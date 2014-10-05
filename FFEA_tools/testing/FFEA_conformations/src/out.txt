@@ -1,0 +1,16 @@
+g++ -fopenmp -finline-functions -Wall -Wstrict-aliasing=2 -D_FILE_OFFSET_BITS=64 -O3 -lm ffea.cpp -o ../bin/ffea
+In file included from ffea.cpp:15:
+Blob.h: In member function 'void Blob::reset_all_faces()':
+Blob.h:1099: error: 'class Face' has no member named 'set_vdw_interaction_flag'
+Blob.h: In member function 'int Blob::create_viewer_node_file(const char*, scalar)':
+Blob.h:1873: error: request for member 'insert' in 'new_node_filename', which is of non-class type 'char [255]'
+Blob.h:1869: warning: unused variable 'j'
+In file included from ffea.cpp:16:
+Blob.h: In member function 'int World::read_and_build_system(FILE*)':
+Blob.h:1864: error: 'int Blob::create_viewer_node_file(const char*, scalar)' is private
+World.h:788: error: within this context
+World.h:791: error: expected ';' before 'return'
+Blob.h:1864: error: 'int Blob::create_viewer_node_file(const char*, scalar)' is private
+World.h:802: error: within this context
+World.h:805: error: expected ';' before 'return'
+make: *** [all] Error 1

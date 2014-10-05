@@ -1,0 +1,1 @@
+g++ -fopenmp -finline-functions -Wall -Wstrict-aliasing=2 -D_FILE_OFFSET_BITS=64 -O3 -lm ffea.cpp -o ../bin/ffea
