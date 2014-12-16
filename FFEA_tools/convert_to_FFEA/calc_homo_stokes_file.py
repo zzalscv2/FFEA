@@ -35,7 +35,7 @@ for i in range(6,6 + num_nodes):
 	elif float(line[0]) > z_max:
 		z_max = float(line[0])
 
-dim = [x_max - x_min, y_max - y_min, z_max - z_min]
+dim = [(x_max - x_min) / 2.0, (y_max - y_min) / 2.0, (z_max - z_min) / 2.0]
 order = [0,0,0]
 if dim[0] >= dim[1] and dim[0] >= dim[2]:
 	order[0] = 0
