@@ -343,10 +343,11 @@ class Surface
 				}
 
 				// Finding second face to delete (two faces share an edge)
-				face_iter = face_to_delete[0];
-				face_iter++;
 				int num_sharing_faces = 1;
-				while(face_iter != faces.end()) {
+				for(face_iter = faces.begin() ; face_iter != faces.end(); face_iter++) {
+					if(face_iter == faces_to_delete[0]) {
+						continue;
+					}
 					if((*face_iter)->do_i_have_this_edge(node_to_delete_a, node_to_delete_b) == true) {
 						if(num_sharing_faces == 1) {
 							face_to_delete[1] = face_iter;
@@ -357,7 +358,6 @@ class Surface
 						}
 						num_sharing_faces++;
 					} 
-					face_iter++;
 				}
 
 				if(num_sharing_faces == 1) {
