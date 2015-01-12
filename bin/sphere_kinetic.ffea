@@ -1,0 +1,108 @@
+<param>
+	<restart = 0>
+	<dt = 1e-14>
+	<kT = 4.11e-21>
+	<check = 1e3>
+	<num_steps = 1e8>
+	<rng_seed = time>
+	<trajectory_out_fname = sphere_trajectory.out>
+	<measurement_out_fname = sphere_measurement.out>
+	<vdw_forcefield_params = sphere.lj>
+	<epsilon = 0.01>
+	<max_iterations_cg = 1000>
+	<kappa = 1e9>
+	<epsilon_0 = 1>
+	<dielec_ext = 1>
+	<do_stokes = 1>
+	<stokes_visc = 1e-06>
+	<calc_vdw = 0>
+	<calc_noise = 1>
+	<calc_es = 0>
+	<es_update = 1>
+	<es_N_x = 0>
+	<es_N_y = 0>
+	<es_N_z = 0>
+	<sticky_wall_xz = 0>
+	<wall_x_1 = PBC>
+	<wall_x_2 = PBC>
+	<wall_y_1 = PBC>
+	<wall_y_2 = PBC>
+	<wall_z_1 = PBC>
+	<wall_z_2 = PBC>
+	<es_h = 3>
+	<num_blobs = 1>
+	<num_conformations = 2,3>
+</param>
+
+<system>
+	<blob>
+		<conformation>
+			<state = DYNAMIC>
+			<nodes = sphere.node>
+			<topology = sphere.top>
+			<surface = sphere.surf>
+			<material = sphere.mat>
+			<stokes = sphere.stokes>
+			<vdw = sphere.vdw>
+			<pin = sphere.pin>
+		</conformation>
+		<conformation>
+			<state = DYNAMIC>
+			<nodes = sphere2.node>
+			<topology = sphere2.top>
+			<surface = sphere2.surf>
+			<material = sphere2.mat>
+			<stokes = sphere2.stokes>
+			<vdw = sphere2.vdw>
+			<pin = sphere2.pin>
+		</conformation>
+		<switching>
+			<map = sphere_blob1.confmap>
+			<rates = sphere_blob1.rates>
+		</switching>
+		<scale = 5e-9>
+		<solver = CG_nomass>
+		<centroid_pos = (0.0,0.0,0.0)>
+		<velocity = (0.0,0.0,0.0)>
+	</blob>
+	<blob>
+		<conformation>
+			<state = DYNAMIC>
+			<nodes = sphere.node>
+			<topology = sphere.top>
+			<surface = sphere.surf>
+			<material = sphere.mat>
+			<stokes = sphere.stokes>
+			<vdw = sphere.vdw>
+			<pin = sphere.pin>
+		</conformation>
+		<conformation>
+			<state = DYNAMIC>
+			<nodes = sphere2.node>
+			<topology = sphere2.top>
+			<surface = sphere2.surf>
+			<material = sphere2.mat>
+			<stokes = sphere2.stokes>
+			<vdw = sphere2.vdw>
+			<pin = sphere2.pin>
+		</conformation>
+		<conformation>
+			<state = DYNAMIC>
+			<nodes = sphere3.node>
+			<topology = sphere3.top>
+			<surface = sphere3.surf>
+			<material = sphere3.mat>
+			<stokes = sphere3.stokes>
+			<vdw = sphere3.vdw>
+			<pin = sphere3.pin>
+		</conformation>
+		<switching>
+			<map = sphere_blob2.confmap>
+			<rates = sphere_blob2.rates>
+		</switching>
+		<scale = 5e-9>
+		<solver = CG_nomass>
+		<centroid_pos = (0.0,0.0,0.0)>
+		<velocity = (0.0,0.0,0.0)>
+	</blob>
+</system>
