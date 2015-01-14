@@ -96,6 +96,9 @@ class FFEA_traj:
 				self.blob[i].num_frames = self.num_frames
 
 		print "Done. All blobs now have " + str(check) + " frames in total."
+		
+		# Calculate basic things
+		self.calc_centroids()
 		return
 			
 	def calc_centroids(self):
