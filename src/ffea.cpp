@@ -24,11 +24,11 @@ int main(int argc, char *argv[])
 	printf("  Theory:\tOliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson\n");
 
 	#ifdef FFEA_PARALLEL_WITHIN_BLOB
-	printf("Parallelisation switch: FFEA_PARALLEL_WITHIN_BLOB\n");
+		printf("Parallelisation switch: FFEA_PARALLEL_WITHIN_BLOB\n");
 	#endif
 
 	#ifdef FFEA_PARALLEL_PER_BLOB
-	printf("Parallelisation switch: FFEA_PARALLEL_PER_BLOB\n");
+		printf("Parallelisation switch: FFEA_PARALLEL_PER_BLOB\n");
 	#endif
 	
 	// Return variable

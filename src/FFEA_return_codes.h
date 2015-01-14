@@ -1,8 +1,8 @@
 #ifndef FFEA_RETURN_CODES_H_INCLUDED
 #define FFEA_RETURN_CODES_H_INCLUDED
 
-#define FFEA_VERSION "1.42"
-#define FFEA_MASCOT "Walrus"
+#define FFEA_VERSION "2"
+#define FFEA_MASCOT "Mega Walrus"
 
 #define FFEA_DIRECT_SOLVER		0
 #define FFEA_ITERATIVE_SOLVER		1

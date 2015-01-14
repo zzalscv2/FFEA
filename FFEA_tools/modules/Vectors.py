@@ -31,6 +31,11 @@ class vector3:
 		self.x = self.x * factor
 		self.y = self.y * factor
 		self.z = self.z * factor
+	
+	def set_pos(self, x, y, z):
+		self.x = x
+		self.y = y
+		self.z = z
 
 def vec3_dot_prod(vec31, vec32):
 	out = vec31.x * vec32.x + vec31.y * vec32.y + vec31.z * vec32.z

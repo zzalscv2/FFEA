@@ -107,7 +107,6 @@ class FFEA_traj_blob:
 			return 0
 
 		node = []
-		trajectory_lines.readline() #num_nodes, delete later
 		for i in range(self.num_nodes):
 			sline = trajectory_lines.readline().split()
 			node.append(vector3(float(sline[0]), float(sline[1]), float(sline[2])))
