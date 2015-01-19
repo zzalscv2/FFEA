@@ -153,7 +153,7 @@ class ConjugateGradientSolver: public Solver
 			key[num_rows] = total_non_zeros;
 
 			// Allocate memory for the 'entry' array
-			printf("\t\tNum non zero entries = %d.\n\t\tAllocating space...\n", total_non_zeros);
+			printf("\t\tNum non zero entries = %d.\n\t\tAllocating...\n", total_non_zeros);
 			entry = new sparse_entry[total_non_zeros];
 			printf("\t\t...done.\n");
 

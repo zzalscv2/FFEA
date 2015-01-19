@@ -27,8 +27,10 @@ class Blob:
 		self.do_Fij = False
 		self.energy_thresh = energy_thresh
 
-	def load(self, idnum, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned):
+	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned):
 		self.id_num = idnum
+		self.blob_index = blob_index
+		self.conformation_index = conformation_index
 		self.nodes_fname = nodes_fname
 		self.nodes_scale = scale
 		self.state = blob_state
@@ -192,12 +194,9 @@ class Blob:
 	def load_frame(self, traj_file):
 		
 		# skip blob, step line
-		line = traj_file.readline()
+		traj_file.readline()
 		line = traj_file.readline()
 		blob_state = line.rstrip()
-		line = traj_file.readline()
-		self.num_nodes = int(line)
-
 		scale = 1e10
 		nodes = []
 		centroid_x = 0.0
@@ -212,6 +211,7 @@ class Blob:
 			centroid_x += el_nodes[0]
 			centroid_y += el_nodes[1]
 			centroid_z += el_nodes[2]
+
 		centroid_x /= self.num_nodes
 		centroid_y /= self.num_nodes
 		centroid_z /= self.num_nodes
@@ -1054,7 +1054,7 @@ class Blob:
 		
 		# calc determinant
 		det = J[0][0] * J_inv[0][0] + J[1][0] * J_inv[0][1] + J[2][0] * J_inv[0][2];
-		
+
 		# divide by determinant
 		det = 1.0/det;
 		J_inv[0][0]*=det; J_inv[0][1]*=det; J_inv[0][2]*=det;

@@ -1,5 +1,7 @@
 ffea conformational switching rates file
-num_conformations 3
-50 200 0
-0 40 90
-100 0 40
+num_states 5
+50 200 150 140 130
+10 40 90 250 70
+50 200 150 140 130
+10 40 90 250 70
+50 200 150 140 130

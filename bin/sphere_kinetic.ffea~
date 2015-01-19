@@ -105,7 +105,7 @@
 		</switching>
 		<initial_conformation = 0>
 		<solver = CG>
-		<centroid_pos = (15e-9,0.0,0.0)>
+		<centroid_pos = (3.0,0.0,0.0)>
 		<velocity = (0.0,0.0,0.0)>
 		<scale = 5e-9>
 	</blob>

@@ -1234,7 +1234,7 @@ class World
 
 			for(int i = 0; i < params.num_blobs; i++) {
 				// Write the node data for this blob
-				fprintf(trajectory_out, "Blob %d, Conformation %d, step %d\n", i, active_conformation_index[i], step);
+				fprintf(trajectory_out, "Blob %d, Conformation %d, step %d\n", i, step);
 				active_blob_array[i]->write_nodes_to_file(trajectory_out);
 
 				// Write the measurement data for this blob

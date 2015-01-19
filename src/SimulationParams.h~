@@ -296,8 +296,8 @@ class SimulationParams
 			printf("\tnum_blobs = %d\n", num_blobs);
 			for(int i = 0; i < num_blobs; ++i) {
 				printf("\tBlob %d:\n", i);
-				printf("\t\tnum_conformations = %d\n", num_conformations[i]);
-				printf("\t\tnum_states = %d\n", num_states[i]);
+				printf("\t\tnum_conformations = %d\n", i, num_conformations[i]);
+				printf("\t\tnum_states = %d\n", i, num_states[i]);
 			}
 			printf("\trng_seed = %d\n", rng_seed);
 			printf("\tkT = %e\n", kT);

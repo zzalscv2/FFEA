@@ -153,6 +153,8 @@ class FFEA_viewer_display_window():
 		blob_surface = None
 		blob_vdw = None
 		blob_number = 0
+		blob_index = 0
+		conformation_index = 0
 		blob_pinned = None
 		blob_state = "DYNAMIC"
 		trajectory_out_fname = None
@@ -161,6 +163,8 @@ class FFEA_viewer_display_window():
 		es_N_y = None
 		es_N_z = None
 		es_h = None
+		self.num_blobs = 0
+		self.num_conformations = []
 		for command in ffea_commands:
 			if in_system_block == True:
 
@@ -228,11 +232,11 @@ class FFEA_viewer_display_window():
 				if "state=" in command:
 					blob_state = command.replace("state=", "")
 
-				if command == "/blob":
+				if command == "/conformation":
 					print "Loading blob", str(blob_number)
 
 					new_blob = Blob.Blob(energy_thresh=self.energy_threshold)
-					new_blob.load(blob_number, blob_nodes, blob_topology, blob_surface, blob_vdw, blob_scale, blob_state, blob_pinned)
+					new_blob.load(blob_number, blob_index, conformation_index, blob_nodes, blob_topology, blob_surface, blob_vdw, blob_scale, blob_state, blob_pinned)
 
 					self.blob_list.append(new_blob)
 					new_blob_name = ffea_id_string + "#" +str(blob_number)
@@ -240,6 +244,10 @@ class FFEA_viewer_display_window():
 					add_blob_info = {'name': new_blob_name, 'info': info_string}
 					self.speak_to_control.send({'add_blob': add_blob_info})
 					blob_number += 1
+					conformation_index += 1
+					if conformation_index == self.num_conformations[blob_index]:
+						conformation_index = 0
+						blob_index += 1
 					blob_nodes = None
 					blob_topology = None
 					blob_surface = None
@@ -272,6 +280,14 @@ class FFEA_viewer_display_window():
 				es_N_y = int(command.replace("es_N_y=", ""))
 			if "es_N_z" in command:
 				es_N_z = int(command.replace("es_N_z=", ""))
+			if "num_blobs=" in command:
+				self.num_blobs = int(command.replace("num_blobs=", ""))
+				self.num_conformations = [0] * self.num_blobs
+				self.active_conformation_index = [0] * self.num_blobs
+			if "num_conformations=" in command:
+				bracket = command.replace("num_conformations=", "").replace("(", "").replace(")", "").split(",")
+				for i in range(self.num_blobs):
+					self.num_conformations[i] = int(bracket[i])
 
 		self.box_x = (1.0e10/kappa) * es_h * es_N_x
 		self.box_y = (1.0e10/kappa) * es_h * es_N_y
@@ -302,10 +318,26 @@ class FFEA_viewer_display_window():
 		#traj.readline()
 		#traj.readline()
 
-		# get all initial stuff for now
-		for i in range(6):
+		# get all initial stuff
+		for i in range(3):
 			traj.readline()
 
+		# get num_blobs
+		if self.num_blobs != int(traj.readline().split()[3].strip()):
+			no_errors_loading = False
+			traj.close()
+			return
+
+		# Get each num_nodes
+		sline = traj.readline().split()
+		blob_id = 0
+		for i in range(self.num_blobs):
+			num_nodes = int(sline[4 * i + 3]) 
+			self.blob_list[blob_id].num_nodes = num_nodes
+			blob_id += self.num_conformations[i]
+
+		# Final whitespace
+		traj.readline()
 		while True:
 			while self.pause_loading == True:
 				self.pausing = True
@@ -320,21 +352,20 @@ class FFEA_viewer_display_window():
 				break
 
 			for blob in self.blob_list:
+				# Only give traj data to active blob
+				if blob.conformation_index != self.active_conformation_index[blob.blob_index]:
+					continue
+
 				# if the blob has state STATIC, then there is no node information in the trajectory file (since it is unchanged during the simulation),
 				# therefore just read in the word STATIC
 				if blob.get_state() == "STATIC":
-					traj.readline() # skip "Blob x, step y" line
-					traj.readline() # skip number of nodes line
+					traj.readline() # skip "Blob x, Conformation y, step z" line
+					traj.readline() # skip "STATIC" line
 					continue
 
 				# for DYNAMIC or FROZEN blobs, try to read the node info for this frame
-				try:
-					blob.load_frame(traj)
-				except Exception as e:
-					print "Error reading frame", self.num_frames, " from", trajectory_out_fname
-					print e
-					no_errors_loading = False
-					break
+				blob.load_frame(traj)
+				
 
 			if no_errors_loading == True:
 				self.num_frames += 1

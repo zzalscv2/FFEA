@@ -725,6 +725,13 @@ class Blob {
 				}
 			}
 
+			int read_num_nodes = 0;
+			if(fscanf(trajectory_out, "%d\n", &read_num_nodes) != 1) {
+				FFEA_ERROR_MESSG("Could not read number of nodes.\n")
+			}
+			if(read_num_nodes != num_nodes) {
+				FFEA_ERROR_MESSG("(When restarting) Number of nodes in trajectory file does not match number of nodes in node file\n")
+			}
 			for(int i = 0; i < num_nodes; i++) {
 				if(fscanf(trajectory_out, "%le %le %le %le %le %le %le %le %le %le\n", &node[i].pos.x, &node[i].pos.y, &node[i].pos.z, &node[i].vel.x, &node[i].vel.y, &node[i].vel.z, &node[i].phi, &force[i].x, &force[i].y, &force[i].z) !=10) {
 					FFEA_ERROR_MESSG("(When restarting) Error reading from trajectory file, for node %d\n", i)
