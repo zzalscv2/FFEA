@@ -22,7 +22,7 @@ ffea_tools = 	{
 		"extractnodes": "extract/extract",
 		"trajtoxyz": "extract/ffea_traj_to_xyz",
 		"xyztodx": "extract/xyz_to_dx_map.py",
-		"cgsurf": "surface_coarse_grainer/new_surface_coarse_grainer.exe",
+		"cgsurf": "surface_coarse_grainer/surface_coarse_grainer_final",
 		"comparemodes": "compare_modes/compare_modes.py",
 		"cuboid": "make_cuboid_mesh/make_cuboid_mesh"
 		}

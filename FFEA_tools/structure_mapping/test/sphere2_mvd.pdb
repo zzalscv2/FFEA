@@ -1,0 +1,134 @@
+ Hi
+
+ Target file name is   : sphere.pdb                                        
+ Moving file name is   : sphere2.pdb                                       
+ Moved  file name is   : sphere2_mvd.pdb                                   
+
+ Atoms read from target file :    63
+ Atoms read from moving file :    63
+
+ Check for identical number of atoms was ok
+ Check for pairwise correspondence of residues was ok
+ Check for pairwise correspondence of atom types was ok
+
+ Centre of target molecule  =   0.027   0.024  -0.003
+ Centre of moving molecule  =   0.027   0.024  -0.003
+ T - vector probe -> target =   0.000   0.000   0.000
+
+ Creating coordinate differences.......
+ Filling quaternion matrix ............
+
+       q(1)         q(2)         q(3)        q(4)
+  0.00000E+00  0.00000E+00  0.00000E+00  0.00000E+00
+  0.00000E+00  0.16418E+03  0.19825E+01 -0.17451E+01
+  0.00000E+00  0.19825E+01  0.16670E+03  0.80405E+00
+  0.00000E+00 -0.17451E+01  0.80405E+00  0.16442E+03
+
+ Jacobi orthogonalization ..........
+ Sorting eigenvalues/vectors .......
+
+ Eigenvalues and Eigenvectors ( 9 Jacobi rotations)
+      e(1)        e(2)        e(4)        e(4)
+ 0.16779E+03 0.16578E+03 0.16173E+03 0.00000E+00
+      ev(1)       ev(2)       ev(3)       ev(4)
+    0.000000    0.000000    0.000000    1.000000
+    0.499756   -0.481272    0.720154    0.000000
+    0.864574    0.327561   -0.381071    0.000000
+   -0.052496    0.813069    0.579796    0.000000
+
+ The smallest eigenvalue represents s.r.s. of best fit
+
+ Constructing the best fit rotation matrix from associated
+ eigenvector elements (last column).....
+
+    1.00000    0.00000    0.00000
+    0.00000    1.00000    0.00000
+    0.00000    0.00000    1.00000
+
+ Writing new pdb file sphere2_mvd.pdb ..........
+
+TITLE   sphere2_mvd.pdb 
+REMARK  This pdb file has been created by superposition of 
+REMARK  Target : sphere.pdb  and
+REMARK  Source : sphere2.pdb  applying
+REMARK  the quaternion method S.K.Kearsley Acta Cryst A45 208 (1989)
+REMARK  implemented in code PDBSUP by B.Rupp and S.Parkin
+REMARK  Lawrence Livermore National Laboratory, BBRP, 1996
+REMARK  See http://www-structure.llnl.gov for details
+REMARK  
+REMARK  Translation vector: source -> target (Angstroem):
+REMARK        0.0000      0.0000      0.0000
+REMARK  Rotation matrix   : source -> target :
+REMARK      1.000000    0.000000    0.000000
+REMARK      0.000000    1.000000    0.000000
+REMARK      0.000000    0.000000    1.000000
+REMARK  The overall best fit r.m.s. deviation is :       0.0000 A
+REMARK  Last 3 columns contain rmsx,rmsy,rmsz,rmsd
+REMARK  
+COMPND   1 CHAIN: A                                                             
+ATOM      1  C   ILE    A1       0.000   0.000   0.000             0.000 0.000 0.000 0.000
+ATOM      2  C   ILE    A1       1.000   0.000   0.000             0.000 0.000 0.000 0.000
+ATOM      3  C   ILE    A1       0.894   0.447   0.000             0.000 0.000 0.000 0.000
+ATOM      4  C   ILE    A1       0.887   0.179   0.426             0.000 0.000 0.000 0.000
+ATOM      5  C   ILE    A1       0.882   0.228  -0.411             0.000 0.000 0.000 0.000
+ATOM      6  C   ILE    A1       0.714   0.624  -0.316             0.000 0.000 0.000 0.000
+ATOM      7  C   ILE    A1       0.580   0.814   0.038             0.000 0.000 0.000 0.000
+ATOM      8  C   ILE    A1       0.883  -0.294   0.365             0.000 0.000 0.000 0.000
+ATOM      9  C   ILE    A1       0.675   0.589   0.445             0.000 0.000 0.000 0.000
+ATOM     10  C   ILE    A1       0.874  -0.242  -0.421             0.000 0.000 0.000 0.000
+ATOM     11  C   ILE    A1       0.903  -0.430  -0.009             0.000 0.000 0.000 0.000
+ATOM     12  C   ILE    A1       0.655   0.013  -0.756             0.000 0.000 0.000 0.000
+ATOM     13  C   ILE    A1       0.549   0.481  -0.684             0.000 0.000 0.000 0.000
+ATOM     14  C   ILE    A1       0.352   0.857  -0.377             0.000 0.000 0.000 0.000
+ATOM     15  C   ILE    A1       0.717  -0.117   0.687             0.000 0.000 0.000 0.000
+ATOM     16  C   ILE    A1       0.133   0.990   0.041             0.000 0.000 0.000 0.000
+ATOM     17  C   ILE    A1       0.563  -0.462  -0.685             0.000 0.000 0.000 0.000
+ATOM     18  C   ILE    A1       0.577  -0.513   0.635             0.000 0.000 0.000 0.000
+ATOM     19  C   ILE    A1       0.339   0.855   0.392             0.000 0.000 0.000 0.000
+ATOM     20  C   ILE    A1       0.663  -0.713   0.229             0.000 0.000 0.000 0.000
+ATOM     21  C   ILE    A1       0.559   0.251   0.791             0.000 0.000 0.000 0.000
+ATOM     22  C   ILE    A1       0.675  -0.694  -0.250             0.000 0.000 0.000 0.000
+ATOM     23  C   ILE    A1      -0.105   0.929  -0.356             0.000 0.000 0.000 0.000
+ATOM     24  C   ILE    A1       0.323  -0.206  -0.924             0.000 0.000 0.000 0.000
+ATOM     25  C   ILE    A1       0.113   0.670  -0.733             0.000 0.000 0.000 0.000
+ATOM     26  C   ILE    A1       0.255   0.229  -0.939             0.000 0.000 0.000 0.000
+ATOM     27  C   ILE    A1       0.372  -0.177   0.911             0.000 0.000 0.000 0.000
+ATOM     28  C   ILE    A1       0.195  -0.561   0.804             0.000 0.000 0.000 0.000
+ATOM     29  C   ILE    A1       0.303  -0.822  -0.483             0.000 0.000 0.000 0.000
+ATOM     30  C   ILE    A1      -0.332   0.940   0.077             0.000 0.000 0.000 0.000
+ATOM     31  C   ILE    A1       0.249  -0.848   0.468             0.000 0.000 0.000 0.000
+ATOM     32  C   ILE    A1      -0.085   0.866   0.493             0.000 0.000 0.000 0.000
+ATOM     33  C   ILE    A1       0.102  -0.577  -0.810             0.000 0.000 0.000 0.000
+ATOM     34  C   ILE    A1      -0.309   0.694  -0.650             0.000 0.000 0.000 0.000
+ATOM     35  C   ILE    A1       0.296  -0.955  -0.029             0.000 0.000 0.000 0.000
+ATOM     36  C   ILE    A1       0.098   0.186   0.978             0.000 0.000 0.000 0.000
+ATOM     37  C   ILE    A1      -0.555   0.772  -0.309             0.000 0.000 0.000 0.000
+ATOM     38  C   ILE    A1       0.248   0.622   0.743             0.000 0.000 0.000 0.000
+ATOM     39  C   ILE    A1      -0.100  -0.139  -0.985             0.000 0.000 0.000 0.000
+ATOM     40  C   ILE    A1      -0.084  -0.284   0.955             0.000 0.000 0.000 0.000
+ATOM     41  C   ILE    A1      -0.155  -0.907  -0.392             0.000 0.000 0.000 0.000
+ATOM     42  C   ILE    A1      -0.711   0.698   0.084             0.000 0.000 0.000 0.000
+ATOM     43  C   ILE    A1      -0.215  -0.699   0.682             0.000 0.000 0.000 0.000
+ATOM     44  C   ILE    A1      -0.548   0.673   0.497             0.000 0.000 0.000 0.000
+ATOM     45  C   ILE    A1      -0.238   0.347  -0.907             0.000 0.000 0.000 0.000
+ATOM     46  C   ILE    A1      -0.333   0.081   0.939             0.000 0.000 0.000 0.000
+ATOM     47  C   ILE    A1      -0.879   0.438  -0.190             0.000 0.000 0.000 0.000
+ATOM     48  C   ILE    A1      -0.184  -0.957   0.224             0.000 0.000 0.000 0.000
+ATOM     49  C   ILE    A1      -0.357  -0.499  -0.790             0.000 0.000 0.000 0.000
+ATOM     50  C   ILE    A1      -0.557  -0.316   0.768             0.000 0.000 0.000 0.000
+ATOM     51  C   ILE    A1      -0.538  -0.012  -0.843             0.000 0.000 0.000 0.000
+ATOM     52  C   ILE    A1      -0.643   0.431  -0.632             0.000 0.000 0.000 0.000
+ATOM     53  C   ILE    A1      -0.891   0.346   0.293             0.000 0.000 0.000 0.000
+ATOM     54  C   ILE    A1      -0.252   0.514   0.820             0.000 0.000 0.000 0.000
+ATOM     55  C   ILE    A1      -0.574  -0.696  -0.431             0.000 0.000 0.000 0.000
+ATOM     56  C   ILE    A1      -0.537  -0.842  -0.044             0.000 0.000 0.000 0.000
+ATOM     57  C   ILE    A1      -0.642  -0.658   0.394             0.000 0.000 0.000 0.000
+ATOM     58  C   ILE    A1      -0.674   0.215   0.707             0.000 0.000 0.000 0.000
+ATOM     59  C   ILE    A1      -0.901  -0.175   0.397             0.000 0.000 0.000 0.000
+ATOM     60  C   ILE    A1      -0.734  -0.345  -0.585             0.000 0.000 0.000 0.000
+ATOM     61  C   ILE    A1      -0.901   0.045  -0.431             0.000 0.000 0.000 0.000
+ATOM     62  C   ILE    A1      -0.999   0.039  -0.005             0.000 0.000 0.000 0.000
+ATOM     63  C   ILE    A1      -0.898  -0.430  -0.090             0.000 0.000 0.000 0.000
+ Atoms read from probe file sphere2.pdb :   63
+ Atoms written to results file sphere2_mvd.pdb :   63
+
