@@ -42,6 +42,13 @@ class vector3
 			return sqrt(x * x + y * y + z * z);
 		}
 		
+		void translate(vector3 a) {
+			this->x += a.x;
+			this->y += a.y;
+			this->z += a.z;
+			
+		}
+		
 		void set_midpoint(vector3 a, vector3 b) {
 			 this->x = (a.x + b.x) / 2.0;
 			 this->y = (a.y + b.y) / 2.0;
@@ -55,10 +62,41 @@ class vector3
 			
 		}
 		
-		void cross_prod(vector3 a, vector3 b) {
-			this->x = a.y * b.z + b.y * a.z;
-			this->y = -1 * (a.x * b.z - a.z * b.x);
-			this->z = a.x * b.y - a.y * b.z; 	
+		
+		// Overloaded operators
+		vector3 operator+(vector3 b) {
+			return vector3(x + b.x, y + b.y, z + b.z);
+		}
+		
+		vector3 operator-(vector3 b) {
+			return vector3(x - b.x, y - b.y, z - b.z);
+		}
+		
+		vector3 operator*(double b) {
+			return vector3(x * b, y * b, z * b);
+		}
+		void operator+=(vector3 b) {
+			x += b.x;
+			y += b.y;
+			z += b.z;
+		}
+		
+		void operator*=(double b) {
+			x *= b;
+			y *= b;
+			z *= b;
+		}
+		
+		static vector3 cross_product(vector3 a, vector3 b) {
+			vector3 c;
+			c.x = a.y * b.z - a.z * b.y;
+			c.y = b.x * a.z - a.x * b.z;
+			c.z = a.x * b.y - a.y * b.x;
+			return c;
+		}
+		
+		static double dot_product(vector3 a, vector3 b) {
+			return a.x * b.x + a.y * b.y + a.z * b.z;
 		}
 		
 		// Vector components
@@ -144,6 +182,95 @@ class Face
 		double shortest_edge;
 		int shortest_edge_index;
 };
+
+class Tetrahedron
+{
+	public:
+		
+		Tetrahedron(vector3 *n0, vector3 *n1, vector3 *n2, vector3 *n3) {
+			this->n[0] = n0;
+			this->n[1] = n1;
+			this->n[2] = n2;
+			this->n[3] = n3;
+			volume = 0.0;
+		}
+		
+		~Tetrahedron() {
+			for(int i = 0; i < 4; ++i) {
+				n[i] = NULL;
+			}
+			volume = 0.0;
+		}
+		
+		double calc_volume() {
+			
+			// Calc new edges
+			edge[0] = *n[1] - *n[0];
+			edge[1] = *n[2] - *n[0];
+			edge[2] = *n[3] - *n[0];
+			vector3 work_vec;
+			work_vec = vector3::cross_product(edge[1], edge[0]);
+			volume = vector3::dot_product(edge[2], work_vec);
+			volume /= 6.0;
+			return volume;
+		}
+	
+		vector3 *n[4];
+		// Only require 3 edges for volume
+		vector3 edge[3];
+		double volume;
+};
+
+// Not a proper volume, just the bare minimum for this implementation i.e. we don't care about it's connection consistency
+class Volume
+{
+	public:
+		
+		Volume() 
+		{
+			element.clear();
+			num_elements = 0; 
+			volume = 0.0;
+		}
+		
+		~Volume() 
+		{
+			element.clear();
+			num_elements = 0; 
+			volume = 0.0;
+		}
+		
+		void reset() {
+			element.clear();
+			num_elements = 0;
+			volume = 0.0;
+		}
+		
+		void build_from_partial_surf(list <Face*> partial_surf, vector3 *new_node, vector3 *node) {
+			list<Face*>::iterator face_iterator;
+			
+			for(face_iterator = partial_surf.begin(); face_iterator != partial_surf.end(); face_iterator++) {
+				element.push_back(new Tetrahedron(&node[(*face_iterator)->n[0]], &node[(*face_iterator)->n[1]], &node[(*face_iterator)->n[2]], new_node));
+			}
+		}
+		
+		double calc_volume() {
+			volume = 0.0;
+			list<Tetrahedron*>::iterator elem_iter;
+			for(elem_iter = element.begin(); elem_iter != element.end(); elem_iter++) {
+				volume += (*elem_iter)->calc_volume();
+			}
+			
+			return volume;
+		}
+		
+	private:
+			
+		list<Tetrahedron*> element;
+		int num_elements;
+		double volume;	
+};
+
 
 // Main class defining surface
 class Surface
@@ -236,16 +363,16 @@ class Surface
 		int coarsen(double limit, char *conserve_vol, char *find_smallest) {
 			
 			// Iterate through faces while any edge is less than limit
-			int i, j, k, runs = 0, completed_check, num_shared_faces, num_shared_nodes;
+			int i, j, k, runs = 0, breaks = 0, completed_check, num_shared_faces, num_shared_nodes;
 			int node_to_delete[2], remaining_node, do_not_delete, section_deleted, twod_section_exists, face_sharing_remaining_node[2];
-			double length_deleted;
-			vector3 midpoint;
+			double length_deleted, original_volume, new_volume, tolerance, upper_limit_vol, lower_limit_vol;
+			vector3 midpoint, connecting_node, distance_node, normal_vector, translate_vector, upper_limit_pos, lower_limit_pos, nodal_distance, nodal_distance_2;
 			list<Face*>::iterator face_iterator, face_to_delete[4];
 			while(true) {
 				
 				// Output completion data
 				// Output Info
-				if((num_faces_initial - num_faces) % 1 == 0) {
+				if((num_faces_initial - num_faces) % 100 == 0) {
 					printf("Faces Remaining = %d\n", num_faces);
 					printf("Nodes Remaining = %d\n", num_nodes);
 					printf("Last Length Deleted = %f\n\n", length_deleted);					
@@ -275,7 +402,7 @@ class Surface
 					for(i = 0; i < 2; ++i) {
 						node_to_delete[i] = (*face_to_delete[0])->edge[(*face_to_delete[0])->shortest_edge_index].n_index[i];
 					}
-
+					
 					// Get remaining node in that face
 					for(i = 0; i < 3; ++i) {
 						if((*face_to_delete[0])->n[i] != node_to_delete[0] && (*face_to_delete[0])->n[i] != node_to_delete[1]) {
@@ -352,8 +479,39 @@ class Surface
 
 				// Coarsen in different ways depending on how many faces are sharing the edge
 				section_deleted = 0;
-				//printf("Num_shared_faces = %d\n", num_shared_faces);
+	
 				if(num_shared_faces == 2) {
+					
+					// To conserve volume, make a local volume mesh before moving the midpoint and calculate the volume
+					if(strcmp(conserve_vol, "y") == 0 || strcmp(conserve_vol, "Y") == 0) {
+						local_volume_surf.clear();
+						for(face_iterator = neighbourhood.begin(); face_iterator != neighbourhood.end(); ++face_iterator) {
+							local_volume_surf.push_back(*face_iterator);
+						}
+						local_volume_surf.push_back(*face_to_delete[0]);
+						local_volume_surf.push_back(*face_to_delete[1]);
+					
+						// Also, calculate the vector along which node will be translated to conserve volume and shape
+						for(i = 0; i < 2; ++i) {
+							normal_vector = vector3::cross_product(node[(*face_to_delete[i])->n[1]] - node[(*face_to_delete[i])->n[0]], node[(*face_to_delete[i])->n[2]] - node[(*face_to_delete[i])->n[1]]);
+							normal_vector.normalise();
+							translate_vector += normal_vector;
+						}
+						translate_vector.normalise(); 
+						
+						// Create the original volume mesh
+						connecting_node.set_midpoint(node[node_to_delete[0]], node[node_to_delete[1]]);
+						connecting_node.translate(translate_vector * -100);
+						distance_node.set_midpoint(node[node_to_delete[0]], node[node_to_delete[1]]);
+						distance_node.translate(translate_vector * 100);
+						local_volume.reset();
+						local_volume.build_from_partial_surf(local_volume_surf, &connecting_node, node);
+						original_volume = local_volume.calc_volume();
+					}
+					
+					// For later
+					nodal_distance = node[node_to_delete[1]] - node[node_to_delete[0]];
+					
 					// Move lowest node to midpoint
 					midpoint.set_midpoint(node[node_to_delete[0]], node[node_to_delete[1]]);
 					node[node_to_delete[0]].set_pos(midpoint.x, midpoint.y, midpoint.z);
@@ -386,19 +544,75 @@ class Surface
 						// Shortest length
 						(*face_iterator)->calc_shortest_edge();
 					}
-
+					
 					// Delete faces
 					face.erase(face_to_delete[1]);
 					face.erase(face_to_delete[0]);
 					num_faces -= 2;
 
+					// To conserve volume, make a new volume mesh after moving the midpoint and iterate new node position until volumes are equal
+					if(strcmp(conserve_vol, "y") == 0 || strcmp(conserve_vol, "Y") == 0) {
+						
+						// Create new volume mesh
+						local_volume_surf.clear();
+						for(face_iterator = neighbourhood.begin(); face_iterator != neighbourhood.end(); ++face_iterator) {
+							local_volume_surf.push_back(*face_iterator);	
+						}
+						local_volume.reset();
+						local_volume.build_from_partial_surf(local_volume_surf, &connecting_node, node);
+						
+						// Iterate node position until volume is equal within tolerance
+						// Firstly, calculate lower and upper limit volumes
+						tolerance = INFINITY;
+						node[node_to_delete[0]].set_pos(distance_node.x, distance_node.y, distance_node.z);
+						upper_limit_pos.set_pos(distance_node.x, distance_node.y, distance_node.z);
+						upper_limit_vol = local_volume.calc_volume();
+						node[node_to_delete[0]].set_pos(connecting_node.x, connecting_node.y, connecting_node.z);
+						lower_limit_pos.set_pos(connecting_node.x, connecting_node.y, connecting_node.z);
+						lower_limit_vol = local_volume.calc_volume();
+						int while_counts = 0;
+						while(tolerance > 0.01) {
+							while_counts++;
+							if(while_counts > 100) {
+								node[node_to_delete[0]].set_pos(midpoint.x, midpoint.y, midpoint.z);
+								break;
+							}
+							node[node_to_delete[0]].set_midpoint(lower_limit_pos, upper_limit_pos);
+							new_volume = local_volume.calc_volume();
+							// If this is true, volume is too small for double precision. Makes both limit 0.0 :(
+							if(new_volume < 1e-14) {
+								break;
+							}
+							
+							if(new_volume < original_volume) {
+								lower_limit_pos.set_pos(node[node_to_delete[0]].x, node[node_to_delete[0]].y, node[node_to_delete[0]].z);
+							} else {
+								upper_limit_pos.set_pos(node[node_to_delete[0]].x, node[node_to_delete[0]].y, node[node_to_delete[0]].z);
+							}
+							tolerance = fabs((new_volume - original_volume) / original_volume);
+						}
+						
+						// For weird surfaces, volume conservation can require a big spike to form. Don't let it!
+						for(face_iterator = neighbourhood.begin(); face_iterator != neighbourhood.end(); ++face_iterator) {
+							for(int i = 0; i < 3; ++i) {
+								if((*face_iterator)->n[i] != node_to_delete[0]) {
+									nodal_distance_2 = node[node_to_delete[0]] - node[(*face_iterator)->n[i]];
+									if(nodal_distance_2.get_magnitude() / nodal_distance.get_magnitude() > 3) {
+										node[node_to_delete[0]].set_pos(midpoint.x, midpoint.y, midpoint.z);
+										face_iterator = neighbourhood.end();
+										face_iterator--;
+										breaks++;
+										break;
+									} 
+								}
+							}	
+						}
+					}
+					
 				} else if(num_shared_faces == 4) {
+
 					// Firstly check for a tetrahedral collapse (leaves two triangles sticking out of an otherwise consistent surface)
 					// Delete the two evil triangles
-				//	for(i = 0; i < num_shared_faces; ++i) {
-				//		printf("Face %d: %d %d %d\n", i, (*face_to_delete[i])->n[0], (*face_to_delete[i])->n[1], (*face_to_delete[i])->n[2]);
-				//	}
-
 					twod_section_exists = 0;
 					for(i = 0; i < num_shared_faces; ++i) {
 						for(j = i + 1; j < num_shared_faces; ++j) {
@@ -443,7 +657,6 @@ class Surface
 
 						// If it isn't, delete it
 						if(do_not_delete == 0) {
-							printf("%d", remaining_node);
 							node[remaining_node].set_pos(INFINITY, INFINITY, INFINITY);
 							num_nodes--;
 						}
@@ -497,6 +710,10 @@ class Surface
 				
 						printf("4-way coarsening attempted. Good luck!\n");
 					}
+				} else {
+					printf("Something has gone wrong. %d faces are sharing an edge\n", num_shared_faces);
+					printf("A face:%d %d %d\n", (*face_to_delete[0])->n[0], (*face_to_delete[0])->n[1], (*face_to_delete[0])->n[2]);
+					break;
 				}
 				
 				// Check neighbourhood consistency
@@ -522,15 +739,6 @@ class Surface
 			for(i = 0; i < num_nodes_initial; ++i) {
 				if(node[i].x != INFINITY) {
 					node_map[i] = new_node_index;
-					if(i == 433) {
-						printf("Node %d -> %d\n", i, new_node_index + 1);
-					}
-					if(i == 278) {
-						printf("Node %d -> %d\n", i, new_node_index + 1);
-					}
-					if(i == 280) {
-						printf("Node %d -> %d\n", i, new_node_index + 1);
-					}
 					node[new_node_index] = node[i];
 					new_node_index++;
 				} else {
@@ -589,16 +797,8 @@ class Surface
 				}
 			}
 		}
+		
 	private:
-
-		// Surface functions
-		double calc_vol(list<Face*> local_surf, vector3 *node, vector3 normal, vector3 extra_node) {
-			list<Face*>::iterator face_iterator;
-			int i;
-			
-			exit(0);
-			
-		}
 		
 		// Surface components
 		int num_nodes;
@@ -607,7 +807,8 @@ class Surface
 		int num_faces_initial;
 		int *node_map;
 		vector3 *node; 
-		list<Face*> face, neighbourhood;
+		list<Face*> face, neighbourhood, local_volume_surf;
+		Volume local_volume;
 };
 
 // Main program begins
@@ -617,6 +818,20 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	
+	char achar[1];
+	if(strcmp(argv[5], "N") == 0 || strcmp(argv[5], "n") == 0) {
+		printf("\nYou have selected not to find the smallest edge at each pass.\n");
+		printf("Although slightly quicker, this can result in a 'blockier' final mesh.\n");
+		if(strcmp(argv[5], "Y") == 0 || strcmp(argv[5], "y") == 0) {
+			printf("This method can also result in instabilities when conserving volume\n");
+		}
+		printf("Would you like to continue (y/n)?:");
+		fscanf(stdin, "%s", &achar);
+		if(strcmp(achar, "n") == 0 || strcmp(achar, "N") == 0) {
+			printf("Bye!");
+			return 0;
+		}
+	}
 	// Create a surface
 	Surface *surf = new Surface();
 	if(surf->init(argv[1]) != 0) {
