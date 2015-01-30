@@ -99,7 +99,9 @@ class NoMassCGSolver: public Solver
 			
 			if(params->do_stokes == 1) {
 				for(ni = 0; ni < num_nodes; ++ni) {
-					sparsity_pattern_viscosity_matrix.register_contribution(ni, ni, &node[ni].stokes_drag);
+					for(nj = 0; nj < 3; ++nj) {
+						sparsity_pattern_viscosity_matrix.register_contribution(3 * ni + nj, 3 * ni + nj, &node[ni].stokes_drag);
+					}		
 				}
 			}
 
