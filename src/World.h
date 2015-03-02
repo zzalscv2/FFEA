@@ -981,6 +981,15 @@ class World
 						}
 					} 
 
+					// Scale centroid if it exists
+					if(set_centroid_pos == 1) {
+						fprintf(stderr, "%e %e %e\n", com_x, com_y, com_z);
+						com_x *= scale;
+						com_y *= scale;
+						com_z *= scale;
+						fprintf(stderr, "%e %e %e\n", com_x, com_y, com_z);
+					}
+
 					// First make sure we have all the information necessary for initialisation
 					if(num_conformations[i] > 1) {
 						if(set_rates_filename == 0) {
