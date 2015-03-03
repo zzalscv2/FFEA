@@ -25,7 +25,6 @@
 #include "World.h"
 #include "VdW_solver.h"
 #include "LJ_matrix.h"
-#include "Spring.h"
 
 class World
 {
@@ -34,10 +33,8 @@ class World
 		{
 			// Initialise everything to zero
 			blob_array = NULL;
-			spring_array = NULL;
 			num_blobs = 0;
 			num_conformations = NULL;
-			num_springs = 0;	
 			num_threads = 0;
 			rng = NULL;
 			phi_Gamma = NULL;
@@ -59,10 +56,6 @@ class World
 			num_blobs = 0;
 			delete[] num_conformations;
 			num_conformations = NULL;
-
-			delete[] spring_array;
-			spring_array = NULL;
-			num_springs = 0;
 
 			delete[] phi_Gamma;
 			phi_Gamma = NULL;
@@ -290,10 +283,10 @@ class World
 				}
 
 				printf("Loading Blob position and velocity data from last completely written snapshot \n");
-				int blob_id, conformation_id;
+				int blob_id;
 				long long rstep;
 				for(int b = 0; b < params.num_blobs; b++) {
-					if(fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
+					if(fscanf(trajectory_out, "Blob %d, step %lld\n", &blob_id, &rstep) != 2) {
 						FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
 					}
 					if(blob_id != b) {
@@ -591,13 +584,15 @@ class World
 			char buf[max_buf_size];
 			char lvalue[max_buf_size];
 			char rvalue[max_buf_size];
-			char *spring_filename = new char[max_buf_size];
+
 			int linear_solver = FFEA_ITERATIVE_SOLVER;
 			float com_x, com_y, com_z;
+                        float r11, r12, r13, r21, r22, r23, r31, r32, r33;
 			float vel_x, vel_y, vel_z;
 
 			int set_linear_solver = 0;
 			int set_centroid_pos = 0;
+                        int set_rotation = 0;
 			int set_velocity = 0;
 
 			scalar scale = 1;
@@ -616,8 +611,8 @@ class World
 			}
 			
 			// Construct each blob and conformation defined in the <system> block
-			int i = 0, j, k = 0, rv;
-			for(;;) {
+			int i, j, rv;
+			for(i = 0; i < params.num_blobs; i++) {
 				
 				// Allocate all memory for this particular blob
 				char **node_filename = new char*[num_conformations[i]];
@@ -628,9 +623,6 @@ class World
 				char **vdw_filename = new char*[num_conformations[i]];
 				char **pin_filename = new char*[num_conformations[i]];
 				int *blob_motion_state = new int[num_conformations[i]];
-				char rates_filename[max_buf_size];
-				char states_filename[max_buf_size];
-				char map_filename[max_buf_size];
 
 				int *set_node_filename = new int[num_conformations[i]];
 				int *set_topology_filename = new int[num_conformations[i]];
@@ -640,10 +632,7 @@ class World
 				int *set_vdw_filename = new int[num_conformations[i]];
 				int *set_pin_filename = new int[num_conformations[i]];
 				int *set_blob_motion_state = new int[num_conformations[i]];
-				int set_rates_filename = 0;
-				int set_states_filename = 0;
-				int set_map_filename = 0;
-
+				
 				for(j = 0; j < num_conformations[i]; ++j) {
 					node_filename[j] = new char[max_buf_size];
 					topology_filename[j] = new char[max_buf_size];
@@ -672,479 +661,387 @@ class World
 
 				// Check if we have prematurely reached the end of the <system> block
 				if(strcmp(buf, "/system") == 0) {
-					printf("\tExiting <system> block.\n");
-
-					// Free all memory!
-					delete[] node_filename;
-					node_filename = NULL;
-					delete[] topology_filename;
-					topology_filename = NULL;
-					delete[] surface_filename;
-					surface_filename = NULL;
-					delete[] material_params_filename;
-					material_params_filename = NULL;
-					delete[] stokes_filename;
-					stokes_filename = NULL;
-					delete[] vdw_filename;
-					vdw_filename = NULL;
-					delete[] pin_filename;
-					pin_filename = NULL;
-					delete[] blob_motion_state;
-					blob_motion_state = NULL;
-
-					delete[] set_node_filename;
-					set_node_filename = NULL;
-					delete[] set_topology_filename;
-					set_topology_filename = NULL;
-					delete[] set_surface_filename;
-					set_surface_filename = NULL;
-					delete[] set_material_params_filename;
-					set_material_params_filename = NULL;
-					delete[] set_stokes_filename;
-					set_stokes_filename = NULL;
-					delete[] set_vdw_filename;
-					set_vdw_filename = NULL;
-					delete[] set_pin_filename;
-					set_pin_filename = NULL;
-					delete[] set_blob_motion_state;
-					set_blob_motion_state = NULL;
-
-					break;
+					FFEA_error_text();
+					printf("\tPremature end of <system> block. Expected %d blob declarations; only found %d.\n", params.num_blobs, i);
+					return FFEA_ERROR;
 				}
 
-				// If it's a blob block
-				if(strcmp(buf, "blob") == 0) {
+				// Only blocks should be <blob> blocks
+				if(strcmp(buf, "blob") != 0) {
+					FFEA_error_text();
+					printf("\tFound unexpected '<%s>' tag. Only allowed tag in <system> block is <blob> tag.\n", buf);
+					return FFEA_ERROR;
+				}
 
-					// Read all blob initialisation info
-					printf("\tEntering <blob> block %d...\n", i);
+				// Read all blob initialisation info
+				printf("\tEntering <blob> block %d...\n", i);
 
-					// Get next tag (could be conformation, switching, solver, scale, centroid_pos or velocity)
-					j = 0;
-					for(;;) {
+				// Get next tag (could be conformation, switching, solver, scale, centroid_pos or velocity)
+				j = 0;
+				for(;;) {
 					
-						// Check for errors first
-						if(get_next_script_tag(in, buf) == FFEA_ERROR) {
-							FFEA_error_text();
-							printf("\t\tError reading tag in <blob> block\n");
-							return FFEA_ERROR;
-						}
+					// Check for errors first
+					if(get_next_script_tag(in, buf) == FFEA_ERROR) {
+						FFEA_error_text();
+						printf("\t\tError reading tag in <blob> block\n");
+						return FFEA_ERROR;
+					}
 
-						if(feof(in)) {
-							FFEA_error_text();
-							printf("\t\tReached end of file before end of <blob> block\n");
-							return FFEA_ERROR;
-						}
+					if(feof(in)) {
+						FFEA_error_text();
+						printf("\t\tReached end of file before end of <blob> block\n");
+						return FFEA_ERROR;
+					}
 
-						if(strcmp(buf, "/system") == 0) {
-							FFEA_error_text();
-							printf("\t\t</system> came before </blob>\n");
-							return FFEA_ERROR;
-						}
+					if(strcmp(buf, "/system") == 0) {
+						FFEA_error_text();
+						printf("\t\t</system> came before </blob>\n");
+						return FFEA_ERROR;
+					}
 
-						if(strcmp(buf, "/blob") == 0) {
-							printf("\tExiting <blob> block %d\n", i);
-							break;
-						}
+					if(strcmp(buf, "/blob") == 0) {
+						printf("\tExiting <blob> block %d\n", i);
+						break;
+					}
 
-						// Now check for possible input values
-						if(strcmp(buf, "conformation") == 0) {
-							printf("\tEntering conformation block %d...\n", j);
+					// Now check for possible input values
+					if(strcmp(buf, "conformation") == 0) {
+						printf("\tEntering conformation block %d...\n", j);
 						
-							// Read in node, topology, surface etc files for conformation
-							for(;;) {
+						// Read in node, topology, surface etc files for conformation
+						for(;;) {
 					
-								if(get_next_script_tag(in, buf) == FFEA_ERROR) {
-									FFEA_error_text();
-									printf("\t\tError reading tag in <conformation> block\n");
-									return FFEA_ERROR;
-								}
-					
-								if(feof(in)) {
-									FFEA_error_text();
-									printf("\t\tReached end of file before end of <conformation> block\n");
-									return FFEA_ERROR;
-								}
-					
-								if(strcmp(buf, "/system") == 0) {
-									FFEA_error_text();
-									printf("\t\t</system> came before </conformation>\n");
-									return FFEA_ERROR;
-								}
-
-								if(strcmp(buf, "/blob") == 0) {
-									FFEA_error_text();
-									printf("\t\t</blob> came before </conformation>\n");
-									return FFEA_ERROR;
-								}
-
-								if(strcmp(buf, "/conformation") == 0) {
-									printf("\tExiting <conformation> block %d\n", j++);
-									break;
-								}
-
-								rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
-								if(rv != 2) {
-									FFEA_error_text();
-									printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
-									return FFEA_ERROR;
-								}
-
-								rv = sscanf(lvalue, "%s", lvalue);
-								rv = sscanf(rvalue, "%s", rvalue);
-
-								if(strcmp(lvalue, "nodes") == 0) {
-									strcpy(node_filename[j], rvalue);
-									printf("\t\tSetting blob %d, conformation %d, nodes input file = '%s'\n", i, j, node_filename[j]);
-									set_node_filename[j] = 1;
-								} else if(strcmp(lvalue, "topology") == 0) {
-									strcpy(topology_filename[j], rvalue);
-									printf("\t\tSetting blob %d, conformation %d, topology input file = '%s'\n", i, j, topology_filename[j]);
-									set_topology_filename[j] = 1;
-								} else if(strcmp(lvalue, "surface") == 0) {
-									strcpy(surface_filename[j], rvalue);
-									printf("\t\tSetting blob %d, conformation %d, surface input file = '%s'\n", i, j, surface_filename[j]);
-									set_surface_filename[j] = 1;
-								} else if(strcmp(lvalue, "material") == 0) {
-									strcpy(material_params_filename[j], rvalue);
-									printf("\t\tSetting blob %d, conformation %d, material parameters file = '%s'\n", i, j, material_params_filename[j]);
-									set_material_params_filename[j] = 1;
-								} else if(strcmp(lvalue, "stokes") == 0) {
-									strcpy(stokes_filename[j], rvalue);
-									printf("\t\tSetting blob %d, conformation %d, stokes file = '%s'\n", i, j, stokes_filename[j]);
-									set_stokes_filename[j] = 1;
-								} else if(strcmp(lvalue, "vdw") == 0) {
-									strcpy(vdw_filename[j], rvalue);
-									printf("\t\tSetting blob %d, conformation %d, vdw file = '%s'\n", i, j, vdw_filename[j]);
-									set_vdw_filename[j] = 1;
-								} else if(strcmp(lvalue, "pin") == 0) {
-									strcpy(pin_filename[j], rvalue);
-									printf("\t\tSetting blob %d, conformation %d, pin file = '%s'\n", i, j, pin_filename[j]);
-									set_pin_filename[j] = 1;
-								} else if(strcmp(lvalue, "motion_state") == 0) {
-									if(strcmp(rvalue, "STATIC") == 0) {
-										printf("\t\tSetting blob %d, conformation %d, motion_state = STATIC (Fixed position, no dynamics simulated)\n", i, j);
-										blob_motion_state[j] = FFEA_BLOB_IS_STATIC;
-									} else if(strcmp(rvalue, "DYNAMIC") == 0) {
-										printf("\t\tSetting blob %d, conformation %d, motion_state = DYNAMIC (Dynamics will be simulated)\n", i, j);
-										blob_motion_state[j] = FFEA_BLOB_IS_DYNAMIC;
-									} else if(strcmp(rvalue, "FROZEN") == 0) {
-										printf("\t\tSetting blob %d, conformation %d, motion_state = FROZEN (Dynamics will not be simulated, but Blob positions still written to trajectory)\n", i, j);
-										blob_motion_state[j] = FFEA_BLOB_IS_FROZEN;
-									} else {
-										FFEA_error_text();
-										printf("\t\tFor 'motion_state' in blob %d, conformation %d, There is no state option '%s'. Please use 'STATIC', 'DYNAMIC' or 'FROZEN'.\n", i, j, rvalue);
-										return FFEA_ERROR;
-									}
-									set_blob_motion_state[j] = 1;
-								} else {
-									FFEA_error_text();
-									printf("\t\tError: In blob %d, conformation %d, '%s' is not a recognised lvalue\n", i, j, lvalue);
-									printf("\t\tRecognised lvalues are:\n");
-									printf("\t\tnodes\n\ttopology\n\tsurface\n\tmaterial\n\tstokes\n\tvdw\n\tpin\n\tmotion_state\n");
-									return FFEA_ERROR;
-								}
+							if(get_next_script_tag(in, buf) == FFEA_ERROR) {
+								FFEA_error_text();
+								printf("\t\tError reading tag in <conformation> block\n");
+								return FFEA_ERROR;
 							}
-						} else if(strcmp(buf, "switching") == 0) {
-						
-							// Getting conformational switching parameters map, rates and states
-							printf("\tEntering switching block...\n");
-							for(;;) {
-								if(get_next_script_tag(in, buf) == FFEA_ERROR) {
-									FFEA_error_text();
-									printf("\t\tError reading tag in <switching> block\n");
-									return FFEA_ERROR;
-								}
 					
-								if(feof(in)) {
-									FFEA_error_text();
-									printf("\t\tReached end of file before end of <switching> block\n");
-									return FFEA_ERROR;
-								}
-					
-								if(strcmp(buf, "/system") == 0) {
-									FFEA_error_text();
-									printf("\t\t</system> came before </switching>\n");
-									return FFEA_ERROR;
-								}
-								if(strcmp(buf, "/blob") == 0) {
-									FFEA_error_text();
-									printf("\t\t</blob> came before </switching>\n");
-									return FFEA_ERROR;
-								}
-								if(strcmp(buf, "/conformation") == 0) {
-									FFEA_error_text();
-									printf("\t\t</conformation> came before </switching>\n");
-									return FFEA_ERROR;
-								}
-								if(strcmp(buf, "/switching") == 0) {
-									printf("\tExiting <switching> block\n");
-									break;
-								}
-	
-								rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
-								if(rv != 2) {
-									FFEA_error_text();
-									printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
-									return FFEA_ERROR;
-				       				}
-
-								rv = sscanf(lvalue, "%s", lvalue);
-								rv = sscanf(rvalue, "%s", rvalue);
-								if(strcmp(lvalue, "map") == 0) {
-									strcpy(map_filename, rvalue);
-									printf("\t\tSetting blob %d, map file = '%s'\n", i, map_filename);
-									set_map_filename = 1;
-								} else if(strcmp(lvalue, "rates") == 0) {
-									strcpy(rates_filename, rvalue);
-									printf("\t\tSetting blob %d, rates file = '%s'\n", i, rates_filename);
-									set_rates_filename = 1;
-								} else if(strcmp(lvalue, "states") == 0) {
-									strcpy(states_filename, rvalue);
-									printf("\t\tSetting blob %d, states file = '%s'\n", i, states_filename);
-									set_states_filename = 1;
-								} else {
-									FFEA_error_text();
-									printf("\t\tError: In blob %d, switching block. '%s' is not a recognised lvalue\n", i, lvalue);
-									printf("\t\tRecognised lvalues are:\n");
-									printf("\t\tmap\n\trates\n\tstates\n");
-									return FFEA_ERROR;
-								}
+							if(feof(in)) {
+								FFEA_error_text();
+								printf("\t\tReached end of file before end of <conformation> block\n");
+								return FFEA_ERROR;
 							}
-						} else {
+					
+							if(strcmp(buf, "/system") == 0) {
+								FFEA_error_text();
+								printf("\t\t</system> came before </conformation>\n");
+								return FFEA_ERROR;
+							}
 
-							// Tag did not open a new block, so it must be a variable
+							if(strcmp(buf, "/blob") == 0) {
+								FFEA_error_text();
+								printf("\t\t</blob> came before </conformation>\n");
+								return FFEA_ERROR;
+							}
+
+							if(strcmp(buf, "/conformation") == 0) {
+								printf("\tExiting <conformation> block %d\n", j++);
+								break;
+							}
+
 							rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
 							if(rv != 2) {
 								FFEA_error_text();
 								printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
 								return FFEA_ERROR;
-					       		}
+				        		}
 
 							rv = sscanf(lvalue, "%s", lvalue);
 							rv = sscanf(rvalue, "%s", rvalue);
-							if(strcmp(lvalue, "solver") == 0) {
-								if(strcmp(rvalue, "CG") == 0) {
-									printf("\t\tSetting blob %d, linear solver = CG (Preconditioned Jacobi Conjugate Gradient)\n", i);
-									linear_solver = FFEA_ITERATIVE_SOLVER;
-								} else if(strcmp(rvalue, "direct") == 0) {
-									printf("\t\tSetting blob %d, linear solver = direct (Sparse Forward/Backward Substitution)\n", i);
-									linear_solver = FFEA_DIRECT_SOLVER;
-								} else if(strcmp(rvalue, "masslumped") == 0) {
-									printf("\t\tSetting blob %d, linear solver = masslumped (diagonal mass matrix)\n", i);
-									linear_solver = FFEA_MASSLUMPED_SOLVER;
-								} else if(strcmp(rvalue, "CG_nomass") == 0) {
-									printf("\t\tSetting blob %d, linear solver = CG_nomass (Preconditioned Jacobi Conjugate Gradient, no mass within system)\n", i);
-									linear_solver = FFEA_NOMASS_CG_SOLVER;
+
+							if(strcmp(lvalue, "nodes") == 0) {
+								strcpy(node_filename[j], rvalue);
+								printf("\t\tSetting blob %d, conformation %d, nodes input file = '%s'\n", i, j, node_filename[j]);
+								set_node_filename[j] = 1;
+							} else if(strcmp(lvalue, "topology") == 0) {
+								strcpy(topology_filename[j], rvalue);
+								printf("\t\tSetting blob %d, conformation %d, topology input file = '%s'\n", i, j, topology_filename[j]);
+								set_topology_filename[j] = 1;
+							} else if(strcmp(lvalue, "surface") == 0) {
+								strcpy(surface_filename[j], rvalue);
+								printf("\t\tSetting blob %d, conformation %d, surface input file = '%s'\n", i, j, surface_filename[j]);
+								set_surface_filename[j] = 1;
+							} else if(strcmp(lvalue, "material") == 0) {
+								strcpy(material_params_filename[j], rvalue);
+								printf("\t\tSetting blob %d, conformation %d, material parameters file = '%s'\n", i, j, material_params_filename[j]);
+								set_material_params_filename[j] = 1;
+							} else if(strcmp(lvalue, "stokes") == 0) {
+								strcpy(stokes_filename[j], rvalue);
+								printf("\t\tSetting blob %d, conformation %d, stokes file = '%s'\n", i, j, stokes_filename[j]);
+								set_stokes_filename[j] = 1;
+							} else if(strcmp(lvalue, "vdw") == 0) {
+								strcpy(vdw_filename[j], rvalue);
+								printf("\t\tSetting blob %d, conformation %d, vdw file = '%s'\n", i, j, vdw_filename[j]);
+								set_vdw_filename[j] = 1;
+							} else if(strcmp(lvalue, "pin") == 0) {
+								strcpy(pin_filename[j], rvalue);
+								printf("\t\tSetting blob %d, conformation %d, pin file = '%s'\n", i, j, pin_filename[j]);
+								set_pin_filename[j] = 1;
+							} else if(strcmp(lvalue, "motion_state") == 0) {
+								if(strcmp(rvalue, "STATIC") == 0) {
+									printf("\t\tSetting blob %d, conformation %d, motion_state = STATIC (Fixed position, no dynamics simulated)\n", i, j);
+									blob_motion_state[j] = FFEA_BLOB_IS_STATIC;
+								} else if(strcmp(rvalue, "DYNAMIC") == 0) {
+									printf("\t\tSetting blob %d, conformation %d, motion_state = DYNAMIC (Dynamics will be simulated)\n", i, j);
+									blob_motion_state[j] = FFEA_BLOB_IS_DYNAMIC;
+								} else if(strcmp(rvalue, "FROZEN") == 0) {
+									printf("\t\tSetting blob %d, conformation %d, motion_state = FROZEN (Dynamics will not be simulated, but Blob positions still written to trajectory)\n", i, j);
+									blob_motion_state[j] = FFEA_BLOB_IS_FROZEN;
 								} else {
 									FFEA_error_text();
-									printf("\t\tThere is no solver option '%s'. Please use 'CG', 'direct' or 'CG_nomass'.\n", rvalue);
+									printf("\t\tFor 'motion_state' in blob %d, conformation %d, There is no state option '%s'. Please use 'STATIC', 'DYNAMIC' or 'FROZEN'.\n", i, j, rvalue);
 									return FFEA_ERROR;
 								}
-								set_linear_solver = 1;
-							} else if(strcmp(lvalue, "scale") == 0) {
-								scale = atof(rvalue);
-								printf("\t\tSetting blob %d, scale factor = %e\n", i, scale);
-							} else if(strcmp(lvalue, "centroid_pos") == 0) {
-								if(sscanf(rvalue, "(%e,%e,%e)", &com_x, &com_y, &com_z) != 3) {
-									FFEA_error_text();
-									printf("\t\tCould not carry out centroid position assignment for blob %d: rvalue '%s' is badly formed. Should have form (x,y,z)\n", i, rvalue);
-									return FFEA_ERROR;
-								} else {
-									printf("\t\tSetting blob %d, initial centroid (%e, %e, %e)\n", i, com_x, com_y, com_z);
-								}
-								set_centroid_pos = 1;
-							} else if(strcmp(lvalue, "velocity") == 0) {
-								if(sscanf(rvalue, "(%e,%e,%e)", &vel_x, &vel_y, &vel_z) != 3) {
-									FFEA_error_text();
-									printf("\t\tCould not carry out velocity assignment for blob %d: rvalue '%s' is badly formed. Should have form (velx,vely,velz)\n", i, rvalue);
-									return FFEA_ERROR;
-								} else {
-									printf("\t\tSetting blob %d, initial velocity (%e, %e, %e)\n", i, vel_x, vel_y, vel_z);
-								}
-								set_velocity = 1;
-							} else if(strcmp(lvalue, "initial_conformation") == 0) {
-								if(atoi(rvalue) < 0 || atoi(rvalue) >= num_conformations[i]) {
-									FFEA_error_text();
-									printf("\t\tIn blob %d, specified 'initial_conformation' was %d. Cannot be less than 0 or greater than %d (indexing starts at 0)\n", i, atoi(rvalue), num_conformations[i]);
-									return FFEA_ERROR;
-								}
-								active_blob_array[i] = &blob_array[i][atoi(rvalue)];
+								set_blob_motion_state[j] = 1;
 							} else {
 								FFEA_error_text();
-								printf("\t\tError: In blob %d, '%s' is not a recognised lvalue\n", i, lvalue);
-								printf("\t\tRecognised tags are:\n");
-								printf("\t\tconformation\n\tswitching\n");
+								printf("\t\tError: In blob %d, conformation %d, '%s' is not a recognised lvalue\n", i, j, lvalue);
 								printf("\t\tRecognised lvalues are:\n");
-								printf("\t\tscale\n\tcentroid_pos\n\tvelocity\n\tsolver\n\tinitial_conformation\n");
+								printf("\t\tnodes\n\ttopology\n\tsurface\n\tmaterial\n\tstokes\n\tvdw\n\tpin\n\tmotion_state\n");
 								return FFEA_ERROR;
 							}
 						}
-					} 
-
-					// Scale centroid if it exists
-					if(set_centroid_pos == 1) {
-						fprintf(stderr, "%e %e %e\n", com_x, com_y, com_z);
-						com_x *= scale;
-						com_y *= scale;
-						com_z *= scale;
-						fprintf(stderr, "%e %e %e\n", com_x, com_y, com_z);
-					}
-
-					// First make sure we have all the information necessary for initialisation
-					if(num_conformations[i] > 1) {
-						if(set_rates_filename == 0) {
-							FFEA_ERROR_MESSG("\tIn blob %d, switching block, 'rates' has not been specified\n", i);
-						}
-						if(set_states_filename == 0) {
-							FFEA_ERROR_MESSG("\tIn blob %d, switching block, 'states' has not been specified\n", i);
-						}
-						if(set_map_filename == 0) {
-							FFEA_ERROR_MESSG("\tIn blob %d, switching block, 'map' has not been specified\n", i);
-						}
-					}
-
-					for(j = 0; j < num_conformations[i]; ++j) {
-						if(set_blob_motion_state[j] == 0) {
-							printf("In blob %d, conformation %d: 'motion_state' option unset. Using 'DYNAMIC' by default.\n", i, j);
-							blob_motion_state[j] = FFEA_BLOB_IS_DYNAMIC;
-						}
-
-						if(set_node_filename[j] == 0) {
-							FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'nodes' has not been specified\n", i, j);
-						}
-						if(set_topology_filename[j] == 0) {
-							if(blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
-								FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'topology' has not been specified\n", i, j);
+					} else if(strcmp(buf, "switching") == 0) {
+						
+						// Getting conformational switching parameters map, rates and states
+						for(;;) {
+							if(get_next_script_tag(in, buf) == FFEA_ERROR) {
+								FFEA_error_text();
+								printf("\t\tError reading tag in <switching> block\n");
+								return FFEA_ERROR;
 							}
-						}
-						if(set_surface_filename[j] == 0) {
-							FFEA_error_text();
-							printf("\tIn blob %d, conformation %d: 'surface' has not been specified\n", i, j);
-							return FFEA_ERROR;
-						}
-
-						if(blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
-							if(set_material_params_filename[j] == 0) {
-								FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: material params file, 'material', has not been specified\n", i, j)
-							}
-							if(set_stokes_filename[j] == 0) {
-								FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: stokes radii file, 'stokes', has not been specified\n", i, j)
-							}
-							if(set_linear_solver == 0) {
-								FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'solver' has not been specified\n", i, j);
-							}
-						}
-						if(set_vdw_filename[j] == 0) {
-							FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: vdw parameters file, 'vdw', has not been specified\n", i, j)
-						}
-						if(set_pin_filename[j] == 0) {
-							if(blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
-								FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: pinned nodes file, 'pin', has not been specified\n", i, j)
-							}
-						}
-
-						printf("\tInitialising blob %d conformation %d...\n", i, j);
-						if(blob_array[i][j].init(i, j, node_filename[j], topology_filename[j], surface_filename[j], material_params_filename[j], stokes_filename[j], vdw_filename[j], pin_filename[j],
-									scale, linear_solver, blob_motion_state[j], &params, &lj_matrix, rng, num_threads) == FFEA_ERROR)
-						{
-							FFEA_error_text();
-							printf("\tError when trying to initialise Blob %d, conformation %d.\n", i, j);
-							return FFEA_ERROR;
-						}
-
-						// if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
-						if(set_centroid_pos == 1) {	
-							blob_array[i][j].position(com_x, com_y, com_z);
-						} 
-
-						if(set_velocity == 1)
-							blob_array[i][j].velocity_all(vel_x, vel_y, vel_z);
-	
-						// set the current node positions as pos_0 for this blob, so that all rmsd values
-						// are calculated relative to this conformation centred at this point in space.
-						blob_array[i][j].set_rmsd_pos_0();
-					}
-					i++;
-				} else if (strcmp(buf, "spring") == 0) {
-					for(;;) {
-						if(get_next_script_tag(in, buf) == FFEA_ERROR) {
-							FFEA_error_text();
-							printf("\t\tError reading tag in <spring> block\n");
-							return FFEA_ERROR;
-						}
 					
-						if(feof(in)) {
-							FFEA_error_text();
-							printf("\t\tReached end of file before end of <spring> block\n");
-							return FFEA_ERROR;
-						}
-						if(strcmp(buf, "/system") == 0) {
-							FFEA_error_text();
-							printf("\t\t</system> came before </spring>\n");
-							return FFEA_ERROR;
-						}
-		
-						if(strcmp(buf, "/spring") == 0) {
-							printf("\t\tExiting <spring> block\n");
-							break;
-						}
+							if(feof(in)) {
+								FFEA_error_text();
+								printf("\t\tReached end of file before end of <switching> block\n");
+								return FFEA_ERROR;
+							}
+					
+							if(strcmp(buf, "/system") == 0) {
+								FFEA_error_text();
+								printf("\t\t</system> came before </switching>\n");
+								return FFEA_ERROR;
+							}
+							if(strcmp(buf, "/blob") == 0) {
+								FFEA_error_text();
+								printf("\t\t</blob> came before </switching>\n");
+								return FFEA_ERROR;
+							}
+							if(strcmp(buf, "/conformation") == 0) {
+								FFEA_error_text();
+								printf("\t\t</conformation> came before </switching>\n");
+								return FFEA_ERROR;
+							}
+							if(strcmp(buf, "/switching") == 0) {
+								FFEA_error_text();
+								printf("\tExiting <switching> block\n");
+								break;
+							}
+	
+							rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
+							if(rv != 2) {
+								FFEA_error_text();
+								printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
+								return FFEA_ERROR;
+			       				}
 
-						// Only acceptable input is spring filename!!! 
-						// By the way, I hope you're enjoying reading this source code :)
+							rv = sscanf(lvalue, "%s", lvalue);
+							rv = sscanf(rvalue, "%s", rvalue);
+							if(strcmp(lvalue, "map") == 0) {
+
+							} else if(strcmp(lvalue, "rates") == 0) {
+
+							} else if(strcmp(lvalue, "states") == 0) {
+
+							} else {
+								FFEA_error_text();
+								printf("\t\tError: In blob %d, switching block. '%s' is not a recognised lvalue\n", i, lvalue);
+								printf("\t\tRecognised lvalues are:\n");
+								printf("\t\tmap\n\trates\n\tstates\n");
+								return FFEA_ERROR;
+							}
+						}
+					} else {
+
+						// Tag did not open a new block, so it must be a variable
 						rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
 						if(rv != 2) {
 							FFEA_error_text();
 							printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
 							return FFEA_ERROR;
-						}
+				       		}
 
 						rv = sscanf(lvalue, "%s", lvalue);
 						rv = sscanf(rvalue, "%s", rvalue);
-						if(strcmp(lvalue, "spring_fname") == 0) {
-							strcpy(spring_filename, rvalue);
-							printf("\t\tSetting springs input file = '%s'\n", spring_filename);
-							k++;
+						if(strcmp(lvalue, "solver") == 0) {
+							if(strcmp(rvalue, "CG") == 0) {
+								printf("\t\tSetting blob %d, linear solver = CG (Preconditioned Jacobi Conjugate Gradient)\n", i);
+								linear_solver = FFEA_ITERATIVE_SOLVER;
+							} else if(strcmp(rvalue, "direct") == 0) {
+								printf("\t\tSetting blob %d, linear solver = direct (Sparse Forward/Backward Substitution)\n", i);
+								linear_solver = FFEA_DIRECT_SOLVER;
+							} else if(strcmp(rvalue, "masslumped") == 0) {
+								printf("\t\tSetting blob %d, linear solver = masslumped (diagonal mass matrix)\n", i);
+								linear_solver = FFEA_MASSLUMPED_SOLVER;
+							} else if(strcmp(rvalue, "CG_nomass") == 0) {
+								printf("\t\tSetting blob %d, linear solver = CG_nomass (Preconditioned Jacobi Conjugate Gradient, no mass within system)\n", i);
+								linear_solver = FFEA_NOMASS_CG_SOLVER;
+							} else {
+								FFEA_error_text();
+								printf("\t\tThere is no solver option '%s'. Please use 'CG', 'direct' or 'CG_nomass'.\n", rvalue);
+								return FFEA_ERROR;
+							}
+							set_linear_solver = 1;
+						} else if(strcmp(lvalue, "scale") == 0) {
+							scale = atof(rvalue);
+							printf("\t\tSetting blob %d, scale factor = %e\n", i, scale);
+						} else if(strcmp(lvalue, "centroid_pos") == 0) {
+							if(sscanf(rvalue, "(%e,%e,%e)", &com_x, &com_y, &com_z) != 3) {
+								FFEA_error_text();
+								printf("\t\tCould not carry out centroid position assignment for blob %d: rvalue '%s' is badly formed. Should have form (x,y,z)\n", i, rvalue);
+								return FFEA_ERROR;
+							} else {
+								printf("\t\tSetting blob %d, initial centroid (%e, %e, %e)\n", i, com_x, com_y, com_z);
+							}
+							set_centroid_pos = 1;
+						} else if(strcmp(lvalue, "rotation") == 0)  {
+							if(sscanf(rvalue, "(%e,%e,%e,%e,%e,%e,%e,%e,%e)", &r11, &r12, &r13, &r21, &r22, &r23, &r31, &r32, &r33) != 9) {
+								FFEA_error_text();
+								printf("\t\tCould not read rotation for blob %d: rvalue '%s' is badly formed. Should have form (r11,r12,r13,r21,r22,r23,r31,r32,r33)\n", i, rvalue);
+								return FFEA_ERROR;
+							} else {
+								printf("\t\tSetting blob %d, initial rotation (%e, %e, %e, %e, %e, %e, %e, %e, %e)\n", i, r11, r12, r13, r21, r22, r23, r31, r32, r33);
+							}
+							set_rotation = 1;
+						} else if(strcmp(lvalue, "velocity") == 0) {
+							if(sscanf(rvalue, "(%e,%e,%e)", &vel_x, &vel_y, &vel_z) != 3) {
+								FFEA_error_text();
+								printf("\t\tCould not carry out velocity assignment for blob %d: rvalue '%s' is badly formed. Should have form (velx,vely,velz)\n", i, rvalue);
+								return FFEA_ERROR;
+							} else {
+								printf("\t\tSetting blob %d, initial velocity (%e, %e, %e)\n", i, vel_x, vel_y, vel_z);
+							}
+							set_velocity = 1;
+						} else if(strcmp(lvalue, "initial_conformation") == 0) {
+							if(atoi(rvalue) < 0 || atoi(rvalue) >= num_conformations[i]) {
+								FFEA_error_text();
+								printf("\t\tIn blob %d, specified 'initial_conformation' was %d. Cannot be less than 0 or greater than %d (indexing starts at 0)\n", i, atoi(rvalue), num_conformations[i]);
+								return FFEA_ERROR;
+							}
+							active_blob_array[i] = &blob_array[i][atoi(rvalue)];
 						} else {
 							FFEA_error_text();
-							printf("\t\tError: In spring block, '%s' is not a recognised lvalue\n", lvalue);
+							printf("\t\tError: In blob %d, '%s' is not a recognised lvalue\n", i, lvalue);
+							printf("\t\tRecognised tags are:\n");
+							printf("\t\tconformation\n\tswitching\n");
 							printf("\t\tRecognised lvalues are:\n");
-							printf("\t\tspring_fname\n\n");
+							printf("\t\tscale\n\tcentroid_pos\n\tvelocity\n\tsolver\n\tinitial_conformation\n");
 							return FFEA_ERROR;
 						}
 					}
-				} else {
-					FFEA_error_text();
-					printf("\t\tError: In system, '%s' is not a recognised tag\n", buf);
-					printf("\t\tRecognised tags are:\n");
-					printf("\t\tblob\n\tspring\n");
-					return FFEA_ERROR;
+				} 
+
+				// Scale centroid if it exists
+				if(set_centroid_pos == 1) {
+					fprintf(stderr, "%e %e %e\n", com_x, com_y, com_z);
+					com_x *= scale;
+                                        com_y *= scale;
+                                        com_z *= scale;
+                                        fprintf(stderr, "%e %e %e\n", com_x, com_y, com_z);
+                                 }
+
+				// First make sure we have all the information necessary for initialisation
+				for(j = 0; j < num_conformations[i]; ++j) {
+					if(set_blob_motion_state[j] == 0) {
+						printf("In blob %d, conformation %d: 'motion_state' option unset. Using 'DYNAMIC' by default.\n", i, j);
+						blob_motion_state[j] = FFEA_BLOB_IS_DYNAMIC;
+					}
+
+					if(set_node_filename[j] == 0) {
+						FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'nodes' has not been specified\n", i, j);
+					}
+					if(set_topology_filename[j] == 0) {
+						if(blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
+							FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'topology' has not been specified\n", i, j);
+						}
+					}
+					if(set_surface_filename[j] == 0) {
+						FFEA_error_text();
+						printf("\tIn blob %d, conformation %d: 'surface' has not been specified\n", i, j);
+						return FFEA_ERROR;
+					}
+
+					if(blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
+						if(set_material_params_filename[j] == 0) {
+							FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: material params file, 'material', has not been specified\n", i, j)
+						}
+						if(set_stokes_filename[j] == 0) {
+							FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: stokes radii file, 'stokes', has not been specified\n", i, j)
+						}
+						if(set_linear_solver == 0) {
+							FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'solver' has not been specified\n", i, j);
+						}
+					}
+					if(set_vdw_filename[j] == 0) {
+						FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: vdw parameters file, 'vdw', has not been specified\n", i, j)
+					}
+					if(set_pin_filename[j] == 0) {
+						if(blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
+							FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: pinned nodes file, 'pin', has not been specified\n", i, j)
+						}
+					}
+
+					printf("\tInitialising blob %d conformation %d...\n", i, j);
+					if(blob_array[i][j].init(i, j, node_filename[j], topology_filename[j], surface_filename[j], material_params_filename[j], stokes_filename[j], vdw_filename[j], pin_filename[j],
+								scale, linear_solver, blob_motion_state[j], &params, &lj_matrix, rng, num_threads) == FFEA_ERROR)
+					{
+						FFEA_error_text();
+						printf("\tError when trying to initialise Blob %d, conformation %d.\n", i, j);
+						return FFEA_ERROR;
+					}
+
+					// if rotation is set, rotate the blob
+					if(set_rotation == 1) {	
+						blob_array[i][j].rotate(r11,r12,r13,r21,r22,r23,r31,r32,r33);
+					} 
+
+					// if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
+					if(set_centroid_pos == 1) {	
+						blob_array[i][j].position(com_x, com_y, com_z);
+					} 
+
+					if(set_velocity == 1)
+						blob_array[i][j].velocity_all(vel_x, vel_y, vel_z);
+	
+					// set the current node positions as pos_0 for this blob, so that all rmsd values
+					// are calculated relative to this conformation centred at this point in space.
+					blob_array[i][j].set_rmsd_pos_0();
 				}
 			}
-	
-			// Check we have correct number of blobs
-			if(i != num_blobs) {
+
+			// Make sure the next tag is the </system> tag, and not more <blob> tags
+			if(get_next_script_tag(in, buf) == FFEA_ERROR) {
 				FFEA_error_text();
-				printf("Number of blobs read, %d, in is not the same as number specified in the script, %d\n", i, num_blobs);
+				printf("\tError reading tag in/at end of <system> block\n");
 				return FFEA_ERROR;
 			}
 
-			// And springs
-			if(k > 1) {
+			if(strcmp(buf, "blob") == 0) {
 				FFEA_error_text();
-				printf("Read %d spring files. Only need 1, containing all possible springs!\n", k);
+				printf("\tToo many blob blocks. Expected only %d\n", params.num_blobs);
 				return FFEA_ERROR;
 			}
 
-			// Add springs to world
-			if(k == 1) {
-				if(load_springs(spring_filename) != 0) {
-					FFEA_error_text();
-					printf("Problem building springs from %s\n", spring_filename);
-					return FFEA_ERROR;
-				}
+			if(strcmp(buf, "/system") == 0) {
+				printf("All blobs fully initialised.\n");
+				printf("Exiting <system> block.\n");
+				return FFEA_OK;
+			} else {
+				FFEA_error_text();
+				printf("Unrecognised tag '<%s>' when expecting '</system>' tag.\n", buf);
+				return FFEA_ERROR;
 			}
-	
-			return FFEA_OK;
 		}
 
 		/* */
@@ -1169,7 +1066,6 @@ class World
 		}
 
 	private:
-
 		/* How many Blobs populate this world */
 		int num_blobs;
 
@@ -1182,12 +1078,6 @@ class World
 		/* Which conformation is active in each blob */
 		Blob **active_blob_array;
 		int *active_conformation_index;
-
-		/* An array of springs which connect nodes if necessary */
-		Spring *spring_array;
-
-		/* And how many springs are there? */ 
-		int num_springs;
 
 		/* How many threads are available for parallelisation */
 		int num_threads;
@@ -1258,54 +1148,6 @@ class World
 		vector3 box_dim;
 
 		long long step_initial;
-
-		int load_springs(char *fname) {
-		
-			int i;
-			FILE *in = NULL;
-			const int max_line_size = 50;
-			char line[max_line_size];
-
-			// open the spring file
-			if((in = fopen(fname, "r")) == NULL) {
-				FFEA_FILE_ERROR_MESSG(fname)
-			}
-			printf("\t\tReading in springs file: %s\n", fname);
-
-			// first line should be the file type "ffea springs file"
-			if(fgets (line, max_line_size, in) == NULL) {
-				fclose(in);
-				FFEA_ERROR_MESSG("Error reading first line of spring file\n")
-			}
-			if(strcmp(line, "ffea spring file\n") != 0) {
-				fclose(in);
-				FFEA_ERROR_MESSG("This is not a 'ffea spring file' (read '%s') \n", line)
-			}
-
-			// read in the number of springs in the file
-			if(fscanf(in, "num_springs %d\n", &num_springs) != 1) {
-				fclose(in);
-				FFEA_ERROR_MESSG("Error reading number of springs\n")
-			}
-			printf("\t\t\tNumber of springs = %d\n", num_springs);
-
-			// Allocate memory for springs
-			spring_array = new Spring[num_springs];
-
-			for(i = 0; i < num_springs; ++i) {
-				if(fscanf(in, "%d %d %d %d %d %d %lf %lf\n", &spring_array[i].blob_index[0], &spring_array[i].conformation_index[0], &spring_array[i].node_index[0], &spring_array[i].blob_index[1], &spring_array[i].conformation_index[1], &spring_array[i].node_index[1], &spring_array[i].k, &spring_array[i].l) != 8) {
-					FFEA_error_text();
-					printf("Problem reading spring data from %s. Format is:\n\n", fname);
-					printf("ffea spring file\nnum_springs ?\n");
-					printf("blob_index_0 conformation_index_0 node_index_0 blob_index_1 conformation_index_1 node_index_1 k l\n");
-					return FFEA_ERROR;
-				}
-			}
-
-			fclose(in);
-			printf("\t\t\tRead %d springs from %s\n", i, fname);
-			return 0;
-		}
 
 		int get_next_script_tag(FILE *in, char *buf)
 		{

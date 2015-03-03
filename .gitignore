@@ -1,0 +1,10 @@
+*.pyc
+*.sw?
+*.o
+*~
+*.a
+a.out
+*.pdf
+*.x
+core.*
+/main/nbproject/private/
