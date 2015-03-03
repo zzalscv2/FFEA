@@ -259,22 +259,6 @@ class SimulationParams
 				char base[MAX_FNAME_SIZE];
 				char ext[MAX_FNAME_SIZE];
 				char *pch = NULL;
-				/*sprintf(temp, temp_fname);
-				pch = strtok(temp, "");
-				fprintf(stderr, "pch is %s\n", pch);
-				pch = strtok(NULL, ".");
-				fprintf(stderr, "pch is %s\n", pch);
-				if(strcmp(pch, temp_fname) == 0) {
-					sprintf(ext, ".out");
-				} else {
-					sprintf(temp_fname, pch);
-					fprintf(stderr, "temp_fname is %s\n", temp_fname);
-					pch = strtok(NULL, ".");
-					fprintf(stderr, "pch is %s\n", pch);
-					sprintf(ext, ".");
-					strcat(ext, pch);
-				}
-				exit(0);*/
 				sprintf(temp, temp_fname);
 				pch = strtok(temp, ".");
 				int num_points = -1;
@@ -406,9 +390,19 @@ class SimulationParams
 					} else {
 						pch = strtok(NULL, " ,)");
 					}	
+					if(pch == NULL) {
+						FFEA_ERROR_MESSG("num_conformations must have %d (num_blobs) arguments in the form (%%d,%%d,...,%%d). You've only specified %d arguments.\n", num_blobs, i);
+					}
 					num_conformations[i] = atoi(pch);
 					printf("\tSetting Blob %d, %s = %d\n", i, lvalue, num_conformations[i]);
 				}
+
+				// Check that we are closing the bracket
+				pch = strtok(NULL, " ,)");
+				if(pch != NULL) {
+					FFEA_ERROR_MESSG("num_conformations must have %d (num_blobs) arguments in the form (%%d,%%d,...,%%d). You've specified at least %d arguments.\n", num_blobs, num_blobs + 1);
+				}
+
 			} else if(strcmp(lvalue, "num_states") == 0) {
 				if(num_blobs == 0) {
 					FFEA_ERROR_MESSG("Error. num_blobs must be specified before num_states in the input scripts\n")
@@ -421,9 +415,19 @@ class SimulationParams
 					} else {
 						pch = strtok(NULL, " ,)");
 					}
+					if(pch == NULL) {
+						FFEA_ERROR_MESSG("num_states must have %d (num_blobs) arguments in the form (%%d,%%d,...,%%d). You've only specified %d arguments.\n", num_blobs, i);
+					}
 					num_states[i] = atoi(pch);
 					printf("\tSetting Blob %d, %s = %d\n", i, lvalue, num_states[i]);
 				}
+				
+				// Check that we are closing the bracket
+				pch = strtok(NULL, " ,)");
+				if(pch != NULL) {
+					FFEA_ERROR_MESSG("num_states must have %d (num_blobs) arguments in the form (%%d,%%d,...,%%d). You've specified at least %d arguments.\n", num_blobs, num_blobs + 1);
+				}
+
 			} else if(strcmp(lvalue, "es_update") == 0) {
 				es_update = atoi(rvalue);
 				printf("\tSetting %s = %d\n", lvalue, es_update);
