@@ -63,7 +63,7 @@ class NoMassCGSolver: public Solver
 			this->epsilon2 = params->epsilon2;
 			this->i_max = params->max_iterations_cg;
 			this->one = 1;
-			printf("Calculating Sparsity Pattern for a 1st Order Viscosity Matrix\n");
+			printf("\t\t\tCalculating Sparsity Pattern for a 1st Order Viscosity Matrix\n");
 			SparsityPattern sparsity_pattern_viscosity_matrix;
 			sparsity_pattern_viscosity_matrix.init(num_rows);
 
@@ -106,7 +106,7 @@ class NoMassCGSolver: public Solver
 			}
 
 			// Creating fixed pattern viscosity matrix, but not entering values! Just making the pattern for now
-			printf("Building Sparsity Pattern for Viscosity Matrix\n");
+			printf("\t\t\tBuilding Sparsity Pattern for Viscosity Matrix\n");
 			V = sparsity_pattern_viscosity_matrix.create_sparse_matrix();
 			
 			// create a preconditioner for solving in less iterations

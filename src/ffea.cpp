@@ -15,6 +15,8 @@
 #include "Blob.h"
 #include "World.h"
 
+#define MAX_FNAME_LENGTH 255
+
 int main(int argc, char *argv[])
 {
 	printf("\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n");
@@ -28,17 +30,43 @@ int main(int argc, char *argv[])
 	#endif
 
 	#ifdef FFEA_PARALLEL_PER_BLOB
-		printf("Parallelisation switch: FFEA_PARALLEL_PER_BLOB\n");
+		 printf("Parallelisation switch: FFEA_PARALLEL_PER_BLOB\n");
 	#endif
 	
 	// Return variable
 	int myreturn = 0;
 
 	// Check for correct number of arguments
-	if(argc != 2) {
-		printf("\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)]\n\n\n");
+	if(argc < 2) {
+		printf("\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)] [OPTIONS]\n\n\n");
 		return FFEA_ERROR;
 	}
+
+	// Read arguments
+	//int arg = 2;
+
+	char script_fname[MAX_FNAME_LENGTH];
+	sprintf(script_fname, "%s", argv[1]);
+	/*while(arg < argc - 1) {
+		if(strcmp(argv[arg], "-m") == 0 || strcmp(argv[arg], "--mode") == 0) {
+			arg++;
+			if(strcmp(argv[arg], "s") == 0) {
+				simulation_mode = SIMULATION_MODE;
+			} else if (strcmp(argv[arg], "r") == 0) {
+				simulation_mode = RELAXATION_MODE;
+			} else {
+				FFEA_error_text();
+				printf("Accepted arguments for '-m/--mode':\n\n's'\n'r'\n\n");
+				printf("Errors during argument initialisation mean simulation cannot commence.\n");
+				return FFEA_ERROR;
+			}
+		} else {
+			FFEA_error_text();
+			printf("Accepted flags are:\n\n'-m/--mode'\n\n");
+			printf("Errors during argument initialisation mean simulation cannot commence.\n");
+			return FFEA_ERROR;
+		}
+	}*/
 
 	// The system of all proteins, electrostatics and water
 	World *world;
@@ -48,7 +76,7 @@ int main(int argc, char *argv[])
 
 	// Initialise the world, loading all blobs, parameters, electrostatics, etc.
 	printf("Initialising the world:\n");
-	if(world->init(argv[1]) == FFEA_ERROR) {
+	if(world->init(script_fname) == FFEA_ERROR) {
 		FFEA_error_text();
 		printf("Errors during initialisation mean World cannot be constructed properly.\n");
 	} else {
