@@ -283,20 +283,20 @@ class World
 				}
 
 				printf("Loading Blob position and velocity data from last completely written snapshot \n");
-				int blob_id;
-				long long rstep;
-				for(int b = 0; b < params.num_blobs; b++) {
-					if(fscanf(trajectory_out, "Blob %d, step %lld\n", &blob_id, &rstep) != 2) {
-						FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
-					}
-					if(blob_id != b) {
-						FFEA_ERROR_MESSG("Mismatch in trajectory file - found blob id = %d, was expecting blob id = %d\n", blob_id, b)
-					}
-					printf("Loading node position, velocity and potential from restart trajectory file, for blob %d, step %lld\n", blob_id, rstep);
-					if(active_blob_array[b]->read_nodes_from_file(trajectory_out) == FFEA_ERROR) {
-						FFEA_ERROR_MESSG("Error restarting blob %d\n", blob_id)
-					}
-				}
+                                int blob_id, conformation_id;
+                                long long rstep;
+                                for(int b = 0; b < params.num_blobs; b++) {
+                                        if(fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
+                                                FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
+                                        }
+                                        if(blob_id != b) {
+                                                FFEA_ERROR_MESSG("Mismatch in trajectory file - found blob id = %d, was expecting blob id = %d\n", blob_id, b)
+                                        }
+                                        printf("Loading node position, velocity and potential from restart trajectory file, for blob %d, step %lld\n", blob_id, rstep);
+                                        if(active_blob_array[b]->read_nodes_from_file(trajectory_out) == FFEA_ERROR) {
+                                                FFEA_ERROR_MESSG("Error restarting blob %d\n", blob_id)
+                                        }
+                                }
 				step_initial = rstep;
 				printf("...done. Simulation will commence from step %lld\n", step_initial);
 				fclose(trajectory_out);
