@@ -534,6 +534,53 @@ class Blob {
 		}
 
 		/*
+		 * Calculates the centroid of this Blob, then brings the Blob to the origin, 
+		 * rotates all nodes in the Blob, and brings back the Blob to the initial position.
+		 * aso that the new centroid position is at the given (x,y,z) position
+		 */
+		void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33)
+		{
+			int i;
+			scalar centroid_x = 0, centroid_y = 0, centroid_z = 0;
+			scalar x, y, z;
+
+			// Calculate centroid of [SURFACE] Blob mesh
+			#ifdef FFEA_PARALLEL_WITHIN_BLOB
+				#pragma omp parallel for default(none) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
+			#endif
+			for(i = 0; i < num_surface_nodes; i++) {
+				centroid_x += node[i].pos.x;
+				centroid_y += node[i].pos.y;
+				centroid_z += node[i].pos.z;
+			}
+
+			centroid_x *= (1.0/num_surface_nodes);
+			centroid_y *= (1.0/num_surface_nodes);
+			centroid_z *= (1.0/num_surface_nodes);
+
+			// Move all nodes to the origin:
+			#ifdef FFEA_PARALLEL_WITHIN_BLOB
+				#pragma omp parallel for default(none) private(i) shared(centroid_x, centroid_y, centroid_z)
+			#endif
+			for(i = 0; i < num_nodes; i++) {
+				node[i].pos.x -= centroid_x;
+				node[i].pos.y -= centroid_y;
+				node[i].pos.z -= centroid_z;
+			}
+
+                        // Do the actual rotation and bring the nodes back to its initial position:
+                        for (i = 0; i < num_nodes; i++){
+                                x = node[i].pos.x;
+                                y = node[i].pos.y;
+                                z = node[i].pos.z;
+                           	node[i].pos.x = x * r11 + y * r12 + z *r13 + centroid_x;
+                           	node[i].pos.y = x * r21 + y * r22 + z *r23 + centroid_y;
+                           	node[i].pos.z = x * r31 + y * r32 + z *r33 + centroid_z;
+
+                        } 
+		}
+
+		/*
 		 * Calculates the centroid of this Blob, then translates all nodes in the Blob
 		 * so that the new centroid position is at the given (x,y,z) position
 		 */

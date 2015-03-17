@@ -205,7 +205,7 @@ class Blob:
 		#cdef int n
 		for n in xrange(self.num_nodes):
 			line = traj_file.readline().split()
-			el_nodes = [float(line[i])*scale for i in xrange(10)]
+			el_nodes = [float(line[i])*scale for i in xrange(3)]
 			nodes.append(el_nodes)
 		
 			centroid_x += el_nodes[0]
@@ -1054,7 +1054,7 @@ class Blob:
 		
 		# calc determinant
 		det = J[0][0] * J_inv[0][0] + J[1][0] * J_inv[0][1] + J[2][0] * J_inv[0][2];
-
+		
 		# divide by determinant
 		det = 1.0/det;
 		J_inv[0][0]*=det; J_inv[0][1]*=det; J_inv[0][2]*=det;

@@ -16,10 +16,10 @@ all: ffea.cpp
 	$(CC) -O3 -lm ffea.cpp -o $(dir)ffea
 
 debug: ffea.cpp
-	$(CC) -g -lm ffea.cpp -o $(dir)ffea
+	$(CC) -ggdb -O0 -lm ffea.cpp -o $(dir)ffea
 
 test: ffea.cpp
-	$(CC) -O3 -lm ffea.cpp -o $(test)ffea
+	$(CC) -O3 -lm ffea.cpp -o $(test)ffea-test
 
 clean:
 	rm -f *.o
