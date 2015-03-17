@@ -265,6 +265,11 @@ class FFEA_viewer_display_window():
 							rvalue = rvalue.strip()
 							if lvalue == "motion_state":
 								blob_motion_state.append(rvalue)
+								if rvalue == "STATIC":
+									blob_top.append("")
+									blob_mat.append("")
+									blob_stokes.append("")
+									blob_pin.append("")
 							elif lvalue == "nodes":
 								blob_nodes.append(rvalue)
 							elif lvalue == "topology":

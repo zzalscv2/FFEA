@@ -38,7 +38,7 @@ class Blob:
 			self.offset = blob_centroid_pos
 		self.state = blob_state
 
-		if top_fname == None:
+		if top_fname == "":
 			print "No topology file provided."
 			self.no_topology = True
 		else:
@@ -47,7 +47,7 @@ class Blob:
 
 		self.load_surface(surf_fname)
 
-		if vdw_fname == None:
+		if vdw_fname == "":
 			print "No vdw file provided. Creating a zero array."
 			self.vdw = [-1 for i in xrange(self.num_surface_faces)]
 		else:
@@ -58,7 +58,7 @@ class Blob:
 			if self.vdw[i] == -2:
 				self.hidden_face[i] = 1
 
-		if blob_pinned == None:
+		if blob_pinned == "":
 			print "No pinned nodes file provided."
 			self.num_pinned_nodes = 0
 		else:
