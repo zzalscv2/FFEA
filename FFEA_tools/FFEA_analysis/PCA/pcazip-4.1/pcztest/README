@@ -1,0 +1,20 @@
+Test of pcazip utilities.
+
+Run:
+./test.sh >& test.log
+
+and then diff test.log with compare.log
+
+Expect the odd difference in the last dp for a few numbers, and messages
+from the molfile-substitute routines differ from those provided by the
+genuine article.
+
+**NOTE**
+If you get 'segmentation violation' errors, you may have a memory
+problem - try issuing the command:
+
+$ limit stacksize unlimited
+
+before you run.
+
+Charlie Laughton 21/7/11

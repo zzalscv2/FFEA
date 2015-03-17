@@ -1,0 +1,2 @@
+If you have the VMD molfile plugins available, use Makefile_molfile,
+otherwise use Makefile_nomolfile.
