@@ -10,6 +10,7 @@ class Spring {
 			node_index = new int[2];
 			k = 0.0;
 			l = 0.0;
+			am_i_active = false;
 		}
 
 		~Spring() {
@@ -21,6 +22,7 @@ class Spring {
 			node_index = NULL;
 			k = 0.0;
 			l = 0.0;
+			am_i_active = false;
 		}
 
 		/* 
@@ -41,4 +43,7 @@ class Spring {
 	
 		// Nodes connected to
 		int *node_index;
+
+		// Check if spring is active
+		bool am_i_active;
 };

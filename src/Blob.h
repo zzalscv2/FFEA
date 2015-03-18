@@ -933,6 +933,7 @@ class Blob {
 
 				
 				/* VdW measurements */
+				vector3_set_zero(&total_vdw_xz_force);
 				for(i = 0; i < num_surface_faces; i++) {
 					if(surface[i].vdw_xz_interaction_flag == true) {
 						total_vdw_xz_force.x += surface[i].vdw_xz_force->x;
@@ -967,6 +968,7 @@ class Blob {
 			vector3 total_vdw_bb_force;
 			scalar total_vdw_bb_energy = 0.0;
 			scalar total_vdw_bb_area = 0.0;
+			vector3_set_zero(&total_vdw_bb_force);
 			for(int i = 0; i < num_surface_faces; ++i) {
 				if(surface[i].vdw_bb_interaction_flag[other_blob_index] == true) {
 					total_vdw_bb_force.x += surface[i].vdw_bb_force[other_blob_index].x;	
@@ -1087,6 +1089,27 @@ class Blob {
 			for(int i = 0; i < num_surface_faces; i++) {
 				surface[i].zero_force();
 			}
+		}
+
+		void set_forces_to_zero()
+		{
+			for(int i = 0; i < num_nodes; ++i) {
+				force[i].x = 0;
+				force[i].y = 0;
+				force[i].z = 0;
+			}
+		}
+
+		vector3 get_node(int index)
+		{
+			return node[index].pos;
+		}
+
+		void add_force_to_node(vector3 f, int index)
+		{
+			force[index].x += f.x;
+			force[index].y += f.y;
+			force[index].z += f.z;
 		}
 
 		void zero_vdw_bb_measurement_data()
@@ -2081,9 +2104,6 @@ class Blob {
 				#pragma omp parallel for default(none) private(n, m) schedule(guided)
 			#endif
 			for(n = 0; n < num_nodes; n++) {
-				force[n].x = 0;
-				force[n].y = 0;
-				force[n].z = 0;
 				for(m = 0; m < node[n].num_element_contributors; m++) {
 					force[n].x += node[n].force_contributions[m]->x;
 					force[n].y += node[n].force_contributions[m]->y;
