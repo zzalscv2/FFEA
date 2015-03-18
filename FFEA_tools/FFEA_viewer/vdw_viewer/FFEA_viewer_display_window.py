@@ -508,6 +508,8 @@ class FFEA_viewer_display_window():
 			glTranslated(-self.offset_x, -self.offset_y, -self.offset_z);
 
 			m = self.orientation.construct_matrix();
+                        m[12] = -self.offset_x
+                        m[13] = -self.offset_y
 			m[14] = -self.z;
 			glLoadMatrixd(m);
 			glTranslated(-centroid_x, -centroid_y, -centroid_z);
