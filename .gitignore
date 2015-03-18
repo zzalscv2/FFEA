@@ -3,7 +3,7 @@
 *.o
 *~
 *.a
-a.out
+*.out
 *.surf
 *.node
 *.vol
