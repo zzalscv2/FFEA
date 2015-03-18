@@ -261,4 +261,14 @@ inline double mag(vector3 *v)
 	return sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
 }
 
+inline vector3 normalise(vector3 *v) 
+{
+	double magnitude;
+	vector3 norm;
+	magnitude = mag(v);
+	norm.x = v->x / magnitude;
+	norm.y = v->y / magnitude;
+	norm.z = v->z / magnitude;
+	return norm;
+}
 #endif

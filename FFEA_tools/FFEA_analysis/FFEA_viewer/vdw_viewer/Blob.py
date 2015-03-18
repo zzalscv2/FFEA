@@ -197,8 +197,8 @@ class Blob:
 
 	def load_frame(self, traj_file):
 		
-		# There's a trajectory! Don't need an offset
-		self.offset = [0.0,0.0,0.0]
+		# There is a trajectory! Ignore offset
+		self.offset = [0.0, 0.0, 0.0]
 
 		# skip blob, step line
 		traj_file.readline()

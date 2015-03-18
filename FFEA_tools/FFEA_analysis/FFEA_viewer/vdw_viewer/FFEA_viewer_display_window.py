@@ -513,7 +513,7 @@ class FFEA_viewer_display_window():
 
 		if len(self.blob_list) > 0:
 			centroid_x, centroid_y, centroid_z = self.blob_list[self.selected_blob].get_centroid(self.frame)
-
+			
 			if self.projection == "orthographic":
 				self.set_orthographic_projection();
 
