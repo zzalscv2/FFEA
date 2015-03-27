@@ -26,7 +26,7 @@ class Face
 			vdw_bb_force = NULL;
 			vdw_bb_energy = NULL;
 			vdw_xz_force = NULL;
-			vdw_xz_energy = NULL;
+			vdw_xz_energy = 0.0;
 			daddy_blob = NULL;
 		}
 
