@@ -17,10 +17,12 @@ CFLAGS = $(GNU_CFLAGS)
 
 OBJECTS = FFEA_return_codes.o BEM_Poisson_Boltzmann.o mesh_node.o \
 	SimulationParams.o tetra_element_linear.o \
-	SparseSubstitutionSolver.o Face.o Blob.o
+	SparseSubstitutionSolver.o Face.o Blob.o \
+	BiCGSTAB_solver.o
 SOURCE = FFEA_return_codes.cpp BEM_Poisson_Boltzmann.cpp mesh_node.cpp \
 	SimulationParams.cpp tetra_element_linear.cpp \
-	SparseSubstitutionSolver.cpp Face.cpp Blob.cpp
+	SparseSubstitutionSolver.cpp Face.cpp Blob.cpp \
+	BiCGSTAB_solver.cpp
 
 all: ffea.o $(OBJECTS) 
 	$(CC) $(CFLAGS) -O3 -lm ffea.o $(OBJECTS) -o $(dir)ffea
