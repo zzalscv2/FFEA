@@ -1,0 +1,79 @@
+#!/bin/bash
+
+path="~/F"
+
+ENM_FILES=('../atp_anim_007.pdb' '../atp_anim_008.pdb' '../atp_anim_009.pdb' '../atp_anim_010.pdb' '../atp_anim_011.pdb')
+FFEA_FILES=('../emd_1590_05_full_trajectory_anim_1.pdb' '../emd_1590_05_full_trajectory_anim_2.pdb' '../emd_1590_05_full_trajectory_anim_3.pdb' '../emd_1590_05_full_trajectory_anim_4.pdb' '../emd_1590_05_full_trajectory_anim_5.pdb')
+FFEA_TOPOLOGY="../emd_1590_05_full.top"
+
+if [ ${#ENM_FILES[@]} -ne ${#FFEA_FILES[@]} ]
+then
+	echo "Error: ENM_FILES must contain same number of files as FFEA_FILES"
+	exit 1
+fi
+
+# clear the folders of prior crap
+rm ENM_transformed/*
+rm FFEA_modes/*
+rm FFEA_mapped_to_ENM/*
+rm eigen/*
+
+# Get the 14th frame in the ENM pdb (corresponds to the "rest" state)
+python extract_nth_pdb_frame.py ${ENM_FILES[0]} 1 ENM_rest.pdb
+
+# Get the translation and rotation required to align the ENM point cloud within the FFEA point cloud
+../align_point_clouds/align_point_cloud ${FFEA_FILES[0]} ENM_rest.pdb aligned_ENM.pdb align_soln 10000
+all=`cat align_soln`
+all=( $all )
+dx=${all[0]}
+dy=${all[1]}
+dz=${all[2]}
+yaw=${all[3]}
+pitch=${all[4]}
+roll=${all[5]}
+
+# Transform all of Kostas' ENM modes using this info, storing the transformed pdbs in ENM_transformed
+for enm_fname in ${ENM_FILES[@]}
+do
+	echo Transforming $enm_fname
+	python transform_pdb.py $enm_fname $yaw $pitch $roll $dx $dy $dz ENM_transformed/${enm_fname}_TRANSFORMED.pdb
+done
+
+# Convert all the FFEA modes into walrus traj files, storing them in FFEA_modes
+for ffea_fname in ${FFEA_FILES[@]}
+do
+	python convert_pdb_to_walrus.py $ffea_fname FFEA_modes/${ffea_fname}_traj.out
+done
+
+# Map the aligned ENM structure onto the frames of the FFEA modes, storing in FFEA_mapped_to_ENM
+for ffea_fname in ${FFEA_FILES[@]}
+do
+	python embed_pdb_in_continuum.py FFEA_modes/${ffea_fname}_traj.out $FFEA_TOPOLOGY aligned_ENM.pdb FFEA_mapped_to_ENM/${ffea_fname}_ENM.pdb
+done
+
+# Get the eigenvectors of the modes in ENM_transformed
+for enm_fname in ${ENM_FILES[@]}
+do
+	echo Calculating eigen vector for $enm_fname
+	python get_eigen_vector.py ENM_transformed/${enm_fname}_TRANSFORMED.pdb eigen/${enm_fname}_eigen
+done
+
+# Get the eigenvectors of the modes in FFEA_mapped_to_ENM
+for ffea_fname in ${FFEA_FILES[@]}
+do
+	python get_eigen_vector.py FFEA_mapped_to_ENM/${ffea_fname}_ENM.pdb eigen/${ffea_fname}_eigen
+done
+
+# Dot the ENM and FFEA eigenvectors
+echo -ne "" > ENM_FFEA_dot_products
+for ffea_fname in ${FFEA_FILES[@]}
+do
+	for enm_fname in ${ENM_FILES[@]}
+	do
+		python dot.py eigen/${ffea_fname}_eigen eigen/${enm_fname}_eigen >> ENM_FFEA_dot_products
+	done
+done
+
+python make_5x5_plot.py ENM_FFEA_dot_products > ENM_FFEA_splot
+
+gnuplot gnuplot_all
