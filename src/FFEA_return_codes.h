@@ -28,9 +28,6 @@
 #include <stdio.h>
 
 /* Prints "ERROR: " to stderr in red text */
-void FFEA_error_text()
-{
-        printf("\e[31mERROR: \e[m");
-}
+void FFEA_error_text();
 
 #endif
