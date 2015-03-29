@@ -136,7 +136,7 @@ protected:
 		{ return m ^ (mixBits(s0,s1)>>1) ^ magic(s1); }
 	static uint32 hash( time_t t, clock_t c );
 };
-
+/*
 // Functions are defined in order of usage to assist inlining
 
 inline MTRand::uint32 MTRand::hash( time_t t, clock_t c )
@@ -410,6 +410,7 @@ inline MTRand& MTRand::operator=( const MTRand& o )
 	return (*this);
 }
 
+*/
 #endif  // MERSENNETWISTER_H
 
 // Change log:

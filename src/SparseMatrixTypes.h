@@ -1,6 +1,9 @@
 #ifndef SPARSEMATRIXTYPES_H_INCLUDED
 #define SPARSEMATRIXTYPES_H_INCLUDED
 
+#include "mat_vec_types.h"
+#include "FFEA_return_codes.h"
+
 typedef struct
 {
 	/* The column index of this entry in the original matrix */
@@ -13,45 +16,17 @@ typedef struct
 class sparse_entry_sources
 {
 	public:
-		sparse_entry_sources() {
-			num_sources = 0;
-			sources = NULL;
-		}
+		sparse_entry_sources();
 
-		~sparse_entry_sources() {
-			num_sources = 0;
-			delete[] sources;
-			sources = NULL;
-		}
+		~sparse_entry_sources();
 
-		int init(int num_sources) {
-			this->num_sources = num_sources;
-			sources = new scalar*[num_sources];
+		int init(int num_sources);
 
-			if(sources == NULL) {
-				FFEA_ERROR_MESSG("Could not allocate memory (for sources array)\n")
-			}
+		void set_source(int i, scalar *s);
 
-			return FFEA_OK;
-		}
+		scalar sum_all_sources();
 
-		void set_source(int i, scalar *s)
-		{
-			sources[i] = s;
-		}
-
-		scalar sum_all_sources()
-		{
-			scalar sum = 0.0;
-			for(int i = 0; i < num_sources; i++) {
-				sum += *(sources[i]);
-			}
-			return sum;
-		}
-
-		int get_num_sources() {
-			return num_sources;
-		}
+		int get_num_sources(); 
 
 	private:
 		int num_sources;

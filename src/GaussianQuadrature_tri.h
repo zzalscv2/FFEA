@@ -109,32 +109,10 @@ class GaussianQuadrature_tri
 		virtual ~GaussianQuadrature_tri() {}
 
 		/* Integrates function f(p,q), for fixed point p and face coordinate q, at the given precision */
-		scalar integrate_point_to_face(scalar (*f)(vector3*, vector3*), vector3 *p, Face *face, int precision)
-		{
-			vector3 q;
-			scalar result = 0;
-			int j = gq_precision[precision].index;
-			for(int i = 0; i < gq_precision[precision].num_points; i++) {
-				face->barycentric_calc_point(gq_triangle[j].zeta_0, gq_triangle[j].zeta_1, gq_triangle[j].zeta_2, &q);
-				result += gq_triangle[j].W * f_3d(p, &q);
-				j++;
-			}
-			return (result * face->area);
-		}
+		scalar integrate_point_to_face(scalar (*f)(vector3*, vector3*), vector3 *p, Face *face, int precision);
 
 		/* Integrates function f(p, q) between two faces, at the given precision */
-		scalar integrate_face_to_face(scalar (*f)(vector3*, vector3*), Face *f1, Face *f2, int precision)
-		{
-			vector3 q;
-			scalar result = 0;
-			int j = gq_precision[precision].index;
-			for(int i = 0; i < gq_precision[precision].num_points; i++) {
-				f1->barycentric_calc_point(gq_triangle[j].zeta_0, gq_triangle[j].zeta_1, gq_triangle[j].zeta_2, &q);
-				result += gq_triangle[j].W * integrate_point_to_face(f, &q, f2, precision);
-				j++;
-			}
-			return (result * f1->area);
-		}
+		scalar integrate_face_to_face(scalar (*f)(vector3*, vector3*), Face *f1, Face *f2, int precision);
 
 	protected:
 		virtual scalar f_3d(vector3 *p, vector3 *q) = 0;
