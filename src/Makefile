@@ -1,6 +1,6 @@
 dir=../bin/
 test=../test/
-opt = -finline-functions -Wall -Wstrict-aliasing=2 -D_FILE_OFFSET_BITS=64
+opt = -I../include/ -finline-functions -Wall -Wstrict-aliasing=2 -D_FILE_OFFSET_BITS=64
 ##-Winline 
 
 GNU_C = g++ 
