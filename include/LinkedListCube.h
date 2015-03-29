@@ -85,6 +85,6 @@ class LinkedListCube
 		void pbc(int *x, int *y, int *z);
 };
 
-#include "LinkedListCube.tpp"
+#include "../src/LinkedListCube.tpp"
 
 #endif

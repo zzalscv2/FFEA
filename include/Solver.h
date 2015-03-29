@@ -3,10 +3,10 @@
 class Solver {
 	public:
 		/* Provide an empty constructor (to avoid linker problems) */
-		Solver() {}
+		Solver() {};
 
 		/* Make the destructor virtual (so that the destructor of derived classes will be called too) */
-		virtual ~Solver() {}
+		virtual ~Solver() {};
 
 		/*
 		 * Initialises the solver (by building whatever representation of the mass matrix it needs)
