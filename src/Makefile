@@ -39,7 +39,7 @@ SOURCE = FFEA_return_codes.cpp BEM_Poisson_Boltzmann.cpp mesh_node.cpp \
 	Spring.cpp World.cpp VdW_solver.cpp
 
 all: ffea.o $(OBJECTS) 
-	$(CC) $(CFLAGS) -O3 -lm ffea.o $(OBJECTS) -o $(dir)ffea
+	$(CC) $(CFLAGS) -O3 -lm ffea.o $(OBJECTS) -o ffea
 
 debug: ffea.cpp
 	$(CC) $(CFLAGS) -ggdb -O0 -lm ffea.cpp -o $(dir)ffea-debug
@@ -52,3 +52,6 @@ test: ffea.cpp
 
 clean:
 	rm -f *.o
+
+install:
+	mv ffea $(dir)
