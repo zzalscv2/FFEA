@@ -16,8 +16,9 @@ import FFEA_viewer_display_window
 
 class FFEA_viewer_control_window:
 
-	def __init__(self, root, file_to_load, energy_thresh=1.0e6):
+	def __init__(self, root, file_to_load, num_frames_to_read, energy_thresh=1.0e6):
 		self.energy_threshold = energy_thresh
+		self.num_frames_to_read = num_frames_to_read
 		self.master = root
 		
 		self.master.protocol("WM_DELETE_WINDOW", self.death)
@@ -227,7 +228,7 @@ class FFEA_viewer_control_window:
 		self.something_has_changed()
 
 	def launch_display_window(self, speak_to_control, ffea_fname):
-		FFEA_viewer_display_window.FFEA_viewer_display_window(speak_to_control, ffea_fname, energy_thresh=self.energy_threshold)
+		FFEA_viewer_display_window.FFEA_viewer_display_window(speak_to_control, ffea_fname, self.num_frames_to_read, energy_thresh=self.energy_threshold)
 
 	def choose_ffea_file_to_load(self):
 		# set up the options for the open file dialog box
