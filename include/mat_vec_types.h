@@ -11,9 +11,8 @@ typedef double scalar;
 /*
  * A simple 3 dimensional vector (x, y, z)
  */
-typedef struct
-{
-	scalar x, y, z;
+typedef struct {
+    scalar x, y, z;
 } vector3;
 
 /*
@@ -39,11 +38,10 @@ typedef scalar matrix4[4][4];
 /*
  * A useful type for holding the upper triangular part of symmetric 4x4 matrices
  */
-typedef struct
-{
-	scalar u00,	u01,	u02,	u03,
-			u11,	u12,	u13,
-				u22,	u23,
-					u33;
+typedef struct {
+    scalar u00, u01, u02, u03,
+    u11, u12, u13,
+    u22, u23,
+    u33;
 } upper_triangular_matrix4;
 #endif

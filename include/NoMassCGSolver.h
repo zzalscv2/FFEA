@@ -14,70 +14,70 @@
 #include "SparsityPattern.h"
 #include "SparseMatrixFixedPattern.h"
 
-class NoMassCGSolver: public Solver
-{
-	public:
-		
-		/* Constructor */
-		NoMassCGSolver();
+class NoMassCGSolver : public Solver {
+public:
 
-		/* Destructor */
-		~NoMassCGSolver();
+    /* Constructor */
+    NoMassCGSolver();
 
-		/* Builds a sparse matrix pattern for blob viscosity matrix from initial structure. Doesn't build the matrix though, just the key and whatnot */		
-		int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list);
+    /* Destructor */
+    ~NoMassCGSolver();
 
-		/* Adds values to sparse viscosity matrix and uses it to solve the system Kv = f using conjugate gradient*/
-		int solve(vector3* x);
+    /* Builds a sparse matrix pattern for blob viscosity matrix from initial structure. Doesn't build the matrix though, just the key and whatnot */
+    int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list);
 
-		/* */
-		void print_matrices(vector3* force);
+    /* Adds values to sparse viscosity matrix and uses it to solve the system Kv = f using conjugate gradient*/
+    int solve(vector3* x);
 
-	private :
+    /* */
+    void print_matrices(vector3* force);
 
-		/* Pointer to the viscosity matrix that will be created */
-		SparseMatrixFixedPattern *V;
+private:
 
-		/* Error tolerance threshold (squared) to determine when solution has converged */
-		scalar epsilon2;
+    /* Pointer to the viscosity matrix that will be created */
+    SparseMatrixFixedPattern *V;
 
-		/* Maximum number of iterations the solver should use before giving up (as solution is not converging) */
-		int i_max;
+    /* Error tolerance threshold (squared) to determine when solution has converged */
+    scalar epsilon2;
 
-		/* Number of rows in V (3 * num_nodes due to x, y and z) */	
-		int num_rows;
+    /* Maximum number of iterations the solver should use before giving up (as solution is not converging) */
+    int i_max;
 
-		/* Number of nodes */
-		int num_nodes;
+    /* Number of rows in V (3 * num_nodes due to x, y and z) */
+    int num_rows;
 
-		/* Jacobi preconditioner (inverse of the viscosity matrix diagonal) */
-		scalar *preconditioner;
+    /* Number of nodes */
+    int num_nodes;
 
-		/* Work vectors */
-		vector3 *r, *p, *z, *q, *f;
+    /* Jacobi preconditioner (inverse of the viscosity matrix diagonal) */
+    scalar *preconditioner;
 
-		/* Unchanging memory locoation */
-		scalar one;
+    /* Work vectors */
+    vector3 *r, *p, *z, *q, *f;
 
-		/* */
-		scalar conjugate_gradient_residual_assume_x_zero(vector3 *b);
+    /* Unchanging memory locoation */
+    scalar one;
 
-		/* */
-		scalar residual2();
+    /* */
+    scalar conjugate_gradient_residual_assume_x_zero(vector3 *b);
 
-		/* */
-		scalar modx(vector3 *x);
+    /* */
+    scalar residual2();
 
-		scalar get_alpha_denominator();
-		
-		/* */
-		scalar parallel_apply_preconditioner();
+    /* */
+    scalar modx(vector3 *x);
 
-		/* */
-		void check(vector3 *x);
+    scalar get_alpha_denominator();
 
-		/* */
-		void apply_matrix(scalar *in, scalar *result) {}
+    /* */
+    scalar parallel_apply_preconditioner();
+
+    /* */
+    void check(vector3 *x);
+
+    /* */
+    void apply_matrix(scalar *in, scalar *result) {
+    }
 
 };
 

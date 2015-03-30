@@ -107,186 +107,183 @@ class Blob;
 /*
  * A 10-point "quadratic" tetrahedron
  */
-class tetra_element_linear
-{
+class tetra_element_linear {
+public:
 
-	public:
+    tetra_element_linear();
 
-		tetra_element_linear();
+    /* Properties of this element */
+    scalar rho; /* density */
+    scalar A; /* shear viscosity */
+    scalar B; /* second coefficient of viscosity */
+    scalar G; /* shear modulus */
+    scalar E; /* bulk modulus */
+    scalar dielectric;
+    scalar mass;
 
-		/* Properties of this element */
-		scalar rho;     /* density */
-		scalar A;       /* shear viscosity */
-		scalar B;       /* second coefficient of viscosity */
-		scalar G;       /* shear modulus */
-		scalar E;       /* bulk modulus */
-		scalar dielectric;
-		scalar mass;
+    /* A quadratic tetrahedron has 10 nodes. Keep pointers to the actual memory location of the nodes. */
+    mesh_node *n[NUM_NODES_QUADRATIC_TET];
 
-		/* A quadratic tetrahedron has 10 nodes. Keep pointers to the actual memory location of the nodes. */
-		mesh_node *n[NUM_NODES_QUADRATIC_TET];
+    /* The 12-vector containing the shape function derivatives for this element */
+    vector12 dpsi;
 
-		/* The 12-vector containing the shape function derivatives for this element */
-		vector12 dpsi;
+    /*
+     * The del2 matrix for this element (in upper triangular form, since it's symmetric).
+     * Used in constructing the diffusion matrix and the poisson matrix.
+     */
+    upper_triangular_matrix4 del2;
 
-		/*
-	 	 * The del2 matrix for this element (in upper triangular form, since it's symmetric).
-		 * Used in constructing the diffusion matrix and the poisson matrix.
-		 */
-		upper_triangular_matrix4 del2;
+    PoissonMatrixQuadratic K_alpha;
 
-		PoissonMatrixQuadratic K_alpha;
+    /* Store the contribution from this element to the force on each of its four nodes */
+    vector3 node_force[NUM_NODES_QUADRATIC_TET];
 
-		/* Store the contribution from this element to the force on each of its four nodes */
-		vector3 node_force[NUM_NODES_QUADRATIC_TET];
+    /* The rest volume of this element */
+    scalar vol_0;
 
-		/* The rest volume of this element */
-		scalar vol_0;
+    /* The current volume of this element */
+    scalar vol;
 
-		/* The current volume of this element */
-		scalar vol;
+    /* The gradient deformation tensor for this element (needed for potential energy calculation) */
+    matrix3 F_ij;
 
-		/* The gradient deformation tensor for this element (needed for potential energy calculation) */
-		matrix3 F_ij;
+    /* The double contraction of the internal stress tensor, including elastic and thermal stresses */
+    scalar internal_stress_mag;
 
-		/* The double contraction of the internal stress tensor, including elastic and thermal stresses */
-		scalar internal_stress_mag;
+    /* The inverse jacobian of this element at rest */
+    matrix3 J_inv_0;
 
-		/* The inverse jacobian of this element at rest */
-		matrix3 J_inv_0;
+    /* Viscosity Matrix for the internal forces of this element */
+    matrix12 viscosity_matrix;
 
-		/* Viscosity Matrix for the internal forces of this element */
-		matrix12 viscosity_matrix;
+    /* Blob this element is a part of */
+    Blob *daddy_blob;
 
-		/* Blob this element is a part of */
-		Blob *daddy_blob;
+    /* Index of this element in the parent Blob */
+    int index;
 
-		/* Index of this element in the parent Blob */
-		int index;
+    vector3 centroid;
 
-		vector3 centroid;
+    /*
+     * Get the memory location of the specified element of K_alpha
+     */
+    scalar * get_K_alpha_element_mem_loc(int ni, int nj);
 
-		/*
-		 * Get the memory location of the specified element of K_alpha
-		 */
-		scalar * get_K_alpha_element_mem_loc(int ni, int nj);
+    /* Calc the diffusion matrix for this element */
+    void calculate_K_alpha();
 
-		/* Calc the diffusion matrix for this element */
-		void calculate_K_alpha();
+    void construct_element_mass_matrix(MassMatrixQuadratic *M_alpha);
 
-		void construct_element_mass_matrix(MassMatrixQuadratic *M_alpha);
+    void add_K_alpha(scalar *K, int num_nodes);
 
-		void add_K_alpha(scalar *K, int num_nodes);
+    /* Returns the gradient of the potential at the given (s,t,u) position in the element */
+    void get_grad_phi_at_stu(vector3 *grad_phi, scalar s, scalar t, scalar u);
 
-		/* Returns the gradient of the potential at the given (s,t,u) position in the element */
-		void get_grad_phi_at_stu(vector3 *grad_phi, scalar s, scalar t, scalar u);
+    /* Calculates the force on each node of the element due to the electrostatic potential gradient there */
+    void calculate_electrostatic_forces();
 
-		/* Calculates the force on each node of the element due to the electrostatic potential gradient there */
-		void calculate_electrostatic_forces();
+    /* Calculates the Jacobian matrix for this element */
+    void calculate_jacobian(matrix3 J);
 
-		/* Calculates the Jacobian matrix for this element */
-		void calculate_jacobian(matrix3 J);
+    /*
+     * Inverts the given jacobian matrix J, using this to calculate the derivatives
+     * of the shape functions which are stored in dpsi. This is an array
+     * of all 12 derivatives, in the following order:
+     *		dpsi    =	[ d(psi)_1/dx ]
+     *				[ d(psi)_2/dx ]
+     *				[ d(psi)_3/dx ]
+     *				[ d(psi)_4/dx ]
+     *				[ d(psi)_1/dy ]
+     *				[ d(psi)_2/dy ]
+     *				[     ...     ]
+     *				[ d(psi)_4/dz ]
+     *
+     * Function also (as a by-product of the inversion) calculates the volume of the
+     * element whose jacobian this is, which is stored in 'vol'.
+     */
+    int calc_shape_function_derivatives_and_volume(matrix3 J);
 
-		/*
-		 * Inverts the given jacobian matrix J, using this to calculate the derivatives
-		 * of the shape functions which are stored in dpsi. This is an array
-		 * of all 12 derivatives, in the following order:
-		 *		dpsi    =	[ d(psi)_1/dx ]
-		 *				[ d(psi)_2/dx ]
-		 *				[ d(psi)_3/dx ]
-		 *				[ d(psi)_4/dx ]
-		 *				[ d(psi)_1/dy ]
-		 *				[ d(psi)_2/dy ]
-		 *				[     ...     ]
-		 *				[ d(psi)_4/dz ]
-		 *
-		 * Function also (as a by-product of the inversion) calculates the volume of the
-		 * element whose jacobian this is, which is stored in 'vol'.
-		 */
-		int calc_shape_function_derivatives_and_volume(matrix3 J);
+    /*
+     * Builds the viscosity matrix from the shape function derivatives, the shear and bulk
+     * viscosity constants, and the element volume
+     */
+    void create_viscosity_matrix();
 
-		/*
-		 * Builds the viscosity matrix from the shape function derivatives, the shear and bulk
-		 * viscosity constants, and the element volume
-		 */
-		void create_viscosity_matrix();
+    /*
+     *
+     */
+    void add_shear_elastic_stress(matrix3 J, matrix3 stress);
 
-		/*
-		 *
-		 */
-		void add_shear_elastic_stress(matrix3 J, matrix3 stress);
+    /*
+     *
+     */
+    void add_bulk_elastic_stress(matrix3 stress);
 
-		/*
-		 *
-		 */
-		void add_bulk_elastic_stress(matrix3 stress);
+    /*
+     * Given the shape function derivatives, the element volume and a random number generator, this
+     * function calculates the fluctuating stress tensor, generating a stochastic change in the
+     * nodal velocities for the element under consideration. This function will add its contribution
+     * to the given 12-vector du.
+     *
+     */
+    void add_fluctuating_stress(SimulationParams *params, MTRand rng[], matrix3 stress, int thread_id);
 
-		/*
-		 * Given the shape function derivatives, the element volume and a random number generator, this
-		 * function calculates the fluctuating stress tensor, generating a stochastic change in the
-		 * nodal velocities for the element under consideration. This function will add its contribution
-		 * to the given 12-vector du.
-		 *
-		 */
-		void add_fluctuating_stress(SimulationParams *params, MTRand rng[], matrix3 stress, int thread_id);
+    /*
+     * Applies the given stress tensor to the shape function derivatives to get the contribution to du
+     */
+    void apply_stress_tensor(matrix3 stress, vector12 du);
 
-		/*
-		 * Applies the given stress tensor to the shape function derivatives to get the contribution to du
-		 */
-		void apply_stress_tensor(matrix3 stress, vector12 du);
+    /*
+     * Sets the given 12-vector to the velocities of this element's four nodes,
+     */
+    void get_element_velocity_vector(vector12 v);
 
-		/*
-		 * Sets the given 12-vector to the velocities of this element's four nodes,
-		 */
-		void get_element_velocity_vector(vector12 v);
+    /*
+     * Add this element's nodal forces to those given in the force 12-vector
+     */
+    void add_element_force_vector(vector12 force);
 
-		/*
-		 * Add this element's nodal forces to those given in the force 12-vector
-		 */
-		void add_element_force_vector(vector12 force);
+    /* Add given force to the specified node of this element */
+    void add_force_to_node(int i, vector3 *f);
 
-		/* Add given force to the specified node of this element */
-		void add_force_to_node(int i, vector3 *f);
+    /* A roundabout and inefficient way of working out what node (from 0 to 9) this index corresponds to */
+    int what_node_is_this(int index);
 
-		/* A roundabout and inefficient way of working out what node (from 0 to 9) this index corresponds to */
-		int what_node_is_this(int index);
+    void print();
 
-		void print();
+    /*
+     * Applies the mass matrix (for a linear tetrahedral element of density rho and equilibrium volume vol_0)
+     * to the force vector du to get the correct distribution of force between nodes.
+     */
+    void apply_element_mass_matrix(vector12 du);
 
-		/*
-		 * Applies the mass matrix (for a linear tetrahedral element of density rho and equilibrium volume vol_0)
-		 * to the force vector du to get the correct distribution of force between nodes.
-		 */
-		void apply_element_mass_matrix(vector12 du);
+    void volume_coord_to_xyz(scalar eta0, scalar eta1, scalar eta2, scalar eta3, vector3 *r);
 
-		void volume_coord_to_xyz(scalar eta0, scalar eta1, scalar eta2, scalar eta3, vector3 *r);
+    void zero_force();
 
-		void zero_force();
+    void linearise_element();
 
-		void linearise_element();
-
-		void calc_centroid();
+    void calc_centroid();
 
 
-	private:
+private:
 
-		/*
-		 * The last determinant of this element's transformation (used to work out whether it has inverted itself)
-		 */
-		scalar last_det;
+    /*
+     * The last determinant of this element's transformation (used to work out whether it has inverted itself)
+     */
+    scalar last_det;
 
-		/*
-		 * Creates del2 matrix from the shape function derivatives
-		 */
-		void calc_del2_matrix();
+    /*
+     * Creates del2 matrix from the shape function derivatives
+     */
+    void calc_del2_matrix();
 
-		void add_diffusion_matrix(matrix12 V);
+    void add_diffusion_matrix(matrix12 V);
 
-		struct tetrahedron_gauss_point
-                {
-                        scalar W;
-                        scalar eta[4];
-                };
+    struct tetrahedron_gauss_point {
+        scalar W;
+        scalar eta[4];
+    };
 
 };
 
