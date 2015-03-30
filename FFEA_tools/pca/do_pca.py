@@ -30,7 +30,6 @@ if blob_number == -1:
 else:
 	print "blob_number = " + blob_number
 
-sys.exit()
 #Get a single blob if necessary
 if blob_number != -1:
 	print "Extracting single blob from file..."
@@ -40,10 +39,10 @@ else:
 	input_filename = trajectory_fname
 
 # get number of nodes from traj file
-os.system("head -n4 " + input_filename + " | tail -n1 > __do_pca_temp_num_nodes__\n")
+os.system("head -n5 " + input_filename + " | tail -n1 > __do_pca_temp_num_nodes__\n")
 
 num_nodes_file = open("__do_pca_temp_num_nodes__", "r")
-num_nodes = int(num_nodes_file.readline())
+num_nodes = int(num_nodes_file.readline().split()[3])
 num_nodes_file.close()
 print "Number of nodes =", num_nodes
 

@@ -16,8 +16,9 @@ import shutil
 
 class FFEA_viewer_display_window():
 
-	def __init__(self, speak_to_control, ffea_fname, energy_thresh=1.0e6):
+	def __init__(self, speak_to_control, ffea_fname, num_frames_to_read, energy_thresh=1.0e6):
 		self.energy_threshold = energy_thresh
+		self.num_frames_to_read = num_frames_to_read
 		self.speak_to_control = speak_to_control
 		self.ffea_fname = ffea_fname
 		self.width = 800
@@ -344,9 +345,9 @@ class FFEA_viewer_display_window():
 					blob.load_nodes_file_as_frame()
 
 			# Start loading frames for each blob from the trajectory file
-			#self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(self, trajectory_out_fname))
-			#self.load_trajectory_thread.start()
-			self.load_trajectory(trajectory_out_fname)
+			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
+			self.load_trajectory_thread.start()
+			#self.load_trajectory(trajectory_out_fname)
 		# else just use the nodes files (if traj file not given or found)
 		else:
 			print "WARNING: Trajectory file is missing. Loading positions from node files."
@@ -356,6 +357,7 @@ class FFEA_viewer_display_window():
 			
 
 	def load_trajectory(self, trajectory_out_fname):
+
 		print "Reading in trajectory file " + trajectory_out_fname
 		traj = open(trajectory_out_fname, "r")
 
@@ -389,6 +391,9 @@ class FFEA_viewer_display_window():
 		# Final whitespace
 		traj.readline()
 		while True:
+			if self.num_frames >= self.num_frames_to_read:
+				break
+
 			while self.pause_loading == True:
 				self.pausing = True
 				time.sleep(2)

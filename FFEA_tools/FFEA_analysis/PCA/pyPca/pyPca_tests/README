@@ -1,0 +1,12 @@
+How to set up your PC for pyPCA
+
+Add these lines to your ~/.bashrc:
+
+	PATH="/import/data801.shared/software/Anaconda-2.1.0-x86_64/bin/":$PATH
+	export PATH	
+
+Now run './test/examples/run_examples.sh >& test.log'
+All results should be successful. Use ctrl+f 'test ' to see all tests in test.log.
+
+Now run 'pyPczdump --input 2ozq.pcz --anim 1 --pdb pocket.pdb -vvv' >& test.pdb
+test.pdb should be a 20 frame animation of the first eigenvector of the PCA analysis performed in 'run_examples.sh'
