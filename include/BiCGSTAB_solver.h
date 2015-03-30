@@ -8,60 +8,59 @@
 #include "mat_vec_types.h"
 #include "SparseMatrixUnknownPattern.h"
 
-class BiCGSTAB_solver
-{
-	public:
-		BiCGSTAB_solver();
+class BiCGSTAB_solver {
+public:
+    BiCGSTAB_solver();
 
-		~BiCGSTAB_solver();
+    ~BiCGSTAB_solver();
 
-		int init(int N, scalar tol, int max_num_iterations);
+    int init(int N, scalar tol, int max_num_iterations);
 
-		int solve(SparseMatrixUnknownPattern *A, scalar *x, scalar *b);
-		
-		int solve(SparseMatrixUnknownPattern *A, scalar *x, scalar *b, int num_iterations);
+    int solve(SparseMatrixUnknownPattern *A, scalar *x, scalar *b);
 
-	private:
+    int solve(SparseMatrixUnknownPattern *A, scalar *x, scalar *b, int num_iterations);
 
-		// The number of unknowns
-		int N;
+private:
 
-		// The convergence tolerance threshold
-		scalar tol;
+    // The number of unknowns
+    int N;
 
-		// Maximum number of iterations before giving up
-		int max_num_iterations;
+    // The convergence tolerance threshold
+    scalar tol;
 
-		// The inverse of the preconditioner matrix
-		scalar *inv_M;
+    // Maximum number of iterations before giving up
+    int max_num_iterations;
 
-		// The residual vectors
-		scalar *r, *r_hat;
+    // The inverse of the preconditioner matrix
+    scalar *inv_M;
 
-		// Other necessary vectors
-		scalar *p, *p_hat, *q, *s, *s_hat, *t;
+    // The residual vectors
+    scalar *r, *r_hat;
 
-		/* Calculates the residual vector, r, for the matrix equation Ax = b. Specifically, r = b - Ax. */
-		void get_residual_vector(scalar *r, scalar *b, SparseMatrixUnknownPattern *A, scalar *x, int N);
+    // Other necessary vectors
+    scalar *p, *p_hat, *q, *s, *s_hat, *t;
 
-		/* Copies the contents of vector b into vector a (a <- b) */
-		void copy_vector(scalar *a, scalar *b, int N);
+    /* Calculates the residual vector, r, for the matrix equation Ax = b. Specifically, r = b - Ax. */
+    void get_residual_vector(scalar *r, scalar *b, SparseMatrixUnknownPattern *A, scalar *x, int N);
 
-		/* Returns the dot product of vectors a and b, of length N */
-		scalar dot(scalar *a, scalar *b, int N);
+    /* Copies the contents of vector b into vector a (a <- b) */
+    void copy_vector(scalar *a, scalar *b, int N);
 
-		/* Calculates y = Mx for diagonal matrix and vectors of dimension N */
-		void apply_diagonal_matrix(scalar *y, scalar *M, scalar *x, int N);
+    /* Returns the dot product of vectors a and b, of length N */
+    scalar dot(scalar *a, scalar *b, int N);
 
-		/* Sets the given vector (length N) to zero */
-		void zero(scalar *x, int N);
+    /* Calculates y = Mx for diagonal matrix and vectors of dimension N */
+    void apply_diagonal_matrix(scalar *y, scalar *M, scalar *x, int N);
 
-		/* Carries out the operation x = y + c*z, where c is a scalar, and x, y and z are vectors of length N. */
-		void scalar_vector_add(scalar *x, scalar *y, scalar c, scalar *z, int N);
+    /* Sets the given vector (length N) to zero */
+    void zero(scalar *x, int N);
 
-		/* Carries out the operation w = x + a * (y + b * z) */
-		// p = r + beta(p - omega * v)
-		void complicated_bastard_machine(scalar *w, scalar *x, scalar a, scalar *y, scalar b, scalar *z, int N);
+    /* Carries out the operation x = y + c*z, where c is a scalar, and x, y and z are vectors of length N. */
+    void scalar_vector_add(scalar *x, scalar *y, scalar c, scalar *z, int N);
+
+    /* Carries out the operation w = x + a * (y + b * z) */
+    // p = r + beta(p - omega * v)
+    void complicated_bastard_machine(scalar *w, scalar *x, scalar a, scalar *y, scalar b, scalar *z, int N);
 };
 
 #endif

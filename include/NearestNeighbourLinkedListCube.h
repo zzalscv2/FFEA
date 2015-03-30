@@ -8,11 +8,10 @@
 #include "LinkedListCube.h"
 #include "Face.h"
 
-class NearestNeighbourLinkedListCube : public LinkedListCube<Face>
-{
-	public:
-		/* Build the nearest neighbour look up cube given the spatial cell size */
-		int build_nearest_neighbour_lookup(scalar h);
+class NearestNeighbourLinkedListCube : public LinkedListCube<Face> {
+public:
+    /* Build the nearest neighbour look up cube given the spatial cell size */
+    int build_nearest_neighbour_lookup(scalar h);
 };
 
 #endif

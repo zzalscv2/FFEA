@@ -18,34 +18,31 @@
 
 #include "SecondOrderFunctions.h"
 
+class PoissonMatrixQuadratic {
+public:
+    PoissonMatrixQuadratic();
 
-class PoissonMatrixQuadratic
-{
-	public:
-		PoissonMatrixQuadratic();
+    scalar * get_K_alpha_mem_loc(int i, int j);
 
-		scalar * get_K_alpha_mem_loc(int i, int j);
+    void build(mesh_node *n[10], scalar epsilon);
 
-		void build(mesh_node *n[10], scalar epsilon);
+    scalar get_K_alpha_value(int i, int j);
 
-		scalar get_K_alpha_value(int i, int j);
+private:
+    scalar K_alpha[NUM_ELEMENTS_LOWER_TRIANGULAR_10X10];
 
-	private:
-		scalar K_alpha[NUM_ELEMENTS_LOWER_TRIANGULAR_10X10];
+    struct tetrahedron_gauss_point {
+        scalar W;
+        scalar eta[4];
+    };
 
-                struct tetrahedron_gauss_point
-                {
-                        scalar W;
-                        scalar eta[4];
-                };
+    void add_grad_dot_products(vector3 grad_psi[10], scalar det_J, scalar weight);
 
-		void add_grad_dot_products(vector3 grad_psi[10], scalar det_J, scalar weight);
+    scalar grad_dot(vector3 *grad_psi_i, vector3 *grad_psi_j);
 
-		scalar grad_dot(vector3 *grad_psi_i, vector3 *grad_psi_j);
+    void zero();
 
-		void zero();
-
-		void scale(scalar factor);
+    void scale(scalar factor);
 };
 
 

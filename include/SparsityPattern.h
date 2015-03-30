@@ -12,41 +12,39 @@
 
 using namespace std;
 
-typedef struct
-{
-	int column_index;
-	vector<scalar *> source_list;
+typedef struct {
+    int column_index;
+    vector<scalar *> source_list;
 } sparse_contribution_location;
 
-class SparsityPattern
-{
-	public:
-		SparsityPattern();
+class SparsityPattern {
+public:
+    SparsityPattern();
 
-		~SparsityPattern();
+    ~SparsityPattern();
 
-		int init(int num_rows);
+    int init(int num_rows);
 
-		/* * */
-		void register_contribution(int i, int j, scalar *contrib_memory_loc);
+    /* * */
+    void register_contribution(int i, int j, scalar *contrib_memory_loc);
 
-		bool check_for_contribution(int i, int j);
+    bool check_for_contribution(int i, int j);
 
-		/* Factory function for making empty fixed sparsity pattern matrices from this sparsity pattern */
-		SparseMatrixFixedPattern * create_sparse_matrix();
+    /* Factory function for making empty fixed sparsity pattern matrices from this sparsity pattern */
+    SparseMatrixFixedPattern * create_sparse_matrix();
 
-		void print();
+    void print();
 
-	private:
+private:
 
-		/* Number of rows in matrix */
-		int num_rows;
+    /* Number of rows in matrix */
+    int num_rows;
 
-		/* An array of vectors containing the indices of the occupied sites */
-		list<sparse_contribution_location*> *row;
+    /* An array of vectors containing the indices of the occupied sites */
+    list<sparse_contribution_location*> *row;
 
-		/* Total number of nonzero elements in the sparsity pattern */
-		int num_nonzero_elements;
+    /* Total number of nonzero elements in the sparsity pattern */
+    int num_nonzero_elements;
 };
 
 #endif

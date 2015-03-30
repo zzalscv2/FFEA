@@ -6,15 +6,13 @@
 
 using namespace std;
 
-typedef struct
-{
-	int x, n;
+typedef struct {
+    int x, n;
 } sparse_count;
 
-class MatrixFixedSparsityPattern
-{
-	public:
-		int init(tetra_element_linear *elem, int num_elements);
+class MatrixFixedSparsityPattern {
+public:
+    int init(tetra_element_linear *elem, int num_elements);
 
 };
 

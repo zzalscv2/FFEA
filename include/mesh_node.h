@@ -13,45 +13,44 @@
 /*
  * Structure for a mesh_node: the points FEM meshes are built from.
  */
-class mesh_node
-{
-	public:
+class mesh_node {
+public:
 
-		mesh_node();
-		~mesh_node();
+    mesh_node();
+    ~mesh_node();
 
-		void print();
+    void print();
 
-		/* Position of node */
-		vector3 pos;
+    /* Position of node */
+    vector3 pos;
 
-		/* Velocity of node */
-		vector3 vel;
+    /* Velocity of node */
+    vector3 vel;
 
-		/* Electrostatic potential at this node */
-		scalar phi;
+    /* Electrostatic potential at this node */
+    scalar phi;
 
-		int num_element_contributors;
+    int num_element_contributors;
 
-		/* An array of pointers to contributions to the total force on this node. There should be one
-		 * contribution from each element this node is a part of (so the length will be num_element_contributors).
-		 */
-		vector3 **force_contributions;
+    /* An array of pointers to contributions to the total force on this node. There should be one
+     * contribution from each element this node is a part of (so the length will be num_element_contributors).
+     */
+    vector3 **force_contributions;
 
-		/* Required for some general matrix constructions in which we need to know this node's 'index' in the node vector */
-		int index;
+    /* Required for some general matrix constructions in which we need to know this node's 'index' in the node vector */
+    int index;
 
-		/* Equilibrium position of nodes (for RMSD calculations) */
-		vector3 pos_0;
+    /* Equilibrium position of nodes (for RMSD calculations) */
+    vector3 pos_0;
 
-		/* Charge density on this node */
-		scalar rho;
+    /* Charge density on this node */
+    scalar rho;
 
-		/* Stokes radius of this node */
-		scalar stokes_radius;
+    /* Stokes radius of this node */
+    scalar stokes_radius;
 
-		/* The drag due to stokes on this node, not including velocity */
-		scalar stokes_drag;
+    /* The drag due to stokes on this node, not including velocity */
+    scalar stokes_drag;
 };
 
 #endif
