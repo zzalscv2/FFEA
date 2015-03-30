@@ -18,4 +18,5 @@
 *.pdf
 *.x
 core.*
-/main/nbproject/private/
+/bin/
+/test/
