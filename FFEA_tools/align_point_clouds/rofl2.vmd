@@ -1,3 +1,0 @@
-mol new ../pca/emd_5476_trajectory_anim_1.pdb
-mol new ../kostas_new/emd_5476_512VQ/emd_5476_512VQ_007.pdb 
-mol new aligned_ENM.pdb
