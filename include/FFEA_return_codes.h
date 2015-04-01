@@ -18,7 +18,7 @@
 #define FFEA_FILE_ERROR_MESSG(F) {FFEA_error_text(); printf("Error opening file: %s\n", F); perror(NULL); return FFEA_ERROR;}
 #define FFEA_ERROR_MESSG(...) {FFEA_error_text(); printf(__VA_ARGS__); return FFEA_ERROR;}
 
-#define FFEA_PARALLEL_WITHIN_BLOB
+//#define FFEA_PARALLEL_WITHIN_BLOB
 //#define FFEA_PARALLEL_PER_BLOB
 
 #define FFEA_BLOB_IS_STATIC	0
