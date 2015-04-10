@@ -569,10 +569,12 @@ int World::read_and_build_system(FILE *in) {
     char *spring_filename = new char[max_buf_size];
     int linear_solver = FFEA_ITERATIVE_SOLVER;
     float com_x, com_y, com_z;
+    float r11, r12, r13, r21, r22, r23, r31, r32, r33;
     float vel_x, vel_y, vel_z;
 
     int set_linear_solver = 0;
     int set_centroid_pos = 0;
+    int set_rotation = 0;
     int set_velocity = 0;
 
     scalar scale = 1;
@@ -928,6 +930,15 @@ int World::read_and_build_system(FILE *in) {
                             printf("\t\tSetting blob %d, initial centroid (%e, %e, %e)\n", i, com_x, com_y, com_z);
                         }
                         set_centroid_pos = 1;
+                    } else if(strcmp(lvalue, "rotation") == 0)  {
+                        if(sscanf(rvalue, "(%e,%e,%e,%e,%e,%e,%e,%e,%e)", &r11, &r12, &r13, &r21, &r22, &r23, &r31, &r32, &r33) != 9) {
+                           FFEA_error_text();
+                           printf("\t\tCould not read rotation for blob %d: rvalue '%s' is badly formed. Should have form (r11,r12,r13,r21,r22,r23,r31,r32,r33)\n", i, rvalue);
+                           return FFEA_ERROR;
+                        } else {
+                           printf("\t\tSetting blob %d, initial rotation (%e, %e, %e, %e, %e, %e, %e, %e, %e)\n", i, r11, r12, r13, r21, r22, r23, r31, r32, r33);
+                        }
+                        set_rotation = 1;
                     } else if (strcmp(lvalue, "velocity") == 0) {
                         if (sscanf(rvalue, "(%e,%e,%e)", &vel_x, &vel_y, &vel_z) != 3) {
                             FFEA_error_text();
@@ -1024,6 +1035,10 @@ int World::read_and_build_system(FILE *in) {
                     com_y *= scale;
                     com_z *= scale;
                     blob_array[i][j].position(com_x, com_y, com_z);
+                }
+
+                if(set_rotation == 1) {
+                    blob_array[i][j].rotate(r11,r12,r13,r21,r22,r23,r31,r32,r33);
                 }
 
                 if (set_velocity == 1)
