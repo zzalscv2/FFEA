@@ -1,15 +1,17 @@
 import sys, os
 from math import *
 import numpy as np
+import matplotlib.pyplot as plt
 
 class FFEA_meas:
 		
-	def __init__(self, meas_basename, num_blobs, num_frames_to_read):
+	def __init__(self, meas_basename, num_blobs, num_frames_to_read, frame_length):
 		
 		self.num_blobs = num_blobs;
 		self.blob = []
 		self.world = None
 		self.num_frames = 0;
+		self.frame_length = frame_length
 		for i in range(self.num_blobs):
 			self.read_blob_meas_from_file(meas_basename, i, num_frames_to_read)
 
@@ -94,7 +96,7 @@ class FFEA_meas:
 
 		# Add a blob
 		print "Done. Read " + str(check) + " frames in total."
-		num_frames = check
+		num_frames = len(ke)
 		self.blob.append(FFEA_meas_blob(num_frames, np.array(ke), np.array(pe), np.array([comx, comy, comz]), np.array([angmomx, angmomy, angmomz]), np.array(rmsd), np.array(vdw_area), np.array(vdw_force), np.array(vdw_energy)))
 
 	def read_world_meas_from_file(self, basename, num_blobs, num_frames):
@@ -169,6 +171,20 @@ class FFEA_meas:
 		for blob in self.blob:
 			blob.calc_avg_energies()
 
+	def plot_energies(self, basename, num_nodes, kT):
+
+		for blob in self.blob:
+			i = self.blob.index(blob)
+			keplot, = plt.plot(np.array(range(blob.num_frames)) * self.frame_length, blob.ke)
+			peplot, = plt.plot(np.array(range(blob.num_frames)) * self.frame_length, blob.pe)
+			ketheoryplot, = plt.plot(np.array(range(blob.num_frames)) * self.frame_length, np.array([(3.0 * num_nodes/2.0) * kT] * blob.num_frames))
+			petheoryplot, = plt.plot(np.array(range(blob.num_frames)) * self.frame_length, np.array([((3.0 * num_nodes - 6)/2.0) * kT] * blob.num_frames))
+
+			plt.xlabel("Time (s)")
+			plt.ylabel("Energy (J)")
+			plt.title("Energy Trace of Blob %d" % (i))
+			plt.legend([keplot, peplot, ketheoryplot, petheoryplot], ["Kinetic energy", "Elastic Potential energy", "Theoretical Average Kinetic Energy", "Theoretical Average Potential Energy"], loc = 2, prop={'size':8})
+			plt.savefig(basename + "_blob" + str(i) + "_energies.jpg")
 class FFEA_meas_blob:
 
 	def __init__(self, num_frames, ke, pe, com, angmom, rmsd, vdw_area, vdw_force, vdw_energy):

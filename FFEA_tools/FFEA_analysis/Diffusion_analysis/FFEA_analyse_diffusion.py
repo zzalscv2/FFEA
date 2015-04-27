@@ -45,20 +45,21 @@ for arg in sys.argv:
 		print "A python script for analysing diffusion of FFEA blobs. Expects a directory containing multiple runs of a single system.\n"
 		sys.exit("Usage python " + sys.argv[0] + " [FFEA trajectory directory]\n")		
 
-if len(sys.argv) != 5:
-	sys.exit("Usage python " + sys.argv[0] + " [FFEA trajectory directory] [OUTPUT diffusion analysis fname] [Time per frame (s)] [Print graphs? (y/n)]\n")
+if len(sys.argv) < 5:
+	sys.exit("Usage python " + sys.argv[0] + " [FFEA trajectory directory] [OUTPUT diffusion analysis fname] [Time per frame (s)] [Print graphs? (y/n)] [num_frames (optional)]\n")
 
 # Arguments
 traj_dir = sys.argv[1]
 out_fname = sys.argv[2]
-if len(out_fname.split(".")) == 2:
-	out_basename = out_fname.split(".")[0]
-else:
-	out_basename = out_fname
-	out_fname = out_basename + ".diffusion"
+out_basename = os.path.splitext(out_fname)[0]
 
 time_per_frame = float(sys.argv[3])
 print_graphs = sys.argv[4]
+
+if len(sys.argv) == 6:
+	num_frames_to_read = int(sys.argv[5])
+else:
+	num_frames_to_read = 1000000
 
 # Get all files in traj_dir
 traj_fnames = get_FFEA_traj_fnames(traj_dir)
@@ -66,9 +67,15 @@ num_trajs = len(traj_fnames)
 
 # Get a centroid trajectory for all trajectories
 centroid_traj = []
+num_nodes = []
 for fname in traj_fnames:
-	centroid_traj.append(FFEA_traj.FFEA_centroid_traj(FFEA_traj.FFEA_traj(fname, 1000000)))
-num_blobs = centroid_traj[0].num_blobs
+	traj = FFEA_traj.FFEA_traj(fname, num_frames_to_read, 0, num_frames_to_read, 1)
+	centroid_traj.append(FFEA_traj.FFEA_centroid_traj(traj))
+	if traj_fnames.index(fname) == 0:
+		num_blobs = traj.num_blobs
+		for i in range(num_blobs):
+			num_nodes.append(traj.blob[i].num_nodes)
+
 num_frames = centroid_traj[0].num_frames
 
 # Use centroid trajs to calculate <x^2> vs frame number
@@ -76,8 +83,13 @@ x2 = np.zeros_like(centroid_traj[0].pos)
 x2err = np.zeros_like(centroid_traj[0].pos)
 for i in range(num_trajs):
 	for j in range(num_blobs):
-		x2[j] += np.power(centroid_traj[i].pos[j], 2)
-		x2err[j] += np.power(centroid_traj[i].pos[j], 4)
+		x2[j] += np.power(centroid_traj[i].pos[j] - centroid_traj[0].pos[j], 2)
+		x2err[j] += np.power(centroid_traj[i].pos[j] - centroid_traj[0].pos[j], 4)
+
+for i in range(num_blobs):
+	for j in range(num_frames):
+		x2[i][3][j] = x2[i][0][j] + x2[i][1][j] + x2[i][2][j]
+		x2err[i][3][j] = pow(x2[i][0][j], 2) + pow(x2[i][1][j], 2) + pow(x2[i][2][j], 2)
 
 for i in range(num_blobs):
 	x2[i] /= num_trajs
@@ -87,11 +99,18 @@ for i in range(num_blobs):
 	for j in range(4):
 		x2err[i][j][0] = np.power(x2[i][j][0], 2)
 
-	x2err[i] = np.sqrt((x2err[i] - np.power(x2[i], 2)) / num_trajs) 
+	# Hack to deal with floating point errors
+	x2err[i] = np.absolute(x2err[i] - np.power(x2[i], 2))
+
+	x2err[i] = np.sqrt(x2err[i] / num_trajs) 
 
 # Write to file
 fout = open(out_fname, "w")
-fout.write("FFEA Diffusion analysis\nnum_blobs = " + str(num_blobs) + " num_frames = " + str(num_frames) + "\n\nTime (s)\t")
+fout.write("FFEA Diffusion analysis\nnum_blobs = " + str(num_blobs) + "\nnum_nodes = ")
+for i in range(num_blobs):
+	fout.write("%d " % (num_nodes[i]))
+fout.write("\n")
+fout.write("num_frames = " + str(num_frames) + "\n\nTime (s)\t")
 for i in range(num_blobs):
 	fout.write("Blob " + str(i) + "(x2+-dx2  y2+-dy2  z2+-dz2  r2+-dr2)\t")
 fout.write("\n")

@@ -75,21 +75,23 @@ for i in range(num_timesteps):
 figindex = 0
 for i in range(num_blobs):
 	plt.figure(figindex)
-	plt.semilogx(timesteps, ke[i])
-	plt.semilogx(timesteps, cke)
+	act, = plt.semilogx(timesteps, ke[i])
+	perf, = plt.semilogx(timesteps, cke)
 	plt.title("Average Kinetic Energy vs Timestep")
 	plt.xlabel("Timestep (s)")
 	plt.ylabel(r"$\langle E_k \rangle (J)$")
+	plt.legend([act, perf], ["Simualtion Averages", "Ideal Values"], loc = 2, prop={'size':12})
 	plt.savefig(out_basename + "_blob" + str(i) + "kevdt.jpg")
 
 	figindex += 1
 	
 	plt.figure(figindex)
-	plt.semilogx(timesteps, pe[i])
-	plt.semilogx(timesteps, cpe)
+	act, = plt.semilogx(timesteps, pe[i])
+	perf, = plt.semilogx(timesteps, cpe)
 	plt.title("Average Potential Energy vs Timestep")
 	plt.xlabel("Timestep (s)")
 	plt.ylabel(r"$\langle E_p \rangle (J)$")
+	plt.legend([act, perf], ["Simualtion Averages", "Ideal Values"], loc = 2, prop={'size':12})
 	plt.savefig(out_basename + "_blob" + str(i) + "pevdt.jpg")
 
 	figindex += 1
