@@ -69,9 +69,8 @@ int main(int argc, char **argv)
 
 		// Progress check
 		frame++;
-		if(frame == 1000) {
+		if(frame % 1000 == 0) {
 			printf("step = %lld\n", step);
-			frame = 0;
 		}
 
 		for(i = 0; i < num_blobs; ++i) {

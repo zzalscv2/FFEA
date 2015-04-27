@@ -4,15 +4,15 @@ import numpy as np
 
 class FFEA_traj:
 
-	def __init__(self, traj_fname, num_frames_to_read):
+	def __init__(self, traj_fname, num_frames_to_read, first_frame, last_frame, frame_rate):
 
 		self.num_blobs = 0
 		self.blob = []
 		self.num_frames = 0
 		self.traj_fname = traj_fname
-		self.read_traj_from_file(traj_fname, num_frames_to_read)
+		self.read_traj_from_file(traj_fname, num_frames_to_read, first_frame, last_frame, frame_rate)
 
-	def read_traj_from_file(self, traj_fname, num_frames):
+	def read_traj_from_file(self, traj_fname, num_frames, first_frame, last_frame, frame_rate):
 		
 		print "Reading FFEA trajectory " + traj_fname
 		traj = open(traj_fname, "r")
@@ -45,8 +45,9 @@ class FFEA_traj:
 			
 		print("\n\tReading position data")
 		completed = 0
+		actual_num_frames = 0
 		for i in range(num_frames):
-			
+				
 			if completed == 1:
 				break
 
@@ -76,16 +77,24 @@ class FFEA_traj:
 				for k in range(self.blob[j].num_nodes):
 					line = traj.readline().split()
 					for l in range(3):
-						work_frame.node[k][l] = float(line[l].strip())
-				
-				self.blob[j].frame.append(work_frame)
+						work_frame.node_pos[k][l] = float(line[l].strip())
+						work_frame.node_vel[k][l] = float(line[l + 3].strip())
+
+				if i < first_frame:
+					continue
+				elif i > last_frame:
+					break
+
+				if i % frame_rate == 0:
+					actual_num_frames += 1
+					self.blob[j].frame.append(work_frame)
 			
 			check += 1
 			if num_frames >= 100 and check % (num_frames / 50) == 0:
-				print "\t\tRead " + str(check) + " frames"
+				print "\t\tRead " + str(actual_num_frames) + " frames"
 
-		print "Done. Read " + str(check) + " frames in total."
-		self.num_frames = check
+		print "Done. Read " + str(actual_num_frames) + " frames in total."
+		self.num_frames = actual_num_frames
 		for i in range(self.num_blobs):
 			self.blob[i].num_frames = len(self.blob[i].frame)		
 
@@ -100,7 +109,7 @@ class FFEA_traj:
 
 				self.blob[i].num_frames = self.num_frames
 
-		print "Done. All blobs now have " + str(check) + " frames in total."
+		print "Done. All blobs now have " + str(actual_num_frames) + " frames in total."
 		
 		# Calculate basic things
 		self.calc_centroids()
@@ -112,6 +121,38 @@ class FFEA_traj:
 			for aframe in ablob.frame:
 				aframe.calc_centroid()
 
+
+	def write_traj_to_file(self, fname):
+
+		# Open frame_fname
+		fout = open(fname, "w")
+
+		# Initial crap
+		fout.write("FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs " + str(self.num_blobs) + "\n")
+		for i in range(self.num_blobs):
+			fout.write("Blob " + str(i) + " Nodes " + str(self.blob[i].num_nodes) + "\t")
+		fout.write("\n\n")
+
+		for i in range(self.num_frames):
+			fout.write("*\n")
+			
+			for j in range(self.num_blobs):
+				fout.write("Blob " + str(j) + ", Conformation 0, step " + str(i) + "\n")
+				fout.write(self.blob[j].motion_state + "\n")
+				if self.blob[j].motion_state == "STATIC":
+					continue
+
+				for k in range(self.blob[j].num_nodes):
+					pos = self.blob[j].frame[i].node_pos[k]
+					vel = self.blob[j].frame[i].node_vel[k]
+					fout.write("%6.3e %6.3e %6.3e %6.3e %6.3e %6.3e" % (pos[0], pos[1], pos[2], vel[0], vel[1], vel[2]))
+			
+					for l in range(4):
+						fout.write(" %6.3e" % (0.0))
+					fout.write("\n")
+
+		fout.write("*\n")
+		fout.close()
 
 	def write_frame_to_file(self, frame_num):
 		
@@ -138,10 +179,15 @@ class FFEA_traj:
 			if self.blob[i].motion_state == "STATIC":
 				continue
 
-			for node in self.blob[i].frame[frame_num].node:
-				fout.write("%6.3e %6.3e %6.3e\n" % (node[0], node[1], node[2]))
-
-		fout.write("*")
+			for j in range(self.blob[i].num_nodes):
+				pos = self.blob[i].frame[frame_num].node_pos[j]
+				vel = self.blob[i].frame[frame_num].node_vel[j]
+				fout.write("%6.3e %6.3e %6.3e %6.3e %6.3e %6.3e" % (pos[0], pos[1], pos[2], vel[0], vel[1], vel[2]))
+			
+				for j in range(4):
+					fout.write(" %6.3e" % (0.0))
+				fout.write("\n")
+		fout.write("*\n")
 		fout.close()
 		return frame_fname
 
@@ -158,12 +204,13 @@ class FFEA_traj_frame:
 
 	def __init__(self, num_nodes):
 		
-		self.node = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
+		self.node_pos = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
+		self.node_vel = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
 		self.centroid = np.array([0.0 for i in range(3)])
 
 	def calc_centroid(self):
 		
-		self.centroid = np.mean(self.node, axis=0)
+		self.centroid = np.mean(self.node_pos, axis=0)
 
 class FFEA_centroid_traj:
 	
@@ -261,10 +308,15 @@ def make_single_blob_traj(traj_fname, blob_num, num_frames):
 		if motion_state == "STATIC":
 			continue
 		
-		for node in traj.blob[blob_num].frame[i].node:
-			fout.write("%6.3e %6.3e %6.3e\n" % (node[0], node[1], node[2]))
-
-	fout.write("*")
+		for j in range(num_nodes):
+			pos = traj.blob[blob_num].frame[i].node_pos[j]
+			vel = traj.blob[blob_num].frame[i].node_vel[j]
+			fout.write("%6.3e %6.3e %6.3e %6.3e %6.3e %6.3e" % (pos[0], pos[1], pos[2], vel[0], vel[1], vel[2]))
+			
+		for j in range(4):
+			fout.write(" %6.3e" % (0.0))
+		fout.write("\n")
+		fout.write("*")
 
 	# Close all
 	fout.close()
