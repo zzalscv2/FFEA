@@ -1,9 +1,0 @@
-ffea conformational states file
-num_states 5
-
-State	Type
-1	Conformation0
-2	Conformation0
-3	conformation1
-4	conformation0
-5	conformation1
