@@ -15,7 +15,7 @@ class FFEA_meas:
 		for i in range(self.num_blobs):
 			self.read_blob_meas_from_file(meas_basename, i, num_frames_to_read)
 
-		self.read_world_meas_from_file(meas_basename, self.num_blobs, num_frames_to_read)
+		#self.read_world_meas_from_file(meas_basename, self.num_blobs, num_frames_to_read)
 		self.num_frames = self.blob[0].num_frames
 
 	def read_blob_meas_from_file(self, basename, index, num_frames):
@@ -59,6 +59,8 @@ class FFEA_meas:
 			
 			# Get a line
 			line = meas.readline()
+			if line.strip() == "#==RESTART==":
+				continue
 
 			# Check for eof
 			if line == "":
@@ -176,16 +178,18 @@ class FFEA_meas:
 
 		for blob in self.blob:
 			i = self.blob.index(blob)
-			keplot, = plt.plot(np.array(range(blob.num_frames)) * self.frame_length, blob.ke)
-			peplot, = plt.plot(np.array(range(blob.num_frames)) * self.frame_length, blob.pe)
-			ketheoryplot, = plt.plot(np.array(range(blob.num_frames)) * self.frame_length, np.array([(3.0 * num_nodes/2.0) * kT] * blob.num_frames))
-			petheoryplot, = plt.plot(np.array(range(blob.num_frames)) * self.frame_length, np.array([((3.0 * num_nodes - 6)/2.0) * kT] * blob.num_frames))
+			fig = plt.figure()
+			figplot = fig.add_subplot(111)
+			keplot, = figplot.plot(np.array(range(blob.num_frames)) * self.frame_length, blob.ke * (1.0 / kT))
+			peplot, = figplot.plot(np.array(range(blob.num_frames)) * self.frame_length, blob.pe * (1.0 / kT))
+			ketheoryplot, = figplot.plot(np.array(range(blob.num_frames)) * self.frame_length, np.array([(3.0 * num_nodes[i]/2.0)] * blob.num_frames))
+			petheoryplot, = figplot.plot(np.array(range(blob.num_frames)) * self.frame_length, np.array([((3.0 * num_nodes[i] - 6)/2.0)] * blob.num_frames))
 
 			plt.xlabel("Time (s)")
-			plt.ylabel("Energy (J)")
+			plt.ylabel("Energy (kbT)")
 			plt.title("Energy Trace of Blob %d" % (i))
-			plt.legend([keplot, peplot, ketheoryplot, petheoryplot], ["Kinetic energy", "Elastic Potential energy", "Theoretical Average Kinetic Energy", "Theoretical Average Potential Energy"], loc = 2, prop={'size':8})
-			plt.savefig(basename + "_blob" + str(i) + "_energies.jpg")
+			figplot.legend([keplot, peplot, ketheoryplot, petheoryplot], ["Kinetic energy", "Elastic Potential energy", "Theoretical Average Kinetic Energy", "Theoretical Average Potential Energy"], loc = 2, prop={'size':8})
+			fig.savefig(basename + "_blob" + str(i) + "_energies.jpg")
 class FFEA_meas_blob:
 
 	def __init__(self, num_frames, ke, pe, com, angmom, rmsd, vdw_area, vdw_force, vdw_energy):

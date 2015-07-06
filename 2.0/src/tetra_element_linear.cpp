@@ -298,6 +298,15 @@ void tetra_element_linear::create_viscosity_matrix() {
 /*
  *
  */
+
+void tetra_element_linear::calc_deformation(matrix3 J) {
+	// Reset gradient deformation to zero
+   	mat3_set_zero(F_ij);
+
+	// F_ij transpose is given by the current jacobian times the rest state jacobian inverse.
+    	mat3_mult_both_transposed(J, J_inv_0, F_ij);
+}
+
 void tetra_element_linear::add_shear_elastic_stress(matrix3 J, matrix3 stress) {
     // Reset gradient deformation to zero
     mat3_set_zero(F_ij);

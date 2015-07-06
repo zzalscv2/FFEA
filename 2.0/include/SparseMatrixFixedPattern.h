@@ -5,6 +5,10 @@
 #include "mat_vec_types.h"
 #include "mat_vec_fns.h"
 #include "SparseMatrixTypes.h"
+#include <iostream>
+#include <stdlib.h>
+
+using namespace std;
 
 class SparseMatrixFixedPattern {
 public:
@@ -13,6 +17,7 @@ public:
     ~SparseMatrixFixedPattern();
 
     void init(int num_rows, int num_nonzero_elements, sparse_entry *entry, int *key, sparse_entry_sources *source_list);
+    void init(int num_rows, int num_entries, scalar *entries, int *key, int *col_indices);
 
     /* Reconstruct the matrix by adding up all the contributions from the sources stored in the source list */
     void build();
@@ -22,6 +27,18 @@ public:
 
     /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'vector3's */
     void apply(vector3 *in, vector3 *result);
+
+    /* Applies each matrix element to vector i.e. each vector3 acts as a scalar */
+    void block_apply(vector3 *in, vector3 *result);
+    
+    /* Applies this matrix to the give vector 'in', writing the result to 'result'. 'in' is made of '*vector3's */
+    void block_apply(vector3 **in, vector3 **result);
+
+    /* Applies matrix to vector in and leaves result in in */
+    void block_apply(vector3 **in);
+
+     /* Applies this matrix to the given sparse matrix 'in', and returns a new sparse matrix */
+    SparseMatrixFixedPattern * apply(SparseMatrixFixedPattern *in);
 
     void calc_inverse_diagonal(scalar *inv_D);
 
@@ -38,10 +55,15 @@ public:
 
     void am_i_diagonally_dominant();
 
-    // Works in progress
-    void cholesky_decompose(scalar* L);
+    sparse_entry * get_entries();
 
-    void forwardbacksub(vector3* f);
+    int * get_key();
+
+    int get_num_nonzero_elements();
+
+    int get_num_rows();
+
+    int get_num_columns();
 
 private:
 

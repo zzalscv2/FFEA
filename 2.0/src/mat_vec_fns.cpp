@@ -162,6 +162,15 @@ void vector3_set_zero(vector3 *v) {
 /*
  *
  */
+void vec3_scale(vector3 *v, scalar scale) {
+	v->x *= scale;
+	v->y *= scale;
+	v->z *= scale;
+}
+
+/*
+ *
+ */
 void vec3_add_to_scaled(vector3 *v1, vector3 *v2, scalar a, int vec_size) {
     int i;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB

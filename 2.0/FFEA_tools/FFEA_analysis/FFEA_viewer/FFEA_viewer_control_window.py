@@ -20,7 +20,6 @@ class FFEA_viewer_control_window:
 		self.energy_threshold = energy_thresh
 		self.num_frames_to_read = num_frames_to_read
 		self.master = root
-		
 		self.master.protocol("WM_DELETE_WINDOW", self.death)
 		self.master.bind('<Escape>', self.esc_key_handler)
 		
@@ -47,27 +46,38 @@ class FFEA_viewer_control_window:
 		
 		# scrollable list box of loaded blobs
 		listbox_frame = Frame(top_frame)
-		listbox_frame.pack(side=LEFT)
+		listbox_frame.pack(side=LEFT, anchor=N)
 		listbox_scrollbar = Scrollbar(listbox_frame)
 		listbox_scrollbar.pack(side=RIGHT, fill=Y)
 		self.blob_listbox = Listbox(listbox_frame, width=40, height=10, yscrollcommand=listbox_scrollbar.set, selectmode=SINGLE)
 		listbox_scrollbar.config(command=self.blob_listbox.yview)
-		self.blob_listbox.pack()
-		self.blob_listbox.bind('<<ListboxSelect>>', self.on_blob_listbox_select) 
+		self.blob_listbox.pack(fill=Y)
+		self.blob_listbox.bind('<<ListboxSelect>>', self.on_blob_listbox_select)
 		
 		# Selected blob frame
-		selected_blob_frame = Frame(top_frame, relief=RAISED, bd=1, bg='#ffffc2')
-		selected_blob_frame.pack(side=RIGHT)
-		self.selected_blob_label = Label(selected_blob_frame, text="No Blob selected...", justify=LEFT, bg='#ffffc2')
-		self.selected_blob_label.pack()
+		selected_index_frame = Frame(top_frame, relief=RAISED, bd=1, bg='#ffffc2')
+		selected_index_frame.pack(side=LEFT, fill=Y)
+		self.selected_index_label = Label(selected_index_frame, text="No Blob selected...", justify=LEFT, bg='#ffffc2')
+		self.selected_index_label.pack()
+
+		vdw_frame = Frame(selected_index_frame, bd=1, bg='#ffffc2')
+		vdw_frame.pack(side=TOP, fill=X)
+		binding_frame = Frame(selected_index_frame, bd=1, bg='#ffffc2')
+		binding_frame.pack(side=TOP, fill=X)
+
 		self.edit_vdw = IntVar()
-		self.check_button_edit_vdw = Checkbutton(selected_blob_frame, text="Edit VdW", variable=self.edit_vdw, state=DISABLED, command=self.something_has_changed)
+		self.check_button_edit_vdw = Checkbutton(vdw_frame, text="Edit VdW", variable=self.edit_vdw, state=DISABLED, command=self.something_has_changed)
 		self.check_button_edit_vdw.pack(side=LEFT)
-		self.show_hide = IntVar()
-		self.check_button_show_hide = Checkbutton(selected_blob_frame, text="Hide", variable=self.show_hide, command=self.hide_blob)
-		self.check_button_show_hide.pack(side=LEFT)
-		self.save_button_vdw = Button(selected_blob_frame, text="Save VdW...", state=DISABLED, command=self.save_vdw)
+		self.save_button_vdw = Button(vdw_frame, text="Save VdW...", state=DISABLED, command=self.save_vdw)
 		self.save_button_vdw.pack(side=RIGHT)
+		self.edit_binding_sites = IntVar()
+		self.check_button_edit_binding = Checkbutton(binding_frame, text="Edit Binding Sites", variable=self.edit_binding_sites, state=DISABLED, command=self.something_has_changed)
+		self.check_button_edit_binding.pack(side=LEFT)
+		self.save_button_binding = Button(binding_frame, text="Save Binding Sites...", state=DISABLED)#, command=self.save_binding_sites)
+		self.save_button_binding.pack(side=RIGHT)
+		self.show_hide = IntVar()
+		self.check_button_show_hide = Checkbutton(selected_index_frame, text="Show/Hide Blob", variable=self.show_hide, command=self.hide_blob)
+		self.check_button_show_hide.pack(side=LEFT, anchor=N)
 		self.blob_info_list = []
 		
 		# Display flags frame
@@ -163,19 +173,22 @@ class FFEA_viewer_control_window:
 		self.there_is_something_to_send_to_display_window = False
 		self.change_frame_to = -1
 		
+		self.num_blobs = 0
+		self.num_conformations = []
+		self.selected_index = 0
 		self.selected_blob = 0
-		
+		self.selected_conformation = 0
 		self.master.after(100, self.get_updates_from_display())
-		
+
 		# If a file name was given, open it
 		if file_to_load != None:
 			self.load_ffea(file_to_load)
 		
 	def hide_blob(self):
 		if self.show_hide.get() == 1:
-			self.speak_to_display.send({'hide_blob':self.selected_blob})
+			self.speak_to_display.send({'hide_blob':self.selected_index})
 		else:
-			self.speak_to_display.send({'show_blob':self.selected_blob})
+			self.speak_to_display.send({'show_blob':self.selected_index})
 
 	def screenshot(self):
 		# set up the options for the save file dialog box
@@ -221,16 +234,33 @@ class FFEA_viewer_control_window:
 		i = int(event.widget.curselection()[0])
 		blob_info_text = "Selected Blob " + str(i) + "\n"
 		blob_info_text += self.blob_info_list[i]
-		self.selected_blob_label.config(text=blob_info_text)
+		self.selected_index_label.config(text=blob_info_text)
 		self.save_button_vdw.config(state=NORMAL)
 		self.check_button_edit_vdw.config(state=NORMAL)
-		self.selected_blob = i
+		self.save_button_binding.config(state=NORMAL)
+		self.check_button_edit_binding.config(state=NORMAL)
+		self.change_indices(i)
 		self.something_has_changed()
+
+	def change_indices(self, index):
+
+		# Change to control blob index to selected_blob and selected_conformation
+		self.selected_index = index
+		k = 0
+		for i in range(self.num_blobs):
+			for j in range(self.num_conformations[i]):
+				if self.selected_index == k:
+					self.selected_blob = i
+					self.selected_conformation = j
+					return
+				else:
+					k += 1
 
 	def launch_display_window(self, speak_to_control, ffea_fname):
 		FFEA_viewer_display_window.FFEA_viewer_display_window(speak_to_control, ffea_fname, self.num_frames_to_read, energy_thresh=self.energy_threshold)
 
 	def choose_ffea_file_to_load(self):
+
 		# set up the options for the open file dialog box
 		options = {}
 		options['defaultextension'] = '.ffea'
@@ -264,7 +294,7 @@ class FFEA_viewer_control_window:
 		self.display_window_process = Process(target=self.launch_display_window, args=(speak_to_control, ffea_fname))
 		self.display_window_process.start()
 		self.display_window_exists = True
-		
+
 		self.start_stop_button.config(text=">")
 		self.pause_loading_button.config(text="Pause loading")
 		
@@ -284,8 +314,11 @@ class FFEA_viewer_control_window:
 									'show_vdw_only': self.show_vdw_only.get(),
 									'show_node_numbers': self.show_node_numbers.get(),
 									'vdw_edit_mode': self.edit_vdw.get(),
+									'binding_site_edit_mode': self.edit_binding_sites.get(),
 									'blob_colour': self.blob_colour,
+									'selected_index': self.selected_index,
 									'selected_blob': self.selected_blob,
+									'selected_conformation': self.selected_conformation,
 									'show_shortest_edge': self.show_shortest_edge.get(),
 									'show_inverted': self.show_inverted.get(),
 									'show_pinned_nodes': 1,
@@ -296,7 +329,7 @@ class FFEA_viewer_control_window:
 						'speed': self.slider_speed.get(),
 						'show_box': self.show_box.get(),
 						'change_frame_to': self.change_frame_to,
-						'selected_blob': self.selected_blob,
+						'selected_index': self.selected_index,
 						'recording': self.recording.get(),
 						'projection': self.projection.get(),
 						'death': death})
@@ -354,6 +387,11 @@ class FFEA_viewer_control_window:
 			if self.speak_to_display.poll() == True:
 				display_stuff = self.speak_to_display.recv()
 
+				if 'num_blobs' in display_stuff.keys():
+					self.num_blobs = display_stuff['num_blobs']
+				if 'num_conformations' in display_stuff.keys():
+					self.num_conformations = display_stuff['num_conformations']
+
 				if "add_blob" in display_stuff.keys():
 					add_blob_info = display_stuff['add_blob']
 					self.blob_listbox.insert(END, add_blob_info['name'])
@@ -393,8 +431,7 @@ class FFEA_viewer_control_window:
 		self.display_window_exists = False
 		self.animate = False
 		self.there_is_something_to_send_to_display_window = False
-		self.selected_blob = 0
-
+		self.selected_index = 0
 		self.frame_slider.config(to=0, width=1)
 		self.speed_slider.config(width=1)
 		self.slider_current_frame.set(0)
@@ -406,9 +443,11 @@ class FFEA_viewer_control_window:
 		self.pause_loading_button.config(text="Pause loading", state=DISABLED)
 
 		self.blob_info_list = []
-		self.selected_blob_label.config(text="No Blob selected...")
+		self.selected_index_label.config(text="No Blob selected...")
 		self.save_button_vdw.config(state=DISABLED)
 		self.check_button_edit_vdw.config(state=DISABLED)
+		self.save_button_binding.config(state=DISABLED)
+		self.check_button_edit_binding.config(state=DISABLED)
 		self.edit_vdw.set(0)
-
+		self.edit_binding_sites.set(0)
 		self.speak_to_display.close()

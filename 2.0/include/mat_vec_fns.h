@@ -40,6 +40,8 @@ void vec3_add_to_scaled(vector3 *v1, vector3 *v2, scalar a, int vec_size);
 
 void vec3_scale_and_add(vector3 *v1, vector3 *v2, scalar a, int vec_size);
 
+void vec3_scale(vector3 *v, scalar scale);
+
 void vec12_set_zero(vector12 v);
 
 /* * Prints out the given 3x3 matrix */

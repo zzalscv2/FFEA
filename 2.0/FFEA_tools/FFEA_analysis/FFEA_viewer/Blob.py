@@ -7,11 +7,14 @@ class Blob:
 	def __init__(self, energy_thresh=1.0e6):
 		self.num_elements = 0
 		self.offset = [0.0, 0.0, 0.0]
+		self.init_centroid = [0.0,0.0,0.0]
+		self.init_rot = [0.0, 0.0, 0.0]
 		self.topology = []
 		self.no_topology = False
-		self.num_surface_faces = []
 		self.num_nodes = 0
 		self.num_surface_faces = 0
+		self.num_binding_sites = 0
+		self.active_binding_site = -1
 		self.num_frames = 0
 		self.frames = []
 		self.num_frames = 0
@@ -28,14 +31,20 @@ class Blob:
 		self.do_Fij = False
 		self.energy_thresh = energy_thresh
 
-	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, blob_centroid_pos):
+	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, binding_fname, blob_centroid_pos, blob_rotation):
 		self.id_num = idnum
 		self.blob_index = blob_index
 		self.conformation_index = conformation_index
 		self.nodes_fname = nodes_fname
 		self.scale = scale
+
 		if blob_centroid_pos != None:
+			self.init_centroid = blob_centroid_pos
 			self.offset = blob_centroid_pos
+			
+		if blob_rotation != None:
+			self.init_rot = blob_rotation
+
 		self.state = blob_state
 
 		if top_fname == "":
@@ -63,6 +72,12 @@ class Blob:
 			self.num_pinned_nodes = 0
 		else:
 			self.load_pinned_nodes(blob_pinned)
+
+		if binding_fname == "":
+			print "No binding sites will be loaded."
+		
+		else:
+			self.load_binding_sites(binding_fname)
 
 	def load_topology(self, top_fname):
 		print "Reading in topology file " + top_fname
@@ -184,6 +199,44 @@ class Blob:
 		vdw_file.close()
 		print "Finished reading in vdw file " + vdw_fname
 
+	def load_binding_sites(self, fname):
+
+		print "Reading in binding sites file " + fname
+		fin = open(fname, "r")
+		line = fin.readline().strip()
+		if line != "ffea binding site file":
+			print "Error: binding site file " + fname + " missing 'ffea binding site file' first line"
+
+		self.num_binding_sites = int(fin.readline().split()[1])
+		print "num_binding_sites according to binding site file = ", self.num_binding_sites
+
+		fin.readline()		
+		self.binding_site = []
+		self.binding_site_type = [[-1, -1] for i in range(self.num_surface_faces)]
+		
+		for i in range(self.num_binding_sites):
+			asite = []
+			sline = fin.readline().split()
+
+			# Include type as first element
+			for j in range(len(sline)):
+				
+				# Ignore num_faces (can't be arsed with a new class)
+				if j == 0:
+					site_type = int(sline[0])
+				if j == 1:
+					continue
+				else:	
+					asite.append(int(sline[j]))
+
+					# Stores type and index
+					self.binding_site_type[asite[-1]][1] = i
+
+			self.binding_site.append(asite)
+
+		fin.close()
+		print "Finished reading in binding site file " + fname
+
 	def write_vdw(self, vdw_fname):
 		print "Writing vdw file " + vdw_fname
 		vdw_file = open(vdw_fname, "w")
@@ -197,13 +250,18 @@ class Blob:
 
 	def load_frame(self, traj_file):
 		
+		# Inactive conf
+		if traj_file == None:
+			self.frames.append(None)
+			self.num_frames += 1
+			return
+
 		# There is a trajectory! Ignore offset
 		self.offset = [0.0, 0.0, 0.0]
 
 		# skip blob, step line
-		traj_file.readline()
 		line = traj_file.readline()
-		blob_state = line.rstrip()
+		blob_state = traj_file.readline().rstrip()
 		
 		nodes = []
 		centroid_x = 0.0
@@ -266,6 +324,13 @@ class Blob:
 			self.first_frame_vol_list = []
 			if self.no_topology == False:
 				print "Calculating volumes of elements in first frame..."
+
+				# Find first frame available
+				for i in range(len(self.frames)):
+					if self.frames[i] != None:
+						frame_index = i
+						break
+
 				for el in xrange(self.num_elements):
 					# Get the indices of the 4 nodes of this tetrahedron
 					i1 = self.topology[el][0]
@@ -274,10 +339,10 @@ class Blob:
 					i4 = self.topology[el][3]
 
 					# Get the nodes
-					n1a = self.frames[0].node_list[i1]
-					n2a = self.frames[0].node_list[i2]
-					n3a = self.frames[0].node_list[i3]
-					n4a = self.frames[0].node_list[i4]
+					n1a = self.frames[frame_index].node_list[i1]
+					n2a = self.frames[frame_index].node_list[i2]
+					n3a = self.frames[frame_index].node_list[i3]
+					n4a = self.frames[frame_index].node_list[i4]
 					n1 = n1a[0:3]
 					n2 = n2a[0:3]
 					n3 = n3a[0:3]
@@ -293,6 +358,13 @@ class Blob:
 			self.first_frame_J_inv = []
 			if self.no_topology == False:
 				print "Calculating J inv of elements in first frame..."
+
+				# Find first frame available
+				for i in range(len(self.frames)):
+					if self.frames[i] != None:
+						frame_index = i
+						break
+
 				for el in xrange(self.num_elements):
 					# Get the indices of the 4 nodes of this tetrahedron
 					i1 = self.topology[el][0]
@@ -301,10 +373,10 @@ class Blob:
 					i4 = self.topology[el][3]
 
 					# Get the nodes
-					n1a = self.frames[0].node_list[i1]
-					n2a = self.frames[0].node_list[i2]
-					n3a = self.frames[0].node_list[i3]
-					n4a = self.frames[0].node_list[i4]
+					n1a = self.frames[frame_index].node_list[i1]
+					n2a = self.frames[frame_index].node_list[i2]
+					n3a = self.frames[frame_index].node_list[i3]
+					n4a = self.frames[frame_index].node_list[i4]
 					n1 = n1a[0:3]
 					n2 = n2a[0:3]
 					n3 = n3a[0:3]
@@ -366,16 +438,34 @@ class Blob:
 		nodes_file.close()
 		print "Finished reading in nodes file " + self.nodes_fname
 
-		if self.offset != [0.0, 0.0, 0.0]:
+		if self.init_centroid != [0.0, 0.0, 0.0]:
 			print "Moving to starting position..."
-			self.offset[0] = self.offset[0] - centroid_x
-			self.offset[1] = self.offset[1] - centroid_y
-			self.offset[2] = self.offset[2] - centroid_z
+			translate = [self.init_centroid[0] - centroid_x, self.init_centroid[1] - centroid_y, self.init_centroid[2] - centroid_z]
 			for i in range(len(nodes)):
 				for j in range(3):
-					nodes[i][j] += self.offset[j]
+					nodes[i][j] += translate[j]
 			print "...done!\n"
+		
+		# Apply a rotation if necessary
+		if self.init_rot != [0.0,0.0,0.0]:
 			
+			# Move centroid to origin
+			for i in range(len(nodes)):
+				nodes[i][0] -= self.offset[0]
+				nodes[i][1] -= self.offset[1]
+				nodes[i][2] -= self.offset[2]
+
+			# Rotate and move back to not the origin!
+			for i in range(len(nodes)):
+				x = nodes[i][0]
+				y = nodes[i][1]
+				z = nodes[i][2]
+
+				nodes[i][0] = x * self.init_rot[0] + y * self.init_rot[1] + z * self.init_rot[2] + self.offset[0]
+        			nodes[i][1] = x * self.init_rot[3] + y * self.init_rot[4] + z * self.init_rot[5] + self.offset[1]
+        			nodes[i][2] = x * self.init_rot[6] + y * self.init_rot[7] + z * self.init_rot[8] + self.offset[2]
+				
+
 		# Calculate average normal at each node (for gl lighting effects)
 		print "Calculating node normals for lighting..."
 		normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
@@ -448,8 +538,13 @@ class Blob:
 		return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
 
 	def get_centroid(self, i):
+		if self.state == "STATIC":
+			i = 0
+
 		if self.num_frames == 0:
 			return 0.0, 0.0, 0.0
+		if self.frames[i] == None:
+			return None, None, None
 
 		if i < 0:
 			i == 0
@@ -459,11 +554,18 @@ class Blob:
 		f = self.frames[i]
 		return f.centroid_x + self.offset[0], f.centroid_y + self.offset[1], f.centroid_z + self.offset[2]
 
-	def draw_frame(self, i, display_flags, iii):
-		if self.hide_blob == True:
-			return
+	def draw_frame(self, i, display_flags):
+		
+		if self.state == "STATIC":
+			i = 0
 
 		if self.num_frames == 0:
+			return
+
+		if self.frames[i] == None:
+			return
+
+		if self.hide_blob == True:
 			return
 
 		if i < 0:
@@ -477,7 +579,7 @@ class Blob:
 		
 		#cdef int f
 
-		if display_flags['vdw_edit_mode'] == 1 and self.id_num == display_flags['selected_blob']:
+		if display_flags['vdw_edit_mode'] == 1 and self.id_num == display_flags['selected_index']:
 			glBegin(GL_TRIANGLES)
 			for f in range(self.num_surface_faces):
 
@@ -518,6 +620,80 @@ class Blob:
 			glEnd()
 
 			return
+		
+		if display_flags['binding_site_edit_mode'] == 1 and self.id_num == display_flags['selected_index']:
+			glBegin(GL_TRIANGLES)
+
+			faces_dealt_with = []
+			for j in range(self.num_binding_sites):
+	
+				# Get type
+				site_type = self.binding_site_type[j][0]
+
+				# All faces on site
+				for k in range(1, len(self.binding_site[j])):
+					
+					f = self.binding_site[j][k]
+					faces_dealt_with.append(f)
+
+					n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
+					n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
+					n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+
+					norm1 = self.frames[i].normal_list[self.surface[f][1]]
+					norm2 = self.frames[i].normal_list[self.surface[f][2]]
+					norm3 = self.frames[i].normal_list[self.surface[f][3]]
+
+					if site_type == 0:
+						glColor3d(1.0,0.0,0.0)
+					elif site_type == 1:
+						glColor3d(0.0,1.0,0.0)
+					elif site_type == 2:
+						glColor3d(0.0,0.0,1.0)
+					elif site_type == 3:
+						glColor3d(1.0,1.0,0.0)
+					elif site_type == 4:
+						glColor3d(0.0,1.0,1.0)
+					elif site_type == 5:
+						glColor3d(1.0,0.0,1.0)
+					elif site_type == 6:
+						glColor3d(1.0,1.0,1.0)
+					elif site_type == 7:
+						glColor3d(0.5,0.5,0.5)
+
+
+					glNormal3d(norm1[0], norm1[1], norm1[2])
+					glVertex3d(n1[0], n1[1], n1[2])
+					glNormal3d(norm2[0], norm2[1], norm2[2])
+					glVertex3d(n2[0], n2[1], n2[2])
+					glNormal3d(norm3[0], norm3[1], norm3[2])
+					glVertex3d(n3[0], n3[1], n3[2])
+			
+			# Now remainder of faces		
+			for f in range(self.num_surface_faces):
+
+				if f in faces_dealt_with:
+					continue
+				else:
+	
+					n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
+					n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
+					n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+
+					norm1 = self.frames[i].normal_list[self.surface[f][1]]
+					norm2 = self.frames[i].normal_list[self.surface[f][2]]
+					norm3 = self.frames[i].normal_list[self.surface[f][3]]
+					
+					glColor3d(0.0, 0.0, 0.0)
+					glNormal3d(norm1[0], norm1[1], norm1[2])
+					glVertex3d(n1[0], n1[1], n1[2])
+					glNormal3d(norm2[0], norm2[1], norm2[2])
+					glVertex3d(n2[0], n2[1], n2[2])
+					glNormal3d(norm3[0], norm3[1], norm3[2])
+					glVertex3d(n3[0], n3[1], n3[2])
+			glEnd()
+
+			return
 
 		if display_flags['show_vdw_only'] == 1:
 			glBegin(GL_TRIANGLES)
@@ -546,7 +722,7 @@ class Blob:
 			return
 
 		bc = display_flags['blob_colour']
-		if self.id_num == display_flags['selected_blob']:
+		if self.blob_index == display_flags['selected_blob']:
 			bc = [0.0, 1.0, 1.0]
 
 		if display_flags['show_solid'] == 1:
@@ -979,6 +1155,41 @@ class Blob:
 		if self.vdw[face_index] >= 8:
 			self.vdw[face_index] = -1
 		print "Set face", face_index, "to", self.vdw[face_index]
+
+	def add_face_to_binding_site(self, face_index):
+		if face_index < 0 or face_index > self.num_surface_faces:
+			print "No face picked."
+			return
+		
+		# New site or not?
+		if self.active_binding_site == -1:
+			
+			# Need a new binding site
+			self.binding_site.append([face_index])
+			self.num_binding_sites += 1
+
+			# Get a type
+			site_type = 3 # For now
+			print "New site type = " + str(site_type)
+			self.binding_site_type[face_index][0] = site_type
+			self.binding_site_type[face_index][1] = len(self.binding_site) - 1
+			self.active_binding_site = len(self.binding_site) - 1
+
+		else:
+			if self.binding_site_type[face_index][1] != -1:
+
+				# Selecting a new site to append to
+				self.active_binding_site = self.binding_site_type[face_index][1]
+				print "New site_type = " + str(self.active_binding_site)
+			else:
+				self.binding_site[self.active_binding_site].append(face_index)
+				#self.binding_site_type[face_index][0] = site_type
+				#self.binding_site_type[face_index][1] = len(self.binding_site) - 1
+	def begin_new_binding_site(self, site_type, face_index):
+		
+		self.binding_site_type[face_index][0] = site_type
+		self.binding_site_type[face_index][1] = len(self.binding_site)
+		self.binding_site.append(face_index)
 
 	def get_state(self):
 		return self.state

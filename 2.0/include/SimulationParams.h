@@ -5,8 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <vector>
+#include <iostream>
+#include <boost/algorithm/string.hpp>
 
 #include "FFEA_return_codes.h"
+#include "FFEA_input_reader.h"
 #include "mat_vec_types.h"
 
 #define WALL_TYPE_PBC 0
@@ -18,6 +22,9 @@
 /*
  * Simulation parameters
  */
+
+using namespace std;
+
 class SimulationParams {
 public:
     scalar dt; /* time step */
@@ -27,6 +34,8 @@ public:
     int num_blobs; /* Number of blobs in the system */
     int *num_conformations; /* Number of conformations for each blob */
     int *num_states; /* Number of states for each blob */
+    int state_array_size;
+    int conformation_array_size;
     int rng_seed; /* Seed for random number generator */
 
     scalar kT; /* boltzmann's const times temperature */
@@ -49,8 +58,9 @@ public:
 
     int calc_vdw; /* Whether or not to simulate van der waals interactions between surfaces */
     int calc_es; /* Whether or not to simulate electrostatic interactions between proteins */
-    int calc_noise; /* Whether or noise to simulate thermal noise for the system. I would, but it's up to you */
-
+    int calc_noise; /* Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique */
+    int calc_kinetics;  /* Whether or not to calculate kinetic switching between different equilibrium states */
+    int kinetics_update; /* How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high */
     int wall_x_1;
     int wall_x_2;
     int wall_y_1;
@@ -60,7 +70,7 @@ public:
 
     int sticky_wall_xz;
 
-    int do_stokes;
+    int calc_stokes;
     scalar stokes_visc;
 
     scalar vdw_r_eq, vdw_eps;
@@ -68,10 +78,9 @@ public:
     char trajectory_out_fname[MAX_FNAME_SIZE];
     char **measurement_out_fname;
     char temp_fname[MAX_FNAME_SIZE];
-    char stress_out_fname[MAX_FNAME_SIZE];
-    int stress_out_fname_set;
 
     char vdw_params_fname[MAX_FNAME_SIZE];
+    char binding_params_fname[MAX_FNAME_SIZE];
 
     SimulationParams();
 
@@ -84,10 +93,19 @@ public:
      */
     int parse_param_assignment(char *str);
 
+    /*
+     * Expects a string of the form "<system>\n<>\n<>.....\n<system>" where parameter data can be extracted from.
+     */
+    int extract_params(vector<string> script_vector);
+
+    /* Expects a parameter label and value, which will be assigned if valid and rejected if not */
+    int assign(string lvalue, string rvalue);
+
 private:
     int trajectory_out_fname_set;
     int measurement_out_fname_set;
     int vdw_params_fname_set;
+    int binding_params_fname_set;
 };
 
 #endif

@@ -13,8 +13,8 @@ for i in range(4, len(sys.argv), 2):
 fout = open(spring_file_fname, "w")
 fout.write("ffea spring file\n")
 fout.write("num_springs %d\n" % (len(node_pairs)))
-fout.write("blob0 conformation0 node0 blob1 conformation1 node1 k l:\n")
+fout.write("springs:\n")
 for node_pair in node_pairs:
-	fout.write("0 0 %d 1 0 %d %6.3e %6.3e\n" % (int(node_pair[0]), int(node_pair[1]), k, l))
+	fout.write("0 0 %d 1 0 %d %e %e\n" % (int(node_pair[0]), int(node_pair[1]), k, l))
 
 fout.close()

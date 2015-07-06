@@ -31,6 +31,7 @@ void SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, spar
 
     // Work out which elements are on the diagonal
     diagonal = new scalar*[num_rows];
+
     for (int i = 0; i < num_rows; i++) {
         for (int j = key[i]; j < key[i + 1]; j++) {
             if (i == entry[j].column_index) {
@@ -38,6 +39,18 @@ void SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, spar
             }
         }
     }
+}
+
+// Initialise matrix without a source list (doesn't need rebuilding)
+void SparseMatrixFixedPattern::init(int num_rows, int num_entries, scalar *entries, int *key, int *col_indices) {
+	this->num_rows = num_rows;
+    	this->num_nonzero_elements = num_entries;
+	this->key = key;
+	this->entry = new sparse_entry[num_entries];
+	for(int i = 0; i < num_entries; ++i) {
+		entry[i].column_index = col_indices[i];
+		entry[i].val = entries[i];
+	}
 }
 
 /* Reconstruct the matrix by adding up all the contributions from the sources stored in the source list */
@@ -62,6 +75,7 @@ void SparseMatrixFixedPattern::apply(scalar *in, scalar *result) {
 }
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'vector3's */
+/* Designed for use in NoMassCGSolver */
 void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
     int i, j;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
@@ -101,11 +115,140 @@ void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
     }
 }
 
+/* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'vector3's */
+/* Each element applies to whole vector */
+/* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
+void SparseMatrixFixedPattern::block_apply(vector3 *in, vector3 *result) {
+	int i, j;
+	for(i = 0; i < num_rows; ++i) {
+		result[i].x = 0;
+        	result[i].y = 0;
+        	result[i].z = 0;
+		for(j = key[i]; j < key[i + 1]; ++j) {
+			result[i].x += entry[j].val * in[entry[j].column_index].x;
+			result[i].y += entry[j].val * in[entry[j].column_index].y;
+			result[i].z += entry[j].val * in[entry[j].column_index].z;
+		}
+	}
+}
+
+/* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'vector3's */
+/* Each element applies to whole vector */
+/* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
+void SparseMatrixFixedPattern::block_apply(vector3 **in, vector3 **result) {
+	int i, j;
+	for(i = 0; i < num_rows; ++i) {
+		result[i]->x = 0;
+        	result[i]->y = 0;
+        	result[i]->z = 0;
+		for(j = key[i]; j < key[i + 1]; ++j) {
+			result[i]->x += entry[j].val * in[entry[j].column_index]->x;
+			result[i]->y += entry[j].val * in[entry[j].column_index]->y;
+			result[i]->z += entry[j].val * in[entry[j].column_index]->z;
+		}
+	}
+}
+
+/* Applies this matrix to the given vector 'in', also writing the result to 'in'. 'in' is made of 'vector3's */
+/* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
+void SparseMatrixFixedPattern::block_apply(vector3 **in) {
+	int i, j;
+	vector3 result[num_rows];
+
+	for(i = 0; i < num_rows; ++i) {
+		result[i].x = 0;
+        	result[i].y = 0;
+        	result[i].z = 0;
+		for(j = key[i]; j < key[i + 1]; ++j) {
+			result[i].x += entry[j].val * in[entry[j].column_index]->x;
+			result[i].y += entry[j].val * in[entry[j].column_index]->y;
+			result[i].z += entry[j].val * in[entry[j].column_index]->z;
+		}
+	}
+	for(i = 0; i < num_rows; ++i) {
+		in[i]->x = result[i].x;
+		in[i]->y = result[i].y;
+		in[i]->z = result[i].z;
+	}
+}
+
+SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPattern *in) {
+
+	int i, j, k, l;
+	
+	// Build big matrix first, sparse it up later
+	int num_rows_A = num_rows;
+	int num_rows_B = in->get_num_rows();
+	int num_rows_result = num_rows_A;
+	
+	// Get num_columns_result
+	int num_columns_result = in->get_num_columns();
+	scalar **result_dense = new scalar*[num_rows_result];
+
+	for(i = 0; i < num_rows_result; ++i) {
+		result_dense[i] = new scalar[num_columns_result];
+		for(j = 0; j < num_columns_result; ++j) {
+			result_dense[i][j] = 0.0;
+		}
+	}
+
+	// Get in matrix pointers for quick access
+	sparse_entry *in_entry = in->get_entries();
+	int *in_key = in->get_key();
+
+	// Make big result matrix of doom
+	for(i = 0; i < num_rows_A; ++i) {
+		for(j = key[i] ; j < key[i + 1]; ++j) {
+			for(k = 0; k < num_rows_B; ++k) {
+				for(l = in_key[k] ; l < in_key[k + 1]; ++l) {
+					if(entry[j].column_index == k) {
+						result_dense[i][in_entry[l].column_index] += entry[j].val * in_entry[l].val;
+					}
+				}
+			}
+		}
+	}
+
+	// Build sparse matrix from big matrix
+	int num_entries_result = 0;
+	for(i = 0; i < num_rows_result; ++i) {
+		for(j = 0; j < num_columns_result; ++j) {
+			if(fabs(result_dense[i][j]) >= 0.001) {
+				num_entries_result++;
+			}
+		}
+	}
+	
+	scalar *entries_result = new scalar[num_entries_result];
+	int *key_result = new int[num_rows_result + 1];
+	int *col_indices_result = new int[num_entries_result];	
+
+	l = 0;
+	key_result[0] = 0;
+	for(i = 0; i < num_rows_result; ++i) {
+		for(j = 0; j < num_columns_result; ++j) {
+			if(fabs(result_dense[i][j]) >= 0.001) {
+				entries_result[l] = result_dense[i][j];
+				col_indices_result[l] = j;
+				l++;
+			}		
+		}
+		key_result[i + 1] = l;
+	}
+
+	SparseMatrixFixedPattern *result_sparse = new SparseMatrixFixedPattern();
+	result_sparse->init(num_rows_result, num_entries_result, entries_result, key_result, col_indices_result);
+	
+	// Release big one
+	delete[] result_dense;
+	return result_sparse;
+}
+
 void SparseMatrixFixedPattern::calc_inverse_diagonal(scalar *inv_D) {
     int i;
-#ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i) shared(inv_D)
-#endif
+//#ifdef FFEA_PARALLEL_WITHIN_BLOB
+//#pragma omp parallel for default(none) private(i) shared(inv_D)
+//#endif
     for (i = 0; i < num_rows; i++) {
         inv_D[i] = 1.0 / (*(diagonal[i]));
     }
@@ -203,130 +346,29 @@ void SparseMatrixFixedPattern::am_i_diagonally_dominant() {
     fclose(fout);
 }
 
-// Works in progress
-
-void SparseMatrixFixedPattern::cholesky_decompose(scalar* L) {
-    int i, j, k = 0;
-
-    // Recreating dense matrix
-    for (i = 0; i < num_rows; ++i) {
-        for (j = 0; j < num_rows; ++j) {
-            if (j == entry[k].column_index) {
-                L[i * num_rows + j] = entry[k].val;
-                k++;
-            } else {
-                L[i * num_rows + j] = 0.0;
-            }
-        }
-    }
-
-    // Decomposition Loop
-    for (i = 0; i < num_rows - 1; ++i) {
-        L[i * num_rows + i] = sqrt(L[i * num_rows + i]);
-        for (j = i + 1; j < num_rows; ++j) {
-            L[j * num_rows + i] *= 1.0 / L[i * num_rows + i];
-        }
-        for (j = i + 1; j < num_rows; ++j) {
-            for (k = i + 1; k < num_rows; ++k) {
-                L[j * num_rows + k] -= L[j * num_rows + i] * L[k * num_rows + i];
-            }
-        }
-    }
-
-    // Zeroing upper triangle
-    for (i = 1; i < num_rows; ++i) {
-        for (j = 0; j < i; ++j) {
-            L[j * num_rows + i] = 0.0;
-        }
-    }
+sparse_entry * SparseMatrixFixedPattern::get_entries() {
+	return entry;
 }
 
-void SparseMatrixFixedPattern::forwardbacksub(vector3* f) {
-    int i, j, temp2;
-    scalar temp;
-
-    // Forward First
-    for (i = 0; i < num_rows / 3; ++i) {
-        temp = 0.0;
-        for (j = key[3 * i]; j < key[3 * i + 1] - 1; ++j) {
-            temp2 = entry[j].column_index % 3;
-            if (temp2 == 0) {
-                temp += entry[j].val * f[entry[j].column_index / 3].x;
-            } else if (temp2 == 1) {
-                temp += entry[j].val * f[entry[j].column_index / 3].y;
-            } else {
-                temp += entry[j].val * f[entry[j].column_index / 3].z;
-            }
-        }
-        f[i].x = (f[i].x - temp) / *diagonal[3 * i];
-
-        temp = 0.0;
-        for (j = key[3 * i + 1]; j < key[3 * i + 2] - 1; ++j) {
-            temp2 = entry[j].column_index % 3;
-            if (temp2 == 0) {
-                temp += entry[j].val * f[entry[j].column_index / 3].x;
-            } else if (temp2 == 1) {
-                temp += entry[j].val * f[entry[j].column_index / 3].y;
-            } else {
-                temp += entry[j].val * f[entry[j].column_index / 3].z;
-            }
-        }
-        f[i].y = (f[i].y - temp) / *diagonal[3 * i + 1];
-
-        temp = 0.0;
-        for (j = key[3 * i + 2]; j < key[3 * i + 3] - 1; ++j) {
-            temp2 = entry[j].column_index % 3;
-            if (temp2 == 0) {
-                temp += entry[j].val * f[entry[j].column_index / 3].x;
-            } else if (temp2 == 1) {
-                temp += entry[j].val * f[entry[j].column_index / 3].y;
-            } else {
-                temp += entry[j].val * f[entry[j].column_index / 3].z;
-            }
-        }
-        f[i].z = (f[i].z - temp) / *diagonal[3 * i + 2];
-    }
-
-    // Now back
-    for (i = num_rows / 3 - 1; i >= 0; --i) {
-        temp = 0.0;
-        for (j = key[3 * i + 3] - 1; j >= key[3 * i + 2]; --j) {
-            temp2 = entry[j].column_index % 3;
-            if (temp2 == 0) {
-                temp += entry[j].val * f[entry[j].column_index / 3].x;
-            } else if (temp2 == 1) {
-                temp += entry[j].val * f[entry[j].column_index / 3].y;
-            } else {
-                temp += entry[j].val * f[entry[j].column_index / 3].z;
-            }
-        }
-        f[i].z = (f[i].z - temp) / *diagonal[3 * i + 2];
-
-        temp = 0.0;
-        for (j = key[3 * i + 2] - 1; j >= key[3 * i + 1]; --j) {
-            temp2 = entry[j].column_index % 3;
-            if (temp2 == 0) {
-                temp += entry[j].val * f[entry[j].column_index / 3].x;
-            } else if (temp2 == 1) {
-                temp += entry[j].val * f[entry[j].column_index / 3].y;
-            } else {
-                temp += entry[j].val * f[entry[j].column_index / 3].z;
-            }
-        }
-        f[i].y = (f[i].y - temp) / *diagonal[3 * i + 1];
-
-        temp = 0.0;
-        for (j = key[3 * i + 1] - 1; j >= key[3 * i]; --j) {
-            temp2 = entry[j].column_index % 3;
-            if (temp2 == 0) {
-                temp += entry[j].val * f[entry[j].column_index / 3].x;
-            } else if (temp2 == 1) {
-                temp += entry[j].val * f[entry[j].column_index / 3].y;
-            } else {
-                temp += entry[j].val * f[entry[j].column_index / 3].z;
-            }
-        }
-        f[i].x = (f[i].x - temp) / *diagonal[3 * i];
-    }
+int * SparseMatrixFixedPattern::get_key() {
+	return key;
 }
 
+int SparseMatrixFixedPattern::get_num_nonzero_elements() {
+	return num_nonzero_elements;
+}
+
+int SparseMatrixFixedPattern::get_num_rows() {
+	return num_rows;
+}
+
+int SparseMatrixFixedPattern::get_num_columns() {
+
+	int i, num_columns = 0;
+	for(i = 0; i < num_nonzero_elements; ++i) {
+		if(entry[i].column_index > num_columns) {
+			num_columns = entry[i].column_index;
+		}
+	}
+	return num_columns + 1;
+}

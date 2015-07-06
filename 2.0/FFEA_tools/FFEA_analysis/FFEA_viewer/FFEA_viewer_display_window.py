@@ -17,6 +17,7 @@ import shutil
 class FFEA_viewer_display_window():
 
 	def __init__(self, speak_to_control, ffea_fname, num_frames_to_read, energy_thresh=1.0e6):
+
 		self.energy_threshold = energy_thresh
 		self.num_frames_to_read = num_frames_to_read
 		self.speak_to_control = speak_to_control
@@ -108,13 +109,18 @@ class FFEA_viewer_display_window():
 					'hide_frozen': 0,
 					'show_shortest_edge': 0,
 					'vdw_edit_mode': 0,
+					'binding_site_edit_mode': 0,
+					'selected_index': 0,
 					'selected_blob': 0,
+					'selected_conformation':0,
 					'show_linear_nodes_only': 0,
 					'show_mesh_surf': 0,
 					'show_inverted': 0,
 					'blob_colour': (1.0, 1.0, 1.0)}
 
+		self.selected_index = 0
 		self.selected_blob = 0
+		self.selected_conformation = 0
 
 		self.offset_x = 0
 		self.offset_y = 0
@@ -136,7 +142,6 @@ class FFEA_viewer_display_window():
 	def load_ffea(self):
 		
 		print "Loading ffea file: " + self.ffea_fname
-
 		ffea_path, ffea_id_string = os.path.split(self.ffea_fname)
 		if ffea_path == "":
 			ffea_path = "."
@@ -194,27 +199,34 @@ class FFEA_viewer_display_window():
 				es_h = int(rvalue)
 			elif lvalue == "num_blobs":
 				self.num_blobs = int(rvalue)
-				self.active_conformation_index = [0] * self.num_blobs
 
 			elif lvalue == "num_conformations":
+
 				rvalue_split = rvalue[1:-1].split(",")
-				for value in rvalue_split:
-					self.num_conformations.append(int(value))
-					self.total_num_blobs += self.num_conformations[-1]
+
+				# If no traj, only load first conf
+				if trajectory_out_fname == None:
+					for value in rvalue_split:
+						self.num_conformations.append(1)
+				else:
+					for value in rvalue_split:
+						self.num_conformations.append(int(value))
+
+				self.total_num_blobs += self.num_conformations[-1]
+
+				# Error Check
+				if len(self.num_conformations) != self.num_blobs:
+					sys.exit("Error. Not enough specified 'num_conformations' to create blob array.")
+
+				# Get blob list array
+				self.blob_list = [[None for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 
 		self.box_x = (1.0/kappa) * es_h * es_N_x
 		self.box_y = (1.0/kappa) * es_h * es_N_y
 		self.box_z = (1.0/kappa) * es_h * es_N_z
-		if es_N_z != 0:
-			scaling_factor = self.z / self.box_z
-			scaling_factor_set = 1
-		else:
-			scaling_factor = 1.0
-			scaling_factor_set = 0
-
-		self.box_x *= scaling_factor
-		self.box_y *= scaling_factor
-		self.box_z *= scaling_factor
+	
+		# Let control window know about num_blobs and num_conformations
+		self.speak_to_control.send({'num_blobs': self.num_blobs, 'num_conformations': self.num_conformations, 'num_frames': self.num_frames, 'current_frame': -1, 'death': False, 'pausing':self.pausing})
 
 		# Now into system block
 		while ffea_in.readline().strip() != "<system>":
@@ -246,9 +258,11 @@ class FFEA_viewer_display_window():
 				blob_surface = []
 				blob_vdw = []
 				blob_pin = []
+				blob_binding = []
 				blob_mat = []
 				blob_stokes = []
 				blob_centroid_pos = None
+				blob_rotation = None
 				scale = 1.0
 
 				while True:
@@ -256,6 +270,7 @@ class FFEA_viewer_display_window():
 					if line == "/blob":
 						break
 					elif line == "conformation":
+						binding_set = 0
 						while True:
 							line = ffea_in.readline().strip()[1:-1]
 							if line == "/conformation":
@@ -271,6 +286,7 @@ class FFEA_viewer_display_window():
 									blob_mat.append("")
 									blob_stokes.append("")
 									blob_pin.append("")
+									blob_binding.append("")
 							elif lvalue == "nodes":
 								blob_nodes.append(rvalue)
 							elif lvalue == "topology":
@@ -285,38 +301,48 @@ class FFEA_viewer_display_window():
 								blob_vdw.append(rvalue)
 							elif lvalue == "pin":
 								blob_pin.append(rvalue)
+							elif lvalue == "binding_sites":
+								binding_set = 1
+								blob_binding.append(rvalue)
 							else:
 								sys.exit("In " + self.ffea_fname + ", " + rvalue + " is an unexpected rvalue\n")
 					
+						# Binding not vital
+						if binding_set == 0:
+							blob_binding.append("")
+
 					elif "=" not in line:
 						continue
 					else:
 						lvalue, rvalue = line.split("=")
 						lvalue = lvalue.strip()
 						rvalue = rvalue.strip()
-						if lvalue == "centroid_pos":
+						print lvalue, rvalue
+						if lvalue == "centroid":
 							rsplit = rvalue[1:-1].split(",")
 							blob_centroid_pos = [float(val) for val in rsplit]
 							
 						if lvalue == "scale":
-							if scaling_factor_set == 0:
-								scaling_factor = 1.0 / float(rvalue)
-								scaling_factor_set = 1
+							scale = float(rvalue)
 
-							scale = scaling_factor
-							
-						elif lvalue == "initial_conformation":
-							self.active_conformation_index[blob_index] = int(rvalue)
+						if lvalue == "rotation":
+							rsplit = rvalue[1:-1].split(",")
+							blob_rotation = [float(val) for val in rsplit]
 
 				# Load all of the conformations
 				for i in range(self.num_conformations[blob_index]):
+
+					# If no trajectory, only load first ('active') conformations
+					if trajectory_out_fname == None and i != 0:
+						break
+
 					print "\nLoading blob " + str(blob_index) + ", conformation " + str(i)
 					new_blob = Blob.Blob(energy_thresh=self.energy_threshold)
-					new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_centroid_pos)
+					new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_binding[i], blob_centroid_pos, blob_rotation)
 
-					self.blob_list.append(new_blob)
+					self.blob_list[blob_index][i] = new_blob
 					new_blob_name = ffea_id_string + "#" + str(blob_index) + ", " + str(conformation_index)
-					info_string = "Name:\t" + ffea_id_string + "\nNodes:\t" + blob_nodes[i] + "\nTopology:\t" + str(blob_top[i]) + "\nSurface:\t" + blob_surface[i] + "\nVdW:\t" + str(blob_vdw[i]) + "\npin:\t" + str(blob_pin[i]) + "\nState:\t" + blob_motion_state[i] + "\n"
+					info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(i) + "\nNodes:\t" + blob_nodes[i] + "\nTopology:\t" + str(blob_top[i]) + "\nSurface:\t" + blob_surface[i] + "\nVdW:\t" + str(blob_vdw[i]) + "\npin:\t" + str(blob_pin[i]) + "\nMotion State:\t" + blob_motion_state[i] + "\n"
 					add_blob_info = {'name': new_blob_name, 'info': info_string}
 					self.speak_to_control.send({'add_blob': add_blob_info})
 					blob_number += 1
@@ -330,66 +356,115 @@ class FFEA_viewer_display_window():
 				blob_surface = []
 				blob_vdw = []
 				blob_pin = []
+				blob_binding = []
 				blob_mat = []
 				blob_stokes = []
 				blob_centroid_pos = None
+				blob_rotation = None
 				scale = 1.0
+			elif line == "interactions":
+				while ffea_in.readline().strip() != "</interactions>":
+					continue
 			else:
 				sys.exit("Expected a blob block in " + self.ffea_fname + " after the <system> tag\n")
+
+		# Get a global scale
+		global_scale = float("inf")
+		for blob in self.blob_list:
+			if blob[0].scale < global_scale:
+				global_scale = blob[0].scale
+		
+		global_scale = 1.0 / global_scale
 
 		# Load frames from the trajectory file
 		if trajectory_out_fname != None:
 			# if any of the blobs are STATIC, just load their node positions from the node file
 			for blob in self.blob_list:
-				if blob.get_state() == "STATIC":
-					blob.load_nodes_file_as_frame()
-
+				for conf in blob:
+					if conf.get_state() == "STATIC":
+						conf.set_scale(global_scale * conf.scale)
+						conf.load_nodes_file_as_frame()
+					else:
+						conf.set_scale(global_scale)
 			# Start loading frames for each blob from the trajectory file
 			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
 			self.load_trajectory_thread.start()
-			#self.load_trajectory(trajectory_out_fname)
+
 		# else just use the nodes files (if traj file not given or found)
 		else:
 			print "WARNING: Trajectory file is missing. Loading positions from node files."
 			for blob in self.blob_list:
-				blob.set_scale(1.0)
-				blob.load_nodes_file_as_frame()
-			
+				#for conf in blob:
+				blob[0].set_scale(global_scale * blob[0].scale)
+				blob[0].load_nodes_file_as_frame()
 
 	def load_trajectory(self, trajectory_out_fname):
 
 		print "Reading in trajectory file " + trajectory_out_fname
 		traj = open(trajectory_out_fname, "r")
 
-		self.num_frames = 0
+		trajtype = 1	# New type
+		tested = 0
+
+		self.num_frames = -1
 		no_errors_loading = True
-		#traj.readline()
-		#traj.readline()
 
 		# get all initial stuff
-		for i in range(3):
-			traj.readline()
-
-		# get num_blobs
-		if self.num_blobs != int(traj.readline().split()[3].strip()):
+		line = traj.readline().strip()
+		if(line != "FFEA_trajectory_file"):
+			print "Error. Expected 'FFEA_trajectory_file' , but got " + line
 			no_errors_loading = False
 			traj.close()
 			return
 
-		# Get each num_nodes
-		sline = traj.readline().split()
-		blob_id = 0
-		for i in range(self.num_blobs):
-			num_nodes = int(sline[4 * i + 3]) 
-			for j in range(self.num_conformations[i]):
-				blob_id = 0
-				for k in range(i):
-					blob_id += self.num_conformations[k]
-				blob_id += j
-				self.blob_list[blob_id].num_nodes = num_nodes
+		for i in range(2):
+			traj.readline()
+			
+		# Get num_blobs
+		line = int(traj.readline().split()[3].strip())
+		if self.num_blobs != line:
+			print "Error. 'Number of Blobs' specified in trajectory file not consistent with script file."
+			no_errors_loading = False
+			traj.close()
+			return
 
+		# Get num_conformations
+		line = traj.readline()
+		if line.split()[0].strip() == "Blob":
+
+			# Old type
+			trajtype = 0
+			for i in range(len(self.num_conformations)):
+				self.num_conformations[i] = 1
+
+			# Get each num_nodes
+			sline = line.split()
+			for i in range(self.num_blobs):
+				self.blob_list[i][0].num_nodes = int(sline[4 * i + 3])
+		else:
+			sline = line.split()[3:]
+		
+			for i in range(len(sline)):
+				if self.num_conformations[i] != int(sline[i]):
+					print "Error. 'Number of Conformations' %d specified in trajectory file not consistent with script file." % (i)
+					no_errors_loading = False
+					traj.close()
+					return
+
+			# Get each num_nodes
+			for i in range(self.num_blobs):
+				sline = traj.readline().split()[2:]
+				for j in range(self.num_conformations[i]):
+					self.blob_list[i][j].num_nodes = int(sline[4 * j + 3])
+	
 		# Final whitespace
 		traj.readline()
+
+		# Start Reading Frames
+		active_conf = [0 for i in range(self.num_blobs)]
+		completed = 0
+		trajtype = 1	# New type
+		tested = 0
 		while True:
 			if self.num_frames >= self.num_frames_to_read:
 				break
@@ -406,28 +481,88 @@ class FFEA_viewer_display_window():
 				print "Instead found '" + line + "'"
 				break
 
-			for blob in self.blob_list:
-				# Only give traj data to active blob
-				if blob.conformation_index != self.active_conformation_index[blob.blob_index]:
-					continue
+			for i in range(self.num_blobs):
 
+
+				# Load actual frame
+				j = active_conf[i]
+				
 				# if the blob has state STATIC, then there is no node information in the trajectory file (since it is unchanged during the simulation),
 				# therefore just read in the word STATIC
-				if blob.get_state() == "STATIC":
+				if self.blob_list[i][j].get_state() == "STATIC":
 					traj.readline() # skip "Blob x, Conformation y, step z" line
 					traj.readline() # skip "STATIC" line
 					continue
 
 				# for DYNAMIC or FROZEN blobs, try to read the node info for this frame
 				try:
-					blob.load_frame(traj)
+					self.blob_list[i][j].load_frame(traj)
+					for k in range(self.num_conformations[i]):
+						if k != j:
+							self.blob_list[i][k].load_frame(None)
 
 				except(IndexError):
-					no_errors_loading == False
-					break			
+					traj.close()
+					completed = 1
+					break
+			
+			if completed == 0:
 
-			if no_errors_loading == True:
-				self.num_frames += 1
+				# Get conformation data!
+				
+				if trajtype == 1:
+					if tested == 0:
+			
+						# Testing traj version
+						tested = 1
+						filepos = traj.tell()
+						if traj.readline().strip() != "*":
+							print "Error. Expected '*' to end trajectory data."
+							no_errors_loading = False
+							traj.close()
+							return
+
+						if traj.readline().strip() != "Conformation Changes:":
+							
+							# Old type
+							trajtype = 0
+
+							# Set back a line, update and finish
+							traj.seek(filepos)
+							self.num_frames += 1
+						else:
+							for i in range(self.num_blobs):
+								active_conf[i] = int(traj.readline().split()[6])
+	
+							if no_errors_loading == True:
+								self.num_frames += 1
+							else:
+								break
+					else:
+						if traj.readline().strip() != "*":
+							print "Error. Expected '*' to end trajectory data."
+							no_errors_loading = False
+							traj.close()
+							return
+	
+						if traj.readline().strip() != "Conformation Changes:":
+							print "Error. Expected 'Conformation Changes:' to begin conformation switching data."
+							no_errors_loading = False
+							traj.close()
+							return
+		
+						for i in range(self.num_blobs):
+							active_conf[i] = int(traj.readline().split()[6])
+	
+						if no_errors_loading == True:
+							self.num_frames += 1
+						else:
+							break
+				else:
+					if no_errors_loading == True:
+						self.num_frames += 1
+					else:
+						break
 			else:
 				break
 
@@ -436,7 +571,37 @@ class FFEA_viewer_display_window():
 	def death(self):
 		glutLeaveMainLoop()
 
+	def change_indices(self, index):
+
+		# Change to control blob index to selected_blob and selected_conformation
+		self.selected_index = index
+		k = 0
+		for i in range(self.num_blobs):
+			for j in range(self.num_conformations[i]):
+				if self.selected_index == k:
+					self.selected_blob = i
+					self.display_flags['selected_blob'] = i
+					self.selected_conformation = j
+					self.display_flags['selected_conformation'] = j
+					return
+				else:
+					k += 1
+ 
+	def return_changed_indices(self, index):
+
+		# Change to control blob index to selected_blob and selected_conformation
+		self.selected_index = index
+		k = 0
+		for i in range(self.num_blobs):
+			for j in range(self.num_conformations[i]):
+				if self.selected_index == k:
+					selected_blob = i
+					selected_conformation = j
+					return selected_blob, selected_conformation
+				else:
+					k += 1
 	def update(self, i):
+		self.change_indices(self.selected_index)
 		if self.speak_to_control.poll() == True:
 			control_stuff = self.speak_to_control.recv()
 
@@ -444,17 +609,23 @@ class FFEA_viewer_display_window():
 				print "Received request to save screenshot to the file", control_stuff['save_screenshot']
 				self.TGA_screenshot(control_stuff['save_screenshot'])
 			elif "save_vdw" in control_stuff.keys():
-				print "Received request to save the VdW profile of blob number", self.selected_blob, " to the file", control_stuff['save_vdw']
-				self.blob_list[self.selected_blob].write_vdw(control_stuff['save_vdw'])
+				print "Received request to save the VdW profile of blob number", self.selected_index, " to the file", control_stuff['save_vdw']
+				self.blob_list[self.selected_blob][self.selected_conformation].write_vdw(control_stuff['save_vdw'])
 			elif "show_blob" in control_stuff.keys():
 				index = control_stuff["show_blob"]
-				print "Showing blob", index
-				self.blob_list[index].show()
+				blobi, confi = self.return_changed_indices(index)
+				print "Showing blob ", blobi
+				for i in range(self.num_conformations[blobi]):
+					self.blob_list[blobi][i].show()
+
 			elif "hide_blob" in control_stuff.keys():
 				index = control_stuff["hide_blob"]
-				print "Hiding blob", index
-				self.blob_list[index].hide()
-			else:
+				blobi, confi = self.return_changed_indices(index)
+				print "Hiding blob ", blobi
+				for i in range(self.num_conformations[blobi]):
+					self.blob_list[blobi][i].hide()
+
+			else:	
 				if control_stuff['death'] == True:
 					self.death()
 					return
@@ -462,8 +633,9 @@ class FFEA_viewer_display_window():
 				self.speed = control_stuff['speed']
 				self.pause_loading = control_stuff['pause_loading']
 				self.display_flags = control_stuff['display_flags']
-				if self.selected_blob != control_stuff['selected_blob']:
-					self.selected_blob = control_stuff['selected_blob']
+
+				if self.selected_index != control_stuff['selected_index']:
+					self.change_indices(control_stuff['selected_index'])
 					self.offset_x = 0
 					self.offset_y = 0
 					self.offset_z = 0
@@ -471,6 +643,11 @@ class FFEA_viewer_display_window():
 				self.show_box = control_stuff["show_box"]
 				if control_stuff['change_frame_to'] != -1:
 					self.frame = int(control_stuff['change_frame_to'])
+					self.change_indices(control_stuff['selected_index'])
+					if self.blob_list[self.selected_blob][self.selected_index].hide_blob == False:
+						for i in range(self.num_conformations[self.selected_blob]):
+							self.blob_list[self.selected_blob][i].show()
+
 					self.modifying_frame = True
 
 				if self.recording != control_stuff["recording"]:
@@ -494,6 +671,7 @@ class FFEA_viewer_display_window():
 						print "Unrecognised projection type: " + self.projection
 
 		if self.animate == True:
+			self.change_indices(self.selected_index)
 			self.frame += self.speed
 			if self.frame > self.num_frames:
 				self.frame = 0
@@ -517,8 +695,12 @@ class FFEA_viewer_display_window():
 		self.draw_axes()
 
 		if len(self.blob_list) > 0:
-			centroid_x, centroid_y, centroid_z = self.blob_list[self.selected_blob].get_centroid(self.frame)
-			
+			for i in range(self.num_conformations[self.selected_blob]):
+				centroid_x, centroid_y, centroid_z = self.blob_list[self.selected_blob][i].get_centroid(self.frame)
+
+				if centroid_x != None:
+					break
+
 			if self.projection == "orthographic":
 				self.set_orthographic_projection();
 
@@ -541,10 +723,21 @@ class FFEA_viewer_display_window():
 			if self.show_box == 1:
 				self.draw_box()
 
-			i = 0
-			for blob in self.blob_list:
-				blob.draw_frame(self.frame, self.display_flags, i)
-				i += 1
+			for i in range(self.num_blobs):
+
+				# First Check if hidden
+				hidden = False
+				for j in range(self.num_conformations[i]):
+					if self.blob_list[i][j].hide_blob == True:
+						hidden = True
+						break
+				
+				# Now draw if not hidden
+				if hidden == False:
+					for j in range(self.num_conformations[i]):	
+						self.blob_list[i][j].draw_frame(self.frame, self.display_flags)
+
+						
 		else:
 			centroid_x = 0
 			centroid_y = 0
@@ -556,7 +749,10 @@ class FFEA_viewer_display_window():
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 		glRenderMode(GL_RENDER)
 		if len(self.blob_list) > 0:
-			centroid_x, centroid_y, centroid_z = self.blob_list[self.selected_blob].get_centroid(self.frame)
+			for i in range(self.num_conformations[self.selected_blob]):
+				centroid_x, centroid_y, centroid_z = self.blob_list[self.selected_blob][i].get_centroid(self.frame)
+				if centroid_x != None:
+					break
 			
 			glDisable(GL_LIGHTING);
 			glDisable(GL_FOG);
@@ -567,11 +763,13 @@ class FFEA_viewer_display_window():
 			glTranslated(-self.offset_x, -self.offset_y, -self.offset_z);
 
 			m = self.orientation.construct_matrix();
+			m[12] = -self.offset_x
+                        m[13] = -self.offset_y
 			m[14] = -self.z;
 			glLoadMatrixd(m);
 			glTranslated(-centroid_x, -centroid_y, -centroid_z);
 			
-			self.blob_list[self.selected_blob].draw_pick_frame(self.frame)
+			self.blob_list[self.selected_blob][self.selected_conformation].draw_pick_frame(self.frame)
 
 		glReadBuffer(GL_BACK)
 		face_colour = glReadPixels(mouse_x, self.height - mouse_y, 1, 1, GL_RGB, GL_FLOAT)
@@ -663,12 +861,16 @@ class FFEA_viewer_display_window():
 			if self.mouse_state == GLUT_DOWN:
 				if self.display_flags['vdw_edit_mode'] == 1:
 					selected_face = self.pick(x, y)
-					self.blob_list[self.selected_blob].incr_vdw_face(selected_face)
+					self.blob_list[self.selected_blob][self.selected_conformation].incr_vdw_face(selected_face)
 
+				if self.display_flags['binding_site_edit_mode'] == 1:
+					selected_face = self.pick(x, y)
+					self.blob_list[self.selected_blob][self.selected_conformation].add_face_to_binding_site(selected_face)
+		
 		if self.mouse_button == 5:
 			if self.mouse_state == GLUT_DOWN:
 				selected_face = self.pick(x, y)
-				self.blob_list[self.selected_blob].hide_unhide_face(selected_face)
+				self.blob_list[self.selected_blob][self.selected_conformation].hide_unhide_face(selected_face)
 
 		if self.mouse_state != GLUT_DOWN:
 			self.last_x = -1;

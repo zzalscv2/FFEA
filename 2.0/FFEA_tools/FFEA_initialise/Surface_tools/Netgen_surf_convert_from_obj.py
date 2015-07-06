@@ -1,7 +1,7 @@
 import os, sys
 
 if len(sys.argv) != 3:
-	sys.exit("Usage: python convert_obj_to_surf.py [INPUT OBJ FNAME] [OUTPUT SURF FNAME]")
+	sys.exit("Usage: python " + os.path.basename(os.path.abspath(sys.argv[0])) + " [INPUT OBJ FNAME] [OUTPUT SURF FNAME]")
 
 obj = open(sys.argv[1], "r")
 v = []
