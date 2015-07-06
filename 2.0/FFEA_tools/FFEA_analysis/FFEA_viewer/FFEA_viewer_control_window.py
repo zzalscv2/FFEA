@@ -116,7 +116,7 @@ class FFEA_viewer_control_window:
 		self.hide_frozen = IntVar()
 		check_button_hide_frozen = Checkbutton(display_flags_frame, text="Hide Frozen", variable=self.hide_frozen, command=self.something_has_changed)
 		check_button_hide_frozen.pack(anchor=W)
-		self.blob_colour = (0.9,0.5,0.3)
+		self.blob_colour = (0.0,0.588,1.0)
 		self.choose_colour = Button(display_flags_frame, text="Colour", command=self.choose_blob_colour, bg=self.get_colour_code(self.blob_colour))
 		self.choose_colour.pack(anchor=W)
 		
