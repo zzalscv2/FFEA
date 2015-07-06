@@ -7,6 +7,8 @@ class FFEA_traj:
 	def __init__(self, traj_fname, num_frames_to_read, first_frame, last_frame, frame_rate):
 
 		self.num_blobs = 0
+		self.total_num_blobs = 0
+		self.num_conformations = []
 		self.blob = []
 		self.num_frames = 0
 		self.traj_fname = traj_fname
@@ -28,28 +30,34 @@ class FFEA_traj:
 		self.num_blobs = int(traj.readline().split()[3].strip())
 		print "\tSpecified num_blobs = " + str(self.num_blobs)
 	
-		# Get num_nodes for each blob and create traj_blobs
-		line = traj.readline().split()
+		# Get num_conformations
+		confs = traj.readline().split()[3:]
+		for conf in confs:
+			self.num_conformations.append(int(conf))
+			self.total_num_blobs += self.num_conformations[-1]
+
+		# Get num_nodes for each blob and conformation and create traj_blobs
+		self.blob = [[] for i in range(self.num_blobs)]
 		for i in range(self.num_blobs):
-			num_nodes = int(line[4 * i + 3].strip())
-			self.blob.append(FFEA_traj_blob(num_nodes))
-			print "\tBlob " + str(i) + " has " + str(num_nodes) + " nodes"
-	
+			sline = traj.readline().split()[2:]
+			for j in range(self.num_conformations[i]):
+				num_nodes = num_nodes = int(sline[4 * j + 3].strip())
+				self.blob[i].append(FFEA_traj_blob(num_nodes))
+				print "\tBlob " + str(i) + ", Conformation " + str(j) + " has " + str(num_nodes) + " nodes"
+
 		# Whitespace
 		traj.readline()
 		
 		# Read trajectory for desired number of frames or all frames
-		check = 0
+		num_frames_parsed = 0
 		if num_frames <= 0:
 			num_frames = 10000
 			
 		print("\n\tReading position data")
 		completed = 0
-		actual_num_frames = 0
+		num_frames_read = 0
+		current_conformation = [0 for i in range(self.num_blobs)]
 		for i in range(num_frames):
-				
-			if completed == 1:
-				break
 
 			# Check for asterisk
 			if traj.readline().strip() != "*":
@@ -57,28 +65,36 @@ class FFEA_traj:
 
 			for j in range(self.num_blobs):
 
+				# Give inactive conformations a dead frame
+				for k in range(self.num_conformations[j]):
+					if k != current_conformation[j]:
+						self.blob[j][k].frame.append(FFEA_traj_frame(self.blob[j][k].num_nodes, 0))
+
+				# Now read active frame
+
 				# Check for eof
 				line = traj.readline()
 				if line == "":
 					print "Specified " + str(num_frames) + " to read, but eof reached at " + str(i - 1) + "."
 					print "Continuing...\n"	
-					completed = 1
-					check -= 1				
+					completed = 1				
 					break
 		
 				# Check for STATIC or not
 				line = traj.readline().strip()
-				self.blob[j].motion_state = line
+				self.blob[j][current_conformation[j]].motion_state = line
 				if line == "STATIC":
 					continue
 			
 				# Read frame
-				work_frame = FFEA_traj_frame(self.blob[j].num_nodes)
-				for k in range(self.blob[j].num_nodes):
+				work_frame = FFEA_traj_frame(self.blob[j][current_conformation[j]].num_nodes, 1)
+				for k in range(self.blob[j][current_conformation[j]].num_nodes):
 					line = traj.readline().split()
+					
 					for l in range(3):
 						work_frame.node_pos[k][l] = float(line[l].strip())
 						work_frame.node_vel[k][l] = float(line[l + 3].strip())
+
 
 				if i < first_frame:
 					continue
@@ -86,30 +102,49 @@ class FFEA_traj:
 					break
 
 				if i % frame_rate == 0:
-					actual_num_frames += 1
-					self.blob[j].frame.append(work_frame)
-			
-			check += 1
-			if num_frames >= 100 and check % (num_frames / 50) == 0:
-				print "\t\tRead " + str(actual_num_frames) + " frames"
+					self.blob[j][current_conformation[j]].frame.append(work_frame)
 
-		print "Done. Read " + str(actual_num_frames) + " frames in total."
-		self.num_frames = actual_num_frames
+			# If not yet at eof, update progress
+			if completed == 0:
+
+				# Get conformation change details
+				if traj.readline().strip() != "*":
+					sys.exit("Error. Expected '*' to end trajectory data at frame " + str(i))
+				if traj.readline().strip() != "Conformation Changes:":
+					sys.exit("Error. Expected 'Conformation Changes:' to begin kinetic section at frame " + str(i))
+
+				for j in range(self.num_blobs):
+					current_conformation[j] = int(traj.readline().split()[6])
+
+				# Get num_frames read/parsed details
+				if i % frame_rate == 0:
+					num_frames_read += 1
+
+				num_frames_parsed += 1
+				if num_frames >= 100 and num_frames_parsed % (num_frames / 50) == 0:
+					print "\t\tParsed " + str(num_frames_parsed) + " frames. Of these, read " + str(num_frames_read) + " frames"
+			else:
+				break
+
+		print "Done. Parsed " + str(num_frames_parsed) + " frames and stored " + str(num_frames_read) + " frames in total."
+		self.num_frames = num_frames_read
 		for i in range(self.num_blobs):
-			self.blob[i].num_frames = len(self.blob[i].frame)		
+			for j in range(self.num_conformations[i]):
+				self.blob[i][j].num_frames = len(self.blob[i][j].frame)		
 
 		# Deleting stuff just in case each blob has different number of frames
 		print "Deleting extra frames"
 		for i in range(self.num_blobs):
-			if self.num_frames != self.blob[i].num_frames:
-				difference = self.num_frames - self.blob[i].num_frames
-				print "\tBlob " + str(i) + " has " + str(difference) + " more frames than others! Deleting..."
-				for j in range(difference):
-					self.blob[i].frame.pop()
+			for j in range(self.num_conformations[i]):
+				if self.num_frames != self.blob[i][j].num_frames:
+					difference = self.num_frames - self.blob[i][j].num_frames
+					print "\tBlob " + str(i) + " Conformation " + str(j) + " has " + str(difference) + " more frames than others! Deleting..."
+					for k in range(difference):
+						self.blob[i][j].frame.pop()
 
-				self.blob[i].num_frames = self.num_frames
+					self.blob[i][j].num_frames = self.num_frames
 
-		print "Done. All blobs now have " + str(actual_num_frames) + " frames in total."
+		print "Done. All blobs now have " + str(num_frames_read) + " frames in total."
 		
 		# Calculate basic things
 		self.calc_centroids()
@@ -118,8 +153,9 @@ class FFEA_traj:
 	def calc_centroids(self):
 
 		for ablob in self.blob:
-			for aframe in ablob.frame:
-				aframe.calc_centroid()
+			for conf in ablob:
+				for aframe in conf.frame:
+					aframe.calc_centroid()
 
 
 	def write_traj_to_file(self, fname):
@@ -202,12 +238,18 @@ class FFEA_traj_blob:
 
 class FFEA_traj_frame:
 
-	def __init__(self, num_nodes):
+	def __init__(self, num_nodes, active):
 		
-		self.node_pos = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
-		self.node_vel = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
-		self.centroid = np.array([0.0 for i in range(3)])
-
+		self.active = active
+		if self.active == 1:
+			self.node_pos = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
+			self.node_vel = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
+			self.centroid = np.array([0.0 for i in range(3)])
+		else:
+			self.node_pos = None
+			self.node_vel = None
+			self.centroid = None
+			
 	def calc_centroid(self):
 		
 		self.centroid = np.mean(self.node_pos, axis=0)

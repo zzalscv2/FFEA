@@ -7,6 +7,7 @@ Blob::Blob() {
     num_nodes = 0;
     num_elements = 0;
     num_surface_faces = 0;
+    num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
     num_surface_elements = 0;
@@ -14,8 +15,10 @@ Blob::Blob() {
     mass = 0;
     blob_state = FFEA_BLOB_IS_STATIC;
     node = NULL;
+    node_position = NULL;
     elem = NULL;
     surface = NULL;
+    binding_site = NULL;
     solver = NULL;
     linear_solver = 0;
     force = NULL;
@@ -34,10 +37,15 @@ Blob::~Blob() {
     /* Release the node, element and surface arrays */
     delete[] node;
     node = NULL;
+    delete[] node_position;
+    node_position = NULL;
     delete[] elem;
     elem = NULL;
     delete[] surface;
     surface = NULL;
+
+    delete[] binding_site;
+    binding_site = NULL;
 
     /* Release the force vector */
     delete[] force;
@@ -72,6 +80,7 @@ Blob::~Blob() {
     num_surface_elements = 0;
     num_interior_elements = 0;
     num_surface_faces = 0;
+    num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
     blob_state = FFEA_BLOB_IS_STATIC;
@@ -80,9 +89,10 @@ Blob::~Blob() {
     num_pinned_nodes = 0;
 }
 
+
 int Blob::init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
-        const char *stokes_filename, const char *vdw_filename, const char *pin_filename, scalar scale, int linear_solver,
-        int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, MTRand rng[], int num_threads) {
+            const char *stokes_filename, const char *vdw_filename, const char *binding_filename, const char *pin_filename, scalar scale, int linear_solver,
+            int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, MTRand rng[], int num_threads) {
 
     // Which blob and conformation am i?
     this->blob_index = blob_index;
@@ -117,6 +127,12 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
     if (load_vdw(vdw_filename, lj_matrix->get_num_types()) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
+    }
+
+    if (params->calc_kinetics == 1) {
+	if (load_binding_sites(binding_filename, binding_matrix->get_num_types()) == FFEA_ERROR) {
+        	FFEA_ERROR_MESSG("Error when loading binding sites file.\n")
+    	}
     }
 
     if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
@@ -197,7 +213,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     }
 
     // Store stokes drag on nodes, for use in viscosity matrix
-    if (params->do_stokes == 1) {
+    if (params->calc_stokes == 1) {
         for (int i = 0; i < num_nodes; ++i) {
             node[i].stokes_drag = 6.0 * 3.141592654 * params->stokes_visc * node[i].stokes_radius;
         }
@@ -367,7 +383,6 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         printf("\t\tdone.\n");
     }
 
-    printf("\tFinished Blob initialisation.\n");
 
     // Return FFEA_OK to indicate "success"
     return FFEA_OK;
@@ -463,7 +478,7 @@ int Blob::update() {
 
     // Update node velocities and positions
     euler_integrate();
-
+	
     // Linearise the 2nd order elements
     for (n = 0; n < num_elements; n++) {
         elem[n].linearise_element();
@@ -474,7 +489,7 @@ int Blob::update() {
 
 void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33) {
     int i;
-    scalar centroid_x = 0, centroid_y = 0, centroid_z = 0;
+    scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
     scalar x, y, z;
 
     // Calculate centroid of [SURFACE] Blob mesh
@@ -506,9 +521,11 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
         x = node[i].pos.x;
         y = node[i].pos.y;
         z = node[i].pos.z;
+
         node[i].pos.x = x * r11 + y * r12 + z * r13 + centroid_x;
         node[i].pos.y = x * r21 + y * r22 + z * r23 + centroid_y;
         node[i].pos.z = x * r31 + y * r32 + z * r33 + centroid_z;
+	
 
     }
 }
@@ -590,12 +607,41 @@ void Blob::get_centroid(vector3 *com) {
     com->z /= num_nodes;
 }
 
+vector3 ** Blob::get_actual_node_positions() {
+	return node_position;
+}
+
+vector3 * Blob::get_node_positions_copy() {
+	vector3 *copy = new vector3[num_nodes];		
+	for(int i = 0; i < num_nodes; ++i) {
+		copy[i].x = node_position[i]->x;
+		copy[i].y = node_position[i]->y;
+		copy[i].z = node_position[i]->z;
+	}
+	return copy;
+}
+
+void Blob::set_nodes(vector3 *node_pos) {
+
+	for (int i = 0; i < num_nodes; i++) {
+        	node[i].pos.x = node_pos[i].x;
+        	node[i].pos.y = node_pos[i].y;
+		node[i].pos.z = node_pos[i].z;
+    	}
+}
+
 void Blob::set_rmsd_pos_0() {
     for (int i = 0; i < num_nodes; i++) {
         node[i].pos_0.x = node[i].pos.x;
         node[i].pos_0.y = node[i].pos.y;
         node[i].pos_0.z = node[i].pos.z;
     }
+}
+
+void Blob::linearise_elements() {
+	for(int i = 0; i < num_elements; ++i) {
+		elem[i].linearise_element();
+	}
 }
 
 int Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
@@ -681,6 +727,52 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
     return FFEA_OK;
 }
 
+int Blob::calculate_deformation() {
+	
+	int num_inversions = 0;
+	matrix3 J;
+	for (int n = 0; n < num_elements; n++) {
+
+	    // calculate jacobian for this element
+            elem[n].calculate_jacobian(J);
+
+            // get the 12 derivatives of the shape functions (by inverting the jacobian)
+            // and also get the element volume. The function returns an error in the
+            // case of an element inverting itself (determinant changing sign since last step)
+            if (elem[n].calc_shape_function_derivatives_and_volume(J) == FFEA_ERROR) {
+                FFEA_error_text();
+                printf("Element %d has inverted\n", n);
+                num_inversions++;
+            }
+
+	    // And F_ij
+	    elem[n].calc_deformation(J);
+	}
+	
+	if(num_inversions > 0) {
+		return FFEA_ERROR;
+	} else {
+		return FFEA_OK;
+	}
+
+}
+
+scalar Blob::calculate_strain_energy() {
+
+	int n;
+	scalar C, detF, strain_energy = 0.0;
+	calculate_deformation();
+	for(n = 0; n < num_elements; ++n) {
+		C = elem[n].E - elem[n].G * 2.0 / 3.0;
+        	detF = elem[n].vol / elem[n].vol_0;
+        	strain_energy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3)
+						  + 0.5 * C * (pow(detF, 2) - 1)
+						  - ((2 * elem[n].G) + C) * log(detF)
+						 );
+	}	
+	return 0.5 * strain_energy;
+}
+
 void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_CoM) {
     // Only calculate and write out measurements if there is an open measurement output file
     if (measurement_out != NULL) {
@@ -757,9 +849,8 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
             pe += elem[n].vol_0 * (
                     elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3)
                     + 0.5 * C * (pow(temp1, 2) - 1)
-                    - ((2 * elem[n].G) + C) * log(temp1));
-
-        }
+                    - ((2 * elem[n].G) + C) * log(temp1));       
+	}
 
         // And don't forget to multiply by a half
         ke *= .5;
@@ -906,6 +997,10 @@ Face * Blob::get_face(int i) {
     } else {
         return NULL;
     }
+}
+
+Face * Blob::absolutely_get_face(int i) {
+	return &surface[i];
 }
 
 scalar Blob::get_vdw_area() {
@@ -1140,6 +1235,53 @@ int Blob::get_num_nodes() {
     return num_nodes;
 }
 
+int Blob::get_motion_state() {
+	return blob_state;
+}
+
+int Blob::get_num_linear_nodes() {
+	
+	int n, i;
+	set<int> node_indices;
+	for(n = 0; n < num_elements; ++n) {
+		for(i = 0; i < 4; ++i) {
+			node_indices.insert(elem[n].n[i]->index);	
+		}	
+	}
+
+	return node_indices.size();
+}
+
+void Blob::get_min_max(vector3 *blob_min, vector3 *blob_max) {
+
+	blob_min->x = INFINITY;
+	blob_max->x = -1 * INFINITY;
+	blob_min->y = INFINITY;
+	blob_max->y = -1 * INFINITY;
+	blob_min->z = INFINITY;
+	blob_max->z = -1 * INFINITY;
+
+	for(int i = 0; i < num_nodes; ++i) {
+		if(node[i].pos.x > blob_max->x) {
+			blob_max->x = node[i].pos.x;
+		} else if (node[i].pos.x < blob_min->x) {
+			blob_min->x = node[i].pos.x;
+		}
+
+		if(node[i].pos.y > blob_max->y) {
+			blob_max->y = node[i].pos.y;
+		} else if (node[i].pos.y < blob_min->y) {
+			blob_min->y = node[i].pos.y;
+		}
+	
+		if(node[i].pos.z > blob_max->z) {
+			blob_max->z = node[i].pos.z;
+		} else if (node[i].pos.z < blob_min->z) {
+			blob_min->z = node[i].pos.z;
+		}
+	}
+}
+
 /*
  */
 int Blob::load_nodes(const char *node_filename, scalar scale) {
@@ -1188,7 +1330,9 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
 
     // Allocate the memory for all these nodes
     node = new mesh_node[num_nodes];
-    if (node == NULL) {
+    node_position = new vector3*[num_nodes];
+
+    if (node == NULL || node_position == NULL) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for nodes array.\n")
     }
@@ -1225,7 +1369,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
             node[i].pos.x = scale * (scalar) x;
             node[i].pos.y = scale * (scalar) y;
             node[i].pos.z = scale * (scalar) z;
-
+	    node_position[i] = &node[i].pos;
             node[i].vel.x = 0;
             node[i].vel.y = 0;
             node[i].vel.z = 0;
@@ -1728,6 +1872,92 @@ int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types) {
 
 /*
  */
+int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_types) {
+	
+	// Open file
+	if(strcmp(binding_filename, "") == 0) {
+
+		// Return successful as params.calc_kinetics == 0
+		return FFEA_OK;
+	}
+	ifstream fin;
+	fin.open(binding_filename);
+	if(fin.fail()) {
+		FFEA_ERROR_MESSG("'binding_params_fname' %s not found\n", binding_filename)
+	}
+
+	cout << "\t\tReading in Binding Sites file: " << binding_filename << endl;
+
+	// Check if correct file
+	int MAX_BUF_SIZE = 255;
+	char buf[MAX_BUF_SIZE];
+	string buf_string;
+	fin.getline(buf, MAX_BUF_SIZE);
+	buf_string = string(buf);
+	boost::trim(buf_string);
+	if(buf_string != "ffea binding site file") {
+		FFEA_ERROR_MESSG("This is not a 'ffea binding site file' (read '%s') \n", buf)
+	}
+	
+	// read in the number of binding sites in the file
+	int num_binding_sites = 0;
+	fin >> buf_string >> num_binding_sites;
+	cout << "\t\t\tNumber of binding sites = " << num_binding_sites << endl;
+
+	if (num_binding_sites > num_surface_faces) {
+		FFEA_ERROR_MESSG("Number of binding sites specified in binding sites file (%d) cannot exceed number of surface faces (%d)\n", num_binding_sites, num_surface_faces)
+	}
+
+	if (num_binding_sites == 0) {
+		return FFEA_OK;
+	}
+
+	// Create binding sites
+	binding_site = new BindingSite[num_binding_sites];
+
+	// Check for "binding sites:" line
+	fin.getline(buf, MAX_BUF_SIZE);
+	fin.getline(buf, MAX_BUF_SIZE);
+	buf_string = string(buf);
+	boost::trim(buf_string);
+	if(buf_string != "binding_sites:") {
+		FFEA_ERROR_MESSG("Could not find 'binding_sites:' line (found '%s' instead)\n", buf)
+	}
+
+	// Get all binding sites
+	int num_faces = 0, bind_type = -1, face_index;
+	for(int i = 0; i < num_binding_sites; ++i) {
+		fin >> bind_type;
+		
+		if(bind_type >= num_binding_site_types) {
+			FFEA_ERROR_MESSG("Binding site %d specifies site type %d, which is outside range of types allowed by the 'binding_site_params' matrix (%d types allowed)\n", i, bind_type, num_binding_site_types)
+			return FFEA_ERROR;
+		}
+
+		fin >> num_faces;
+		binding_site[i].set_type(bind_type);
+		binding_site[i].set_num_faces(num_faces);
+		for(int j = 0; j < num_faces; ++j) {
+			fin >> face_index;
+			if(face_index >= num_surface_faces) {
+				FFEA_ERROR_MESSG("Face index %d specifies face outside range of surface faces defined in surface file (%d)\n", face_index, num_surface_faces)
+				return FFEA_ERROR;
+			} else {
+				binding_site[i].add_face(&surface[face_index]);
+
+			}	
+		}
+
+		// For completion
+		binding_site[i].calc_centroid();
+	}
+
+	fin.close();
+	return FFEA_OK;
+}
+
+/*
+ */
 int Blob::load_pinned_nodes(const char *pin_filename) {
     FILE *in = NULL;
     int i, pn_index;
@@ -1877,7 +2107,7 @@ int Blob::aggregate_forces_and_solve() {
     }
     //	printf("----\n\n");
 
-    if (params->do_stokes == 1) {
+    if (params->calc_stokes == 1) {
         if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none) schedule(guided)
@@ -1907,11 +2137,6 @@ int Blob::aggregate_forces_and_solve() {
             }
         }
     }
-
-    //	printf("2 num_nodes = %d\n", num_nodes);
-    //	for(int i = 0; i < num_nodes; i++) {
-    //		printf("%e %e %e\n", force[i].x, force[i].y, force[i].z);
-    //	}
 
 
     // Set to zero any forces on the pinned nodes
@@ -2017,6 +2242,65 @@ int Blob::calculate_node_element_connectivity() {
     delete[] node_counter;
 
     return FFEA_OK;
+}
+
+void Blob::kinetic_bind(int site_index) {
+
+	// To bind, we must add all nodes of the binding site to the pinned node list
+	int i;
+	vector<Face*>::iterator it;
+	set<int> new_pinned;
+
+	// Add current pinned to set
+	for(i = 0; i < num_pinned_nodes; ++i) {
+		new_pinned.insert(pinned_nodes_list[i]);
+	}
+
+	// Now add binding site indices
+	for(it = binding_site[site_index].faces.begin(); it != binding_site[site_index].faces.end(); ++it) {
+		for(i = 0; i < 3; ++i) {
+			new_pinned.insert((*it)->n[i]->index);
+		}
+	}
+
+	// Finally create new pinned node list
+	create_pinned_nodes(new_pinned);
+}
+
+void Blob::kinetic_unbind(int site_index) {
+
+	// To unbind, we must remove all nodes of the binding site from the pinned node list
+	int i;
+	vector<Face*>::iterator it;
+	set<int> new_pinned;
+
+	// Add current pinned to set
+	for(i = 0; i < num_pinned_nodes; ++i) {
+		new_pinned.insert(pinned_nodes_list[i]);
+	}
+
+	// Now add binding site indices
+	for(it = binding_site[site_index].faces.begin(); it != binding_site[site_index].faces.end(); ++it) {
+		for(i = 0; i < 3; ++i) {
+			new_pinned.erase((*it)->n[i]->index);
+		}
+	}
+
+	// Finally create new pinned node list
+	create_pinned_nodes(new_pinned);
+}
+
+void Blob::create_pinned_nodes(set<int> list) {
+
+	int i;
+	set<int>::iterator it;
+	delete[] pinned_nodes_list;
+
+	pinned_nodes_list = new int[list.size()];
+	i = 0;
+	for(it = list.begin(); it != list.end(); ++it) {
+		pinned_nodes_list[i++] = *it;
+	}
 }
 
 void Blob::build_mass_matrix() {

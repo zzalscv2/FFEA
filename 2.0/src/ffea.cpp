@@ -1,12 +1,14 @@
-#include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
 #include <ctime>
+
 #include <omp.h>
 
+#include <boost/program_options.hpp>
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "mesh_node.h"
-#include "tetra_element_linear.h"
+//#include "tetra_element_linear.h"
 #include "SimulationParams.h"
 #include "Solver.h"
 #include "SparseSubstitutionSolver.h"
@@ -16,64 +18,97 @@
 
 #define MAX_FNAME_LENGTH 255
 
-int main(int argc, char *argv[]) {
-    printf("\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n");
-    printf(" Version:\t%s [%s]\n", FFEA_VERSION, FFEA_MASCOT);
-    printf("Compiled:\t%s at %s\n", __DATE__, __TIME__);
-    printf("  Coding:\tRobin Richardson (pyrar@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk)\n");
-    printf("  Theory:\tOliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson\n");
+using namespace std;
+namespace b_po = boost::program_options;
 
-#ifdef FFEA_PARALLEL_WITHIN_BLOB
-    printf("Parallelisation switch: FFEA_PARALLEL_WITHIN_BLOB\n");
-#endif
+int main(int argc, char *argv[])
+{
+	cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
+	cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
+	cout << "Compiled:\t" << __DATE__ " at " << __TIME__ << endl;
+	cout << "  Coding:\tRobin Richardson (pyrar@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk)\n" << endl;
+	cout << "  Theory:\tOliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson\n" << endl;
 
-#ifdef FFEA_PARALLEL_PER_BLOB
-    printf("Parallelisation switch: FFEA_PARALLEL_PER_BLOB\n");
-#endif
+	#ifdef FFEA_PARALLEL_WITHIN_BLOB
+		cout << "Parallelisation switch: FFEA_PARALLEL_WITHIN_BLOB\n" << endl;
+	#endif
 
-    // Return variable
-    int myreturn = 0;
+	#ifdef FFEA_PARALLEL_PER_BLOB
+		 cout << "Parallelisation switch: FFEA_PARALLEL_PER_BLOB\n" << endl;
+	#endif
+	
+	// Return variable
+	int myreturn = 0;
+	
+	// Get required args
+	string script_fname;
+	b_po::options_description desc("Allowed options");
+	b_po::positional_options_description pdesc;
+	b_po::variables_map var_map;
+	try {
 
-    // Check for correct number of arguments
-    if (argc < 2) {
-        printf("\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)]\n\n\n");
-        return FFEA_ERROR;
-    }
+		// Options for visible and non-visible cmd line params
+		desc.add_options()
+			("help,h", "print usage message")
+			("input-file,i", b_po::value(&script_fname), "input script fname")
+		;
+		
+		// 1 input file max! Option invisible (positional)
+		pdesc.add("input-file", 1);
 
-    // Read arguments
-    //int arg = 2;
+		// Parse
+		b_po::store(b_po::command_line_parser(argc, argv).options(desc).positional(pdesc).run(), var_map);
+		b_po::notify(var_map);
 
-    char script_fname[MAX_FNAME_LENGTH];
-    sprintf(script_fname, "%s", argv[1]);
+	// User related problems end here
+	} catch(exception& e) {
+		cerr << e.what() << endl;
+	}
 
-    // The system of all proteins, electrostatics and water
-    World *world;
+	// Help text is built in to boost	
+	if (var_map.count("help")) {  
+		cout << desc << "\n";
+		return 0;
+	}
 
-    // Allocate the world
-    world = new World();
+	// Check we have an input script
+	if (var_map.count("input-file")) {  
+		cout << "Input FFEA script - " << var_map["input-file"].as<string>() << "\n";
+	} else {
+		cout << "\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)] [OPTIONS]\n\n\n" << endl;
+		return FFEA_ERROR;
+	}
 
-    // Initialise the world, loading all blobs, parameters, electrostatics, etc.
-    printf("Initialising the world:\n");
-    if (world->init(script_fname) == FFEA_ERROR) {
-        FFEA_error_text();
-        printf("Errors during initialisation mean World cannot be constructed properly.\n");
-    } else {
-        // Run the world for the specified number of time steps
-        printf("Running world...\n");
-        if (world->run() == FFEA_ERROR) {
-            FFEA_error_text();
-            printf("Error occurred when running World\n");
-            myreturn = FFEA_ERROR;
-        } else {
-            printf("...done\n");
-            myreturn = FFEA_OK;
-        }
-    }
+	// The system of all proteins, electrostatics and water
+	World *world;
 
-    // Delete the world (oh no!)
-    printf("Deleting world...");
-    delete world;
-    printf("...done. World has been sucessfully destroyed.\n");
+	// Allocate the world
+	world = new World();
 
-    return myreturn;
+	// Initialise the world, loading all blobs, parameters, electrostatics, etc.
+	cout << "Initialising the world:\n" << endl;
+	if(world->init(script_fname) == FFEA_ERROR) {
+		FFEA_error_text();
+		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
+		myreturn = FFEA_ERROR;
+	} else {
+
+		// Run the world for the specified number of time steps
+		cout << "Running world...\n" << endl;
+		if(world->run() == FFEA_ERROR) {
+			FFEA_error_text();
+			cout << "Error occurred when running World\n" << endl;
+			myreturn = FFEA_ERROR;
+		} else {
+			cout << "...done\n" << endl;
+			myreturn = FFEA_OK;
+		}
+	}
+
+	// Delete the world (oh no!)
+	cout << "Deleting world..." << endl;
+	delete world;
+	cout << "...done. World has been sucessfully destroyed." << endl;
+
+	return myreturn;
 }

@@ -96,26 +96,50 @@ class tet_element
 		}
 		
 		vector3 get_face_normal(int index) {
-			vector3 a, b, normal;
+			int n[3];			
+			vector3 edge[2], to_centroid, normal;
+
+			// Get face
 			if(index == 0) {
-				a = *node[2] - *node[0];
-				b = *node[1] - *node[2];
+				n[0] = 0;
+				n[1] = 1;
+				n[2] = 2;
+				
 			} else if(index == 1) {
-				a = *node[2] - *node[1];
-				b = *node[3] - *node[2];
+				n[0] = 0;
+				n[1] = 1;
+				n[2] = 3;
+				
 			} else if(index == 2) {
-				a = *node[3] - *node[0];
-				b = *node[2] - *node[3];
+				n[0] = 0;
+				n[1] = 2;
+				n[2] = 3;
+				
 			} else if(index == 3) {
-				a = *node[1] - *node[0];
-				b = *node[3] - *node[1];
+				n[0] = 1;
+				n[1] = 2;
+				n[2] = 3;
+				
 			} else {
 				cout << "Error. Invalid index, " << index << endl;
 				exit(0);
 			}
-			
-			normal = a.cross(b);
+
+			// Get edge vectors
+			edge[0] = *node[n[1]] - *node[n[0]];
+			edge[1] = *node[n[2]] - *node[n[0]];
+
+			// Get a normal
+			normal = edge[0].cross(edge[1]);
 			normal.normalise();
+
+			// Make normal point out using projection onto centroid - n[0]
+			to_centroid = get_centroid();
+			to_centroid -= *node[n[0]];
+			
+			if(normal.dot(to_centroid) > 0.0) {
+				normal *= -1;
+			}
 			return normal;
 		}
 		
@@ -313,20 +337,38 @@ void print_map_to_file(string map_fname, double **map, int num_nodes_from, int n
 	map_file.open(map_fname.c_str());
 
 	// Write initial stuff
-	ffea node file
-	map_file << "ffea kinetic conformation mapping file" << endl;
+	map_file << "FFEA Kinetic Conformation Mapping File ";
 	if(sparsity == 1) {
-		map_file << "(sparse representation)" << endl;
+		map_file << "(Sparse)" << endl;
 	} else {
-		map_file << "(dense representation)" << endl;
+		map_file << "(Dense)" << endl;
+	}
+
+	// Get num entries
+	int num_entries = 0;
+	for(i = 0; i < num_nodes_to; ++i) {
+		for(j = 0; j < num_nodes_from; ++j) {
+
+			// If irrelevant, don't include
+			if (fabs(map[i][j]) >= 0.01) {
+				num_entries++;
+			}
+		}
 	}
 	map_file << "num_nodes_from " << num_nodes_from << endl;
 	map_file << "num_nodes_to " << num_nodes_to << endl;
+	map_file << "num_entries " << num_entries << endl;
 	map_file << "map:" << endl;
 	
 	for(i = 0; i < num_nodes_to; ++i) {
 		for(j = 0; j < num_nodes_from; ++j) {
-			map_file << map[i][j] << " ";
+
+			// If irrelevant, don't include
+			if (fabs(map[i][j]) < 0.01) {
+				map_file << 0 << " ";
+			} else {
+				map_file << map[i][j] << " ";
+			}
 		}
 		map_file << endl;
 	}
@@ -336,24 +378,27 @@ void print_map_to_file(string map_fname, double **map, int num_nodes_from, int n
 tet_element * find_containing_element(vector3 node, tet_element *top, int num_elements) {
 	
 	int i, j, num_faces_behind, check;
-	double angle;
-	vector3 face_normal, face_centroid, node_to_face;
+	//double angle;
+	vector3 face_normal, face_centroid, face_to_node;
 	check = 0;
 
 	for(i = 0; i < num_elements; ++i) {
 
 		// Check if in element by calculating face normals and node-face_center vectors
+		//cout << "Element 0: " << top[i].n[0] << " " << top[i].n[1] << " " << top[i].n[2] << " " << top[i].n[3] << endl;
 		num_faces_behind = 0;
 		for(j = 0; j < 4; ++j) {
 
 			face_normal = top[i].get_face_normal(j);
+			//cout << "\tFace normal " << j << ": " << face_normal.x << " " << face_normal.y << " " << face_normal.z << endl;
 			face_centroid = top[i].get_face_centroid(j);
-			node_to_face = face_centroid - node;
-			node_to_face.normalise();
+			face_to_node = node - face_centroid;
+			//cout << "\tFace to node " << j << ": " << face_to_node.x << " " << face_to_node.y << " " << face_to_node.z << endl;
+			face_to_node.normalise();
 
-			angle = acos(face_normal.dot(node_to_face));
-			if(angle > M_PI / 2.0 || angle < M_PI / -2.0) {
-
+			// If in front of plane, not in element. If behind all, it is in element
+			if(face_normal.dot(face_to_node) > 0) {
+				
 				// Not in this element
 				break;
 			} else {
@@ -379,12 +424,10 @@ tet_element * get_nearest_element(vector3 node, tet_element *top, int num_elemen
 	tet_element *nearest_element;
 	shortest_distance = INFINITY;
 	for(i = 0; i < num_elements; ++i) {
-		for(j = 0; j < 4; ++j) {
-			distance = *top[i].node[j] - node;
-			if(distance.r < shortest_distance) {
-				shortest_distance = distance.r;
-				nearest_element = &top[i];
-			}
+		distance = top[i].get_centroid() - node;
+		if(distance.r < shortest_distance) {
+			shortest_distance = distance.r;
+			nearest_element = &top[i];
 		}
 	}
 
@@ -408,6 +451,7 @@ void get_single_node_map(vector3 node, tet_element *elem, double *map) {
 	map[1] = coeff.x;
 	map[2] = coeff.y;
 	map[3] = coeff.z;
+
 	return;
 }
 
@@ -442,7 +486,7 @@ int main(int argc, char **argv) {
 
 	// Check for the right input
 	if(argc != 6) {
-		cout << "Usage ./" << argv[0] << " [INPUT from .node] [INPUT from .top] [INPUT to .node] [INPUT to .top] [OUTPUT .map fname]" << endl;
+		cout << "Usage " << argv[0] << " [INPUT from .node] [INPUT from .top] [INPUT to .node] [INPUT to .top] [OUTPUT .map fname]" << endl;
 		exit(0);
 	}
 
@@ -479,6 +523,9 @@ int main(int argc, char **argv) {
 	map = new double*[num_nodes_to];
 	for(int i = 0; i < num_nodes_to; ++i) {
 		map[i] = new double[num_nodes_from];
+		for(int j = 0; j < num_nodes_from; ++j) {
+			map[i][j] = 0.0;
+		}
 	}
 
 	// Find nearest linear!! node, and therefore nearest element / containing element
@@ -496,7 +543,7 @@ int main(int argc, char **argv) {
 
 		// Output check
 		if(i % check == 0) {
-			cout << "Num elements left to map: " << num_nodes_to - i << endl;
+			cout << "Num nodes left to map: " << num_nodes_to - i << endl;
 		}
 
 		// Find containing element
@@ -505,18 +552,17 @@ int main(int argc, char **argv) {
 			
 			// Get nearest node from nearest element
 			containing_element = get_nearest_element(to_node[i], from_top, num_elements_from);
-	
 		} 
 
 		// Get position of to_node[i] as a function of the nodes of this element
 		get_single_node_map(to_node[i], containing_element, single_map);
-			
+
 		// Add this data to final map
 		add_map_to_big_map(single_map, map, i, containing_element);
 		
 	}
 
 	// Print out the whole map
-	print_map_to_file(output_map_fname, map, num_nodes_from, num_nodes_to);
+	print_map_to_file(output_map_fname, map, num_nodes_from, num_nodes_to, 0);
 	return 0;
 }

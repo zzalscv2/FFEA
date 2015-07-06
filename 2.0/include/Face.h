@@ -62,6 +62,10 @@ public:
 
     void calc_area_normal_centroid();
 
+    vector3 * get_centroid();
+    
+    scalar get_area();
+
     /* Calculate the point p on this triangle given the barycentric coordinates b1, b2, b3 */
     void barycentric_calc_point(scalar b1, scalar b2, scalar b3, vector3 *p);
 

@@ -185,6 +185,9 @@ public:
     /* Calculates the Jacobian matrix for this element */
     void calculate_jacobian(matrix3 J);
 
+    /* Calculates Deformation Gradient */
+    void calc_deformation(matrix3 J);
+
     /*
      * Inverts the given jacobian matrix J, using this to calculate the derivatives
      * of the shape functions which are stored in dpsi. This is an array

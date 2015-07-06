@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <math.h>
-
+#include <set>
 #include <omp.h>
 
 #include "FFEA_return_codes.h"
@@ -28,12 +28,14 @@
 #include "CG_solver.h"
 #include "BEM_Poisson_Boltzmann.h"
 #include "LJ_matrix.h"
+#include "BindingSite.h"
 
 /*
  * The "Blob" class
  */
 class Blob {
 public:
+
     /*
      * Blob constructor:
      * Initialises all variables and pointers to 0 (or NULL). Does not perform any memory allocation. Actual Blob initialisation
@@ -55,9 +57,11 @@ public:
      * Also takes the simulation parameters and the array of RNGs (for multiprocessor runs).
      */
     int init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
-            const char *stokes_filename, const char *vdw_filename, const char *pin_filename, scalar scale, int linear_solver,
-            int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, MTRand rng[], int num_threads);
-
+            const char *stokes_filename, const char *vdw_filename, const char *binding_filename, const char *pin_filename, scalar scale, int linear_solver,
+            int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, MTRand rng[], int num_threads);
+    //int init(const int blob_index, const int conformation_index, const string node_filename, const string topology_filename, const string surface_filename, const string material_params_filename,
+      //  const string stokes_filename, const string vdw_filename, const string pin_filename, scalar scale, int linear_solver,
+        //int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, MTRand rng[], int num_threads);
 
     /*
      * Solves the EOM on the finite element mesh, updating the node positions and velocities by one time step
@@ -117,6 +121,8 @@ public:
      */
     void make_measurements(FILE *measurement_out, int step, vector3 *system_CoM);
 
+    int calculate_deformation();
+
     void make_stress_measurements(FILE *stress_out, int blob_number);
 
     void calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_out, int other_blob_index);
@@ -135,6 +141,8 @@ public:
      * Return pointer to the ith Face of this Blob's surface
      */
     Face *get_face(int i);
+
+    Face *absolutely_get_face(int i);
 
     scalar get_vdw_area();
 
@@ -157,6 +165,12 @@ public:
     void set_forces_to_zero();
 
     vector3 get_node(int index);
+
+    vector3 **get_actual_node_positions();
+
+    vector3 *get_node_positions_copy();
+
+    void set_nodes(vector3 *node_pos);
 
     void add_force_to_node(vector3 f, int index);
 
@@ -194,11 +208,31 @@ public:
      */
     void reset_all_faces();
 
+    void linearise_elements();
+
     int get_num_nodes();
+
+    int get_motion_state();
+
+    int get_num_linear_nodes();
+
+    scalar calculate_strain_energy();
+
+    void get_min_max(vector3 *blob_min, vector3 *blob_max);
 
     /* Blob and conformation indices */
     int blob_index;
     int conformation_index;
+
+    /* Binding sites must be known publicly */
+    int num_binding_sites;
+    BindingSite *binding_site;
+
+    /*
+     *
+     */
+    void kinetic_bind(int site_index);
+    void kinetic_unbind(int site_index);
 
 private:
 
@@ -237,6 +271,9 @@ private:
 
     /* Array of nodes */
     mesh_node *node;
+
+    /* Array of node positions only */
+    vector3 **node_position;
 
     /* Array of elements */
     tetra_element_linear *elem;
@@ -327,11 +364,20 @@ private:
     int load_vdw(const char *vdw_filename, int num_vdw_face_types);
 
     /*
+     * Opens and reads the given 'ffea binding site file', extracting all the kinetic binding sites (face list) for this Blob.
+     */
+    int load_binding_sites(const char *binding_filename, int num_binding_site_types);
+
+    /*
      * Opens and reads the given 'ffea pinned nodes file', extracting all the faces for this Blob.
      */
     int load_pinned_nodes(const char *pin_filename);
 
-
+    /*
+     * Creates a new pinned nodes list from a given set
+     */
+    void create_pinned_nodes(set<int> list);
+    
     /*
      * Calculate some quantities such as the rest jacobian, rest volume etc.
      */

@@ -1,6 +1,7 @@
 #ifndef SOLVER_H_INCLUDED
 #define SOLVER_H_INCLUDED
 
+#include "tetra_element_linear.h"
 class Solver {
 public:
 

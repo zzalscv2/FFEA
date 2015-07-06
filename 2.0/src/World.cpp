@@ -1,9 +1,16 @@
 #include "World.h"
 
 World::World() {
+
     // Initialise everything to zero
     blob_array = NULL;
+    active_conformation_index = NULL;
+    active_state_index = NULL;
     spring_array = NULL;
+    kinetic_map_array = NULL;
+    kinetic_double_map_array = NULL;
+    kinetic_state = NULL;
+    kinetic_rate = NULL;
     num_blobs = 0;
     num_conformations = NULL;
     num_springs = 0;
@@ -15,7 +22,6 @@ World::World() {
     box_dim.y = 0;
     box_dim.z = 0;
     step_initial = 0;
-    stress_out = NULL;
     trajectory_out = NULL;
     measurement_out = NULL;
 }
@@ -31,366 +37,373 @@ World::~World() {
     delete[] num_conformations;
     num_conformations = NULL;
 
+    delete[] active_conformation_index;
+    active_conformation_index = NULL;
+    delete[] active_state_index;
+    active_state_index = NULL;
+
     delete[] spring_array;
     spring_array = NULL;
     num_springs = 0;
+  
+    delete[] kinetic_map_array;
+    kinetic_map_array = NULL;
+
+    delete[] kinetic_double_map_array;
+    kinetic_double_map_array = NULL;
+
+    delete[] kinetic_state;
+    kinetic_state = NULL;
+    delete[] kinetic_rate;
+    kinetic_rate = NULL;
 
     delete[] phi_Gamma;
     phi_Gamma = NULL;
 
     total_num_surface_faces = 0;
-
+  
     box_dim.x = 0;
     box_dim.y = 0;
     box_dim.z = 0;
     step_initial = 0;
-
-    stress_out = NULL;
+  
     trajectory_out = NULL;
 
     delete[] measurement_out;
-    measurement_out = NULL;
+    measurement_out = NULL;   
 }
 
 /* */
-int World::init(const char *FFEA_script_filename) {
-    int i, j;
+int World::init(string FFEA_script_filename) {
+	
+	// Set some constants and variables
+	int i, j;
+	const int MAX_BUF_SIZE = 255;
+	string buf_string;
+	FFEA_input_reader *ffeareader;
+	ffeareader = new FFEA_input_reader();
 
-    // Open the ffea script file
-    FILE *script_file;
-    if ((script_file = fopen(FFEA_script_filename, "r")) == NULL) {
-        FFEA_FILE_ERROR_MESSG(FFEA_script_filename);
-    }
+	// Open script
+	ifstream fin;
+	fin.open(FFEA_script_filename.c_str());
 
-    const int buffer_size = 101;
-    char buf[buffer_size];
+	// Copy entire script into string
+	vector<string> script_vector;
+	ffeareader->file_to_lines(FFEA_script_filename, &script_vector);
 
-    printf("Parsing script file '%s'...\n", FFEA_script_filename);
+	// Get params section
+	cout << "Extracting Parameters..." << endl;
+	if(params.extract_params(script_vector) != 0) {
+		FFEA_error_text();
+		printf("Error parsing parameters in SimulationParams::extract_params()\n");
+		return FFEA_ERROR;
+	}
+	cout << "...done!" << endl;
 
-    // Read first tag
-    if (get_next_script_tag(script_file, buf) == FFEA_ERROR) {
-        FFEA_error_text();
-        printf("Error when reading first tag in %s\n", FFEA_script_filename);
-        fclose(script_file);
-        return FFEA_ERROR;
-    }
+	// Check for consistency
+	cout << "\nVerifying Parameters..." << endl;
+	if(params.validate() != 0) {
+		FFEA_error_text();
+		printf("Parameters found to be inconsistent in SimulationParams::validate()\n");
+		return FFEA_ERROR;
+	}
+	
+	// Build kinetic maps if necessary (and rates and binding site matrix)
+	if(params.calc_kinetics == 1) {
+		kinetic_rate = new scalar**[params.num_blobs];
+		kinetic_state = new KineticState*[params.num_blobs];
+		kinetic_map_array = new SparseMatrixFixedPattern**[params.num_blobs];
+		kinetic_double_map_array = new SparseMatrixFixedPattern***[params.num_blobs];
+		for(i = 0; i < params.num_blobs; ++i) {
+			kinetic_map_array[i] = new SparseMatrixFixedPattern*[params.num_conformations[i]];
+			kinetic_double_map_array[i] = new SparseMatrixFixedPattern**[params.num_conformations[i]];
+			for(j = 0; j < params.num_conformations[i]; ++j) {
+				kinetic_map_array[i][j] = new SparseMatrixFixedPattern[params.num_conformations[i]];
+				kinetic_double_map_array[i][j] = new SparseMatrixFixedPattern*[params.num_conformations[i]];
+			}
+		}
 
-    // 1st block should be <param> block
-    if (strcmp(buf, "param") != 0) {
-        FFEA_error_text();
-        printf("In script file, '%s': First block in script file should be <param> block, not '<%s>'\n", FFEA_script_filename, buf);
-        fclose(script_file);
-        return FFEA_ERROR;
-    }
+		kinetic_rng.seed(params.rng_seed);
 
-    // Parse each tag in the <param> block
-    printf("Entering <param> block...\n");
-    for (;;) {
-        if (get_next_script_tag(script_file, buf) == FFEA_ERROR) {
-            FFEA_error_text();
-            printf("\tError when reading tag in <param> block\n");
-            fclose(script_file);
-            return FFEA_ERROR;
-        }
-        if (feof(script_file)) {
-            FFEA_error_text();
-            printf("\tReached end of file before end of <param> block\n");
-            fclose(script_file);
-            return FFEA_ERROR;
-        }
+		if(binding_matrix.init(params.binding_params_fname) == FFEA_ERROR) {
+			FFEA_ERROR_MESSG("Error when reading from binding site params file.\n")
+		}
+		
+		
+	}
 
-        if (strcmp(buf, "/param") == 0) {
-            printf("Exiting <param> block\n");
-            break;
-        }
+	// Load the vdw forcefield params matrix
+    	if (lj_matrix.init(params.vdw_params_fname) == FFEA_ERROR) {
+        	FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
+    	}
 
-        if (params.parse_param_assignment(buf) == FFEA_ERROR) {
-            FFEA_error_text();
-            printf("Parameter assignment failed.\n");
-            fclose(script_file);
-            return FFEA_ERROR;
-        }
-    }
+    	// detect how many threads we have for openmp
+    	int tid;
+	
+	#pragma omp parallel default(none) private(tid)
+	{
+        	tid = omp_get_thread_num();
+        	if (tid == 0) {
+            		num_threads = omp_get_num_threads();
+            		printf("\n\tNumber of threads detected: %d\n\n", num_threads);
+        	}
+    	}
 
-    // Check if the simulation parameters are reasonable
-    if (params.validate() == FFEA_ERROR) {
-        FFEA_error_text();
-        printf("There are some required parameters that are either unset or have bad values.\n");
-        fclose(script_file);
-        return FFEA_ERROR;
-    }
+    	// We need one rng for each thread, to avoid concurrency problems,
+    	// so generate an array of instances of mersenne-twister rngs.
+    	rng = new MTRand[num_threads];
 
-    // Add data to world for quicker coding!
-    this->num_blobs = params.num_blobs;
-    this->num_conformations = new int[num_blobs];
+    	// Seed each rng differently
+    	for (i = 0; i < num_threads; i++) {
+        	rng[i].seed(params.rng_seed + i);
+	}
 
-    for (int i = 0; i < num_blobs; ++i) {
-        this->num_conformations[i] = params.num_conformations[i];
-    }
+	// Build system of blobs, conformations, kinetics etc
+	if(read_and_build_system(script_vector) != 0) {
+		FFEA_error_text();
+		cout << "System could not be built in World::read_and_build_system()" << endl;
+		return FFEA_ERROR;
+	}
 
-    // Load the vdw forcefield params matrix
-    if (lj_matrix.init(params.vdw_params_fname) == FFEA_ERROR) {
-        FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
-    }
+	// Create measurement files
+	measurement_out = new FILE *[params.num_blobs + 1];
 
-    // detect how many threads we have for openmp
-    int tid;
-#pragma omp parallel default(none) private(tid)
-    {
-        tid = omp_get_thread_num();
-        if (tid == 0) {
-            num_threads = omp_get_num_threads();
-            printf("Number of threads detected: %d\n", num_threads);
-        }
-    }
+	// If not restarting a previous simulation, create new trajectory and measurement files
+	if (params.restart == 0) {
+		
+		// Open the trajectory output file for writing
+		if ((trajectory_out = fopen(params.trajectory_out_fname, "w")) == NULL) {
+		    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+		}
 
-    // We need one rng for each thread, to avoid concurrency problems,
-    // so generate an array of instances of mersenne-twister rngs.
-    rng = new MTRand[num_threads];
+		// Open the measurement output file for writing
+		for (i = 0; i < params.num_blobs + 1; ++i) {
+		    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "w")) == NULL) {
+		        FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
+		    }
+		}
 
-    // Seed each rng differently
-    for (i = 0; i < num_threads; i++)
-        rng[i].seed(params.rng_seed + i);
+		// Print initial info stuff
+		fprintf(trajectory_out, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs %d\nNumber of Conformations", params.num_blobs);
+		for (i = 0; i < params.num_blobs; ++i) {
+			fprintf(trajectory_out, " %d", params.num_conformations[i]);
+		}
+		fprintf(trajectory_out, "\n");
 
+		for (i = 0; i < params.num_blobs; ++i) {
+		    fprintf(trajectory_out, "Blob %d:\t", i);
+		    for(j = 0; j < params.num_conformations[i]; ++j) {
+			    fprintf(trajectory_out, "Conformation %d Nodes %d\t", j, blob_array[i][j].get_num_nodes());
+		    }
+		    fprintf(trajectory_out, "\n");
+		}
+		fprintf(trajectory_out, "\n");
 
-    // Read next main block tag
-    if (get_next_script_tag(script_file, buf) == FFEA_ERROR) {
-        FFEA_error_text();
-        printf("Error when reading/looking for <system> tag in %s\n", FFEA_script_filename);
-        fclose(script_file);
-        return FFEA_ERROR;
-    }
+		// First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
+		fprintf(trajectory_out, "*\n");
 
-    // 2nd block should be <system> block
-    if (strcmp(buf, "system") != 0) {
-        FFEA_error_text();
-        printf("In script file, '%s': Second block in script file should be <system> block, not '<%s>'\n", FFEA_script_filename, buf);
-        fclose(script_file);
-        return FFEA_ERROR;
-    }
+		// First line in measurements file should be a header explaining what quantities are in each column
+		for (i = 0; i < params.num_blobs; ++i) {
+		    fprintf(measurement_out[i], "# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface\n", i, i, i);
+		    fflush(measurement_out[i]);
+		}
+		fprintf(measurement_out[params.num_blobs], "# step ");
+		for (i = 0; i < params.num_blobs; ++i) {
+		    for (j = i + 1; j < params.num_blobs; ++j) {
+		        fprintf(measurement_out[params.num_blobs], "| vdw_area_%d_%d | vdw_force_%d_%d | vdw_energy_%d_%d ", i, j, i, j, i, j);
+		    }
+		}
+		fprintf(measurement_out[params.num_blobs], "\n");
+		fflush(measurement_out[params.num_blobs]);
 
-    // Parse system block
-    printf("Entering <system> block...\n");
-    if (read_and_build_system(script_file) == FFEA_ERROR) {
-        FFEA_error_text();
-        printf("\tError when reading <system> block. Aborting.\n");
-        fclose(script_file);
-        return FFEA_ERROR;
-    }
-    fclose(script_file);
+	    } else {
+		// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
+		printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
+		if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
+		    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+		}
 
-    // Create measurement files
-    measurement_out = new FILE *[params.num_blobs + 1];
+		printf("Reverse searching for 2 asterisks (denoting a completely written snapshot)...\n");
+		if (fseek(trajectory_out, 0, SEEK_END) != 0) {
+		    FFEA_ERROR_MESSG("Could not seek to end of file\n")
+		}
 
-    // If not restarting a previous simulation, create new trajectory and measurement files
-    if (params.restart == 0) {
-        // Open the trajectory output file for writing
-        if ((trajectory_out = fopen(params.trajectory_out_fname, "w")) == NULL) {
-            FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
-        }
+		// Variable to store position of last asterisk in trajectory file (initialise it at end of file)
+		off_t last_asterisk_pos = ftello(trajectory_out);
 
-        // Open the measurement output file for writing
-        for (i = 0; i < params.num_blobs + 1; ++i) {
-            if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "w")) == NULL) {
-                FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
-            }
-        }
+		int num_asterisks = 0;
+		while (num_asterisks != 3) {
+		    if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
+		        perror(NULL);
+		        FFEA_ERROR_MESSG("Balls.\n")
+		    }
+		    char c = fgetc(trajectory_out);
+		    if (c == '*') {
+		        num_asterisks++;
+		        printf("Found %d\n", num_asterisks);
 
-        // Open stress file for writing, maybe
-        if (params.stress_out_fname_set == 1) {
-            if (((stress_out = fopen(params.stress_out_fname, "w")) == NULL)) {
-                FFEA_FILE_ERROR_MESSG(params.stress_out_fname)
-            }
-        }
+		        // get the position in the file of this last asterisk
+		        if (num_asterisks == 1) {
+		            last_asterisk_pos = ftello(trajectory_out);
+		        }
+		    }
+		}
 
-        // Print initial info stuff
-        fprintf(trajectory_out, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs %d\n", params.num_blobs);
-        for (i = 0; i < params.num_blobs; ++i) {
-            fprintf(trajectory_out, "Blob %d Nodes %d\t", i, active_blob_array[i]->get_num_nodes());
-        }
-        fprintf(trajectory_out, "\n\n");
+		char c;
+		if ((c = fgetc(trajectory_out)) != '\n') {
+		    ungetc(c, trajectory_out);
+		}
 
-        // First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
-        fprintf(trajectory_out, "*\n");
+		printf("Loading Blob position and velocity data from last completely written snapshot \n");
+		int blob_id, conformation_id;
+		long long rstep;
+		for (int b = 0; b < params.num_blobs; b++) {
+		    if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
+		        FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
+		    }
+		    if (blob_id != b) {
+		        FFEA_ERROR_MESSG("Mismatch in trajectory file - found blob id = %d, was expecting blob id = %d\n", blob_id, b)
+		    }
+		    printf("Loading node position, velocity and potential from restart trajectory file, for blob %d, step %lld\n", blob_id, rstep);
+		    if (active_blob_array[b]->read_nodes_from_file(trajectory_out) == FFEA_ERROR) {
+		        FFEA_ERROR_MESSG("Error restarting blob %d\n", blob_id)
+		    }
+		}
+		step_initial = rstep;
+		printf("...done. Simulation will commence from step %lld\n", step_initial);
+		fclose(trajectory_out);
 
-        // First line in measurements file should be a header explaining what quantities are in each column
-        for (i = 0; i < params.num_blobs; ++i) {
-            fprintf(measurement_out[i], "# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface\n", i, i, i);
-            fflush(measurement_out[i]);
-        }
-        fprintf(measurement_out[params.num_blobs], "# step ");
-        for (i = 0; i < params.num_blobs; ++i) {
-            for (j = i + 1; j < params.num_blobs; ++j) {
-                fprintf(measurement_out[params.num_blobs], "| vdw_area_%d_%d | vdw_force_%d_%d | vdw_energy_%d_%d ", i, j, i, j, i, j);
-            }
-        }
-        fprintf(measurement_out[params.num_blobs], "\n");
-        fflush(measurement_out[params.num_blobs]);
+		// Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
+		printf("Truncating the trajectory file to the last asterisk (to remove any half-written time steps)\n");
+		if (truncate(params.trajectory_out_fname, last_asterisk_pos) != 0) {
+		    FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname)
+		}
 
-    } else {
-        // Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
-        printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
-        if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
-            FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
-        }
+		// Open trajectory and measurment files for appending
+		printf("Opening trajectory and measurement files for appending.\n");
+		if ((trajectory_out = fopen(params.trajectory_out_fname, "a")) == NULL) {
+		    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+		}
+		for (i = 0; i < params.num_blobs + 1; ++i) {
+		    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "a")) == NULL) {
+		        FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
+		    }
+		}
 
-        printf("Reverse searching for 2 asterisks (denoting a completely written snapshot)...\n");
-        if (fseek(trajectory_out, 0, SEEK_END) != 0) {
-            FFEA_ERROR_MESSG("Could not seek to end of file\n")
-        }
+		// Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
+		fprintf(trajectory_out, "\n");
 
-        // Variable to store position of last asterisk in trajectory file (initialise it at end of file)
-        off_t last_asterisk_pos = ftello(trajectory_out);
+		for (i = 0; i < params.num_blobs + 1; ++i) {
+		    fprintf(measurement_out[i], "#==RESTART==\n");
+		}
 
-        int num_asterisks = 0;
-        while (num_asterisks != 2) {
-            if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
-                perror(NULL);
-                FFEA_ERROR_MESSG("Balls.\n")
-            }
-            char c = fgetc(trajectory_out);
-            if (c == '*') {
-                num_asterisks++;
-                printf("Found %d\n", num_asterisks);
-
-                // get the position in the file of this last asterisk
-                if (num_asterisks == 1) {
-                    last_asterisk_pos = ftello(trajectory_out);
-                }
-            }
-        }
-
-        char c;
-        if ((c = fgetc(trajectory_out)) != '\n') {
-            ungetc(c, trajectory_out);
-        }
-
-        printf("Loading Blob position and velocity data from last completely written snapshot \n");
-        int blob_id, conformation_id;
-        long long rstep;
-        for (int b = 0; b < params.num_blobs; b++) {
-            if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
-                FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
-            }
-            if (blob_id != b) {
-                FFEA_ERROR_MESSG("Mismatch in trajectory file - found blob id = %d, was expecting blob id = %d\n", blob_id, b)
-            }
-            printf("Loading node position, velocity and potential from restart trajectory file, for blob %d, step %lld\n", blob_id, rstep);
-            if (active_blob_array[b]->read_nodes_from_file(trajectory_out) == FFEA_ERROR) {
-                FFEA_ERROR_MESSG("Error restarting blob %d\n", blob_id)
-            }
-        }
-        step_initial = rstep;
-        printf("...done. Simulation will commence from step %lld\n", step_initial);
-        fclose(trajectory_out);
-
-        // Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
-        printf("Truncating the trajectory file to the last asterisk (to remove any half-written time steps)\n");
-        if (truncate(params.trajectory_out_fname, last_asterisk_pos) != 0) {
-            FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname)
-        }
-
-        // Open trajectory and measurment files for appending
-        printf("Opening trajectory and measurement files for appending.\n");
-        if ((trajectory_out = fopen(params.trajectory_out_fname, "a")) == NULL) {
-            FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
-        }
-        for (i = 0; i < params.num_blobs + 1; ++i) {
-            if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "a")) == NULL) {
-                FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
-            }
-        }
-
-        // Open stress file for appending
-        if (params.stress_out_fname_set == 1) {
-            if (((stress_out = fopen(params.stress_out_fname, "a")) == NULL)) {
-                FFEA_FILE_ERROR_MESSG(params.stress_out_fname)
-            }
-        }
-
-        // Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
-        fprintf(trajectory_out, "\n");
-
-        for (i = 0; i < params.num_blobs + 1; ++i) {
-            fprintf(measurement_out[i], "#==RESTART==\n");
-        }
-
-    }
+	    }
 
 
 
-    // Initialise the Van der Waals solver
-    box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
-    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
-    box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
-    vdw_solver.init(&lookup, &box_dim, &lj_matrix);
+	    // Initialise the Van der Waals solver
+	    if(params.calc_vdw == 1 || params.calc_es == 1) {
+		vector3 world_centroid, shift;
+	        get_system_centroid(&world_centroid);
+		if(params.es_N_x < 1 || params.es_N_y < 1 || params.es_N_z < 1) {
+			vector3 dimension_vector;
+			get_system_dimensions(&dimension_vector);
+			
+			// Calculate decent box size
+			params.es_N_x = 2 * (int)ceil(dimension_vector.x * (params.kappa / params.es_h));
+			params.es_N_y = 2 * (int)ceil(dimension_vector.y * (params.kappa / params.es_h));
+			params.es_N_z = 2 * (int)ceil(dimension_vector.z * (params.kappa / params.es_h));
+			cout << " " << params.es_N_x << " " << params.es_N_y << " " << params.es_N_z << endl;
+		}
 
-    // Calculate the total number of vdw interacting faces in the entire system
-    total_num_surface_faces = 0;
-    for (i = 0; i < params.num_blobs; i++) {
-        total_num_surface_faces += active_blob_array[i]->get_num_faces();
-    }
-    printf("Total number of surface faces in system: %d\n", total_num_surface_faces);
+		// Move to box centre
+		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
+	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
+	        box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
+		
+		shift.x = box_dim.x / 2.0 - world_centroid.x;
+		shift.y = box_dim.y / 2.0 - world_centroid.y;
+		shift.z = box_dim.z / 2.0 - world_centroid.z;
 
-    if (params.es_N_x > 0 && params.es_N_y > 0 && params.es_N_z > 0) {
+		for (i = 0; i < params.num_blobs; i++) {
+			active_blob_array[i]->get_centroid(&world_centroid);
+			active_blob_array[i]->move(shift.x, shift.y, shift.z);
+		}
+	    }
 
-        // Allocate memory for an NxNxN grid, with a 'pool' for the required number of surface faces
-        printf("Allocating memory for nearest neighbour lookup grid...\n");
-        if (lookup.alloc(params.es_N_x, params.es_N_y, params.es_N_z, total_num_surface_faces) == FFEA_ERROR) {
-            FFEA_error_text();
-            printf("When allocating memory for nearest neighbour lookup grid\n");
-            return FFEA_ERROR;
-        }
-        printf("...done\n");
+	    box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
+	    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
+	    box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
+	    
+	    vdw_solver.init(&lookup, &box_dim, &lj_matrix);
 
-        printf("Box has volume %e cubic angstroms\n", (box_dim.x * box_dim.y * box_dim.z) * 1e30);
+	    // Calculate the total number of vdw interacting faces in the entire system
+	    total_num_surface_faces = 0;
+	    for (i = 0; i < params.num_blobs; i++) {
+		total_num_surface_faces += active_blob_array[i]->get_num_faces();
+	    }
+	    printf("Total number of surface faces in system: %d\n", total_num_surface_faces);
 
-        // Add all the faces from each Blob to the lookup pool
-        printf("Adding all faces to nearest neighbour grid lookup pool\n");
-        for (i = 0; i < params.num_blobs; i++) {
-            int num_faces_added = 0;
-            for (j = 0; j < active_blob_array[i]->get_num_faces(); j++) {
-                Face *b_face = active_blob_array[i]->get_face(j);
-                if (b_face != NULL) {
-                    if (lookup.add_to_pool(b_face) == FFEA_ERROR) {
-                        FFEA_error_text();
-                        printf("When attempting to add a face to the lookup pool\n");
-                        return FFEA_ERROR;
-                    }
-                    num_faces_added++;
-                }
-            }
-            printf("%d 'VdW active' faces, from blob %d, added to lookup grid.\n", num_faces_added, i);
-        }
+	    if (params.es_N_x > 0 && params.es_N_y > 0 && params.es_N_z > 0) {
 
-        // Initialise the BEM PBE solver
-        if (params.calc_es == 1) {
-            printf("Initialising Boundary Element Poisson Boltzmann Solver...\n");
-            PB_solver.init(&lookup);
-            PB_solver.set_kappa(params.kappa);
+		// Allocate memory for an NxNxN grid, with a 'pool' for the required number of surface faces
+		printf("Allocating memory for nearest neighbour lookup grid...\n");
+		if (lookup.alloc(params.es_N_x, params.es_N_y, params.es_N_z, total_num_surface_faces) == FFEA_ERROR) {
+		    FFEA_error_text();
+		    printf("When allocating memory for nearest neighbour lookup grid\n");
+		    return FFEA_ERROR;
+		}
+		printf("...done\n");
 
-            // Initialise the nonsymmetric matrix solver
-            nonsymmetric_solver.init(total_num_surface_faces, params.epsilon2, params.max_iterations_cg);
+		printf("Box has volume %e cubic angstroms\n", (box_dim.x * box_dim.y * box_dim.z) * 1e30);
 
-            // Allocate memory for surface potential vector
-            phi_Gamma = new scalar[total_num_surface_faces];
-            for (i = 0; i < total_num_surface_faces; i++)
-                phi_Gamma[i] = 0;
+		// Add all the faces from each Blob to the lookup pool
+		printf("Adding all faces to nearest neighbour grid lookup pool\n");
+		for (i = 0; i < params.num_blobs; i++) {
+		    int num_faces_added = 0;
+		    for (j = 0; j < active_blob_array[i]->get_num_faces(); j++) {
+		        Face *b_face = active_blob_array[i]->get_face(j);
+		        if (b_face != NULL) {
+		            if (lookup.add_to_pool(b_face) == FFEA_ERROR) {
+		                FFEA_error_text();
+		                printf("When attempting to add a face to the lookup pool\n");
+		                return FFEA_ERROR;
+		            }
+		            num_faces_added++;
+		        }
+		    }
+		    printf("%d 'VdW active' faces, from blob %d, added to lookup grid.\n", num_faces_added, i);
+		}
 
-            work_vec = new scalar[total_num_surface_faces];
-            for (i = 0; i < total_num_surface_faces; i++)
-                work_vec[i] = 0;
+		// Initialise the BEM PBE solver
+		if (params.calc_es == 1) {
+		    printf("Initialising Boundary Element Poisson Boltzmann Solver...\n");
+		    PB_solver.init(&lookup);
+		    PB_solver.set_kappa(params.kappa);
 
-            J_Gamma = new scalar[total_num_surface_faces];
-            for (i = 0; i < total_num_surface_faces; i++)
-                J_Gamma[i] = 0;
-        }
-    }
+		    // Initialise the nonsymmetric matrix solver
+		    nonsymmetric_solver.init(total_num_surface_faces, params.epsilon2, params.max_iterations_cg);
 
-    if (params.restart == 0) {
-        // Carry out measurements on the system before carrying out any updates (if this is step 0)
-        print_trajectory_and_measurement_files(0, 0);
-    }
+		    // Allocate memory for surface potential vector
+		    phi_Gamma = new scalar[total_num_surface_faces];
+		    for (i = 0; i < total_num_surface_faces; i++)
+		        phi_Gamma[i] = 0;
+
+		    work_vec = new scalar[total_num_surface_faces];
+		    for (i = 0; i < total_num_surface_faces; i++)
+		        work_vec[i] = 0;
+
+		    J_Gamma = new scalar[total_num_surface_faces];
+		    for (i = 0; i < total_num_surface_faces; i++)
+		        J_Gamma[i] = 0;
+		}
+	    }
+
+	    if (params.restart == 0) {
+		// Carry out measurements on the system before carrying out any updates (if this is step 0)
+		print_trajectory_and_measurement_files(0, 0);
+		print_trajectory_conformation_changes(trajectory_out, 0, NULL, NULL);
+	    }
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now ready to run with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
@@ -505,6 +518,7 @@ int World::run() {
                     // attempt to print out the final (bad) time step
                     printf("Dumping final step:\n");
                     print_trajectory_and_measurement_files(step, wtime);
+		    print_trajectory_conformation_changes(trajectory_out, 0, NULL, NULL);
 
                     return FFEA_ERROR;
                 }
@@ -534,20 +548,22 @@ int World::run() {
 
         // Apply springs directly to nodes
         apply_springs();
-
+	
         // Sort internal forces out
         int fatal_errors = 0;
+	
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
 #endif
+
         for (int i = 0; i < params.num_blobs; i++) {
-            if (active_blob_array[i]->update() == FFEA_ERROR) {
-                FFEA_error_text();
-                printf("A problem occurred when updating Blob %d on step %lld\n", i, step);
-                printf("Simulation ran for %2f seconds (wall clock time) before error ocurred\n", (omp_get_wtime() - wtime));
-                //return FFEA_ERROR;
-                fatal_errors++;
-            }
+        	if (active_blob_array[i]->update() == FFEA_ERROR) {
+        		FFEA_error_text();
+               		printf("A problem occurred when updating Blob %d on step %lld\n", i, step);
+                	printf("Simulation ran for %2f seconds (wall clock time) before error ocurred\n", (omp_get_wtime() - wtime));
+                	//return FFEA_ERROR;
+                	fatal_errors++;
+            	}
         }
         if (fatal_errors > 0) {
             FFEA_error_text();
@@ -556,6 +572,7 @@ int World::run() {
             // attempt to print out the final (bad) time step
             printf("Dumping final step:\n");
             print_trajectory_and_measurement_files(step, wtime);
+	    print_trajectory_conformation_changes(trajectory_out, 0, NULL, NULL);
 
             return FFEA_ERROR;
         }
@@ -563,581 +580,1014 @@ int World::run() {
         if (step % params.check == 0) {
             print_trajectory_and_measurement_files(step + 1, wtime);
         }
+
+	/* Kinetic Part of each step */
+
+	// Get a list of old conformations for writing to traj
+	int *from = new int[params.num_blobs];
+	for(int i = 0; i < params.num_blobs; ++i) {
+		from[i] = active_blob_array[i]->conformation_index;
+	}
+
+	if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
+
+		// Get base rates
+		scalar ***switching_probs;
+		switching_probs = new scalar**[params.num_blobs];
+		for(int i = 0; i < params.num_blobs; ++i) {
+			switching_probs[i] = new scalar*[params.num_states[i]];
+			for(int j = 0; j < params.num_states[i]; ++j) {
+				switching_probs[i][j] = new scalar[params.num_states[i]];
+				for(int k = 0; k < params.num_states[i]; ++k) {
+					if(params.num_states[i] > 1) {
+						switching_probs[i][j][k] = kinetic_rate[i][j][k];
+					} else {
+						switching_probs[i][j][k] = 1;
+					}	
+				}
+			}
+		}
+
+		// Rescale rates based on energies
+		if(rescale_kinetic_rates(switching_probs) != FFEA_OK) {
+
+			delete[] from;
+			delete[] switching_probs;
+			cout << "Error in 'rescale_kinetic_rates' function." << endl;
+			return FFEA_ERROR;
+		}
+		
+		// Change conformation based on these rates
+		// Make some bins for the random number generator
+		scalar prob_sum;
+		scalar **bin_limits = new scalar*[params.num_blobs];
+		for(int i = 0; i < params.num_blobs; ++i) {
+			bin_limits[i] = new scalar[params.num_states[i] + 1];
+			prob_sum = 0.0;
+			for(int j = 0; j < params.num_states[i]; ++j) {
+				bin_limits[i][j] = prob_sum;
+				prob_sum += switching_probs[i][active_state_index[i]][j];
+			}
+			bin_limits[i][params.num_states[i]] = prob_sum;	
+		}
+
+		// Changing states now, if necessary
+		scalar switch_check;
+		for(int i = 0; i < params.num_blobs; ++i) {
+
+			// Get a random number between 0 and 1
+			switch_check = kinetic_rng.rand();
+			for(int j = 0; j < params.num_states[i]; ++j) {
+				
+				// Change state based on this random number!
+				if(switch_check >= bin_limits[i][j] && switch_check < bin_limits[i][j + 1]) {
+					change_blob_state(i, j);
+				}
+			}
+		}
+
+		delete[] bin_limits;
+		delete[] switching_probs;
+	}
+
+	// Get a list of new conformations for writing to traj
+	int *to = new int[params.num_blobs];
+	for(int i = 0; i < params.num_blobs; ++i) {
+		to[i] = active_blob_array[i]->conformation_index;
+	}
+
+	// Print Trajectory Conf change data and free data
+	if(step % params.check == 0) {
+		print_trajectory_conformation_changes(trajectory_out, step + 1, from, to);
+	}
+	
+	delete[] from;
+	delete[] to;
     }
     printf("Time taken: %2f seconds\n", (omp_get_wtime() - wtime));
 
     return FFEA_OK;
 }
 
-/* */
-int World::read_and_build_system(FILE *in) {
-    const int max_buf_size = 255;
-    char buf[max_buf_size];
-    char lvalue[max_buf_size];
-    char rvalue[max_buf_size];
-    char *spring_filename = new char[max_buf_size];
-    int linear_solver = FFEA_ITERATIVE_SOLVER;
-    float com_x, com_y, com_z;
-    float r11, r12, r13, r21, r22, r23, r31, r32, r33;
-    float vel_x, vel_y, vel_z;
+int World::change_blob_state(int blob_index, int new_state_index) {
 
-    int set_linear_solver = 0;
-    int set_centroid_pos = 0;
-    int set_rotation = 0;
-    int set_velocity = 0;
+	// First check if work needs to be done at all
+	if(new_state_index == active_state_index[blob_index]) {
+		return FFEA_OK;
+	}
 
-    scalar scale = 1;
+	// Now check on type of state change
+	int switch_type;
+	if(kinetic_state[blob_index][active_state_index[blob_index]].conformation_index != kinetic_state[blob_index][new_state_index].conformation_index) {
+		
+		// Flag for conformation change
+		switch_type = FFEA_CONFORMATION_CHANGE;
 
-    // Create the array of Blobs and conformations
-    // Default active conformation is always first specified
-    printf("\tCreating blob array\n");
-    blob_array = new Blob*[params.num_blobs];
-    active_blob_array = new Blob*[params.num_blobs];
-    active_conformation_index = new int[params.num_blobs];
+	} else if (kinetic_state[blob_index][active_state_index[blob_index]].bound == 0 && kinetic_state[blob_index][new_state_index].bound == 1) {
+		
+		// Flag for a binding event
+		switch_type = FFEA_BINDING_EVENT;
+	
+	} else if (kinetic_state[blob_index][active_state_index[blob_index]].bound == 1 && kinetic_state[blob_index][new_state_index].bound == 0) {
+		
+		// Flag for an ubinding event
+		switch_type = FFEA_UNBINDING_EVENT;
+	
+	} else {
+		
+		// Flag for an identity event
+		switch_type = FFEA_IDENTITY_EVENT;
+	}
 
-    for (int i = 0; i < params.num_blobs; ++i) {
-        blob_array[i] = new Blob[num_conformations[i]];
-        active_blob_array[i] = &blob_array[i][0];
-        active_conformation_index[i] = 0;
-    }
+	// Let's change states
 
-    // Construct each blob and conformation defined in the <system> block
-    int i = 0, j, k = 0, rv;
-    for (;;) {
+	// Stuff for all state changes
+	active_state_index[blob_index] = new_state_index;
 
-        // Allocate all memory for this particular blob
-        char **node_filename = new char*[num_conformations[i]];
-        char **topology_filename = new char*[num_conformations[i]];
-        char **surface_filename = new char*[num_conformations[i]];
-        char **material_params_filename = new char*[num_conformations[i]];
-        char **stokes_filename = new char*[num_conformations[i]];
-        char **vdw_filename = new char*[num_conformations[i]];
-        char **pin_filename = new char*[num_conformations[i]];
-        int *blob_motion_state = new int[num_conformations[i]];
-        char rates_filename[max_buf_size];
-        char states_filename[max_buf_size];
-        char map_filename[max_buf_size];
+	// Then type specific stuff
+	switch(switch_type) {
+		
+		case FFEA_CONFORMATION_CHANGE:
+		{	
+			int from_conf = active_conformation_index[blob_index];
+			int to_conf = kinetic_state[blob_index][new_state_index].conformation_index;
+			vector3 **from_nodes = active_blob_array[blob_index]->get_actual_node_positions();
+			vector3 **to_nodes = blob_array[blob_index][to_conf].get_actual_node_positions();
 
-        int *set_node_filename = new int[num_conformations[i]];
-        int *set_topology_filename = new int[num_conformations[i]];
-        int *set_surface_filename = new int[num_conformations[i]];
-        int *set_material_params_filename = new int[num_conformations[i]];
-        int *set_stokes_filename = new int[num_conformations[i]];
-        int *set_vdw_filename = new int[num_conformations[i]];
-        int *set_pin_filename = new int[num_conformations[i]];
-        int *set_blob_motion_state = new int[num_conformations[i]];
-        int set_rates_filename = 0;
-        int set_states_filename = 0;
-        int set_map_filename = 0;
+			// Apply map
+			kinetic_map_array[blob_index][from_conf][to_conf].block_apply(from_nodes, to_nodes);
+			
+			// Reassign active_blob and conformation
+			active_conformation_index[blob_index] = to_conf;
+			active_blob_array[blob_index] = &blob_array[blob_index][to_conf];
 
-        for (j = 0; j < num_conformations[i]; ++j) {
-            node_filename[j] = new char[max_buf_size];
-            topology_filename[j] = new char[max_buf_size];
-            surface_filename[j] = new char[max_buf_size];
-            material_params_filename[j] = new char[max_buf_size];
-            stokes_filename[j] = new char[max_buf_size];
-            vdw_filename[j] = new char[max_buf_size];
-            pin_filename[j] = new char[max_buf_size];
-            blob_motion_state[j] = FFEA_BLOB_IS_DYNAMIC;
+			// Activate springs for new conformation
+			activate_springs();
+			break;
+		}
+		case FFEA_BINDING_EVENT:
+		{
+			// Calculate properties for binding sites on the current blob
+			int i, j, k;
+			scalar average_size;
+			vector3 separation;
 
-            set_node_filename[j] = 0;
-            set_topology_filename[j] = 0;
-            set_surface_filename[j] = 0;
-            set_material_params_filename[j] = 0;
-            set_stokes_filename[j] = 0;
-            set_vdw_filename[j] = 0;
-            set_pin_filename[j] = 0;
-            set_blob_motion_state[j] = 0;
+			// Skip if blob is static
+			if(active_blob_array[blob_index]->get_motion_state() == FFEA_BLOB_IS_STATIC) {
+				break;
+			}
 
-        }
-        if (get_next_script_tag(in, buf) == FFEA_ERROR) {
-            FFEA_error_text();
-            printf("\tError reading tag in <system> block\n");
-            return FFEA_ERROR;
-        }
 
-        // Check if we have prematurely reached the end of the <system> block
-        if (strcmp(buf, "/system") == 0) {
-            printf("\tExiting <system> block.\n");
+			// Scan over all binding sites
+			for(i = 0; i < active_blob_array[blob_index]->num_binding_sites; ++i) {
 
-            // Free all memory!
-            delete[] node_filename;
-            node_filename = NULL;
-            delete[] topology_filename;
-            topology_filename = NULL;
-            delete[] surface_filename;
-            surface_filename = NULL;
-            delete[] material_params_filename;
-            material_params_filename = NULL;
-            delete[] stokes_filename;
-            stokes_filename = NULL;
-            delete[] vdw_filename;
-            vdw_filename = NULL;
-            delete[] pin_filename;
-            pin_filename = NULL;
-            delete[] blob_motion_state;
-            blob_motion_state = NULL;
+				// If wrong site type, ignore
+				if(active_blob_array[blob_index]->binding_site[i].site_type != kinetic_state[blob_index][new_state_index].binding_site_type_from) {
+					continue;
+				}
 
-            delete[] set_node_filename;
-            set_node_filename = NULL;
-            delete[] set_topology_filename;
-            set_topology_filename = NULL;
-            delete[] set_surface_filename;
-            set_surface_filename = NULL;
-            delete[] set_material_params_filename;
-            set_material_params_filename = NULL;
-            delete[] set_stokes_filename;
-            set_stokes_filename = NULL;
-            delete[] set_vdw_filename;
-            set_vdw_filename = NULL;
-            delete[] set_pin_filename;
-            set_pin_filename = NULL;
-            delete[] set_blob_motion_state;
-            set_blob_motion_state = NULL;
+				// Calculate properties for binding sites on the current blob
+				active_blob_array[blob_index]->binding_site[i].calc_site_shape();
 
-            break;
-        }
+				// Scan over all binding sites on all other blobs
+				for(j = 0; j < params.num_blobs; ++j) {
+					
+					// Skip binding to self (for now)
+					if(j == blob_index) {
+						continue;
+					}
+					
+					for(k = 0; k < active_blob_array[j]->num_binding_sites; ++k) {
+			
+						// If wrong site type, ignore
+						if(active_blob_array[j]->binding_site[k].site_type != kinetic_state[blob_index][new_state_index].binding_site_type_to) {
+							continue;
+						}
+		
+						// Check if binding sites are compatible
+						if(binding_matrix.interaction[active_blob_array[blob_index]->binding_site[i].site_type][active_blob_array[j]->binding_site[k].site_type] != 1) {
+							continue;
+						}
 
-        // If it's a blob block
-        if (strcmp(buf, "blob") == 0) {
+						// Calculate properties for potential binding site and their coupling
+						active_blob_array[j]->binding_site[k].calc_site_shape();
+						average_size = (active_blob_array[blob_index]->binding_site[i].length + active_blob_array[j]->binding_site[k].length) / 2.0;
+						separation.x = active_blob_array[blob_index]->binding_site[i].centroid.x - active_blob_array[j]->binding_site[k].centroid.x;
+						separation.y = active_blob_array[blob_index]->binding_site[i].centroid.y - active_blob_array[j]->binding_site[k].centroid.y;
+						separation.z = active_blob_array[blob_index]->binding_site[i].centroid.z - active_blob_array[j]->binding_site[k].centroid.z;
 
-            // Read all blob initialisation info
-            printf("\tEntering <blob> block %d...\n", i);
+						// Bind if close enough!
+						if(mag(&separation) < average_size) {
+							active_blob_array[blob_index]->kinetic_bind(i);		
+						}
+					}
+				}
+				
+				
+			}
+			
+			break;
+		}
+		case FFEA_UNBINDING_EVENT:
+			// Calculate properties for binding sites on the current blob
+			int i, j, k;
+			scalar average_size;
+			vector3 separation;
 
-            // Get next tag (could be conformation, switching, solver, scale, centroid_pos or velocity)
-            j = 0;
-            for (;;) {
+			// Skip if blob is static
+			if(active_blob_array[blob_index]->get_motion_state() == FFEA_BLOB_IS_STATIC) {
+				break;
+			}
 
-                // Check for errors first
-                if (get_next_script_tag(in, buf) == FFEA_ERROR) {
-                    FFEA_error_text();
-                    printf("\t\tError reading tag in <blob> block\n");
-                    return FFEA_ERROR;
-                }
 
-                if (feof(in)) {
-                    FFEA_error_text();
-                    printf("\t\tReached end of file before end of <blob> block\n");
-                    return FFEA_ERROR;
-                }
+			// Scan over all binding sites
+			for(i = 0; i < active_blob_array[blob_index]->num_binding_sites; ++i) {
 
-                if (strcmp(buf, "/system") == 0) {
-                    FFEA_error_text();
-                    printf("\t\t</system> came before </blob>\n");
-                    return FFEA_ERROR;
-                }
+				// If wrong site type, ignore
+				if(active_blob_array[blob_index]->binding_site[i].site_type != kinetic_state[blob_index][new_state_index].binding_site_type_from) {
+					continue;
+				}
 
-                if (strcmp(buf, "/blob") == 0) {
-                    printf("\tExiting <blob> block %d\n", i);
-                    break;
-                }
+				// Calculate properties for binding sites on the current blob
+				active_blob_array[blob_index]->binding_site[i].calc_site_shape();
 
-                // Now check for possible input values
-                if (strcmp(buf, "conformation") == 0) {
-                    printf("\tEntering conformation block %d...\n", j);
+				// Scan over all binding sites on all other blobs
+				for(j = 0; j < params.num_blobs; ++j) {
+					
+					// Skip binding to self (for now)
+					if(j == blob_index) {
+						continue;
+					}
+					
+					for(k = 0; k < active_blob_array[j]->num_binding_sites; ++k) {
+			
+						// If wrong site type, ignore
+						if(active_blob_array[j]->binding_site[k].site_type != kinetic_state[blob_index][new_state_index].binding_site_type_to) {
+							continue;
+						}
+		
+						// Check if binding sites are compatible
+						if(binding_matrix.interaction[active_blob_array[blob_index]->binding_site[i].site_type][active_blob_array[j]->binding_site[k].site_type] != 1) {
+							continue;
+						}
 
-                    // Read in node, topology, surface etc files for conformation
-                    for (;;) {
+						// Calculate properties for potential binding site and their coupling
+						active_blob_array[j]->binding_site[k].calc_site_shape();
+						average_size = (active_blob_array[blob_index]->binding_site[i].length + active_blob_array[j]->binding_site[k].length) / 2.0;
+						separation.x = active_blob_array[blob_index]->binding_site[i].centroid.x - active_blob_array[j]->binding_site[k].centroid.x;
+						separation.y = active_blob_array[blob_index]->binding_site[i].centroid.y - active_blob_array[j]->binding_site[k].centroid.y;
+						separation.z = active_blob_array[blob_index]->binding_site[i].centroid.z - active_blob_array[j]->binding_site[k].centroid.z;
 
-                        if (get_next_script_tag(in, buf) == FFEA_ERROR) {
-                            FFEA_error_text();
-                            printf("\t\tError reading tag in <conformation> block\n");
-                            return FFEA_ERROR;
-                        }
+						// Bind if close enough!
+						if(mag(&separation) < average_size) {
+							active_blob_array[blob_index]->kinetic_unbind(i);		
+						}
+					}
+				}
+				
+				
+			}
+			
+			break;
+	
+		case FFEA_IDENTITY_EVENT:
 
-                        if (feof(in)) {
-                            FFEA_error_text();
-                            printf("\t\tReached end of file before end of <conformation> block\n");
-                            return FFEA_ERROR;
-                        }
+			break;
 
-                        if (strcmp(buf, "/system") == 0) {
-                            FFEA_error_text();
-                            printf("\t\t</system> came before </conformation>\n");
-                            return FFEA_ERROR;
-                        }
+			
+	}
 
-                        if (strcmp(buf, "/blob") == 0) {
-                            FFEA_error_text();
-                            printf("\t\t</blob> came before </conformation>\n");
-                            return FFEA_ERROR;
-                        }
+	return FFEA_OK;
+}
 
-                        if (strcmp(buf, "/conformation") == 0) {
-                            printf("\tExiting <conformation> block %d\n", j++);
-                            break;
-                        }
+int World::read_and_build_system(vector<string> script_vector) {
 
-                        rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
-                        if (rv != 2) {
-                            FFEA_error_text();
-                            printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
-                            return FFEA_ERROR;
-                        }
+	// Create some blobs based on params
+	cout << "\tCreating blob array..." << endl;
+   	blob_array = new Blob*[params.num_blobs];
+	active_blob_array = new Blob*[params.num_blobs];
+	active_conformation_index = new int[params.num_blobs];
+	active_state_index = new int[params.num_blobs];
+	for (int i = 0; i < params.num_blobs; ++i) {
+	        blob_array[i] = new Blob[params.num_conformations[i]];
+	        active_blob_array[i] = &blob_array[i][0];
+		active_conformation_index[i] = 0;
+		active_state_index[i] = 0;
+	}
 
-                        rv = sscanf(lvalue, "%s", lvalue);
-                        rv = sscanf(rvalue, "%s", rvalue);
 
-                        if (strcmp(lvalue, "nodes") == 0) {
-                            strcpy(node_filename[j], rvalue);
-                            printf("\t\tSetting blob %d, conformation %d, nodes input file = '%s'\n", i, j, node_filename[j]);
-                            set_node_filename[j] = 1;
-                        } else if (strcmp(lvalue, "topology") == 0) {
-                            strcpy(topology_filename[j], rvalue);
-                            printf("\t\tSetting blob %d, conformation %d, topology input file = '%s'\n", i, j, topology_filename[j]);
-                            set_topology_filename[j] = 1;
-                        } else if (strcmp(lvalue, "surface") == 0) {
-                            strcpy(surface_filename[j], rvalue);
-                            printf("\t\tSetting blob %d, conformation %d, surface input file = '%s'\n", i, j, surface_filename[j]);
-                            set_surface_filename[j] = 1;
-                        } else if (strcmp(lvalue, "material") == 0) {
-                            strcpy(material_params_filename[j], rvalue);
-                            printf("\t\tSetting blob %d, conformation %d, material parameters file = '%s'\n", i, j, material_params_filename[j]);
-                            set_material_params_filename[j] = 1;
-                        } else if (strcmp(lvalue, "stokes") == 0) {
-                            strcpy(stokes_filename[j], rvalue);
-                            printf("\t\tSetting blob %d, conformation %d, stokes file = '%s'\n", i, j, stokes_filename[j]);
-                            set_stokes_filename[j] = 1;
-                        } else if (strcmp(lvalue, "vdw") == 0) {
-                            strcpy(vdw_filename[j], rvalue);
-                            printf("\t\tSetting blob %d, conformation %d, vdw file = '%s'\n", i, j, vdw_filename[j]);
-                            set_vdw_filename[j] = 1;
-                        } else if (strcmp(lvalue, "pin") == 0) {
-                            strcpy(pin_filename[j], rvalue);
-                            printf("\t\tSetting blob %d, conformation %d, pin file = '%s'\n", i, j, pin_filename[j]);
-                            set_pin_filename[j] = 1;
-                        } else if (strcmp(lvalue, "motion_state") == 0) {
-                            if (strcmp(rvalue, "STATIC") == 0) {
-                                printf("\t\tSetting blob %d, conformation %d, motion_state = STATIC (Fixed position, no dynamics simulated)\n", i, j);
-                                blob_motion_state[j] = FFEA_BLOB_IS_STATIC;
-                            } else if (strcmp(rvalue, "DYNAMIC") == 0) {
-                                printf("\t\tSetting blob %d, conformation %d, motion_state = DYNAMIC (Dynamics will be simulated)\n", i, j);
-                                blob_motion_state[j] = FFEA_BLOB_IS_DYNAMIC;
-                            } else if (strcmp(rvalue, "FROZEN") == 0) {
-                                printf("\t\tSetting blob %d, conformation %d, motion_state = FROZEN (Dynamics will not be simulated, but Blob positions still written to trajectory)\n", i, j);
-                                blob_motion_state[j] = FFEA_BLOB_IS_FROZEN;
-                            } else {
-                                FFEA_error_text();
-                                printf("\t\tFor 'motion_state' in blob %d, conformation %d, There is no state option '%s'. Please use 'STATIC', 'DYNAMIC' or 'FROZEN'.\n", i, j, rvalue);
-                                return FFEA_ERROR;
-                            }
-                            set_blob_motion_state[j] = 1;
-                        } else {
-                            FFEA_error_text();
-                            printf("\t\tError: In blob %d, conformation %d, '%s' is not a recognised lvalue\n", i, j, lvalue);
-                            printf("\t\tRecognised lvalues are:\n");
-                            printf("\t\tnodes\n\ttopology\n\tsurface\n\tmaterial\n\tstokes\n\tvdw\n\tpin\n\tmotion_state\n");
-                            return FFEA_ERROR;
-                        }
-                    }
-                } else if (strcmp(buf, "switching") == 0) {
+	// Reading variables
+	FFEA_input_reader *systemreader = new FFEA_input_reader();
+	int i, j;
+	string tag, lrvalue[2], maplvalue[2];
+	vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, param_vector, spring_vector, binding_vector;
+	vector<string>::iterator it;
+	
+	vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, maps;
+	string states, rates, map_fname;
+	int map_indices[2];
+	int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_scale = 0;
+	scalar scale = 1;
+	int solver = FFEA_NOMASS_CG_SOLVER;
+	vector<int> motion_state, maps_conf_index_to, maps_conf_index_from;
+	vector<int>::iterator maps_conf_ind_it;
 
-                    // Getting conformational switching parameters map, rates and states
-                    printf("\tEntering switching block...\n");
-                    for (;;) {
-                        if (get_next_script_tag(in, buf) == FFEA_ERROR) {
-                            FFEA_error_text();
-                            printf("\t\tError reading tag in <switching> block\n");
-                            return FFEA_ERROR;
-                        }
+	scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
 
-                        if (feof(in)) {
-                            FFEA_error_text();
-                            printf("\t\tReached end of file before end of <switching> block\n");
-                            return FFEA_ERROR;
-                        }
+	// Read in each blob one at a time
+	for(i = 0; i < params.num_blobs; ++i) {
 
-                        if (strcmp(buf, "/system") == 0) {
-                            FFEA_error_text();
-                            printf("\t\t</system> came before </switching>\n");
-                            return FFEA_ERROR;
-                        }
-                        if (strcmp(buf, "/blob") == 0) {
-                            FFEA_error_text();
-                            printf("\t\t</blob> came before </switching>\n");
-                            return FFEA_ERROR;
-                        }
-                        if (strcmp(buf, "/conformation") == 0) {
-                            FFEA_error_text();
-                            printf("\t\t</conformation> came before </switching>\n");
-                            return FFEA_ERROR;
-                        }
-                        if (strcmp(buf, "/switching") == 0) {
-                            printf("\tExiting <switching> block\n");
-                            break;
-                        }
+		// Get blob data
+		systemreader->extract_block("blob", i, script_vector, &blob_vector);
 
-                        rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
-                        if (rv != 2) {
-                            FFEA_error_text();
-                            printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
-                            return FFEA_ERROR;
-                        }
+		// Read all conformations
+		for(j = 0; j < params.num_conformations[i]; ++j) {
 
-                        rv = sscanf(lvalue, "%s", lvalue);
-                        rv = sscanf(rvalue, "%s", rvalue);
-                        if (strcmp(lvalue, "map") == 0) {
-                            strcpy(map_filename, rvalue);
-                            printf("\t\tSetting blob %d, map file = '%s'\n", i, map_filename);
-                            set_map_filename = 1;
-                        } else if (strcmp(lvalue, "rates") == 0) {
-                            strcpy(rates_filename, rvalue);
-                            printf("\t\tSetting blob %d, rates file = '%s'\n", i, rates_filename);
-                            set_rates_filename = 1;
-                        } else if (strcmp(lvalue, "states") == 0) {
-                            strcpy(states_filename, rvalue);
-                            printf("\t\tSetting blob %d, states file = '%s'\n", i, states_filename);
-                            set_states_filename = 1;
-                        } else {
-                            FFEA_error_text();
-                            printf("\t\tError: In blob %d, switching block. '%s' is not a recognised lvalue\n", i, lvalue);
-                            printf("\t\tRecognised lvalues are:\n");
-                            printf("\t\tmap\n\trates\n\tstates\n");
-                            return FFEA_ERROR;
-                        }
-                    }
-                } else {
+			// Get conformation data
+			systemreader->extract_block("conformation", j, blob_vector, &conformation_vector);
 
-                    // Tag did not open a new block, so it must be a variable
-                    rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
-                    if (rv != 2) {
-                        FFEA_error_text();
-                        printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
-                        return FFEA_ERROR;
-                    }
+			// Error check
+			if(conformation_vector.size() == 0) {
+				FFEA_error_text();
+				cout << " In 'Blob' block " << i << ", expected at least a single 'conformation' block." << endl;
+				return FFEA_ERROR;  
+			}
 
-                    rv = sscanf(lvalue, "%s", lvalue);
-                    rv = sscanf(rvalue, "%s", rvalue);
-                    if (strcmp(lvalue, "solver") == 0) {
-                        if (strcmp(rvalue, "CG") == 0) {
-                            printf("\t\tSetting blob %d, linear solver = CG (Preconditioned Jacobi Conjugate Gradient)\n", i);
-                            linear_solver = FFEA_ITERATIVE_SOLVER;
-                        } else if (strcmp(rvalue, "direct") == 0) {
-                            printf("\t\tSetting blob %d, linear solver = direct (Sparse Forward/Backward Substitution)\n", i);
-                            linear_solver = FFEA_DIRECT_SOLVER;
-                        } else if (strcmp(rvalue, "masslumped") == 0) {
-                            printf("\t\tSetting blob %d, linear solver = masslumped (diagonal mass matrix)\n", i);
-                            linear_solver = FFEA_MASSLUMPED_SOLVER;
-                        } else if (strcmp(rvalue, "CG_nomass") == 0) {
-                            printf("\t\tSetting blob %d, linear solver = CG_nomass (Preconditioned Jacobi Conjugate Gradient, no mass within system)\n", i);
-                            linear_solver = FFEA_NOMASS_CG_SOLVER;
-                        } else {
-                            FFEA_error_text();
-                            printf("\t\tThere is no solver option '%s'. Please use 'CG', 'direct' or 'CG_nomass'.\n", rvalue);
-                            return FFEA_ERROR;
-                        }
-                        set_linear_solver = 1;
-                    } else if (strcmp(lvalue, "scale") == 0) {
-                        scale = atof(rvalue);
-                        printf("\t\tSetting blob %d, scale factor = %e\n", i, scale);
-                    } else if (strcmp(lvalue, "centroid_pos") == 0) {
-                        if (sscanf(rvalue, "(%e,%e,%e)", &com_x, &com_y, &com_z) != 3) {
-                            FFEA_error_text();
-                            printf("\t\tCould not carry out centroid position assignment for blob %d: rvalue '%s' is badly formed. Should have form (x,y,z)\n", i, rvalue);
-                            return FFEA_ERROR;
-                        } else {
-                            printf("\t\tSetting blob %d, initial centroid (%e, %e, %e)\n", i, com_x, com_y, com_z);
-                        }
-                        set_centroid_pos = 1;
-                    } else if(strcmp(lvalue, "rotation") == 0)  {
-                        if(sscanf(rvalue, "(%e,%e,%e,%e,%e,%e,%e,%e,%e)", &r11, &r12, &r13, &r21, &r22, &r23, &r31, &r32, &r33) != 9) {
-                           FFEA_error_text();
-                           printf("\t\tCould not read rotation for blob %d: rvalue '%s' is badly formed. Should have form (r11,r12,r13,r21,r22,r23,r31,r32,r33)\n", i, rvalue);
-                           return FFEA_ERROR;
-                        } else {
-                           printf("\t\tSetting blob %d, initial rotation (%e, %e, %e, %e, %e, %e, %e, %e, %e)\n", i, r11, r12, r13, r21, r22, r23, r31, r32, r33);
-                        }
-                        set_rotation = 1;
-                    } else if (strcmp(lvalue, "velocity") == 0) {
-                        if (sscanf(rvalue, "(%e,%e,%e)", &vel_x, &vel_y, &vel_z) != 3) {
-                            FFEA_error_text();
-                            printf("\t\tCould not carry out velocity assignment for blob %d: rvalue '%s' is badly formed. Should have form (velx,vely,velz)\n", i, rvalue);
-                            return FFEA_ERROR;
-                        } else {
-                            printf("\t\tSetting blob %d, initial velocity (%e, %e, %e)\n", i, vel_x, vel_y, vel_z);
-                        }
-                        set_velocity = 1;
-                    } else if (strcmp(lvalue, "initial_conformation") == 0) {
-                        if (atoi(rvalue) < 0 || atoi(rvalue) >= num_conformations[i]) {
-                            FFEA_error_text();
-                            printf("\t\tIn blob %d, specified 'initial_conformation' was %d. Cannot be less than 0 or greater than %d (indexing starts at 0)\n", i, atoi(rvalue), num_conformations[i]);
-                            return FFEA_ERROR;
-                        }
-                        active_blob_array[i] = &blob_array[i][atoi(rvalue)];
-                    } else {
-                        FFEA_error_text();
-                        printf("\t\tError: In blob %d, '%s' is not a recognised lvalue\n", i, lvalue);
-                        printf("\t\tRecognised tags are:\n");
-                        printf("\t\tconformation\n\tswitching\n");
-                        printf("\t\tRecognised lvalues are:\n");
-                        printf("\t\tscale\n\tcentroid_pos\n\tvelocity\n\tsolver\n\tinitial_conformation\n");
-                        return FFEA_ERROR;
-                    }
-                }
-            }
+			// Parse conformation data
+			for(it = conformation_vector.begin(); it != conformation_vector.end(); ++it) {
+				systemreader->parse_tag(*it, lrvalue);
 
-            // First make sure we have all the information necessary for initialisation
-            if (num_conformations[i] > 1) {
-                if (set_rates_filename == 0) {
-                    FFEA_ERROR_MESSG("\tIn blob %d, switching block, 'rates' has not been specified\n", i);
-                }
-                if (set_states_filename == 0) {
-                    FFEA_ERROR_MESSG("\tIn blob %d, switching block, 'states' has not been specified\n", i);
-                }
-                if (set_map_filename == 0) {
-                    FFEA_ERROR_MESSG("\tIn blob %d, switching block, 'map' has not been specified\n", i);
-                }
-            }
+				// Assign if possible
+				if(lrvalue[0] == "motion_state") {
 
-            for (j = 0; j < num_conformations[i]; ++j) {
-                if (set_blob_motion_state[j] == 0) {
-                    printf("In blob %d, conformation %d: 'motion_state' option unset. Using 'DYNAMIC' by default.\n", i, j);
-                    blob_motion_state[j] = FFEA_BLOB_IS_DYNAMIC;
-                }
+					if(lrvalue[1] == "DYNAMIC") {
+						motion_state.push_back(FFEA_BLOB_IS_DYNAMIC);
+					} else if(lrvalue[1] == "STATIC") {
+						motion_state.push_back(FFEA_BLOB_IS_STATIC);
+					} else if(lrvalue[1] == "FROZEN") {
+						motion_state.push_back(FFEA_BLOB_IS_FROZEN);
+					}
+					set_motion_state = 1;
+				} else if (lrvalue[0] == "nodes") {
+					nodes.push_back(lrvalue[1]);
+					set_nodes = 1;
+				} else if (lrvalue[0] == "topology") {
+					topology.push_back(lrvalue[1]);
+					set_top = 1;
+				} else if (lrvalue[0] == "surface") {
+					surface.push_back(lrvalue[1]);
+					set_surf = 1;
+				} else if (lrvalue[0] == "material") {
+					material.push_back(lrvalue[1]);
+					set_mat = 1;
+				} else if (lrvalue[0] == "stokes") {
+					stokes.push_back(lrvalue[1]);
+					set_stokes = 1;
+				} else if (lrvalue[0] == "vdw") {
+					vdw.push_back(lrvalue[1]);
+					set_vdw = 1;
+				} else if (lrvalue[0] == "binding_sites") {
+					binding.push_back(lrvalue[1]);
+					set_binding = 1;
+				} else if (lrvalue[0] == "pin") {
+					pin.push_back(lrvalue[1]);
+					set_pin = 1;
+				} else {
+					FFEA_error_text();
+					cout << "Unrecognised conformation lvalue" << endl;
+					return FFEA_ERROR;
+				}
+			}
+		
+			// Error check
+			if (set_motion_state == 0) {
+				FFEA_error_text();
+				cout << "Blob " << i << ", conformation " << j << " must have a motion state set.\nAccepted states: DYNAMIC, STATIC, FROZEN." << endl;
+				return FFEA_ERROR;
+			} else {
+				if(set_nodes == 0 || set_surf == 0 || set_vdw == 0) {
+					FFEA_error_text();
+					cout << "In blob " << i << ", conformation " << j << ":\nFor any blob conformation, 'nodes', 'surface' and 'vdw' must be set." << endl;
+					return FFEA_ERROR; 
+				} 
+				if(motion_state.back() == FFEA_BLOB_IS_DYNAMIC) {
+					if(set_top == 0 || set_mat == 0 || set_stokes == 0 || set_pin == 0) {
+						FFEA_error_text();
+						cout << "In blob " << i << ", conformation " << j << ":\nFor a DYNAMIC blob conformation, 'topology', 'material', 'stokes' and 'pin' must be set." << endl;
+						return FFEA_ERROR; 
+					}
+				} else {
+					topology.push_back("");
+					material.push_back("");
+					stokes.push_back("");
+					pin.push_back("");
+					set_top = 1;
+					set_mat = 1;
+					set_stokes = 1;
+					set_pin = 1;
+				}
+			}
 
-                if (set_node_filename[j] == 0) {
-                    FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'nodes' has not been specified\n", i, j);
-                }
-                if (set_topology_filename[j] == 0) {
-                    if (blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
-                        FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'topology' has not been specified\n", i, j);
-                    }
-                }
-                if (set_surface_filename[j] == 0) {
-                    FFEA_error_text();
-                    printf("\tIn blob %d, conformation %d: 'surface' has not been specified\n", i, j);
-                    return FFEA_ERROR;
-                }
+			if(params.calc_kinetics == 0) {
+				if(set_binding == 1) {
+					cout << "In blob " << i << ", conformation " << j << ":\nIf 'calc_kinetics' is set to 0, 'binding_sites' will be ignored." << endl;
+					binding.pop_back();
+					binding.push_back("");
+				}
+			} else {
+				if(set_binding == 0) {
+					FFEA_error_text();
+					cout << "In blob " << i << ", conformation " << j << ":\nIf 'calc_kinetics' is set to 1, 'binding_sites' must be set (can contain 0 sites if necessary)." << endl;
+					return FFEA_ERROR;
+				}
+			}
+			
+			// Clear conformation vector and set values for next round
+			set_nodes = 0;
+			set_top = 0;
+			set_surf = 0;
+			set_mat = 0;
+			set_stokes = 0;
+			set_vdw = 0;
+			set_binding = 0;
+			set_pin = 0;
+			conformation_vector.clear();
+		}
 
-                if (blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
-                    if (set_material_params_filename[j] == 0) {
-                        FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: material params file, 'material', has not been specified\n", i, j)
-                    }
-                    if (set_stokes_filename[j] == 0) {
-                        FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: stokes radii file, 'stokes', has not been specified\n", i, j)
-                    }
-                    if (set_linear_solver == 0) {
-                        FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: 'solver' has not been specified\n", i, j);
-                    }
-                }
-                if (set_vdw_filename[j] == 0) {
-                    FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: vdw parameters file, 'vdw', has not been specified\n", i, j)
-                }
-                if (set_pin_filename[j] == 0) {
-                    if (blob_motion_state[j] == FFEA_BLOB_IS_DYNAMIC) {
-                        FFEA_ERROR_MESSG("\tIn blob %d, conformation %d: pinned nodes file, 'pin', has not been specified\n", i, j)
-                    }
-                }
+		// Read kinetic info if necessary
+		if(params.calc_kinetics == 1 && params.num_states[i] > 1) {
 
-                printf("\tInitialising blob %d conformation %d...\n", i, j);
-                if (blob_array[i][j].init(i, j, node_filename[j], topology_filename[j], surface_filename[j], material_params_filename[j], stokes_filename[j], vdw_filename[j], pin_filename[j],
-                        scale, linear_solver, blob_motion_state[j], &params, &lj_matrix, rng, num_threads) == FFEA_ERROR) {
-                    FFEA_error_text();
-                    printf("\tError when trying to initialise Blob %d, conformation %d.\n", i, j);
-                    return FFEA_ERROR;
-                }
+			// Get kinetic data
+			systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector);
+			
+			// Get map info if necessary
+			if(params.num_conformations[i] > 1) {
 
-                // if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
-                if (set_centroid_pos == 1) {
-                    // Rescale first	
-                    com_x *= scale;
-                    com_y *= scale;
-                    com_z *= scale;
-                    blob_array[i][j].position(com_x, com_y, com_z);
-                }
+				// Get map data
+				systemreader->extract_block("maps", 0, kinetics_vector, &map_vector);
 
-                if(set_rotation == 1) {
-                    blob_array[i][j].rotate(r11,r12,r13,r21,r22,r23,r31,r32,r33);
-                }
+				// Parse map data
+				for(it = map_vector.begin(); it != map_vector.end(); ++it) {
+					systemreader->parse_map_tag(*it, map_indices, &map_fname);
+					maps.push_back(map_fname);
+					maps_conf_index_from.push_back(map_indices[0]);
+					maps_conf_index_to.push_back(map_indices[1]);
+				}
 
-                if (set_velocity == 1)
-                    blob_array[i][j].velocity_all(vel_x, vel_y, vel_z);
+				// Error check
+				if(maps.size() != params.num_conformations[i] * (params.num_conformations[i] - 1)) {
+					FFEA_error_text();
+					cout << "In blob " << i << ", expected " << params.num_conformations[i] * (params.num_conformations[i] - 1) << " maps to describe all possible switches.\n Read " << maps.size() << " maps." << endl;
+					return FFEA_ERROR;
+				}
+			}
 
-                // set the current node positions as pos_0 for this blob, so that all rmsd values
-                // are calculated relative to this conformation centred at this point in space.
-                blob_array[i][j].set_rmsd_pos_0();
-            }
-            i++;
-        } else if (strcmp(buf, "spring") == 0) {
-            for (;;) {
-                if (get_next_script_tag(in, buf) == FFEA_ERROR) {
-                    FFEA_error_text();
-                    printf("\t\tError reading tag in <spring> block\n");
-                    return FFEA_ERROR;
-                }
+			// Then, states and rates data
+			for(it = kinetics_vector.begin(); it != kinetics_vector.end(); ++it) {
+				systemreader->parse_tag(*it, lrvalue);
+				if(lrvalue[0] == "maps" || lrvalue[0] == "/maps") {
+					continue;
+				} else if(lrvalue[0] == "states") {
+					states = lrvalue[1];
+				} else if (lrvalue[0] == "rates") {
+					rates = lrvalue[1];
+				}
+			}
 
-                if (feof(in)) {
-                    FFEA_error_text();
-                    printf("\t\tReached end of file before end of <spring> block\n");
-                    return FFEA_ERROR;
-                }
-                if (strcmp(buf, "/system") == 0) {
-                    FFEA_error_text();
-                    printf("\t\t</system> came before </spring>\n");
-                    return FFEA_ERROR;
-                }
+			// Error check
+			if(states.size() == 0 || rates.size() == 0) {
+				FFEA_error_text();
+				cout << "In blob " << i << ", for kinetics, we require both a 'states' file and a 'rates' file." << endl;
+				return FFEA_ERROR;
+			}
+		}		
 
-                if (strcmp(buf, "/spring") == 0) {
-                    printf("\t\tExiting <spring> block\n");
-                    break;
-                }
+		// Finally, get the extra blob data (solver, scale, centroid etc)
+		for(it = blob_vector.begin(); it != blob_vector.end(); ++it) {
+			systemreader->parse_tag(*it, lrvalue);
 
-                // Only acceptable input is spring filename!!! 
-                // By the way, I hope you're enjoying reading this source code :)
-                rv = sscanf(buf, "%100[^=]=%s", lvalue, rvalue);
-                if (rv != 2) {
-                    FFEA_error_text();
-                    printf("\t\tError parsing conformation parameter assignment, '%s'\n", buf);
-                    return FFEA_ERROR;
-                }
+			if(lrvalue[0] == "conformation" || lrvalue[0] == "/conformation" || lrvalue[0] == "kinetics" || lrvalue[0] == "/kinetics" || lrvalue[0] == "maps" || lrvalue[0] == "/maps") {
+				continue;
+			} else if(lrvalue[0] == "solver") {
+				if(lrvalue[1] == "CG") {
+					solver = FFEA_ITERATIVE_SOLVER;
+				} else if (lrvalue[1] == "CG_nomass") {
+					solver = FFEA_NOMASS_CG_SOLVER;
+				} else if (lrvalue[1] == "direct") {
+					solver = FFEA_DIRECT_SOLVER;
+				} else if (lrvalue[1] == "masslumped") {
+					solver = FFEA_MASSLUMPED_SOLVER;
+				} else {
+					FFEA_error_text();
+					cout << "In blob " << i << ", unrecognised solver type.\nRecognised solvers:CG, CG_nomass, direct, masslumped." << endl;
+					return FFEA_ERROR;
+				}
+				set_solver = 1;
 
-                rv = sscanf(lvalue, "%s", lvalue);
-                rv = sscanf(rvalue, "%s", rvalue);
-                if (strcmp(lvalue, "spring_fname") == 0) {
-                    strcpy(spring_filename, rvalue);
-                    printf("\t\tSetting springs input file = '%s'\n", spring_filename);
-                    k++;
-                } else {
-                    FFEA_error_text();
-                    printf("\t\tError: In spring block, '%s' is not a recognised lvalue\n", lvalue);
-                    printf("\t\tRecognised lvalues are:\n");
-                    printf("\t\tspring_fname\n\n");
-                    return FFEA_ERROR;
-                }
-            }
-        } else {
-            FFEA_error_text();
-            printf("\t\tError: In system, '%s' is not a recognised tag\n", buf);
-            printf("\t\tRecognised tags are:\n");
-            printf("\t\tblob\n\tspring\n");
-            return FFEA_ERROR;
-        }
-    }
+			} else if(lrvalue[0] == "scale") {
+				scale = atof(lrvalue[1].c_str());
+				set_scale = 1;
+			} else if(lrvalue[0] == "centroid") {
+				
+				centroid = new scalar[3];
 
-    // Check we have correct number of blobs
-    if (i != num_blobs) {
-        FFEA_error_text();
-        printf("Number of blobs read, %d, in is not the same as number specified in the script, %d\n", i, num_blobs);
-        return FFEA_ERROR;
-    }
+				lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
+				boost::trim(lrvalue[1]);
+				systemreader->split_string(lrvalue[1], centroid, ",");
 
-    // And springs
-    if (k > 1) {
-        FFEA_error_text();
-        printf("Read %d spring files. Only need 1, containing all possible springs!\n", k);
-        return FFEA_ERROR;
-    }
+			} else if(lrvalue[0] == "velocity") {
+				
+				velocity = new scalar[3];
+				
+				lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
+				boost::trim(lrvalue[1]);
+				systemreader->split_string(lrvalue[1], velocity, ",");
 
-    // Add springs to world
-    if (k == 1) {
-        if (load_springs(spring_filename) != 0) {
-            FFEA_error_text();
-            printf("Problem building springs from %s\n", spring_filename);
-            return FFEA_ERROR;
-        }
-    }
+			} else if(lrvalue[0] == "rotation") {
+				
+				rotation = new scalar[9];
+				
+				lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
+				boost::trim(lrvalue[1]);
+				systemreader->split_string(lrvalue[1], rotation, ",");
+			}
+		}
 
-    return FFEA_OK;
+		// Error checking
+		if(set_solver == 0) {
+			cout << "\tBlob " << i << ", solver not set. Defaulting to CG_nomass." << endl;
+			solver = FFEA_NOMASS_CG_SOLVER;
+			set_solver = 1;
+		}
+
+		if(set_scale == 0) {
+			FFEA_error_text();
+			cout << "Blob " << i << ", scale not set." << endl;
+			return FFEA_ERROR;
+		}
+
+		// Build blob
+		//Build conformations
+		for(j = 0; j < params.num_conformations[i]; ++j) {
+			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
+			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), binding.at(j).c_str(), pin.at(j).c_str(),
+                       		scale, solver, motion_state.at(j), &params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
+                       		FFEA_error_text();
+                        	cout << "\tError when trying to initialise Blob " << i << ", conformation " << j << "." << endl;
+                    		return FFEA_ERROR;
+               		}
+
+			// if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
+                	if (centroid != NULL) {
+
+                    		// Rescale first	
+                    		centroid[0] *= scale;
+                    		centroid[1] *= scale;
+                    		centroid[2] *= scale;
+                    		blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
+                	}
+                	if(rotation != NULL) {
+                    		blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
+                	}
+
+                	if (velocity != NULL)
+                    		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
+
+                	// set the current node positions as pos_0 for this blob, so that all rmsd values
+                	// are calculated relative to this conformation centred at this point in space.
+                	blob_array[i][j].set_rmsd_pos_0();
+
+			cout << "\t...done!" << endl;
+		}
+
+		// Build kinetics
+		if(params.calc_kinetics == 1 && params.num_states[i] > 1) {
+			cout << "\tInitialising kinetics for blob " << i << "..." << endl;
+			if(load_kinetic_maps(maps, maps_conf_index_from, maps_conf_index_to, i) == FFEA_ERROR) {
+				FFEA_error_text();
+				cout << "Problem reading kinetic maps in 'read_kinetic_maps' function" << endl;			
+				return FFEA_ERROR;
+			}
+			
+			if(load_kinetic_states(states, i) == FFEA_ERROR) {
+				FFEA_error_text();
+				cout << "Problem reading kinetic states in 'read_kinetic_states' function" << endl;			
+				return FFEA_ERROR;
+			}
+			
+			if(load_kinetic_rates(rates, i) == FFEA_ERROR) {
+				FFEA_error_text();
+				cout << "Problem reading kinetic rates in 'read_kinetic_rates' function" << endl;			
+				return FFEA_ERROR;
+			}
+			cout << "\t...done!" << endl;
+		
+			cout << "\tBuilding extra maps for energy comparison..." << endl;
+			if(build_kinetic_identity_maps() == FFEA_ERROR) {
+				FFEA_error_text();
+				cout << "Problem reading kinetic maps in 'build_kinetic_identity_maps' function" << endl;			
+				return FFEA_ERROR;
+			}
+
+			cout << "\t...done!" << endl;
+		}
+		
+		// Clear blob vector and other vectors for next round
+		motion_state.clear();
+		nodes.clear();
+		topology.clear();
+		surface.clear();
+		material.clear();
+		stokes.clear();
+		vdw.clear();
+		binding.clear();
+		pin.clear();
+		maps.clear();
+		scale = 1;
+		solver = FFEA_NOMASS_CG_SOLVER;
+		map_vector.clear();
+		kinetics_vector.clear();
+		blob_vector.clear();
+		centroid = NULL;
+		velocity = NULL;
+		rotation = NULL;
+		set_scale = 0;
+		set_solver = 0;
+	}
+
+	cout << "\t...done!" << endl;
+
+	// Get Interactions Lines
+	systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
+
+	// Get spring data
+	systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
+
+	// Error check
+	if (spring_vector.size() > 1) {
+		FFEA_error_text();
+		cout << "'Spring' block should only have 1 file." << endl;
+		return FFEA_ERROR; 
+	} else if (spring_vector.size() == 1) {
+		systemreader->parse_tag(spring_vector.at(0), lrvalue);
+
+		if(load_springs(lrvalue[1].c_str()) != 0) {
+			FFEA_error_text();
+			cout << "Problem loading springs from " << lrvalue[1] << "." << endl;
+			return FFEA_ERROR; 
+		}
+	}
+
+	return FFEA_OK;
+}
+
+int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, vector<int> map_to, int blob_index) {
+	
+	int MAX_BUF_SIZE = 255;
+	char buf[MAX_BUF_SIZE];
+	unsigned int i, j, num_rows, num_entries;
+	string buf_string;
+	vector<string> string_vec;
+	for(i = 0; i < map_fnames.size(); ++i) {
+
+		cout << "\t\tReading map " << i << ", " << map_fnames.at(i) << ": from conformation " << map_from.at(i) << " to " << map_to.at(i) << endl;
+		ifstream fin;
+		fin.open(map_fnames.at(i).c_str());
+		
+		// Check if sparse or dense
+		fin.getline(buf, MAX_BUF_SIZE);
+		buf_string = string(buf);
+		boost::trim(buf_string);
+		if(buf_string != "FFEA Kinetic Conformation Mapping File (Sparse)") {
+			FFEA_error_text();
+			cout << "In " << map_fnames.at(i) << ", expected 'FFEA Kinetic Conformation Mapping File (Sparse)'" << endl;
+			cout << "but got " << buf_string << endl;
+			return FFEA_ERROR;
+		}
+
+		// Get nodes to and from
+		fin.getline(buf, MAX_BUF_SIZE);
+		fin.getline(buf, MAX_BUF_SIZE);
+		buf_string = string(buf);
+		boost::split(string_vec, buf_string, boost::is_space());
+		num_rows = atoi(string_vec.at(string_vec.size() - 1).c_str());
+		
+		// Get num_entries
+		fin.getline(buf, MAX_BUF_SIZE);
+		buf_string = string(buf);
+		boost::split(string_vec, buf_string, boost::is_space());
+		num_entries = atoi(string_vec.at(string_vec.size() - 1).c_str());
+
+		// Create some memory for the matrix stuff
+		scalar *entries = new scalar[num_entries];
+		int *key = new int[num_rows + 1];
+		int *col_index = new int[num_entries];
+
+		// Get 'map:'
+		fin.getline(buf, MAX_BUF_SIZE);
+		
+		// Read matrix
+		// 'entries -'
+		fin >> buf_string;
+		fin >> buf_string;
+		for(j = 0; j < num_entries; j++) {
+			fin >> buf_string;
+			entries[j] = atof(buf_string.c_str());
+		}
+
+		// 'key -'
+		fin >> buf_string;
+		fin >> buf_string;
+		for(j = 0; j < num_rows + 1; j++) {
+			fin >> buf_string;
+			key[j] = atoi(buf_string.c_str());
+		}
+
+		// 'columns -'
+		fin >> buf_string;
+		fin >> buf_string;
+		for(j = 0; j < num_entries; j++) {
+			fin >> buf_string;
+			col_index[j] = atoi(buf_string.c_str());
+		}
+
+		// Close file
+		fin.close();
+
+		// Create sparse matrix
+		kinetic_map_array[blob_index][map_from[i]][map_to[i]].init(num_rows, num_entries, entries, key, col_index);
+	}
+
+	return FFEA_OK;
+}
+
+int World::build_kinetic_identity_maps() {
+	
+	int i, j, k;
+
+	// For each blob, build map_ij*map_ji and map_ji*map_ij so we can compare energies using only the conserved modes. Well clever this, Oliver Harlen's idea.
+	// He didn't write this though!
+	
+	for(i = 0; i < params.num_blobs; ++i) {
+		for(j = 0; j < params.num_conformations[i]; ++j) {
+			for(k = j + 1; k < params.num_conformations[i]; ++k) {
+
+				kinetic_double_map_array[i][j][k] = kinetic_map_array[i][k][j].apply(&kinetic_map_array[i][j][k]);
+				kinetic_double_map_array[i][k][j] = kinetic_map_array[i][j][k].apply(&kinetic_map_array[i][k][j]);
+			}
+		}
+	}
+	return FFEA_OK;
+}
+
+int World::rescale_kinetic_rates(scalar ***rates) {
+
+	return FFEA_OK;
+	int i, j, current_state, case_index;
+	scalar total_prob, current_energy, final_energy;
+	for(i = 0; i < params.num_blobs; ++i) {
+		
+		// Get current energy
+		current_state = active_state_index[i];
+		current_energy = active_blob_array[i]->calculate_strain_energy();
+		//cout << i << " " << current_energy / (params.kT * (3 * active_blob_array[i]->get_num_linear_nodes() - 6)) << endl;
+
+		total_prob = 0.0;
+		for(j = 0; j < params.num_states[i]; ++j) {
+
+			// Calculate remainder at end
+			if(j == current_state) {
+				continue;
+			}
+
+			// Rates change depending on situation
+			if(kinetic_state[i][current_state].bound == kinetic_state[i][j].bound && kinetic_state[i][current_state].conformation_index == kinetic_state[i][j].conformation_index)
+			{
+				// Null transform
+				case_index = 0;
+
+			} else if(kinetic_state[i][current_state].bound == 0 && kinetic_state[i][j].bound == 1) {
+				
+				// Unbound to bound
+				case_index = 1;
+
+			} else if(kinetic_state[i][current_state].bound == 1 && kinetic_state[i][j].bound == 0) {
+		
+				// Bound to unbound
+				case_index = 2;
+
+			} else if (kinetic_state[i][current_state].conformation_index != kinetic_state[i][j].conformation_index) {
+			
+				// Conformation change
+				case_index = 3;
+			} else {
+				FFEA_ERROR_MESSG("Error when trying to rescale kinetic rate: Blob %d from state %d to state %d\n", i, current_state, j);
+				return FFEA_ERROR;
+			}
+
+			switch(case_index) {
+				
+				// Null
+				case(0):
+					break;
+
+				// Binding
+				case(1):
+
+					/*for(k = 0; k < num_binding_sites; ++k) {
+
+						// Binding site on our molecule
+						if(kinetic_binding_sites[k].blob_index == i && kinetic_binding_sites[k].conf_index == j) {
+							kinetic_binding_sites[k].calc_centroid();
+							radius[0] = sqrt(kinetic_binding_sites[k].area / 3.1415926);
+							for(l = 0; l < num_binding_sites; ++l) {
+								if(l == k) {
+									continue;
+								}
+								kinetic_binding_sites[l].calc_centroid();
+								radius[1] = sqrt(kinetic_binding_sites[l].area / 3.1415926);
+								distance.x = kinetic_binding_sites[k].centroid.x - kinetic_binding_sites[l].centroid.x;
+								distance.y = kinetic_binding_sites[k].centroid.y - kinetic_binding_sites[l].centroid.y;
+								distance.z = kinetic_binding_sites[k].centroid.z - kinetic_binding_sites[l].centroid.z;
+								
+								// Successful binding!
+								if(mag(&distance) < radius[0] + radius[1]) {
+
+								}
+
+								
+							}
+						}	
+					}*/				
+					break;
+		
+				// Unbinding
+				case(2):
+
+					
+					break;
+
+				// Conformation change
+				case(3):
+				
+					
+					break;
+			}
+
+			total_prob += rates[i][current_state][j];
+			
+			
+		}
+
+		// Prob of staying put
+		rates[i][current_state][current_state] = 1 - total_prob;
+	}
+
+	return FFEA_OK;
+}
+
+int World::load_kinetic_states(string states_fname, int blob_index) {
+	
+	int i, MAX_BUF_SIZE = 255, num_kinetic_states;
+	int conf_index, bound_state, binding_site_type_from, binding_site_type_to;
+	char buf[MAX_BUF_SIZE];
+	string string_buf;
+
+	cout << "\t\tReading states file '" << states_fname << "'" << endl;
+	ifstream fin;
+	fin.open(states_fname.c_str());
+
+	// Check filetype
+	fin.getline(buf, MAX_BUF_SIZE);
+	string_buf = string(buf);
+	boost::trim(string_buf);
+	if(string_buf != "ffea kinetic states file") {
+		FFEA_error_text();
+		cout << "In '" << states_fname << "', expected 'ffea kinetic states file' but got " << buf << endl;
+		return FFEA_ERROR;
+	}
+	
+	// Get num_states
+	fin >> buf >> num_kinetic_states;
+	
+	// Check against params
+	if(params.num_states[blob_index] != num_kinetic_states) {
+		FFEA_error_text();
+		cout << "Read 'num_states " << num_kinetic_states << "' from " << states_fname << " but expected " << params.num_states[blob_index] << " from .ffea script." << endl;
+		return FFEA_ERROR;
+	}
+
+	// Create states objects
+	kinetic_state[blob_index] = new KineticState[num_kinetic_states];
+
+	// Get states line
+	fin.getline(buf, MAX_BUF_SIZE);
+	fin.getline(buf, MAX_BUF_SIZE);
+
+	// Initialise states
+	for(i = 0; i < num_kinetic_states; ++i) {
+
+		// Get conformation index
+		fin >> conf_index;
+		if(conf_index >= params.num_conformations[blob_index]) {
+			FFEA_error_text();
+			cout << "In kinetic states file '" << states_fname << "', state " << i << " references a conformation index which is out of the range of the number of conformation defined in the script" << endl;
+			return FFEA_ERROR;
+		}
+
+		// Get bound state
+		fin >> string_buf;
+		if(string_buf == "u" or string_buf == "unbound") {
+			bound_state = 0;
+
+		} else if (string_buf == "b" or string_buf == "bound") {
+			bound_state = 1;
+
+		} else {
+			FFEA_error_text();
+			cout << "Expected bound/unbound, got " << string_buf << endl;
+			return FFEA_ERROR;
+		}
+
+		// Get site types in binding event
+		fin >> binding_site_type_from;
+		fin >> binding_site_type_to;
+		if(binding_site_type_from >= binding_matrix.num_interaction_types || binding_site_type_to >= binding_matrix.num_interaction_types) {
+			FFEA_error_text();
+			cout << "In kinetic states file '" << states_fname << "', state " << i << " references a state type which is out of the range of the number of types defined in 'binding_params'" << endl;
+			return FFEA_ERROR; 
+		}
+
+		// Initialise state
+		kinetic_state[blob_index][i].init(conf_index, bound_state, binding_site_type_from, binding_site_type_to);
+	}
+	return FFEA_OK;
+}
+
+int World::load_kinetic_rates(string rates_fname, int blob_index) {
+	
+	int i, j, MAX_BUF_SIZE = 255, num_kinetic_states;
+	char buf[MAX_BUF_SIZE];
+	string string_buf;
+
+	cout << "\t\tReading rates file '" << rates_fname << "'" << endl;
+	ifstream fin;
+	fin.open(rates_fname.c_str());
+
+	// Check filetype
+	fin.getline(buf, MAX_BUF_SIZE);
+	string_buf = string(buf);
+	boost::trim(string_buf);
+	if(string_buf != "ffea kinetic rates file") {
+		FFEA_error_text();
+		cout << "In '" << rates_fname << "', expected 'ffea kinetic rates file' but got " << buf << endl;
+		return FFEA_ERROR;
+	}
+	
+	// Get num_states
+	fin >> buf >> num_kinetic_states;
+	
+	// Check against params
+	if(params.num_states[blob_index] != num_kinetic_states) {
+		FFEA_error_text();
+		cout << "Read 'num_states " << num_kinetic_states << "' from " << rates_fname << " but expected " << params.num_states[blob_index] << " from .ffea script." << endl;
+		return FFEA_ERROR;
+	}
+
+	// Create rates matrix
+	kinetic_rate[blob_index] = new scalar*[num_kinetic_states];
+	for(i = 0; i < num_kinetic_states; ++i) {
+		kinetic_rate[blob_index][i] = new scalar[num_kinetic_states];	
+	}
+
+	// Get rates line
+	fin.getline(buf, MAX_BUF_SIZE);
+	fin.getline(buf, MAX_BUF_SIZE);
+	double total_prob;
+	for(i = 0; i < num_kinetic_states; ++i) {
+		total_prob = 0.0;
+		for(j = 0; j < num_kinetic_states; ++j) {
+			fin >> kinetic_rate[blob_index][i][j];
+
+			// Change to probabilities
+			kinetic_rate[blob_index][i][j] *= params.dt * params.kinetics_update;
+			if(i != j) {
+				total_prob += kinetic_rate[blob_index][i][j];
+			}
+		}
+		
+		// Prob of not switching (for completion)
+		if(total_prob > 1) {
+			FFEA_error_text();
+			cout << "P(switch_state in kinetic update period) = rate(switch_state)(Hz) * dt * kinetics_update" << endl;
+			cout << "Due to the size of your rates, your timestep, and your kinetic_update value, the total probability of changing states each kinetic update period is greater than one." << endl;
+			cout << "Best solution - Reduce 'kinetics_update' parameter" << endl;
+			return FFEA_ERROR;
+		}
+		kinetic_rate[blob_index][i][i] = 1 - total_prob;
+	}
+
+	return FFEA_OK;
 }
 
 /* */
@@ -1160,7 +1610,71 @@ void World::get_system_CoM(vector3 *system_CoM) {
     system_CoM->z /= total_mass;
 }
 
-int World::load_springs(char *fname) {
+/* */
+void World::get_system_centroid(vector3 *centroid) {
+    centroid->x = 0;
+    centroid->y = 0;
+    centroid->z = 0;
+    scalar total_num_nodes = 0;
+    for (int i = 0; i < params.num_blobs; i++) {
+        vector3 cen;
+        active_blob_array[i]->get_centroid(&cen);
+        centroid->x += cen.x * active_blob_array[i]->get_num_nodes();
+        centroid->y += cen.y * active_blob_array[i]->get_num_nodes();
+        centroid->z += cen.z * active_blob_array[i]->get_num_nodes();
+
+        total_num_nodes += active_blob_array[i]->get_num_nodes();
+    }
+    centroid->x /= total_num_nodes;
+    centroid->y /= total_num_nodes;
+    centroid->z /= total_num_nodes;
+}
+
+void World::get_system_dimensions(vector3 *dimension) {
+	dimension->x = 0;
+	dimension->y = 0;
+	dimension->z = 0;
+	
+	vector3 min, max;
+	min.x = INFINITY;
+	min.y = INFINITY;
+	min.z = INFINITY;
+	max.x = -1 * INFINITY;
+	max.y = -1 * INFINITY;
+	max.z = -1 * INFINITY;
+	
+	vector3 blob_min, blob_max;
+	for(int i = 0; i < params.num_blobs; i++) {
+		active_blob_array[i]->get_min_max(&blob_min, &blob_max);
+		if(blob_min.x < min.x) {
+			min.x = blob_min.x;
+		}
+		if(blob_min.y < min.y) {
+			min.y = blob_min.y;
+		}
+		if(blob_min.z < min.z) {
+			min.z = blob_min.z;
+		}
+
+		if(blob_max.x > max.x) {
+			max.x = blob_max.x;
+		}
+
+		if(blob_max.y > max.y) {
+			max.y = blob_max.y;
+		}
+
+		if(blob_max.z > max.z) {
+			max.z = blob_max.z;
+		}
+	}
+
+	dimension->x = max.x - min.x;
+	dimension->y = max.y - min.y;
+	dimension->z = max.z - min.z;
+}
+
+int World::load_springs(const char *fname) {
 
     int i;
     FILE *in = NULL;
@@ -1193,15 +1707,55 @@ int World::load_springs(char *fname) {
     // Allocate memory for springs
     spring_array = new Spring[num_springs];
 
+    // Read in next line
+    fscanf(in,"springs:\n");
     for (i = 0; i < num_springs; ++i) {
-        if (fscanf(in, "%d %d %d %d %d %d %lf %lf\n", &spring_array[i].blob_index[0], &spring_array[i].conformation_index[0], &spring_array[i].node_index[0], &spring_array[i].blob_index[1], &spring_array[i].conformation_index[1], &spring_array[i].node_index[1], &spring_array[i].k, &spring_array[i].l) != 8) {
+       if (fscanf(in, "%d %d %d %d %d %d %lf %lf\n", &spring_array[i].blob_index[0], &spring_array[i].conformation_index[0], &spring_array[i].node_index[0], &spring_array[i].blob_index[1], &spring_array[i].conformation_index[1], &spring_array[i].node_index[1], &spring_array[i].k, &spring_array[i].l) != 8) {
             FFEA_error_text();
             printf("Problem reading spring data from %s. Format is:\n\n", fname);
             printf("ffea spring file\nnum_springs ?\n");
-            printf("blob_index_0 conformation_index_0 node_index_0 blob_index_1 conformation_index_1 node_index_1 k l\n");
+            printf("blob_index_0 conformation_index_0 node_index_0 blob_index_1 conformation_index_1 node_index_1 k l\n\n");
             return FFEA_ERROR;
         }
 
+	// Error checking
+	for(int j = 0; j < 2; ++j) {
+		if(spring_array[i].blob_index[j] >= params.num_blobs || spring_array[i].blob_index[j] < 0) {
+			FFEA_error_text();
+        	    	printf("In spring %d, blob index %d is out of bounds given the number of blobs defined (%d). Please fix. Remember, indexing starts at ZERO!\n", i, j, params.num_blobs);
+			return FFEA_ERROR;
+		}
+		if(spring_array[i].conformation_index[j] >= params.num_conformations[spring_array[i].blob_index[j]] || spring_array[i].conformation_index[j] < 0) {
+			FFEA_error_text();
+        	    	printf("In spring %d, conformation index %d is out of bounds given the number of conformations defined in blob %d (%d). Please fix. Remember, indexing starts at ZERO!\n", i, j, spring_array[i].blob_index[j], params.num_conformations[spring_array[i].blob_index[j]]);
+			return FFEA_ERROR;
+		}
+		if(spring_array[i].node_index[j] >= blob_array[spring_array[i].blob_index[j]][spring_array[i].conformation_index[j]].get_num_nodes() || spring_array[i].node_index[j] < 0) {
+			FFEA_error_text();
+        	    	printf("In spring %d, node index %d is out of bounds given the number of nodes defined in blob %d, conformation %d (%d). Please fix. Remember, indexing starts at ZERO!\n", i, j, spring_array[i].blob_index[j], spring_array[i].conformation_index[j], blob_array[spring_array[i].blob_index[j]][spring_array[i].conformation_index[j]].get_num_nodes());
+			return FFEA_ERROR;
+		}
+		if(spring_array[i].k < 0) {
+			FFEA_error_text();
+			printf("In spring %d, spring constant, %e, < 0. This is not going to end well for you...\n", i, spring_array[i].k);
+			return FFEA_ERROR;
+		}
+		if(spring_array[i].l < 0) {
+			FFEA_error_text();
+			printf("In spring %d, spring equilibrium length, %e, < 0. Reverse node definitions for consistency.\n", i, spring_array[i].l);
+			return FFEA_ERROR;
+		}
+	}
+	if(spring_array[i].blob_index[0] == spring_array[i].blob_index[1] && spring_array[i].conformation_index[0] == spring_array[i].conformation_index[1] && spring_array[i].node_index[0] == spring_array[i].node_index[1]) {
+			FFEA_error_text();
+			printf("In spring %d, spring is connected to same node on same blob on same conformation. Will probably cause an force calculation error.\n", i);
+			return FFEA_ERROR;
+	}
+	if(spring_array[i].blob_index[0] == spring_array[i].blob_index[1] && spring_array[i].conformation_index[0] != spring_array[i].conformation_index[1]) {
+			FFEA_error_text();
+			printf("In spring %d, spring is connected two conformations of the same blob (blob_index = %d). This cannot happen as conformations are mutually exclusive.\n", i, spring_array[i].blob_index[0]);
+			return FFEA_ERROR;
+	}
     }
 
     fclose(in);
@@ -1214,7 +1768,9 @@ void World::activate_springs() {
     for (int i = 0; i < num_springs; ++i) {
         if (spring_array[i].conformation_index[0] == active_blob_array[spring_array[i].blob_index[0]]->conformation_index && spring_array[i].conformation_index[1] == active_blob_array[spring_array[i].blob_index[1]]->conformation_index) {
             spring_array[i].am_i_active = true;
-        }
+        } else {
+	    spring_array[i].am_i_active = false;
+	}
     }
 }
 
@@ -1230,7 +1786,6 @@ void World::apply_springs() {
             sep.z = n1.z - n0.z;
             sep_norm = normalise(&sep);
             force_mag = spring_array[i].k * (mag(&sep) - spring_array[i].l);
-
             force0.x = force_mag * sep_norm.x;
             force0.y = force_mag * sep_norm.y;
             force0.z = force_mag * sep_norm.z;
@@ -1238,7 +1793,6 @@ void World::apply_springs() {
             force1.x = -1 * force_mag * sep_norm.x;
             force1.y = -1 * force_mag * sep_norm.y;
             force1.z = -1 * force_mag * sep_norm.z;
-
             active_blob_array[spring_array[i].blob_index[0]]->add_force_to_node(force0, spring_array[i].node_index[0]);
             active_blob_array[spring_array[i].blob_index[1]]->add_force_to_node(force1, spring_array[i].node_index[1]);
         }
@@ -1346,10 +1900,6 @@ void World::print_trajectory_and_measurement_files(int step, double wtime) {
     if (measurement_out[params.num_blobs] != NULL) {
         fprintf(measurement_out[params.num_blobs], "%d\t", step);
     }
-    if (stress_out != NULL) {
-	fprintf(stderr, "Write to stress");
-        fprintf(stress_out, "step\t%d\n", step);
-    }
 
     for (int i = 0; i < params.num_blobs; i++) {
 
@@ -1360,16 +1910,13 @@ void World::print_trajectory_and_measurement_files(int step, double wtime) {
         // Write the measurement data for this blob
         active_blob_array[i]->make_measurements(measurement_out[i], step, &system_CoM);
 
-        // Output stress information
-        active_blob_array[i]->make_stress_measurements(stress_out, i);
-
         // Output interblob_vdw info
-        for (int j = i + 1; j < params.num_blobs; ++j) {
+	for (int j = i + 1; j < params.num_blobs; ++j) {
             active_blob_array[i]->calculate_vdw_bb_interaction_with_another_blob(measurement_out[params.num_blobs], j);
         }
     }
 
-    fprintf(measurement_out[num_blobs], "\n");
+    fprintf(measurement_out[params.num_blobs], "\n");
 
     // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
     fprintf(trajectory_out, "*\n");
@@ -1381,9 +1928,93 @@ void World::print_trajectory_and_measurement_files(int step, double wtime) {
     }
 }
 
+void World::print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index) {
+
+	// Check input
+	int *to;
+	int *from;
+	if(to_index == NULL || from_index == NULL) {
+		to = new int[params.num_blobs];
+		from = new int[params.num_blobs];
+		for(int i = 0; i < params.num_blobs; ++i) {
+			to[i] = active_blob_array[i]->conformation_index;
+			from[i] = active_blob_array[i]->conformation_index;
+		}
+	} else {
+		to = to_index;
+		from = from_index;
+	}
+
+	// Inform whoever is watching of changes
+	if(params.calc_kinetics == 1 && (step - 1) % params.kinetics_update == 0) {
+		printf("Conformation Changes:\n");
+	}	
+	fprintf(fout, "Conformation Changes:\n");
+	for(int i = 0; i < params.num_blobs; ++i) {
+		if(params.calc_kinetics == 1 && (step - 1) % params.kinetics_update == 0) {
+			printf("\tBlob %d - Conformation %d -> Conformation %d\n", i, from[i], to[i]);	
+		}
+
+		// Print to file
+		fprintf(fout, "Blob %d: Conformation %d -> Conformation %d\n", i, from[i], to[i]);
+	}
+	fprintf(fout, "*\n");
+
+	// Force print in case of ctrl + c stop
+	fflush(fout);
+
+	// Free data
+	if(to_index == NULL || from_index == NULL) {
+		delete[] to;
+		delete[] from;
+	}
+}
 void World::print_static_trajectory(int step, double wtime, int blob_index) {
     printf("Printing single trajectory of Blob %d for viewer\n", blob_index);
     // Write the node data for this blob
     fprintf(trajectory_out, "Blob %d, step %d\n", blob_index, step);
     active_blob_array[blob_index]->write_nodes_to_file(trajectory_out);
 }
+
+// Well done for reading this far! Hope this makes you smile. People should smile more
+
+/*
+quu..__
+ $$$b  `---.__
+  "$$b        `--.                          ___.---uuudP
+   `$$b           `.__.------.__     __.---'      $$$$"              .
+     "$b          -'            `-.-'            $$$"              .'|
+       ".                                       d$"             _.'  |
+         `.   /                              ..."             .'     |
+           `./                           ..::-'            _.'       |
+            /                         .:::-'            .-'         .'
+           :                          ::''\          _.'            |
+          .' .-.             .-.           `.      .'               |
+          : /'$$|           .@"$\           `.   .'              _.-'
+         .'|$u$$|          |$$,$$|           |  <            _.-'
+         | `:$$:'          :$$$$$:           `.  `.       .-'
+         :                  `"--'             |    `-.     \
+        :##.       ==             .###.       `.      `.    `\
+        |##:                      :###:        |        >     >
+        |#'     `..'`..'          `###'        x:      /     /
+         \                                   xXX|     /    ./
+          \                                xXXX'|    /   ./
+          /`-.                                  `.  /   /
+         :    `-  ...........,                   | /  .'
+         |         ``:::::::'       .            |<    `.
+         |             ```          |           x| \ `.:``.
+         |                         .'    /'   xXX|  `:`M`M':.
+         |    |                    ;    /:' xXXX'|  -'MMMMM:'
+         `.  .'                   :    /:'       |-'MMMM.-'
+          |  |                   .'   /'        .'MMM.-'
+          `'`'                   :  ,'          |MMM<
+            |                     `'            |tbap\
+             \                                  :MM.-'
+              \                 |              .''
+               \.               `.            /
+                /     .:::::::.. :           /
+               |     .:::::::::::`.         /
+               |   .:::------------\       /
+              /   .''               >::'  /
+              `',:                 :    .'
+*/

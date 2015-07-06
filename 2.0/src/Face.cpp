@@ -59,7 +59,15 @@ void Face::init(tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node
     vdw_bb_energy = new scalar[num_blobs];
     vdw_bb_interaction_flag = new bool[num_blobs];
     vdw_xz_force = new vector3;
+
+    for(int i = 0; i < num_blobs; ++i) {
+	vector3_set_zero(&vdw_bb_force[i]);
+        vdw_bb_energy[i] = 0.0;
+	vdw_bb_interaction_flag[i] = false;
+    }
+    vector3_set_zero(vdw_xz_force);
     vdw_xz_energy = 0.0;
+
 
     this->daddy_blob = daddy_blob;
 }
@@ -82,6 +90,13 @@ void Face::init(mesh_node *n0, mesh_node *n1, mesh_node *n2, Blob *daddy_blob, S
     vdw_bb_energy = new scalar[num_blobs];
     vdw_bb_interaction_flag = new bool[num_blobs];
     vdw_xz_force = new vector3;
+
+    for(int i = 0; i < num_blobs; ++i) {
+	vector3_set_zero(&vdw_bb_force[i]);
+        vdw_bb_energy[i] = 0.0;
+	vdw_bb_interaction_flag[i] = false;
+    }
+    vector3_set_zero(vdw_xz_force);
     vdw_xz_energy = 0.0;
 
     this->daddy_blob = daddy_blob;
@@ -112,6 +127,32 @@ void Face::calc_area_normal_centroid() {
     centroid.x = (1.0 / 3.0) * (n[0]->pos.x + n[1]->pos.x + n[2]->pos.x);
     centroid.y = (1.0 / 3.0) * (n[0]->pos.y + n[1]->pos.y + n[2]->pos.y);
     centroid.z = (1.0 / 3.0) * (n[0]->pos.z + n[1]->pos.z + n[2]->pos.z);
+}
+
+vector3 * Face::get_centroid() {
+	centroid.x = (1.0 / 3.0) * (n[0]->pos.x + n[1]->pos.x + n[2]->pos.x);
+	centroid.y = (1.0 / 3.0) * (n[0]->pos.y + n[1]->pos.y + n[2]->pos.y);
+	centroid.z = (1.0 / 3.0) * (n[0]->pos.z + n[1]->pos.z + n[2]->pos.z);
+	
+	return &centroid;
+}
+
+scalar Face::get_area() {
+
+    vector3 temp;
+
+    // (1/2) * |a x b|
+    vector3 a = {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z},
+    b = {n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z};
+    temp.x = a.y * b.z - a.z * b.y;
+    temp.y = a.z * b.x - a.x * b.z;
+    temp.z = a.x * b.y - a.y * b.x;
+
+    scalar normal_mag = sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+
+    area = .5 * normal_mag;
+    return area;
+
 }
 
 /* Calculate the point p on this triangle given the barycentric coordinates b1, b2, b3 */

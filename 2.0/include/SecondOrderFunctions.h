@@ -35,7 +35,7 @@ namespace SecondOrderFunctions {
         scalar a, b, c, d;
     };
 
-    static stu stu_lookup[10] ={
+     static stu stu_lookup[10] ={
         {0, 0, 0},
         {1, 0, 0},
         {0, 1, 0},
@@ -46,7 +46,7 @@ namespace SecondOrderFunctions {
         {.5, .5, 0},
         {.5, 0, .5},
         {0, .5, .5}
-    };
+    }; 
 
     static void calc_psi(scalar psi[10], scalar s, scalar t, scalar u) {
         scalar r = 1 - s - t - u;
@@ -60,9 +60,9 @@ namespace SecondOrderFunctions {
         psi[7] = 4 * s * t;
         psi[8] = 4 * s * u;
         psi[9] = 4 * t * u;
-    }
+    } 
 
-    static void calc_grad_psi(vector3 grad_psi[10], scalar s, scalar t, scalar u, scalar J_inv[9]) {
+     static void calc_grad_psi(vector3 grad_psi[10], scalar s, scalar t, scalar u, scalar J_inv[9]) {
         scalar dpsi1_by_dstu = 4 * (s + t + u) - 3;
         grad_psi[GRAD_PSI_1].x = dpsi1_by_dstu * (J_inv[DS_BY_DX] + J_inv[DT_BY_DX] + J_inv[DU_BY_DX]);
         grad_psi[GRAD_PSI_1].y = dpsi1_by_dstu * (J_inv[DS_BY_DY] + J_inv[DT_BY_DY] + J_inv[DU_BY_DY]);
@@ -118,11 +118,11 @@ namespace SecondOrderFunctions {
         //			printf("dpsi%d/dy = %+e\n", i + 1, grad_psi[i].y);
         //			printf("dpsi%d/dz = %+e\n", i + 1, grad_psi[i].z);
         //		}
-    }
+    } 
 
     // Construct jacobian column coefficients
 
-    static void calc_jacobian_column_coefficients(mesh_node *n[10], abcd J_coeff[3][3]) {
+  static void calc_jacobian_column_coefficients(mesh_node *n[10], abcd J_coeff[3][3]) {
         // dx/ds
         J_coeff[0][0].a = 4 * (n[0]->pos.x + n[1]->pos.x - 2 * n[4]->pos.x);
         J_coeff[0][0].b = 4 * (n[0]->pos.x - n[4]->pos.x - n[5]->pos.x + n[7]->pos.x);
@@ -180,7 +180,7 @@ namespace SecondOrderFunctions {
         J_coeff[2][2].d = 4 * n[6]->pos.z - 3 * n[0]->pos.z - n[3]->pos.z;
     }
 
-    static scalar calc_det_J(abcd J_coeff[3][3], scalar s, scalar t, scalar u, scalar J_inv[9]) {
+   static scalar calc_det_J(abcd J_coeff[3][3], scalar s, scalar t, scalar u, scalar J_inv[9]) {
         scalar J[3][3];
 
         // Construct Jacobian for the part of the element at (s, t, u)
@@ -210,17 +210,17 @@ namespace SecondOrderFunctions {
             J_inv[i] /= det;
         }
 
-        /*
-                        printf("J:\n");
-                        printf("%+e %+e %+e\n", J[0][0], J[0][1], J[0][2]);
-                        printf("%+e %+e %+e\n", J[1][0], J[1][1], J[1][2]);
-                        printf("%+e %+e %+e\n", J[2][0], J[2][1], J[2][2]);
+        
+         //               printf("J:\n");
+         //               printf("%+e %+e %+e\n", J[0][0], J[0][1], J[0][2]);
+         //               printf("%+e %+e %+e\n", J[1][0], J[1][1], J[1][2]);
+         //               printf("%+e %+e %+e\n", J[2][0], J[2][1], J[2][2]);
 
-                        printf("J_inv:\n");
-                        printf("%+e %+e %+e\n", J_inv[0], J_inv[1], J_inv[2]);
-                        printf("%+e %+e %+e\n", J_inv[3], J_inv[4], J_inv[5]);
-                        printf("%+e %+e %+e\n", J_inv[6], J_inv[7], J_inv[8]);
-         */
+         //               printf("J_inv:\n");
+         //               printf("%+e %+e %+e\n", J_inv[0], J_inv[1], J_inv[2]);
+         //               printf("%+e %+e %+e\n", J_inv[3], J_inv[4], J_inv[5]);
+         //               printf("%+e %+e %+e\n", J_inv[6], J_inv[7], J_inv[8]);
+         
 
         return fabs(det);
     }
