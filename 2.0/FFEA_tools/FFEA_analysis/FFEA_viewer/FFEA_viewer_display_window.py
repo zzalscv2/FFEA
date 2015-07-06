@@ -67,8 +67,6 @@ class FFEA_viewer_display_window():
 		shininess = 1.0;
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
 		glEnable(GL_COLOR_MATERIAL);
-		
-#		self.set_orthographic_projection()
 
 		glutDisplayFunc(self.draw_all)
 		glutIdleFunc(self.draw_all)
