@@ -17,6 +17,7 @@
 	<stokes_visc = 1e-03>
 	<calc_vdw = 0>
 	<calc_noise = 1>
+	<calc_kinetics = 0>
 	<calc_es = 0>
 	<es_update = 1>
 	<es_N_x = 0>
@@ -49,6 +50,6 @@
 		</conformation>
 		<solver = CG_nomass>
 		<scale = 5e-9>
-		<centroid_pos = (0.0,0.0,0.0)>
+		<centroid = (0.0,0.0,0.0)>
 	</blob>
 </system>

@@ -992,8 +992,8 @@ int World::read_and_build_system(vector<string> script_vector) {
 				if(set_binding == 1) {
 					cout << "In blob " << i << ", conformation " << j << ":\nIf 'calc_kinetics' is set to 0, 'binding_sites' will be ignored." << endl;
 					binding.pop_back();
-					binding.push_back("");
 				}
+				binding.push_back("");
 			} else {
 				if(set_binding == 0) {
 					FFEA_error_text();
@@ -1087,7 +1087,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 			} else if(lrvalue[0] == "scale") {
 				scale = atof(lrvalue[1].c_str());
 				set_scale = 1;
-			} else if(lrvalue[0] == "centroid") {
+			} else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
 				
 				centroid = new scalar[3];
 
@@ -1130,6 +1130,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		//Build conformations
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
+
 			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), binding.at(j).c_str(), pin.at(j).c_str(),
                        		scale, solver, motion_state.at(j), &params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
                        		FFEA_error_text();
@@ -1218,25 +1219,34 @@ int World::read_and_build_system(vector<string> script_vector) {
 	cout << "\t...done!" << endl;
 
 	// Get Interactions Lines
-	systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
+	int error_code;
+	error_code = systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
+	if(error_code == FFEA_ERROR) {
+		return FFEA_ERROR;
+	} else if (error_code == FFEA_CAUTION) {
 
-	// Get spring data
-	systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
+		// Block doesn't exist. Maybe add a protection to ensure binding later
+	} else {
 
-	// Error check
-	if (spring_vector.size() > 1) {
-		FFEA_error_text();
-		cout << "'Spring' block should only have 1 file." << endl;
-		return FFEA_ERROR; 
-	} else if (spring_vector.size() == 1) {
-		systemreader->parse_tag(spring_vector.at(0), lrvalue);
+		// Get spring data
+		systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
 
-		if(load_springs(lrvalue[1].c_str()) != 0) {
+		// Error check
+		if (spring_vector.size() > 1) {
 			FFEA_error_text();
-			cout << "Problem loading springs from " << lrvalue[1] << "." << endl;
+			cout << "'Spring' block should only have 1 file." << endl;
 			return FFEA_ERROR; 
+		} else if (spring_vector.size() == 1) {
+			systemreader->parse_tag(spring_vector.at(0), lrvalue);
+
+			if(load_springs(lrvalue[1].c_str()) != 0) {
+				FFEA_error_text();
+				cout << "Problem loading springs from " << lrvalue[1] << "." << endl;
+				return FFEA_ERROR; 
+			}
 		}
 	}
+
 
 	return FFEA_OK;
 }

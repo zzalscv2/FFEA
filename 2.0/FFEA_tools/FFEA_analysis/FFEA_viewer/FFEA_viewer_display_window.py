@@ -108,6 +108,7 @@ class FFEA_viewer_display_window():
 					'show_shortest_edge': 0,
 					'vdw_edit_mode': 0,
 					'binding_site_edit_mode': 0,
+					'binding_site_list': [],
 					'selected_index': 0,
 					'selected_blob': 0,
 					'selected_conformation':0,
@@ -316,7 +317,7 @@ class FFEA_viewer_display_window():
 						lvalue = lvalue.strip()
 						rvalue = rvalue.strip()
 						print lvalue, rvalue
-						if lvalue == "centroid":
+						if lvalue == "centroid" or lvalue == "centroid_pos":
 							rsplit = rvalue[1:-1].split(",")
 							blob_centroid_pos = [float(val) for val in rsplit]
 							
@@ -366,6 +367,13 @@ class FFEA_viewer_display_window():
 			else:
 				sys.exit("Expected a blob block in " + self.ffea_fname + " after the <system> tag\n")
 
+		# Send binding sites to control
+		binding_sites = [[0 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
+		for i in range(self.num_blobs):
+			for j in range(self.num_conformations[i]):
+				binding_sites[i][j] = self.blob_list[i][j].num_binding_sites
+	
+		#self.speak_to_control.send({'num_blobs': self.num_blobs})
 		# Get a global scale
 		global_scale = float("inf")
 		for blob in self.blob_list:

@@ -82,13 +82,14 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 		}
 	}
 
-	FFEA_error_text();
 	if(copying == 1) {
+		FFEA_error_text();
 		cout << "Never found closing tag '/" << block_title << "'." << endl;
 		return FFEA_ERROR;
 	} else {
+		FFEA_caution_text();
 		cout << "Specified block_index " << block_index << " for block '" << block_title << "' not found." << endl;
-		return FFEA_OK;
+		return FFEA_CAUTION;
 	}
 	
 }
