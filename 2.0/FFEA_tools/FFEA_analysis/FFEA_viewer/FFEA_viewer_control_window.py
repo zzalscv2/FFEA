@@ -60,6 +60,9 @@ class FFEA_viewer_control_window:
 		self.selected_index_label = Label(selected_index_frame, text="No Blob selected...", justify=LEFT, bg='#ffffc2')
 		self.selected_index_label.pack()
 
+		self.show_hide = IntVar()
+		self.check_button_show_hide = Checkbutton(selected_index_frame, text="Show/Hide Blob", variable=self.show_hide, command=self.hide_blob)
+		self.check_button_show_hide.pack(side=TOP, anchor=N)
 		vdw_frame = Frame(selected_index_frame, bd=1, bg='#ffffc2')
 		vdw_frame.pack(side=TOP, fill=X)
 		binding_frame = Frame(selected_index_frame, bd=1, bg='#ffffc2')
@@ -71,13 +74,12 @@ class FFEA_viewer_control_window:
 		self.save_button_vdw = Button(vdw_frame, text="Save VdW...", state=DISABLED, command=self.save_vdw)
 		self.save_button_vdw.pack(side=RIGHT)
 		self.edit_binding_sites = IntVar()
-		self.check_button_edit_binding = Checkbutton(binding_frame, text="Edit Binding Sites", variable=self.edit_binding_sites, state=DISABLED, command=self.something_has_changed)
+		self.check_button_edit_binding = Checkbutton(binding_frame, text="Edit Binding Site:", variable=self.edit_binding_sites, state=DISABLED, command=self.something_has_changed)
 		self.check_button_edit_binding.pack(side=LEFT)
 		self.save_button_binding = Button(binding_frame, text="Save Binding Sites...", state=DISABLED)#, command=self.save_binding_sites)
 		self.save_button_binding.pack(side=RIGHT)
-		self.show_hide = IntVar()
-		self.check_button_show_hide = Checkbutton(selected_index_frame, text="Show/Hide Blob", variable=self.show_hide, command=self.hide_blob)
-		self.check_button_show_hide.pack(side=LEFT, anchor=N)
+		self.bsite_spin = Spinbox(binding_frame, state=DISABLED)
+		self.bsite_spin.pack(side=LEFT)
 		self.blob_info_list = []
 		
 		# Display flags frame
