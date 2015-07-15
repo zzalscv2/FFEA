@@ -51,10 +51,24 @@ else ()
   endif()
 endif()
 
-# 2 ### MATH ######
+# 3 ### MATH ######
 if (UNIX)
   set(LIBS_TO_LINK ${LIBS_TO_LINK} "m") 
 endif(UNIX)
+
+
+# 4 ### BOOST #####
+set (Boost_NO_SYSTEM_PATHS ON)
+set (Boost_NO_BOOST_CMAKE ON)
+find_package( Boost COMPONENTS program_options )
+if (Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+  set(LIBS_TO_LINK ${LIBS_TO_LINK} ${Boost_LIBRARIES})
+else (Boost_FOUND)
+  message(FATAL_ERROR "Boost not found. Please provide valid paths for either:
+   -- BOOST_ROOT or
+   -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
+endif (Boost_FOUND)
 
 ######## END OF LIBRARIES #######
 #################################
