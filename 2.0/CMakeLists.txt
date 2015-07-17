@@ -79,7 +79,7 @@ if(DOXYGEN_FOUND)
   add_custom_target(doc ${DOXYGEN_EXECUTABLE}
                         ${PROJECT_BINARY_DIR}/Doxyfile
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
-                        COMMENT "Generating API documentation with Doxygen"
+                        COMMENT "Generating documentation for developers"
                         VERBATIM)
   install(FILES "${PROJECT_BINARY_DIR}/src/doc" DESTINATION
                 "${CMAKE_INSTALL_PREFIX}/")
