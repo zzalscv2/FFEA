@@ -70,6 +70,22 @@ else (Boost_FOUND)
    -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
 endif (Boost_FOUND)
 
+
+# 5 ### DOXYGEN ##### 
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+  configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
+                 "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
+  add_custom_target(doc ${DOXYGEN_EXECUTABLE}
+                        ${PROJECT_BINARY_DIR}/Doxyfile
+                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
+                        COMMENT "Generating API documentation with Doxygen"
+                        VERBATIM)
+  install(FILES "${PROJECT_BINARY_DIR}/src/doc" DESTINATION
+                "${CMAKE_INSTALL_PREFIX}/")
+endif(DOXYGEN_FOUND)
+
+
 ######## END OF LIBRARIES #######
 #################################
 
