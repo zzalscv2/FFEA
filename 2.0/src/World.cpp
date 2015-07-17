@@ -860,6 +860,11 @@ int World::change_blob_state(int blob_index, int new_state_index) {
 	return FFEA_OK;
 }
 
+/** 
+ * @brief Parses <blobs> and springs. 
+ * @param[in] vector<string> script_vector, which is essentially the FFEA input file,
+ *            line by line, as it comes out of FFEA_input_reader::file_to_lines
+ */
 int World::read_and_build_system(vector<string> script_vector) {
 
 	// Create some blobs based on params
