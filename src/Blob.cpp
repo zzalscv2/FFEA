@@ -487,6 +487,64 @@ int Blob::update() {
     return FFEA_OK;
 }
 
+// Rotate about x axis, then y axis, then z axis
+void Blob::rotate(float xang, float yang, float zang) {
+	int i;
+	scalar x, y, z;
+   	scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
+	scalar r[3][3];
+
+	// Convert to radians
+	xang *= 3.1415926 / 180.0;
+	yang *= 3.1415926 / 180.0;
+	zang *= 3.1415926 / 180.0;
+
+	// Calculate centroid of [SURFACE] Blob mesh
+	#ifdef FFEA_PARALLEL_WITHIN_BLOB
+	#pragma omp parallel for default(none) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
+	#endif
+        for (i = 0; i < num_surface_nodes; i++) {
+        	centroid_x += node[i].pos.x;
+        	centroid_y += node[i].pos.y;
+        	centroid_z += node[i].pos.z;
+        }
+
+    	centroid_x *= (1.0 / num_surface_nodes);
+    	centroid_y *= (1.0 / num_surface_nodes);
+    	centroid_z *= (1.0 / num_surface_nodes);
+
+	// Move all nodes to the origin:
+	#ifdef FFEA_PARALLEL_WITHIN_BLOB
+	#pragma omp parallel for default(none) private(i) shared(centroid_x, centroid_y, centroid_z)
+	#endif
+    	for (i = 0; i < num_nodes; i++) {
+       		node[i].pos.x -= centroid_x;
+        	node[i].pos.y -= centroid_y;
+        	node[i].pos.z -= centroid_z;
+    	}
+
+	// Do rotation
+	r[0][0] = cos(yang) * cos(zang);
+	r[0][1] = sin(xang) * sin(yang) * cos(zang) - cos(xang) * sin(zang);
+	r[0][2] = cos(xang) * sin(yang) * cos(zang) + sin(xang) * sin(zang);
+	r[1][0] = cos(yang) * sin(zang);
+	r[1][1] = sin(xang) * sin(yang) * sin(zang) + cos(xang) * cos(zang);
+	r[1][2] = cos(xang) * sin(yang) * sin(zang) - sin(xang) * cos(zang);
+	r[2][0] = -1 * sin(yang);
+	r[2][1] = sin(xang) * cos(yang);
+	r[2][2] = cos(xang) * cos(yang);
+
+	for (i = 0; i < num_nodes; i++) {
+        	x = node[i].pos.x;
+        	y = node[i].pos.y;
+        	z = node[i].pos.z;
+
+        	node[i].pos.x = x * r[0][0] + y * r[0][1] + z * r[0][2] + centroid_x;
+        	node[i].pos.y = x * r[1][0] + y * r[1][1] + z * r[1][2] + centroid_y;
+        	node[i].pos.z = x * r[2][0] + y * r[2][1] + z * r[2][2] + centroid_z;
+	}
+}
+
 void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33) {
     int i;
     scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;

@@ -1,0 +1,10 @@
+*.pyc
+*.sw?
+*.o
+*~
+*.a
+*.out
+*.pdf
+*.x
+core.*
+/bin/
