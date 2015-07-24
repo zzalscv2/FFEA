@@ -76,6 +76,11 @@ public:
     void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33);
 
     /*
+     *   Performs rotation about x axis, then y axis, then z axis
+     */
+    void rotate(float xang, float yang, float zang);
+
+    /*
      * Calculates the centroid of this Blob, then translates all nodes in the Blob
      * so that the new centroid position is at the given (x,y,z) position
      */

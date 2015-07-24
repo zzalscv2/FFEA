@@ -2,13 +2,14 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math
+import numpy as np
 
 class Blob:
 	def __init__(self, energy_thresh=1.0e6):
 		self.num_elements = 0
 		self.offset = [0.0, 0.0, 0.0]
 		self.init_centroid = [0.0,0.0,0.0]
-		self.init_rot = [0.0, 0.0, 0.0]
+		self.init_rot = None
 		self.topology = []
 		self.no_topology = False
 		self.num_nodes = 0
@@ -444,26 +445,57 @@ class Blob:
 			for i in range(len(nodes)):
 				for j in range(3):
 					nodes[i][j] += translate[j]
+
+			centroid_x = self.init_centroid[0]
+			centroid_y = self.init_centroid[1]
+			centroid_z = self.init_centroid[2]
 			print "...done!\n"
 		
 		# Apply a rotation if necessary
-		if self.init_rot != [0.0,0.0,0.0]:
+		if self.init_rot != None:
 			
 			# Move centroid to origin
 			for i in range(len(nodes)):
-				nodes[i][0] -= self.offset[0]
-				nodes[i][1] -= self.offset[1]
-				nodes[i][2] -= self.offset[2]
-
+				nodes[i][0] -= centroid_x
+				nodes[i][1] -= centroid_y
+				nodes[i][2] -= centroid_z
+				
 			# Rotate and move back to not the origin!
-			for i in range(len(nodes)):
-				x = nodes[i][0]
-				y = nodes[i][1]
-				z = nodes[i][2]
+			if len(self.init_rot) == 3:
+				for i in range(3):
+					self.init_rot[i] = np.radians(self.init_rot[i])
+	
+				R = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
+				R[0][0] = np.cos(self.init_rot[1]) * np.cos(self.init_rot[2])
+				R[0][1] = np.sin(self.init_rot[0]) * np.sin(self.init_rot[1]) * np.cos(self.init_rot[2]) - np.cos(self.init_rot[0]) * np.sin(self.init_rot[2])
+				R[0][2] = np.cos(self.init_rot[0]) * np.sin(self.init_rot[1]) * np.cos(self.init_rot[2]) + np.sin(self.init_rot[0]) * np.sin(self.init_rot[2])
+				R[1][0] = np.cos(self.init_rot[1]) * np.sin(self.init_rot[2])
+				R[1][1] = np.sin(self.init_rot[0]) * np.sin(self.init_rot[1]) * np.sin(self.init_rot[2]) + np.cos(self.init_rot[0]) * np.cos(self.init_rot[2])
+				R[1][2] = np.cos(self.init_rot[0]) * np.sin(self.init_rot[1]) * np.sin(self.init_rot[2]) - np.sin(self.init_rot[0]) * np.cos(self.init_rot[2])
+				R[2][0] = -1 * np.sin(self.init_rot[1])
+				R[2][1] = np.sin(self.init_rot[0]) * np.cos(self.init_rot[1])
+				R[2][2] = np.cos(self.init_rot[0]) * np.cos(self.init_rot[1])
 
-				nodes[i][0] = x * self.init_rot[0] + y * self.init_rot[1] + z * self.init_rot[2] + self.offset[0]
-        			nodes[i][1] = x * self.init_rot[3] + y * self.init_rot[4] + z * self.init_rot[5] + self.offset[1]
-        			nodes[i][2] = x * self.init_rot[6] + y * self.init_rot[7] + z * self.init_rot[8] + self.offset[2]
+				for i in range(len(nodes)):
+					x = nodes[i][0]
+					y = nodes[i][1]
+					z = nodes[i][2]
+
+					nodes[i][0] = x * R[0][0] + y * R[0][1] + z * R[0][2] + self.offset[0]
+					nodes[i][1] = x * R[1][0] + y * R[1][1] + z * R[1][2] + self.offset[1]
+					nodes[i][2] = x * R[2][0] + y * R[2][1] + z * R[2][2] + self.offset[2]
+
+			elif len(self.init_rot) == 9:
+
+				# Explicit matrix
+				for i in range(len(nodes)):
+					x = nodes[i][0]
+					y = nodes[i][1]
+					z = nodes[i][2]
+
+					nodes[i][0] = x * self.init_rot[0] + y * self.init_rot[1] + z * self.init_rot[2] + self.offset[0]
+					nodes[i][1] = x * self.init_rot[3] + y * self.init_rot[4] + z * self.init_rot[5] + self.offset[1]
+					nodes[i][2] = x * self.init_rot[6] + y * self.init_rot[7] + z * self.init_rot[8] + self.offset[2]
 				
 
 		# Calculate average normal at each node (for gl lighting effects)

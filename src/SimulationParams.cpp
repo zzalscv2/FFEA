@@ -495,43 +495,25 @@ int SimulationParams::validate() {
         FFEA_ERROR_MESSG("Measurement output file name required (measurement_out_fname).\n");
     } else {
         measurement_out_fname = new char*[num_blobs + 1];
-        char temp[MAX_FNAME_SIZE];
-        char base[MAX_FNAME_SIZE];
-        char ext[MAX_FNAME_SIZE];
-        char *pch = NULL;
-        sprintf(temp, temp_fname);
-        pch = strtok(temp, ".");
-        int num_points = -1;
-        while (pch != NULL) {
-            num_points++;
-            pch = strtok(NULL, ".");
-        }
-        sprintf(temp, temp_fname);
-        pch = strtok(temp, ".");
-        sprintf(base, pch);
-        for (int i = 1; i < num_points; ++i) {
-            pch = strtok(NULL, ".");
-            strcat(base, pch);
-        }
-
-        sprintf(ext, ".");
-        if (num_points == 0) {
-            strcat(ext, "out");
-        } else {
-            pch = strtok(NULL, ".");
-            strcat(ext, pch);
-        }
+	vector<string> all;
+	char temp[MAX_FNAME_SIZE];
+	string orig, base, ext;
+	orig = string(temp_fname);
+	boost::split(all, temp_fname, boost::is_any_of("."));
+	ext = "." + all.at(all.size() - 1);
+	base = boost::erase_last_copy(orig, ext);
 
         for (int i = 0; i < num_blobs + 1; ++i) {
             measurement_out_fname[i] = new char[MAX_FNAME_SIZE];
-            sprintf(measurement_out_fname[i], base);
+            sprintf(measurement_out_fname[i], base.c_str());
             if (i < num_blobs) {
                 sprintf(temp, "_blob%d", i);
                 strcat(measurement_out_fname[i], temp);
             } else {
                 strcat(measurement_out_fname[i], "_world");
             }
-            strcat(measurement_out_fname[i], ext);
+            strcat(measurement_out_fname[i], ext.c_str());
+
         }
     }
 
