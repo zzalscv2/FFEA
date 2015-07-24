@@ -2,10 +2,7 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math
-<<<<<<< HEAD
 import numpy as np
-=======
->>>>>>> ae21ff1c06f373017017b6c762ab58777e9d28b5
 
 class Blob:
 	def __init__(self, energy_thresh=1.0e6):
