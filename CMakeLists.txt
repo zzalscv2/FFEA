@@ -51,10 +51,39 @@ else ()
   endif()
 endif()
 
-# 2 ### MATH ######
+
+# 3 ### MATH ######
 if (UNIX)
   set(LIBS_TO_LINK ${LIBS_TO_LINK} "m") 
 endif(UNIX)
+
+# 4 ### BOOST #####
+set (Boost_NO_SYSTEM_PATHS ON)
+set (Boost_NO_BOOST_CMAKE ON)
+find_package( Boost COMPONENTS program_options )
+if (Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+  set(LIBS_TO_LINK ${LIBS_TO_LINK} ${Boost_LIBRARIES})
+else (Boost_FOUND)
+  message(FATAL_ERROR "Boost not found. Please provide valid paths for either:
+   -- BOOST_ROOT or
+   -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
+endif (Boost_FOUND)
+
+
+# 5 ### DOXYGEN ##### 
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+  configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
+                 "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
+  add_custom_target(doc ${DOXYGEN_EXECUTABLE}
+                        ${PROJECT_BINARY_DIR}/Doxyfile
+                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
+                        COMMENT "Generating documentation for developers"
+                        VERBATIM)
+  install(FILES "${PROJECT_BINARY_DIR}/src/doc" DESTINATION
+                "${CMAKE_INSTALL_PREFIX}/")
+endif(DOXYGEN_FOUND)
 
 ######## END OF LIBRARIES #######
 #################################

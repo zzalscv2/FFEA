@@ -2,7 +2,10 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math
+<<<<<<< HEAD
 import numpy as np
+=======
+>>>>>>> ae21ff1c06f373017017b6c762ab58777e9d28b5
 
 class Blob:
 	def __init__(self, energy_thresh=1.0e6):
@@ -496,6 +499,8 @@ class Blob:
 					nodes[i][0] = x * self.init_rot[0] + y * self.init_rot[1] + z * self.init_rot[2] + self.offset[0]
 					nodes[i][1] = x * self.init_rot[3] + y * self.init_rot[4] + z * self.init_rot[5] + self.offset[1]
 					nodes[i][2] = x * self.init_rot[6] + y * self.init_rot[7] + z * self.init_rot[8] + self.offset[2]
+
+			print "...done!\n"
 				
 
 		# Calculate average normal at each node (for gl lighting effects)
