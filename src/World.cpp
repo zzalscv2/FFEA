@@ -860,6 +860,14 @@ int World::change_blob_state(int blob_index, int new_state_index) {
 	return FFEA_OK;
 }
 
+<<<<<<< HEAD
+=======
+/** 
+ * @brief Parses <blobs> and springs. 
+ * @param[in] vector<string> script_vector, which is essentially the FFEA input file,
+ *            line by line, as it comes out of FFEA_input_reader::file_to_lines
+ */
+>>>>>>> ae21ff1c06f373017017b6c762ab58777e9d28b5
 int World::read_and_build_system(vector<string> script_vector) {
 
 	// Create some blobs based on params
@@ -1063,7 +1071,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 		}		
 
 		// Finally, get the extra blob data (solver, scale, centroid etc)
+
 		int rotation_type = -1;
+
 		for(it = blob_vector.begin(); it != blob_vector.end(); ++it) {
 			systemreader->parse_tag(*it, lrvalue);
 
@@ -1105,6 +1115,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 				systemreader->split_string(lrvalue[1], velocity, ",");
 
 			} else if(lrvalue[0] == "rotation") {
+
 				rotation = new scalar[9];
 				lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
 				boost::trim(lrvalue[1]);
@@ -1151,12 +1162,17 @@ int World::read_and_build_system(vector<string> script_vector) {
                     		blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
                 	}
                 	if(rotation != NULL) {
+<<<<<<< HEAD
 				if(rotation_type == 0) {
 					blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
 				} else {
 	                    		blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
 				}        
 	        	}
+=======
+                    		blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
+                	}
+>>>>>>> ae21ff1c06f373017017b6c762ab58777e9d28b5
 
                 	if (velocity != NULL)
                     		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);

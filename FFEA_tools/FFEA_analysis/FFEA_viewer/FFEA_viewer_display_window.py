@@ -393,9 +393,10 @@ class FFEA_viewer_display_window():
 					else:
 						conf.set_scale(global_scale)
 			# Start loading frames for each blob from the trajectory file
-			#self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
-			#self.load_trajectory_thread.start()
-			self.load_trajectory(trajectory_out_fname)
+
+			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
+			self.load_trajectory_thread.start()
+			#self.load_trajectory(trajectory_out_fname)
 
 		# else just use the nodes files (if traj file not given or found)
 		else:

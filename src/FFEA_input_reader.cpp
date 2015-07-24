@@ -146,6 +146,7 @@ int FFEA_input_reader::split_string(string input, string *output, string delim) 
 		output[i] = *it;
 		boost::trim(output[i++]);
 	}
+
 	return lrvalvec.size();
 }
 
@@ -171,8 +172,6 @@ int FFEA_input_reader::split_string(string input, scalar *output, string delim) 
 	int i = 0;
 	for(it = lrvalvec.begin(); it != lrvalvec.end(); it++) {
 		output[i++] = atof((*it).c_str());
-		cout << output[i - 1] << " ";
 	}
-	cout << endl;
 	return lrvalvec.size();
 }
