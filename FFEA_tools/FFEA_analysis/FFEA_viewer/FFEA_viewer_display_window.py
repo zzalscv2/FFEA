@@ -382,6 +382,11 @@ class FFEA_viewer_display_window():
 		
 		global_scale = 1.0 / global_scale
 
+		# Rescale box
+		self.box_x *= global_scale
+		self.box_y *= global_scale
+		self.box_z *= global_scale
+		
 		# Load frames from the trajectory file
 		if trajectory_out_fname != None:
 			# if any of the blobs are STATIC, just load their node positions from the node file
