@@ -73,7 +73,18 @@ World::~World() {
     measurement_out = NULL;   
 }
 
-/* */
+/**
+ * @brief Reads the .ffea file and initialises the World.
+ * @param[in] string FFEA_script_filename
+ * @details Open and read .ffea file,
+ *   parse the <param> block through SimulationParams::extract_params in the 
+ *   "SimulationParams params" private attribute,
+ *   parse the <blobs> and <springs> blocks through World::read_and_build_system
+ * initialise a number of RNG,
+ * prepare output files,
+ * initialise VdW solver,
+ * initialise BEM PBE solver
+ * */
 int World::init(string FFEA_script_filename) {
 	
 	// Set some constants and variables
