@@ -150,6 +150,11 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 	
 }
 
+/** 
+ * @brief parse an input ffea line
+ * @param[in] string input e. g.,  string < blah = whatever>
+ * @param[out] string[2] output; string[0] = blah, string[1] = whatever.
+ */
 int FFEA_input_reader::parse_tag(string input, string *output) {
 
 	string tag;
@@ -200,6 +205,21 @@ int FFEA_input_reader::split_string(string input, string *output, string delim) 
 	int i = 0;
 	for(it = lrvalvec.begin(); it != lrvalvec.end(); it++) {
 		output[i] = *it;
+		boost::trim(output[i++]);
+	}
+
+	return lrvalvec.size();
+}
+
+int FFEA_input_reader::split_string(string input, vector<string> &output, string delim) {
+
+	vector<string> lrvalvec;
+	vector<string>::iterator it;
+	boost::split(lrvalvec, input, boost::is_any_of(delim));
+
+	int i = 0;
+	for(it = lrvalvec.begin(); it != lrvalvec.end(); it++) {
+		output.push_back(*it);
 		boost::trim(output[i++]);
 	}
 
