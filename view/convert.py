@@ -1,9 +1,6 @@
 #!/usr/bin/python
 
-# script version 1.0
-# script output contain mesh and mesh surface (VTK) only
-
-import sys, re, getopt
+import sys, re, getopt, math
 ################################################################################
 # HELP
 ################################################################################
@@ -160,6 +157,39 @@ def getSurf(inputfile):
 		sys.stderr.write(".SURF file missing content!\n")
 		exit(1)
 	return surfList
+################################################################################
+## F = sqrt( F_x^2 + F_y^2 + F_z^2)
+# @param force (list)	- list of input vectors of force
+# @return (list)		- list of scalar values of force
+def cntForce(force):
+	res = []
+	for f in force:
+		res.append(math.sqrt(math.pow(float(f[0]),2)+math.pow(float(f[1]),2)+math.pow(float(f[2]),2)))
+	return res
+		
+################################################################################
+## add forces information to points
+# @param outputfile (string)	- name of output file
+# @param data (list)		- list of forces in each point
+"""
+def writeData(outputfile, data):
+	scalars = cntForce(data)
+	outputfile = open(outputfile,'a')
+	outputfile.write("\nPOINT_DATA "+str(len(scalars))+"\nSCALARS scalar_force float 1\nLOOKUP_TABLE default\n")
+	for i in scalars:
+		outputfile.write(str(i)+"\n")
+	outputfile.write("VECTORS vector_force float\n")
+	for i in data:
+		outputfile.write(" ".join([i[0],i[1],i[2],'\n']))
+	outputfile.close()
+"""	
+def writeData(outputfile, data):
+	outputfile = open(outputfile,'a')
+	outputfile.write("\nPOINT_DATA "+str(len(data))+"\nVECTORS vector_force float\n")
+	for i in data:
+		outputfile.write(" ".join([i[0],i[1],i[2],'\n']))
+	outputfile.close()
+
 
 ################################################################################
 #------------------------------------------------------------------------------#
@@ -316,7 +346,7 @@ nodeMove = {} #surface_faces
 
 nodeList1 = [] #surface
 nodeList2 = [] #interior
-
+force = {}
 blobID = -1
 step = 0
 
@@ -327,7 +357,8 @@ for line in inputfile.readlines():
 	if state == 1: #DYNAMIC / STATIC info
 		state = 2
 	elif state == 2: #list of node moves
-		cont = re.match(r"(-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+)\s*",line)
+#		cont = re.match(r"(-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+)\s*",line)
+		cont = re.match(r"(-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+).*\s(-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+)\s*$",line)
 		if cont == None: #another blob - next step
 			state = 0
 		else:
@@ -336,7 +367,7 @@ for line in inputfile.readlines():
 				nodeMove[blobID][0].append([cont.group(1), cont.group(2), cont.group(3)])
 			else:
 				nodeMove[blobID][1].append([cont.group(1), cont.group(2), cont.group(3)])
-
+			force[blobID].append([cont.group(4), cont.group(5), cont.group(6)])
 	if state == 0:	#waiting for blob info
 		cont = re.match(r"Blob (\d+), Conformation \d+, step (\d+).*",line)
 		if cont != None:
@@ -346,10 +377,12 @@ for line in inputfile.readlines():
 				#write
 				for i in nodeMove:
 					writeMesh("out/"+str(i)+"mesh",step, meshInfo[0][blobMeshIndex[i][1]], nodeMove[i][0], nodeMove[i][1]) #write mesh
+					writeData("out/"+str(i)+"mesh"+str(step)+".vtk",force[i]) #write data (force)
 					writeMesh("out/"+str(i)+"meshSurf",step, meshInfo[1][blobMeshIndex[i][2]], nodeMove[i][0],[]) #write meshSurf
 				step = stepRead
 			blobID = int(cont.group(1))
 			nodeMove[blobID] = [[],[]]
+			force[blobID] = []
 			pointN =0
 inputfile.close()
 
