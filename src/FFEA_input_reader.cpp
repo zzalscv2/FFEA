@@ -100,10 +100,10 @@ int FFEA_input_reader::file_to_lines(string script_fname, vector<string> *script
 int FFEA_input_reader::extract_block(string block_title, int block_index, vector<string> input, vector<string> *output) {
 
 	// Immediate error checking
-	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs" && block_title != "lookup") {
+	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs" && block_title != "precomp") {
 		FFEA_error_text();
-		cout << "Unrecognised block. Block structure is:" << endl;
-		cout << "<param>\n</param>\n<system>\n\t<blob>\n\t\t<conformation>\n\t\t</conformation>\n\t\t\t.\n\t\t\t.\n\t\t\t.\n\t\t<kinetics>\n\t\t\t<maps>\n\t\t\t</maps>\n\t\t</kinetics>\n\t</blob>\n\t\t.\n\t\t.\n\t\t.\n\t<interactions>\n\t\t<springs>\n\t\t</springs>\n\t\t<lookup>\n\t\t</lookup>\n\t</interactions>\n</system>" << endl;
+		cout << "Unrecognised block: " << block_title << ". Block structure is:" << endl;
+		cout << "<param>\n</param>\n<system>\n\t<blob>\n\t\t<conformation>\n\t\t</conformation>\n\t\t\t.\n\t\t\t.\n\t\t\t.\n\t\t<kinetics>\n\t\t\t<maps>\n\t\t\t</maps>\n\t\t</kinetics>\n\t</blob>\n\t\t.\n\t\t.\n\t\t.\n\t<interactions>\n\t\t<springs>\n\t\t</springs>\n\t\t<precomp>\n\t\t</precomp>\n\t</interactions>\n</system>" << endl;
 		return FFEA_ERROR;
 	}
 

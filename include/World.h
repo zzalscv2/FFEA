@@ -29,6 +29,7 @@
 #include "Blob.h"
 #include "World.h"
 #include "VdW_solver.h"
+#include "PreComp_solver.h"
 #include "LJ_matrix.h"
 #include "BindingSite.h"
 #include "Spring.h"
@@ -162,6 +163,17 @@ private:
 
     /* Binding Interactions matrix */
     BindingSite_matrix binding_matrix;
+
+
+    /**
+      * @brief stores info within the <precomp> block at the .ffea file.
+      */
+    PreComp_params pc_params; 
+    /**
+      * @brief PreComputed potentials solver
+      */
+    PreComp_solver pc_solver;
+
 
     vector3 box_dim;
 
