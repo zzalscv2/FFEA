@@ -410,6 +410,8 @@ int World::init(string FFEA_script_filename) {
 		}
 	    }
 
+            pc_solver.init(pc_params);
+
 	    if (params.restart == 0) {
 		// Carry out measurements on the system before carrying out any updates (if this is step 0)
 		print_trajectory_and_measurement_files(0, 0);
@@ -872,7 +874,7 @@ int World::change_blob_state(int blob_index, int new_state_index) {
 }
 
 /** 
- * @brief Parses <blobs> and springs. 
+ * @brief Parses <blobs>, <springs> and <precomp>. 
  * @param[in] vector<string> script_vector, which is essentially the FFEA input file,
  *            line by line, as it comes out of FFEA_input_reader::file_to_lines
  */
@@ -1271,8 +1273,30 @@ int World::read_and_build_system(vector<string> script_vector) {
 				return FFEA_ERROR; 
 			}
 		}
-	}
 
+	       // Get precomputed data
+               vector<string> precomp_vector;
+               systemreader->extract_block("precomp", 0, script_vector, &precomp_vector);
+	
+               for (i=0; i<precomp_vector.size(); i++){
+                 systemreader->parse_tag(precomp_vector[i], lrvalue);
+		 if (lrvalue[0] == "types") {
+                   cout << "types! " << lrvalue[1] << endl;
+                   lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
+                   boost::trim(lrvalue[1]);
+                   systemreader->split_string(lrvalue[1], pc_params.types, ",");
+                   for (j=0;j<pc_params.types.size();j++) cout << "types[" << j << "] = " << pc_params.types[j] << endl;
+                 } else if (lrvalue[0] == "inputData") {
+                   pc_params.inputData = stoi(lrvalue[1]);
+                 } else if (lrvalue[0] == "approach") {
+                   pc_params.approach = lrvalue[1];
+                 } else if (lrvalue[0] == "folder") {
+                   pc_params.folder = lrvalue[1];
+                 } 
+               } 
+       	}
+
+ 
 
 	return FFEA_OK;
 }
