@@ -90,9 +90,12 @@ if(DOXYGEN_FOUND)
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
-  install(FILES "${PROJECT_BINARY_DIR}/src/doc" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/")
+  install(FILES "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
+                "${CMAKE_INSTALL_PREFIX}/share/doc" OPTIONAL)
 endif(DOXYGEN_FOUND)
+
+# 7 ### DEBUG FLAGS ####
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 ######## END OF LIBRARIES #######
 #################################
