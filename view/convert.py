@@ -188,7 +188,12 @@ def writeData(outputfile, data):
 	outputfile.write("\nPOINT_DATA "+str(len(data))+"\nVECTORS vector_force float\n")
 	for i in data:
 		outputfile.write(" ".join([i[0],i[1],i[2],'\n']))
+	scalars = cntForce(data)
+	outputfile.write("\nSCALARS scalar_force float\nLOOKUP_TABLE default\n")
+	for i in scalars:
+		outputfile.write(str(i)+"\n")
 	outputfile.close()
+
 
 
 ################################################################################
