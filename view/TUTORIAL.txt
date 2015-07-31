@@ -1,0 +1,27 @@
+TUTORIAL - how to plot data in paraview:
+
+OPEN
+1) open VTK file
+2) Apply
+
+VIEW internal lines
+1) Filters/Alphabetical/ExtractEdges
+2) Apply
+
+VIEW Force
+1) Display/Color/Color by - force
+2) View force vectors - Filters/Alphabetical/Glyph
+3) Color Force vectors - Display/Color/Color by - GlyphVector
+
+SELECT points in specific value range
+1) View/Selection Inspector (now we continue in Selection inspector panel)
+2) Create Selection
+3) Selection Type: Trashold
+4) Field Type: POINT
+5) Create Selection
+6) Now we can choose from scalar values, in this case scalar_force
+7) Add Treshold
+8) Change Lower and Upper boundaries
+9) In Display Style you may change marks style of these points (add point ID or value) 
+
+
