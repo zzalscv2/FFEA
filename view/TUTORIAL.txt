@@ -24,4 +24,42 @@ SELECT points in specific value range
 8) Change Lower and Upper boundaries
 9) In Display Style you may change marks style of these points (add point ID or value) 
 
+HOW TO MAKE VIDEO
+1) File/Save Animation
+2) Set
+	* Fram rate - number of frames per second (for example 25)
+	* Number of frames - total number of frames (for example 250 - 10 sec long video)
+	* Resolution 
+--------------------------------------------------------------------------------------------------------
+|Final Display | Preview    | Aspect | Antialias | Antialias |                Usual Use                |
+| Resolution   | Resolution | Ratio  |     2x    |     3x    |                                         |
+|--------------|------------|--------|-----------|-----------|-----------------------------------------|
+|   640x480    |  640x480   |   4:3  |  1280x960 | 1920x1440 | Small area on a PowerPoint slide        |
+|   800x600    |  800x600   |   4:3  | 1600x1200 | 2400x1800 | Reasonable area on a PowerPoint Slide   |
+|  1024x768    |  800x600   |   4:3  | 2048x1536 | 3072x2304 | Large area on a PowerPoint Slide        |
+|  1280x720    |  800x450   |  16:9  | 2560x1440 | 3840x2160 | Small HD (High Definition)              |
+|  1280x960    |  800x600   |   4:3  | 2560x1920 | 3840x2880 | High resolution PowerPoint              |
+| 1400x1050    |  800x600   |   4:3  | 2800x2100 | 4200x3150 | Possible Full-Screen Conference Display |
+| 1600x1200    |  800x600   |   4:3  | 3200x2400 | 4800x3600 | Full Screen Desktop                     |
+| 1920x1080#   |  800x450   |  16:9  | 3840x2160 | 5760x3240 | Full HD (preferred Conference Display)  |
+--------------------------------------------------------------------------------------------------------
+ # Probably best to use this for your master frames, then crop/resize as needed for movies of other resolutions/aspect ratios.
+ * Copy of table from: https://confluence.slac.stanford.edu/display/AdvComp/Choosing+Frame+Resolution
+3) Files of type - Paraview don't produce usual video types, but alows produce sequece of pictures (.png, .jpg). 
+
+** HOW TO MAKE VIDEO FROM PICTURES SEQUENCE **
+1) use linux tool ffmpeg
+	-i    = input file format %04d = 4 digits
+	-f    = file format
+	-b:v  = bitrate (https://en.wikipedia.org/wiki/Bit_rate#Video)
+example:
+	ffmpeg -i blob.%04d.png -f flv -b:v 15M out.flv
+
+** ADVANCED ANIMATION SETTINGS **
+1) View/Animation View
+2) Here you may set Start and End time (useful for composition of more pictures sequence)
+3) Possibility to set camera rotation around data (under TimeKeeper add Camera + Orbit)
+
+
+
 
