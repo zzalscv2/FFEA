@@ -5,6 +5,7 @@ if len(sys.argv) < 8:
 	sys.exit("Usage: python " + sys.argv[0] + " -traj [FFEA trajectory (.out)] -scale [FFEA scale (inverts to work in metres)] -out [OUT fname] -format[mdcrd/pdb] -blob [blob_number (optional)] -frames [num_frames (optional)]")
 
 # Get arguments
+scriptdir = os.path.dirname(os.path.abspath(sys.argv[0])) + "/"
 traj_fname_set = 0
 out_fname_set = 0
 format_set = 0
@@ -60,16 +61,16 @@ first_frame_fname = traj.write_frame_to_file(0)
 
 # Convert first frame to a pseudo .pdb file
 first_frame_fname_pdb = first_frame_fname.split(".")[0] + ".pdb"
-os.system("/localhome/py09bh/Software/FFEA/FFEA_git/FFEA_tools/FFEA_initialise/PDB_tools/PDB_convert_from_FFEA_trajectory/FFEA_convert_traj_to_pdb " + first_frame_fname + " " + first_frame_fname_pdb + " " + str(num_frames) + " " + str(scale))
+os.system(scriptdir + "../../FFEA_initialise/PDB_tools/PDB_convert_from_FFEA_trajectory/FFEA_convert_traj_to_pdb " + first_frame_fname + " " + first_frame_fname_pdb + " " + str(num_frames) + " " + str(scale))
 
 # Convert entire trajectory to a pdb trajectory
 if format == "mdcrd":
 	final_traj_fname_pdb = final_traj_fname.split(".")[0] + ".mdcrd"
-	os.system("/localhome/py09bh/Software/FFEA/FFEA_git/FFEA_tools/FFEA_analysis/PCA/pyPca/FFEA_convert_traj_to_mdcrd " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
+	os.system(scriptdir + "../../FFEA_analysis/PCA/pyPca/FFEA_convert_traj_to_mdcrd " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
 
 elif format == "pdb":
 	final_traj_fname_pdb = final_traj_fname.split(".")[0] + ".pdb"
-	os.system("/localhome/py09bh/Software/FFEA/FFEA_git/FFEA_tools/FFEA_initialise/PDB_tools/PDB_convert_from_FFEA_trajectory/FFEA_convert_traj_to_pdb " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
+	os.system(scriptdir + "../../FFEA_initialise/PDB_tools/PDB_convert_from_FFEA_trajectory/FFEA_convert_traj_to_pdb " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
 
 # Tell the user what they have
 print "\nOrignal trajectory - " + traj_fname

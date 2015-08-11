@@ -203,27 +203,50 @@ class FFEA_traj:
 		
 		# Initial crap
 		fout.write("FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs " + str(self.num_blobs) + "\n")
+		fout.write("Number of Conformations")
 		for i in range(self.num_blobs):
-			fout.write("Blob " + str(i) + " Nodes " + str(self.blob[i].num_nodes) + "\t")
-		fout.write("\n\n")
+			fout.write(" " + str(self.num_conformations[i]))
+		fout.write("\n")
+		for i in range(self.num_blobs):
+			fout.write("Blob " + str(i) + ": ")
+			for j in range(self.num_conformations[i]):
+				fout.write("Conformation " + str(j) + " Nodes " + str(self.blob[i][j].num_nodes) + "\t")
+			fout.write("\n")
+
+		fout.write("\n")
 		
+		current_conformation = -1
+
 		# Write single frame
 		fout.write("*\n")
 		for i in range(self.num_blobs):
-			fout.write("Blob " + str(i) + ", Conformation 0, step " + str(frame_num) + "\n")
-			fout.write(self.blob[i].motion_state + "\n")
-			if self.blob[i].motion_state == "STATIC":
-				continue
+			for j in range(self.num_conformations[i]):
+				fout.write("Blob " + str(i) + ", Conformation " + str(j) + ", step " + str(frame_num) + "\n")
+				fout.write(self.blob[i][j].motion_state + "\n")
 
-			for j in range(self.blob[i].num_nodes):
-				pos = self.blob[i].frame[frame_num].node_pos[j]
-				vel = self.blob[i].frame[frame_num].node_vel[j]
-				fout.write("%6.3e %6.3e %6.3e %6.3e %6.3e %6.3e" % (pos[0], pos[1], pos[2], vel[0], vel[1], vel[2]))
+				if self.blob[i][j].motion_state == "STATIC":
+					continue
+
+				if self.blob[i][j].frame[frame_num].active == 1:
+					print "Blob " + str(i) + " was in conformation " + str(j) + " at frame " + str(frame_num) + ".\n"
+					current_conformation = j
+					for k in range(self.blob[i][j].num_nodes):
+						pos = self.blob[i][j].frame[frame_num].node_pos[k]
+						vel = self.blob[i][j].frame[frame_num].node_vel[k]
+						fout.write("%6.3e %6.3e %6.3e %6.3e %6.3e %6.3e" % (pos[0], pos[1], pos[2], vel[0], vel[1], vel[2]))
 			
-				for j in range(4):
-					fout.write(" %6.3e" % (0.0))
-				fout.write("\n")
+						for l in range(4):
+							fout.write(" %6.3e" % (0.0))
+						fout.write("\n")
+
+		# And conformation changes
 		fout.write("*\n")
+		if current_conformation != -1:
+			fout.write("Conformation Changes:\n")
+			for i in range(self.num_blobs):
+				fout.write("Blob " + str(i) + ": Conformation " + str(current_conformation) + " -> Conformation " + str(current_conformation) + "\n")
+			fout.write("*\n")
+
 		fout.close()
 		return frame_fname
 
