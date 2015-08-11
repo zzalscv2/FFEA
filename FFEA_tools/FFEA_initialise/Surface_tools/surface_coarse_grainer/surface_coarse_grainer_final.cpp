@@ -392,7 +392,8 @@ class Surface
 							face_to_delete[0] = face_iterator;
 						}
 					}
-
+					//printf("%d %d %d\n", (*face_to_delete[0])->n[0], (*face_to_delete[0])->n[1], (*face_to_delete[0])->n[2]);
+					//printf("%e\n", length_deleted);
 					// Not finished if length < limit
 					if(length_deleted < limit) {
 						completed_check = 0;
@@ -462,9 +463,9 @@ class Surface
 
 					// If shares two nodes, shares the whole edge. These faces need dealing with (may be more than two)
 					// Will find original face, then overwrite with the second
-					if(num_shared_nodes == 2) {
+					else if(num_shared_nodes == 2) {
 					
-						// Remember how many faces are shared (2 is easy, 4 is not)
+						// Remember how many faces are shared (2 is easy, 4 is not. Others are weird :/)
 						num_shared_faces++;
 
 						// Remember remaining node
@@ -474,6 +475,8 @@ class Surface
 							}
 						}
 						face_to_delete[num_shared_faces - 1] = face_iterator;
+					//} else {
+						//printf("Num shared node = %d\n", num_shared_nodes);
 					}
 				}
 
@@ -710,6 +713,31 @@ class Surface
 				
 						printf("4-way coarsening attempted. Good luck!\n");
 					}
+				} else if (num_shared_faces == 1) {
+
+					// In a consistent manifold, a face with 1 edge cannot exist. So, get rid of it! Possibly get rid of some nodes too
+					printf("Deleting a single face (which shouldn't even exist anyway!)\n");
+					int deletenode[3] = {1,1,1};
+					for(i = 0; i < 3; ++i) {
+						for(face_iterator = neighbourhood.begin(); face_iterator != neighbourhood.end(); ++face_iterator) {
+							for(j = 0; j < 3; ++j) {
+								if((*face_to_delete[0])->n[i] == (*face_iterator)->n[j]) {
+									deletenode[i] = 0;
+								}
+							}
+						}
+					}
+					printf("Deleting nodes");
+					for(i = 0; i < 3; ++i) {
+						if(deletenode[i] == 1) {
+							printf("%d ", (*face_to_delete[0])->n[i]);
+							node[(*face_to_delete[0])->n[i]].set_pos(INFINITY, INFINITY, INFINITY);
+							num_nodes--;
+						}
+					}
+					printf("\n");
+					face.erase(face_to_delete[0]);
+					num_faces--;
 				} else {
 					printf("Something has gone wrong. %d faces are sharing an edge\n", num_shared_faces);
 					printf("A face:%d %d %d\n", (*face_to_delete[0])->n[0], (*face_to_delete[0])->n[1], (*face_to_delete[0])->n[2]);
@@ -763,7 +791,7 @@ class Surface
 			fprintf(surf_out, "surfacemesh\n");
 			fprintf(surf_out, "%d\n", num_nodes);
 			for(i = 0; i < num_nodes; ++i) {
-				fprintf(surf_out, "%6.3lf %6.3lf %6.3lf\n", node[i].x, node[i].y, node[i].z);
+				fprintf(surf_out, "%6.6lf %6.6lf %6.6lf\n", node[i].x, node[i].y, node[i].z);
 			}
 			fprintf(surf_out, "%d\n", num_faces);
 			for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {

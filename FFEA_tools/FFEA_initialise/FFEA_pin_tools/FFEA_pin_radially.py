@@ -13,6 +13,7 @@ radius = float(sys.argv[3])
 # Get nodes and create pinned node object
 nodes = FFEA_node.FFEA_node(node_fname)
 pinned = FFEA_pin.FFEA_pin(pin_fname)
+pinned.reset()
 
 # If pinned node file exists, ask if we want to overwrite
 if(os.path.exists(pin_fname)):

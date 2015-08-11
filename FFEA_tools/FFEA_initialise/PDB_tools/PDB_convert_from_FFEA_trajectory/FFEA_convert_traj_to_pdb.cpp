@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 
-
+using namespace std;
 int main(int argc, char **argv)
 {
 	if(argc < 4) {
@@ -48,7 +49,12 @@ int main(int argc, char **argv)
 		printf("Error. Expected 'Number of Blobs x'\n");
 		exit(0);
 	}
-
+	
+	// Assign memory for conformations
+	num_conformations = new int[num_blobs];
+	for(i = 0; i < num_blobs; ++i) {
+		
+	}
 	num_nodes = new int[num_blobs];
 
 	for(i = 0; i < num_blobs; ++i) {

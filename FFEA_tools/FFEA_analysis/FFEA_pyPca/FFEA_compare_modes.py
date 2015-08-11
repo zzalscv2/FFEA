@@ -43,3 +43,6 @@ outfile.close()
 for i in range(2):
 	for fname in evec_fname[i]:
 		os.system("rm " + fname)
+
+# Plot the heatmap thing
+os.system(os.path.dirname(os.path.abspath(sys.argv[0])) + "/plot_eigensystem_comparison.py " + out_fname)
