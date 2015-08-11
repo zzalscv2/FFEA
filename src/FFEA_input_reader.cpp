@@ -29,9 +29,65 @@ int FFEA_input_reader::file_to_lines(string script_fname, vector<string> *script
 	// Copy entire script into string
 	script_vector->clear();
 
+        // The following variable declarations belong to 
+        //   to the comment removal functionality
+        size_t found, ini, end;
+        int comment = 0;
+        int count, count_0;
+        string m_ini = "<!--";
+        string m_end = "-->";
+        string buf2_string;
+
 	while(!fin.eof()) {
 		fin.getline(buf, max_buf_size);
 		buf_string = string(buf);
+
+                // start removing comments enclosed in <!-- --> 
+                buf2_string.clear();
+                found = 0;
+                count = 0;
+                count_0 = 0;
+                ini = 0;
+                end = max_buf_size + 1;
+                // essentially parse the line until no more 
+                while (found != string::npos) {
+                  if (comment == 0) {
+                    found = buf_string.find(m_ini);
+                    if (found!=string::npos) {
+                       count += 1;
+                       comment = 1;
+                       ini = found;
+                    }
+                  }
+                  if (comment == 1) {
+                    found = buf_string.find(m_end);
+                    if (found!=string::npos) {
+                       count += 2;
+                       comment = 0;
+                       end = found + 3;
+                    }
+                  }
+                  // the line end up without closing the comment: 
+                  if (comment == 1) {
+                    // cout << "!!! COMMENT IN\n";
+                    buf_string = buf_string.substr(0,ini);
+                    break;
+                  // we're out of the comment.
+                  } else if (comment == 0) {
+                    if (count == count_0 + 3) {
+                      buf2_string = buf_string.substr(0,ini);
+                      buf2_string.append( buf_string.substr(end) );
+                      buf_string = buf2_string;
+                      count_0 = count;
+                    } else if (count == count_0 + 2) {
+                      buf_string = buf_string.substr(end);
+                      count_0 = count;
+                    }
+                  }
+                }
+                // end removing comments. 
+
+
 		boost::trim(buf_string);
 		if(buf_string != "\n" && buf_string != "") {
 			script_vector->push_back(buf_string);
@@ -44,10 +100,10 @@ int FFEA_input_reader::file_to_lines(string script_fname, vector<string> *script
 int FFEA_input_reader::extract_block(string block_title, int block_index, vector<string> input, vector<string> *output) {
 
 	// Immediate error checking
-	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs") {
+	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs" && block_title != "precomp") {
 		FFEA_error_text();
-		cout << "Unrecognised block. Block structure is:" << endl;
-		cout << "<param>\n</param>\n<system>\n\t<blob>\n\t\t<conformation>\n\t\t</conformation>\n\t\t\t.\n\t\t\t.\n\t\t\t.\n\t\t<kinetics>\n\t\t\t<maps>\n\t\t\t</maps>\n\t\t</kinetics>\n\t</blob>\n\t\t.\n\t\t.\n\t\t.\n\t<interactions>\n\t\t<springs>\n\t\t</springs>\n\t</interactions>\n</system>" << endl;
+		cout << "Unrecognised block: " << block_title << ". Block structure is:" << endl;
+		cout << "<param>\n</param>\n<system>\n\t<blob>\n\t\t<conformation>\n\t\t</conformation>\n\t\t\t.\n\t\t\t.\n\t\t\t.\n\t\t<kinetics>\n\t\t\t<maps>\n\t\t\t</maps>\n\t\t</kinetics>\n\t</blob>\n\t\t.\n\t\t.\n\t\t.\n\t<interactions>\n\t\t<springs>\n\t\t</springs>\n\t\t<precomp>\n\t\t</precomp>\n\t</interactions>\n</system>" << endl;
 		return FFEA_ERROR;
 	}
 
@@ -94,6 +150,11 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 	
 }
 
+/** 
+ * @brief parse an input ffea line
+ * @param[in] string input e. g.,  string < blah = whatever>
+ * @param[out] string[2] output; string[0] = blah, string[1] = whatever.
+ */
 int FFEA_input_reader::parse_tag(string input, string *output) {
 
 	string tag;
@@ -144,6 +205,21 @@ int FFEA_input_reader::split_string(string input, string *output, string delim) 
 	int i = 0;
 	for(it = lrvalvec.begin(); it != lrvalvec.end(); it++) {
 		output[i] = *it;
+		boost::trim(output[i++]);
+	}
+
+	return lrvalvec.size();
+}
+
+int FFEA_input_reader::split_string(string input, vector<string> &output, string delim) {
+
+	vector<string> lrvalvec;
+	vector<string>::iterator it;
+	boost::split(lrvalvec, input, boost::is_any_of(delim));
+
+	int i = 0;
+	for(it = lrvalvec.begin(); it != lrvalvec.end(); it++) {
+		output.push_back(*it);
 		boost::trim(output[i++]);
 	}
 

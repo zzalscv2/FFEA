@@ -51,13 +51,22 @@ else ()
   endif()
 endif()
 
+# 3 #### USE C++11 ############ 
+# g++: -std=c++0x / -std=c++11
+# icpc: -std=c++0x / -std=c++11 on LINUX, OS X and WINDOWS 
+# pg++: 13.2 crashes with flag -std=c++0x, besides it does not support
+#         the latest standard ("cannot open source file "future"). 
+# MSVC: does not need any flag.
+include(cmake/CheckForCXX11Features.cmake)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_COMPILER_FLAGS}")
 
-# 3 ### MATH ######
+
+# 4 ### MATH ######
 if (UNIX)
   set(LIBS_TO_LINK ${LIBS_TO_LINK} "m") 
 endif(UNIX)
 
-# 4 ### BOOST #####
+# 5 ### BOOST #####
 set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_NO_BOOST_CMAKE ON)
 find_package( Boost COMPONENTS program_options )
@@ -71,7 +80,7 @@ else (Boost_FOUND)
 endif (Boost_FOUND)
 
 
-# 5 ### DOXYGEN ##### 
+# 6 ### DOXYGEN ##### 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
   configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
@@ -81,9 +90,12 @@ if(DOXYGEN_FOUND)
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
-  install(FILES "${PROJECT_BINARY_DIR}/src/doc" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/")
+  install(FILES "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
+                "${CMAKE_INSTALL_PREFIX}/share/doc" OPTIONAL)
 endif(DOXYGEN_FOUND)
+
+# 7 ### DEBUG FLAGS ####
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 ######## END OF LIBRARIES #######
 #################################
