@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, re, getopt, math
+import sys, os, re, getopt, math
 ################################################################################
 # HELP
 ################################################################################
@@ -345,7 +345,6 @@ for blob in range(blobCnt):
 ################################################################################
 # read the input trajectory.out file
 inputfile = open(inputTraj,'r')
-
 state = 0
 nodeMove = {} #surface_faces
 
@@ -354,6 +353,16 @@ nodeList2 = [] #interior
 force = {}
 blobID = -1
 step = 0
+
+#make output directories if necessary
+if not os.path.exists("vtkout/"):
+    os.makedirs("vtkout/")
+
+subdirname = os.path.splitext(os.path.basename(inputTraj))[0]
+if not os.path.exists("vtkout/" + subdirname):
+    os.makedirs("vtkout/" + subdirname)
+
+outdir = "vtkout/" + subdirname + "/"
 
 c=0
 for line in inputfile.readlines():
@@ -381,9 +390,9 @@ for line in inputfile.readlines():
 			if step != stepRead:								
 				#write
 				for i in nodeMove:
-					writeMesh("out/"+str(i)+"mesh",step, meshInfo[0][blobMeshIndex[i][1]], nodeMove[i][0], nodeMove[i][1]) #write mesh
-					writeData("out/"+str(i)+"mesh"+str(step)+".vtk",force[i]) #write data (force)
-					writeMesh("out/"+str(i)+"meshSurf",step, meshInfo[1][blobMeshIndex[i][2]], nodeMove[i][0],[]) #write meshSurf
+					writeMesh(outdir+str(i)+"mesh",step, meshInfo[0][blobMeshIndex[i][1]], nodeMove[i][0], nodeMove[i][1]) #write mesh
+					writeData(outdir+str(i)+"mesh"+str(step)+".vtk",force[i]) #write data (force)
+					writeMesh(outdir+str(i)+"meshSurf",step, meshInfo[1][blobMeshIndex[i][2]], nodeMove[i][0],[]) #write meshSurf
 				step = stepRead
 			blobID = int(cont.group(1))
 			nodeMove[blobID] = [[],[]]
