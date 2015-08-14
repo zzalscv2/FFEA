@@ -25,8 +25,9 @@ SELECT points in specific value range
 9) In Display Style you may change marks style of these points (add point ID or value) 
 
 HOW TO MAKE VIDEO
-1) File/Save Animation
-2) Set
+1) Press Reset button (reset position of camera to the centre) - cross with arrows
+2) File/Save Animation
+3) Set
 	* Fram rate - number of frames per second (for example 25)
 	* Number of frames - total number of frames (for example 250 - 10 sec long video)
 	* Resolution 
@@ -45,7 +46,7 @@ HOW TO MAKE VIDEO
 --------------------------------------------------------------------------------------------------------
  # Probably best to use this for your master frames, then crop/resize as needed for movies of other resolutions/aspect ratios.
  * Copy of table from: https://confluence.slac.stanford.edu/display/AdvComp/Choosing+Frame+Resolution
-3) Files of type - Paraview don't produce usual video types, but alows produce sequece of pictures (.png, .jpg). 
+4) Files of type - Paraview don't produce usual video types, but alows produce sequece of pictures (.png, .jpg). 
 
 ** HOW TO MAKE VIDEO FROM PICTURES SEQUENCE **
 1) use linux tool ffmpeg
@@ -60,6 +61,13 @@ example:
 2) Here you may set Start and End time (useful for composition of more pictures sequence)
 3) Possibility to set camera rotation around data (under TimeKeeper add Camera + Orbit)
 
+In case of composing videos from sequences of pictures, use sequence.sh to produce one sequence form a number of smaller sequences. 
+All sequences should be named the same, with the sequnce number (name1.0000.png, name1.0001.png, name2.0000.png, etc). Start indexing with 1.
+Please watch help for more instructions.
 
 
+
+ * Ondrej Vysocky
+ * xvysoc01@stud.fit.vutbr.cz
+ * EPCC, University of Edinburgh
 
