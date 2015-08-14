@@ -28,16 +28,22 @@ class vector3
 		// Vector functions
 		void normalise() {
 			double l = sqrt(x * x + y * y + z * z);
-			x /= l;
-			y /= l;
-			z /= l;
+			if(l > 0.0) {
+				x /= l;
+				y /= l;
+				z /= l;
+			}
 		}
-		
+	
 		vector3 get_normal() {
 			double l = sqrt(x * x + y * y + z * z);
-			return vector3(this->x/l, this->y/l, this->z/l);
+			if(l > 0.0) {
+				return vector3(this->x/l, this->y/l, this->z/l);
+	
+			} else {
+				return vector3(this->x, this->y, this->z);
+			}
 		}
-		
 		double get_magnitude() {
 			return sqrt(x * x + y * y + z * z);
 		}
@@ -368,6 +374,7 @@ class Surface
 			double length_deleted, original_volume, new_volume, tolerance, upper_limit_vol, lower_limit_vol;
 			vector3 midpoint, connecting_node, distance_node, normal_vector, translate_vector, upper_limit_pos, lower_limit_pos, nodal_distance, nodal_distance_2;
 			list<Face*>::iterator face_iterator, face_to_delete[4];
+			int t = 0;
 			while(true) {
 				
 				// Output completion data
@@ -499,6 +506,7 @@ class Surface
 							normal_vector = vector3::cross_product(node[(*face_to_delete[i])->n[1]] - node[(*face_to_delete[i])->n[0]], node[(*face_to_delete[i])->n[2]] - node[(*face_to_delete[i])->n[1]]);
 							normal_vector.normalise();
 							translate_vector += normal_vector;
+							
 						}
 						translate_vector.normalise(); 
 						
@@ -576,6 +584,7 @@ class Surface
 						int while_counts = 0;
 						while(tolerance > 0.01) {
 							while_counts++;
+							//printf("%e %e %e\n", connecting_node.x, connecting_node.y, connecting_node.z);
 							if(while_counts > 100) {
 								node[node_to_delete[0]].set_pos(midpoint.x, midpoint.y, midpoint.z);
 								break;
