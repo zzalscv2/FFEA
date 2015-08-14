@@ -8,7 +8,7 @@ class Blob:
 	def __init__(self, energy_thresh=1.0e6):
 		self.num_elements = 0
 		self.offset = [0.0, 0.0, 0.0]
-		self.init_centroid = [0.0,0.0,0.0]
+		self.init_centroid = None
 		self.init_rot = None
 		self.topology = []
 		self.no_topology = False
@@ -439,7 +439,7 @@ class Blob:
 		nodes_file.close()
 		print "Finished reading in nodes file " + self.nodes_fname
 
-		if self.init_centroid != [0.0, 0.0, 0.0]:
+		if self.init_centroid != None:
 			print "Moving to starting position..."
 			translate = [self.init_centroid[0] - centroid_x, self.init_centroid[1] - centroid_y, self.init_centroid[2] - centroid_z]
 			for i in range(len(nodes)):
