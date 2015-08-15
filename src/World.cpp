@@ -85,7 +85,7 @@ World::~World() {
  * initialise VdW solver,
  * initialise BEM PBE solver
  * */
-int World::init(string FFEA_script_filename) {
+int World::init(string FFEA_script_filename, int frames_to_delete) {
 	
 	// Set some constants and variables
 	int i, j;
@@ -234,7 +234,11 @@ int World::init(string FFEA_script_filename) {
 		    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
 		}
 
-		printf("Reverse searching for 2 asterisks (denoting a completely written snapshot)...\n");
+		printf("Reverse searching for 3 asterisks ");
+		if(frames_to_delete != 0) {
+			printf(", plus an extra %d, ", frames_to_delete * 2);
+		}
+		printf("(denoting %d completely written snapshots)...\n", 1 + frames_to_delete);
 		if (fseek(trajectory_out, 0, SEEK_END) != 0) {
 		    FFEA_ERROR_MESSG("Could not seek to end of file\n")
 		}
@@ -243,7 +247,8 @@ int World::init(string FFEA_script_filename) {
 		off_t last_asterisk_pos = ftello(trajectory_out);
 
 		int num_asterisks = 0;
-		while (num_asterisks != 3) {
+		int num_asterisks_to_find = 3 + frames_to_delete * 2;
+		while (num_asterisks != num_asterisks_to_find) {
 		    if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
 		        perror(NULL);
 		        FFEA_ERROR_MESSG("Balls.\n")
@@ -427,6 +432,80 @@ int World::init(string FFEA_script_filename) {
 #endif
 
     return FFEA_OK;
+}
+
+/* Linearise the system in order to solve exactly for a linear approximation about initial position */
+int World::get_smallest_time_constants() {
+	
+	int blob_index;
+	int num_nodes, num_rows;
+
+	// Do active blobs first
+	for(blob_index = 0; blob_index < params.num_blobs; ++blob_index) {
+
+		// Ignore if we have a static blob
+		if(active_blob_array[blob_index]->get_motion_state() == FFEA_BLOB_IS_STATIC) {
+			cout << "Blob " << blob_index << " is STATIC. No associated timesteps." << endl;
+			continue;
+		}
+
+		// Define and reset all required variables for this crazy thing (maybe don't use stack memory??)
+		num_nodes = active_blob_array[blob_index]->get_num_nodes();
+		num_rows = 3 * num_nodes;
+
+		Eigen::SparseMatrix<double> K(num_rows, num_rows);
+		Eigen::SparseMatrix<double> A(num_rows, num_rows);
+		Eigen::SparseMatrix<double> A_inv(num_rows, num_rows);
+		Eigen::SparseMatrix<double> I(num_rows, num_rows);
+		Eigen::SparseMatrix<double> tau(num_rows, num_rows);
+
+		/* Build K */
+		if(active_blob_array[blob_index]->build_viscosity_matrix(K) == FFEA_ERROR) {
+			FFEA_error_text();
+			cout << "In function 'Blob::build_viscosity_matrix' from blob " << blob_index << endl;
+			return FFEA_ERROR;
+		}
+
+		cout << "K: " << K.rows() << " " << K.cols() << endl;
+
+		/* Build A */
+		if(active_blob_array[blob_index]->build_linear_elasticity_matrix(K) == FFEA_ERROR) {
+			FFEA_error_text();
+			cout << "In function 'Blob::build_linear_elasticity_matrix'" << blob_index << endl;
+			return FFEA_ERROR;
+		}
+
+		cout << "A: " << A.rows() << " " << A.cols() << endl;
+
+		/* Invert A */
+		Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> cholesky(A); // performs a Cholesky factorization of A
+		I.setIdentity();
+		cout << "I: " << I.rows() << " " << I.cols() << endl;
+		A_inv = cholesky.solve(K);
+		cout << "A_inv: " << A_inv.rows() << " " << A_inv.cols() << endl;
+
+		/* Apply to K */
+		tau = A_inv * K;
+		cout << "tau: " << tau.rows() << " " << tau.cols() << endl;
+
+		/* Diagonalise */
+		/*Eigen::EigenSolver<Eigen::SparseMatrix<double>> eigensolver(tau);
+		double smallest_val = INFINITY;
+		double largest_val = 0.0;
+		for(int i = 0; i < num_rows; ++i) {
+			if(eigensolver.eigenvalues()[i].real() < smallest_val) {
+				smallest_val = eigensolver.eigenvalues()[i].real();
+			} else if (eigensolver.eigenvalues()[i].real() > smallest_val) {
+				largest_val = eigensolver.eigenvalues()[i].real();
+			}
+		}
+
+		// Output
+		cout << "Smallest Eigenvalue = " << smallest_val << endl;
+		cout << "Largest Eigenvalue = " << largest_val << endl;*/
+	}
+	
+	return FFEA_OK;
 }
 
 /* */
