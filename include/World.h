@@ -12,6 +12,8 @@
 #include <omp.h>
 #include <boost/algorithm/string.hpp>
 #include <typeinfo>
+#include <Eigen/Sparse>
+#include <Eigen/Eigenvalues>
 
 #include "MersenneTwister.h"
 #include "NearestNeighbourLinkedListCube.h"
@@ -46,7 +48,10 @@ public:
     ~World();
 
     /* */
-    int init(string FFEA_script_filename);
+    int init(string FFEA_script_filename, int frames_to_delete);
+
+    /* */
+    int get_smallest_time_constants();
 
     /* */
     int run();

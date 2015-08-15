@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
 	
 	// Get required args
 	string script_fname;
+	string mode;
+	int frames;
 	b_po::options_description desc("Allowed options");
 	b_po::positional_options_description pdesc;
 	b_po::variables_map var_map;
@@ -51,6 +53,9 @@ int main(int argc, char *argv[])
 		desc.add_options()
 			("help,h", "print usage message")
 			("input-file,i", b_po::value(&script_fname), "input script fname")
+			("mode,m", b_po::value(&mode), "ffea mode (0 - full sim, 1 - ENM)")
+			("timestep,t", "calculates maximum allowed timestep (slow)")
+			("less_frames,l", b_po::value(&frames), "If restarting a simulation, this will delete the final 'n' frames before restarting")
 		;
 		
 		// 1 input file max! Option invisible (positional)
@@ -67,8 +72,14 @@ int main(int argc, char *argv[])
 
 	// Help text is built in to boost	
 	if (var_map.count("help")) {  
-		cout << desc << "\n";
+		cout << desc << endl;
 		return 0;
+	}
+
+	// Do we delete frames?
+	int frames_to_delete = 0;
+	if (var_map.count("less_frames")) {
+		frames_to_delete = var_map["less_frames"].as<int>();
 	}
 
 	// Check we have an input script
@@ -76,6 +87,7 @@ int main(int argc, char *argv[])
 		cout << "Input FFEA script - " << var_map["input-file"].as<string>() << "\n";
 	} else {
 		cout << "\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)] [OPTIONS]\n\n\n" << endl;
+		cout << desc << endl;
 		return FFEA_ERROR;
 	}
 
@@ -87,10 +99,22 @@ int main(int argc, char *argv[])
 
 	// Initialise the world, loading all blobs, parameters, electrostatics, etc.
 	cout << "Initialising the world:\n" << endl;
-	if(world->init(script_fname) == FFEA_ERROR) {
+	if(world->init(script_fname, frames_to_delete) == FFEA_ERROR) {
 		FFEA_error_text();
 		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 		myreturn = FFEA_ERROR;
+	}
+	
+	// World is initialised. How shall we run FFEA?
+	if(var_map.count("timestep")) {
+		if(world->get_smallest_time_constants() == FFEA_ERROR) {
+			FFEA_error_text();
+			cout << "Error occurred in 'get_smallest_time_constants()' in World\n" << endl;
+			myreturn = FFEA_ERROR;
+		} else {
+			cout << "...done\n" << endl;
+			myreturn = FFEA_OK;
+		}
 	} else {
 
 		// Run the world for the specified number of time steps
