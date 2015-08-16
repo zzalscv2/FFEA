@@ -722,9 +722,8 @@ class FFEA_viewer_display_window():
 			glLoadIdentity();
 			#glTranslated(-self.offset_x, -self.offset_y, -self.offset_z);
 
-			#position = [-centroid_x - self.offset_x, -centroid_y - self.offset_y, -centroid_z - self.offset_z - self.z * 10, 1.0];
+			position = [-centroid_x - self.offset_x, -centroid_y - self.offset_y, -centroid_z - self.offset_z - self.z * 10, 1.0];
 			#position = [centroid_x, centroid_y, centroid_z - self.z * 10, 1.0];
-			position = [45000, 45000, 45000]
 			glLightfv(GL_LIGHT0, GL_POSITION, position);
 
 			m = self.orientation.construct_matrix();
