@@ -586,7 +586,7 @@ class Blob:
 			i = self.num_frames - 1
 
 		f = self.frames[i]
-		return f.centroid_x + self.offset[0], f.centroid_y + self.offset[1], f.centroid_z + self.offset[2]
+		return f.centroid_x, f.centroid_y, f.centroid_z
 
 	def draw_frame(self, i, display_flags):
 		

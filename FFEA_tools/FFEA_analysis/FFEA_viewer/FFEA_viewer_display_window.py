@@ -373,7 +373,6 @@ class FFEA_viewer_display_window():
 			for j in range(self.num_conformations[i]):
 				binding_sites[i][j] = self.blob_list[i][j].num_binding_sites
 	
-		#self.speak_to_control.send({'num_blobs': self.num_blobs})
 		# Get a global scale
 		global_scale = float("inf")
 		for blob in self.blob_list:
@@ -721,9 +720,11 @@ class FFEA_viewer_display_window():
 			glMatrixMode(GL_MODELVIEW);
 			glViewport(0,0,self.width,self.height);
 			glLoadIdentity();
-			glTranslated(-self.offset_x, -self.offset_y, -self.offset_z);
+			#glTranslated(-self.offset_x, -self.offset_y, -self.offset_z);
 
-			position = [-centroid_x - self.offset_x, -centroid_y - self.offset_y, -centroid_z - self.offset_z - self.z * 10, 1.0];
+			#position = [-centroid_x - self.offset_x, -centroid_y - self.offset_y, -centroid_z - self.offset_z - self.z * 10, 1.0];
+			#position = [centroid_x, centroid_y, centroid_z - self.z * 10, 1.0];
+			position = [45000, 45000, 45000]
 			glLightfv(GL_LIGHT0, GL_POSITION, position);
 
 			m = self.orientation.construct_matrix();
@@ -732,7 +733,6 @@ class FFEA_viewer_display_window():
 			m[14] = -self.z;
 			glLoadMatrixd(m);
 			glTranslated(-centroid_x, -centroid_y, -centroid_z);
-
 			if self.show_box == 1:
 				self.draw_box()
 
