@@ -236,9 +236,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 
 		printf("Reverse searching for 3 asterisks ");
 		if(frames_to_delete != 0) {
-			printf(", plus an extra %d, ", frames_to_delete * 2);
+			printf(", plus an extra %d, ", (frames_to_delete) * 2);
 		}
-		printf("(denoting %d completely written snapshots)...\n", 1 + frames_to_delete);
+		printf("(denoting %d completely written snapshots)...\n", frames_to_delete + 1);
 		if (fseek(trajectory_out, 0, SEEK_END) != 0) {
 		    FFEA_ERROR_MESSG("Could not seek to end of file\n")
 		}
@@ -247,7 +247,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		off_t last_asterisk_pos = ftello(trajectory_out);
 
 		int num_asterisks = 0;
-		int num_asterisks_to_find = 3 + frames_to_delete * 2;
+		int num_asterisks_to_find = 3 + (frames_to_delete) * 2;
 		while (num_asterisks != num_asterisks_to_find) {
 		    if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
 		        perror(NULL);
@@ -259,7 +259,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		        printf("Found %d\n", num_asterisks);
 
 		        // get the position in the file of this last asterisk
-		        if (num_asterisks == 1) {
+		        if (num_asterisks == num_asterisks_to_find - 2) {
 		            last_asterisk_pos = ftello(trajectory_out);
 		        }
 		    }
@@ -274,7 +274,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		int blob_id, conformation_id;
 		long long rstep;
 		for (int b = 0; b < params.num_blobs; b++) {
-		    if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
+		    if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {;
 		        FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
 		    }
 		    if (blob_id != b) {
