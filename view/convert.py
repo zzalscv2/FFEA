@@ -1,4 +1,10 @@
 #!/usr/bin/python
+# script to convert output files of FFEA simulation to VTK file format
+# 
+# 17.8.2015
+# Ondrej Vysocky - xvysoc01@stud.fit.vutbr.cz
+# EPCC, University of Edinburgh
+
 
 import sys, os, re, getopt, math
 ################################################################################
@@ -6,13 +12,9 @@ import sys, os, re, getopt, math
 ################################################################################
 HELP = """Data format converter from ffea+trajectory.out to VTK
 \t-h or --help : print this help
-\t-s : requires argument with path to .ffea file\n
+\t-s : requires argument with path to .ffea file
+\t-m : output of the script is for mapping only\n
 """
-#input = ffea
-#			- .top
-#			- .node
-#			- .surf
-#			- .trajectory
 
 ################################################################################
 # FUNCTIONS
@@ -66,7 +68,7 @@ def writeMesh(name, step, meshStr, inputList1, inputList2):
 
 ################################################################################
 ## parse the input .NODE file
-# infor about number of surface and interior nodes
+# info about number of surface and interior nodes
 # @param inputfile (string)	- name of .node file
 def getNode(inputfile):
 	inputfile = open(inputfile,'r')
@@ -157,6 +159,64 @@ def getSurf(inputfile):
 		sys.stderr.write(".SURF file missing content!\n")
 		exit(1)
 	return surfList
+
+################################################################################
+## parse VDW file
+# @param inputfile (string) - name of .vdw file
+def getVDW(inputfile):
+	inputfile = open(inputfile,'r')
+
+	state = 0
+	vdwList = []
+	c=0
+	for line in inputfile.readlines():
+		c = c+1
+		if state == 0:	#waiting for vdw
+			cont = re.match(r"vdw params:.*",line)
+			if cont != None:
+				state = 1
+		elif state == 1: #list of vdw values
+			cont = re.match(r"(-?\d+)\s*",line)
+			if cont == None:
+				sys.stderr.write("unknown file (.VDW) content! - line "+str(c)+"\n")
+				exit(1)
+			else:
+				vdwList.append(cont.group(1))
+	inputfile.close()
+	if vdwList==[]:
+		sys.stderr.write(".VDW file missing content!\n")
+		exit(1)
+	return vdwList
+
+################################################################################
+## parse the input .NODE file for MAPPING
+# get list of nodes from node file
+# @param inputfile (string)	- name of .node file
+def mappNode(inputfile):
+	inputfile = open(inputfile,'r')
+
+	state = 0
+	numSurf = -1
+	mappList = []
+	c = 0
+	for line in inputfile.readlines():
+		if state == 0:	#waiting for surface nodes
+			cont = re.match(r"num_nodes\s?(\d+)\s*",line)
+			if cont != None:
+				numSurf = int(cont.group(1))
+				state = 1
+		elif state == 1:
+			cont = re.match(r"(-?\d+\.\d+)\s(-?\d+\.\d+)\s(-?\d+\.\d+)\s*",line)
+			if cont != None:
+				c=c+1
+				mappList.append([float(cont.group(1)), float(cont.group(2)), float(cont.group(3))])
+
+	inputfile.close()
+	if c == 0 or c != numSurf:
+		sys.stderr.write(".NODE wrong number of nodes!\n")
+		exit(1)
+	return mappList
+
 ################################################################################
 ## F = sqrt( F_x^2 + F_y^2 + F_z^2)
 # @param force (list)	- list of input vectors of force
@@ -169,20 +229,8 @@ def cntForce(force):
 		
 ################################################################################
 ## add forces information to points
-# @param outputfile (string)	- name of output file
+# @param outputfile (string)- name of output file
 # @param data (list)		- list of forces in each point
-"""
-def writeData(outputfile, data):
-	scalars = cntForce(data)
-	outputfile = open(outputfile,'a')
-	outputfile.write("\nPOINT_DATA "+str(len(scalars))+"\nSCALARS scalar_force float 1\nLOOKUP_TABLE default\n")
-	for i in scalars:
-		outputfile.write(str(i)+"\n")
-	outputfile.write("VECTORS vector_force float\n")
-	for i in data:
-		outputfile.write(" ".join([i[0],i[1],i[2],'\n']))
-	outputfile.close()
-"""	
 def writeData(outputfile, data):
 	outputfile = open(outputfile,'a')
 	outputfile.write("\nPOINT_DATA "+str(len(data))+"\nVECTORS vector_force float\n")
@@ -194,6 +242,16 @@ def writeData(outputfile, data):
 		outputfile.write(str(i)+"\n")
 	outputfile.close()
 
+################################################################################
+## add vdw values to each cell
+# @param outputfile (string)- name of output file
+# @param data (list)		- list of forces in each point
+def writeCellData(outputfile, data):
+	outputfile = open(outputfile,'a')
+	outputfile.write("\nCELL_DATA "+str(len(data))+"\nSCALARS vdw FLOAT\nLOOKUP_TABLE default\n")
+	for i in data:
+		outputfile.write(i+'\n')
+	outputfile.close()
 
 
 ################################################################################
@@ -206,12 +264,13 @@ def writeData(outputfile, data):
 # GETOPT
 ################################################################################
 try:
-	optlist, args= getopt.getopt(sys.argv[1:], 's:h', ['help'])
+	optlist, args= getopt.getopt(sys.argv[1:], 's:hm', ['help'])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(2)
 
 ok=False
+mapp=False
 for opt in optlist:
 	if "--help" in opt or "-h" in opt:
 		sys.stderr.write(HELP)
@@ -219,10 +278,27 @@ for opt in optlist:
 	if "-s" in opt:
 		inputfile = (opt[1])
 		ok=True
+	if "-m" in opt:
+		mapp = True
 
 if ok == False:
 	sys.stderr.write(HELP)
 	sys.exit(2)
+
+
+################################################################################
+# path settings
+################################################################################
+path = '/'.join(inputfile.split('/')[:-1])+'/'
+
+#make output directories if necessary
+if not os.path.exists("vtkout/"):
+    os.makedirs("vtkout/")
+
+subdirname = os.path.splitext(os.path.basename(inputfile))[0]
+if not os.path.exists("vtkout/" + subdirname):
+    os.makedirs("vtkout/" + subdirname)
+outdir = "vtkout/" + subdirname + "/"
 
 ################################################################################
 ## parse .ffea file
@@ -234,9 +310,8 @@ if ok == False:
 #	<nodes = sphere_63_120_structure/sphere_63_120.node>
 #	<topology = sphere_63_120_structure/sphere_63_120.top>
 #	<surface = sphere_63_120_structure/sphere_63_120.surf>
+#	<vdw = sphere_63_120_structure/sphere_63_120.vdw>
 ################################################################################
-path = '/'.join(inputfile.split('/')[:-1])+'/'
-
 inputfile = open(inputfile,'r')
 inputBlob = []
 state = 0
@@ -246,7 +321,7 @@ for line in inputfile.readlines():
 	if state == 0:	#trajectory file
 		cont = re.match(r"\s*<trajectory_out_fname\s?=\s?(.*\.out).*",line)
 		if cont != None:
-			inputTraj = path+'/'+cont.group(1)
+			inputTraj = path+cont.group(1)
 			state = 1
 	elif state == 1: #nuber of blobs
 		cont = re.match(r"\s*<num_blobs\s?=\s?(\d+).*",line)
@@ -271,6 +346,11 @@ for line in inputfile.readlines():
 		cont = re.match(r"\s*<surface\s?=\s?(.*\.surf).*",line)
 		if cont != None:
 			inputBlob[blobC].append(path+cont.group(1))
+			state = 5
+	elif state == 5:
+		cont = re.match(r"\s*<vdw\s?=\s?(.*\.vdw).*",line)
+		if cont != None:
+			inputBlob[blobC].append(path+cont.group(1))
 			state = 2
 			blobC +=1
 if state != 2:
@@ -290,7 +370,7 @@ blobInfo = []
 #		<interior elements>
 #	<surf>
 #		<surface faces>
-meshInfo = [[],[]]
+meshInfo = [[],[],[]]
 #<mesh>
 #	<mesh description #1>
 #	<mesh description #2>
@@ -299,9 +379,11 @@ meshInfo = [[],[]]
 #	<surf description #1>
 #	<surf description #2>
 #	<...>
+#<vdw>
+#	<vdw values>
 blobMeshIndex=[]
 ################################################################################
-# parse files with information about blob structure (.node, .top, .surf)
+# parse files with information about blob structure (.node, .top, .surf, .vdw)
 ################################################################################
 for blob in range(blobCnt):
 	blobMeshIndex.append([])
@@ -325,7 +407,11 @@ for blob in range(blobCnt):
 				#parse SURF
 				meshInfo[1].append(prepareMeshStructure(getSurf(inputBlob[blob][data]), 3, "5"))
 				blobMeshIndex[blob].append(len(meshInfo[1])-1)
-
+			elif data == 3:
+				#parse VDW
+				meshInfo[2].append(getVDW(inputBlob[blob][data]))
+				blobMeshIndex[blob].append(len(meshInfo[2])-1)
+				
 ################################################################################
 #-----------#
 #	TEST	#
@@ -337,6 +423,16 @@ for blob in range(blobCnt):
 #print meshInfo[1][blobMeshIndex[0][1]]
 #exit()
 #-----------#
+
+################################################################################
+# mapping - in this case are positions of nodes defined in .node instead .out
+# trajectory file is not required
+################################################################################
+if mapp == True:
+	mappList = mappNode(inputBlob[0][0]) # parsing NODEfile of first blob
+	writeMesh(outdir+"mappMesh",0, meshInfo[0][blobMeshIndex[0][1]], mappList,[])
+	exit()
+
 ################################################################################
 # main part of code
 # read position of points in each timestep
@@ -354,16 +450,6 @@ force = {}
 blobID = -1
 step = 0
 
-#make output directories if necessary
-if not os.path.exists("vtkout/"):
-    os.makedirs("vtkout/")
-
-subdirname = os.path.splitext(os.path.basename(inputTraj))[0]
-if not os.path.exists("vtkout/" + subdirname):
-    os.makedirs("vtkout/" + subdirname)
-
-outdir = "vtkout/" + subdirname + "/"
-
 c=0
 for line in inputfile.readlines():
 	c = c+1
@@ -371,7 +457,6 @@ for line in inputfile.readlines():
 	if state == 1: #DYNAMIC / STATIC info
 		state = 2
 	elif state == 2: #list of node moves
-#		cont = re.match(r"(-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+)\s*",line)
 		cont = re.match(r"(-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+).*\s(-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+) (-?\d+.\d+e[-\+]\d+)\s*$",line)
 		if cont == None: #another blob - next step
 			state = 0
@@ -393,6 +478,7 @@ for line in inputfile.readlines():
 					writeMesh(outdir+str(i)+"mesh",step, meshInfo[0][blobMeshIndex[i][1]], nodeMove[i][0], nodeMove[i][1]) #write mesh
 					writeData(outdir+str(i)+"mesh"+str(step)+".vtk",force[i]) #write data (force)
 					writeMesh(outdir+str(i)+"meshSurf",step, meshInfo[1][blobMeshIndex[i][2]], nodeMove[i][0],[]) #write meshSurf
+					writeCellData(outdir+str(i)+"meshSurf"+str(step)+".vtk", meshInfo[2][blobMeshIndex[i][3]]) #write VDW
 				step = stepRead
 			blobID = int(cont.group(1))
 			nodeMove[blobID] = [[],[]]
