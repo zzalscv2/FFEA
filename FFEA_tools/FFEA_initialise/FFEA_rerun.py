@@ -24,14 +24,14 @@ while(True):
 	# If on zeroth restart, make sure script will run indefinitely
 	if restarts == 0:
 		script.params.num_steps = script.params.check * num_frames_required
-		script.write_to_file(script_fname.split(".")[0] + "_newnumframes.ffea")
-
+		script_fname = script_fname.split(".")[0] + "_newnumframes.ffea"
+		script.write_to_file(script_fname)
+		
 	# If on first restart, script needs changing
 	if restarts == 1:
 		script.params.restart = 1
-		script_fname = script_fname.split(".")[0] + "_restarted.ffea"
+		script_fname = script_fname.split("_newnumframes")[0] + "_restarted.ffea"
 		script.write_to_file(script_fname)
-		script = FFEA_script.FFEA_script(script_fname)
 
 	# Run sim if possible
 	if num_frames_completed < delete_frames and script.params.restart == 1:
@@ -54,6 +54,7 @@ while(True):
 		break
 
 	if num_frames_completed >= num_frames_required:
+		restarts -= 1
 		print "Simulation completed!!!!"
 		print "num_restarts = " + str(restarts)
 		print "num_restarts / num_frames = " + str(float(restarts) / float(num_frames_completed))
