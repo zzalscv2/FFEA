@@ -79,6 +79,36 @@ else (Boost_FOUND)
    -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
 endif (Boost_FOUND)
 
+# 6 ### EIGEN3 #####
+set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
+if (EIGEN3_HOME)
+  find_file(EIGEN3_I_OK Sparse PATHS "${EIGEN3_HOME}/include/eigen3/Eigen" NO_DEFAULT_PATH)
+  if (EIGEN3_I_OK)
+    set(EIGEN3_INC "${EIGEN3_HOME}/include/eigen3/Eigen" CACHE PATH "Path to the Eigen3 headers" FORCE)
+  else (EIGEN3_I_OK)
+    message(FATAL_ERROR "Eigen/Sparse not found in ${EIGEN3_HOME}/include/eigen3")
+  endif (EIGEN3_I_OK)
+  unset(EIGEN3_I_OK CACHE)
+else(EIGEN3_HOME)
+  find_path(EIGEN3_INC "Sparse" HINTS
+    $ENV{EIGEN_HOME}/include/eigen3/Eigen
+    $ENV{EIGEN3_HOME}/include/eigen3/Eigen
+    ${CMAKE_INCLUDE_PATH}/Eigen 
+    ${CMAKE_INCLUDE_PATH}/eigen3/Eigen 
+    ${CMAKE_PREFIX_PATH}/include/eigen3/Eigen
+    /usr/include/eigen3/Eigen
+    /usr/local/include/eigen3/Eigen
+    /opt/local/include/eigen3/Eigen
+  )
+
+  if(NOT EIGEN3_INC)
+    message(FATAL_ERROR "Could NOT find EIGEN3: use variable EIGEN3_HOME if you have any local installation")
+  endif(NOT EIGEN3_INC)
+endif(EIGEN3_HOME)
+set (EIGEN3_INC "${EIGEN3_INC}/..")
+message(STATUS "Found Eigen3 headers: ${EIGEN3_INC}")
+include_directories("${EIGEN3_INC}")
+
 
 # 6 ### DOXYGEN ##### 
 find_package(Doxygen)
