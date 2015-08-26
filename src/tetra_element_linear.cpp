@@ -298,7 +298,33 @@ void tetra_element_linear::create_viscosity_matrix() {
 /*
  *
  */
+scalar tetra_element_linear::calc_volume() {
 
+	matrix3 J;
+	calculate_jacobian(J);
+        calc_shape_function_derivatives_and_volume(J);
+	return vol;
+}
+
+/*
+ *
+ */
+void tetra_element_linear::calc_elastic_force_vector(vector12 F) {
+	
+	matrix3 J, stress;
+	mat3_set_zero(stress);
+	vec12_set_zero(F);
+
+	calculate_jacobian(J);
+        calc_shape_function_derivatives_and_volume(J);
+	add_shear_elastic_stress(J, stress);
+	add_bulk_elastic_stress(stress);
+	apply_stress_tensor(stress, F);
+}
+
+/*
+ *
+ */
 void tetra_element_linear::calc_deformation(matrix3 J) {
 	// Reset gradient deformation to zero
    	mat3_set_zero(F_ij);

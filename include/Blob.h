@@ -12,6 +12,7 @@
 #include <math.h>
 #include <set>
 #include <omp.h>
+#include <Eigen/Sparse>
 
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
@@ -196,6 +197,16 @@ public:
     //		int elements_are_connected(int e1, int e2);
 
     /*
+     * Builds a global viscosity matrix for this blob
+     */
+    int build_viscosity_matrix(Eigen::SparseMatrix<double> K);
+
+    /*
+     * Linearises the elasticity vector and build a global elasticity matrix for this blob
+     */
+    int build_linear_elasticity_matrix(Eigen::SparseMatrix<double> A);
+
+    /*
      * Returns the total mass of this Blob.
      */
     scalar get_mass();
@@ -216,6 +227,8 @@ public:
     void linearise_elements();
 
     int get_num_nodes();
+
+    int get_num_elements();
 
     int get_motion_state();
 
