@@ -11,7 +11,7 @@ _help="	HELP:\n
 	-i	input sequences name\n
 	-o	output sequence name\n
 	-f	image format\n
-	-d	number of necessary digits for image index
+	-d	number of necessary digits for image index\n
 	-h	help\n\n
 if '-i name' then input sequences should be named:\n\t
 	name1.0001.png, name15.0055.png...\n\t
@@ -39,8 +39,8 @@ then
 	exit 1
 fi
 
-c=1
-export i=0
+c=0
+export i=1
 while [ $c -ne $nsq ]
 do
 	for file in $inp$c.*
