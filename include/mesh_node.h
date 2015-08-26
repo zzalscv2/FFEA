@@ -19,6 +19,8 @@ public:
     mesh_node();
     ~mesh_node();
 
+    void move(int direction, scalar dx);
+
     void print();
 
     /* Position of node */

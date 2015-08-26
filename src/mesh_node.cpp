@@ -44,6 +44,20 @@ mesh_node::~mesh_node() {
     stokes_drag = 0;
 }
 
+void mesh_node::move(int direction, scalar dx) {
+	switch(direction) {
+		case(0):
+			pos.x += dx;
+			break;
+		case(1):
+			pos.y += dx;
+			break;
+		case(2):
+			pos.z += dx;
+			break;
+	}
+}
+
 void mesh_node::print() {
     printf("pos: %e %e %e\n", pos.x, pos.y, pos.z);
     printf("vel: %e %e %e\n", vel.x, vel.y, vel.z);

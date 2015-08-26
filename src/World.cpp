@@ -251,7 +251,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		while (num_asterisks != num_asterisks_to_find) {
 		    if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
 		        perror(NULL);
-		        FFEA_ERROR_MESSG("Balls.\n")
+		        FFEA_ERROR_MESSG("It is likely we have reached the begininng of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
 		    }
 		    char c = fgetc(trajectory_out);
 		    if (c == '*') {

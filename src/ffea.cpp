@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 			("input-file,i", b_po::value(&script_fname), "input script fname")
 			("mode,m", b_po::value(&mode), "ffea mode (0 - full sim, 1 - ENM)")
 			("timestep,t", "calculates maximum allowed timestep (slow)")
-			("less_frames,l", b_po::value(&frames), "If restarting a simulation, this will delete the final 'n' frames before restarting")
+			("less_frames,l", b_po::value(&frames), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
 		;
 		
 		// 1 input file max! Option invisible (positional)

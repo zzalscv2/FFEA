@@ -1074,6 +1074,134 @@ scalar Blob::get_vdw_area() {
 //		 *
 //		 */
 
+int Blob::build_linear_elasticity_matrix(Eigen::SparseMatrix<double> A) {
+
+	int elem_index, node_index[2], dir[2], global_node_index[2];
+	int global_row, global_column;
+	scalar dx, val;
+	matrix3 J, stress;
+	vector12 elastic_force[2];
+	vector<Eigen::Triplet<double>> components;
+
+	// For each element
+	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
+
+		// Calculate dx, how far each node should be moved for a linearisataion, as well as unstrained parameters
+		elem[elem_index].calc_volume();
+		dx = pow(elem[elem_index].calc_volume(), 1.0/3.0);
+
+		// For each node (beta)
+		for(node_index[0] = 0; node_index[0] < 4; ++node_index[0]) {
+
+			global_node_index[0] = elem[elem_index].n[node_index[0]]->index;
+
+			// And each direction (i)
+			for(dir[0] = 0; dir[0] < 3; ++dir[0]) {
+				
+				/* Move the node a bit in each direction and recalculate the elasticity. Assume linear and add to global matrix */
+
+				// Move
+				node[global_node_index[0]].move(dir[0], dx);
+
+				// Recalculate
+				elem[elem_index].calc_elastic_force_vector(elastic_force[1]);
+
+				// Other side
+				node[global_node_index[0]].move(dir[0], -2 * dx);
+
+				// Recalculate
+				elem[elem_index].calc_elastic_force_vector(elastic_force[0]);
+
+				// Move back to start
+				node[global_node_index[0]].move(dir[0], dx);
+
+				// How has each elastic component changed due to the movement of this node?
+
+				// For each node (alpha)
+				for(node_index[1] = 0; node_index[1] < 4; ++node_index[1]) {
+
+					global_node_index[1] = elem[elem_index].n[node_index[1]]->index;
+			
+					// And each direction (j)
+					for(dir[1] = 0; dir[1] < 3; ++dir[1]) {
+						global_row = 3 * global_node_index[1] + dir[1];
+						global_column = 3 * global_node_index[0] + dir[0];
+						val = (elastic_force[1][dir[1] + 4 * node_index[1]] - elastic_force[0][dir[1] + 4 * node_index[1]]) / dx;
+						components.push_back(Eigen::Triplet<double>(global_row, global_column, val));
+					}
+				}
+				
+			}
+		}
+	}
+
+	// Now build the matrix
+	A.setFromTriplets(components.begin(), components.end());
+	return FFEA_OK;
+}
+
+int Blob::build_viscosity_matrix(Eigen::SparseMatrix<double> K) {
+
+	int elem_index, local_index_a, local_index_b, direction_a, direction_b, global_index_a, global_index_b, global_row, global_column;
+	int num_rows;
+	matrix3 J;
+	vector<Eigen::Triplet<double>> components;
+
+	num_rows = 3 * num_nodes;
+
+	// From each element
+	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
+
+		// Build the viscosity matrix
+		elem[elem_index].calculate_jacobian(J);
+        	elem[elem_index].calc_shape_function_derivatives_and_volume(J);
+        	elem[elem_index].create_viscosity_matrix();
+
+		// And for each node pair
+		for(local_index_a = 0; local_index_a < 4; ++local_index_a) {
+			for(local_index_b = 0; local_index_b < 4; ++local_index_b) {
+
+				global_index_a = elem[elem_index].n[local_index_a]->index;
+				global_index_b = elem[elem_index].n[local_index_b]->index;
+				global_row = global_index_a * 3;
+				global_column = global_index_b * 3;
+
+				// And direction
+				for(direction_a = 0; direction_a < 3; ++direction_a) {
+					for(direction_b = 0; direction_b < 3; ++direction_b) {
+
+						// Add contribution to the global matrix
+						components.push_back(Eigen::Triplet<double>(global_row + direction_a, global_column + direction_b, elem[elem_index].viscosity_matrix[local_index_a + 4 * direction_a][local_index_b + 4 * direction_b]));
+					}
+				} 
+			}
+		}
+
+		// Secondary nodes submatrices should be set to identity
+		for(local_index_a = 4; local_index_a < 10; ++local_index_a) {
+
+			global_index_a = elem[elem_index].n[local_index_a]->index;
+			global_row = global_index_a * 3;
+
+			for(direction_a = 0; direction_a < 3; ++direction_a) {
+				components.push_back(Eigen::Triplet<double>(global_row + direction_a, global_row + direction_a, 1));
+			}
+		}
+	}
+		
+	// From each node, add a stokes component if necessary
+	if(params->calc_stokes == 1) {
+		for(global_row = 0; global_row < num_nodes; ++global_row) {
+			for(direction_a = 0; direction_a < 3; ++direction_a) {
+				components.push_back(Eigen::Triplet<double>(3 * global_row + direction_a, 3 * global_row + direction_a, node[global_row].stokes_drag));
+			}	
+		}
+	}
+
+	K.setFromTriplets(components.begin(), components.end());
+	return FFEA_OK;
+}
+
 int Blob::solve_poisson(scalar *phi_gamma_IN, scalar *J_Gamma_OUT) {
     if (num_interior_nodes > 0) {
         /* Convert the given potential on the surface faces into the potential on each node */
@@ -1291,6 +1419,10 @@ void Blob::reset_all_faces() {
 
 int Blob::get_num_nodes() {
     return num_nodes;
+}
+
+int Blob::get_num_elements() {
+    return num_elements;
 }
 
 int Blob::get_motion_state() {
