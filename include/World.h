@@ -88,7 +88,7 @@ private:
     /** @brief How many conformations does each blob have? */
     int *num_conformations;
 
-    /* 2-D Array of Blob objects (blob i, conformation j) */
+    /** @brief 2-D Array of Blob objects (blob i, conformation j) */
     Blob **blob_array;
 
     /** @brief Which conformation is active in each blob */
