@@ -19,18 +19,24 @@ set (LIBS_TO_LINK)
 
 # 1 #### OPENMP #####
 if (USE_OPENMP)
-  # add_definitions(-DUSE_OPENMP)
-  set(USE_PARALLEL ON)
-  include(${CMAKE_ROOT}/Modules/FindOpenMP.cmake)
-  if (OPENMP_FOUND)
+  add_definitions(-DUSE_OPENMP)
+endif(USE_OPENMP)
+include(${CMAKE_ROOT}/Modules/FindOpenMP.cmake)
+if (OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  else()
-    message(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP. Possible
+else(OPENMP_FOUND)
+    if (USE_OPENMP)
+      message(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP. Possible
 solutions:
   -- Disable OPENMP option (-DUSE_OPENMP=0)
   -- Provide valid compiler flags for variable: OpenMP_CXX_FLAGS")
-  endif(OPENMP_FOUND)
-endif(USE_OPENMP)
+    else (USE_OPENMP)
+      message(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP.  Possible
+solutions:
+  -- Provide valid compiler flags for variable: OpenMP_CXX_FLAGS
+  -- Submit a request to the developers suggesting to change omp_get_wtime to something else")
+    endif (USE_OPENMP)
+endif(OPENMP_FOUND)
 
 # 2 #### PARALLEL MODE #########
 if (USE_OMP_MODE EQUAL "0")
