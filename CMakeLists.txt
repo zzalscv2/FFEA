@@ -19,18 +19,24 @@ set (LIBS_TO_LINK)
 
 # 1 #### OPENMP #####
 if (USE_OPENMP)
-  # add_definitions(-DUSE_OPENMP)
-  set(USE_PARALLEL ON)
-  include(${CMAKE_ROOT}/Modules/FindOpenMP.cmake)
-  if (OPENMP_FOUND)
+  add_definitions(-DUSE_OPENMP)
+endif(USE_OPENMP)
+include(${CMAKE_ROOT}/Modules/FindOpenMP.cmake)
+if (OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  else()
-    message(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP. Possible
+else(OPENMP_FOUND)
+    if (USE_OPENMP)
+      message(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP. Possible
 solutions:
   -- Disable OPENMP option (-DUSE_OPENMP=0)
   -- Provide valid compiler flags for variable: OpenMP_CXX_FLAGS")
-  endif(OPENMP_FOUND)
-endif(USE_OPENMP)
+    else (USE_OPENMP)
+      message(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP.  Possible
+solutions:
+  -- Provide valid compiler flags for variable: OpenMP_CXX_FLAGS
+  -- Submit a request to the developers suggesting to change omp_get_wtime to something else")
+    endif (USE_OPENMP)
+endif(OPENMP_FOUND)
 
 # 2 #### PARALLEL MODE #########
 if (USE_OMP_MODE EQUAL "0")
@@ -78,6 +84,36 @@ else (Boost_FOUND)
    -- BOOST_ROOT or
    -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
 endif (Boost_FOUND)
+
+# 6 ### EIGEN3 #####
+set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
+if (EIGEN3_HOME)
+  find_file(EIGEN3_I_OK Sparse PATHS "${EIGEN3_HOME}/include/eigen3/Eigen" NO_DEFAULT_PATH)
+  if (EIGEN3_I_OK)
+    set(EIGEN3_INC "${EIGEN3_HOME}/include/eigen3/Eigen" CACHE PATH "Path to the Eigen3 headers" FORCE)
+  else (EIGEN3_I_OK)
+    message(FATAL_ERROR "Eigen/Sparse not found in ${EIGEN3_HOME}/include/eigen3")
+  endif (EIGEN3_I_OK)
+  unset(EIGEN3_I_OK CACHE)
+else(EIGEN3_HOME)
+  find_path(EIGEN3_INC "Sparse" HINTS
+    $ENV{EIGEN_HOME}/include/eigen3/Eigen
+    $ENV{EIGEN3_HOME}/include/eigen3/Eigen
+    ${CMAKE_INCLUDE_PATH}/Eigen 
+    ${CMAKE_INCLUDE_PATH}/eigen3/Eigen 
+    ${CMAKE_PREFIX_PATH}/include/eigen3/Eigen
+    /usr/include/eigen3/Eigen
+    /usr/local/include/eigen3/Eigen
+    /opt/local/include/eigen3/Eigen
+  )
+
+  if(NOT EIGEN3_INC)
+    message(FATAL_ERROR "Could NOT find EIGEN3: use variable EIGEN3_HOME if you have any local installation")
+  endif(NOT EIGEN3_INC)
+endif(EIGEN3_HOME)
+set (EIGEN3_INC "${EIGEN3_INC}/..")
+message(STATUS "Found Eigen3 headers: ${EIGEN3_INC}")
+include_directories("${EIGEN3_INC}")
 
 
 # 6 ### DOXYGEN ##### 

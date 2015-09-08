@@ -82,59 +82,59 @@ public:
 
 private:
 
-    /* How many Blobs populate this world */
+    /** @brief How many Blobs populate this world */
     int num_blobs;
 
-    /* How many conformations does each blob have? */
+    /** @brief How many conformations does each blob have? */
     int *num_conformations;
 
-    /* 2-D Array of Blob objects (blob i, conformation j) */
+    /** @brief 2-D Array of Blob objects (blob i, conformation j) */
     Blob **blob_array;
 
-    /* Which conformation is active in each blob */
+    /** @brief Which conformation is active in each blob */
     Blob **active_blob_array;
     int *active_conformation_index;
     int *active_state_index;
 
-    /* Maps for kinetic switching of conformations */
+    /** @brief Maps for kinetic switching of conformations */
     SparseMatrixFixedPattern ***kinetic_map_array;
     SparseMatrixFixedPattern ****kinetic_double_map_array;
 
-    /* Kinetic State and Rate objects */
+    /** @brief Kinetic State and Rate objects */
     KineticState **kinetic_state;
     scalar ***kinetic_rate;
 
-    /* An array of springs which connect nodes if necessary */
+    /** @brief An array of springs which connect nodes if necessary */
     Spring *spring_array;
 
-    /* And how many springs are there? */
+    /** @brief And how many springs are there? */
     int num_springs;
 
-    /* How many kinetic binding sites are there? */
+    /** @brief How many kinetic binding sites are there? */
     int num_binding_sites;
 
-    /* How many threads are available for parallelisation */
+    /** @brief How many threads are available for parallelisation */
     int num_threads;
 
-    /* An array of pointers to random number generators (for use in parallel) */
+    /** @brief An array of pointers to random number generators (for use in parallel) */
     MTRand *rng;
 
-    /* An array of pointers to random number generators for use in kinetics */
+    /** @brief An array of pointers to random number generators for use in kinetics */
     MTRand kinetic_rng;
 
-    /* Parameters being used for this simulation */
+    /** @brief Parameters being used for this simulation */
     SimulationParams params;
 
-    /*
+    /** @brief
      * Data structure keeping track of which `cell' each face lies in (where the world has been discretised into a grid of cells of dimension 1.5 kappa)
      * so that the BEM matrices may be constructed quickly and sparsely.
      */
     NearestNeighbourLinkedListCube lookup;
 
-    /* * Output trajectory file */
+    /** @brief * Output trajectory file */
     FILE *trajectory_out;
 
-    /* * Output measurement file */
+    /** @brief * Output measurement file */
     FILE **measurement_out;
 
     /*
@@ -142,20 +142,20 @@ private:
      */
     //		SurfaceElementLookup surface_element_lookup;
 
-    /* * BEM solver for the exterior electrostatics */
+    /** @brief BEM solver for the exterior electrostatics */
     BEM_Poisson_Boltzmann PB_solver;
 
-    /* * Number of surface faces in entire system */
+    /** @brief Number of surface faces in entire system */
     int total_num_surface_faces;
 
-    /*
+    /** @brief
      * Vector of the electrostatic potential on each surface in entire system
      */
     scalar *phi_Gamma;
     scalar *J_Gamma;
     scalar *work_vec;
 
-    /*
+    /** @brief
      * Biconjugate gradient stabilised solver for nonsymmetric matrices
      */
     BiCGSTAB_solver nonsymmetric_solver;
@@ -163,10 +163,10 @@ private:
     /* Van der Waals solver */
     VdW_solver vdw_solver;
 
-    /* LJ parameters matrix */
+    /** @brief LJ parameters matrix */
     LJ_matrix lj_matrix;
 
-    /* Binding Interactions matrix */
+    /** @brief Binding Interactions matrix */
     BindingSite_matrix binding_matrix;
 
 

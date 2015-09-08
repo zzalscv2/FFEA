@@ -514,9 +514,10 @@ int World::get_smallest_time_constants() {
 	return FFEA_OK;
 }
 
-/* */
+/*
+ * Update entire World for num_steps time steps
+ * */
 int World::run() {
-    // Update entire World for num_steps time steps
     int es_count = 1;
     double wtime = omp_get_wtime();
     for (long long step = step_initial; step < params.num_steps; step++) {
@@ -986,16 +987,67 @@ int World::read_and_build_system(vector<string> script_vector) {
 	vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, param_vector, spring_vector, binding_vector;
 	vector<string>::iterator it;
 	
-	vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, maps;
+	vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, maps, beads;
 	string states, rates, map_fname;
 	int map_indices[2];
-	int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_scale = 0;
+	int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0;
 	scalar scale = 1;
 	int solver = FFEA_NOMASS_CG_SOLVER;
 	vector<int> motion_state, maps_conf_index_to, maps_conf_index_from;
 	vector<int>::iterator maps_conf_ind_it;
 
 	scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
+
+	// Get Interactions Lines
+	int error_code;
+	error_code = systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
+	if(error_code == FFEA_ERROR) {
+		return FFEA_ERROR;
+	} else if (error_code == FFEA_CAUTION) {
+
+		// Block doesn't exist. Maybe add a protection to ensure binding later
+	} else {
+
+		// Get spring data
+		systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
+
+		// Error check
+		if (spring_vector.size() > 1) {
+			FFEA_error_text();
+			cout << "'Spring' block should only have 1 file." << endl;
+			return FFEA_ERROR; 
+		} else if (spring_vector.size() == 1) {
+			systemreader->parse_tag(spring_vector.at(0), lrvalue);
+
+			if(load_springs(lrvalue[1].c_str()) != 0) {
+				FFEA_error_text();
+				cout << "Problem loading springs from " << lrvalue[1] << "." << endl;
+				return FFEA_ERROR; 
+			}
+		}
+
+	       // Get precomputed data
+               vector<string> precomp_vector;
+               systemreader->extract_block("precomp", 0, script_vector, &precomp_vector);
+	
+               for (i=0; i<precomp_vector.size(); i++){
+                 systemreader->parse_tag(precomp_vector[i], lrvalue);
+		 if (lrvalue[0] == "types") {
+                   cout << "types! " << lrvalue[1] << endl;
+                   lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
+                   boost::trim(lrvalue[1]);
+                   systemreader->split_string(lrvalue[1], pc_params.types, ",");
+                   for (j=0;j<pc_params.types.size();j++) cout << "types[" << j << "] = " << pc_params.types[j] << endl;
+                 } else if (lrvalue[0] == "inputData") {
+                   pc_params.inputData = stoi(lrvalue[1]);
+                 } else if (lrvalue[0] == "approach") {
+                   pc_params.approach = lrvalue[1];
+                 } else if (lrvalue[0] == "folder") {
+                   pc_params.folder = lrvalue[1];
+                 } 
+               } 
+       	}
+
 
 	// Read in each blob one at a time
 	for(i = 0; i < params.num_blobs; ++i) {
@@ -1055,6 +1107,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 				} else if (lrvalue[0] == "pin") {
 					pin.push_back(lrvalue[1]);
 					set_pin = 1;
+                                } else if (lrvalue[0] == "beads") {
+					beads.push_back(lrvalue[1]);
+					set_preComp = 1;
 				} else {
 					FFEA_error_text();
 					cout << "Unrecognised conformation lvalue" << endl;
@@ -1114,6 +1169,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 			set_vdw = 0;
 			set_binding = 0;
 			set_pin = 0;
+			set_preComp = 0;
 			conformation_vector.clear();
 		}
 
@@ -1240,8 +1296,8 @@ int World::read_and_build_system(vector<string> script_vector) {
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
 
-			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), binding.at(j).c_str(), pin.at(j).c_str(),
-                       		scale, solver, motion_state.at(j), &params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
+			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), binding.at(j).c_str(), pin.at(j).c_str(), beads.at(j).c_str(), 
+                       		scale, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
                        		FFEA_error_text();
                         	cout << "\tError when trying to initialise Blob " << i << ", conformation " << j << "." << endl;
                     		return FFEA_ERROR;
@@ -1331,57 +1387,6 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 	cout << "\t...done!" << endl;
 
-	// Get Interactions Lines
-	int error_code;
-	error_code = systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
-	if(error_code == FFEA_ERROR) {
-		return FFEA_ERROR;
-	} else if (error_code == FFEA_CAUTION) {
-
-		// Block doesn't exist. Maybe add a protection to ensure binding later
-	} else {
-
-		// Get spring data
-		systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
-
-		// Error check
-		if (spring_vector.size() > 1) {
-			FFEA_error_text();
-			cout << "'Spring' block should only have 1 file." << endl;
-			return FFEA_ERROR; 
-		} else if (spring_vector.size() == 1) {
-			systemreader->parse_tag(spring_vector.at(0), lrvalue);
-
-			if(load_springs(lrvalue[1].c_str()) != 0) {
-				FFEA_error_text();
-				cout << "Problem loading springs from " << lrvalue[1] << "." << endl;
-				return FFEA_ERROR; 
-			}
-		}
-
-	       // Get precomputed data
-               vector<string> precomp_vector;
-               systemreader->extract_block("precomp", 0, script_vector, &precomp_vector);
-	
-               for (i=0; i<precomp_vector.size(); i++){
-                 systemreader->parse_tag(precomp_vector[i], lrvalue);
-		 if (lrvalue[0] == "types") {
-                   cout << "types! " << lrvalue[1] << endl;
-                   lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
-                   boost::trim(lrvalue[1]);
-                   systemreader->split_string(lrvalue[1], pc_params.types, ",");
-                   for (j=0;j<pc_params.types.size();j++) cout << "types[" << j << "] = " << pc_params.types[j] << endl;
-                 } else if (lrvalue[0] == "inputData") {
-                   pc_params.inputData = stoi(lrvalue[1]);
-                 } else if (lrvalue[0] == "approach") {
-                   pc_params.approach = lrvalue[1];
-                 } else if (lrvalue[0] == "folder") {
-                   pc_params.folder = lrvalue[1];
-                 } 
-               } 
-       	}
-
- 
 
 	return FFEA_OK;
 }

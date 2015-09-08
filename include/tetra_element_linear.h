@@ -113,21 +113,21 @@ public:
     tetra_element_linear();
 
     /* Properties of this element */
-    scalar rho; /* density */
-    scalar A; /* shear viscosity */
-    scalar B; /* second coefficient of viscosity */
-    scalar G; /* shear modulus */
-    scalar E; /* bulk modulus */
+    scalar rho; /// density
+    scalar A; /// shear viscosity
+    scalar B; /// second coefficient of viscosity
+    scalar G; /// shear modulus
+    scalar E; /// bulk modulus
     scalar dielectric;
     scalar mass;
 
-    /* A quadratic tetrahedron has 10 nodes. Keep pointers to the actual memory location of the nodes. */
+    /** @brief A quadratic tetrahedron has 10 nodes. Keep pointers to the actual memory location of the nodes. */
     mesh_node *n[NUM_NODES_QUADRATIC_TET];
 
-    /* The 12-vector containing the shape function derivatives for this element */
+    /** @brief The 12-vector containing the shape function derivatives for this element */
     vector12 dpsi;
 
-    /*
+    /** @brief
      * The del2 matrix for this element (in upper triangular form, since it's symmetric).
      * Used in constructing the diffusion matrix and the poisson matrix.
      */
@@ -135,63 +135,63 @@ public:
 
     PoissonMatrixQuadratic K_alpha;
 
-    /* Store the contribution from this element to the force on each of its four nodes */
+    /** @brief Store the contribution from this element to the force on each of its four nodes */
     vector3 node_force[NUM_NODES_QUADRATIC_TET];
 
-    /* The rest volume of this element */
+    /** @brief The rest volume of this element */
     scalar vol_0;
 
-    /* The current volume of this element */
+    /** @brief The current volume of this element */
     scalar vol;
 
-    /* The gradient deformation tensor for this element (needed for potential energy calculation) */
+    /** @brief The gradient deformation tensor for this element (needed for potential energy calculation) */
     matrix3 F_ij;
 
-    /* The double contraction of the internal stress tensor, including elastic and thermal stresses */
+    /** @brief The double contraction of the internal stress tensor, including elastic and thermal stresses */
     scalar internal_stress_mag;
 
-    /* The inverse jacobian of this element at rest */
+    /** @brief The inverse jacobian of this element at rest */
     matrix3 J_inv_0;
 
-    /* Viscosity Matrix for the internal forces of this element */
+    /** @brief Viscosity Matrix for the internal forces of this element */
     matrix12 viscosity_matrix;
 
     /* Blob this element is a part of */
     Blob *daddy_blob;
 
-    /* Index of this element in the parent Blob */
+    /** @brief Index of this element in the parent Blob */
     int index;
 
     vector3 centroid;
 
-    /*
+    /** @brief
      * Get the memory location of the specified element of K_alpha
      */
     scalar * get_K_alpha_element_mem_loc(int ni, int nj);
 
-    /* Calc the diffusion matrix for this element */
+    /** @brief Calc the diffusion matrix for this element */
     void calculate_K_alpha();
 
     void construct_element_mass_matrix(MassMatrixQuadratic *M_alpha);
 
     void add_K_alpha(scalar *K, int num_nodes);
 
-    /* Returns the gradient of the potential at the given (s,t,u) position in the element */
+    /** @brief Returns the gradient of the potential at the given (s,t,u) position in the element */
     void get_grad_phi_at_stu(vector3 *grad_phi, scalar s, scalar t, scalar u);
 
-    /* Calculates the force on each node of the element due to the electrostatic potential gradient there */
+    /** @brief Calculates the force on each node of the element due to the electrostatic potential gradient there */
     void calculate_electrostatic_forces();
 
-    /* Calculates the Jacobian matrix for this element */
+    /** @brief Calculates the Jacobian matrix for this element */
     void calculate_jacobian(matrix3 J);
 
-    /* Calculates Deformation Gradient */
+    /** @brief Calculates Deformation Gradient */
     void calc_deformation(matrix3 J);
 
-    /* Calculate the elastic contribution to the force */
+    /** @brief Calculate the elastic contribution to the force */
     void calc_elastic_force_vector(vector12 F);
 
-    /*
+    /** @brief
      * Inverts the given jacobian matrix J, using this to calculate the derivatives
      * of the shape functions which are stored in dpsi. This is an array
      * of all 12 derivatives, in the following order:
@@ -209,12 +209,12 @@ public:
      */
     int calc_shape_function_derivatives_and_volume(matrix3 J);
 
-    /*
+    /** @brief
      *  Uses above functions to get volume. Easy
      */
     scalar calc_volume();
 
-    /*
+    /** @brief
      * Builds the viscosity matrix from the shape function derivatives, the shear and bulk
      * viscosity constants, and the element volume
      */
@@ -230,7 +230,7 @@ public:
      */
     void add_bulk_elastic_stress(matrix3 stress);
 
-    /*
+    /** @brief
      * Given the shape function derivatives, the element volume and a random number generator, this
      * function calculates the fluctuating stress tensor, generating a stochastic change in the
      * nodal velocities for the element under consideration. This function will add its contribution
@@ -239,30 +239,30 @@ public:
      */
     void add_fluctuating_stress(SimulationParams *params, MTRand rng[], matrix3 stress, int thread_id);
 
-    /*
+    /** @brief
      * Applies the given stress tensor to the shape function derivatives to get the contribution to du
      */
     void apply_stress_tensor(matrix3 stress, vector12 du);
 
-    /*
+    /** @brief
      * Sets the given 12-vector to the velocities of this element's four nodes,
      */
     void get_element_velocity_vector(vector12 v);
 
-    /*
+    /** @brief
      * Add this element's nodal forces to those given in the force 12-vector
      */
     void add_element_force_vector(vector12 force);
 
-    /* Add given force to the specified node of this element */
+    /** @brief Add given force to the specified node of this element */
     void add_force_to_node(int i, vector3 *f);
 
-    /* A roundabout and inefficient way of working out what node (from 0 to 9) this index corresponds to */
+    /** @brief A roundabout and inefficient way of working out what node (from 0 to 9) this index corresponds to */
     int what_node_is_this(int index);
 
     void print();
 
-    /*
+    /** @brief
      * Applies the mass matrix (for a linear tetrahedral element of density rho and equilibrium volume vol_0)
      * to the force vector du to get the correct distribution of force between nodes.
      */
@@ -279,12 +279,12 @@ public:
 
 private:
 
-    /*
+    /** @brief
      * The last determinant of this element's transformation (used to work out whether it has inverted itself)
      */
     scalar last_det;
 
-    /*
+    /** @brief
      * Creates del2 matrix from the shape function derivatives
      */
     void calc_del2_matrix();

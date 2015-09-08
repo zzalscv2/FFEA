@@ -72,6 +72,12 @@ Blob::~Blob() {
     delete[] pinned_nodes_list;
     pinned_nodes_list = NULL;
 
+    /* delete precomp stuff */
+    delete[] bead_position;
+    bead_position = NULL;
+    delete[] bead_type;
+    bead_type = NULL;
+
     /* Set relevant data to zero */
     blob_index = 0;
     conformation_index = 0;
@@ -91,8 +97,8 @@ Blob::~Blob() {
 
 
 int Blob::init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
-            const char *stokes_filename, const char *vdw_filename, const char *binding_filename, const char *pin_filename, scalar scale, int linear_solver,
-            int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, MTRand rng[], int num_threads) {
+            const char *stokes_filename, const char *vdw_filename, const char *binding_filename, const char *pin_filename, const char *beads_filename, scalar scale, int linear_solver,
+            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, MTRand rng[], int num_threads) {
 
     // Which blob and conformation am i?
     this->blob_index = blob_index;
@@ -127,6 +133,12 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
     if (load_vdw(vdw_filename, lj_matrix->get_num_types()) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
+    }
+
+    if (params->calc_preComp == 1) {
+	if (load_beads(beads_filename, pc_params) == FFEA_ERROR) {
+        	FFEA_ERROR_MESSG("Error when loading beads file.\n")
+    	}
     }
 
     if (params->calc_kinetics == 1) {
@@ -1992,6 +2004,73 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
     printf("\t\t\tRead %d stokes radii from %s\n", i, stokes_filename);
 
     return FFEA_OK;
+}
+
+/** 
+ * @brief Read the beads_filename, loading beads position and types.
+ *
+ * @ingroup FMM
+ * @details
+ */
+int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params) {
+
+    ifstream fin;
+    string line;
+    vector<string> vec_line;
+    int typeBead;
+    
+    fin.open(beads_filename, std::ifstream::in);
+    if (fin.fail()) {
+        FFEA_FILE_ERROR_MESSG(beads_filename);
+        return FFEA_ERROR;
+    }
+    printf("\t\tReading in Beads file: %s\n", beads_filename);
+
+
+    vector<string> stypes;
+    vector<scalar> positions;
+    string type;
+    scalar x, y, z;
+    // 1 - read the data, positions and bead-types to memory before storing:
+    while (getline(fin, line)) {
+      // ignore those lines that do not start with "ATOM"
+      if (line.find("ATOM",0,4) != 0)
+        continue;
+      
+      cout << line << endl;
+      type = line.substr(11,5);
+      boost::trim (type);
+      stypes.push_back(type);
+      type.clear();
+  
+      x = stod( line.substr(28,10) );
+      y = stod( line.substr(38,8) );
+      z = stod( line.substr(48,8) );
+      positions.push_back(x);
+      positions.push_back(y);
+      positions.push_back(z);
+    } 
+
+    // 2 - store the data efficiently:
+    // 2.1 - positions:
+    bead_position = new scalar[positions.size()];
+    for (int i=0; i<positions.size(); i++) {
+      bead_position[i] = positions[i];
+    }
+    
+
+    // 2.2 - bead types are integers starting from zero:
+    vector<string>::iterator it;
+    bead_type = new int[stypes.size()];
+    int index;
+    for (int i=0; i<stypes.size(); i++) {
+      it = std::find(pc_params->types.begin(), pc_params->types.end(), stypes[i]);
+      index = std::distance(pc_params->types.begin(), it);
+      bead_type[i] = index;
+    } 
+
+    return FFEA_OK; 
+
 }
 
 /*
