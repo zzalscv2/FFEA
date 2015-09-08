@@ -274,9 +274,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		int blob_id, conformation_id;
 		long long rstep;
 		for (int b = 0; b < params.num_blobs; b++) {
-		    if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {;
-		        FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
-		    }
+			if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
+		        	FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
+		    	}
 		    if (blob_id != b) {
 		        FFEA_ERROR_MESSG("Mismatch in trajectory file - found blob id = %d, was expecting blob id = %d\n", blob_id, b)
 		    }
@@ -487,6 +487,12 @@ int World::get_smallest_time_constants() {
 		/* Apply to K */
 		tau = A_inv * K;
 		cout << "tau: " << tau.rows() << " " << tau.cols() << endl;
+
+		/* Convert to dense :( */
+		Eigen::MatrixXd dtau;
+		dtau = MatrixXd(tau);
+		cout << "tau: " << dtau.rows() << " " << dtau.cols() << endl;
+		exit();
 
 		/* Diagonalise */
 		/*Eigen::EigenSolver<Eigen::SparseMatrix<double>> eigensolver(tau);
@@ -1608,7 +1614,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	
 	// Get num_states
 	fin >> buf >> num_kinetic_states;
-	
+
 	// Check against params
 	if(params.num_states[blob_index] != num_kinetic_states) {
 		FFEA_error_text();
