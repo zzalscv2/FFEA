@@ -26,6 +26,7 @@ SimulationParams::SimulationParams() {
     calc_es = 0;
     calc_noise = 1;
     calc_kinetics = 0;
+    calc_preComp = 0;
 
     wall_x_1 = WALL_TYPE_PBC;
     wall_x_2 = WALL_TYPE_PBC;
@@ -81,6 +82,7 @@ SimulationParams::~SimulationParams() {
     calc_vdw = -1;
     calc_es = 0;
     calc_noise = 0;
+    calc_preComp = 0;
     calc_kinetics = 0;
 
     wall_x_1 = -1;
@@ -267,6 +269,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	calc_noise = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_noise << endl;
 
+	} else if (lvalue == "calc_preComp") {
+        	calc_preComp = atoi(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << calc_preComp << endl;
+
 	} else if (lvalue == "calc_kinetics") {
         	calc_kinetics = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_kinetics << endl;
@@ -339,10 +345,6 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		}
 		cout << "\tSetting " << lvalue << " = " << wall_z_2 << endl;
 
-   	} else if (lvalue == "calc_noise") {
-        	calc_noise = atoi(rvalue.c_str());
-        	cout << "\tSetting " << lvalue << " = " << calc_noise << endl;
-
     	} else if (lvalue == "trajectory_out_fname") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("trajectory_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
@@ -381,7 +383,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	FFEA_error_text();
         	cout << "Error: '" << lvalue << "' is not a recognised lvalue" << endl;
         	cout << "Recognised lvalues are:" << endl;
-        	cout << "dt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\tepsilon_0\n\trestart\n\tcalc_vdw\n\tcalc_noise\n" << endl;
+        	cout << "dt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\tepsilon_0\n\trestart\n\tcalc_vdw\n\tcalc_noise\n\tcalc_preComp\n" << endl;
         	return FFEA_ERROR;
    	}
 
@@ -440,6 +442,10 @@ int SimulationParams::validate() {
         if (vdw_params_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
+    }
+
+    if (calc_preComp != 0 && calc_preComp != 1) {
+        FFEA_ERROR_MESSG("Required: 'calc_preComp', must be 0 (no) or 1 (yes).\n");
     }
 
     if (calc_es != 0 && calc_es != 1) {
@@ -556,6 +562,7 @@ int SimulationParams::validate() {
     printf("\tcalc_es = %d\n", calc_es);
     printf("\tcalc_noise = %d\n", calc_noise);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
+    printf("\tcalc_preComp = %d\n", calc_preComp);
     printf("\tcalc_stokes = %d\n", calc_stokes);
     printf("\tstokes_visc = %f\n", stokes_visc);
 
@@ -565,6 +572,7 @@ int SimulationParams::validate() {
 /*
  * Expects a string of the form "lvalue = rvalue" where lvalue must be a recognised parameter name.
  */
+/*
 int SimulationParams::parse_param_assignment(char *str) {
     const int buf_size = 101;
     char lvalue[buf_size];
@@ -698,6 +706,9 @@ int SimulationParams::parse_param_assignment(char *str) {
     } else if (strcmp(lvalue, "calc_noise") == 0) {
         calc_noise = atoi(rvalue);
         printf("\tSetting %s = %d\n", lvalue, calc_noise);
+    } else if (strcmp(lvalue, "calc_preComp") == 0) {
+        calc_preComp = atoi(rvalue);
+        printf("\tSetting %s = %d\n", lvalue, calc_preComp);
     } else if (strcmp(lvalue, "calc_stokes") == 0) {
         calc_stokes = atoi(rvalue);
         printf("\tSetting %s = %d\n", lvalue, calc_stokes);
@@ -795,3 +806,4 @@ int SimulationParams::parse_param_assignment(char *str) {
 
     return FFEA_OK;
 }
+*/ 

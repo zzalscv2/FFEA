@@ -1,3 +1,8 @@
+/** 
+ * \defgroup FMM Force Match
+ * @{
+ */
+
 #include "PreComp_solver.h"
 
 using namespace std;
@@ -6,7 +11,7 @@ PreComp_solver::PreComp_solver() {
   msgc = 0;
 } 
 
-/** @brief destrctor: deallocates pointers. */
+/** @brief destructor: deallocates pointers. */
 PreComp_solver::~PreComp_solver() {
   delete U;
   delete F;
@@ -33,7 +38,7 @@ int PreComp_solver::msg(string whatever){
  *                 while 2 means read .pot and calculate the forces
  * @param[in] int approach: if .vdw -> use .vdw files and solve faces;
  *                          if .solid -> use .solid files and solve volumes.
- * @detail read <type_i>-<type_j>.force and <type_i>-<type_j>.pot files
+ * @details read <type_i>-<type_j>.force and <type_i>-<type_j>.pot files
  *         for all the possible pairs, setting up the potential functions.
  *         All the .pot and .force files need to have the same x_range
  *         same Dx, and same number of points. It is allowed, however, that 
@@ -164,7 +169,7 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
    for (int i=0; i<pc_params.types.size(); i++) {
      for (int j=i; j<pc_params.types.size(); j++) { 
        ssfile << pc_params.folder << "/" << pc_params.types[i] << "-" << pc_params.types[j] << "." << kind;
-       fin.open(ssfile.str());
+       fin.open(ssfile.str(), std::ifstream::in);
        // get the first line that does not start with "#"
        getline(fin, line);
        while (line.find("#", 0, 1) == 0) {
@@ -236,7 +241,10 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
    return 0;
 }
 
-/* @detail Compute (through finterpolate) the value of the potential at x 
+/**
+ * @brief Use finterpolate to return the value for U at x between types i and j.
+ * 
+ * @details Compute (through finterpolate) the value of the potential at x 
  * between bead types typei and typej. Kept just for clarity, may be removed
  * in the future.
  */
@@ -246,7 +254,11 @@ scalar PreComp_solver::get_U(scalar x, int typei, int typej) {
 
 }
 
-/* @detail Compute (through finterpolate) the value of the potential at x 
+
+/**
+ * @brief Use finterpolate to return the value for F at x between types i and j.
+ *
+ * @details Compute (through finterpolate) the value of the potential at x 
  * between bead types typei and typej. Kept just for clarity, may be removed
  * in the future.
  */
@@ -257,7 +269,7 @@ scalar PreComp_solver::get_F(scalar x, int typei, int typej) {
 }
 
 /** @brief Get the value Z value (either U or F) at x between types typei and typej.
-  * @detail The function is currently private and accessed through get_U and get_F.
+  * @details The function is currently private and accessed through get_U and get_F.
   * For production purposes it may be reasonable to move it to public, and 
   * remove get_U and get_F
   */
@@ -285,7 +297,8 @@ scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
    // interpolate:
    x0 = int(x/Dx) * Dx; 
    x1 = x0 + Dx; 
-   msg("");  
    return Z[index] + (Z[index +1] - Z[index])*(x - x0)/Dx;
 
 }  
+
+/**@}*/

@@ -62,7 +62,7 @@ int VdW_solver::solve() {
 
     total_num_surface_faces = surface_face_lookup->get_pool_size();
 
-    /* For each face, calculate the interaction with all other relevant faces and add the contribution to mat_C and mat_D */
+    /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/ 
 #ifdef FFEA_PER_BLOB_PARALLELISATION
 #pragma omp parallel for schedule(static)
 #endif
@@ -76,7 +76,8 @@ int VdW_solver::solve() {
         // Remember to check that the face is not interacting with itself or connected faces
         for (int c = 0; c < 27; c++) {
             LinkedListNode<Face> *l_j = NULL;
-            l_j = surface_face_lookup->get_top_of_stack(l_i->x + adjacent_cell_lookup_table[c].ix,
+            l_j = surface_face_lookup->get_top_of_stack( 
+                    l_i->x + adjacent_cell_lookup_table[c].ix,
                     l_i->y + adjacent_cell_lookup_table[c].iy,
                     l_i->z + adjacent_cell_lookup_table[c].iz);
             while (l_j != NULL) {
