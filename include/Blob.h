@@ -74,20 +74,14 @@ public:
     /**
      * Calculates the centroid of this Blob, then brings the Blob to the origin, 
      * rotates all nodes in the Blob, and brings back the Blob to the initial position.
-     * aso that the new centroid position is at the given (x,y,z) position
+     * If beads = 1, then it rotates its own "bead_positions" too. 
      */
-    void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33);
+    void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, int beads=0);
 
     /**
      *   Performs rotation about x axis, then y axis, then z axis
      */
-    void rotate(float xang, float yang, float zang);
-
-    /**
-     * Calculates the centroid of this Blob, then brings the beads to the origin, 
-     * rotates all beads in the Blob, and brings back the nodes to the "initial position".
-     */
-    void rotate_beads(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33);
+    void rotate(float xang, float yang, float zang, int beads=0);
 
     /**
      * Calculates the centroid of this Blob, then translates all nodes in the Blob
