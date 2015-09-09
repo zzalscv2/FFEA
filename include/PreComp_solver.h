@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "mat_vec_types.h"
+// WARNING: Blob.h will be included after defining PreComp_params! 
 
 using namespace std;
 /**
@@ -30,11 +31,14 @@ struct PreComp_params {
   string approach;
 };
 
+
+#include "Blob.h"
+
 class PreComp_solver{
 public:
   PreComp_solver();
   ~PreComp_solver();
-  int init(PreComp_params &pc_params);
+  int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
 
@@ -56,7 +60,7 @@ private:
   scalar x_range[2];
   /** number of pre-computed values per table */ 
   int n_values; 
-  /** total number of interactions */
+  /** total number of type interactions */
   int nint; 
   /** number of types of "beads */
   int ntypes; 
@@ -64,6 +68,13 @@ private:
   scalar *U;
   /** pointer to array containing all the values for all the pair forces. */
   scalar *F;
+  /** interacting elements */
+  typedef tetra_element_linear* TELPtr;
+  TELPtr *b_elems;
+  /** bead types */
+  int *b_types; 
+  /** number of beads */ 
+  int n_beads; 
 
 };
 

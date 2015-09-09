@@ -7,6 +7,7 @@ Blob::Blob() {
     num_nodes = 0;
     num_elements = 0;
     num_surface_faces = 0;
+    num_beads = 0;
     num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
@@ -86,6 +87,7 @@ Blob::~Blob() {
     num_surface_elements = 0;
     num_interior_elements = 0;
     num_surface_faces = 0;
+    num_beads = 0;
     num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
@@ -418,7 +420,11 @@ int Blob::update() {
 #pragma omp parallel default(none) private(J, stress, du, tid, n) reduction(+:num_inversions)
     {
 #endif
+#ifdef USE_OPENMP
         tid = omp_get_thread_num();
+#else
+	tid = 0;
+#endif
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp for schedule(guided)
@@ -600,10 +606,47 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
     }
 }
 
-void Blob::position(scalar x, scalar y, scalar z) {
+void Blob::rotate_beads(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33) {
+    int i;
+    scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
+
+    // Calculate centroid of [SURFACE] Blob mesh
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+#pragma omp parallel for default(none) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
+#endif
+    for (i = 0; i < num_surface_nodes; i++) {
+        centroid_x += node[i].pos.x;
+        centroid_y += node[i].pos.y;
+        centroid_z += node[i].pos.z;
+    }
+
+    centroid_x *= (1.0 / num_surface_nodes);
+    centroid_y *= (1.0 / num_surface_nodes);
+    centroid_z *= (1.0 / num_surface_nodes);
+
+    // Move all beads to the origin:
+    for (i = 0; i < num_beads; i++) {
+        bead_position[3*i] -= centroid_x;
+        bead_position[3*i+1] -= centroid_y;
+        bead_position[3*i+2] -= centroid_z;
+    }
+
+    // Do the actual rotation and bring the beads back to its initial position:
+    for (i = 0; i < num_beads; i++) {
+        node[i].pos.x = bead_position[3*i] * r11 + bead_position[3*i+1] * r12 + bead_position[3*i+2] * r13 + centroid_x;
+        node[i].pos.y = bead_position[3*i] * r21 + bead_position[3*i+1] * r22 + bead_position[3*i+2] * r23 + centroid_y;
+        node[i].pos.z = bead_position[3*i] * r31 + bead_position[3*i+1] * r32 + bead_position[3*i+2] * r33 + centroid_z;
+	
+
+    }
+}
+
+
+vector3 Blob::position(scalar x, scalar y, scalar z) {
     int i;
     scalar centroid_x = 0, centroid_y = 0, centroid_z = 0;
-    scalar dx, dy, dz;
+    vector3 v;
+    // scalar dx, dy, dz;
 
     // Calculate centroid of [SURFACE] Blob mesh
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
@@ -620,19 +663,32 @@ void Blob::position(scalar x, scalar y, scalar z) {
     centroid_z *= (1.0 / num_surface_nodes);
 
     // Calculate displacement vector required to move centroid to requested position
-    dx = x - centroid_x;
-    dy = y - centroid_y;
-    dz = z - centroid_z;
+    v.x = x - centroid_x;
+    v.y = y - centroid_y;
+    v.z = z - centroid_z;
 
     // Move all nodes in mesh by displacement vector
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i) shared(dx, dy, dz)
+#pragma omp parallel for default(none) private(i) shared(v)
 #endif
     for (i = 0; i < num_nodes; i++) {
-        node[i].pos.x += dx;
-        node[i].pos.y += dy;
-        node[i].pos.z += dz;
+        node[i].pos.x += v.x;
+        node[i].pos.y += v.y;
+        node[i].pos.z += v.z;
     }
+
+    return v;
+
+}
+
+void Blob::position_beads(scalar x, scalar y, scalar z) {
+  
+  for (int i = 0; i < num_beads; i ++) {
+    bead_position[3*i] += x;
+    bead_position[3*i+1] += y;
+    bead_position[3*i+2] += z;
+  } 
+
 }
 
 void Blob::move(scalar dx, scalar dy, scalar dz) {
@@ -1059,6 +1115,13 @@ int Blob::get_num_faces() {
 }
 
 /*
+ *
+ */
+int Blob::get_num_beads() {
+    return num_beads;
+}
+
+/*
  * 
  */
 Face * Blob::get_face(int i) {
@@ -1071,6 +1134,36 @@ Face * Blob::get_face(int i) {
 
 Face * Blob::absolutely_get_face(int i) {
 	return &surface[i];
+}
+
+/*
+ * 
+ */
+tetra_element_linear *Blob::get_element(int i) {
+        return &elem[i];
+}
+
+/** 
+ * @brief returns the position of bead i.
+ *
+ * @ingroup FMM
+ **/
+vector3 Blob::get_bead_position(int i) {
+    vector3 v;
+    v.x = bead_position[3*i]; 
+    v.y = bead_position[3*i+1]; 
+    v.z = bead_position[3*i+2]; 
+    return v; 
+}
+
+/** 
+ * @brief returns the bead_type pointer.
+ *
+ * @ingroup FMM
+ **/
+int *Blob::get_bead_type_ptr() {
+  return bead_type; 
+
 }
 
 scalar Blob::get_vdw_area() {
@@ -2025,27 +2118,29 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params) {
         return FFEA_ERROR;
     }
     printf("\t\tReading in Beads file: %s\n", beads_filename);
+    printf("\t\tReading beads positions in Armstrongs\n");
 
 
     vector<string> stypes;
     vector<scalar> positions;
     string type;
     scalar x, y, z;
+    scalar armstrongs = pow(10, -10);
     // 1 - read the data, positions and bead-types to memory before storing:
     while (getline(fin, line)) {
       // ignore those lines that do not start with "ATOM"
       if (line.find("ATOM",0,4) != 0)
         continue;
       
-      cout << line << endl;
+      // cout << line << endl;
       type = line.substr(11,5);
       boost::trim (type);
       stypes.push_back(type);
       type.clear();
   
-      x = stod( line.substr(28,10) );
-      y = stod( line.substr(38,8) );
-      z = stod( line.substr(48,8) );
+      x = stod( line.substr(28,10) ) * armstrongs; 
+      y = stod( line.substr(38,8) ) * armstrongs;
+      z = stod( line.substr(48,8) ) * armstrongs;
       positions.push_back(x);
       positions.push_back(y);
       positions.push_back(z);
@@ -2058,7 +2153,6 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params) {
       bead_position[i] = positions[i];
     }
     
-
     // 2.2 - bead types are integers starting from zero:
     vector<string>::iterator it;
     bead_type = new int[stypes.size()];
@@ -2069,8 +2163,29 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params) {
       bead_type[i] = index;
     } 
 
+    // 2.3 - num_beads:
+    num_beads = stypes.size();
+
     return FFEA_OK; 
 
+}
+
+void Blob::print_node_positions() {
+
+    for (int n = 0; n < num_nodes; n++) {
+        cout << "---n: " << node[n].pos.x << " " << node[n].pos.y << "  " << node[n].pos.z << endl; 
+    } 
+
+} 
+
+void Blob::print_bead_positions() {
+
+    for (int i=0; i<num_beads; i++) {
+      cout << "---b: " << bead_position[3*i] << " "
+                       << bead_position[3*i+1] << " "
+                       << bead_position[3*i+2] << endl;
+    } 
+  
 }
 
 /*
@@ -2382,7 +2497,11 @@ int Blob::aggregate_forces_and_solve() {
 #pragma omp parallel for default(none) schedule(guided)
 #endif
             for (int i = 0; i < num_nodes; i++) {
+#ifdef USE_OPENMP                
                 int thread_id = omp_get_thread_num();
+#else
+                int thread_id = 0;
+#endif
                 force[i].x -= node[i].vel.x * node[i].stokes_drag;
                 force[i].y -= node[i].vel.y * node[i].stokes_drag;
                 force[i].z -= node[i].vel.z * node[i].stokes_drag;
@@ -2398,7 +2517,11 @@ int Blob::aggregate_forces_and_solve() {
 #pragma omp parallel for default(none) schedule(guided)
 #endif
                 for (int i = 0; i < num_nodes; i++) {
+#ifdef USE_OPENMP
                     int thread_id = omp_get_thread_num();
+#else
+                    int thread_id = 0;
+#endif
                     force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                     force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                     force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));

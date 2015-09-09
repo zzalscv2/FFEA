@@ -9,12 +9,15 @@ using namespace std;
 
 PreComp_solver::PreComp_solver() { 
   msgc = 0;
+  n_beads = 0;
 } 
 
 /** @brief destructor: deallocates pointers. */
 PreComp_solver::~PreComp_solver() {
   delete U;
   delete F;
+  delete b_types;
+  delete b_elems; 
 }
 
 
@@ -44,7 +47,7 @@ int PreComp_solver::msg(string whatever){
  *         same Dx, and same number of points. It is allowed, however, that 
  *         they have a different number of lines at the beginning starting with "#". 
  */        
-int PreComp_solver::init(PreComp_params &pc_params) {
+int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array) {
 
    /* Firstly, we get the number of lines, x_range, 
     * and Dx from the first pair type potential file. 
@@ -55,27 +58,28 @@ int PreComp_solver::init(PreComp_params &pc_params) {
     * Finally, the functions get_U and get_F will be ready. 
     */  
    
-   if (pc_params.types.size() == 0) return 0;
+   if (pc_params->types.size() == 0) return 0;
 
    stringstream ssfile; 
    ifstream fin;
    string line; 
    vector<string> vec_line; 
    scalar x_0, x;
+   scalar d2, d2_0;
    
    /*--------- FIRSTLY ----------*/ 
    /* get the number of interactions */
-   for (int i=1; i<pc_params.types.size() + 1; i++){
+   for (int i=1; i<pc_params->types.size() + 1; i++){
      nint += i;
    } 
    msg(nint);
    // and the number of bead types: 
-   ntypes = pc_params.types.size();
+   ntypes = pc_params->types.size();
 
    /* read the first file, and get the number of lines
     * (n_values), Dx, and x_range */
    // the first file:
-   ssfile << pc_params.folder << "/" << pc_params.types[0] << "-" << pc_params.types[0] << ".pot";
+   ssfile << pc_params->folder << "/" << pc_params->types[0] << "-" << pc_params->types[0] << ".pot";
    fin.open(ssfile.str());
    // get the first line that does not start with "#"
    getline(fin, line);
@@ -113,10 +117,10 @@ int PreComp_solver::init(PreComp_params &pc_params) {
    F = new scalar[n_values * nint];    
       
    // and load potentials and forces:
-   read_tabulated_values(pc_params, "pot", U);
-   if (pc_params.inputData == 1) {
-     read_tabulated_values(pc_params, "force", F);
-   } else if (pc_params.inputData == 2) {
+   read_tabulated_values(*pc_params, "pot", U);
+   if (pc_params->inputData == 1) {
+     read_tabulated_values(*pc_params, "force", F);
+   } else if (pc_params->inputData == 2) {
      calc_force_from_pot();
    } else {
      FFEA_error_text();
@@ -124,6 +128,89 @@ int PreComp_solver::init(PreComp_params &pc_params) {
      return FFEA_ERROR;
    }
 
+
+   /*------------ THIRDLY --------*/
+   // allocate the list of elements that have a bead will use: 
+   for (int i=0; i < params->num_blobs; i ++) {
+     // we only consider one conformation per blob.
+     if (params->num_conformations[i] > 1) {
+       FFEA_error_text();
+       msg("currently PreComp only deals with a single conformation per blob");
+       return FFEA_ERROR;
+     }
+     n_beads += blob_array[i][0].get_num_beads();
+   } 
+   b_elems = new TELPtr[n_beads];
+   
+   
+
+   /*------------ FOURTHLY --------*/
+   // get the elements of the list of "elements" that we will use: 
+   vector3 b; 
+   int closest; 
+   tetra_element_linear *e;
+   for (int i=0; i < params->num_blobs; i++) {
+     // for each bead within this blob (remember that we only deal with conf 0):
+     blob_array[i][0].print_node_positions();
+     blob_array[i][0].print_bead_positions();
+     for (int j=0; j < blob_array[i][0].get_num_beads(); j++) {
+       b = blob_array[i][0].get_bead_position(j);
+       // cout << "---b: " << b.x << " " << b.y << " " << b.z << endl;
+       d2_0 = 1e9;
+       // get the closest node to this bead: 
+       for (int k=0; k < blob_array[i][0].get_num_elements(); k++) { 
+         e = blob_array[i][0].get_element(k);
+         e->calc_centroid();
+         d2 = (e->centroid.x - b.x)*(e->centroid.x - b.x) + 
+              (e->centroid.y - b.y)*(e->centroid.y - b.y) + 
+              (e->centroid.z - b.z)*(e->centroid.z - b.z);
+       
+         // cout << "---c: " << e->centroid.x << " " << e->centroid.y << " " << e->centroid.z << endl;
+         if (d2 < d2_0) {
+           d2_0 = d2;
+           closest = k;
+           b_elems[j] = e; 
+         }
+         // b_elems[j] = blob_array[i][0].get_element(closest);
+       } 
+       // cout << closest << endl; 
+     } 
+   } 
+ 
+    
+   /*------------ FIFTHLY --------*/
+   // store the bead types: 
+   cout << "--- allocating bead_types... ";
+   b_types = new int[n_beads]; 
+   int j = 0;
+   int n;
+   for (int i=0; i < params->num_blobs; i ++) {
+     n = blob_array[i][0].get_num_beads();
+     memcpy(&b_types[j], blob_array[i][0].get_bead_type_ptr(), n*sizeof(int));
+     j += n;  
+   } 
+   cout << "done!" << endl;
+
+
+   /*------------ SIXTHLY -----------*/
+   // store the RELATIVE bead positions: 
+
+
+
+   /*- - - - - CHECK!! - - - - - -*/
+   int k = 0;
+   for (int i=0; i < params->num_blobs; i ++) {
+     for (int j=0; j < blob_array[i][0].get_num_beads(); j++) {
+       vector3 blob_bp = blob_array[i][0].get_bead_position(j); 
+       cout << "k: " << k << " " << 
+               "centroid: " << b_elems[k]->centroid.x << " " << 
+                               b_elems[k]->centroid.y << " " << 
+                               b_elems[k]->centroid.z <<
+               " position: " << blob_bp.x << " " << blob_bp.y << " " << blob_bp.z
+               << endl; 
+       k++;
+     }
+   }
 
    return FFEA_OK; 
 }
