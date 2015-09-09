@@ -151,6 +151,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
     	// detect how many threads we have for openmp
     	int tid;
 	
+#ifdef USE_OPENMP
 	#pragma omp parallel default(none) private(tid)
 	{
         	tid = omp_get_thread_num();
@@ -159,6 +160,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
             		printf("\n\tNumber of threads detected: %d\n\n", num_threads);
         	}
     	}
+#else
+	num_threads = 1;
+#endif
 
     	// We need one rng for each thread, to avoid concurrency problems,
     	// so generate an array of instances of mersenne-twister rngs.
@@ -415,7 +419,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		}
 	    }
 
-            pc_solver.init(pc_params);
+            if (params.calc_preComp ==1)
+              pc_solver.init(&pc_params, &params, blob_array);
 
 	    if (params.restart == 0) {
 		// Carry out measurements on the system before carrying out any updates (if this is step 0)
@@ -1122,6 +1127,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 					cout << "In blob " << i << ", conformation " << j << ":\nFor any blob conformation, 'nodes', 'surface' and 'vdw' must be set." << endl;
 					return FFEA_ERROR; 
 				} 
+				if(set_preComp == 0) {
+                                        beads.push_back("");
+                                } 
 				if(motion_state.back() == FFEA_BLOB_IS_DYNAMIC) {
 					if(set_top == 0 || set_mat == 0 || set_stokes == 0 || set_pin == 0) {
 						FFEA_error_text();
@@ -1304,13 +1312,20 @@ int World::read_and_build_system(vector<string> script_vector) {
                     		centroid[0] *= scale;
                     		centroid[1] *= scale;
                     		centroid[2] *= scale;
-                    		blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
+                    		vector3 dv = blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
+                                // if Blob has a number of beads, transform them too:
+                                if (blob_array[i][j].get_num_beads() > 0)
+                                  blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
                 	}
+                      
                 	if(rotation != NULL) {
 				if(rotation_type == 0) {
 					blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
 				} else {
 	                    		blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
+                                        // if Blob has a number of beads, transform them too:
+                                        if (blob_array[i][j].get_num_beads() > 0)
+                                          blob_array[i][j].rotate_beads(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
 				}        
 	        	}
 
@@ -1367,6 +1382,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		binding.clear();
 		pin.clear();
 		maps.clear();
+                beads.clear();
 		scale = 1;
 		solver = FFEA_NOMASS_CG_SOLVER;
 		map_vector.clear();
@@ -1380,7 +1396,6 @@ int World::read_and_build_system(vector<string> script_vector) {
 	}
 
 	cout << "\t...done!" << endl;
-
 
 	return FFEA_OK;
 }
