@@ -180,6 +180,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		return FFEA_ERROR;
 	}
 
+        // If requested, initialise the PreComp_solver. 
+        //   Because beads need to be related to elements, it is much easier if 
+        //   it is done before moving the blobs to the latest trajectory step in 
+        //   case of "restart".
+        if (params.calc_preComp ==1)
+              pc_solver.init(&pc_params, &params, blob_array);
+
+
 	// Create measurement files
 	measurement_out = new FILE *[params.num_blobs + 1];
 
@@ -320,7 +328,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 	    }
 
 
-
 	    // Initialise the Van der Waals solver
 	    if(params.calc_vdw == 1 || params.calc_es == 1) {
 		vector3 world_centroid, shift;
@@ -418,9 +425,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		        J_Gamma[i] = 0;
 		}
 	    }
-
-            if (params.calc_preComp ==1)
-              pc_solver.init(&pc_params, &params, blob_array);
 
 	    if (params.restart == 0) {
 		// Carry out measurements on the system before carrying out any updates (if this is step 0)
@@ -1320,12 +1324,18 @@ int World::read_and_build_system(vector<string> script_vector) {
                       
                 	if(rotation != NULL) {
 				if(rotation_type == 0) {
+                                   if (blob_array[i][j].get_num_beads() > 0) {
 					blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
+                                    } else {
+					blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
+                                    }
 				} else {
+                                   if (blob_array[i][j].get_num_beads() > 0) {
 	                    		blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
-                                        // if Blob has a number of beads, transform them too:
-                                        if (blob_array[i][j].get_num_beads() > 0)
-                                          blob_array[i][j].rotate_beads(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
+                                   } else { 
+                                      // if Blob has a number of beads, transform them too:
+                                        blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8], 1);
+                                   }
 				}        
 	        	}
 
@@ -1396,6 +1406,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 	}
 
 	cout << "\t...done!" << endl;
+
 
 	return FFEA_OK;
 }
