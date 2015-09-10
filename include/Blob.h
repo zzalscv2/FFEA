@@ -97,6 +97,12 @@ public:
     void position_beads(scalar x, scalar y, scalar z);
 
     /**
+     * Beads are only useful before PreComp_solver.init is called.
+     * They can be removed later on.
+     */
+    int forget_beads();
+
+    /**
      * Translate the Blob by the given vector
      */
     void move(scalar dx, scalar dy, scalar dz);
@@ -420,6 +426,8 @@ private:
      * Opens and reads the given 'ffea beads file', extracting all the beads types and positions and for this Blob.
      */
     int load_beads(const char *beads_filename, PreComp_params *pc_params);
+
+
 
     /**
      * Opens and reads the given 'ffea binding site file', extracting all the kinetic binding sites (face list) for this Blob.

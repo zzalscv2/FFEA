@@ -74,10 +74,13 @@ Blob::~Blob() {
     pinned_nodes_list = NULL;
 
     /* delete precomp stuff */
-    delete[] bead_position;
-    bead_position = NULL;
-    delete[] bead_type;
-    bead_type = NULL;
+    if (num_beads > 0) { 
+      num_beads = 0;
+      delete[] bead_position;
+      bead_position = NULL;
+      delete[] bead_type;
+      bead_type = NULL;
+    } 
 
     /* Set relevant data to zero */
     blob_index = 0;
@@ -87,7 +90,6 @@ Blob::~Blob() {
     num_surface_elements = 0;
     num_interior_elements = 0;
     num_surface_faces = 0;
-    num_beads = 0;
     num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
@@ -2151,6 +2153,25 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params) {
     return FFEA_OK; 
 
 }
+
+/** 
+ * @brief num_beads = 0; delete bead_type; delete bead_position.
+ *
+ * @ingroup FMM
+ * @details Beads are only useful before PreComp_solver.init is called.
+ *      * They can be removed later on.
+ */
+int Blob::forget_beads(){
+
+    num_beads = 0;
+    delete[] bead_position;
+    bead_position = NULL;
+    delete[] bead_type ; 
+    bead_type = NULL; 
+    return FFEA_OK;
+
+}
+
 
 void Blob::print_node_positions() {
 
