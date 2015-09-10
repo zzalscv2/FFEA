@@ -450,65 +450,80 @@ int World::get_smallest_time_constants() {
 		}
 
 		// Define and reset all required variables for this crazy thing (maybe don't use stack memory??)
-		num_nodes = active_blob_array[blob_index]->get_num_nodes();
+		num_nodes = active_blob_array[blob_index]->get_num_linear_nodes();
 		num_rows = 3 * num_nodes;
 
 		Eigen::SparseMatrix<double> K(num_rows, num_rows);
 		Eigen::SparseMatrix<double> A(num_rows, num_rows);
-		Eigen::SparseMatrix<double> A_inv(num_rows, num_rows);
+		Eigen::SparseMatrix<double> K_inv(num_rows, num_rows);
 		Eigen::SparseMatrix<double> I(num_rows, num_rows);
-		Eigen::SparseMatrix<double> tau(num_rows, num_rows);
+		Eigen::SparseMatrix<double> tau_inv(num_rows, num_rows);
 
 		/* Build K */
-		if(active_blob_array[blob_index]->build_viscosity_matrix(K) == FFEA_ERROR) {
+		cout << K.rows() << endl;
+		if(active_blob_array[blob_index]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
 			FFEA_error_text();
-			cout << "In function 'Blob::build_viscosity_matrix' from blob " << blob_index << endl;
+			cout << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << blob_index << endl;
 			return FFEA_ERROR;
 		}
 
-		cout << "K: " << K.rows() << " " << K.cols() << endl;
+		cout << "K: " << K.rows() << " " << K.cols() << " " << K.nonZeros() << endl;
 
 		/* Build A */
-		if(active_blob_array[blob_index]->build_linear_elasticity_matrix(K) == FFEA_ERROR) {
+		if(active_blob_array[blob_index]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
 			FFEA_error_text();
-			cout << "In function 'Blob::build_linear_elasticity_matrix'" << blob_index << endl;
+			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << blob_index << endl;
 			return FFEA_ERROR;
 		}
 
-		cout << "A: " << A.rows() << " " << A.cols() << endl;
+		cout << "A: " << A.rows() << " " << A.cols() << " " << A.nonZeros() << endl;
 
-		/* Invert A */
-		Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> cholesky(A); // performs a Cholesky factorization of A
+		/* Invert K (it's symmetric!) */
+		Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> Cholesky(K); // performs a Cholesky factorization of K
 		I.setIdentity();
-		cout << "I: " << I.rows() << " " << I.cols() << endl;
-		A_inv = cholesky.solve(K);
-		cout << "A_inv: " << A_inv.rows() << " " << A_inv.cols() << endl;
+		K_inv = Cholesky.solve(I);
+		if(Cholesky.info() == Eigen::Success) {
+			cout << "Successful Inversion of K!" << endl;
+		} else if (Cholesky.info() == Eigen::NumericalIssue) {
+			cout << "This cannot be solved via Cholesky factorisation due to numerical issues (not symettric etc). Sorry about that." << endl;
+		} else if (Cholesky.info() == Eigen::NoConvergence) {
+			cout << "Inversion iteration couldn't converge. K must be a crazy matrix. Possibly has zero eigenvalues?" << endl;
+		}
+		cout << "K_inv: " << K_inv.rows() << " " << K_inv.cols() << " " << K_inv.nonZeros() << endl;
+		
 
-		/* Apply to K */
-		tau = A_inv * K;
-		cout << "tau: " << tau.rows() << " " << tau.cols() << endl;
+		/* Apply to A */
+		tau_inv = K_inv * A;
+		cout << "tau_inv: " << tau_inv.rows() << " " << tau_inv.cols() << " " << tau_inv.nonZeros() << endl;
+		//cout << K_inv << endl;
 
 		/* Convert to dense :( */
-		Eigen::MatrixXd dtau;
-		dtau = MatrixXd(tau);
-		cout << "tau: " << dtau.rows() << " " << dtau.cols() << endl;
-		exit();
+		Eigen::MatrixXd dtau_inv;
+		dtau_inv = Eigen::MatrixXd(tau_inv);
+
+		cout << "dtau_inv: " << dtau_inv.rows() << " " << dtau_inv.cols() << " " << dtau_inv.nonZeros() << endl;
 
 		/* Diagonalise */
-		/*Eigen::EigenSolver<Eigen::SparseMatrix<double>> eigensolver(tau);
+		Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(dtau_inv);
 		double smallest_val = INFINITY;
-		double largest_val = 0.0;
+		double largest_val = -1 * INFINITY;
 		for(int i = 0; i < num_rows; ++i) {
+			if(eigensolver.eigenvalues()[i].imag() != 0) {
+				cout << eigensolver.eigenvalues()[i] << endl;
+				continue;
+			}
 			if(eigensolver.eigenvalues()[i].real() < smallest_val) {
 				smallest_val = eigensolver.eigenvalues()[i].real();
-			} else if (eigensolver.eigenvalues()[i].real() > smallest_val) {
+			} else if (eigensolver.eigenvalues()[i].real() > largest_val) {
 				largest_val = eigensolver.eigenvalues()[i].real();
 			}
 		}
 
 		// Output
+		//cout << eigensolver.eigenvalues() << endl;
 		cout << "Smallest Eigenvalue = " << smallest_val << endl;
-		cout << "Largest Eigenvalue = " << largest_val << endl;*/
+		cout << "Largest Eigenvalue = " << largest_val << endl;
+		cout << "Smallest Relaxation Time = " << 1.0 / largest_val << endl;
 	}
 	
 	return FFEA_OK;
@@ -1127,7 +1142,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 					FFEA_error_text();
 					cout << "In blob " << i << ", conformation " << j << ":\nFor any blob conformation, 'nodes', 'surface' and 'vdw' must be set." << endl;
 					return FFEA_ERROR; 
-				} 
+				}
 				if(motion_state.back() == FFEA_BLOB_IS_DYNAMIC) {
 					if(set_top == 0 || set_mat == 0 || set_stokes == 0 || set_pin == 0) {
 						FFEA_error_text();
@@ -1143,6 +1158,10 @@ int World::read_and_build_system(vector<string> script_vector) {
 					set_mat = 1;
 					set_stokes = 1;
 					set_pin = 1;
+				}
+
+				if(set_preComp == 0) {
+					beads.push_back("");
 				}
 			}
 
@@ -1295,7 +1314,6 @@ int World::read_and_build_system(vector<string> script_vector) {
 		//Build conformations
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
-
 			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), binding.at(j).c_str(), pin.at(j).c_str(), beads.at(j).c_str(), 
                        		scale, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
                        		FFEA_error_text();
