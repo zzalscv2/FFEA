@@ -74,21 +74,33 @@ public:
     /**
      * Calculates the centroid of this Blob, then brings the Blob to the origin, 
      * rotates all nodes in the Blob, and brings back the Blob to the initial position.
-     * aso that the new centroid position is at the given (x,y,z) position
+     * If beads = 1, then it rotates its own "bead_positions" too. 
      */
-    void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33);
+    void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, int beads=0);
 
     /**
      *   Performs rotation about x axis, then y axis, then z axis
      */
-    void rotate(float xang, float yang, float zang);
+    void rotate(float xang, float yang, float zang, int beads=0);
 
     /**
      * Calculates the centroid of this Blob, then translates all nodes in the Blob
-     * so that the new centroid position is at the given (x,y,z) position
+     * so that the new centroid position is at the given (x,y,z) position, while
+     * returning a vector with the displacement (dx, dy, dz) applied to every node.
      */
-    void position(scalar x, scalar y, scalar z);
+    vector3 position(scalar x, scalar y, scalar z);
 
+    /**
+     * Moves the beads according to (dx, dy, dz). 
+     * The name is to be related to "vector3 position(scalar x, scalar y, scalar z).
+     */
+    void position_beads(scalar x, scalar y, scalar z);
+
+    /**
+     * Beads are only useful before PreComp_solver.init is called.
+     * They can be removed later on.
+     */
+    int forget_beads();
 
     /**
      * Translate the Blob by the given vector
@@ -151,6 +163,19 @@ public:
     Face *get_face(int i);
 
     Face *absolutely_get_face(int i);
+
+    /**
+     * Return pointer to the ith Element of this Blob's surface
+     */
+    tetra_element_linear *get_element(int i);
+
+    /** get_bead_position */ 
+    vector3 get_bead_position(int i); 
+
+    /** get the pointer to "bead_type" */
+    int *get_bead_type_ptr(); 
+
+  
 
     scalar get_vdw_area();
 
@@ -236,6 +261,8 @@ public:
 
     int get_num_linear_nodes();
 
+    int get_num_beads();
+
     scalar calculate_strain_energy();
 
     void get_min_max(vector3 *blob_min, vector3 *blob_max);
@@ -254,6 +281,9 @@ public:
     void kinetic_bind(int site_index);
     void kinetic_unbind(int site_index);
 
+
+    void print_node_positions();
+    void print_bead_positions();
 private:
 
     /** Total number of nodes in Blob */
@@ -279,6 +309,9 @@ private:
 
     /** Number of 'pinned' nodes (nodes which are not able to move, removing degrees of freedom from system) */
     int num_pinned_nodes;
+
+    /** Amount of interacting beads within this Blob */
+    int num_beads;
 
     /** Whether this Blob is DYNAMIC (movable; dynamics simulated) or STATIC (fixed; no simulation of dynamics; Blob is a perfectly solid object fixed in space)*/
     int blob_state;
@@ -393,6 +426,8 @@ private:
      * Opens and reads the given 'ffea beads file', extracting all the beads types and positions and for this Blob.
      */
     int load_beads(const char *beads_filename, PreComp_params *pc_params);
+
+
 
     /**
      * Opens and reads the given 'ffea binding site file', extracting all the kinetic binding sites (face list) for this Blob.
