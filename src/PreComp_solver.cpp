@@ -9,12 +9,15 @@ using namespace std;
 
 PreComp_solver::PreComp_solver() { 
   msgc = 0;
+  n_beads = 0;
 } 
 
 /** @brief destructor: deallocates pointers. */
 PreComp_solver::~PreComp_solver() {
   delete U;
   delete F;
+  delete b_types;
+  delete b_elems; 
 }
 
 
@@ -44,7 +47,7 @@ int PreComp_solver::msg(string whatever){
  *         same Dx, and same number of points. It is allowed, however, that 
  *         they have a different number of lines at the beginning starting with "#". 
  */        
-int PreComp_solver::init(PreComp_params &pc_params) {
+int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array) {
 
    /* Firstly, we get the number of lines, x_range, 
     * and Dx from the first pair type potential file. 
@@ -52,30 +55,34 @@ int PreComp_solver::init(PreComp_params &pc_params) {
     * are the same for all the files. Secondly, 
     * we allocate the F and U arrays, and then
     * we store the y_values, re-reading the files.
-    * Finally, the functions get_U and get_F will be ready. 
+    * The functions get_U and get_F will then be ready. 
+    * Thirdly and fourthly, allocate and fill the 
+    * elements and relative bead position arrays.
+    * And finally, delete beads stuff from the blobs.
     */  
    
-   if (pc_params.types.size() == 0) return 0;
+   if (pc_params->types.size() == 0) return 0;
 
    stringstream ssfile; 
    ifstream fin;
    string line; 
    vector<string> vec_line; 
    scalar x_0, x;
+   scalar d2, d2_0;
    
    /*--------- FIRSTLY ----------*/ 
    /* get the number of interactions */
-   for (int i=1; i<pc_params.types.size() + 1; i++){
+   for (int i=1; i<pc_params->types.size() + 1; i++){
      nint += i;
    } 
    msg(nint);
    // and the number of bead types: 
-   ntypes = pc_params.types.size();
+   ntypes = pc_params->types.size();
 
    /* read the first file, and get the number of lines
     * (n_values), Dx, and x_range */
    // the first file:
-   ssfile << pc_params.folder << "/" << pc_params.types[0] << "-" << pc_params.types[0] << ".pot";
+   ssfile << pc_params->folder << "/" << pc_params->types[0] << "-" << pc_params->types[0] << ".pot";
    fin.open(ssfile.str());
    // get the first line that does not start with "#"
    getline(fin, line);
@@ -113,10 +120,10 @@ int PreComp_solver::init(PreComp_params &pc_params) {
    F = new scalar[n_values * nint];    
       
    // and load potentials and forces:
-   read_tabulated_values(pc_params, "pot", U);
-   if (pc_params.inputData == 1) {
-     read_tabulated_values(pc_params, "force", F);
-   } else if (pc_params.inputData == 2) {
+   read_tabulated_values(*pc_params, "pot", U);
+   if (pc_params->inputData == 1) {
+     read_tabulated_values(*pc_params, "force", F);
+   } else if (pc_params->inputData == 2) {
      calc_force_from_pot();
    } else {
      FFEA_error_text();
@@ -125,7 +132,104 @@ int PreComp_solver::init(PreComp_params &pc_params) {
    }
 
 
+   /*------------ THIRDLY --------*/
+   // allocate the list of elements that have a bead will use: 
+   for (int i=0; i < params->num_blobs; i ++) {
+     // we only consider one conformation per blob.
+     if (params->num_conformations[i] > 1) {
+       FFEA_error_text();
+       msg("currently PreComp only deals with a single conformation per blob");
+       return FFEA_ERROR;
+     }
+     n_beads += blob_array[i][0].get_num_beads();
+   } 
+   b_elems = new TELPtr[n_beads];
+   // allocate the array that store the relative positions 
+   //    of the beads to the elements where they belong to. 
+   b_rel_pos = new scalar[n_beads*3];
+   // and allocate the bead types: 
+   b_types = new int[n_beads]; 
+   
+   
+
+   /*------------ FOURTHLY --------*/
+   // get the elements of the list of "elements" that we will use: 
+   vector3 u, v, w; 
+   // vector3 s, e1, e2, e3;
+   tetra_element_linear *e;
+   matrix3 J, J_inv; // will hold the Jacobian for the current element. 
+   scalar det;  // determinant for J.
+   int m = 0;
+   int n;
+   // for each Blob: 
+   for (int i=0; i < params->num_blobs; i ++) {
+     // store the bead types: 
+     n = blob_array[i][0].get_num_beads();
+     memcpy(&b_types[m], blob_array[i][0].get_bead_type_ptr(), n*sizeof(int));
+     m += n;
+
+     // for each bead within this blob (remember that we only deal with conf 0):
+     for (int j=0; j < n; j++) {
+       v = blob_array[i][0].get_bead_position(j);
+       d2_0 = 1e9;
+       // get the closest node to this bead: 
+       for (int k=0; k < blob_array[i][0].get_num_elements(); k++) { 
+         e = blob_array[i][0].get_element(k);
+         e->calc_centroid();
+         d2 = (e->centroid.x - v.x)*(e->centroid.x - v.x) + 
+              (e->centroid.y - v.y)*(e->centroid.y - v.y) + 
+              (e->centroid.z - v.z)*(e->centroid.z - v.z);
+       
+         if (d2 < d2_0) {
+           d2_0 = d2;
+           b_elems[j] = e; 
+         }
+       } 
+       // and get the relative coordinates within the element
+       //   as a fraction of the basis vectors length.
+       b_elems[j]->calculate_jacobian(J); 
+       mat3_invert(J, J_inv, &det);
+       vec3_vec3_subs(&v, &b_elems[j]->n[0]->pos, &w);
+       vec3_mat3_mult(&w, J_inv, &u); 
+       // now u has the relative coordinates, not under unit vectors
+       //    but under full length vectors. And we store them:
+       b_rel_pos[3*j] = u.x;
+       b_rel_pos[3*j+1] = u.y;
+       b_rel_pos[3*j+2] = u.z;
+       
+       /*
+       //  prove it: v = 
+       vec3_vec3_subs(&b_elems[j]->n[1]->pos, &b_elems[j]->n[0]->pos, &e1);
+       vec3_vec3_subs(&b_elems[j]->n[2]->pos, &b_elems[j]->n[0]->pos, &e2);
+       vec3_vec3_subs(&b_elems[j]->n[3]->pos, &b_elems[j]->n[0]->pos, &e3);
+       s.x = b_elems[j]->n[0]->pos.x + u.x*e1.x + u.y*e2.x + u.z*e3.x;
+       s.y = b_elems[j]->n[0]->pos.y + u.x*e1.y + u.y*e2.y + u.z*e3.y;
+       s.z = b_elems[j]->n[0]->pos.z + u.x*e1.z + u.y*e2.z + u.z*e3.z;
+       print_vector3(&v);
+       print_vector3(&s);
+       s.x = b_elems[j]->n[0]->pos.x + u.x*J[0][0] + u.y*J[1][0] + u.z*J[2][0];
+       s.y = b_elems[j]->n[0]->pos.y + u.x*J[0][1] + u.y*J[1][1] + u.z*J[2][1];
+       s.z = b_elems[j]->n[0]->pos.z + u.x*J[0][2] + u.y*J[1][2] + u.z*J[2][2];
+       print_vector3(&s);
+       */
+       
+       
+     } 
+     // and forget all about beads. 
+     blob_array[i][0].forget_beads();
+   } 
+ 
+   cout << "done!" << endl;
+
+
    return FFEA_OK; 
+}
+
+int PreComp_solver::solve() {
+
+
+  
+    return FFEA_OK;
 }
 
 
