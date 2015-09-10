@@ -201,12 +201,12 @@ public:
     /**
      * Builds a global viscosity matrix for this blob
      */
-    int build_viscosity_matrix(Eigen::SparseMatrix<double> K);
+    int build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K);
 
     /**
      * Linearises the elasticity vector and build a global elasticity matrix for this blob
      */
-    int build_linear_elasticity_matrix(Eigen::SparseMatrix<double> A);
+    int build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A);
 
     /**
      * Returns the total mass of this Blob.

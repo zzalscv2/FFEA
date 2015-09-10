@@ -103,6 +103,13 @@ int main(int argc, char *argv[])
 		FFEA_error_text();
 		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 		myreturn = FFEA_ERROR;
+
+		// Delete the world (oh no!)
+		cout << "Deleting world..." << endl;
+		delete world;
+		cout << "...done. World has been sucessfully destroyed." << endl;
+
+		return myreturn;
 	}
 	
 	// World is initialised. How shall we run FFEA?
