@@ -424,11 +424,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 	    }
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    printf("Now ready to run with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
+    printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
 #endif
 
 #ifdef FFEA_PARALLEL_PER_BLOB
-    printf("Now ready to run with 'per-blob parallelisation' (FFEA_PARALLEL_PER_BLOB) on %d threads.\n", num_threads);
+    printf("Now initialised with 'per-blob parallelisation' (FFEA_PARALLEL_PER_BLOB) on %d threads.\n", num_threads);
 #endif
 
     return FFEA_OK;
@@ -439,9 +439,15 @@ int World::get_smallest_time_constants() {
 	
 	int blob_index;
 	int num_nodes, num_rows;
+	double dt_min = INFINITY;
+	double dt_max = -1 * INFINITY;
+	int dt_max_bin = -1, dt_min_bin = -1;
+	cout << "\n\nFFEA mode - Calculate Maximum Allowed Timesteps" << endl << endl;
 
 	// Do active blobs first
 	for(blob_index = 0; blob_index < params.num_blobs; ++blob_index) {
+
+		cout << "Blob " << blob_index << ":" << endl << endl;
 
 		// Ignore if we have a static blob
 		if(active_blob_array[blob_index]->get_motion_state() == FFEA_BLOB_IS_STATIC) {
@@ -460,72 +466,87 @@ int World::get_smallest_time_constants() {
 		Eigen::SparseMatrix<double> tau_inv(num_rows, num_rows);
 
 		/* Build K */
-		cout << K.rows() << endl;
+		cout << "\tCalculating the Global Viscosity Matrix, K...";
 		if(active_blob_array[blob_index]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
+			cout << endl;
 			FFEA_error_text();
 			cout << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << blob_index << endl;
 			return FFEA_ERROR;
 		}
-
-		cout << "K: " << K.rows() << " " << K.cols() << " " << K.nonZeros() << endl;
-
+		cout << "done!" << endl;
+	
 		/* Build A */
+		cout << "\tCalculating the Global Linearised Elasticity Matrix, A...";
 		if(active_blob_array[blob_index]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
+			cout << endl;
 			FFEA_error_text();
 			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << blob_index << endl;
 			return FFEA_ERROR;
 		}
-
-		cout << "A: " << A.rows() << " " << A.cols() << " " << A.nonZeros() << endl;
+		cout << "done!" << endl;
 
 		/* Invert K (it's symmetric!) */
+		cout << "\tAttempting to invert K to form K_inv...";
 		Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> Cholesky(K); // performs a Cholesky factorization of K
 		I.setIdentity();
 		K_inv = Cholesky.solve(I);
 		if(Cholesky.info() == Eigen::Success) {
-			cout << "Successful Inversion of K!" << endl;
+			cout << "done! Successful inversion of K!" << endl;
 		} else if (Cholesky.info() == Eigen::NumericalIssue) {
-			cout << "This cannot be solved via Cholesky factorisation due to numerical issues (not symettric etc). Sorry about that." << endl;
+			cout << "\nK cannot be inverted via Cholesky factorisation due to numerical issues (not symettric etc). Sorry about that." << endl;
+			return FFEA_OK;
 		} else if (Cholesky.info() == Eigen::NoConvergence) {
-			cout << "Inversion iteration couldn't converge. K must be a crazy matrix. Possibly has zero eigenvalues?" << endl;
+			cout << "\nInversion iteration couldn't converge. K must be a crazy matrix. Possibly has zero eigenvalues?" << endl;
+			return FFEA_OK;
 		}
-		cout << "K_inv: " << K_inv.rows() << " " << K_inv.cols() << " " << K_inv.nonZeros() << endl;
 		
 
 		/* Apply to A */
+		cout << "\tCalculating inverse time constant matrix, tau_inv = K_inv * A...";
 		tau_inv = K_inv * A;
-		cout << "tau_inv: " << tau_inv.rows() << " " << tau_inv.cols() << " " << tau_inv.nonZeros() << endl;
-		//cout << K_inv << endl;
+		cout << "done!" << endl;
 
 		/* Convert to dense :( */
 		Eigen::MatrixXd dtau_inv;
 		dtau_inv = Eigen::MatrixXd(tau_inv);
 
-		cout << "dtau_inv: " << dtau_inv.rows() << " " << dtau_inv.cols() << " " << dtau_inv.nonZeros() << endl;
-
 		/* Diagonalise */
+		cout << "\tDiagonalising tau_inv...";
 		Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(dtau_inv);
 		double smallest_val = INFINITY;
 		double largest_val = -1 * INFINITY;
 		for(int i = 0; i < num_rows; ++i) {
 			if(eigensolver.eigenvalues()[i].imag() != 0) {
-				cout << eigensolver.eigenvalues()[i] << endl;
 				continue;
 			}
-			if(eigensolver.eigenvalues()[i].real() < smallest_val) {
+			if(eigensolver.eigenvalues()[i].real() < smallest_val && eigensolver.eigenvalues()[i].real() > 0) {
 				smallest_val = eigensolver.eigenvalues()[i].real();
-			} else if (eigensolver.eigenvalues()[i].real() > largest_val) {
+			} 
+			if (eigensolver.eigenvalues()[i].real() > largest_val) {
 				largest_val = eigensolver.eigenvalues()[i].real();
 			}
 		}
+		cout << "done!" << endl;
 
 		// Output
-		//cout << eigensolver.eigenvalues() << endl;
-		cout << "Smallest Eigenvalue = " << smallest_val << endl;
-		cout << "Largest Eigenvalue = " << largest_val << endl;
-		cout << "Smallest Relaxation Time = " << 1.0 / largest_val << endl;
+		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << 1.0 / smallest_val << "s" << endl;
+		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << 1.0 / largest_val << "s" << endl << endl;
+
+		// Global stuff
+		if(1.0 / smallest_val > dt_max) {
+			dt_max = 1.0 / smallest_val;
+			dt_max_bin = blob_index;
+		}
+
+		if(1.0 / largest_val < dt_min) {
+			dt_min = 1.0 / largest_val;
+			dt_min_bin = blob_index;
+		}
+
 	}
-	
+	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max << "s, from Blob " << dt_max_bin << endl;
+	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min << "s, from Blob " << dt_min_bin << endl << endl;
+	cout << "Remember, the energies in your system will begin to be incorrect long before the dt = tau_min. I'd have dt << tau_min if I were you." << endl;
 	return FFEA_OK;
 }
 
