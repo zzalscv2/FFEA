@@ -39,6 +39,7 @@ public:
   PreComp_solver();
   ~PreComp_solver();
   int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
+  int solve();
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
 
@@ -75,6 +76,8 @@ private:
   int *b_types; 
   /** number of beads */ 
   int n_beads; 
+  /** relative position of the beads to the element they belong, xyzxyzxyz... */
+  scalar *b_rel_pos;
 
 };
 

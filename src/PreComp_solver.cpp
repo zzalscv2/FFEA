@@ -55,7 +55,10 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
     * are the same for all the files. Secondly, 
     * we allocate the F and U arrays, and then
     * we store the y_values, re-reading the files.
-    * Finally, the functions get_U and get_F will be ready. 
+    * The functions get_U and get_F will then be ready. 
+    * Thirdly and fourthly, allocate and fill the 
+    * elements and relative bead position arrays.
+    * And finally, delete beads stuff from the blobs.
     */  
    
    if (pc_params->types.size() == 0) return 0;
@@ -141,78 +144,92 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      n_beads += blob_array[i][0].get_num_beads();
    } 
    b_elems = new TELPtr[n_beads];
+   // allocate the array that store the relative positions 
+   //    of the beads to the elements where they belong to. 
+   b_rel_pos = new scalar[n_beads*3];
+   // and allocate the bead types: 
+   b_types = new int[n_beads]; 
    
    
 
    /*------------ FOURTHLY --------*/
    // get the elements of the list of "elements" that we will use: 
-   vector3 b; 
-   int closest; 
+   vector3 u, v, w; 
+   // vector3 s, e1, e2, e3;
    tetra_element_linear *e;
-   for (int i=0; i < params->num_blobs; i++) {
+   matrix3 J, J_inv; // will hold the Jacobian for the current element. 
+   scalar det;  // determinant for J.
+   int m = 0;
+   int n;
+   // for each Blob: 
+   for (int i=0; i < params->num_blobs; i ++) {
+     // store the bead types: 
+     n = blob_array[i][0].get_num_beads();
+     memcpy(&b_types[m], blob_array[i][0].get_bead_type_ptr(), n*sizeof(int));
+     m += n;
+
      // for each bead within this blob (remember that we only deal with conf 0):
-     blob_array[i][0].print_node_positions();
-     blob_array[i][0].print_bead_positions();
-     for (int j=0; j < blob_array[i][0].get_num_beads(); j++) {
-       b = blob_array[i][0].get_bead_position(j);
-       // cout << "---b: " << b.x << " " << b.y << " " << b.z << endl;
+     for (int j=0; j < n; j++) {
+       v = blob_array[i][0].get_bead_position(j);
        d2_0 = 1e9;
        // get the closest node to this bead: 
        for (int k=0; k < blob_array[i][0].get_num_elements(); k++) { 
          e = blob_array[i][0].get_element(k);
          e->calc_centroid();
-         d2 = (e->centroid.x - b.x)*(e->centroid.x - b.x) + 
-              (e->centroid.y - b.y)*(e->centroid.y - b.y) + 
-              (e->centroid.z - b.z)*(e->centroid.z - b.z);
+         d2 = (e->centroid.x - v.x)*(e->centroid.x - v.x) + 
+              (e->centroid.y - v.y)*(e->centroid.y - v.y) + 
+              (e->centroid.z - v.z)*(e->centroid.z - v.z);
        
-         // cout << "---c: " << e->centroid.x << " " << e->centroid.y << " " << e->centroid.z << endl;
          if (d2 < d2_0) {
            d2_0 = d2;
-           closest = k;
            b_elems[j] = e; 
          }
-         // b_elems[j] = blob_array[i][0].get_element(closest);
        } 
-       // cout << closest << endl; 
+       // and get the relative coordinates within the element
+       //   as a fraction of the basis vectors length.
+       b_elems[j]->calculate_jacobian(J); 
+       mat3_invert(J, J_inv, &det);
+       vec3_vec3_subs(&v, &b_elems[j]->n[0]->pos, &w);
+       vec3_mat3_mult(&w, J_inv, &u); 
+       // now u has the relative coordinates, not under unit vectors
+       //    but under full length vectors. And we store them:
+       b_rel_pos[3*j] = u.x;
+       b_rel_pos[3*j+1] = u.y;
+       b_rel_pos[3*j+2] = u.z;
+       
+       /*
+       //  prove it: v = 
+       vec3_vec3_subs(&b_elems[j]->n[1]->pos, &b_elems[j]->n[0]->pos, &e1);
+       vec3_vec3_subs(&b_elems[j]->n[2]->pos, &b_elems[j]->n[0]->pos, &e2);
+       vec3_vec3_subs(&b_elems[j]->n[3]->pos, &b_elems[j]->n[0]->pos, &e3);
+       s.x = b_elems[j]->n[0]->pos.x + u.x*e1.x + u.y*e2.x + u.z*e3.x;
+       s.y = b_elems[j]->n[0]->pos.y + u.x*e1.y + u.y*e2.y + u.z*e3.y;
+       s.z = b_elems[j]->n[0]->pos.z + u.x*e1.z + u.y*e2.z + u.z*e3.z;
+       print_vector3(&v);
+       print_vector3(&s);
+       s.x = b_elems[j]->n[0]->pos.x + u.x*J[0][0] + u.y*J[1][0] + u.z*J[2][0];
+       s.y = b_elems[j]->n[0]->pos.y + u.x*J[0][1] + u.y*J[1][1] + u.z*J[2][1];
+       s.z = b_elems[j]->n[0]->pos.z + u.x*J[0][2] + u.y*J[1][2] + u.z*J[2][2];
+       print_vector3(&s);
+       */
+       
+       
      } 
+     // and forget all about beads. 
+     blob_array[i][0].forget_beads();
    } 
  
-    
-   /*------------ FIFTHLY --------*/
-   // store the bead types: 
-   cout << "--- allocating bead_types... ";
-   b_types = new int[n_beads]; 
-   int j = 0;
-   int n;
-   for (int i=0; i < params->num_blobs; i ++) {
-     n = blob_array[i][0].get_num_beads();
-     memcpy(&b_types[j], blob_array[i][0].get_bead_type_ptr(), n*sizeof(int));
-     j += n;  
-   } 
    cout << "done!" << endl;
 
 
-   /*------------ SIXTHLY -----------*/
-   // store the RELATIVE bead positions: 
-
-
-
-   /*- - - - - CHECK!! - - - - - -*/
-   int k = 0;
-   for (int i=0; i < params->num_blobs; i ++) {
-     for (int j=0; j < blob_array[i][0].get_num_beads(); j++) {
-       vector3 blob_bp = blob_array[i][0].get_bead_position(j); 
-       cout << "k: " << k << " " << 
-               "centroid: " << b_elems[k]->centroid.x << " " << 
-                               b_elems[k]->centroid.y << " " << 
-                               b_elems[k]->centroid.z <<
-               " position: " << blob_bp.x << " " << blob_bp.y << " " << blob_bp.z
-               << endl; 
-       k++;
-     }
-   }
-
    return FFEA_OK; 
+}
+
+int PreComp_solver::solve() {
+
+
+  
+    return FFEA_OK;
 }
 
 
