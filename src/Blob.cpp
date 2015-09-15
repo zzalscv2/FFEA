@@ -1163,7 +1163,7 @@ scalar Blob::get_vdw_area() {
 //		 *
 //		 */
 
-int Blob::build_linear_elasticity_matrix(Eigen::SparseMatrix<double> A) {
+int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 
 	int elem_index, node_index[2], dir[2], global_node_index[2];
 	int global_row, global_column;
@@ -1171,6 +1171,18 @@ int Blob::build_linear_elasticity_matrix(Eigen::SparseMatrix<double> A) {
 	matrix3 J, stress;
 	vector12 elastic_force[2];
 	vector<Eigen::Triplet<double>> components;
+
+	// Firstly, get a mapping from all node indices to just linear node indices
+	int map[num_nodes];
+	int offset = 0;
+	for(int i = 0; i < num_nodes; ++i) {
+		if(node[i].am_I_linear()) {
+			map[i] = i - offset;
+		} else {
+			offset += 1;
+			map[i] = -1;
+		}
+	}
 
 	// For each element
 	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
@@ -1213,8 +1225,8 @@ int Blob::build_linear_elasticity_matrix(Eigen::SparseMatrix<double> A) {
 			
 					// And each direction (j)
 					for(dir[1] = 0; dir[1] < 3; ++dir[1]) {
-						global_row = 3 * global_node_index[1] + dir[1];
-						global_column = 3 * global_node_index[0] + dir[0];
+						global_row = 3 * map[global_node_index[1]] + dir[1];
+						global_column = 3 * map[global_node_index[0]] + dir[0];
 						val = (elastic_force[1][dir[1] + 4 * node_index[1]] - elastic_force[0][dir[1] + 4 * node_index[1]]) / dx;
 						components.push_back(Eigen::Triplet<double>(global_row, global_column, val));
 					}
@@ -1225,11 +1237,11 @@ int Blob::build_linear_elasticity_matrix(Eigen::SparseMatrix<double> A) {
 	}
 
 	// Now build the matrix
-	A.setFromTriplets(components.begin(), components.end());
+	A->setFromTriplets(components.begin(), components.end());
 	return FFEA_OK;
 }
 
-int Blob::build_viscosity_matrix(Eigen::SparseMatrix<double> K) {
+int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 
 	int elem_index, local_index_a, local_index_b, direction_a, direction_b, global_index_a, global_index_b, global_row, global_column;
 	int num_rows;
@@ -1237,6 +1249,18 @@ int Blob::build_viscosity_matrix(Eigen::SparseMatrix<double> K) {
 	vector<Eigen::Triplet<double>> components;
 
 	num_rows = 3 * num_nodes;
+
+	// Firstly, get a mapping from all node indices to just linear node indices
+	int map[num_nodes];
+	int offset = 0;
+	for(int i = 0; i < num_nodes; ++i) {
+		if(node[i].am_I_linear()) {
+			map[i] = i - offset;
+		} else {
+			offset += 1;
+			map[i] = -1;
+		}
+	}
 
 	// From each element
 	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
@@ -1252,8 +1276,8 @@ int Blob::build_viscosity_matrix(Eigen::SparseMatrix<double> K) {
 
 				global_index_a = elem[elem_index].n[local_index_a]->index;
 				global_index_b = elem[elem_index].n[local_index_b]->index;
-				global_row = global_index_a * 3;
-				global_column = global_index_b * 3;
+				global_row = map[global_index_a] * 3;
+				global_column = map[global_index_b] * 3;
 
 				// And direction
 				for(direction_a = 0; direction_a < 3; ++direction_a) {
@@ -1265,29 +1289,20 @@ int Blob::build_viscosity_matrix(Eigen::SparseMatrix<double> K) {
 				} 
 			}
 		}
-
-		// Secondary nodes submatrices should be set to identity
-		for(local_index_a = 4; local_index_a < 10; ++local_index_a) {
-
-			global_index_a = elem[elem_index].n[local_index_a]->index;
-			global_row = global_index_a * 3;
-
-			for(direction_a = 0; direction_a < 3; ++direction_a) {
-				components.push_back(Eigen::Triplet<double>(global_row + direction_a, global_row + direction_a, 1));
-			}
-		}
 	}
-		
+
 	// From each node, add a stokes component if necessary
 	if(params->calc_stokes == 1) {
 		for(global_row = 0; global_row < num_nodes; ++global_row) {
+			if(!node[global_row].am_I_linear()) {
+				continue;
+			}
 			for(direction_a = 0; direction_a < 3; ++direction_a) {
-				components.push_back(Eigen::Triplet<double>(3 * global_row + direction_a, 3 * global_row + direction_a, node[global_row].stokes_drag));
+				components.push_back(Eigen::Triplet<double>(3 * map[global_row] + direction_a, 3 * map[global_row] + direction_a, node[global_row].stokes_drag));
 			}	
 		}
 	}
-
-	K.setFromTriplets(components.begin(), components.end());
+	K->setFromTriplets(components.begin(), components.end());
 	return FFEA_OK;
 }
 
@@ -1758,6 +1773,7 @@ int Blob::load_topology(const char *topology_filename) {
                 FFEA_ERROR_MESSG("Error: Element %d references an out of bounds node index\n", i)
             }
 
+	    // Link element nodes to actual nodes
             elem[i].n[0] = &node[n1];
             elem[i].n[1] = &node[n2];
             elem[i].n[2] = &node[n3];
@@ -1769,6 +1785,11 @@ int Blob::load_topology(const char *topology_filename) {
             elem[i].n[8] = &node[n9];
             elem[i].n[9] = &node[n10];
 
+	    // Assign bool to linear nodes
+	    node[n1].set_linear();
+	    node[n2].set_linear();
+	    node[n3].set_linear();
+	    node[n4].set_linear();
             elem[i].daddy_blob = this;
             elem[i].index = i;
         }
