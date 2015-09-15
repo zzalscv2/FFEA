@@ -704,6 +704,11 @@ int World::run() {
 
         // Apply springs directly to nodes
         apply_springs();
+
+        // if PreComp is required: 
+        if (params.calc_preComp == 1) {
+          pc_solver.solve();
+        }
 	
         // Sort internal forces out
         int fatal_errors = 0;
@@ -1084,6 +1089,8 @@ int World::read_and_build_system(vector<string> script_vector) {
 		}
 
 	       // Get precomputed data
+	       pc_params.dist_to_m = 1;
+	       pc_params.E_to_J = 1;
                vector<string> precomp_vector;
                systemreader->extract_block("precomp", 0, script_vector, &precomp_vector);
 	
@@ -1101,9 +1108,14 @@ int World::read_and_build_system(vector<string> script_vector) {
                    pc_params.approach = lrvalue[1];
                  } else if (lrvalue[0] == "folder") {
                    pc_params.folder = lrvalue[1];
-                 } 
-               } 
-       	}
+                 } else if (lrvalue[0] == "dist_to_m") {
+                   pc_params.dist_to_m = stod(lrvalue[1]);
+                 } else if (lrvalue[0] == "E_to_J") {
+                   pc_params.E_to_J = stod(lrvalue[1]);
+                 }
+               }
+        }
+
 
 
 	// Read in each blob one at a time

@@ -8,6 +8,7 @@
 using namespace std;
 
 PreComp_solver::PreComp_solver() { 
+  nint = 0;
   msgc = 0;
   n_beads = 0;
 } 
@@ -120,9 +121,10 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    F = new scalar[n_values * nint];    
       
    // and load potentials and forces:
-   read_tabulated_values(*pc_params, "pot", U);
+   read_tabulated_values(*pc_params, "pot", U, pc_params->E_to_J);
    if (pc_params->inputData == 1) {
-     read_tabulated_values(*pc_params, "force", F);
+     scalar F_to_Jm = pc_params->E_to_J / pc_params->dist_to_m;
+     read_tabulated_values(*pc_params, "force", F, F_to_Jm);
    } else if (pc_params->inputData == 2) {
      calc_force_from_pot();
    } else {
@@ -130,6 +132,8 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      msg("invalid value for precomp->inputData");
      return FFEA_ERROR;
    }
+   Dx = Dx * pc_params->dist_to_m;
+
 
 
    /*------------ THIRDLY --------*/
@@ -147,6 +151,8 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    // allocate the array that store the relative positions 
    //    of the beads to the elements where they belong to. 
    b_rel_pos = new scalar[n_beads*3];
+   // allocate the array to compute the absolute positions of the beads:
+   b_pos = new scalar[n_beads*3];
    // and allocate the bead types: 
    b_types = new int[n_beads]; 
    
@@ -166,7 +172,6 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      // store the bead types: 
      n = blob_array[i][0].get_num_beads();
      memcpy(&b_types[m], blob_array[i][0].get_bead_type_ptr(), n*sizeof(int));
-     m += n;
 
      // for each bead within this blob (remember that we only deal with conf 0):
      for (int j=0; j < n; j++) {
@@ -182,23 +187,23 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        
          if (d2 < d2_0) {
            d2_0 = d2;
-           b_elems[j] = e; 
+           b_elems[m+j] = e; 
          }
        } 
        // and get the relative coordinates within the element
        //   as a fraction of the basis vectors length.
-       b_elems[j]->calculate_jacobian(J); 
+       b_elems[m+j]->calculate_jacobian(J); 
        mat3_invert(J, J_inv, &det);
-       vec3_vec3_subs(&v, &b_elems[j]->n[0]->pos, &w);
+       vec3_vec3_subs(&v, &b_elems[j+m]->n[0]->pos, &w);
        vec3_mat3_mult(&w, J_inv, &u); 
        // now u has the relative coordinates, not under unit vectors
        //    but under full length vectors. And we store them:
-       b_rel_pos[3*j] = u.x;
-       b_rel_pos[3*j+1] = u.y;
-       b_rel_pos[3*j+2] = u.z;
+       b_rel_pos[m+3*j] = u.x;
+       b_rel_pos[m+3*j+1] = u.y;
+       b_rel_pos[m+3*j+2] = u.z;
        
        /*
-       //  prove it: v = 
+       //  prove it: v =? s
        vec3_vec3_subs(&b_elems[j]->n[1]->pos, &b_elems[j]->n[0]->pos, &e1);
        vec3_vec3_subs(&b_elems[j]->n[2]->pos, &b_elems[j]->n[0]->pos, &e2);
        vec3_vec3_subs(&b_elems[j]->n[3]->pos, &b_elems[j]->n[0]->pos, &e3);
@@ -212,23 +217,92 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        s.z = b_elems[j]->n[0]->pos.z + u.x*J[0][2] + u.y*J[1][2] + u.z*J[2][2];
        print_vector3(&s);
        */
+
+       /* the following is useless but useful while testing:
+       b_pos[m+3*j] = v.x;
+       b_pos[m+3*j+1] = v.y;
+       b_pos[m+3*j+2] = v.z;
+       */
        
        
      } 
      // and forget all about beads. 
      blob_array[i][0].forget_beads();
+     m += n;
    } 
  
    cout << "done!" << endl;
 
-
    return FFEA_OK; 
 }
 
+
 int PreComp_solver::solve() {
 
+    scalar d, f_ij, f_ijk_i, f_ijk_j; 
+    vector3 dx, dtemp;
+    int type_i; 
+    scalar phi_i[4], phi_j[4];
+    tetra_element_linear *e_i, *e_j;
+    matrix3 Ji, Jj; // these are the jacobians for the elements i and j
+
+    // 1 - Compute the position of the beads:
+    compute_bead_positions();
+
+    // 2 - Compute all the i-j forces:
+    for (int i=0; i<n_beads; i++){ 
+      type_i = b_types[i]; 
+      phi_i[1] = b_rel_pos[3*i];
+      phi_i[2] = b_rel_pos[3*i+1];
+      phi_i[3] = b_rel_pos[3*i+2];
+      phi_i[0] = 1 - phi_i[1] - phi_i[2] - phi_i[3];
+      e_i = b_elems[i];  
+      for (int j=i+1; j<n_beads; j++) {
+        dx.x = (b_pos[3*j] - b_pos[3*i]);
+        dx.y = (b_pos[3*j+1] - b_pos[3*i+1]);
+        dx.z = (b_pos[3*j+2] - b_pos[3*i+2]);
+        d = mag(&dx);
+        dx.x = dx.x / d;
+        dx.y = dx.y / d;
+        dx.z = dx.z / d;
+ 
+        f_ij = get_F(d, type_i, b_types[j]); 
+        e_j = b_elems[j];
+        vec3_scale(&dx, f_ij);
+        dtemp = dx; 
+
+        phi_j[1] = b_rel_pos[3*j];
+        phi_j[2] = b_rel_pos[3*j+1];
+        phi_j[3]= b_rel_pos[3*j+2];
+        phi_j[0]= 1 - phi_j[1] - phi_j[2] - phi_j[3];
+        // and apply the force to all the nodes in the elements i and j: 
+        for (int k=0; k<4; k++) {
+          // forces for e_i
+          vec3_scale(&dx, -phi_i[k]);
+          e_i->add_force_to_node(k, &dx);
+          dx = dtemp; 
+          // forces for e_j
+          vec3_scale(&dx, phi_j[k]);
+          e_j->add_force_to_node(k, &dx);
+          dx = dtemp; 
+        } 
+      }
+    }
 
   
+    return FFEA_OK;
+}
+
+
+int PreComp_solver::compute_bead_positions() {
+
+    matrix3 J; 
+    for (int i=0; i<n_beads; i++){
+       b_elems[i]->calculate_jacobian(J); 
+       b_pos[3*i]   = b_elems[i]->n[0]->pos.x + b_rel_pos[3*i]*J[0][0] + b_rel_pos[3*i+1]*J[1][0] + b_rel_pos[3*i+2]*J[2][0];
+       b_pos[3*i+1] = b_elems[i]->n[0]->pos.y + b_rel_pos[3*i]*J[0][1] + b_rel_pos[3*i+1]*J[1][1] + b_rel_pos[3*i+2]*J[2][1];
+       b_pos[3*i+2] = b_elems[i]->n[0]->pos.z + b_rel_pos[3*i]*J[0][2] + b_rel_pos[3*i+1]*J[1][2] + b_rel_pos[3*i+2]*J[2][2];
+    }
     return FFEA_OK;
 }
 
@@ -259,7 +333,7 @@ int PreComp_solver::calc_force_from_pot() {
 
 /** Read either the .pot or .force files
   * and store its contents either in U or F */
-int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind, scalar *Z){
+int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind, scalar *Z, scalar scale_Z){
 
    stringstream ssfile; 
    ifstream fin;
@@ -272,6 +346,7 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
    // read the potentials/forces in while checking:
    for (int i=0; i<pc_params.types.size(); i++) {
      for (int j=i; j<pc_params.types.size(); j++) { 
+       // open file i-j
        ssfile << pc_params.folder << "/" << pc_params.types[i] << "-" << pc_params.types[j] << "." << kind;
        fin.open(ssfile.str(), std::ifstream::in);
        // get the first line that does not start with "#"
@@ -290,7 +365,7 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
           return FFEA_ERROR;
        }
        // and store the potential:
-       Z[index] = stod(vec_line[1]);
+       Z[index] = stod(vec_line[1]) * scale_Z;
        index += 1;
        // get the next line, and check Dx:
        getline(fin, line);
@@ -303,7 +378,7 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
           return FFEA_ERROR;
        }
        // and store the potential:
-       Z[index] = stod(vec_line[1]);
+       Z[index] = stod(vec_line[1]) * scale_Z;
        index += 1;
        // Now, go for the rest of the file:
        m_values = 2;
@@ -320,14 +395,14 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
             return FFEA_ERROR;
           } 
           x_0 = x; 
-          // and check that it is not too long:
+          // and check that the file is not too long:
           if (m_values > n_values) { 
             FFEA_error_text();
             msg("Aborting; too many points for file:");
             msg(ssfile.str());
             return FFEA_ERROR;
           } 
-          Z[index] = stod(vec_line[1]);
+          Z[index] = stod(vec_line[1]) * scale_Z;
           index += 1;
        }  
        // and check that it is not too short:
@@ -379,27 +454,41 @@ scalar PreComp_solver::get_F(scalar x, int typei, int typej) {
   */
 scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
 
-   int index;
    scalar y0, y1, x0, x1;
+   int index = 0;
+   int index_l = x/Dx;
+   if (index_l < 0) 
+     cout << "WTF?!" << endl; 
+
+   // check that the index is not too high (all the tables are equally long): 
+   if (index_l > n_values) {
+      // cout << "returned zero for x: " << x << endl; 
+      return 0.; 
+   } 
 
    // sort so that typei <= typej
    if (typei > typej){
-     index = typei;
+     int tmp = typei;
      typei = typej;
-     typej = index;
+     typej = tmp;
    } 
 
 
    // get the index for the closest (bottom) value:
-   index = typej - typei;
-   for (int i=ntypes; i>typei; i--) {
-      index += i;
+   for (int i=0; i<ntypes; i++){
+     for (int j=i; j<ntypes; j++) {
+       if ((typei == i) and (typej == j))
+         goto end_loop;
+       index += 1;
+     }
    }
+   end_loop:
    index = index*n_values;
-   index += x/Dx ;
+   index += index_l;
+
 
    // interpolate:
-   x0 = int(x/Dx) * Dx; 
+   x0 = index_l * Dx; 
    x1 = x0 + Dx; 
    return Z[index] + (Z[index +1] - Z[index])*(x - x0)/Dx;
 

@@ -303,6 +303,8 @@ class FFEA_viewer_display_window():
 							elif lvalue == "binding_sites":
 								binding_set = 1
 								blob_binding.append(rvalue)
+                                                        elif lvalue == "beads":
+                                                                continue
 							else:
 								sys.exit("In " + self.ffea_fname + ", " + rvalue + " is an unexpected rvalue\n")
 					
