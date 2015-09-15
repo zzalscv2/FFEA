@@ -286,9 +286,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		int blob_id, conformation_id;
 		long long rstep;
 		for (int b = 0; b < params.num_blobs; b++) {
-		    if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {;
-		        FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
-		    }
+			if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
+		        	FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
+		    	}
 		    if (blob_id != b) {
 		        FFEA_ERROR_MESSG("Mismatch in trajectory file - found blob id = %d, was expecting blob id = %d\n", blob_id, b)
 		    }
@@ -433,11 +433,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 	    }
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    printf("Now ready to run with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
+    printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
 #endif
 
 #ifdef FFEA_PARALLEL_PER_BLOB
-    printf("Now ready to run with 'per-blob parallelisation' (FFEA_PARALLEL_PER_BLOB) on %d threads.\n", num_threads);
+    printf("Now initialised with 'per-blob parallelisation' (FFEA_PARALLEL_PER_BLOB) on %d threads.\n", num_threads);
 #endif
 
     return FFEA_OK;
@@ -448,9 +448,15 @@ int World::get_smallest_time_constants() {
 	
 	int blob_index;
 	int num_nodes, num_rows;
+	double dt_min = INFINITY;
+	double dt_max = -1 * INFINITY;
+	int dt_max_bin = -1, dt_min_bin = -1;
+	cout << "\n\nFFEA mode - Calculate Maximum Allowed Timesteps" << endl << endl;
 
 	// Do active blobs first
 	for(blob_index = 0; blob_index < params.num_blobs; ++blob_index) {
+
+		cout << "Blob " << blob_index << ":" << endl << endl;
 
 		// Ignore if we have a static blob
 		if(active_blob_array[blob_index]->get_motion_state() == FFEA_BLOB_IS_STATIC) {
@@ -459,61 +465,97 @@ int World::get_smallest_time_constants() {
 		}
 
 		// Define and reset all required variables for this crazy thing (maybe don't use stack memory??)
-		num_nodes = active_blob_array[blob_index]->get_num_nodes();
+		num_nodes = active_blob_array[blob_index]->get_num_linear_nodes();
 		num_rows = 3 * num_nodes;
 
 		Eigen::SparseMatrix<double> K(num_rows, num_rows);
 		Eigen::SparseMatrix<double> A(num_rows, num_rows);
-		Eigen::SparseMatrix<double> A_inv(num_rows, num_rows);
+		Eigen::SparseMatrix<double> K_inv(num_rows, num_rows);
 		Eigen::SparseMatrix<double> I(num_rows, num_rows);
-		Eigen::SparseMatrix<double> tau(num_rows, num_rows);
+		Eigen::SparseMatrix<double> tau_inv(num_rows, num_rows);
 
 		/* Build K */
-		if(active_blob_array[blob_index]->build_viscosity_matrix(K) == FFEA_ERROR) {
+		cout << "\tCalculating the Global Viscosity Matrix, K...";
+		if(active_blob_array[blob_index]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
+			cout << endl;
 			FFEA_error_text();
-			cout << "In function 'Blob::build_viscosity_matrix' from blob " << blob_index << endl;
+			cout << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << blob_index << endl;
 			return FFEA_ERROR;
 		}
-
-		cout << "K: " << K.rows() << " " << K.cols() << endl;
-
+		cout << "done!" << endl;
+	
 		/* Build A */
-		if(active_blob_array[blob_index]->build_linear_elasticity_matrix(K) == FFEA_ERROR) {
+		cout << "\tCalculating the Global Linearised Elasticity Matrix, A...";
+		if(active_blob_array[blob_index]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
+			cout << endl;
 			FFEA_error_text();
-			cout << "In function 'Blob::build_linear_elasticity_matrix'" << blob_index << endl;
+			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << blob_index << endl;
 			return FFEA_ERROR;
 		}
+		cout << "done!" << endl;
 
-		cout << "A: " << A.rows() << " " << A.cols() << endl;
-
-		/* Invert A */
-		Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> cholesky(A); // performs a Cholesky factorization of A
+		/* Invert K (it's symmetric!) */
+		cout << "\tAttempting to invert K to form K_inv...";
+		Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> Cholesky(K); // performs a Cholesky factorization of K
 		I.setIdentity();
-		cout << "I: " << I.rows() << " " << I.cols() << endl;
-		A_inv = cholesky.solve(K);
-		cout << "A_inv: " << A_inv.rows() << " " << A_inv.cols() << endl;
+		K_inv = Cholesky.solve(I);
+		if(Cholesky.info() == Eigen::Success) {
+			cout << "done! Successful inversion of K!" << endl;
+		} else if (Cholesky.info() == Eigen::NumericalIssue) {
+			cout << "\nK cannot be inverted via Cholesky factorisation due to numerical issues (not symettric etc). Sorry about that." << endl;
+			return FFEA_OK;
+		} else if (Cholesky.info() == Eigen::NoConvergence) {
+			cout << "\nInversion iteration couldn't converge. K must be a crazy matrix. Possibly has zero eigenvalues?" << endl;
+			return FFEA_OK;
+		}
+		
 
-		/* Apply to K */
-		tau = A_inv * K;
-		cout << "tau: " << tau.rows() << " " << tau.cols() << endl;
+		/* Apply to A */
+		cout << "\tCalculating inverse time constant matrix, tau_inv = K_inv * A...";
+		tau_inv = K_inv * A;
+		cout << "done!" << endl;
+
+		/* Convert to dense :( */
+		Eigen::MatrixXd dtau_inv;
+		dtau_inv = Eigen::MatrixXd(tau_inv);
 
 		/* Diagonalise */
-		/*Eigen::EigenSolver<Eigen::SparseMatrix<double>> eigensolver(tau);
+		cout << "\tDiagonalising tau_inv...";
+		Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(dtau_inv);
 		double smallest_val = INFINITY;
-		double largest_val = 0.0;
+		double largest_val = -1 * INFINITY;
 		for(int i = 0; i < num_rows; ++i) {
-			if(eigensolver.eigenvalues()[i].real() < smallest_val) {
+			if(eigensolver.eigenvalues()[i].imag() != 0) {
+				continue;
+			}
+			if(eigensolver.eigenvalues()[i].real() < smallest_val && eigensolver.eigenvalues()[i].real() > 0) {
 				smallest_val = eigensolver.eigenvalues()[i].real();
-			} else if (eigensolver.eigenvalues()[i].real() > smallest_val) {
+			} 
+			if (eigensolver.eigenvalues()[i].real() > largest_val) {
 				largest_val = eigensolver.eigenvalues()[i].real();
 			}
 		}
+		cout << "done!" << endl;
 
 		// Output
-		cout << "Smallest Eigenvalue = " << smallest_val << endl;
-		cout << "Largest Eigenvalue = " << largest_val << endl;*/
+		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << 1.0 / smallest_val << "s" << endl;
+		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << 1.0 / largest_val << "s" << endl << endl;
+
+		// Global stuff
+		if(1.0 / smallest_val > dt_max) {
+			dt_max = 1.0 / smallest_val;
+			dt_max_bin = blob_index;
+		}
+
+		if(1.0 / largest_val < dt_min) {
+			dt_min = 1.0 / largest_val;
+			dt_min_bin = blob_index;
+		}
+
 	}
-	
+	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max << "s, from Blob " << dt_max_bin << endl;
+	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min << "s, from Blob " << dt_min_bin << endl << endl;
+	cout << "Remember, the energies in your system will begin to be incorrect long before the dt = tau_min. I'd have dt << tau_min if I were you." << endl;
 	return FFEA_OK;
 }
 
@@ -1142,10 +1184,12 @@ int World::read_and_build_system(vector<string> script_vector) {
 					FFEA_error_text();
 					cout << "In blob " << i << ", conformation " << j << ":\nFor any blob conformation, 'nodes', 'surface' and 'vdw' must be set." << endl;
 					return FFEA_ERROR; 
+
 				} 
 				if(set_preComp == 0) {
                                         beads.push_back("");
                                 } 
+
 				if(motion_state.back() == FFEA_BLOB_IS_DYNAMIC) {
 					if(set_top == 0 || set_mat == 0 || set_stokes == 0 || set_pin == 0) {
 						FFEA_error_text();
@@ -1161,6 +1205,10 @@ int World::read_and_build_system(vector<string> script_vector) {
 					set_mat = 1;
 					set_stokes = 1;
 					set_pin = 1;
+				}
+
+				if(set_preComp == 0) {
+					beads.push_back("");
 				}
 			}
 
@@ -1313,7 +1361,6 @@ int World::read_and_build_system(vector<string> script_vector) {
 		//Build conformations
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
-
 			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), binding.at(j).c_str(), pin.at(j).c_str(), beads.at(j).c_str(), 
                        		scale, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
                        		FFEA_error_text();
@@ -1651,7 +1698,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	
 	// Get num_states
 	fin >> buf >> num_kinetic_states;
-	
+
 	// Check against params
 	if(params.num_states[blob_index] != num_kinetic_states) {
 		FFEA_error_text();

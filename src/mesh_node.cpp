@@ -24,6 +24,7 @@ mesh_node::mesh_node() {
     pos_0.z = 0;
     stokes_radius = 0;
     stokes_drag = 0;
+    linear = false;
 }
 
 mesh_node::~mesh_node() {
@@ -42,6 +43,7 @@ mesh_node::~mesh_node() {
     num_element_contributors = 0;
     stokes_radius = 0;
     stokes_drag = 0;
+    linear = false;
 }
 
 void mesh_node::move(int direction, scalar dx) {
@@ -63,3 +65,10 @@ void mesh_node::print() {
     printf("vel: %e %e %e\n", vel.x, vel.y, vel.z);
 }
 
+void mesh_node::set_linear() {
+    linear = true;
+}
+
+bool mesh_node::am_I_linear() {
+    return linear;
+}

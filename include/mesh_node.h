@@ -53,6 +53,12 @@ public:
 
     /* The drag due to stokes on this node, not including velocity */
     scalar stokes_drag;
+
+    /* Stores whether or not this node is linear (as the order is surface - interior, not linear - secondary) */
+    bool linear;
+
+    void set_linear();
+    bool am_I_linear();
 };
 
 #endif
