@@ -29,6 +29,8 @@ struct PreComp_params {
   string folder;
   int inputData;
   string approach;
+  scalar dist_to_m;
+  scalar E_to_J;
 };
 
 
@@ -49,11 +51,13 @@ private:
   int msg(string whatever); 
   int msg(int whatever); 
   
-  int read_tabulated_values(PreComp_params &pc_params, string kind, scalar *Z);
+  int read_tabulated_values(PreComp_params &pc_params, string kind, scalar *Z, scalar scale_Z);
 
   int calc_force_from_pot();
   
   scalar finterpolate(scalar *Z, scalar x, int typei, int typej);
+
+  int compute_bead_positions();
 
   /** delta x in tabulated potentials and forces"  */
   scalar Dx; 
@@ -78,6 +82,8 @@ private:
   int n_beads; 
   /** relative position of the beads to the element they belong, xyzxyzxyz... */
   scalar *b_rel_pos;
+  /** absolute position of the beads */
+  scalar *b_pos; 
 
 };
 
