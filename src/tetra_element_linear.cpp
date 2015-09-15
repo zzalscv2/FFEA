@@ -334,6 +334,7 @@ void tetra_element_linear::calc_deformation(matrix3 J) {
 }
 
 void tetra_element_linear::add_shear_elastic_stress(matrix3 J, matrix3 stress) {
+
     // Reset gradient deformation to zero
     mat3_set_zero(F_ij);
 

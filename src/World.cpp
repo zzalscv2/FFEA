@@ -483,7 +483,7 @@ int World::get_smallest_time_constants() {
 			return FFEA_ERROR;
 		}
 		cout << "done!" << endl;
-	
+
 		/* Build A */
 		cout << "\tCalculating the Global Linearised Elasticity Matrix, A...";
 		if(active_blob_array[blob_index]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
@@ -502,13 +502,12 @@ int World::get_smallest_time_constants() {
 		if(Cholesky.info() == Eigen::Success) {
 			cout << "done! Successful inversion of K!" << endl;
 		} else if (Cholesky.info() == Eigen::NumericalIssue) {
-			cout << "\nK cannot be inverted via Cholesky factorisation due to numerical issues (not symettric etc). Sorry about that." << endl;
+			cout << "\nK cannot be inverted via Cholesky factorisation due to numerical issues. You possible don't have an external solvent set." << endl;
 			return FFEA_OK;
 		} else if (Cholesky.info() == Eigen::NoConvergence) {
 			cout << "\nInversion iteration couldn't converge. K must be a crazy matrix. Possibly has zero eigenvalues?" << endl;
 			return FFEA_OK;
 		}
-		
 
 		/* Apply to A */
 		cout << "\tCalculating inverse time constant matrix, tau_inv = K_inv * A...";
@@ -522,18 +521,22 @@ int World::get_smallest_time_constants() {
 		/* Diagonalise */
 		cout << "\tDiagonalising tau_inv...";
 		Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(dtau_inv);
+
 		double smallest_val = INFINITY;
 		double largest_val = -1 * INFINITY;
 		for(int i = 0; i < num_rows; ++i) {
+
+			// Quick fix for weird eigenvalues
 			if(eigensolver.eigenvalues()[i].imag() != 0) {
 				continue;
-			}
-			if(eigensolver.eigenvalues()[i].real() < smallest_val && eigensolver.eigenvalues()[i].real() > 0) {
-				smallest_val = eigensolver.eigenvalues()[i].real();
-			} 
-			if (eigensolver.eigenvalues()[i].real() > largest_val) {
-				largest_val = eigensolver.eigenvalues()[i].real();
-			}
+			} else {
+				if(eigensolver.eigenvalues()[i].real() < smallest_val && eigensolver.eigenvalues()[i].real() > 0) {
+					smallest_val = eigensolver.eigenvalues()[i].real();
+				} 
+				if (eigensolver.eigenvalues()[i].real() > largest_val) {
+					largest_val = eigensolver.eigenvalues()[i].real();
+				}
+			}	
 		}
 		cout << "done!" << endl;
 
@@ -556,6 +559,15 @@ int World::get_smallest_time_constants() {
 	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max << "s, from Blob " << dt_max_bin << endl;
 	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min << "s, from Blob " << dt_min_bin << endl << endl;
 	cout << "Remember, the energies in your system will begin to be incorrect long before the dt = tau_min. I'd have dt << tau_min if I were you." << endl;
+	return FFEA_OK;
+}
+
+/*
+ *  Build and output an elastic network model
+ */
+int World::enm(int *blob_index, int num_modes) {
+
+	
 	return FFEA_OK;
 }
 
@@ -1889,6 +1901,11 @@ void World::get_system_dimensions(vector3 *dimension) {
 	dimension->x = max.x - min.x;
 	dimension->y = max.y - min.y;
 	dimension->z = max.z - min.z;
+}
+
+int World::get_num_blobs() {
+
+	return num_blobs;
 }
 
 int World::load_springs(const char *fname) {
