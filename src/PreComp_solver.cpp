@@ -245,7 +245,7 @@ int PreComp_solver::solve() {
     scalar phi_i[4], phi_j[4];
     tetra_element_linear *e_i, *e_j;
     matrix3 Ji, Jj; // these are the jacobians for the elements i and j
-    
+
     // 1 - Compute the position of the beads:
     compute_bead_positions();
 
@@ -265,7 +265,7 @@ int PreComp_solver::solve() {
         dx.x = dx.x / d;
         dx.y = dx.y / d;
         dx.z = dx.z / d;
-        
+ 
         f_ij = get_F(d, type_i, b_types[j]); 
         e_j = b_elems[j];
         vec3_scale(&dx, f_ij);
@@ -278,22 +278,16 @@ int PreComp_solver::solve() {
         // and apply the force to all the nodes in the elements i and j: 
         for (int k=0; k<4; k++) {
           // forces for e_i
-          f_ijk_i = - phi_i[k] * f_ij; 
-          vec3_scale(&dx, f_ijk_i); 
+          vec3_scale(&dx, -phi_i[k]);
           e_i->add_force_to_node(k, &dx);
           dx = dtemp; 
           // forces for e_j
-          f_ijk_j = phi_j[k] * f_ij;
-          vec3_scale(&dx, f_ijk_j);
+          vec3_scale(&dx, phi_j[k]);
           e_j->add_force_to_node(k, &dx);
           dx = dtemp; 
         } 
       }
     }
-
-        
-        
-
 
   
     return FFEA_OK;
