@@ -140,7 +140,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     }
 
     if (params->calc_preComp == 1) {
-	if (load_beads(beads_filename, pc_params) == FFEA_ERROR) {
+	if (load_beads(beads_filename, pc_params, scale) == FFEA_ERROR) {
         	FFEA_ERROR_MESSG("Error when loading beads file.\n")
     	}
     }
@@ -2115,7 +2115,7 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
  * @ingroup FMM
  * @details
  */
-int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params) {
+int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scalar scale) {
 
     ifstream fin;
     string line;
@@ -2128,14 +2128,13 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params) {
         return FFEA_ERROR;
     }
     printf("\t\tReading in Beads file: %s\n", beads_filename);
-    printf("\t\tReading beads positions in Armstrongs\n");
+    printf("\t\tScaling beads positions using scale: %e\n", scale);
 
 
     vector<string> stypes;
     vector<scalar> positions;
     string type;
     scalar x, y, z;
-    scalar armstrongs = pow(10, -10);
     // 1 - read the data, positions and bead-types to memory before storing:
     while (getline(fin, line)) {
       // ignore those lines that do not start with "ATOM"
@@ -2148,9 +2147,9 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params) {
       stypes.push_back(type);
       type.clear();
   
-      x = stod( line.substr(28,10) ) * armstrongs; 
-      y = stod( line.substr(38,8) ) * armstrongs;
-      z = stod( line.substr(48,8) ) * armstrongs;
+      x = stod( line.substr(28,10) ) * scale; 
+      y = stod( line.substr(38,8) ) * scale;
+      z = stod( line.substr(48,8) ) * scale;
       positions.push_back(x);
       positions.push_back(y);
       positions.push_back(z);
@@ -2192,7 +2191,7 @@ int Blob::forget_beads(){
     num_beads = 0;
     delete[] bead_position;
     bead_position = NULL;
-    delete[] bead_type ; 
+    delete[] bead_type; 
     bead_type = NULL; 
     return FFEA_OK;
 

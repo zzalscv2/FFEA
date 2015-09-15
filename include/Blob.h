@@ -425,7 +425,7 @@ private:
     /**
      * Opens and reads the given 'ffea beads file', extracting all the beads types and positions and for this Blob.
      */
-    int load_beads(const char *beads_filename, PreComp_params *pc_params);
+    int load_beads(const char *beads_filename, PreComp_params *pc_params, scalar scale);
 
 
 
