@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
 	
 	// Get required args
 	string script_fname;
-	string mode;
-	int frames;
+	int mode;
+	int frames_to_delete;
 	b_po::options_description desc("Allowed options");
 	b_po::positional_options_description pdesc;
 	b_po::variables_map var_map;
@@ -52,10 +52,10 @@ int main(int argc, char *argv[])
 		// Options for visible and non-visible cmd line params
 		desc.add_options()
 			("help,h", "print usage message")
-			("input-file,i", b_po::value(&script_fname), "input script fname")
-			("mode,m", b_po::value(&mode), "ffea mode (0 - full sim, 1 - ENM)")
-			("timestep,t", "calculates maximum allowed timestep (slow)")
-			("less_frames,l", b_po::value(&frames), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
+			("input-file,i", b_po::value<string>(&script_fname), "input script fname")
+			("mode,m", b_po::value<int>(&mode)->default_value(0), "simulation mode (0 - FFEA, 1 - ENM, 2 - DMM)")
+			("timestep,t", "calculates maximum allowed timestep (one-time calculation for a given system)")
+			("delete_frames,l", b_po::value<int>(&frames_to_delete), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
 		;
 		
 		// 1 input file max! Option invisible (positional)
@@ -70,21 +70,42 @@ int main(int argc, char *argv[])
 		cerr << e.what() << endl;
 	}
 
+	// Boost makes sure options are valid. We check arguments are valid
+	// --mode
+	if(var_map.count("mode")) {
+		if(mode != 0 && mode != 1 && mode != 2) {
+			FFEA_error_text();		
+			cout << "Unrecognised argument to --mode" << endl;
+			cout << desc << endl;
+			return -1;
+		}
+	}
+
+	// --delete_frames
+	if(var_map.count("delete_frames")) {
+		if(frames_to_delete < 0) {
+			FFEA_error_text();		
+			cout << "Argument to --delete_frames cannot be less than zero. We can't magic up simulation frames for you! :D" << endl;
+			cout << desc << endl;
+			return -1;
+		} else if (frames_to_delete == 0) {
+			FFEA_error_text();		
+			cout << "Argument to --delete_frames shouldn't equal zero as this won't have any effect and your simulation will crash again." << endl;
+			cout << desc << endl;
+			return -1;
+		}
+	}
+
+	/* Starting actual functionality */
 	// Help text is built in to boost	
 	if (var_map.count("help")) {  
 		cout << desc << endl;
 		return 0;
 	}
 
-	// Do we delete frames?
-	int frames_to_delete = 0;
-	if (var_map.count("less_frames")) {
-		frames_to_delete = var_map["less_frames"].as<int>();
-	}
-
 	// Check we have an input script
 	if (var_map.count("input-file")) {  
-		cout << "Input FFEA script - " << var_map["input-file"].as<string>() << "\n";
+		cout << "Input FFEA script - " << script_fname << "\n";
 	} else {
 		cout << "\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)] [OPTIONS]\n\n\n" << endl;
 		cout << desc << endl;
@@ -113,7 +134,11 @@ int main(int argc, char *argv[])
 	}
 	
 	// World is initialised. How shall we run FFEA?
+
+	/* Calculate the maximum allowed timestep for this system */
 	if(var_map.count("timestep")) {
+
+		cout << endl << "FFEA - Calculating System Timescales" << endl << endl;
 		if(world->get_smallest_time_constants() == FFEA_ERROR) {
 			FFEA_error_text();
 			cout << "Error occurred in 'get_smallest_time_constants()' in World\n" << endl;
@@ -122,7 +147,64 @@ int main(int argc, char *argv[])
 			cout << "...done\n" << endl;
 			myreturn = FFEA_OK;
 		}
-	} else {
+
+	}
+
+	else if(mode == 1) {
+		
+		/* Elastic Network Model */
+		cout << endl << "FFEA - Elastic Network Model" << endl << endl;
+
+		// Get the desired blobs
+		cout << "\tFirstly, lets decide which blobs to analyse!" << endl;
+		set<int> blobs;
+		char buf[5];
+		while(true) {
+			try{
+				cout << "Which blob would you like an  elastic network model for?:";
+				scanf("%s", &buf);
+				
+				//if(ablob < 0 || ablob >= world.get_num_blobs()) {
+				//	throw "ValueError";
+				//}
+			} catch (exception &e) {
+
+			}
+		}
+
+		// Get number of modes
+		int num_modes;
+		while(true) {
+			try{
+				cout << "How many modes would you like to visualise?:";
+				scanf("%d", &num_modes);
+				if(num_modes <= 0) {
+					throw "ValueError";
+				}
+				break;
+			} catch(const char* e) {
+				FFEA_error_text();
+				cout << "Exception occured:" << endl << e << endl;
+				cout << "Please enter a whole number less than 3 * the total number of nodes in your system and greater than zero." << endl; 
+			} catch(exception &e) {
+				FFEA_error_text();
+				cout << "Exception occured:" << endl;
+				cout << e.what() << endl;
+				cout << "Please enter a whole number less than 3 * the total number of nodes in your system and greater than zero." << endl; 
+			}
+		}
+
+		//if(world->enm(num_modes) == FFEA_ERROR) {
+		//	
+		//}
+
+	} else if(mode == 2) {
+			
+		/* Dynamic Mode Model */
+		cout << endl << "FFEA - Dynamic Mode Model" << endl << endl;
+	} else if(mode == 0){
+		
+		/* Full FFEA */
 
 		// Run the world for the specified number of time steps
 		cout << "Running world...\n" << endl;
@@ -134,6 +216,9 @@ int main(int argc, char *argv[])
 			cout << "...done\n" << endl;
 			myreturn = FFEA_OK;
 		}
+	} else {
+		cout << "Error. Unrecognised argument to --mode \"" << mode << "\"" << endl << endl;
+		cout << desc << endl;
 	}
 
 	// Delete the world (oh no!)
