@@ -80,6 +80,9 @@ public:
     /* */
     void get_system_dimensions(vector3 *dimenstion_vector);
 
+    int enm(int *blob_index, int num_modes);
+    int get_num_blobs();
+
 private:
 
     /** @brief How many Blobs populate this world */
