@@ -194,23 +194,34 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     // Construct the force pair matrix: f(p, q) where p and q are all the gauss points in each face
     // Also calculate energy whilst looping through face points
     scalar energy = 0.0;
-    for (int k = 0; k < num_tri_gauss_quad_points; k++) {
-        for (int l = k; l < num_tri_gauss_quad_points; l++) {
-            //					vector3 r = 	{
-            //								minimum_image(p[k].x - q[l].x, box_size.x),
-            //								minimum_image(p[k].y - q[l].y, box_size.y),
-            //								minimum_image(p[k].z - q[l].z, box_size.z)
-            //							};
-            vector3 r = {
-                p[k].x - q[l].x,
-                p[k].y - q[l].y,
-                p[k].z - q[l].z
-            };
+    scalar mag_r, mag_ri,  mag_ri_2, mag_ri_4, mag_ri_6, mag_ri_7;
+    scalar force_mag, vdw_fac_6;
+    scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
+    scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
+    scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
+    for(int k = 0; k < num_tri_gauss_quad_points; k++) {
+        for(int l = k; l < num_tri_gauss_quad_points; l++) {
+//          vector3 r =     {
+//                                  minimum_image(p[k].x - q[l].x, box_size.x),
+//                                  minimum_image(p[k].y - q[l].y, box_size.y),
+//                                  minimum_image(p[k].z - q[l].z, box_size.z)
+//                          };
+            vector3 r =     {
+                                    p[k].x - q[l].x,
+                                    p[k].y - q[l].y,
+                                    p[k].z - q[l].z
+                            };
 
 
-            scalar mag_r = sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
-            scalar force_mag = 12 * pow(vdw_r_eq, 6) * vdw_eps * (pow(mag_r, -7) - pow(vdw_r_eq, 6) * pow(mag_r, -13));
-            energy += pow(vdw_r_eq, 6) * vdw_eps * (pow(vdw_r_eq, 6) * pow(mag_r, -12) - 2 * pow(mag_r, -6));
+            mag_r = sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
+            mag_ri = 1./mag_r;
+            mag_ri_2 = mag_ri * mag_ri;
+            mag_ri_4 = mag_ri_2 * mag_ri_2;
+            mag_ri_6 = mag_ri_4 * mag_ri_2;
+            mag_ri_7 = mag_ri_6 * mag_ri;
+            vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
+            force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (1 - vdw_fac_6 );
+            energy += vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
             force_mag *= -1;
 
             force_pair_matrix[k][l].x = force_mag * (r.x / mag_r);
