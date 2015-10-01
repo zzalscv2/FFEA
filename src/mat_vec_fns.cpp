@@ -53,6 +53,15 @@ void vec12_add(vector12 A, vector12 B) {
 /*
  *
  */
+void vec12_scale(vector12 A, scalar scale) {
+    for (int i = 0; i < 12; ++i) {
+        A[i] = A[i] * scale;
+    }
+}
+
+/*
+ *
+ */
 void mat3_mult_transpose(matrix3 A, matrix3 B, matrix3 result) {
     int i, j, k;
     for (i = 0; i < 3; i++)

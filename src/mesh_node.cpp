@@ -60,6 +60,12 @@ void mesh_node::move(int direction, scalar dx) {
 	}
 }
 
+void mesh_node::set_pos(scalar x, scalar y, scalar z) {
+	pos.x = x;
+	pos.y = y;
+	pos.z = z;
+}
+
 void mesh_node::print() {
     printf("pos: %e %e %e\n", pos.x, pos.y, pos.z);
     printf("vel: %e %e %e\n", vel.x, vel.y, vel.z);
