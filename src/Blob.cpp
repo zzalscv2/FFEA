@@ -876,7 +876,7 @@ scalar Blob::calculate_strain_energy() {
 		C = elem[n].E - elem[n].G * 2.0 / 3.0;
         	detF = elem[n].vol / elem[n].vol_0;
         	strain_energy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3)
-						  + 0.5 * C * (pow(detF, 2) - 1)
+							  + 0.5 * C * (detF * detF - 1)
 						  - ((2 * elem[n].G) + C) * log(detF)
 						 );
 	}	
@@ -958,7 +958,7 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
             temp1 = elem[n].vol / elem[n].vol_0;
             pe += elem[n].vol_0 * (
                     elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3)
-                    + 0.5 * C * (pow(temp1, 2) - 1)
+                    + 0.5 * C * (temp1 * temp1 - 1)
                     - ((2 * elem[n].G) + C) * log(temp1));       
 	}
 
@@ -1189,7 +1189,8 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 		
 		// Calculate dx, how far each node should be moved for a linearisataion, as well as unstrained parameters
 		elem[elem_index].calc_volume();
-		dx = pow(elem[elem_index].calc_volume(), 1.0/3.0) / 10.0;
+		// dx = pow(elem[elem_index].calc_volume(), 1.0/3.0) / 10.0;
+		dx = cbrt(elem[elem_index].calc_volume()) / 10.0;
 
 		// For every node a in every direction i
 		for(a = 0; a < 4; ++a) {
