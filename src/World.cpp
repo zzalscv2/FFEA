@@ -1316,11 +1316,9 @@ int World::read_and_build_system(vector<string> script_vector) {
                for (i=0; i<precomp_vector.size(); i++){
                  systemreader->parse_tag(precomp_vector[i], lrvalue);
 		 if (lrvalue[0] == "types") {
-                   cout << "types! " << lrvalue[1] << endl;
                    lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
                    boost::trim(lrvalue[1]);
                    systemreader->split_string(lrvalue[1], pc_params.types, ",");
-                   for (j=0;j<pc_params.types.size();j++) cout << "types[" << j << "] = " << pc_params.types[j] << endl;
                  } else if (lrvalue[0] == "inputData") {
                    pc_params.inputData = stoi(lrvalue[1]);
                  } else if (lrvalue[0] == "approach") {
