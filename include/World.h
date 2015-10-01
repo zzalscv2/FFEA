@@ -54,6 +54,12 @@ public:
     int get_smallest_time_constants();
 
     /* */
+    int enm(set<int> blob_indices, int num_modes);
+
+    /* */
+    int dmm(set<int> blob_indices, int num_modes);
+
+    /* */
     int run();
 
     /* */
@@ -79,6 +85,9 @@ public:
 
     /* */
     void get_system_dimensions(vector3 *dimenstion_vector);
+
+    /* */
+    int get_num_blobs();
 
 private:
 
@@ -199,6 +208,8 @@ private:
     void apply_dense_matrix(scalar *y, scalar *M, scalar *x, int N);
 
     void do_es();
+
+    void make_trajectory_from_eigenvector(int blob_index, int mode_index, Eigen::VectorXd evec, double step);
 
     void print_trajectory_and_measurement_files(int step, double wtime);
 
