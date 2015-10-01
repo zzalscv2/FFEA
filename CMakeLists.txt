@@ -88,9 +88,10 @@ endif (Boost_FOUND)
 # 6 ### EIGEN3 #####
 set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
 if (EIGEN3_HOME)
-  find_file(EIGEN3_I_OK Sparse PATHS "${EIGEN3_HOME}/include/eigen3/Eigen" NO_DEFAULT_PATH)
+  find_path(EIGEN3_I_OK Sparse PATHS "${EIGEN3_HOME}/include/eigen3/Eigen"
+	  "${EIGEN3_HOME}/include/Eigen" NO_DEFAULT_PATH)
   if (EIGEN3_I_OK)
-    set(EIGEN3_INC "${EIGEN3_HOME}/include/eigen3/Eigen" CACHE PATH "Path to the Eigen3 headers" FORCE)
+    set(EIGEN3_INC "${EIGEN3_I_OK}" CACHE PATH "Path to the Eigen3 headers" FORCE)
   else (EIGEN3_I_OK)
     message(FATAL_ERROR "Eigen/Sparse not found in ${EIGEN3_HOME}/include/eigen3")
   endif (EIGEN3_I_OK)
@@ -99,12 +100,18 @@ else(EIGEN3_HOME)
   find_path(EIGEN3_INC "Sparse" HINTS
     $ENV{EIGEN_HOME}/include/eigen3/Eigen
     $ENV{EIGEN3_HOME}/include/eigen3/Eigen
+    $ENV{EIGEN_HOME}/include/Eigen
+    $ENV{EIGEN3_HOME}/include/Eigen
     ${CMAKE_INCLUDE_PATH}/Eigen 
     ${CMAKE_INCLUDE_PATH}/eigen3/Eigen 
     ${CMAKE_PREFIX_PATH}/include/eigen3/Eigen
+    ${CMAKE_PREFIX_PATH}/include/Eigen
     /usr/include/eigen3/Eigen
+    /usr/include/Eigen
     /usr/local/include/eigen3/Eigen
+    /usr/local/include/Eigen
     /opt/local/include/eigen3/Eigen
+    /opt/local/include//Eigen
   )
 
   if(NOT EIGEN3_INC)
