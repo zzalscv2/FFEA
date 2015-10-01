@@ -19,6 +19,8 @@ void mat3_mult(matrix3 A, matrix3 B, matrix3 result);
 
 void vec12_add(vector12 A, vector12 B);
 
+void vec12_scale(vector12 A, scalar scale);
+
 void mat3_mult_transpose(matrix3 A, matrix3 B, matrix3 result);
 
 void mat3_mult_both_transposed(matrix3 A, matrix3 B, matrix3 result);
