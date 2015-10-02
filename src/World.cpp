@@ -679,9 +679,9 @@ int World::run() {
                     return FFEA_ERROR;
                 }
 
-                if (params.calc_vdw == 1) {
+                /*if (params.calc_vdw == 1) {
                     vdw_solver.solve();
-                }
+                }*/
                 if (params.sticky_wall_xz == 1) {
                     vdw_solver.solve_sticky_wall(params.es_h * (1.0 / params.kappa));
                 }
@@ -694,6 +694,7 @@ int World::run() {
             } else
                 es_count++;
         }
+        if (params.calc_vdw == 1) vdw_solver.solve();
 
         // Update all Blobs in the World
 
