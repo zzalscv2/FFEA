@@ -507,6 +507,31 @@ int Blob::update() {
     return FFEA_OK;
 }
 
+void Blob::translate_linear(vector3 *vec) {
+
+	// Get a mapping from all node indices to just linear node indices
+	int map[num_nodes];
+	int i, offset = 0;
+	for(i = 0; i < num_nodes; ++i) {
+		if(node[i].am_I_linear()) {
+			map[i] = i - offset;
+		} else {
+			offset += 1;
+			map[i] = -1;
+		}
+	}
+
+	// Translate linear nodes
+	for(i = 0; i < get_num_linear_nodes(); ++i) {
+		node[map[i]].pos.x += vec[i].x;
+		node[map[i]].pos.y += vec[i].y;
+		node[map[i]].pos.z += vec[i].z;
+	}
+
+	// Sort secondary nodes
+	linearise_elements();
+}
+
 // Rotate about x axis, then y axis, then z axis
 void Blob::rotate(float xang, float yang, float zang, int beads) {
 	int i;
@@ -867,6 +892,15 @@ int Blob::calculate_deformation() {
 
 }
 
+double Blob::calc_volume() {
+	
+	double volume = 0.0;
+	for(int i = 0; i < num_elements; ++i) {
+		volume += elem[i].calc_volume();
+	}
+	return volume;
+}
+
 scalar Blob::calculate_strain_energy() {
 
 	int n;
@@ -1167,7 +1201,7 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 
 	int elem_index, a, b, i, j, global_a, global_b;
 	int row, column;
-	scalar dx, val;
+	scalar dx, dxtemp, val;
 	matrix3 J, stress;
 	vector12 elastic_force[2];
 	vector<Eigen::Triplet<double>> components;
@@ -1175,7 +1209,7 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 	// Firstly, get a mapping from all node indices to just linear node indices
 	int map[num_nodes];
 	int offset = 0;
-	for(int i = 0; i < num_nodes; ++i) {
+	for(i = 0; i < num_nodes; ++i) {
 		if(node[i].am_I_linear()) {
 			map[i] = i - offset;
 		} else {
@@ -1184,9 +1218,21 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 		}
 	}
 
+	int num_linear_nodes = get_num_linear_nodes();
+
+	// Get a dx value
+	dx = INFINITY;
+	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
+		dxtemp = pow(elem[elem_index].calc_volume(), 1.0/3.0);
+		if(dxtemp < dx) {
+			dx = dxtemp;
+		}
+	}
+	dx *= 1.0/100000.0;
+
 	// For each element
 	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
-		
+
 		// Calculate dx, how far each node should be moved for a linearisataion, as well as unstrained parameters
 		elem[elem_index].calc_volume();
 		// dx = pow(elem[elem_index].calc_volume(), 1.0/3.0) / 10.0;
@@ -1206,13 +1252,13 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 
 				// Calculate
 				elem[elem_index].calc_elastic_force_vector(elastic_force[1]);
-	
+
 				// Other side
 				node[global_a].move(i, -2 * dx);
 
 				// Recalculate
 				elem[elem_index].calc_elastic_force_vector(elastic_force[0]);
-
+			
 				// Move back to start
 				node[global_a].move(i, dx);
 				
@@ -1222,15 +1268,17 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 	
 					// Get global index for node b
 					global_b = map[elem[elem_index].n[b]->index];
-
+					
 					for(j = 0; j < 3; ++j) {
 						val = (1.0 / (2 * dx)) * (elastic_force[1][4 * j + b] - elastic_force[0][4 * j + b]);
+						if(fabs(val) < 1e-3) {
+							val = 0.0;
+						}
+						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,x1,x2...xn,y0,y1.....yn....zn
+						row = num_linear_nodes * j + global_b;
+						column = num_linear_nodes * i + global_a;
 
-						// Row is dE_p, column dx_q
-						row = 3 * global_b + j;
-						column = 3 * global_a + i;
-
-						components.push_back(Eigen::Triplet<double>(row, column, val));
+						components.push_back(Eigen::Triplet<scalar>(row, column, val));
 					}
 				}
 			}
@@ -1239,13 +1287,23 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 
 	// Now build the matrix
 	A->setFromTriplets(components.begin(), components.end());
+
+	// And get the symmetric part (just in case)
+	/*components.clear();
+	for(j = 0; j < A->outerSize(); ++j) {
+		for(Eigen::SparseMatrix<double>::InnerIterator it(*A,j); it; ++it) {
+			components.push_back(Eigen::Triplet<double>(it.row(), it.col(), 0.5 * it.value()));
+			components.push_back(Eigen::Triplet<double>(it.col(), it.row(), 0.5 * it.value()));
+		}
+	}
+	A->setFromTriplets(components.begin(), components.end());*/
 	return FFEA_OK;
 }
 
 int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 
 	int i, j, a, b, global_a, global_b, row, column;
-	int elem_index;
+	int elem_index, num_linear_nodes;
 	scalar val;
 	matrix3 J;
 	vector<Eigen::Triplet<double>> components;
@@ -1261,6 +1319,8 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 			map[i] = -1;
 		}
 	}
+
+	num_linear_nodes = get_num_linear_nodes();
 
 	// For each element
 	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
@@ -1283,8 +1343,8 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 				for(i = 0; i < 3; ++i) {
 					for(j = 0; j < 3; ++j) {
 						val = elem[elem_index].viscosity_matrix[4 * i + a][4 * j + b];
-						row = 3 * global_a + i;
-						column = 3 * global_b + j;
+						row = num_linear_nodes * i + global_a;
+						column = num_linear_nodes * j + global_b;
 
 						components.push_back(Eigen::Triplet<double>(row, column, val));
 					}
@@ -1301,11 +1361,21 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 			} else {
 				for(i = 0; i < 3; ++i) {
 					val = node[map[global_a]].stokes_drag;
-					row = 3 * map[global_a] + i;
+					row = 4 * i + map[global_a];
 					column = row;
 					components.push_back(Eigen::Triplet<double>(row, column, val));
 				}
 			}
+		}
+	}
+
+	// Now build the matrix and get the symmetric part (just in case)
+	K->setFromTriplets(components.begin(), components.end());
+	components.clear();
+	for(j = 0; j < K->outerSize(); ++j) {
+		for(Eigen::SparseMatrix<double>::InnerIterator it(*K,j); it; ++it) {
+			components.push_back(Eigen::Triplet<double>(it.row(), it.col(), 0.5 * it.value()));
+			components.push_back(Eigen::Triplet<double>(it.col(), it.row(), 0.5 * it.value()));
 		}
 	}
 	K->setFromTriplets(components.begin(), components.end());

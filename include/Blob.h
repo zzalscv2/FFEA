@@ -72,6 +72,11 @@ public:
     int update();
 
     /**
+      * Translates the linear nodes, then linearises the secondary nodes 
+      */
+    void translate_linear(vector3 *vec);
+
+    /**
      * Calculates the centroid of this Blob, then brings the Blob to the origin, 
      * rotates all nodes in the Blob, and brings back the Blob to the initial position.
      * If beads = 1, then it rotates its own "bead_positions" too. 
@@ -142,6 +147,8 @@ public:
     void make_measurements(FILE *measurement_out, int step, vector3 *system_CoM);
 
     int calculate_deformation();
+
+    double calc_volume();
 
     void make_stress_measurements(FILE *stress_out, int blob_number);
 

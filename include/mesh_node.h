@@ -21,6 +21,8 @@ public:
 
     void move(int direction, scalar dx);
 
+    void set_pos(scalar x, scalar y, scalar z);
+
     void print();
 
     /* Position of node */

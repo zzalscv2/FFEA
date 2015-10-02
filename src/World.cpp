@@ -494,7 +494,7 @@ int World::get_smallest_time_constants() {
 		}
 		cout << "done!" << endl;
 
-		/* Invert K (it's symmetric!) */
+		/* Invert K (it's symmetric! Will not work if stokes_visc == 0) */
 		cout << "\tAttempting to invert K to form K_inv...";
 		Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> Cholesky(K); // performs a Cholesky factorization of K
 		I.setIdentity();
@@ -512,15 +512,17 @@ int World::get_smallest_time_constants() {
 		/* Apply to A */
 		cout << "\tCalculating inverse time constant matrix, tau_inv = K_inv * A...";
 		tau_inv = K_inv * A;
+		cout << tau_inv << endl;
+		tau_inv = A * K_inv;
+		cout << endl << tau_inv << endl;
 		cout << "done!" << endl;
-
-		/* Convert to dense :( */
-		Eigen::MatrixXd dtau_inv;
-		dtau_inv = Eigen::MatrixXd(tau_inv);
+		exit(0);
 
 		/* Diagonalise */
 		cout << "\tDiagonalising tau_inv...";
-		Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(dtau_inv);
+		Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(tau_inv);
+		cout << eigensolver.eigenvalues() << endl;
+		exit(0);
 
 		double smallest_val = INFINITY;
 		double largest_val = -1 * INFINITY;
@@ -565,9 +567,226 @@ int World::get_smallest_time_constants() {
 /*
  *  Build and output an elastic network model
  */
-int World::enm(int *blob_index, int num_modes) {
+int World::enm(set<int> blob_indices, int num_modes) {
 
-	
+	set<int> order;
+	set<int>::iterator it, it2;
+	int i, j, k, num_nodes, num_rows;
+
+	// Calculate the modes for each blob
+	for(it = blob_indices.begin(); it != blob_indices.end(); ++it) {
+
+		// Because I'm lazy!
+		i = *it;
+		
+		/* Firstly build the linear elasticity matrix */
+		num_nodes = active_blob_array[i]->get_num_linear_nodes();
+		num_rows = 3 * num_nodes;
+		Eigen::SparseMatrix<double> A(num_rows, num_rows);
+		cout << "\t\tCalculating the Global Linearised Elasticity Matrix, A...";
+		if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
+			cout << endl;
+			FFEA_error_text();
+			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << i << endl;
+			return FFEA_ERROR;
+		}
+		cout << "done!" << endl;
+
+		/* Diagonalise it */
+		cout << "\t\tDiagonalising A...";
+		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(A);
+		cout << "done!" << endl;
+
+		/* Find the top 'num_modes' eigenvalues by ordering the list */
+		cout << "\t\tOrdering the eigenvalues...";
+		int index[num_rows], tempi;
+		double evals_ordered[num_rows], tempd;
+		for(j = 0; j < num_rows; ++j) {
+			index[j] = j;
+			evals_ordered[j] = eigensolver.eigenvalues()[j];	
+		}
+
+		int fin = 0;
+		while(fin == 0) {
+			fin = 1;
+			for(j = 0; j < num_rows - 1; j++) {
+				if(fabs(evals_ordered[j]) < fabs(evals_ordered[j + 1])) {
+					fin = 0;
+					tempd = evals_ordered[j + 1];
+					evals_ordered[j + 1] = evals_ordered[j];
+					evals_ordered[j] = tempd;
+					tempi = index[j + 1];
+					index[j + 1] = index[j];
+					index[j] = tempi;
+				}	
+			}
+		}
+		cout << "done! " << endl;
+		for(j = 0; j < num_rows; ++j) {
+			cout << evals_ordered[j] << endl;
+		}
+
+		/* Use the eigenvalues to build mode trajectories */
+
+		// Firstly get the overall size of the top mode
+		double L = -1 * INFINITY, dx;
+		vector3 min, max;
+		active_blob_array[i]->get_min_max(&min, &max);
+		if(max.x - min.x > L) {
+			L = max.x - min.x;
+		}
+		if(max.y - min.y > L) {
+			L = max.y - min.y;
+		}
+		if(max.z - min.z > L) {
+			L = max.z - min.z;
+		}
+
+		// L becomes a scaling factor
+		L = 0.5 * sqrt(fabs(evals_ordered[0]) / params.kT) * L;
+		for(j = 0; j < num_modes; ++j) {
+
+			// See what eigenvector multiplier is
+			dx = L * sqrt(params.kT / fabs(evals_ordered[0])) / 25.0;
+
+			// Make 20 frames out of this
+			make_trajectory_from_eigenvector(i, j, eigensolver.eigenvectors().col(index[j]), dx);
+		}
+	}
+	return FFEA_OK;
+}
+
+/*
+ *  Build and output a dynamic mode model
+ */
+int World::dmm(set<int> blob_indices, int num_modes) {
+
+	set<int> order;
+	set<int>::iterator it, it2;
+	int i, j, k, num_nodes, num_rows;
+
+	// Calculate the modes for each blob
+	for(it = blob_indices.begin(); it != blob_indices.end(); ++it) {
+
+		// Because I'm lazy!
+		i = *it;
+		
+		num_nodes = active_blob_array[i]->get_num_linear_nodes();
+		num_rows = 3 * num_nodes;
+		Eigen::SparseMatrix<double> K(num_rows, num_rows);
+		Eigen::SparseMatrix<double> Q(num_rows, num_rows);
+		Eigen::SparseMatrix<double> A(num_rows, num_rows);
+		Eigen::MatrixXd Ahat(num_rows, num_rows);
+		Eigen::MatrixXd R(num_rows, num_rows);
+
+		/* Build K, the linear viscosity matrix */
+		cout << "\tCalculating the Global Viscosity Matrix, K...";
+		if(active_blob_array[i]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
+			cout << endl;
+			FFEA_error_text();
+			cout << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << i << endl;
+			return FFEA_ERROR;
+		}
+		cout << "done!" << endl;
+
+		/* Diagonalise it */
+		cout << "\t\tDiagonalising K...";
+		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esK(K);
+		cout << "done!" << endl;
+		cout << esK.eigenvalues() << endl;
+		//exit(0);
+
+		/* Invert the and sqrt the elements of K evals to form Q */
+		std::vector<Eigen::Triplet<double>> vals;
+		for(j = 0; j < num_rows; ++j) {
+
+			// This will catch the zero eigenvalues i.e. ridiculously small ones
+			if(esK.eigenvalues()[j] < 0) {
+				vals.push_back(Eigen::Triplet<double>(j,j, 1.0 / sqrt(-1 * esK.eigenvalues()[j])));
+			} else {
+				vals.push_back(Eigen::Triplet<double>(j,j, 1.0 / sqrt(esK.eigenvalues()[j])));
+			}		
+		}
+		Q.setFromTriplets(vals.begin(), vals.end());
+
+		/* Build the linear elasticity matrix and get symmetric part (just in case) */
+		cout << "\t\tCalculating the Global Linearised Elasticity Matrix, A...";
+		if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
+			cout << endl;
+			FFEA_error_text();
+			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << i << endl;
+			return FFEA_ERROR;
+		}
+		cout << "done!" << endl;
+
+		/* Build the transformation matrix Ahat */
+		cout << "\t\tBuilding the transformation matrix, Ahat..." << endl;
+		Ahat = Q.transpose() * esK.eigenvectors().transpose() * A * esK.eigenvectors() * Q;
+		cout << "done!" << endl;
+
+		/* Diagonalise it */
+		cout << "\t\tDiagonalising Ahat...";
+		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esAhat(Ahat);
+		cout << "done!" << endl;
+
+		/* Finally, build the dynamical mode matrix R */
+		R = esK.eigenvectors() * Q * esAhat.eigenvectors();
+ 
+		/* Find the top 'num_modes' eigenvalues by ordering the list */
+		cout << "\t\tOrdering the eigenvalues...";
+		int index[num_rows], tempi;
+		double evals_ordered[num_rows], tempd;
+		for(j = 0; j < num_rows; ++j) {
+			index[j] = j;
+			evals_ordered[j] = esAhat.eigenvalues()[j];	
+		}
+
+		int fin = 0;
+		while(fin == 0) {
+			fin = 1;
+			for(j = 0; j < num_rows - 1; j++) {
+				if(evals_ordered[j] < evals_ordered[j + 1]) {
+					fin = 0;
+					tempd = evals_ordered[j + 1];
+					evals_ordered[j + 1] = evals_ordered[j];
+					evals_ordered[j] = tempd;
+					tempi = index[j + 1];
+					index[j + 1] = index[j];
+					index[j] = tempi;
+				}	
+			}
+		}
+		cout << "done! " << endl;
+		for(int j = 0; j < num_rows; ++j) {
+			cout << evals_ordered[j] << endl;
+		}
+		/* Use the eigenvalues to build mode trajectories */
+
+		// Firstly get the overall size of the top mode
+		double L = -1 * INFINITY, dx;
+		vector3 min, max;
+		active_blob_array[i]->get_min_max(&min, &max);
+		if(max.x - min.x > L) {
+			L = max.x - min.x;
+		}
+		if(max.y - min.y > L) {
+			L = max.y - min.y;
+		}
+		if(max.z - min.z > L) {
+			L = max.z - min.z;
+		}
+
+		// L becomes a scaling factor
+		L = 0.5 * sqrt(fabs(evals_ordered[0]) / params.kT) * L;
+		for(j = 0; j < num_modes; ++j) {
+
+			// See what eigenvector multiplier is
+			dx = L * sqrt(params.kT / fabs(evals_ordered[0])) / 25.0;
+
+			// Make 20 frames out of this
+			make_trajectory_from_eigenvector(i, j, esAhat.eigenvectors().col(index[j]), dx);
+		}
+	}
 	return FFEA_OK;
 }
 
@@ -1916,7 +2135,7 @@ void World::get_system_dimensions(vector3 *dimension) {
 
 int World::get_num_blobs() {
 
-	return num_blobs;
+	return params.num_blobs;
 }
 
 int World::load_springs(const char *fname) {
@@ -2129,6 +2348,67 @@ void World::do_es() {
     //	}
 
     //	blob_array[0].print_phi();
+}
+
+void World::make_trajectory_from_eigenvector(int blob_index, int mode_index, Eigen::VectorXd evec, double step) {
+
+	// Get a filename
+	int i, j;
+	double dx;
+	vector<string> all;
+	string traj_out_fname, base, ext;
+	ostringstream bi, mi;
+	bi << blob_index;
+	mi << mode_index;
+	boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
+	ext = "." + all.at(all.size() - 1);
+	base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
+	traj_out_fname = base + "_blob" + bi.str() + "mode" + mi.str() + ext;
+	int from_index = 0;
+	int to_index = 0;
+
+	// Convert weird eigen thing into a nice vector3 list
+	vector3 node_trans[active_blob_array[blob_index]->get_num_linear_nodes()];
+
+	// Open file
+	FILE *fout;
+	fout = fopen(traj_out_fname.c_str(), "w");
+
+	// Header Stuff
+	fprintf(fout, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs 1\nNumber of Conformations 1\nBlob 0:	Conformation 0 Nodes %d\n\n*\n", active_blob_array[blob_index]->get_num_nodes());
+
+	for(i = 0; i < 21; ++i) {
+		
+		/* Build a frame */
+
+		// Get eigenvector multiplier
+		if(i == 0) {
+			dx = 0.0;
+		} else if(i > 0 && i < 5) {
+			dx = step;
+		} else if (i > 5 && i <= 15) {
+			dx = -step;
+		} else {
+			dx = step;
+		}
+
+		// Get some node translations
+		int num_linear_nodes = active_blob_array[blob_index]->get_num_linear_nodes();
+		for(j = 0; j < num_linear_nodes; ++j) {
+			node_trans[j].x = evec[0 * num_linear_nodes + j] * dx;
+			node_trans[j].y = evec[1 * num_linear_nodes + j] * dx;
+			node_trans[j].z = evec[2 * num_linear_nodes + j] * dx;
+		}
+
+		// Translate all the nodes
+		active_blob_array[blob_index]->translate_linear(node_trans);
+		fprintf(fout, "Blob 0, Conformation 0, step %d\n", i);
+		active_blob_array[blob_index]->write_nodes_to_file(fout);
+		fprintf(fout, "*\n");
+		print_trajectory_conformation_changes(fout, i, &from_index, &to_index);
+	
+	}
+	fclose(fout);
 }
 
 void World::print_trajectory_and_measurement_files(int step, double wtime) {

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <ctime>
-
+#include <cctype>
 #include <omp.h>
 
 #include <boost/program_options.hpp>
@@ -150,58 +150,123 @@ int main(int argc, char *argv[])
 
 	}
 
-	else if(mode == 1) {
+	else if(mode == 1 || mode == 2) {
 		
-		/* Elastic Network Model */
-		cout << endl << "FFEA - Elastic Network Model" << endl << endl;
+		if(mode == 1) {
 
+			/* Elastic Network Model */
+			cout << "\n\n\n***************************************************\n\tFFEA - Elastic Network Model\n***************************************************\n\n";
+		} else {
+
+			/* Dynamic Mode Model */
+			cout << "\n\n\n***************************************************\n\tFFEA - Dynamic Mode Model\n***************************************************\n\n";
+		}
 		// Get the desired blobs
-		cout << "\tFirstly, lets decide which blobs to analyse!" << endl;
+		cout << "\tFirstly, lets decide which blobs to analyse!" << endl << endl;
 		set<int> blobs;
+		int ablob;
+		int error;
 		char buf[5];
 		while(true) {
+			error = 0;
 			try{
-				cout << "Which blob would you like an  elastic network model for?:";
-				scanf("%s", &buf);
-				
-				//if(ablob < 0 || ablob >= world.get_num_blobs()) {
-				//	throw "ValueError";
-				//}
-			} catch (exception &e) {
+				cout << "\t\tEnter an index for the blob you would like an elastic network model for, or type 'q' to finish?:";
+				scanf("%S", &buf);
+				if(strcmp(buf, "q") == 0 or strcmp(buf, "Q") == 0) {
+					cout << endl << "\tThat's all the blobs!" << endl;
+					break;
+				}
 
+				for(int i = 0; i < 1; ++i) {
+					if(isalpha(buf[i])) {
+						FFEA_error_text();
+						cout << "\tPlease enter a valid blob index (0 <= x <" << world->get_num_blobs() << ")" << endl;
+						error = 1;
+						break;
+					}
+				}
+				
+				if(error == 1) {
+					continue;
+				}
+
+				ablob = atoi(buf);
+				if(ablob < 0 || ablob >= world->get_num_blobs()) {
+					FFEA_error_text();
+					cout << "\tPlease enter a valid blob index (0 <= x <" << world->get_num_blobs() << ")" << endl;
+					continue;
+				} else {
+					blobs.insert(ablob);
+				}
+			} catch (exception &e) {
+				FFEA_error_text();
+				cout << "Exception occured:" << endl;
+				cout << e.what() << endl;
 			}
+		}
+
+		if(blobs.size() == 0) {
+			cout << "No blobs selected. No elastic network models will be found :(" << endl;
+			return FFEA_OK;
 		}
 
 		// Get number of modes
 		int num_modes;
 		while(true) {
 			try{
-				cout << "How many modes would you like to visualise?:";
-				scanf("%d", &num_modes);
+				cout << "\n\tHow many modes would you like to visualise?:";
+				scanf("%s", &buf);
+				for(int i = 0; i < 1; ++i) {
+					if(isalpha(buf[i])) {
+						FFEA_error_text();
+						cout << "\tYou must choose a whole number i > 0 and i < 3N" << endl;
+						error = 1;
+						break;
+					}
+				}
+
+				if(error == 1) {
+					continue;
+				}
+
+				num_modes = atoi(buf);
 				if(num_modes <= 0) {
-					throw "ValueError";
+					FFEA_error_text();
+					cout << "\tYou must choose a whole number i > 0 and i < 3N" << endl;
+					continue;
 				}
 				break;
-			} catch(const char* e) {
-				FFEA_error_text();
-				cout << "Exception occured:" << endl << e << endl;
-				cout << "Please enter a whole number less than 3 * the total number of nodes in your system and greater than zero." << endl; 
 			} catch(exception &e) {
 				FFEA_error_text();
 				cout << "Exception occured:" << endl;
 				cout << e.what() << endl;
-				cout << "Please enter a whole number less than 3 * the total number of nodes in your system and greater than zero." << endl; 
+				cout << "\tPlease enter a whole number less than 3 * the total number of nodes in your system and greater than zero." << endl; 
 			}
 		}
+		
+		set<int>::iterator it;
+		cout << endl << "\tYou've asked for " << num_modes << " modes to be calculated for blob(s):" << endl << "\t";
+		for(it = blobs.begin(); it != blobs.end(); ++it) {
+			cout << *it << " ";
+		}
 
-		//if(world->enm(num_modes) == FFEA_ERROR) {
-		//	
-		//}
+		if(mode == 1) {
+			cout << endl << endl << "\tBeginning the calculation of the ENMs..." << endl;
+			if(world->enm(blobs, num_modes) == FFEA_ERROR) {
+				cout << endl;
+				FFEA_error_text();
+				cout << "Problem when calculating elastic network models." << endl;
+			}
+		} else {
+			cout << endl << endl << "\tBeginning the calculation of the DMMs..." << endl;
+			if(world->dmm(blobs, num_modes) == FFEA_ERROR) {
+				cout << endl;
+				FFEA_error_text();
+				cout << "Problem when calculating dynamic mode models." << endl;
+			}
+		}
+		cout << "\tdone!" << endl;
 
-	} else if(mode == 2) {
-			
-		/* Dynamic Mode Model */
-		cout << endl << "FFEA - Dynamic Mode Model" << endl << endl;
 	} else if(mode == 0){
 		
 		/* Full FFEA */
