@@ -58,13 +58,14 @@ int VdW_solver::solve() {
     };
 
     LinkedListNode<Face> *l_i = NULL;
+    LinkedListNode<Face> *l_j = NULL;
     Face *f_i, *f_j;
 
     total_num_surface_faces = surface_face_lookup->get_pool_size();
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/ 
-#ifdef FFEA_PER_BLOB_PARALLELISATION
-#pragma omp parallel for schedule(static)
+#ifdef USE_OPENMP
+#pragma omp parallel for private(l_i, l_j, f_i, f_j) 
 #endif
     for (int i = 0; i < total_num_surface_faces; i++) {
 
@@ -75,7 +76,6 @@ int VdW_solver::solve() {
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
         for (int c = 0; c < 27; c++) {
-            LinkedListNode<Face> *l_j = NULL;
             l_j = surface_face_lookup->get_top_of_stack( 
                     l_i->x + adjacent_cell_lookup_table[c].ix,
                     l_i->y + adjacent_cell_lookup_table[c].iy,
@@ -199,6 +199,7 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
     scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
     scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
+    vector3 r; 
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
         for(int l = k; l < num_tri_gauss_quad_points; l++) {
 //          vector3 r =     {
@@ -206,14 +207,17 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
 //                                  minimum_image(p[k].y - q[l].y, box_size.y),
 //                                  minimum_image(p[k].z - q[l].z, box_size.z)
 //                          };
-            vector3 r =     {
+            /*r =     {
                                     p[k].x - q[l].x,
                                     p[k].y - q[l].y,
                                     p[k].z - q[l].z
-                            };
+                            }; */
 
 
-            mag_r = sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
+            // mag_r = sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
+            mag_r = sqrt( (p[k].x - q[l].x) * (p[k].x - q[l].x) + 
+                          (p[k].y - q[l].y) * (p[k].y - q[l].y) +
+                          (p[k].z - q[l].z) * (p[k].z - q[l].z) );
             mag_ri = 1./mag_r;
             mag_ri_2 = mag_ri * mag_ri;
             mag_ri_4 = mag_ri_2 * mag_ri_2;
