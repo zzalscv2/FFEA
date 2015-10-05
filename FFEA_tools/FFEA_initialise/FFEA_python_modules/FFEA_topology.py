@@ -1,60 +1,116 @@
-import sys, os
-import numpy as np
+import sys
 
 class FFEA_topology:
-	
-	def __init__(top_fname):
 
-		# Open file and check stuff
-		fin = open(top_fname, "r")
-		if(fin.readline().strip() != "ffea topology file"):
-			sys.exit("Error. Expected but didn't find 'ffea topology file.\n")
-
-		self.num_elements = int(fin.readline().split()[1])
-		self.num_surface_elements = int(fin.readline().split()[1])
-		self.num_interior_elements = int(fin.readline().split()[1])
-		self.element = np.array([FFEA_tetra_element(0,0,0,0)] for i in range(num_elements))
+	def __init__(self, fname):
 		
-		# Surface elements
-		fin.readline()
+		# Initialise stuff
+		self.reset()
+
+		# Start reading
+		try:
+			fin = open(fname, "r")
+		
+		except(IOError):
+			print "Error. File " + fname  + " not found."
+			return
+
+		# Header
+		if fin.readline().rstrip() != "ffea topology file":
+			print "Error. Expected to read 'ffea topology file'. This may not be an ffea topology file"
+			return
+
+		# num_elements
+		try:
+			self.num_elements = int(fin.readline().split()[1])
+			self.num_surface_elements = int(fin.readline().split()[1])
+			self.num_interior_elements = int(fin.readline().split()[1])
+
+		except(ValueError):
+			print "Error. Expected to read:"
+			print "num_elements = %d\nnum_surface_elements = %d\nnum_interior_elements = %d"
+			self.reset()
+			fin.close()
+			return			
+
+		# Begin to read elements
+		if fin.readline().strip() != "surface elements:":
+			print "Error. Expected to read 'surface elements:' to begin the surface elements section."
+			self.reset()
+			fin.close()
+			return
+
 		for i in range(self.num_surface_elements):
-			sline = fin.readline().split()
-			self.element[i].set_nodes(int(sline[0]), int(sline[1]), int(sline[2]), int(sline[3]))	
+			try:
+				line = fin.readline()
+				if line == [] or line == None or line == "":
+					raise EOFError
 
-		# Interior elements
-                fin.readline()
-                for i in range(self.num_surface_elements, self.num_elements, i):
-                        sline = fin.readline().split()
-                        self.element[i].set_nodes(int(sline[0]), int(sline[1]), int(sline[2]), int(sline[3]))
+				sline = line.split()
 
-		fin.close()
+				# Final 6 indices are the secondary element nodes. May need later
+				self.element.append(FFEA_element(int(sline[0]), int(sline[1]), int(sline[2]), int(sline[3])))
 
-		def calc_volume(FFEA_nodes):
+			except(EOFError):
+				print "Error. EOF may have been reached prematurely:\nnum_elements = " + str(self.num_elements) + "\nnum_elements read = " + str(i)
+				self.reset()
+				fin.close()
+				return
 
-			volume = 0.0
-			for element in self.elements:
-				volume += element.calc_volume(FFEA_nodes)
+			except(IndexError, ValueError):
+				print "Error. Expected a top position of the form '%f %f %f %f' for element " + str(i) + ", but found " + line
+				self.reset()
+				fin.close()
+				return
 
-			return volume
+		if fin.readline().strip() != "interior elements:":
+			print "Error. Expected to read 'interior elements:' to begin the interior elements section."
+			self.reset()
+			fin.close()
+			return
+
+		for i in range(self.num_surface_elements, self.num_elements):
+			try:
+				line = fin.readline()
+				if line == [] or line == None or line == "":
+					raise EOFError
+
+				sline = line.split()
+
+				# Final 6 indices are the secondary element nodes. May need later
+				self.element.append(FFEA_element(int(sline[0]), int(sline[1]), int(sline[2]), int(sline[3])))
+
+			except(EOFError):
+				print "Error. EOF may have been reached prematurely:\nnum_elements = " + str(self.num_elements) + "\nnum_elements read = " + str(i)
+				self.reset()
+				fin.close()
+				return
+
+			except(IndexError, ValueError):
+				print "Error. Expected a top position of the form '%f %f %f %f' for element " + str(i) + ", but found " + line
+				self.reset()
+				fin.close()
+				return
+
+	def reset(self):
+		self.num_elements = 0
+		self.element = []
+
+	def get_linear_nodes(self):
+		
+		linear_nodes = []
+		for elem in self.element:
+			for i in elem.n:
+				linear_nodes.append(i)
+
+		return set(linear_nodes)
+
+	def get_num_linear_nodes(self):
+		
+		return len(self.get_linear_nodes())
 
 class FFEA_element:
 
-	def __init__(a,b,c,d):
-		
-		self.node = np.array([a,b,c,d])
-		self.volume = 0.0
-		self.surface_area = 0.0
-		
-	def set_nodes(a,b,c,d):
-		
-		self.node[0] = a
-		self.node[1] = b
-		self.node[2] = c
-		self.node[3] = d
-
-	def calc_volume(FFEA_nodes):
+	def __init__(self, n0, n1, n2, n3):
 	
-		v = np.array([FFEA_nodes[self.node[i]] - FFEA_nodes[self.node[0]]] for i in range(1,4,1))
-		self.volume = np.absolute(np.dot(v[0], np.cross(v[1], v[2]))) / 6.0
-		
-		return volume
+		self.n = [n0, n1, n2, n3]

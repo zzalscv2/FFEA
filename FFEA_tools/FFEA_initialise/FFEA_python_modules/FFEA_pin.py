@@ -1,46 +1,99 @@
-import sys, os
+import numpy as np
+import sys
+import FFEA_node
 
 class FFEA_pin:
 
-	def __init__(self, pin_fname):
+	def __init__(self, fname):
 		
-		# Open file and check initial stuff
+		# Initialise stuff
+		self.reset()
+
+		# Start reading
 		try:
-			fin = open(pin_fname, "r")
+			fin = open(fname, "r")
+		
 		except(IOError):
-			self.num_pinned_nodes = 0
-			self.pinned_node_index = []
+			print "File " + fname  + " not found. Returning empty object."
+			self.reset()
 			return
 
-		line = fin.readline().strip()
-		if line != "ffea pinned nodes file" and line != "walrus pinned nodes file":
-			sys.exit("Error. Expected but didn't find 'ffea pinned nodes file'\n")
-		
-		self.num_pinned_nodes = int(fin.readline().split()[1].strip())
-		self.pinned_node_index = [0 for i in range(self.num_pinned_nodes)]
-		fin.readline()	#'pinned nodes:'
-		
-		# Read pinned node indices
-		for i in range(self.num_pinned_nodes):
-			self.pinned_node_index[i] = int(fin.readline().strip())
+		# Header
+		if fin.readline().rstrip() != "ffea pinned nodes file":
+			print "Error. Expected to read 'ffea pinned nodes file'. This may not be an ffea pinned nodes file"
+			return
 
+		# num_pinned_nodes
+		try:
+			self.num_pinned_nodes = int(fin.readline().split()[1])
+			self.node_index = []
+
+		except(ValueError):
+			print "Error. Expected to read:"
+			print "num_pinned_nodes %d"
+			self.reset()
+			fin.close()
+			return
+
+		# pin indices
+		if fin.readline().strip() != "pinned nodes:":
+			print "Error. Expected to read 'pinned nodes:' to begin the pin indices section."
+			self.reset()
+			fin.close()
+			return
+
+		for i in range(self.num_pinned_nodes):
+			try:
+				line = fin.readline()
+				if line == [] or line == None or line == "":
+					raise EOFError
+
+				self.node_index.append(int(line))
+
+			except(EOFError):
+				print "Error. EOF may have been reached prematurely:\nnum_pinned_nodes = " + str(self.num_pinned_nodes) + "\nnum_pinned_nodes read = " + str(i)
+				self.reset()
+				fin.close()
+				return
+
+			except(IndexError, ValueError):
+				print "Error. Expected a pin index of the form '%d' for face " + str(i) + ", but found " + line
+				self.reset()
+				fin.close()
+				return
+		
+		self.node_index = set(self.node_index)
 		fin.close()
 
 	def reset(self):
+		self.node_index = []
 		self.num_pinned_nodes = 0
-		self.pinned_node_index = []
-
-	def add_node(self, index):
-		self.num_pinned_nodes += 1
-		self.pinned_node_index.append(index)
 
 	def write_to_file(self, fname):
 
 		fout = open(fname, "w")
-		fout.write("ffea pinned nodes file\n")
-		fout.write("num_pinned_nodes %d\n" % (self.num_pinned_nodes))
-		fout.write("pinned nodes:\n")
-		for i in range(self.num_pinned_nodes):
-			fout.write("%d\n" % (self.pinned_node_index[i]))
+		fout.write("ffea pinned nodes file\nnum_pinned_nodes %d\npinned nodes:\n" % (self.num_pinned_nodes))
+		for i in self.node_index:
+			fout.write(str(i) +"\n")
 
-		fout.close()
+	def get_num_pinned_nodes(self):
+
+		return self.num_pinned_nodes
+
+	def get_num_linear_pinned_nodes(self, top):
+
+		linear_nodes = top.get_linear_nodes()
+		return len(linear_nodes & self.node_index)
+
+	def get_node_indices(self):
+
+		return self.node_index
+
+	def pin_radially(self, node, origin, radius):
+
+		self.reset()
+		origin = np.array(origin)
+		for i in range(len(node.pos)):
+			if np.linalg.norm(node.pos[i] - origin) < radius:
+				self.num_pinned_nodes += 1
+				self.node_index.append(i)
