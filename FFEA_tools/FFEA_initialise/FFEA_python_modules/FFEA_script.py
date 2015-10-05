@@ -1,54 +1,270 @@
 import sys, os
+import FFEA_trajectory, FFEA_measurement, FFEA_topology, FFEA_pin
 
-def get_block_file(filein, block_title, index):
-	
-	block = []
-	block_index = 0
-	while block_index <= index:
-		while filein.readline().strip().replace("<", "").replace(">", "") != block_title:
-			continue
-
-		block_index += 1
-
-	line = filein.readline()
-	while line.strip().replace("<", "").replace(">", "") != "/" +  block_title:
-		block.append(line)
-		line = filein.readline()
-	
-	return block
-
-def get_block_lines(linesin, block_title, index):
-	
-	block = []
-	block_index = 0
-	in_block = 0
-	for line in linesin:
-		if in_block == 0:
-			if line.strip().replace("<", "").replace(">", "") == block_title:
-
-				block_index += 1
-				if block_index <= index:
-					continue
-				else:
-					in_block = 1
-
-		else:
-			if line.strip().replace("<", "").replace(">", "") == "/" + block_title:
-				break
-			else:
-				block.append(line)
-
-	return block
+def get_path_from_script(path, scriptdir):
+	if os.path.isabs(path):
+		return path
+	else:
+		return os.path.abspath(os.path.join(scriptdir, path))
 
 class FFEA_script:
-	
-	def __init__(self, script_fname):
+
+	def __init__(self, fname):
+
+		self.reset()
+
+		# Start reading to test
+		try:
+			fin = open(fname, "r")
 		
-		self.params = FFEA_script_params()
-		self.params.read_params_from_script(script_fname)
-		self.blob = [FFEA_script_blob(self.params.num_conformations[i]) for i in range(self.params.num_blobs)]
-		for b in self.blob:
-			b.read_blob_from_script(script_fname, self.blob.index(b))
+		except(IOError):
+			print "Error. File " + fname  + " not found."
+			return
+
+		if "<param>\n" not in fin.readlines():
+			print "Error. File " + fname  + " not an FFEA script file."
+			fin.close()
+			return
+
+		fin.close()
+
+		try:
+			self.params = self.read_params_from_file(fname)
+		except:
+			print "Error. Couldn't load <params>...</params>"
+			self.reset()
+			return
+
+		for i in range(self.params.num_blobs):
+			try:
+				self.blob.append(self.read_blob_from_file(fname, i, self.params.num_conformations[i]))
+			except:
+				print "Error. Couldn't load <blob>...</blob> " + str(i)
+				self.reset()
+				return
+
+	def reset(self):
+		self.params = None
+		self.blob = []
+
+	def read_params_from_file(self, fname):
+
+		# Get scriptdir
+		scriptdir = os.path.dirname(fname)
+
+		# Open script file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print "Error. File " + fname  + " not found."
+			return
+			
+		param_lines = fin.readlines()
+
+		# Close file
+		fin.close()
+
+		# Get params block
+		param_lines = extract_block_from_lines('param', 0, param_lines)
+
+		# Get some parameters
+		params = FFEA_script_params()
+
+		# Assign the params
+		for param in param_lines:
+			try:
+				line = param.strip().replace("<", "").replace(">", "")
+				lvalue = line.split("=")[0].rstrip()
+				rvalue = line.split("=")[1].lstrip()
+			except:
+				print "Error. Could not parse param '" + param + "'"
+				return None
+
+			try:
+				if lvalue == "restart":
+					params.restart = int(rvalue)
+				elif lvalue == "dt":
+					params.dt = float(rvalue)
+				elif lvalue == "rng_seed":
+					continue
+				elif lvalue == "kT":
+					params.kT = float(rvalue)
+				elif lvalue == "check":
+					params.check = int(rvalue)
+				elif lvalue == "num_steps":
+					params.num_steps = int(float(rvalue))
+				elif lvalue == "trajectory_out_fname":
+					params.trajectory_out_fname = get_path_from_script(rvalue, scriptdir)
+				elif lvalue == "measurement_out_fname":
+					params.measurement_out_basefname = get_path_from_script(rvalue, scriptdir)
+				elif lvalue == "vdw_forcefield_params":
+					params.vdw_forcefield_params = get_path_from_script(rvalue, scriptdir)
+				elif lvalue == "epsilon":
+					params.epsilon = float(rvalue)
+				elif lvalue == "max_iterations_cg":
+					params.max_iterations_cg = int(rvalue)
+				elif lvalue == "kappa":
+					params.kappa = float(rvalue)
+				elif lvalue == "epsilon_0":
+					params.epsilon_0 = float(rvalue)
+				elif lvalue == "dielec_ext":
+					params.dielec_ext = float(rvalue)
+				elif lvalue == "calc_stokes":
+					params.calc_stokes = int(rvalue)
+				elif lvalue == "calc_kinetics":
+					params.calc_kinetics = int(rvalue)
+				elif lvalue == "kinetics_update":
+					params.kinetics_update = int(rvalue)
+				elif lvalue == "stokes_visc":
+					params.stokes_visc = float(rvalue)
+				elif lvalue == "calc_vdw":
+					params.calc_vdw = int(rvalue)
+				elif lvalue == "calc_noise":
+					params.calc_noise = int(rvalue)
+				elif lvalue == "calc_es":
+					params.calc_es = int(rvalue)
+				elif lvalue == "es_update":
+					params.es_update = int(rvalue)
+				elif lvalue == "es_N_x":
+					params.es_N_x = int(rvalue)
+				elif lvalue == "es_N_y":
+					params.es_N_y = int(rvalue)
+				elif lvalue == "es_N_z":
+					params.es_N_z = int(rvalue)
+				elif lvalue == "sticky_wall_xz":
+					params.sticky_wall_xz = int(rvalue)
+				elif lvalue == "wall_x_1":
+					params.wall_x_1 = rvalue
+				elif lvalue == "wall_x_2":
+					params.wall_x_2 = rvalue
+				elif lvalue == "wall_y_1":
+					params.wall_y_1 = rvalue
+				elif lvalue == "wall_y_2":
+					params.wall_y_2 = rvalue
+				elif lvalue == "wall_z_1":
+					params.wall_z_1 = rvalue
+				elif lvalue == "wall_z_2":
+					params.wall_z_2 = rvalue
+				elif lvalue == "es_h":
+					params.es_h = int(rvalue)
+				elif lvalue == "num_blobs":
+					params.num_blobs = int(rvalue)
+				elif lvalue == "num_conformations":
+					params.num_conformations = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
+				elif lvalue == "num_states":
+					params.num_states = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
+				else:
+					print "Unrecognised parameter '" + param + "'. Ignoring..."
+					continue
+
+			except(IndexError, ValueError):
+				print "Error. Couldn't parse parameter '" + param + "'"
+				return None
+
+		# Sort measurement names
+		base, ext = os.path.splitext(params.measurement_out_basefname)
+		for i in range(params.num_blobs):
+			params.measurement_out_fname.append(base + "_blob" + str(i) + ext)
+		params.measurement_out_fname.append(base + "_world" + ext)
+		return params
+
+	def read_blob_from_file(self, fname, index, num_conformations):
+
+
+		# Get scriptdir
+		scriptdir = os.path.dirname(fname)
+
+		# Open script file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print "Error. File " + fname  + " not found."
+			return
+
+		blob_lines = fin.readlines()
+
+		# Close file
+		fin.close()
+
+		# Get relevent blob block
+		blob_lines = extract_block_from_lines('blob', index, blob_lines)
+
+		# Get some parameters
+		blob = FFEA_script_blob()
+
+		# Get conformations first
+		for i in range(num_conformations):
+
+			# Get a conformation
+			conformation = FFEA_script_conformation()
+			
+			conformation_lines = extract_block_from_lines('conformation', i, blob_lines)
+			for line in conformation_lines:
+				try:
+					line = line.strip().replace("<", "").replace(">", "")
+					lvalue = line.split("=")[0].rstrip()
+					rvalue = line.split("=")[1].lstrip()
+				except:
+					print "Error. Could not parse conformation tag '" + line + "'"
+					return None
+		
+				try:
+					if lvalue == "motion_state":
+						conformation.motion_state = rvalue
+					elif lvalue == "nodes":
+						conformation.nodes = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "topology":
+						conformation.topology = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "surface":
+						conformation.surface = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "material":
+						conformation.material = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "stokes":
+						conformation.stokes = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "vdw":
+						conformation.vdw = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "pin":
+						conformation.pin = get_path_from_script(rvalue, scriptdir)
+					else:
+						print "Unrecognised conformation tag '" + line + "'. Ignoring..."
+						continue
+
+				except(IndexError, ValueError):
+					print "Error. Couldn't parse conformation tag '" + line + "'"
+					return None
+			
+			blob.conformation.append(conformation)
+			blob.num_conformations += 1
+
+		# Now blob general stuff
+		for line in blob_lines:
+			try:
+				line = line.strip().replace("<", "").replace(">", "")
+				lvalue = line.split("=")[0].rstrip()
+				rvalue = line.split("=")[1].lstrip()
+			except(IndexError):
+				continue
+			except:
+				print "Error. Could not parse blob tag '" + line + "'"
+				return None
+
+			try:
+				if lvalue == "solver":
+					blob.solver = rvalue
+				elif lvalue == "scale":
+					blob.scale = float(rvalue)
+				elif lvalue == "centroid" or lvalue == "centroid_pos":
+					blob.centroid = [float(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
+				elif lvalue == "rotation":
+					blob.rotation = [float(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
+				else:
+					continue
+
+			except(IndexError, ValueError):
+				print "Error. Couldn't parse blob tag '" + line + "'"
+				return None
+
+		return blob
 
 	def write_to_file(self, fname):
 
@@ -60,6 +276,22 @@ class FFEA_script:
 		fout.write("</system>\n")
 		fout.close()
 
+	def load_topology(self, blob_index, conformation_index):
+
+		return FFEA_topology.FFEA_topology(self.blob[blob_index].conformation[conformation_index].topology)
+
+	def load_pin(self, blob_index, conformation_index):
+	
+		return FFEA_pin.FFEA_pin(self.blob[blob_index].conformation[conformation_index].pin)
+	
+	def load_trajectory(self, frames_to_read = float("inf")):
+		
+		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname, num_frames_to_read = frames_to_read)
+
+	def load_measurement(self, frames_to_read = float("inf")):
+
+		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_fname, self.params.num_blobs, num_frames_to_read = frames_to_read)
+
 class FFEA_script_params():
 	
 	def __init__(self):
@@ -69,18 +301,21 @@ class FFEA_script_params():
 		self.check = 0
 		self.num_steps = 0
 		self.trajectory_out_fname = ""
-		self.measurement_out_fname = ""
+		self.measurement_out_basefname = ""
+		self.measurement_out_fname = []
 		self.vdw_forcefield_params = ""
 		self.epsilon = 0.0
 		self.max_iterations_cg = 0
 		self.kappa = 0.0
 		self.epsilon_0 = 0.0
 		self.dielec_ext = 0.0
-		self.do_stokes = 0
+		self.calc_stokes = 0
 		self.stokes_visc = 0.0
 		self.calc_vdw = 0
 		self.calc_noise = 0
 		self.calc_es = 0
+		self.calc_kinetics = 0
+		self.kinetics_update = 0
 		self.es_update = 0
 		self.es_N_x = 0
 		self.es_N_y = 0
@@ -107,7 +342,7 @@ class FFEA_script_params():
 
 		num_conformations_string = num_conformations_string[0:-1]
 		num_states_string = num_states_string[0:-1]
-
+		print self.trajectory_out_fname
 		astr = ""
 		astr += "<param>\n"
 		astr += "\t<restart = %d>\n" % (self.restart)
@@ -117,14 +352,14 @@ class FFEA_script_params():
 		astr += "\t<num_steps = %d>\n" % (self.num_steps)
 		astr += "\t<rng_seed = time>\n"
 		astr += "\t<trajectory_out_fname = %s>\n" % (self.trajectory_out_fname)
-		astr += "\t<measurement_out_fname = %s>\n" % (self.measurement_out_fname)
+		astr += "\t<measurement_out_fname = %s>\n" % (self.measurement_out_basefname)
 		astr += "\t<vdw_forcefield_params = %s>\n" % (self.vdw_forcefield_params)
 		astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
 		astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
 		astr += "\t<kappa = %5.2e>\n" % (self.kappa)
 		astr += "\t<epsilon_0 = %5.2e>\n" % (self.epsilon_0)
 		astr += "\t<dielec_ext = %5.2e>\n" % (self.dielec_ext)
-		astr += "\t<do_stokes = %d>\n" % (self.do_stokes)
+		astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
 		astr += "\t<stokes_visc = %5.2e>\n" % (self.stokes_visc)
 		astr += "\t<calc_vdw = %d>\n" % (self.calc_vdw)
 		astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
@@ -147,123 +382,46 @@ class FFEA_script_params():
 		astr += "</param>\n\n"	
 		fout.write(astr)
 
-	def read_params_from_script(self, fname):
-		
-		fin = open(fname, "r")
-		param_lines = get_block_file(fin, "param", 0)
-		for line in param_lines:
-			line = line.strip().replace("<", "").replace(">", "")
-			lvalue = line.split("=")[0].rstrip()
-			rvalue = line.split("=")[1].lstrip()
-
-			if lvalue == "restart":
-				self.restart = int(rvalue)
-			elif lvalue == "dt":
-				self.dt = float(rvalue)
-			elif lvalue == "kT":
-				self.kT = float(rvalue)
-			elif lvalue == "check":
-				self.check = int(rvalue)
-			elif lvalue == "num_steps":
-				self.num_steps = int(float(rvalue))
-			elif lvalue == "trajectory_out_fname":
-				self.trajectory_out_fname = rvalue
-			elif lvalue == "measurement_out_fname":
-				self.measurement_out_fname = rvalue
-			elif lvalue == "vdw_forcefield_params":
-				self.vdw_forcefield_params = rvalue
-			elif lvalue == "epsilon":
-				self.epsilon = float(rvalue)
-			elif lvalue == "max_iterations_cg":
-				self.max_iterations_cg = int(rvalue)
-			elif lvalue == "kappa":
-				self.kappa = float(rvalue)
-			elif lvalue == "epsilon_0":
-				self.epsilon_0 = float(rvalue)
-			elif lvalue == "dielec_ext":
-				self.dielec_ext = float(rvalue)
-			elif lvalue == "do_stokes":
-				self.do_stokes = int(rvalue)
-			elif lvalue == "stokes_visc":
-				self.stokes_visc = float(rvalue)
-			elif lvalue == "calc_vdw":
-				self.calc_vdw = int(rvalue)
-			elif lvalue == "calc_noise":
-				self.calc_noise = int(rvalue)
-			elif lvalue == "calc_es":
-				self.calc_es = int(rvalue)
-			elif lvalue == "es_update":
-				self.es_update = int(rvalue)
-			elif lvalue == "es_N_x":
-				self.es_N_x = int(rvalue)
-			elif lvalue == "es_N_y":
-				self.es_N_y = int(rvalue)
-			elif lvalue == "es_N_z":
-				self.es_N_z = int(rvalue)
-			elif lvalue == "sticky_wall_xz":
-				self.sticky_wall_xz = int(rvalue)
-			elif lvalue == "wall_x_1":
-				self.wall_x_1 = rvalue
-			elif lvalue == "wall_x_2":
-				self.wall_x_2 = rvalue
-			elif lvalue == "wall_y_1":
-				self.wall_y_1 = rvalue
-			elif lvalue == "wall_y_2":
-				self.wall_y_2 = rvalue
-			elif lvalue == "wall_z_1":
-				self.wall_z_1 = rvalue
-			elif lvalue == "wall_z_2":
-				self.wall_z_2 = rvalue
-			elif lvalue == "es_h":
-				self.es_h = int(rvalue)
-			elif lvalue == "num_blobs":
-				self.num_blobs = int(rvalue)
-			elif lvalue == "num_conformations":
-				self.num_conformations = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
-			elif lvalue == "num_states":
-				self.num_states = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
-
-		fin.close()
-
 class FFEA_script_blob:
+
+	def __init__(self):
 		
-	def __init__(self, num_conformations):
-		
-		self.num_conformations = num_conformations
-		self.conformation = [FFEA_script_conformation() for i in range(self.num_conformations)]
+		self.num_conformations = 0
+		self.conformation = []
 		self.solver = ""
 		self.scale = 0.0
+		self.centroid = None
+		self.rotation = None
 
 	def write_to_file(self, fout):
 
 		fout.write("\t<blob>\n")
+		need_solver = 0;
 		for conformation in self.conformation:
 			conformation.write_to_file(fout)
-
-		fout.write("\t\t<solver = %s>\n" % (self.solver))
+			if conformation.motion_state == "DYNAMIC":
+				need_solver = 1
+		
+		if need_solver == 1:
+			fout.write("\t\t<solver = %s>\n" % (self.solver))
 		fout.write("\t\t<scale = %5.2e>\n" % (self.scale))
+		if self.rotation != None:
+			fout.write("\t\t<rotation = (")
+			for i in range(len(self.rotation)):
+				fout.write("%5.2f" % (self.rotation[i]))
+				if i != len(self.rotation) - 1:
+					fout.write(",")
+
+			fout.write(")>\n")
+		if self.centroid != None:
+			fout.write("\t\t<centroid = (")
+			for i in range(len(self.centroid)):
+				fout.write("%5.2f" % (self.centroid[i]))
+				if i != len(self.centroid) - 1:
+					fout.write(",")
+
+			fout.write(")>\n")
 		fout.write("\t</blob>\n")
-
-	def read_blob_from_script(self, fname, blob_index):
-		 
-		fin = open(fname, "r")
-		blob_lines = get_block_file(fin, "blob", blob_index)
-		for c in self.conformation:
-			c.read_conformation_from_lines(blob_lines, self.conformation.index(c))
-			
-		for line in blob_lines:
-			if "=" not in line:
-				continue
-
-			line = line.strip().replace("<", "").replace(">", "")
-			lvalue = line.split("=")[0].rstrip()
-			rvalue = line.split("=")[1].lstrip()
-			if lvalue == "solver":
-				self.solver = rvalue
-			elif lvalue == "scale":
-				self.scale = float(rvalue)
-
-		fin.close()
 
 class FFEA_script_conformation:
 
@@ -283,37 +441,42 @@ class FFEA_script_conformation:
 		astr = ""
 		astr += "\t\t<conformation>\n"
 		astr += "\t\t\t<motion_state = %s>\n" % (self.motion_state)
+		if self.motion_state != "STATIC":
+			astr += "\t\t\t<topology = %s>\n" % (self.topology)
+			astr += "\t\t\t<material = %s>\n" % (self.material)
+			astr += "\t\t\t<stokes = %s>\n" % (self.stokes)
+			astr += "\t\t\t<pin = %s>\n" % (self.pin)
+
 		astr += "\t\t\t<nodes = %s>\n" % (self.nodes)
-		astr += "\t\t\t<topology = %s>\n" % (self.topology)
 		astr += "\t\t\t<surface = %s>\n" % (self.surface)
-		astr += "\t\t\t<material = %s>\n" % (self.material)
-		astr += "\t\t\t<stokes = %s>\n" % (self.stokes)
 		astr += "\t\t\t<vdw = %s>\n" % (self.vdw)
-		astr += "\t\t\t<pin = %s>\n" % (self.pin)
 		astr += "\t\t</conformation>\n"
 		fout.write(astr)
 
-	def read_conformation_from_lines(self, blob_lines, index):
+def extract_block_from_lines(title, index, lines):
 
-		conformation_lines = get_block_lines(blob_lines, "conformation", index)
-		for line in conformation_lines:
-			line = line.strip().replace("<", "").replace(">", "")
-			lvalue = line.split("=")[0].rstrip()
-			rvalue = line.split("=")[1].lstrip()
+	block = []
+	block_index = 0
+	in_block = 0
+	for line in lines:
+		try:
+			if in_block == 0:
+				if line.strip().replace("<", "").replace(">", "") == title:
+
+					block_index += 1
+					if block_index <= index:
+						continue
+					else:
+						in_block = 1
+
+			else:
+				if line.strip().replace("<", "").replace(">", "") == "/" + title:
+					break
+				else:
+					block.append(line)
+		except:
 			
-			if lvalue == "motion_state":
-				self.motion_state = rvalue
-			elif lvalue == "nodes":
-				self.nodes = rvalue
-			elif lvalue == "topology":
-				self.topology = rvalue
-			elif lvalue == "surface":
-				self.surface = rvalue
-			elif lvalue == "material":
-				self.material = rvalue
-			elif lvalue == "stokes":
-				self.stokes = rvalue
-			elif lvalue == "vdw":
-				self.vdw = rvalue
-			elif lvalue == "pin":
-				self.pin = rvalue
+			print "Error. Could not parse line " + line
+			return []
+
+	return block	

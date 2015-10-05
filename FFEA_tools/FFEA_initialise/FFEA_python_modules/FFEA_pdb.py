@@ -19,6 +19,11 @@ class FFEA_pdb:
 		fin.close()
 
 		for line in lines:
+
+			# Only get a single frame for now (very basic, update me continuously)
+			if line[0:6] == "ENDMDL":
+				break
+
 			if line[0:4] == "ATOM":
 				self.num_atoms += 1
 				atom_index = self.num_atoms
@@ -82,8 +87,15 @@ class FFEA_pdb:
 			fout.write(a.element.rjust(2))
 			fout.write(a.charge.rjust(2))
 			fout.write("  \n")
+		fout.write("TER                  " + str(self.atom[-1].chain))
 		fout.close()
 
+	def scale(self, scale):
+
+		for a in self.atom:
+			for j in range(3):
+				a.pos[j] *= scale
+			
 	# Removes and returns chuck of pdb. Keeps the leftover
 	def extract_atoms(self, atomlist):
 		
@@ -227,3 +239,33 @@ class FFEA_pdb_atom:
 		self.segment_id = seg
 		self.element = elem
 		self.charge = charge
+
+def write_frames_to_file(pdb, pdbfname):
+
+	# Open file
+	fout = open(pdbfname, "w")
+	
+	# Write out each frame as a model
+	for frame in pdb:
+		fout.write("MODEL      %d\n" % (pdb.index(frame) + 1))
+		for a in frame.atom:
+			fout.write("ATOM  ")
+			fout.write(str(a.atom_index).rjust(5))
+			fout.write("  " + a.atom_type.ljust(4))
+			fout.write(a.residue_type.rjust(3))
+			fout.write(" " + a.chain)
+			fout.write(str(a.residue_index).rjust(4))
+			fout.write(" ")
+			fout.write("   ")
+			fout.write("%8.3f" % a.pos[0])
+			fout.write("%8.3f" % a.pos[1])
+			fout.write("%8.3f" % a.pos[2])
+			fout.write("%6.2f" % a.occupancy)
+			fout.write("%6.2f" % a.temp_factor)
+			fout.write("      ")
+			fout.write(a.segment_id.ljust(4))
+			fout.write(a.element.rjust(2))
+			fout.write(a.charge.rjust(2))
+			fout.write("  \n")
+		fout.write("TER\nENDMDL\n")
+	fout.close()
