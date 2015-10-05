@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <list>
+#include <iterator>
 #include <string.h>
 #include <unistd.h>
 
@@ -135,12 +136,31 @@ class Edge
 			this->n_index[1] = n1;
 			this->length = calc_length(node);
 		}
+
 		double calc_length(vector3 *node) {
 			vector3 v(node[this->n_index[1]].x - node[this->n_index[0]].x, node[this->n_index[1]].y - node[this->n_index[0]].y, node[this->n_index[1]].z - node[this->n_index[0]].z);
 			this->length = v.get_magnitude();
 			return v.get_magnitude();
 		}
+		
+		vector3 calc_centroid(vector3 *node) {
+			vector3 centroid;
+			centroid.x = (node[n_index[0]].x + node[n_index[1]].x) / 2.0;
+			centroid.y = (node[n_index[0]].y + node[n_index[1]].y) / 2.0;
+			centroid.z = (node[n_index[0]].z + node[n_index[1]].z) / 2.0;
 			
+			return centroid;
+		}
+	
+		bool within_limits(double *limits, vector3 *node) {
+			vector3 centroid = calc_centroid(node);
+			if(centroid.x >= limits[0] && centroid.x <= limits[1] && centroid.y >= limits[2] && centroid.y <= limits[3] && centroid.z >= limits[4] && centroid.z <= limits[5]) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
 		// Edge components
 		int n_index[2];
 		double length;
@@ -181,6 +201,32 @@ class Face
 			}
 		}
 		
+		bool same_as(Face *f) {
+			int i, j, count = 0;
+			for(i = 0; i < 3; ++i) {
+				for(j = 0; j < 3; ++j) {
+					if(f->n[i] == n[j]) {
+						count++;
+						break;
+					}
+				}
+			}
+			if(count == 3) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		bool within_limits(double *limits, vector3 *node) {
+			
+			if(edge[shortest_edge_index].within_limits(limits, node)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
 		// Face components
 		int n[3];
 		int remaining_node;
@@ -366,7 +412,7 @@ class Surface
 			return 0;
 		}
 		
-		int coarsen(double limit, char *conserve_vol, char *find_smallest) {
+		int coarsen(double limit, char *conserve_vol, char *find_smallest, double *limits) {
 			
 			// Iterate through faces while any edge is less than limit
 			int i, j, k, runs = 0, breaks = 0, completed_check, num_shared_faces, num_shared_nodes;
@@ -395,8 +441,12 @@ class Surface
 					length_deleted = INFINITY;
 					for(face_iterator = face.begin(); face_iterator != face.end(); face_iterator++) {
 						if((*face_iterator)->shortest_edge < length_deleted) {
-							length_deleted = (*face_iterator)->shortest_edge;
-							face_to_delete[0] = face_iterator;
+
+							// Check it's within limits
+							if((*face_iterator)->within_limits(limits, node)) {
+								length_deleted = (*face_iterator)->shortest_edge;
+								face_to_delete[0] = face_iterator;
+							}
 						}
 					}
 					//printf("%d %d %d\n", (*face_to_delete[0])->n[0], (*face_to_delete[0])->n[1], (*face_to_delete[0])->n[2]);
@@ -792,6 +842,33 @@ class Surface
 			return 0;
 		}
 		
+		int clean() {
+			
+			list<Face*>::iterator face_iterator, neighbour_iterator, temp_iterator;
+			list<Face*> to_erase;
+
+			// Clear all non-manifold faces
+			for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
+				
+				temp_iterator = face_iterator;
+				advance(temp_iterator, 1);
+				for(neighbour_iterator = temp_iterator; neighbour_iterator != face.end(); ++neighbour_iterator) {
+
+					// Check if same face
+					if((*neighbour_iterator)->same_as(*face_iterator)) {
+						to_erase.push_back(*neighbour_iterator);
+						to_erase.push_back(*face_iterator);
+					}
+				}
+				
+			}
+			for(face_iterator = to_erase.begin(); face_iterator != to_erase.end(); ++face_iterator) {
+				face.erase(face_iterator);
+			}
+
+			return 0;
+		}
+
 		int write_to_file(char *surf_fname) {
 			int i;
 			FILE *surf_out;
@@ -850,8 +927,8 @@ class Surface
 
 // Main program begins
 int main(int argc, char **argv) {
-	if(argc != 6) {
-		cout << "Input Error" << endl << "USAGE: " << argv[0] << " [Input .surf fname] [Output .surf fname] [Coarseness level] [Volume conserve (y/n)] [Find smallest edge? (y/n)]" << endl;
+	if(argc != 6 && argc != 12) {
+		cout << "Input Error" << endl << "USAGE: " << argv[0] << " [Input .surf fname] [Output .surf fname] [Coarseness level] [Volume conserve (y/n)] [Find smallest edge? (y/n)] OPTIONAL[Coarsening range (xmin, xmax, ymin,ymax, zmin,zmax)]" << endl;
 		return -1;
 	}
 	
@@ -869,6 +946,15 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 	}
+
+	// Set limits
+	double limits[6] = {-1 * INFINITY, INFINITY, -1 * INFINITY, INFINITY, -1 * INFINITY, INFINITY};
+	if(argc == 12) {
+		for(int i = 0; i < 6; ++i) {
+			limits[i] = atof(argv[i + 6]);
+		}
+	}
+
 	// Create a surface
 	Surface *surf = new Surface();
 	if(surf->init(argv[1]) != 0) {
@@ -876,11 +962,8 @@ int main(int argc, char **argv) {
 		return -1;
 	};
 	
-	// Check Identical Edges are the same length
-	//surf->check_edges();
-	
 	// Coarsen surface
-	surf->coarsen(atof(argv[3]), argv[4], argv[5]);
+	surf->coarsen(atof(argv[3]), argv[4], argv[5], limits);
 	
 	// Get rid of surface errors
 	//surf->clean();
