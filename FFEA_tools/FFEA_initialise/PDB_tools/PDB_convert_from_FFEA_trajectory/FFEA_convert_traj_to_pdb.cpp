@@ -49,17 +49,21 @@ int main(int argc, char **argv)
 		printf("Error. Expected 'Number of Blobs x'\n");
 		exit(0);
 	}
-	
+
 	// Assign memory for conformations
 	num_conformations = new int[num_blobs];
+	num_nodes = new int*[num_blobs];
+	char buf[100];
+	fgets(buf, 25, traj);
 	for(i = 0; i < num_blobs; ++i) {
-		
+		fgets(buf, 2, traj);
+		num_conformations[i] = atoi(buf);
+		num_nodes[i] = new int[num_conformations[i]];
 	}
-	num_nodes = new int[num_blobs];
-
+	fgets(buf,100, traj);
 	for(i = 0; i < num_blobs; ++i) {
-		if(fscanf(traj, "Blob %*d Nodes %d ", &num_nodes[i]) != 1) {
-			printf("Error. Expected 'Blob %d Nodes ? \n", i);
+		if(fscanf(traj, "Blob %*d: Conformation %*d Nodes %d\n", &num_nodes[i][0]) != 1) {
+			printf("Error. Expected 'Blob %*d: Conformation %*d Nodes %d\n", i);
 			exit(0);
 		}
 		
@@ -84,7 +88,7 @@ int main(int argc, char **argv)
 			if(strcmp(motion_state, "STATIC") == 0) {
 				continue;
 			}
-			for(j = start; j < start + num_nodes[i]; j++) {
+			for(j = start; j < start + num_nodes[i][0]; j++) {
 
 				// Read the x, y and z position values
 				if(fscanf(traj, "%le %le %le", &x, &y, &z) != 3) {
@@ -103,9 +107,9 @@ int main(int argc, char **argv)
 
 				fprintf(pdb_out, "ATOM%7d  N   GLY     1    %8.3f%8.3f%8.3f\n", j, x, y, z);
 			}
-			start += num_nodes[i];
+			start += num_nodes[i][0];
 		}
-		fscanf(traj, "*\n");
+		fscanf(traj, "*\nConformation Changes:\nBlob %*d: Conformation %*d -> Conformation %*d\n*\n");
 		fprintf(pdb_out, "TER\n");
 		fprintf(pdb_out, "ENDMDL\n");
 	}

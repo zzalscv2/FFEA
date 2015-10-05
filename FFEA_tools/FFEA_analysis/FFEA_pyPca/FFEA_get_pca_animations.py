@@ -1,5 +1,4 @@
 import sys, os
-import FFEA_traj
 
 if len(sys.argv) != 5:
 	sys.exit("Usage: python " + sys.argv[0] + " [INPUT .pcz file] [INPUT reference topology (_frame0.pdb)] [num_animations] [ffea scale]")
