@@ -388,31 +388,74 @@ class FFEA_viewer_display_window():
 		self.box_y *= global_scale
 		self.box_z *= global_scale
 		
-		# Load frames from the trajectory file
-		if trajectory_out_fname != None:
-			# if any of the blobs are STATIC, just load their node positions from the node file
+		# Load nodes and shift to appropriate positions
+		# Firstly, load all nodes from node files to get a global centroid
+		world_centroid = [0.0,0.0,0.0]
+		total_num_nodes = 0.0
+		for blob in self.blob_list:
+
+			# First conformations only
+			blob[0].set_scale(global_scale * blob[0].scale)
+			blob[0].load_nodes_file_as_frame()
+			x,y,z = blob[0].get_centroid(0)
+			world_centroid[0] += x * blob[0].num_nodes
+			world_centroid[1] += y * blob[0].num_nodes
+			world_centroid[2] += z * blob[0].num_nodes
+			total_num_nodes += blob[0].num_nodes
+		world_centroid[0] *= 1.0 / total_num_nodes
+		world_centroid[1] *= 1.0 / total_num_nodes
+		world_centroid[2] *= 1.0 / total_num_nodes
+
+		# Translation to box center
+		shift = [0.0,0.0,0.0]
+		shift[0] = self.box_x / 2.0 - world_centroid[0]
+		shift[1] = self.box_y / 2.0 - world_centroid[1]
+		shift[2] = self.box_z / 2.0 - world_centroid[2]
+
+		# Shift to the global centroid if static, else load nodes from traj
+		if trajectory_out_fname == None:
 			for blob in self.blob_list:
-				for conf in blob:
-					if conf.get_state() == "STATIC":
-						conf.set_scale(global_scale * conf.scale)
-						conf.load_nodes_file_as_frame()
-					else:
-						conf.set_scale(global_scale)
-			# Start loading frames for each blob from the trajectory file
+				blob[0].frames[0].translate(shift)
+		else:
+			for blob in self.blob_list:
+				if blob[0].state == "STATIC":
+					blob[0].frames[0].translate(shift)
+				else:
+					blob[0].set_scale(global_scale)
 
 			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
 			self.load_trajectory_thread.start()
+
+		# Load frames from the trajectory file
+		#if trajectory_out_fname != None:
+		#	# if any of the blobs are STATIC, just load their node positions from the node file
+		#	for blob in self.blob_list:
+		#		for conf in blob:
+		#			if conf.get_state() == "STATIC":
+		#				conf.set_scale(global_scale * conf.scale)
+		#				conf.load_nodes_file_as_frame()
+		#			else:
+		#				conf.set_scale(global_scale)
+			# Start loading frames for each blob from the trajectory file
+#
+#			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
+#			self.load_trajectory_thread.start()
 			#self.load_trajectory(trajectory_out_fname)
 
 		# else just use the nodes files (if traj file not given or found)
-		else:
-			print "WARNING: Trajectory file is missing. Loading positions from node files."
-			for blob in self.blob_list:
-				#for conf in blob:
-				blob[0].set_scale(global_scale * blob[0].scale)
-				blob[0].load_nodes_file_as_frame()
+#		else:
+#			print "WARNING: Trajectory file is missing. Loading positions from node files."
+#			for blob in self.blob_list:
+#				#for conf in blob:
+#				blob[0].set_scale(global_scale * blob[0].scale)
+#				blob[0].load_nodes_file_as_frame()
 
-	def load_trajectory(self, trajectory_out_fname):
+	def load_trajectory(self, trajectory_out_fname,):
+
+		# Firstly, delete the frames loaded from node files originally
+		for blob in self.blob_list:
+			if blob[0].get_state() == "DYNAMIC":
+				blob[0].delete_all_frames()
 
 		print "Reading in trajectory file " + trajectory_out_fname
 		traj = open(trajectory_out_fname, "r")
@@ -479,6 +522,7 @@ class FFEA_viewer_display_window():
 		completed = 0
 		trajtype = 1	# New type
 		tested = 0
+		first_frame = self.num_blobs
 		while True:
 			if self.num_frames >= self.num_frames_to_read:
 				break
@@ -496,7 +540,6 @@ class FFEA_viewer_display_window():
 				break
 
 			for i in range(self.num_blobs):
-
 
 				# Load actual frame
 				j = active_conf[i]

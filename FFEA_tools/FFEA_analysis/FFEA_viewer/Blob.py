@@ -61,7 +61,14 @@ class Blob:
 			print "No vdw file provided. Creating a zero array."
 			self.vdw = [-1 for i in xrange(self.num_surface_faces)]
 		else:
-			self.load_vdw(vdw_fname)
+			try:
+				self.load_vdw(vdw_fname)
+			except(IOError):
+				print "Vdw file '" + vdw_fname + "' not found. Creating a zero array."
+				self.vdw = [-1 for i in xrange(self.num_surface_faces)]
+			except:
+				print "Unknow error in 'self.load_vdw()'. Creating a zero array."
+				self.vdw = [-1 for i in xrange(self.num_surface_faces)]
 
 		self.hidden_face = [-1 for i in xrange(self.num_surface_faces)]
 		for i in xrange(self.num_surface_faces):
@@ -388,6 +395,9 @@ class Blob:
 				print "...Done."
 				self.calculated_first_frame_J_inv = True
 
+	def delete_all_frames(self):
+		self.num_frames = 0
+		self.frames = []
 	def load_nodes_file_as_frame(self):
 		print "Reading in nodes file " + self.nodes_fname
 		nodes_file = open(self.nodes_fname, "r")
@@ -1359,3 +1369,8 @@ class Frame:
 		self.centroid_x = centroid_x
 		self.centroid_y = centroid_y
 		self.centroid_z = centroid_z
+
+	def translate(self, trans):
+		for n in self.node_list:
+			for i in range(3):
+				n[i] += trans[i]
