@@ -65,3 +65,6 @@ for i in JA:
 	outmap.write(str(i) + " ")
 outmap.write("\n")
 outmap.close()
+outmap = open(outmap_fname, "r")
+for i in range(5):
+	outmap.readline()

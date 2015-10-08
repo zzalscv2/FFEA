@@ -1,7 +1,8 @@
 import sys, os, time
-import FFEA_script, FFEA_traj
-if len(sys.argv) != 4:
-	sys.exit("Usage: python FFEA_rerun.py [INPUT .ffea file] [num_frames to delete each restart] [num_frames required]")
+import FFEA_script, FFEA_trajectory
+
+if len(sys.argv) < 4:
+	sys.exit("Usage: python FFEA_rerun.py [INPUT .ffea file] [num_frames to delete each restart] [num_frames required] [frames_already_completed (OPTIONAL)]")
 
 # Get args
 script_fname = os.path.abspath(sys.argv[1])
@@ -19,6 +20,10 @@ if num_frames_required > script.params.num_steps / script.params.check:
 original_script_fname = script_fname
 restarts = 0
 num_frames_completed = 0
+if len(sys.argv) == 5:
+	num_frames_completed += int(sys.argv[4])
+	restarts += 1
+
 while(True):
 
 	# If on zeroth restart, make sure script will run indefinitely
@@ -43,8 +48,11 @@ while(True):
 	# Completed runs
 	restarts += 1
 
+	# To enable ctrl+c quit if necessary
+	time.sleep(2)
+
 	# How many frames calculated before crash?
-	num_frames_completed = FFEA_traj.get_num_frames(script.params.trajectory_out_fname)
+	num_frames_completed = FFEA_trajectory.get_num_frames(script.params.trajectory_out_fname)
 
 	# Do we need to stop?
 	if restarts > num_frames_completed:

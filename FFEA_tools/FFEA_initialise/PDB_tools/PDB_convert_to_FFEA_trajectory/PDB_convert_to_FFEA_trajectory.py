@@ -28,9 +28,10 @@ outfile = open(outfname, "w")
 
 # Get number of nodes in 
 # Outfile Header Stuff
-outfile.write("FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs 1\nBlob 0 Nodes %d\n\n" % (num_nodes))
+outfile.write("FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs 1\nNumber of Conformations 1\nBlob 0: Conformation 0 Nodes %d\n\n" % (num_nodes))
 
 step = -1
+
 while True:
 	line = infile.readline()
 	if line == "":
@@ -45,8 +46,7 @@ while True:
 	outfile.write("*\nBlob 0, Conformation 0, step %d\nDYNAMIC\n" % (step))
 	line = infile.readline()
 	while "TER" not in line:
-		sline = line.split()
-		outfile.write("%6.3e %6.3e %6.3e " % (float(sline[5]) * scale, float(sline[6]) * scale, float(sline[7]) * scale))
+		outfile.write("%6.3e %6.3e %6.3e " % (float(line[30:38]) * scale, float(line[38:46]) * scale, float(line[46:52]) * scale))	
 		for i in range(7):
 			outfile.write("%6.3e " % (0.0))
 		outfile.write("\n")
