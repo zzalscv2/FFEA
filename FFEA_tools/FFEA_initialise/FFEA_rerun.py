@@ -5,12 +5,13 @@ if len(sys.argv) < 4:
 	sys.exit("Usage: python FFEA_rerun.py [INPUT .ffea file] [num_frames to delete each restart] [num_frames required] [frames_already_completed (OPTIONAL)]")
 
 # Get args
-script_fname = os.path.abspath(sys.argv[1])
+script_fname = sys.argv[1]
+absscript_fname = os.path.abspath(sys.argv[1])
 delete_frames = int(sys.argv[2])
 num_frames_required = int(sys.argv[3])
 
 # Do stuff with args
-os.chdir(os.path.dirname(script_fname))
+os.chdir(os.path.dirname(absscript_fname))
 script = FFEA_script.FFEA_script(script_fname)
 if num_frames_required > script.params.num_steps / script.params.check:
 	print "num_frames_required larger than number set in script. Resetting..."
@@ -28,14 +29,14 @@ while(True):
 
 	# If on zeroth restart, make sure script will run indefinitely
 	if restarts == 0:
-		script.params.num_steps = script.params.check * num_frames_required
+		script.params.num_steps = script.params.check * num_frames_required + num_frames_completed
 		script_fname = script_fname.split(".")[0] + "_newnumframes.ffea"
 		script.write_to_file(script_fname)
-		
+
 	# If on first restart, script needs changing
 	if restarts == 1:
 		script.params.restart = 1
-		script_fname = script_fname.split("_newnumframes")[0] + "_restarted.ffea"
+		script_fname = script_fname.split(".")[0].split("_newnumframes")[0] + "_restarted.ffea"
 		script.write_to_file(script_fname)
 
 	# Run sim if possible
