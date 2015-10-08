@@ -269,10 +269,10 @@ class FFEA_script:
 	def write_to_file(self, fname):
 
 		fout = open(fname, "w")
-		self.params.write_to_file(fout)
+		self.params.write_to_file(fout, fname)
 		fout.write("<system>\n")
 		for blob in self.blob:
-			blob.write_to_file(fout)
+			blob.write_to_file(fout, fname)
 		fout.write("</system>\n")
 		fout.close()
 
@@ -332,7 +332,7 @@ class FFEA_script_params():
 		self.num_conformations = []
 		self.num_states = []
 
-	def write_to_file(self, fout):
+	def write_to_file(self, fout, fname):
 		
 		num_conformations_string = ""
 		num_states_string = ""
@@ -342,7 +342,9 @@ class FFEA_script_params():
 
 		num_conformations_string = num_conformations_string[0:-1]
 		num_states_string = num_states_string[0:-1]
-		print self.trajectory_out_fname
+		
+		print 
+
 		astr = ""
 		astr += "<param>\n"
 		astr += "\t<restart = %d>\n" % (self.restart)
@@ -351,9 +353,9 @@ class FFEA_script_params():
 		astr += "\t<check = %d>\n" % (self.check)
 		astr += "\t<num_steps = %d>\n" % (self.num_steps)
 		astr += "\t<rng_seed = time>\n"
-		astr += "\t<trajectory_out_fname = %s>\n" % (self.trajectory_out_fname)
-		astr += "\t<measurement_out_fname = %s>\n" % (self.measurement_out_basefname)
-		astr += "\t<vdw_forcefield_params = %s>\n" % (self.vdw_forcefield_params)
+		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
+		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_basefname, os.path.dirname(os.path.abspath(fname))))
+		astr += "\t<vdw_forcefield_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
 		astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
 		astr += "\t<kappa = %5.2e>\n" % (self.kappa)
@@ -393,12 +395,12 @@ class FFEA_script_blob:
 		self.centroid = None
 		self.rotation = None
 
-	def write_to_file(self, fout):
+	def write_to_file(self, fout, fname):
 
 		fout.write("\t<blob>\n")
 		need_solver = 0;
 		for conformation in self.conformation:
-			conformation.write_to_file(fout)
+			conformation.write_to_file(fout, fname)
 			if conformation.motion_state == "DYNAMIC":
 				need_solver = 1
 		
@@ -436,20 +438,20 @@ class FFEA_script_conformation:
 		self.vdw = ""
 		self.pin = ""
 
-	def write_to_file(self, fout):
+	def write_to_file(self, fout, fname):
 
 		astr = ""
 		astr += "\t\t<conformation>\n"
 		astr += "\t\t\t<motion_state = %s>\n" % (self.motion_state)
 		if self.motion_state != "STATIC":
-			astr += "\t\t\t<topology = %s>\n" % (self.topology)
-			astr += "\t\t\t<material = %s>\n" % (self.material)
-			astr += "\t\t\t<stokes = %s>\n" % (self.stokes)
-			astr += "\t\t\t<pin = %s>\n" % (self.pin)
+			astr += "\t\t\t<topology = %s>\n" % (os.path.relpath(self.topology, os.path.dirname(os.path.abspath(fname))))
+			astr += "\t\t\t<material = %s>\n" % (os.path.relpath(self.material, os.path.dirname(os.path.abspath(fname))))
+			astr += "\t\t\t<stokes = %s>\n" % (os.path.relpath(self.stokes, os.path.dirname(os.path.abspath(fname))))
+			astr += "\t\t\t<pin = %s>\n" % (os.path.relpath(self.pin, os.path.dirname(os.path.abspath(fname))))
 
-		astr += "\t\t\t<nodes = %s>\n" % (self.nodes)
-		astr += "\t\t\t<surface = %s>\n" % (self.surface)
-		astr += "\t\t\t<vdw = %s>\n" % (self.vdw)
+		astr += "\t\t\t<nodes = %s>\n" % (os.path.relpath(self.nodes, os.path.dirname(os.path.abspath(fname))))
+		astr += "\t\t\t<surface = %s>\n" % (os.path.relpath(self.surface, os.path.dirname(os.path.abspath(fname))))
+		astr += "\t\t\t<vdw = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t\t</conformation>\n"
 		fout.write(astr)
 
