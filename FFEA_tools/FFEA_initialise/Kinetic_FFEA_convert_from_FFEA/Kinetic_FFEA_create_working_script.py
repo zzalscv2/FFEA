@@ -62,9 +62,9 @@ for line in lines:
 
 if working_spring_fname != "none.spring":
 	fout.write("\t<interactions>\n")
-	fout.write("\t\t<spring>\n")
+	fout.write("\t\t<springs>\n")
 	fout.write("\t\t\t<spring_fname = " + working_spring_fname + ">\n")
-	fout.write("\t\t</spring>\n")
+	fout.write("\t\t</springs>\n")
 	fout.write("\t</interactions>\n")
 
 fout.write("</system>\n")

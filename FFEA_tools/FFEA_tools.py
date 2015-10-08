@@ -16,7 +16,7 @@ ffea_tools = 	{
 		"makekineticmaps": "FFEA_initialise/Kinetic_FFEA_convert_from_FFEA/Kinetic_FFEA_create_maps.py",
 		"meshmap": "FFEA_initialise/Surface_tools/Surface_convert_from_EM_density_map/emdb_map_to_ffea",
 		"addmap": "FFEA_initialise/EM_density_map_tools/add_maps",
-		"pdbtomap": "FFEA_initialise/EM_density_map_tools/EM_density_map_convert_from_pdb/convert_pdb_to_emdb_map",
+		"pdbtomap": "FFEA_initialise/EM_density_map_tools/convert_pdb_to_emdb_map",
 		"align": "FFEA_initialise/PDB_tools/PDB_align/align_point_cloud",
 		"extractnodes": "FFEA_analysis/FFEA_traj_tools/FFEA_extract_specific_nodes",
 		"trajtoxyz": "FFEA_analysis/FFEA_traj_tools/FFEA_extract_positions",

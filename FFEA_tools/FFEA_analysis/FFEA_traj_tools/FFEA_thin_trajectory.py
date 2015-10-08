@@ -1,6 +1,6 @@
 import sys, os
 from math import ceil
-import FFEA_traj
+import FFEA_trajectory
 
 if len(sys.argv) != 5:
 	sys.exit("Usage python " + os.path.basename(sys.argv[0]) + " [FFEA traj fname] [FFEA output traj fname] [frames to read] [Percentage to keep]")
@@ -20,5 +20,5 @@ if thin_percent < 1:
 
 
 frame_rate = ceil(100 / thin_percent)
-traj = FFEA_traj.FFEA_traj(traj_fname, frames_to_read, 0, frames_to_read - 1, frame_rate)
-traj.write_traj_to_file(out_fname)
+traj = FFEA_trajectory.FFEA_trajectory(traj_fname, frames_to_read, frame_rate)
+traj.write_to_file(out_fname)
