@@ -112,9 +112,5 @@ class FFEA_node:
 		self.num_surface_nodes = 0
 
 	def scale(self, scale):
-		print self.pos[0]
-		print self.pos[1]
 		self.pos *= scale
-		print self.pos[0]
-		print self.pos[1]
 		
