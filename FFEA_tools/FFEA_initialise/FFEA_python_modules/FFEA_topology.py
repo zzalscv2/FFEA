@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 
 class FFEA_topology:
 
@@ -114,3 +115,11 @@ class FFEA_element:
 	def __init__(self, n0, n1, n2, n3):
 	
 		self.n = [n0, n1, n2, n3]
+
+	def calc_centroid(self, ffea_node):
+		
+		centroid = np.array([0.0,0.0,0.0])
+		for index in self.n:
+			centroid += ffea_node.pos[index]
+
+		return centroid * (1.0/4.0)

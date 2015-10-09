@@ -61,13 +61,24 @@ class FFEA_material:
 		self.element = []
 		self.num_elements = 0
 
+	def write_to_file(self, fname):
+
+		with open(fname, "w") as fout:
+			fout.write("ffea material params file\nnum_elements %d\n" % (self.num_elements))
+			for el in self.element:
+				fout.write(str(el.density) + " " + str(el.shear_viscosity) + " " + str(el.bulk_viscosity) + " " + str(el.shear_modulus) + " " + str(el.bulk_modulus) + " " + str(el.dielectric) + "\n")
+
 class FFEA_material_element:
 
 	def __init__(self, d, sv, bv, sm, bm, de):
+
+		self.set_params(d, sv, bv, sm, bm, de)
+
+	def set_params(self, d, sv, bv, sm, bm, de):
 
 		self.density = d
 		self.shear_viscosity = sv
 		self.bulk_viscosity = bv
 		self.shear_modulus = sm
 		self.bulk_modulus = bm
-		self.dieletric = de
+		self.dielectric = de
