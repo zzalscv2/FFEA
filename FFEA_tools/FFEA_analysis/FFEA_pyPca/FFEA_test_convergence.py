@@ -19,12 +19,12 @@ num_frames = np.array([int(floor((total_num_frames * (i + 1)) / num_test_points)
 scriptdirname = os.path.dirname(script_fname)
 trajbasename = os.path.splitext(traj_fname)[0]
 convert = scriptdirname + "/FFEA_convert_FFEA_to_atomic.py"
-out_fname = trajbasename + "_temp.out"
+out_fname = trajbasename + ".out"
 pdb_top_fname = os.path.splitext(out_fname)[0] + "_frame0.pdb"
 pdb_traj_fname = trajbasename + ".pdb"
 FFEA_top_fname = os.path.splitext(out_fname)[0] + "_frame0.out"
-pcz_fname = trajbasename + "_temp.pcz"
-eval_fname = trajbasename + "_temp.evals"
+pcz_fname = trajbasename + ".pcz"
+eval_fname = trajbasename + ".evals"
 
 # Run PCA multiple times (this could take ages!)
 alleigs = []
@@ -60,3 +60,4 @@ plt.show()
 figname = trajbasename + "_evalconv.png"
 plt.savefig(figname)
 print("If pyPca/1.4.0 was not loaded, this program didn't work! Load pyPca and run again.")
+os.system("rm " + eval_fname)
