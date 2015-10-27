@@ -16,18 +16,22 @@ for i in range(4):
 	fin.readline()
 
 data = []
+data2 = []
 for i in range(5):
 	data_line = []
 	sline = fin.readline().split()
 	for bit in sline:
 		data_line.append(abs(float(bit)))
 	data.append(data_line)
+	data2.append(data_line)
+
+for i in range(5):
+	data[i] = data2[4 - i]
 
 data = np.array(data)
-print data
 
 # Build figure
-column_labels = list('01234')
+column_labels = list('43210')
 row_labels = list('01234')
 ax = plt.subplot(111)
 ax.set_xticks(np.arange(data.shape[1]) + 0.5, minor=False)
