@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import FFEA_topology
 
 class FFEA_trajectory:
 
@@ -46,9 +47,9 @@ class FFEA_trajectory:
 				self.num_conformations = [1 for i in range(self.num_blobs)]
 				self.num_nodes = [[int(sline[4 * i + 3]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 				self.num_subblobs = [[1 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
+				fin.readline()
 			except:
 				print("Error. Expected:\nBlob 0 Nodes %d Blob 1 Nodes %d ... Blob %d Nodes %d")
-				print sline
 				self.reset()
 				fin.close()
 				return
@@ -75,13 +76,13 @@ class FFEA_trajectory:
 					self.reset()
 					fin.close()
 					return
+			fin.readline()
 
 		# Initialise the trajectory object
 		self.blob = [[FFEA_traj_blob(self.num_nodes[i][j]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 		self.subblob = [[[FFEA_traj_subblob(range(self.num_nodes[i][j]))] for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 
 		# Begin traj
-		fin.readline()
 		if fin.readline().rstrip() != "*":
 			print("Error. Expected to read '*' to begin the trajectory.")
 			self.reset()
@@ -137,7 +138,7 @@ class FFEA_trajectory:
 					self.reset()
 					fin.close()
 					return
-			
+
 				if fin.readline().strip() == "STATIC":
 					if(num_frames_read + num_frames_skipped == 0):
 						self.blob[i][j].motion_state = "STATIC"
@@ -145,10 +146,13 @@ class FFEA_trajectory:
 					continue
 
 				else:
-					# num_nodes used to be here
+					# num_nodes used to be here, maybe
 					if self.type == "OLD":
-						fin.readline()
+						last_pos = fin.tell()
 
+						# If no 'num_nodes', return to last line
+						if len(fin.readline().split()) != 1:
+							fin.seek(last_pos)
 				for j in range(self.num_nodes[i][active_conformation[i]]):
 					try:
 						sline = fin.readline().split()
@@ -175,7 +179,13 @@ class FFEA_trajectory:
 
 				# Conformation changes
 				try:
-					if fin.readline().rstrip() != "*":
+					line = fin.readline().rstrip()
+					if self.type == "OLD" and (line == "" or line == []):
+						print line
+						num_frames_read += 1
+						break
+
+					elif line != "*":
 						print("Error. Expected to read '*' to end the frame and begin the conformation changes section.")
 						self.reset()
 						fin.close()
@@ -211,8 +221,64 @@ class FFEA_trajectory:
 		print("...done!\nRead " + str(num_frames_read) + " frames.\nSkipped " + str(num_frames_skipped) + " frames.\nTotal frames parsed = " + str(num_frames_read + num_frames_skipped))
 		self.num_frames = num_frames_read
 
+	def write_linear_to_file(self, fname, top):
+
+		# Firstly, get a list of linear nodes
+		linear_nodes = [[[] for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
+		num_linear_nodes = [[0 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
+		
+		i = -1
+		for b in top:
+			i += 1
+			j = -1
+			for c in b:
+				j += 1
+				linear_nodes[i][j] = list(c.get_linear_nodes())
+				num_linear_nodes[i][j] = len(linear_nodes[i][j])
+
+		fout = open(fname, "w")
+
+		# Write header info
+		fout.write("FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs %d\n" % (self.num_blobs))
+		fout.write("Number of Conformations ")
+		for i in range(self.num_blobs):
+			fout.write("%d " % (self.num_conformations[i]))
+		fout.write("\n")
+		for i in range(self.num_blobs):
+			fout.write("Blob %d:\t" % (i))
+			for j in range(self.num_conformations[i]):
+				fout.write("Conformation %d Nodes %d " % (j, num_linear_nodes[i][j]))
+
+			fout.write("\n")
+		fout.write("\n")
+
+		# Frames
+		fout.write("*\n")
+		for i in range(self.num_frames):
+			for blob in self.blob:
+				blob_index = self.blob.index(blob)
+				conformation_index = 0
+				fout.write("Blob %d, Conformation %d, step 0\n" % (self.blob.index(blob), 0))
+				fout.write(blob[0].motion_state + "\n")
+				if blob[0].motion_state == "DYNAMIC":
+					j = -1
+					for pos in blob[0].frame[i].pos:
+						j += 1
+						# Only write if linear
+						if j in linear_nodes[blob_index][conformation_index]:
+							fout.write("%8.6e %8.6e %8.6e %8.6e %8.6e %8.6e %8.6e %8.6e %8.6e %8.6e\n" % (pos[0], pos[1], pos[2], 0, 0, 0, 0, 0, 0, 0))
+		
+			# Conformation changes		
+			fout.write("*\nConformation Changes:\n")
+			for j in range(self.num_blobs):
+				fout.write("Blob %d: Conformation %d -> Conformation %d\n" % (j, 0, 0))
+			fout.write("*\n")
+
+		fout.close()
+
 	def write_to_file(self, fname):
 
+		print "Writing trajectory to " + fname + "..."
 		fout = open(fname, "w")
 
 		# Write header info
@@ -232,6 +298,7 @@ class FFEA_trajectory:
 		# Frames
 		fout.write("*\n")
 		for i in range(self.num_frames):
+			sys.stdout.write("\r\t%d%% of frames written to file" % ((100 * i) / self.num_frames))
 			for blob in self.blob:
 				fout.write("Blob %d, Conformation %d, step 0\n" % (self.blob.index(blob), 0))
 				fout.write(blob[0].motion_state + "\n")
@@ -244,7 +311,7 @@ class FFEA_trajectory:
 			for j in range(self.num_blobs):
 				fout.write("Blob %d: Conformation %d -> Conformation %d\n" % (j, 0, 0))
 			fout.write("*\n")
-
+		print("\ndone!")
 		fout.close()
 		
 	def write_frame_to_file(self, fname, frame_index):
@@ -280,16 +347,6 @@ class FFEA_trajectory:
 		fout.write("*")
 		fout.close()
 
-	def reset(self):
-		self.type = "NEW"
-		self.num_blobs = 0
-		self.num_conformations = []
-		self.num_nodes = []
-		self.blob = []
-		self.num_subblobs = []
-		self.subblob = []
-		self.num_frames = 0
-
 	def define_subblob(self, blob_index, conformation_index, indices):
 
 		self.num_subblobs[blob_index][conformation_index] += 1
@@ -303,7 +360,17 @@ class FFEA_trajectory:
 
 		self.subblob[blob_index][conformation_index][subblob_index].calc_trajectory(self.blob[blob_index][conformation_index])
 		return np.array([f.centroid for f in self.subblob[blob_index][conformation_index][subblob_index].frame])
-	
+
+	def reset(self):
+		self.type = "NEW"
+		self.num_blobs = 0
+		self.num_conformations = []
+		self.num_nodes = []
+		self.blob = []
+		self.num_subblobs = []
+		self.subblob = []
+		self.num_frames = 0
+
 class FFEA_traj_blob:
 
 	def __init__(self, num_nodes):

@@ -1,5 +1,5 @@
 import numpy as np
-import sys
+import sys, os
 import FFEA_node
 
 class FFEA_pin:
