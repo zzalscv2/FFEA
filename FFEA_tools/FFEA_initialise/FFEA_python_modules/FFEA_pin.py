@@ -10,16 +10,16 @@ class FFEA_pin:
 		self.reset()
 
 		# Start reading
-		try:
-			fin = open(fname, "r")
-		
-		except(IOError):
-			print "File " + fname  + " not found. Returning empty object."
+		if not os.path.exists(fname):
+			print "File " + fname  + " not found. Creating empty object....done!"
 			self.reset()
 			return
 
+		fin = open(fname, "r")
+
 		# Header
-		if fin.readline().rstrip() != "ffea pinned nodes file":
+		line = fin.readline().rstrip()
+		if line != "ffea pinned nodes file" and line != "walrus pinned nodes file":
 			print "Error. Expected to read 'ffea pinned nodes file'. This may not be an ffea pinned nodes file"
 			return
 
