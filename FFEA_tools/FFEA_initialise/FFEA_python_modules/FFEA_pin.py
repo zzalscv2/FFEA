@@ -97,3 +97,8 @@ class FFEA_pin:
 			if np.linalg.norm(node.pos[i] - origin) < radius:
 				self.num_pinned_nodes += 1
 				self.node_index.append(i)
+
+	def add_node(self, node_no):
+
+		self.node_index.append(node_no)
+		self.num_pinned_nodes += 1
