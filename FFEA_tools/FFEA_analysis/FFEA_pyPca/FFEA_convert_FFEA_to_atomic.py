@@ -67,8 +67,7 @@ os.system(scriptdir + "../../FFEA_initialise/PDB_tools/PDB_convert_from_FFEA_tra
 # Convert entire trajectory to a pdb trajectory
 if format == "mdcrd":
 	final_traj_fname_pdb = final_traj_fname.split(".")[0] + ".mdcrd"
-	os.system(scriptdir + "../../FFEA_analysis/PCA/pyPca/FFEA_convert_traj_to_mdcrd " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
-
+	os.system(scriptdir + "../../FFEA_analysis/FFEA_pyPca/FFEA_convert_traj_to_mdcrd " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
 elif format == "pdb":
 	final_traj_fname_pdb = final_traj_fname.split(".")[0] + ".pdb"
 	os.system(scriptdir + "../../FFEA_initialise/PDB_tools/PDB_convert_from_FFEA_trajectory/FFEA_convert_traj_to_pdb " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
