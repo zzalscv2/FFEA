@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	// Get required args
 	string script_fname;
 	int mode;
-	int frames_to_delete;
+	int frames_to_delete = 0;
 	b_po::options_description desc("Allowed options");
 	b_po::positional_options_description pdesc;
 	b_po::variables_map var_map;
@@ -53,8 +53,7 @@ int main(int argc, char *argv[])
 		desc.add_options()
 			("help,h", "print usage message")
 			("input-file,i", b_po::value<string>(&script_fname), "input script fname")
-			("mode,m", b_po::value<int>(&mode)->default_value(0), "simulation mode (0 - FFEA, 1 - ENM, 2 - DMM)")
-			("timestep,t", "calculates maximum allowed timestep (one-time calculation for a given system)")
+			("mode,m", b_po::value<int>(&mode)->default_value(0), "simulation mode (0 - FFEA, 1 - ENM, 2 - DMM, 3 - Timestep Calculator)")
 			("delete_frames,l", b_po::value<int>(&frames_to_delete), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
 		;
 		
@@ -73,7 +72,7 @@ int main(int argc, char *argv[])
 	// Boost makes sure options are valid. We check arguments are valid
 	// --mode
 	if(var_map.count("mode")) {
-		if(mode != 0 && mode != 1 && mode != 2) {
+		if(mode != 0 && mode != 1 && mode != 2 && mode != 3) {
 			FFEA_error_text();		
 			cout << "Unrecognised argument to --mode" << endl;
 			cout << desc << endl;
@@ -120,7 +119,7 @@ int main(int argc, char *argv[])
 
 	// Initialise the world, loading all blobs, parameters, electrostatics, etc.
 	cout << "Initialising the world:\n" << endl;
-	if(world->init(script_fname, frames_to_delete) == FFEA_ERROR) {
+	if(world->init(script_fname, frames_to_delete, mode) == FFEA_ERROR) {
 		FFEA_error_text();
 		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 		myreturn = FFEA_ERROR;

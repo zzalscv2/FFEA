@@ -48,7 +48,7 @@ public:
     ~World();
 
     /* */
-    int init(string FFEA_script_filename, int frames_to_delete);
+    int init(string FFEA_script_filename, int frames_to_delete, int mode);
 
     /* */
     int get_smallest_time_constants();
@@ -212,8 +212,14 @@ private:
 
     void do_es();
 
-    void make_trajectory_from_eigenvector(int blob_index, int mode_index, Eigen::VectorXd evec, double step);
+    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXd evec, double step);
 
+    void print_evecs_to_file(string fname, Eigen::MatrixXd ev, int num_rows, int num_modes);
+
+    void print_evals_to_file(string fname, Eigen::VectorXd ev, int num_modes);
+
+    void write_eig_to_files(double *evals_ordered, double **evecs_ordered, int num_modes, int num_nodes);
+    
     void print_trajectory_and_measurement_files(int step, double wtime);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
