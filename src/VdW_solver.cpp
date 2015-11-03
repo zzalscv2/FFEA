@@ -199,7 +199,6 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
     scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
     scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
-    vector3 r; 
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
         for(int l = k; l < num_tri_gauss_quad_points; l++) {
 //          vector3 r =     {
@@ -207,14 +206,6 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
 //                                  minimum_image(p[k].y - q[l].y, box_size.y),
 //                                  minimum_image(p[k].z - q[l].z, box_size.z)
 //                          };
-            /*r =     {
-                                    p[k].x - q[l].x,
-                                    p[k].y - q[l].y,
-                                    p[k].z - q[l].z
-                            }; */
-
-
-            // mag_r = sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
             mag_r = sqrt( (p[k].x - q[l].x) * (p[k].x - q[l].x) + 
                           (p[k].y - q[l].y) * (p[k].y - q[l].y) +
                           (p[k].z - q[l].z) * (p[k].z - q[l].z) );
@@ -224,13 +215,13 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
             mag_ri_6 = mag_ri_4 * mag_ri_2;
             mag_ri_7 = mag_ri_6 * mag_ri;
             vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
-            force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (1 - vdw_fac_6 );
+            force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (vdw_fac_6 - 1);
             energy += vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
-            force_mag *= -1;
+            // force_mag *= -1;
 
-            force_pair_matrix[k][l].x = force_mag * (r.x / mag_r);
-            force_pair_matrix[k][l].y = force_mag * (r.y / mag_r);
-            force_pair_matrix[k][l].z = force_mag * (r.z / mag_r);
+            force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
+            force_pair_matrix[k][l].y = force_mag * ((p[k].x - q[l].x) / mag_r);
+            force_pair_matrix[k][l].z = force_mag * ((p[k].x - q[l].x) / mag_r);
 
             force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
             force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
