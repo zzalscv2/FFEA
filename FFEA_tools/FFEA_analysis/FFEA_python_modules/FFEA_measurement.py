@@ -12,6 +12,7 @@ class FFEA_measurement:
 		self.num_blobs = num_blobs
 
 		# Split name into world and blob names
+		print fname
 		basename, ext = os.path.splitext(os.path.abspath(fname))
 		world_fname = basename + "_world" + ext
 		blob_fname = [basename + "_blob" + str(i) + ext for i in range(self.num_blobs)]
@@ -175,11 +176,14 @@ class FFEA_blob_measurement:
 						self.vdw_surfacearea.pop()
 						self.vdw_surfaceforce.pop()
 						self.vdw_surfaceenergy.pop()
+
 						if self.step[-1] == int(sline[0]):
 							self.step.pop()
 							break
-
-						self.step.pop()
+						else:
+							self.step.pop()
+					else:
+						break
 
 				just_restarted = 0
 

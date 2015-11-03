@@ -7,11 +7,11 @@ if len(sys.argv) != 3:
 # Get args
 infname = sys.argv[1]
 simdir = os.path.abspath(sys.argv[2])
-scriptdir = simdir + "/scripts"
-trajdir = simdir + "/traj"
-measdir = simdir + "/meas"
-structdir = simdir + "/structure"
-resultsdir = simdir + "/results"
+scriptdir = simdir + "/scripts/"
+trajdir = simdir + "/traj/"
+measdir = simdir + "/meas/"
+structdir = simdir + "/structure/"
+resultsdir = simdir + "/results/"
 
 # Get files
 if os.path.splitext(infname)[1] == ".ffea":
@@ -32,40 +32,40 @@ for b in script.blob:
 	
 		# Nodes
 		os.system("mv " + c.nodes + " " + structdir)
-		c.nodes = "../structure/" + os.path.basename(os.path.abspath(c.nodes))
+		c.nodes = structdir + os.path.basename(os.path.abspath(c.nodes))
 
 		# Topology
 		os.system("mv " + c.topology + " " + structdir)
-		c.topology = "../structure/" + os.path.basename(os.path.abspath(c.topology))
+		c.topology = structdir + os.path.basename(os.path.abspath(c.topology))
 
 		# surface
 		os.system("mv " + c.surface + " " + structdir)
-		c.surface = "../structure/" + os.path.basename(os.path.abspath(c.surface))
+		c.surface = structdir + os.path.basename(os.path.abspath(c.surface))
 
 		# material
 		os.system("mv " + c.material + " " + structdir)
-		c.material = "../structure/" +  os.path.basename(os.path.abspath(c.material))
+		c.material = structdir +  os.path.basename(os.path.abspath(c.material))
 
 		# stokes
 		os.system("mv " + c.stokes + " " + structdir)
-		c.stokes = "../structure/" + os.path.basename(os.path.abspath(c.stokes))
+		c.stokes = structdir + os.path.basename(os.path.abspath(c.stokes))
 
 		# vdw
 		os.system("mv " + c.vdw + " " + structdir)
-		c.vdw = "../structure/" + os.path.basename(os.path.abspath(c.vdw))
+		c.vdw = structdir + os.path.basename(os.path.abspath(c.vdw))
 
 		# pin
 		os.system("mv " + c.pin + " " + structdir)
-		c.pin = "../structure/" + os.path.basename(os.path.abspath(c.pin))
+		c.pin = structdir + os.path.basename(os.path.abspath(c.pin))
 
 # Final script change
-script.params.trajectory_out_fname = "../traj/" + os.path.basename(os.path.abspath(script.params.trajectory_out_fname))
-script.params.measurement_out_basefname = "../meas/" + os.path.basename(os.path.abspath(script.params.measurement_out_basefname))
+script.params.trajectory_out_fname = trajdir + os.path.basename(os.path.abspath(script.params.trajectory_out_fname))
+script.params.measurement_out_basefname = measdir + os.path.basename(os.path.abspath(script.params.measurement_out_basefname))
 os.system("mv " + script.params.vdw_forcefield_params + " " + structdir)
-script.params.vdw_forcefield_params = "../structure/" +  os.path.basename(os.path.abspath(script.params.vdw_forcefield_params))
+script.params.vdw_forcefield_params = structdir +  os.path.basename(os.path.abspath(script.params.vdw_forcefield_params))
 print "done!"
 
 # Finally move script
+ffeafname = scriptdir + os.path.basename(ffeafname)
 script.write_to_file(ffeafname)
-os.system("mv " + ffeafname + " " + scriptdir)
 print "FFEA file '" + ffeafname + "' is now in " + scriptdir

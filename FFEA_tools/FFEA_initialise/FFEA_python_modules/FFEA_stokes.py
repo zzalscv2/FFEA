@@ -54,7 +54,6 @@ class FFEA_stokes:
 				fin.close()
 				return
 		
-		print self.stokes_radius
 		fin.close()
 
 	def reset(self):

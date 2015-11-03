@@ -290,7 +290,7 @@ class FFEA_script:
 
 	def load_measurement(self, frames_to_read = float("inf")):
 
-		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_fname, self.params.num_blobs, num_frames_to_read = frames_to_read)
+		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_basefname, self.params.num_blobs, num_frames_to_read = frames_to_read)
 
 class FFEA_script_params():
 	
@@ -351,10 +351,10 @@ class FFEA_script_params():
 		astr += "\t<dt = %5.2e>\n" % (self.dt)
 		astr += "\t<kT = %5.2e>\n" % (self.kT)
 		astr += "\t<check = %d>\n" % (self.check)
-		astr += "\t<num_steps = %d>\n" % (self.num_steps)
+		astr += "\t<num_steps = %1.0e>\n" % (self.num_steps)
 		astr += "\t<rng_seed = time>\n"
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
-		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_basefname, os.path.dirname(os.path.abspath(fname))))
+		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<vdw_forcefield_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
 		astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
