@@ -354,7 +354,7 @@ class FFEA_script_params():
 		astr += "\t<num_steps = %1.0e>\n" % (self.num_steps)
 		astr += "\t<rng_seed = time>\n"
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
-		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
+		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_basefname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<vdw_forcefield_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
 		astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)

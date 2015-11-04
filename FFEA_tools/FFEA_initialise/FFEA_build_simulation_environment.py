@@ -31,37 +31,37 @@ for b in script.blob:
 	for c in b.conformation:
 	
 		# Nodes
-		os.system("mv " + c.nodes + " " + structdir)
+		os.system("cp " + c.nodes + " " + structdir)
 		c.nodes = structdir + os.path.basename(os.path.abspath(c.nodes))
 
 		# Topology
-		os.system("mv " + c.topology + " " + structdir)
+		os.system("cp " + c.topology + " " + structdir)
 		c.topology = structdir + os.path.basename(os.path.abspath(c.topology))
 
 		# surface
-		os.system("mv " + c.surface + " " + structdir)
+		os.system("cp " + c.surface + " " + structdir)
 		c.surface = structdir + os.path.basename(os.path.abspath(c.surface))
 
 		# material
-		os.system("mv " + c.material + " " + structdir)
+		os.system("cp " + c.material + " " + structdir)
 		c.material = structdir +  os.path.basename(os.path.abspath(c.material))
 
 		# stokes
-		os.system("mv " + c.stokes + " " + structdir)
+		os.system("cp " + c.stokes + " " + structdir)
 		c.stokes = structdir + os.path.basename(os.path.abspath(c.stokes))
 
 		# vdw
-		os.system("mv " + c.vdw + " " + structdir)
+		os.system("cp " + c.vdw + " " + structdir)
 		c.vdw = structdir + os.path.basename(os.path.abspath(c.vdw))
 
 		# pin
-		os.system("mv " + c.pin + " " + structdir)
+		os.system("cp " + c.pin + " " + structdir)
 		c.pin = structdir + os.path.basename(os.path.abspath(c.pin))
 
 # Final script change
 script.params.trajectory_out_fname = trajdir + os.path.basename(os.path.abspath(script.params.trajectory_out_fname))
 script.params.measurement_out_basefname = measdir + os.path.basename(os.path.abspath(script.params.measurement_out_basefname))
-os.system("mv " + script.params.vdw_forcefield_params + " " + structdir)
+os.system("cp " + script.params.vdw_forcefield_params + " " + structdir)
 script.params.vdw_forcefield_params = structdir +  os.path.basename(os.path.abspath(script.params.vdw_forcefield_params))
 print "done!"
 
