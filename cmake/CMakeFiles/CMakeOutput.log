@@ -1,0 +1,385 @@
+The system is: Linux - 2.6.32-431.5.1.el6.x86_64 - x86_64
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /localhome/Software/gcc/4.9.2/bin/g++ 
+Build flags: 
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+The CXX compiler identification is GNU, found in "/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/3.2.2/CompilerIdCXX/a.out"
+
+Determining if the CXX compiler works passed with the following output:
+Change Dir: /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/gmake" "cmTryCompileExec785540333/fast"
+/usr/bin/gmake -f CMakeFiles/cmTryCompileExec785540333.dir/build.make CMakeFiles/cmTryCompileExec785540333.dir/build
+gmake[1]: Entering directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+/localhome/Software/cmake/bin/cmake -E cmake_progress_report /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec785540333.dir/testCXXCompiler.cxx.o
+/localhome/Software/gcc/4.9.2/bin/g++     -o CMakeFiles/cmTryCompileExec785540333.dir/testCXXCompiler.cxx.o -c /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTryCompileExec785540333
+/localhome/Software/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec785540333.dir/link.txt --verbose=1
+/localhome/Software/gcc/4.9.2/bin/g++        CMakeFiles/cmTryCompileExec785540333.dir/testCXXCompiler.cxx.o  -o cmTryCompileExec785540333 -rdynamic 
+gmake[1]: Leaving directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/gmake" "cmTryCompileExec4142450368/fast"
+/usr/bin/gmake -f CMakeFiles/cmTryCompileExec4142450368.dir/build.make CMakeFiles/cmTryCompileExec4142450368.dir/build
+gmake[1]: Entering directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+/localhome/Software/cmake/bin/cmake -E cmake_progress_report /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o
+/localhome/Software/gcc/4.9.2/bin/g++     -o CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o -c /localhome/Software/cmake/share/cmake-3.2/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTryCompileExec4142450368
+/localhome/Software/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec4142450368.dir/link.txt --verbose=1
+/localhome/Software/gcc/4.9.2/bin/g++       -v CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o  -o cmTryCompileExec4142450368 -rdynamic  
+Using built-in specs.
+COLLECT_GCC=/localhome/Software/gcc/4.9.2/bin/g++
+COLLECT_LTO_WRAPPER=/localhome/Software/gcc/4.9.2/bin/../libexec/gcc/x86_64-unknown-linux-gnu/4.9.2/lto-wrapper
+Target: x86_64-unknown-linux-gnu
+Configured with: ../gcc-4.9.2/configure --prefix=/localhome/py09bh/Software/gcc/4.9.2 --disable-multilib
+Thread model: posix
+gcc version 4.9.2 (GCC) 
+COMPILER_PATH=/localhome/Software/gcc/4.9.2/bin/../libexec/gcc/x86_64-unknown-linux-gnu/4.9.2/:/localhome/Software/gcc/4.9.2/bin/../libexec/gcc/
+LIBRARY_PATH=/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/:/localhome/Software/gcc/4.9.2/bin/../lib/gcc/:/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../../lib64/:/lib/../lib64/:/usr/lib/../lib64/:/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../:/lib/:/usr/lib/
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTryCompileExec4142450368' '-rdynamic' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+ /localhome/Software/gcc/4.9.2/bin/../libexec/gcc/x86_64-unknown-linux-gnu/4.9.2/collect2 --eh-frame-hdr -m elf_x86_64 -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTryCompileExec4142450368 /usr/lib/../lib64/crt1.o /usr/lib/../lib64/crti.o /localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/crtbegin.o -L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2 -L/localhome/Software/gcc/4.9.2/bin/../lib/gcc -L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../.. CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/crtend.o /usr/lib/../lib64/crtn.o
+gmake[1]: Leaving directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+
+
+Parsed CXX implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:"/usr/bin/gmake" "cmTryCompileExec4142450368/fast"]
+  ignore line: [/usr/bin/gmake -f CMakeFiles/cmTryCompileExec4142450368.dir/build.make CMakeFiles/cmTryCompileExec4142450368.dir/build]
+  ignore line: [gmake[1]: Entering directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp']
+  ignore line: [/localhome/Software/cmake/bin/cmake -E cmake_progress_report /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/CMakeFiles 1]
+  ignore line: [Building CXX object CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [/localhome/Software/gcc/4.9.2/bin/g++     -o CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o -c /localhome/Software/cmake/share/cmake-3.2/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [Linking CXX executable cmTryCompileExec4142450368]
+  ignore line: [/localhome/Software/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec4142450368.dir/link.txt --verbose=1]
+  ignore line: [/localhome/Software/gcc/4.9.2/bin/g++       -v CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o  -o cmTryCompileExec4142450368 -rdynamic  ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/localhome/Software/gcc/4.9.2/bin/g++]
+  ignore line: [COLLECT_LTO_WRAPPER=/localhome/Software/gcc/4.9.2/bin/../libexec/gcc/x86_64-unknown-linux-gnu/4.9.2/lto-wrapper]
+  ignore line: [Target: x86_64-unknown-linux-gnu]
+  ignore line: [Configured with: ../gcc-4.9.2/configure --prefix=/localhome/py09bh/Software/gcc/4.9.2 --disable-multilib]
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 4.9.2 (GCC) ]
+  ignore line: [COMPILER_PATH=/localhome/Software/gcc/4.9.2/bin/../libexec/gcc/x86_64-unknown-linux-gnu/4.9.2/:/localhome/Software/gcc/4.9.2/bin/../libexec/gcc/]
+  ignore line: [LIBRARY_PATH=/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/:/localhome/Software/gcc/4.9.2/bin/../lib/gcc/:/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../../lib64/:/lib/../lib64/:/usr/lib/../lib64/:/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../:/lib/:/usr/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTryCompileExec4142450368' '-rdynamic' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
+  link line: [ /localhome/Software/gcc/4.9.2/bin/../libexec/gcc/x86_64-unknown-linux-gnu/4.9.2/collect2 --eh-frame-hdr -m elf_x86_64 -export-dynamic -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTryCompileExec4142450368 /usr/lib/../lib64/crt1.o /usr/lib/../lib64/crti.o /localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/crtbegin.o -L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2 -L/localhome/Software/gcc/4.9.2/bin/../lib/gcc -L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../.. CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/crtend.o /usr/lib/../lib64/crtn.o]
+    arg [/localhome/Software/gcc/4.9.2/bin/../libexec/gcc/x86_64-unknown-linux-gnu/4.9.2/collect2] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-m] ==> ignore
+    arg [elf_x86_64] ==> ignore
+    arg [-export-dynamic] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTryCompileExec4142450368] ==> ignore
+    arg [/usr/lib/../lib64/crt1.o] ==> ignore
+    arg [/usr/lib/../lib64/crti.o] ==> ignore
+    arg [/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/crtbegin.o] ==> ignore
+    arg [-L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2] ==> dir [/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2]
+    arg [-L/localhome/Software/gcc/4.9.2/bin/../lib/gcc] ==> dir [/localhome/Software/gcc/4.9.2/bin/../lib/gcc]
+    arg [-L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../../lib64] ==> dir [/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../../lib64]
+    arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+    arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+    arg [-L/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../..] ==> dir [/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../..]
+    arg [CMakeFiles/cmTryCompileExec4142450368.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [-lstdc++] ==> lib [stdc++]
+    arg [-lm] ==> lib [m]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lc] ==> lib [c]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lgcc] ==> lib [gcc]
+    arg [/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/crtend.o] ==> ignore
+    arg [/usr/lib/../lib64/crtn.o] ==> ignore
+  remove lib [gcc_s]
+  remove lib [gcc]
+  remove lib [gcc_s]
+  remove lib [gcc]
+  collapse library dir [/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2] ==> [/localhome/Software/gcc/4.9.2/lib/gcc/x86_64-unknown-linux-gnu/4.9.2]
+  collapse library dir [/localhome/Software/gcc/4.9.2/bin/../lib/gcc] ==> [/localhome/Software/gcc/4.9.2/lib/gcc]
+  collapse library dir [/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../../../lib64] ==> [/localhome/Software/gcc/4.9.2/lib64]
+  collapse library dir [/lib/../lib64] ==> [/lib64]
+  collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+  collapse library dir [/localhome/Software/gcc/4.9.2/bin/../lib/gcc/x86_64-unknown-linux-gnu/4.9.2/../../..] ==> [/localhome/Software/gcc/4.9.2/lib]
+  implicit libs: [stdc++;m;c]
+  implicit dirs: [/localhome/Software/gcc/4.9.2/lib/gcc/x86_64-unknown-linux-gnu/4.9.2;/localhome/Software/gcc/4.9.2/lib/gcc;/localhome/Software/gcc/4.9.2/lib64;/lib64;/usr/lib64;/localhome/Software/gcc/4.9.2/lib]
+  implicit fwks: []
+
+
+
+
+Detecting CXX [-std=c++14] compiler features compiled with the following output:
+Change Dir: /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/gmake" "cmTryCompileExec95063487/fast"
+/usr/bin/gmake -f CMakeFiles/cmTryCompileExec95063487.dir/build.make CMakeFiles/cmTryCompileExec95063487.dir/build
+gmake[1]: Entering directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+/localhome/Software/cmake/bin/cmake -E cmake_progress_report /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec95063487.dir/feature_tests.cxx.o
+/localhome/Software/gcc/4.9.2/bin/g++    -std=c++14 -o CMakeFiles/cmTryCompileExec95063487.dir/feature_tests.cxx.o -c /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTryCompileExec95063487
+/localhome/Software/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec95063487.dir/link.txt --verbose=1
+/localhome/Software/gcc/4.9.2/bin/g++        CMakeFiles/cmTryCompileExec95063487.dir/feature_tests.cxx.o  -o cmTryCompileExec95063487 -rdynamic 
+gmake[1]: Leaving directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:1cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:1cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:1cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:1cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:1cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:1cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:1cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:1cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++11] compiler features compiled with the following output:
+Change Dir: /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/gmake" "cmTryCompileExec3596146666/fast"
+/usr/bin/gmake -f CMakeFiles/cmTryCompileExec3596146666.dir/build.make CMakeFiles/cmTryCompileExec3596146666.dir/build
+gmake[1]: Entering directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+/localhome/Software/cmake/bin/cmake -E cmake_progress_report /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec3596146666.dir/feature_tests.cxx.o
+/localhome/Software/gcc/4.9.2/bin/g++    -std=c++11 -o CMakeFiles/cmTryCompileExec3596146666.dir/feature_tests.cxx.o -c /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTryCompileExec3596146666
+/localhome/Software/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3596146666.dir/link.txt --verbose=1
+/localhome/Software/gcc/4.9.2/bin/g++        CMakeFiles/cmTryCompileExec3596146666.dir/feature_tests.cxx.o  -o cmTryCompileExec3596146666 -rdynamic 
+gmake[1]: Leaving directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++98] compiler features compiled with the following output:
+Change Dir: /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/gmake" "cmTryCompileExec3123946083/fast"
+/usr/bin/gmake -f CMakeFiles/cmTryCompileExec3123946083.dir/build.make CMakeFiles/cmTryCompileExec3123946083.dir/build
+gmake[1]: Entering directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+/localhome/Software/cmake/bin/cmake -E cmake_progress_report /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec3123946083.dir/feature_tests.cxx.o
+/localhome/Software/gcc/4.9.2/bin/g++    -std=c++98 -o CMakeFiles/cmTryCompileExec3123946083.dir/feature_tests.cxx.o -c /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTryCompileExec3123946083
+/localhome/Software/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3123946083.dir/link.txt --verbose=1
+/localhome/Software/gcc/4.9.2/bin/g++        CMakeFiles/cmTryCompileExec3123946083.dir/feature_tests.cxx.o  -o cmTryCompileExec3123946083 -rdynamic 
+gmake[1]: Leaving directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:0cxx_alias_templates
+    Feature record: CXX_FEATURE:0cxx_alignas
+    Feature record: CXX_FEATURE:0cxx_alignof
+    Feature record: CXX_FEATURE:0cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:0cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:0cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:0cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:0cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:0cxx_default_function_template_args
+    Feature record: CXX_FEATURE:0cxx_defaulted_functions
+    Feature record: CXX_FEATURE:0cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:0cxx_delegating_constructors
+    Feature record: CXX_FEATURE:0cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:0cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:0cxx_explicit_conversions
+    Feature record: CXX_FEATURE:0cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:0cxx_extern_templates
+    Feature record: CXX_FEATURE:0cxx_final
+    Feature record: CXX_FEATURE:0cxx_func_identifier
+    Feature record: CXX_FEATURE:0cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:0cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:0cxx_inline_namespaces
+    Feature record: CXX_FEATURE:0cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:0cxx_local_type_template_args
+    Feature record: CXX_FEATURE:0cxx_long_long_type
+    Feature record: CXX_FEATURE:0cxx_noexcept
+    Feature record: CXX_FEATURE:0cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:0cxx_nullptr
+    Feature record: CXX_FEATURE:0cxx_override
+    Feature record: CXX_FEATURE:0cxx_range_for
+    Feature record: CXX_FEATURE:0cxx_raw_string_literals
+    Feature record: CXX_FEATURE:0cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:0cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:0cxx_rvalue_references
+    Feature record: CXX_FEATURE:0cxx_sizeof_member
+    Feature record: CXX_FEATURE:0cxx_static_assert
+    Feature record: CXX_FEATURE:0cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:0cxx_thread_local
+    Feature record: CXX_FEATURE:0cxx_trailing_return_types
+    Feature record: CXX_FEATURE:0cxx_unicode_literals
+    Feature record: CXX_FEATURE:0cxx_uniform_initialization
+    Feature record: CXX_FEATURE:0cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:0cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:0cxx_variadic_macros
+    Feature record: CXX_FEATURE:0cxx_variadic_templates
+Performing C++ SOURCE FILE Test OpenMP_FLAG_DETECTED succeded with the following output:
+Change Dir: /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/gmake" "cmTryCompileExec2385248956/fast"
+/usr/bin/gmake -f CMakeFiles/cmTryCompileExec2385248956.dir/build.make CMakeFiles/cmTryCompileExec2385248956.dir/build
+gmake[1]: Entering directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+/localhome/Software/cmake/bin/cmake -E cmake_progress_report /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec2385248956.dir/src.cxx.o
+/localhome/Software/gcc/4.9.2/bin/g++    -DOpenMP_FLAG_DETECTED -fopenmp   -o CMakeFiles/cmTryCompileExec2385248956.dir/src.cxx.o -c /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/src.cxx
+Linking CXX executable cmTryCompileExec2385248956
+/localhome/Software/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2385248956.dir/link.txt --verbose=1
+/localhome/Software/gcc/4.9.2/bin/g++    -DOpenMP_FLAG_DETECTED -fopenmp    CMakeFiles/cmTryCompileExec2385248956.dir/src.cxx.o  -o cmTryCompileExec2385248956 -rdynamic 
+gmake[1]: Leaving directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+
+Source file was:
+
+#include <omp.h>
+int main() {
+#ifdef _OPENMP
+  return 0;
+#else
+  breaks_on_purpose
+#endif
+}
+
+Performing C++ SOURCE FILE Test _HAS_CXX11_FLAG succeded with the following output:
+Change Dir: /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/gmake" "cmTryCompileExec3238496846/fast"
+/usr/bin/gmake -f CMakeFiles/cmTryCompileExec3238496846.dir/build.make CMakeFiles/cmTryCompileExec3238496846.dir/build
+gmake[1]: Entering directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+/localhome/Software/cmake/bin/cmake -E cmake_progress_report /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec3238496846.dir/src.cxx.o
+/localhome/Software/gcc/4.9.2/bin/g++    -fopenmp -D_HAS_CXX11_FLAG   -std=c++11 -o CMakeFiles/cmTryCompileExec3238496846.dir/src.cxx.o -c /localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp/src.cxx
+Linking CXX executable cmTryCompileExec3238496846
+/localhome/Software/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3238496846.dir/link.txt --verbose=1
+/localhome/Software/gcc/4.9.2/bin/g++    -fopenmp -D_HAS_CXX11_FLAG    CMakeFiles/cmTryCompileExec3238496846.dir/src.cxx.o  -o cmTryCompileExec3238496846 -rdynamic 
+gmake[1]: Leaving directory `/localhome/Software/FFEA/FFEA_code/cmake/CMakeFiles/CMakeTmp'
+
+Source file was:
+int main() { return 0; }

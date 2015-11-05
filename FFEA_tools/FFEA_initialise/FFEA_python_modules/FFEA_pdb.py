@@ -5,36 +5,118 @@ class FFEA_pdb:
 
 	def __init__(self, fname):
 
-		# Initialise variables
-		self.atom = []
-		self.num_atoms = 0
+		# Initialise everything
+		self.reset()
 
-		# Open and read file
+		# Open file for reading
 		try:
 			fin = open(fname, "r")
+		
 		except(IOError):
+			print "Error. File " + fname  + " not found."
 			return
 
+		# The file may contain frames as models, models of separate structures, or just a single structure. 
+		# Work this out first with an initial sweep
+		print("Making an initial sweep of the structure...")
+		num_models = 0
+		num_atoms = []
 		lines = fin.readlines()
-		fin.close()
+		for line in lines:
+
+			# Not interested in this
+			if len(line.strip()) < 5:
+				continue
+				
+			# Have we got models?
+			if line[0:5] == "MODEL":
+				num_models += 1
+				num_atoms.append(0)
+
+			elif line[0:4] == "ATOM":
+
+				# If not in models
+				if num_models == 0 and len(num_atoms) == 0:
+					num_atoms.append(0)
+
+				num_atoms[-1] += 1
+
+		print("done!")
+		print("num_models = " + str(num_models))
+
+		# This should be fixed for multiple blobs with multiple frames in future
+		if len(set(num_atoms)) == 1:
+
+			print("num_atoms = " + str(num_atoms[0]) + " for all models. Models are frames.")
+			if num_models == 0:
+				self.num_frames = 1
+			else:
+				self.num_frames = num_models
+			self.num_blobs = 1
+		else:
+			print("num_atoms is different for all models. Models are different structures.")
+			self.num_blobs = num_models
+			self.num_frames = 1
+
+		# Setup the frames and structures
+		if num_models == 0:
+			self.num_blobs = 1
+		self.blob = [FFEA_pdb_blob() for i in range(self.num_blobs)]
+
+		# Load in the structure and trajectory
+		print("Reading structure and trajectory...")
+		num_atoms = 0
+		model_index = 0
+		atom_index = 0
+		blob_index = 0
+		frame_index = 0
+	
+		# Get a single frame for everything
+		for b in self.blob:
+			b.frame.append(FFEA_pdb_frame())
 
 		for line in lines:
 
-			# Only get a single frame for now (very basic, update me continuously)
-			if line[0:6] == "ENDMDL":
+			# Finished
+			if line[0:3] == "END":
 				break
 
-			if line[0:4] == "ATOM":
-				self.num_atoms += 1
-				atom_index = self.num_atoms
-				#atom_index = int(line[6:11].strip())
+			# Not interested in this
+			elif len(line.strip()) < 5:
+				continue
+	
+					
+			elif line[0:6] == "ENDMDL":
+				model_index += 1
+
+				# May need fixing for multiple blobs with multiple frames
+				if self.num_frames == 1:
+					blob_index = model_index
+				else:
+					frame_index = model_index
+
+					# Might need another frame
+					if frame_index != self.num_frames:
+						self.blob[blob_index].frame.append(FFEA_pdb_frame())
+
+			elif line[0:3] == "TER":
+				self.blob[blob_index].num_atoms = num_atoms
+				atom_index = 0
+				num_atoms = 0
+
+			elif line[0:4] == "ATOM":
+
+				# Initialise the atom
+				self.blob[blob_index].atom.append(FFEA_pdb_atom())
+				#atom_index = self.num_atoms
+				atom_index = int(line[6:11].strip())
+
+				# Get structure data
 				atom_type = line[12:16].strip()
-				residue_type = line[17:20].strip()
+				res_type = line[17:20].strip()
 				chain = line[21]
-				residue_index = int(line[22:26].strip())
-				x = float(line[30:38].strip())
-				y = float(line[38:46].strip())
-				z = float(line[46:54].strip())
+				res_index = int(line[22:26].strip())
+
 				try:
 					occupancy = float(line[54:60].strip())
 				except:
@@ -60,212 +142,139 @@ class FFEA_pdb:
 				except:
 					charge = " "
 
-				self.atom.append(FFEA_pdb_atom(atom_index, atom_type, residue_type, chain, residue_index, np.array([x,y,z]), occupancy, temp_factor, segment, elem, charge))
+				# Get position data
+				x = float(line[30:38].strip())
+				y = float(line[38:46].strip())
+				z = float(line[46:54].strip())
 
-		self.calc_centroid()
+				# Set structure data
+				self.blob[blob_index].atom[num_atoms].set_structure(atom_index = atom_index, atom_type = atom_type, res_type = res_type, chain = chain, res_index = res_index, occupancy = occupancy, temp_factor = temp_factor, segment = segment, elem = elem, charge = charge)
 
+				# Set position data
+				self.blob[blob_index].frame[frame_index].set_atomic_pos(num_atoms, x, y, z)
+
+				# Increment index
+				num_atoms += 1
+
+		for b in self.blob:
+
+			# If no 'TER's
+			if b.num_atoms == 0:
+				b.num_atoms = len(b.atom)
+
+			for f in b.frame:
+				f.pos = np.array(f.pos)
+
+		print("done!")
+	
 	def write_to_file(self, fname):
 
-		# Open file
-		fout = open(fname, "w")	
-		for a in self.atom:
-			fout.write("ATOM  ")
-			fout.write(str(a.atom_index).rjust(5))
-			fout.write("  " + a.atom_type.ljust(4))
-			fout.write(a.residue_type.rjust(3))
-			fout.write(" " + a.chain)
-			fout.write(str(a.residue_index).rjust(4))
-			fout.write(" ")
-			fout.write("   ")
-			fout.write("%8.3f" % a.pos[0])
-			fout.write("%8.3f" % a.pos[1])
-			fout.write("%8.3f" % a.pos[2])
-			fout.write("%6.2f" % a.occupancy)
-			fout.write("%6.2f" % a.temp_factor)
-			fout.write("      ")
-			fout.write(a.segment_id.ljust(4))
-			fout.write(a.element.rjust(2))
-			fout.write(a.charge.rjust(2))
-			fout.write("  \n")
-		fout.write("TER                  " + str(self.atom[-1].chain))
+		# Open file for writing
+		fout = open(fname, "w")
+
+		# Very simple output, no headers or any stuff like that. Frames are models
+		for i in range(self.num_frames):
+			sys.stdout.write("\r%d%% written" % (int(i * 100.0 / self.num_frames)))
+			sys.stdout.flush()
+			for b in self.blob:
+				fout.write("MODEL\n")
+				index = 0
+				for a in b.atom:
+					fout.write("ATOM  ")
+					fout.write(str(a.atom_index).rjust(5))
+					fout.write("  " + a.atom_type.ljust(4))
+					fout.write(a.res_type.rjust(3))
+					fout.write(" " + a.chain)
+					fout.write(str(a.res_index).rjust(4))
+					fout.write(" ")
+					fout.write("   ")
+					fout.write("%8.3f" % b.frame[i].pos[index][0])
+					fout.write("%8.3f" % b.frame[i].pos[index][1])
+					fout.write("%8.3f" % b.frame[i].pos[index][2])
+					fout.write("%6.2f" % a.occupancy)
+					fout.write("%6.2f" % a.temp_factor)
+					fout.write("      ")
+					fout.write(a.segment.ljust(4))
+					fout.write(a.elem.rjust(2))
+					fout.write(a.charge.rjust(2))
+					fout.write("  \n")
+					index += 1
+				fout.write("TER                  " + str(b.atom[-1].chain) + "\n")
+				fout.write("ENDMDL\n")
+
+		fout.write("END")
 		fout.close()
-
-	def scale(self, scale):
-
-		for a in self.atom:
-			for j in range(3):
-				a.pos[j] *= scale
-			
-	# Removes and returns chuck of pdb. Keeps the leftover
-	def extract_atoms(self, atomlist):
-		
-		atomlist.sort()
-
-		fromatom = atomlist[0]
-		toatom = atomlist[-1]
-
-		if fromatom > toatom:
-			print "Lower index > upper index. Switching..."
-			fromatom, toatom = toatom, fromatom
-
-		# Check for whole residues
-		print "Specified extraction of atom " + str(fromatom) + " to " + str(toatom) + "..."
-		while(True):
-			try:
-				if self.atom[fromatom].residue_index != self.atom[fromatom - 1].residue_index:
-					break
-				else:
-					fromatom -= 1
-
-			except(IndexError):
-				break
-
-		while(True):
-			try:
-				if self.atom[toatom].residue_index != self.atom[toatom + 1].residue_index:
-					break
-
-				toatom += 1
-
-			except(IndexError):
-				break
-
-		print "Checked for complete residues. This corresponds to " + str(self.atom[fromatom].atom_index) + " up to and including " + str(self.atom[toatom - 1].atom_index)
-
-		# Creating the new object
-		chunkpdb = FFEA_pdb("")
-		
-		# Appending to new, removing from old
-		for i in atomlist:
-			chunkpdb.add_atom(self.atom[i])
-
-		self.remove_atoms(atomlist)
-		
-		return chunkpdb
-
-	def get_atomlist_radially(self, origin, radius):
-		
-		atomlist = []
-		for i in range(len(self.atom)):
-			distance = np.linalg.norm(self.atom[i].pos - origin)
-			if distance < radius:
-				atomlist.append(i)
-
-		return atomlist
 	
-	def add_atom(self, ffeaatom):
-		self.atom.append(ffeaatom)
-		self.num_atoms += 1
-		self.atom[-1].atom_index = self.num_atoms
+	def clear_position_data(self):
 
-	def remove_atoms(self, atomlist):
-		offset = len(atomlist)
-		indexlist = range(len(self.atom))
-		indexlist.reverse()
-		for i in indexlist:
-			if i in atomlist:
-				offset -= 1
-				self.atom.pop(i)
-			else:
-				self.atom[i].atom_index -= offset
+		self.num_frames = 0
+		for b in self.blob:
+			b.frame = []
 
-		self.num_atoms -= len(atomlist)
-
-	def add_pdb(self, ffeapdb):
-		for a in ffeapdb.atom:
-			self.atom.append(a)
-			self.num_atoms += 1
-			self.atom[-1].atom_index = self.num_atoms
-
-
-	def calc_centroid(self):
-		self.centroid = np.array([0.0, 0.0, 0.0])
-		for a in self.atom:
-			self.centroid += a.pos
-
-		self.centroid *= 1.0/self.num_atoms
-
-	def translate(self, translation):
-		for a in self.atom:
-			a.pos += translation
-
-	def rotate(self, point, axis, angle):
+	def add_frames(self, num_frames):
 		
-		# First make sure axis is normalised!
-		mag = np.linalg.norm(axis)
-		axis *= 1.0/mag
+		self.num_frames = num_frames
+		for b in self.blob:
+			b.frame = [FFEA_pdb_frame() for i in range(self.num_frames)]
 
-		# And angle is radians
-		angle = np.radians(angle)
-
-		# Move point to origin
-		self.translate(-1 * point)
+	def reset(self):
 		
-		# Now do rotation
-		c = np.cos
-		s = np.sin
-		r00 = c(angle) + axis[0]**2 * (1 - c(angle))
-		r01 = axis[0] * axis[1] * (1 - c(angle)) - axis[2] * s(angle)
-		r02 = axis[0] * axis[2] * (1 - c(angle)) + axis[1] * s(angle)
-		r10 = axis[0] * axis[1] * (1 - c(angle)) + axis[2] * s(angle)
-		r11 = c(angle) + axis[1]**2 * (1 - c(angle))
-		r12 = axis[1] * axis[2] * (1 - c(angle)) - axis[0] * s(angle)
-		r20 = axis[0] * axis[2] * (1 - c(angle)) - axis[1] * s(angle)
-		r21 = axis[1] * axis[2] * (1 - c(angle)) + axis[0] * s(angle)
-		r22 = c(angle) + axis[2]**2 * (1 - c(angle))
-		R = np.array([[r00,r01,r02],[r10,r11,r12],[r20,r21,r22]])
-		
-		for a in self.atom:
-			a.pos = np.dot(R, a.pos)
-			
-		# Move back
-		self.translate(point)
+		self.num_blobs = 0
+		self.blob = []
+		self.num_frames = 0
 
+class FFEA_pdb_blob:
+
+	def __init__(self):
+
+		# Reset object
+		self.reset()	
+
+	def set_pos(self, frame_index, pos):
+		if self.num_atoms == len(pos):
+			self.frame[frame_index].pos = pos
+
+	def reset(self):
+
+		self.num_frames = 0
+		self.frame = []
+		self.atom = []
+		self.num_atoms = 0
 
 class FFEA_pdb_atom:
 
-	def __init__(self, ai, at, rt, c, ri, p, oc, temp, seg, elem, charge):
-		self.set_params(ai, at, rt, c, ri, p, oc, temp, seg, elem, charge)
+	def __init__(self):
 
-	def set_params(self, ai, at, rt, c, ri, p, oc, temp, seg, elem, charge):
-		self.atom_index = ai
-		self.atom_type = at
-		self.residue_index = ri
-		self.residue_type = rt
-		self.chain = c
-		self.pos = p
-		self.occupancy = oc
-		self.temp_factor = temp
-		self.segment_id = seg
-		self.element = elem
+		# Initialise via the set_structure function
+		self.set_structure()
+
+	def set_structure(self, atom_index = 0, atom_type = "", res_type = "", chain = "", res_index = 0, occupancy = 0, temp_factor = 1.0, segment = "", elem = "", charge = ""):
+
+		self.atom_index = atom_index
+		self.atom_type = atom_type
+		self.res_type = res_type
+		self.chain = chain
+		self.res_index = res_index
+		self.occupancy = occupancy
+		self.temp_factor = temp_factor
+		self.segment = segment
+		self.elem = elem
 		self.charge = charge
 
-def write_frames_to_file(pdb, pdbfname):
+class FFEA_pdb_frame:
 
-	# Open file
-	fout = open(pdbfname, "w")
-	
-	# Write out each frame as a model
-	for frame in pdb:
-		fout.write("MODEL      %d\n" % (pdb.index(frame) + 1))
-		for a in frame.atom:
-			fout.write("ATOM  ")
-			fout.write(str(a.atom_index).rjust(5))
-			fout.write("  " + a.atom_type.ljust(4))
-			fout.write(a.residue_type.rjust(3))
-			fout.write(" " + a.chain)
-			fout.write(str(a.residue_index).rjust(4))
-			fout.write(" ")
-			fout.write("   ")
-			fout.write("%8.3f" % a.pos[0])
-			fout.write("%8.3f" % a.pos[1])
-			fout.write("%8.3f" % a.pos[2])
-			fout.write("%6.2f" % a.occupancy)
-			fout.write("%6.2f" % a.temp_factor)
-			fout.write("      ")
-			fout.write(a.segment_id.ljust(4))
-			fout.write(a.element.rjust(2))
-			fout.write(a.charge.rjust(2))
-			fout.write("  \n")
-		fout.write("TER\nENDMDL\n")
-	fout.close()
+	def __init__(self):
+
+		self.reset()
+
+	def reset(self):
+
+		self.pos = []
+
+
+	def set_atomic_pos(self, atom_index, x, y, z):
+		
+		while atom_index >= len(self.pos):
+			self.pos.append([0.0,0.0,0.0])
+		
+		self.pos[atom_index] = [x,y,z] 

@@ -214,6 +214,7 @@ int get_num_atoms_from_file(string pdb_fname) {
 		}
 	}
 	fclose(fin);
+	cout << "\tFrom " + pdb_fname + " we expect " << num_atoms << " atoms." << endl;
 	return num_atoms;
 }
 
@@ -235,8 +236,7 @@ int get_num_nodes_from_file(string node_fname) {
 	// Get num_nodes
 	int num_nodes;
 	node_file >> line >> num_nodes;
-	
-	node_file.close();
+	cout << "\tFrom " + node_fname + " we expect " << num_nodes << " nodes." << endl;
 	return num_nodes;
 }
 
@@ -260,6 +260,7 @@ int get_num_elements_from_file(string top_fname) {
 	top_file >> line >> num_elements;
 	
 	top_file.close();
+	cout << "\tFrom " + top_fname + " we expect " << num_elements << " elements." << endl;
 	return num_elements;
 }
 
@@ -282,6 +283,7 @@ void extract_and_create_nodes(string node_fname, vector3 *node) {
 	// Get num_nodes and build node_list
 	int num_nodes, num_surface_nodes, num_interior_nodes;
 	node_file >> line >> num_nodes;
+	cout << "\tFound " << num_nodes << " nodes." << endl;
 	node_file >> line >> num_surface_nodes;
 	node_file >> line >> num_interior_nodes;
 
@@ -314,13 +316,13 @@ void extract_and_create_nodes(string node_fname, vector3 *node) {
 	centroid.y /= num_nodes;
 	centroid.z /= num_nodes;
 
-	cout << "Moving to origin to overlap centroids...";
+	cout << "\tMoving to origin to overlap centroids...";
 	for(i = 0; i < num_nodes; ++i) {
 		node[i].x -= centroid.x;
 		node[i].y -= centroid.y;
 		node[i].z -= centroid.z;
 	}
-	cout << "Done!" << endl;
+	cout << "done!" << endl;
 	node_file.close();
 	return;
 }
@@ -335,13 +337,15 @@ void extract_and_create_pdb(string pdb_fname, vector3 *node, double scale) {
 	int i = -1;
 	vector3 centroid;
 	while(true) {
-		i++;
 		if(feof(fin)) {
 			break;	
 		} else {
 			fgets(buf,5,fin);
-			if(strcmp(buf, "ATOM") == 0) {
-				fgets(buf,28,fin);
+			if(strcmp(buf, "END") == 0) {
+				break;
+			} else if(strcmp(buf, "ATOM") == 0) {
+				i++;
+				fgets(buf,27,fin);
 				fgets(buf,9,fin);
 				x = atof(buf) * scale;
 				centroid.x += x;
@@ -353,21 +357,24 @@ void extract_and_create_pdb(string pdb_fname, vector3 *node, double scale) {
 				centroid.z += z;
 				fgets(buf,100,fin);
 				node[i].set_pos(x, y, z);
-			}	
+			} else {
+				fgets(buf,100,fin);
+			}
 		}
 	}
-	int num_atoms = i;
+	int num_atoms = i + 1;
+	cout << "\tFound " << num_atoms << " atoms." << endl;
 	centroid.x /= num_atoms;
 	centroid.y /= num_atoms;
 	centroid.z /= num_atoms;
 
-	cout << "Moving to origin to overlap centroids...";
+	cout << "\tMoving to origin to overlap centroids...";
 	for(i = 0; i < num_atoms; ++i) {
 		node[i].x -= centroid.x;
 		node[i].y -= centroid.y;
 		node[i].z -= centroid.z;
 	}
-	cout << "Done!" << endl;
+	cout << "done!" << endl;
 	fclose(fin);
 	return;
 }
@@ -390,6 +397,7 @@ void extract_and_create_topologies(string top_fname, tet_element *elem, vector3 
 	// Get num_elements and build node_list
 	int num_elements, num_surface_elements, num_interior_elements;
 	top_file >> line >> num_elements;
+	cout << "\tFound " << num_elements << " elements." << endl;
 	top_file >> line >> num_surface_elements;
 	top_file >> line >> num_interior_elements;
 
@@ -573,19 +581,23 @@ void add_map_to_big_map(double *little_map, double **big_map, int to, tet_elemen
 int main(int argc, char **argv) {
 
 	// Check for the right input
-	if(argc != 6) {
-		cout << "Usage " << argv[0] << " [INPUT from .node] [INPUT from .top] [INPUT to .pdb] [OUTPUT .map fname] [scaling_factor]" << endl;
+	if(argc != 5 and argc != 6) {
+		cout << "Usage " << argv[0] << " [INPUT Base FFEA .node] [INPUT Base FFEA .top] [INPUT Target FFEA .node / Atomic .pdb] [OUTPUT .map fname] [scaling_factor (.pdb mapping only)]" << endl;
 		exit(0);
 	}
 
-	// Extract input
-	string from_node_fname, to_pdb_fname, from_top_fname, output_map_fname;
+	// Get arguments
+	string from_node_fname, to_fname, from_top_fname, output_map_fname;
 	double scale;
 	from_node_fname = argv[1];
-	to_pdb_fname = argv[3];
 	from_top_fname = argv[2];
+	to_fname = argv[3];	
 	output_map_fname = argv[4];
-	scale = atof(argv[5]);
+	if(argc == 6) {
+		scale = atof(argv[5]);
+	} else {
+		scale = 1.0;
+	}
 
 	// Create node lists and topologies and map
 	int num_elements_from, num_nodes_from, num_nodes_to;
@@ -593,28 +605,48 @@ int main(int argc, char **argv) {
 	vector3 *from_node, *to_node;
 	tet_element *from_top;
 	
+	// Sort out base structure
+	cout << "Building base structure..." << endl << flush;
 	num_nodes_from = get_num_nodes_from_file(from_node_fname);
-	num_nodes_to = get_num_atoms_from_file(to_pdb_fname);
-	num_elements_from = get_num_elements_from_file(from_top_fname);
-
-	// Extra work node in from_node
 	from_node = new vector3[num_nodes_from + 1];
-	to_node = new vector3[num_nodes_to];
-	from_top = new tet_element[num_elements_from];
-	
 	extract_and_create_nodes(from_node_fname, from_node);
-	extract_and_create_pdb(to_pdb_fname, to_node, 1.0);
-	extract_and_create_topologies(from_top_fname, from_top, from_node);
 
+	num_elements_from = get_num_elements_from_file(from_top_fname);
+	from_top = new tet_element[num_elements_from];
+	extract_and_create_topologies(from_top_fname, from_top, from_node);
+	cout << "done!" << endl;
+
+	// Now target structure, wich depends on the input type
+	cout << "Building target structure..." << endl << flush;
+	string line;
+	ifstream fin;
+	fin.open(to_fname.c_str());
+	getline(fin, line);
+	fin.close();
+	if(line == "ffea node file" || line == "ffea node file\n") {
+		num_nodes_to = get_num_nodes_from_file(to_fname);
+		to_node = new vector3[num_nodes_to];
+		extract_and_create_nodes(to_fname, to_node);
+	} else {
+		num_nodes_to = get_num_atoms_from_file(to_fname);
+		to_node = new vector3[num_nodes_to];
+		extract_and_create_pdb(to_fname, to_node, 1.0);
+	}
+	cout << "done!" << endl;
+
+	// Build the map object
 	map = new double*[num_nodes_to];
+	cout << "Building map object..." << endl << flush;
 	for(int i = 0; i < num_nodes_to; ++i) {
+		cout << "\r" << ((100 * i) / num_nodes_to) << "\% of map initialised...";
 		map[i] = new double[num_nodes_from];
 		for(int j = 0; j < num_nodes_from; ++j) {
 			map[i][j] = 0.0;
 		}
 	}
+	cout << "done!" << endl;
 
-	// Find nearest linear!! node, and therefore nearest element / containing element
+	// Find nearest LINEAR node, and therefore nearest element / containing element
 	int i, nearest_node_index, check;
 	tet_element *containing_element, *temp_element;
 	double single_map[4];
@@ -628,9 +660,7 @@ int main(int argc, char **argv) {
 	for(i = 0; i < num_nodes_to; ++i) {
 
 		// Output check
-		if(i % check == 0) {
-			cout << "Num nodes left to map: " << num_nodes_to - i << endl;
-		}
+		cout << "\r" << ((100 * i) / num_nodes_to) << "\% of map built...";
 
 		// Find containing element
 		containing_element = find_containing_element(to_node[i], from_top, num_elements_from);
@@ -647,8 +677,11 @@ int main(int argc, char **argv) {
 		add_map_to_big_map(single_map, map, i, containing_element);
 		
 	}
+	cout << "done" << endl;
 
 	// Print out the whole map
+	cout << "Writing map to " << output_map_fname << "...";
 	print_map_to_file(output_map_fname, map, num_nodes_from, num_nodes_to, 0);
+	cout << "done! " << endl;
 	return 0;
 }
