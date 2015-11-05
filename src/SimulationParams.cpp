@@ -369,13 +369,13 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	vdw_params_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << vdw_params_fname << endl;
 
-	} else if (lvalue == "binding_site_params") {
+	/*} else if (lvalue == "binding_site_params") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("binding_site_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
 		sprintf(binding_params_fname, "%s", rvalue.c_str());
         	binding_params_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << binding_params_fname << endl;
+		cout << "\tSetting " << lvalue << " = " << binding_params_fname << endl;*/
 
     	} else if (lvalue == "stress_out_fname") {
 		cout << lvalue << " no longer recognised" << endl;
@@ -484,9 +484,9 @@ int SimulationParams::validate() {
 	if(kinetics_update <= 0) {
 		FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
 	}
-	if(binding_params_fname_set != 1) {
+	/*if(binding_params_fname_set != 1) {
 		FFEA_ERROR_MESSG("Required: If 'calc_kinetics' = 1, then 'binding_site_params' must be set.\n");
-	}
+	}*/
     }
 
     if (calc_noise != 0 && calc_noise != 1) {
