@@ -14,7 +14,7 @@ World::World() {
     num_blobs = 0;
     num_conformations = NULL;
     num_springs = 0;
-    num_threads = 0;
+    num_threads = 1;
     rng = NULL;
     phi_Gamma = NULL;
     total_num_surface_faces = 0;

@@ -206,7 +206,7 @@ scalar ConjugateGradientSolver::conjugate_gradient_residual_assume_x_zero(vector
     int i;
     scalar delta_new = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i) shared(b) reduction(+:delta_new)
+// //#pragma omp parallel for default(none) private(i) shared(b) reduction(+:delta_new)
 #endif
     for (i = 0; i < num_rows; i++) {
         r[i].x = b[i].x;
@@ -232,7 +232,7 @@ scalar ConjugateGradientSolver::parallel_sparse_matrix_apply() {
     int i, j;
     scalar dTq = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i, j) reduction(+:dTq)
+// //#pragma omp parallel for default(none) private(i, j) reduction(+:dTq)
 #endif
     for (i = 0; i < num_rows; i++) {
         q[i].x = 0;
@@ -279,7 +279,7 @@ scalar ConjugateGradientSolver::parallel_apply_preconditioner() {
     int i;
     scalar delta_new = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i) reduction(+:delta_new)
+// //#pragma omp parallel for default(none) private(i) reduction(+:delta_new)
 #endif
     for (i = 0; i < num_rows; i++) {
         s[i].x = preconditioner[i] * r[i].x;
@@ -296,7 +296,7 @@ scalar ConjugateGradientSolver::residual2() {
     int i;
     scalar r2 = 0, f2 = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i) shared(stderr) reduction(+:r2, f2)
+// //#pragma omp parallel for default(none) private(i) shared(stderr) reduction(+:r2, f2)
 #endif
     for (i = 0; i < num_rows; i++) {
         r2 += r[i].x * r[i].x + r[i].y * r[i].y + r[i].z * r[i].z;
