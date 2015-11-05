@@ -136,9 +136,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 		kinetic_rng.seed(params.rng_seed);
 
-		if(binding_matrix.init(params.binding_params_fname) == FFEA_ERROR) {
-			FFEA_ERROR_MESSG("Error when reading from binding site params file.\n")
-		}
+		//if(binding_matrix.init(params.binding_params_fname) == FFEA_ERROR) {
+		//	FFEA_ERROR_MESSG("Error when reading from binding site params file.\n")
+		//}
 		
 		
 	}
@@ -1469,11 +1469,11 @@ int World::read_and_build_system(vector<string> script_vector) {
 				}
 				binding.push_back("");
 			} else {
-				if(set_binding == 0) {
+				/*if(set_binding == 0) {
 					FFEA_error_text();
 					cout << "In blob " << i << ", conformation " << j << ":\nIf 'calc_kinetics' is set to 1, 'binding_sites' must be set (can contain 0 sites if necessary)." << endl;
 					return FFEA_ERROR;
-				}
+				}*/
 			}
 			
 			// Clear conformation vector and set values for next round
@@ -1611,7 +1611,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		//Build conformations
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
-			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), binding.at(j).c_str(), pin.at(j).c_str(), beads.at(j).c_str(), 
+			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), beads.at(j).c_str(), 
                        		scale, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
                        		FFEA_error_text();
                         	cout << "\tError when trying to initialise Blob " << i << ", conformation " << j << "." << endl;
@@ -1735,6 +1735,15 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 		
 		// Check if sparse or dense
 		fin.getline(buf, MAX_BUF_SIZE);
+		cout << buf << endl;
+		fin.getline(buf, MAX_BUF_SIZE);
+		cout << buf << endl;
+		fin.getline(buf, MAX_BUF_SIZE);
+		cout << buf << endl;
+		fin.getline(buf, MAX_BUF_SIZE);
+		cout << buf << endl;
+		fin.getline(buf, MAX_BUF_SIZE);
+		cout << buf << endl;
 		buf_string = string(buf);
 		boost::trim(buf_string);
 		if(buf_string != "FFEA Kinetic Conformation Mapping File (Sparse)") {
@@ -1991,11 +2000,11 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 		// Get site types in binding event
 		fin >> binding_site_type_from;
 		fin >> binding_site_type_to;
-		if(binding_site_type_from >= binding_matrix.num_interaction_types || binding_site_type_to >= binding_matrix.num_interaction_types) {
-			FFEA_error_text();
-			cout << "In kinetic states file '" << states_fname << "', state " << i << " references a state type which is out of the range of the number of types defined in 'binding_params'" << endl;
-			return FFEA_ERROR; 
-		}
+	//	if(binding_site_type_from >= binding_matrix.num_interaction_types || binding_site_type_to >= binding_matrix.num_interaction_types) {
+	//		FFEA_error_text();
+		//	cout << "In kinetic states file '" << states_fname << "', state " << i << " references a state type which is out of the range of the number of types defined in 'binding_params'" << endl;
+	//		return FFEA_ERROR; 
+		//}
 
 		// Initialise state
 		kinetic_state[blob_index][i].init(conf_index, bound_state, binding_site_type_from, binding_site_type_to);
