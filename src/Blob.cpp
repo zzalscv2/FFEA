@@ -658,9 +658,11 @@ vector3 Blob::position(scalar x, scalar y, scalar z) {
     // scalar dx, dy, dz;
 
     // Calculate centroid of [SURFACE] Blob mesh
+/* DO NOT REDUCE, it does lead to errors.
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
+#pragma omp parallel for default(shared) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
 #endif
+*/
     for (i = 0; i < num_surface_nodes; i++) {
         centroid_x += node[i].pos.x;
         centroid_y += node[i].pos.y;
