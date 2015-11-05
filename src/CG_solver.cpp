@@ -145,7 +145,7 @@ scalar CG_solver::residual2() {
     int i;
     scalar r2 = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i) reduction(+:r2)
+//#pragma omp parallel for default(none) private(i) reduction(+:r2)
 #endif
     for (i = 0; i < N; i++) {
         r2 += r[i] * r[i];
@@ -175,7 +175,7 @@ void CG_solver::parallel_vector_add(scalar *v1, scalar a, scalar *v2) {
 scalar CG_solver::parallel_apply_preconditioner() {
     scalar delta_new = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:delta_new)
+//#pragma omp parallel for default(none) reduction(+:delta_new)
 #endif
     for (int i = 0; i < N; i++) {
         s[i] = inv_M[i] * r[i];
