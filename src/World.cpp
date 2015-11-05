@@ -85,7 +85,7 @@ World::~World() {
  * initialise VdW solver,
  * initialise BEM PBE solver
  * */
-int World::init(string FFEA_script_filename, int frames_to_delete) {
+int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	
 	// Set some constants and variables
 	int i, j;
@@ -191,143 +191,155 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 	// Create measurement files
 	measurement_out = new FILE *[params.num_blobs + 1];
 
-	// If not restarting a previous simulation, create new trajectory and measurement files
-	if (params.restart == 0) {
+	// If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
+	if(mode == 0) {
+		if (params.restart == 0) {
 		
-		// Open the trajectory output file for writing
-		if ((trajectory_out = fopen(params.trajectory_out_fname, "w")) == NULL) {
-		    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+			// Open the trajectory output file for writing
+			if ((trajectory_out = fopen(params.trajectory_out_fname, "w")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+			}
+
+			// Open the measurement output file for writing
+			for (i = 0; i < params.num_blobs + 1; ++i) {
+			    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "w")) == NULL) {
+				FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
+			    }
+			}
+
+			// Print initial info stuff
+			fprintf(trajectory_out, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs %d\nNumber of Conformations", params.num_blobs);
+			for (i = 0; i < params.num_blobs; ++i) {
+				fprintf(trajectory_out, " %d", params.num_conformations[i]);
+			}
+			fprintf(trajectory_out, "\n");
+
+			for (i = 0; i < params.num_blobs; ++i) {
+			    fprintf(trajectory_out, "Blob %d:\t", i);
+			    for(j = 0; j < params.num_conformations[i]; ++j) {
+				    fprintf(trajectory_out, "Conformation %d Nodes %d\t", j, blob_array[i][j].get_num_nodes());
+			    }
+			    fprintf(trajectory_out, "\n");
+			}
+			fprintf(trajectory_out, "\n");
+
+			// First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
+			fprintf(trajectory_out, "*\n");
+
+			// First line in measurements file should be a header explaining what quantities are in each column
+			for (i = 0; i < params.num_blobs; ++i) {
+			    fprintf(measurement_out[i], "# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface\n", i, i, i);
+			    fflush(measurement_out[i]);
+			}
+			fprintf(measurement_out[params.num_blobs], "# step ");
+			for (i = 0; i < params.num_blobs; ++i) {
+			    for (j = i + 1; j < params.num_blobs; ++j) {
+				fprintf(measurement_out[params.num_blobs], "| vdw_area_%d_%d | vdw_force_%d_%d | vdw_energy_%d_%d ", i, j, i, j, i, j);
+			    }
+			}
+			fprintf(measurement_out[params.num_blobs], "\n");
+			fflush(measurement_out[params.num_blobs]);
+
+		} else {
+
+			// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
+			printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
+			if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+			}
+
+			printf("Reverse searching for 3 asterisks ");
+			if(frames_to_delete != 0) {
+				printf(", plus an extra %d, ", (frames_to_delete) * 2);
+			}
+			printf("(denoting %d completely written snapshots)...\n", frames_to_delete + 1);
+			if (fseek(trajectory_out, 0, SEEK_END) != 0) {
+			    FFEA_ERROR_MESSG("Could not seek to end of file\n")
+			}
+
+			// Variable to store position of last asterisk in trajectory file (initialise it at end of file)
+			off_t last_asterisk_pos = ftello(trajectory_out);
+
+			int num_asterisks = 0;
+			int num_asterisks_to_find = 3 + (frames_to_delete) * 2;
+			while (num_asterisks != num_asterisks_to_find) {
+			    if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
+				perror(NULL);
+				FFEA_ERROR_MESSG("It is likely we have reached the begininng of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
+			    }
+			    char c = fgetc(trajectory_out);
+			    if (c == '*') {
+				num_asterisks++;
+				printf("Found %d\n", num_asterisks);
+
+				// get the position in the file of this last asterisk
+				if (num_asterisks == num_asterisks_to_find - 2) {
+				    last_asterisk_pos = ftello(trajectory_out);
+				}
+			    }
+			}
+
+			char c, sline[255];
+			if ((c = fgetc(trajectory_out)) != '\n') {
+			    ungetc(c, trajectory_out);
+			} else {
+				last_asterisk_pos = ftello(trajectory_out);
+			}
+
+			printf("Loading Blob position and velocity data from last completely written snapshot \n");
+			int blob_id, conformation_id;
+			long long rstep;
+			for (int b = 0; b < params.num_blobs; b++) {
+				if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
+					fgets(sline, 255, trajectory_out);
+					cout << sline << endl;
+					fgets(sline, 255, trajectory_out);
+					cout << sline << endl;
+					fgets(sline, 255, trajectory_out);
+					cout << sline << endl;
+					fgets(sline, 255, trajectory_out);
+					cout << sline << endl;
+					FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
+			    	}
+			    if (blob_id != b) {
+				FFEA_ERROR_MESSG("Mismatch in trajectory file - found blob id = %d, was expecting blob id = %d\n", blob_id, b)
+			    }
+			    printf("Loading node position, velocity and potential from restart trajectory file, for blob %d, step %lld\n", blob_id, rstep);
+			    if (active_blob_array[b]->read_nodes_from_file(trajectory_out) == FFEA_ERROR) {
+				FFEA_ERROR_MESSG("Error restarting blob %d\n", blob_id)
+			    }
+			}
+			step_initial = rstep;
+			printf("...done. Simulation will commence from step %lld\n", step_initial);
+			fclose(trajectory_out);
+
+			// Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
+			printf("Truncating the trajectory file to the last asterisk (to remove any half-written time steps)\n");
+			if (truncate(params.trajectory_out_fname, last_asterisk_pos) != 0) {
+			    FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname)
+			}
+
+			// Open trajectory and measurment files for appending
+			printf("Opening trajectory and measurement files for appending.\n");
+			if ((trajectory_out = fopen(params.trajectory_out_fname, "a")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+			}
+			for (i = 0; i < params.num_blobs + 1; ++i) {
+			    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "a")) == NULL) {
+				FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
+			    }
+			}
+
+			// Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
+			//fprintf(trajectory_out, "\n");
+
+			for (i = 0; i < params.num_blobs + 1; ++i) {
+			    fprintf(measurement_out[i], "#==RESTART==\n");
+			}
+
 		}
 
-		// Open the measurement output file for writing
-		for (i = 0; i < params.num_blobs + 1; ++i) {
-		    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "w")) == NULL) {
-		        FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
-		    }
-		}
-
-		// Print initial info stuff
-		fprintf(trajectory_out, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs %d\nNumber of Conformations", params.num_blobs);
-		for (i = 0; i < params.num_blobs; ++i) {
-			fprintf(trajectory_out, " %d", params.num_conformations[i]);
-		}
-		fprintf(trajectory_out, "\n");
-
-		for (i = 0; i < params.num_blobs; ++i) {
-		    fprintf(trajectory_out, "Blob %d:\t", i);
-		    for(j = 0; j < params.num_conformations[i]; ++j) {
-			    fprintf(trajectory_out, "Conformation %d Nodes %d\t", j, blob_array[i][j].get_num_nodes());
-		    }
-		    fprintf(trajectory_out, "\n");
-		}
-		fprintf(trajectory_out, "\n");
-
-		// First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
-		fprintf(trajectory_out, "*\n");
-
-		// First line in measurements file should be a header explaining what quantities are in each column
-		for (i = 0; i < params.num_blobs; ++i) {
-		    fprintf(measurement_out[i], "# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface\n", i, i, i);
-		    fflush(measurement_out[i]);
-		}
-		fprintf(measurement_out[params.num_blobs], "# step ");
-		for (i = 0; i < params.num_blobs; ++i) {
-		    for (j = i + 1; j < params.num_blobs; ++j) {
-		        fprintf(measurement_out[params.num_blobs], "| vdw_area_%d_%d | vdw_force_%d_%d | vdw_energy_%d_%d ", i, j, i, j, i, j);
-		    }
-		}
-		fprintf(measurement_out[params.num_blobs], "\n");
-		fflush(measurement_out[params.num_blobs]);
-
-	    } else {
-		// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
-		printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
-		if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
-		    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
-		}
-
-		printf("Reverse searching for 3 asterisks ");
-		if(frames_to_delete != 0) {
-			printf(", plus an extra %d, ", (frames_to_delete) * 2);
-		}
-		printf("(denoting %d completely written snapshots)...\n", frames_to_delete + 1);
-		if (fseek(trajectory_out, 0, SEEK_END) != 0) {
-		    FFEA_ERROR_MESSG("Could not seek to end of file\n")
-		}
-
-		// Variable to store position of last asterisk in trajectory file (initialise it at end of file)
-		off_t last_asterisk_pos = ftello(trajectory_out);
-
-		int num_asterisks = 0;
-		int num_asterisks_to_find = 3 + (frames_to_delete) * 2;
-		while (num_asterisks != num_asterisks_to_find) {
-		    if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
-		        perror(NULL);
-		        FFEA_ERROR_MESSG("It is likely we have reached the begininng of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
-		    }
-		    char c = fgetc(trajectory_out);
-		    if (c == '*') {
-		        num_asterisks++;
-		        printf("Found %d\n", num_asterisks);
-
-		        // get the position in the file of this last asterisk
-		        if (num_asterisks == num_asterisks_to_find - 2) {
-		            last_asterisk_pos = ftello(trajectory_out);
-		        }
-		    }
-		}
-
-		char c;
-		if ((c = fgetc(trajectory_out)) != '\n') {
-		    ungetc(c, trajectory_out);
-		}
-
-		printf("Loading Blob position and velocity data from last completely written snapshot \n");
-		int blob_id, conformation_id;
-		long long rstep;
-		for (int b = 0; b < params.num_blobs; b++) {
-			if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
-		        	FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
-		    	}
-		    if (blob_id != b) {
-		        FFEA_ERROR_MESSG("Mismatch in trajectory file - found blob id = %d, was expecting blob id = %d\n", blob_id, b)
-		    }
-		    printf("Loading node position, velocity and potential from restart trajectory file, for blob %d, step %lld\n", blob_id, rstep);
-		    if (active_blob_array[b]->read_nodes_from_file(trajectory_out) == FFEA_ERROR) {
-		        FFEA_ERROR_MESSG("Error restarting blob %d\n", blob_id)
-		    }
-		}
-		step_initial = rstep;
-		printf("...done. Simulation will commence from step %lld\n", step_initial);
-		fclose(trajectory_out);
-
-		// Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
-		printf("Truncating the trajectory file to the last asterisk (to remove any half-written time steps)\n");
-		if (truncate(params.trajectory_out_fname, last_asterisk_pos) != 0) {
-		    FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname)
-		}
-
-		// Open trajectory and measurment files for appending
-		printf("Opening trajectory and measurement files for appending.\n");
-		if ((trajectory_out = fopen(params.trajectory_out_fname, "a")) == NULL) {
-		    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
-		}
-		for (i = 0; i < params.num_blobs + 1; ++i) {
-		    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "a")) == NULL) {
-		        FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
-		    }
-		}
-
-		// Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
-		fprintf(trajectory_out, "\n");
-
-		for (i = 0; i < params.num_blobs + 1; ++i) {
-		    fprintf(measurement_out[i], "#==RESTART==\n");
-		}
-
-	    }
-
-
+	}
 	    // Initialise the Van der Waals solver
 	    if(params.calc_vdw == 1 || params.calc_es == 1) {
 		vector3 world_centroid, shift;
@@ -426,7 +438,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete) {
 		}
 	    }
 
-	    if (params.restart == 0) {
+	    if (params.restart == 0 && mode == 0) {
 		// Carry out measurements on the system before carrying out any updates (if this is step 0)
 		print_trajectory_and_measurement_files(0, 0);
 		print_trajectory_conformation_changes(trajectory_out, 0, NULL, NULL);
@@ -468,11 +480,11 @@ int World::get_smallest_time_constants() {
 		num_nodes = active_blob_array[blob_index]->get_num_linear_nodes();
 		num_rows = 3 * num_nodes;
 
-		Eigen::SparseMatrix<double> K(num_rows, num_rows);
-		Eigen::SparseMatrix<double> A(num_rows, num_rows);
-		Eigen::SparseMatrix<double> K_inv(num_rows, num_rows);
-		Eigen::SparseMatrix<double> I(num_rows, num_rows);
-		Eigen::SparseMatrix<double> tau_inv(num_rows, num_rows);
+		Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
+		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
+		Eigen::SparseMatrix<scalar> K_inv(num_rows, num_rows);
+		Eigen::SparseMatrix<scalar> I(num_rows, num_rows);
+		Eigen::MatrixXd tau_inv(num_rows, num_rows);
 
 		/* Build K */
 		cout << "\tCalculating the Global Viscosity Matrix, K...";
@@ -496,7 +508,7 @@ int World::get_smallest_time_constants() {
 
 		/* Invert K (it's symmetric! Will not work if stokes_visc == 0) */
 		cout << "\tAttempting to invert K to form K_inv...";
-		Eigen::SimplicialCholesky<Eigen::SparseMatrix<double>> Cholesky(K); // performs a Cholesky factorization of K
+		Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(K); // performs a Cholesky factorization of K
 		I.setIdentity();
 		K_inv = Cholesky.solve(I);
 		if(Cholesky.info() == Eigen::Success) {
@@ -512,37 +524,35 @@ int World::get_smallest_time_constants() {
 		/* Apply to A */
 		cout << "\tCalculating inverse time constant matrix, tau_inv = K_inv * A...";
 		tau_inv = K_inv * A;
-		cout << tau_inv << endl;
-		tau_inv = A * K_inv;
-		cout << endl << tau_inv << endl;
 		cout << "done!" << endl;
-		exit(0);
 
 		/* Diagonalise */
-		cout << "\tDiagonalising tau_inv...";
-		Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(tau_inv);
-		cout << eigensolver.eigenvalues() << endl;
-		exit(0);
-
-		double smallest_val = INFINITY;
+		cout << "\tDiagonalising tau_inv..." << flush;
+		Eigen::EigenSolver<Eigen::MatrixXd> es(tau_inv);
+		//cout << es.eigenvalues() << endl;
+		/*double smallest_val = INFINITY;
 		double largest_val = -1 * INFINITY;
 		for(int i = 0; i < num_rows; ++i) {
 
-			// Quick fix for weird eigenvalues
-			if(eigensolver.eigenvalues()[i].imag() != 0) {
+			// Quick fix for weird eigenvalues. Will look into this later
+			if(es.eigenvalues()[i].imag() != 0) {
 				continue;
 			} else {
-				if(eigensolver.eigenvalues()[i].real() < smallest_val && eigensolver.eigenvalues()[i].real() > 0) {
-					smallest_val = eigensolver.eigenvalues()[i].real();
+				if(es.eigenvalues()[i].real() < smallest_val && es.eigenvalues()[i].real() > 0) {
+					smallest_val = es.eigenvalues()[i].real();
 				} 
-				if (eigensolver.eigenvalues()[i].real() > largest_val) {
-					largest_val = eigensolver.eigenvalues()[i].real();
+				if (es.eigenvalues()[i].real() > largest_val) {
+					largest_val = es.eigenvalues()[i].real();
 				}
 			}	
-		}
+		}*/
+
 		cout << "done!" << endl;
 
-		// Output
+		// Output. Ignore the 6 translational modes (they are the slowest 6 modes)
+		double smallest_val = fabs(es.eigenvalues()[6].real());
+		double largest_val = fabs(es.eigenvalues()[0].real());
+
 		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << 1.0 / smallest_val << "s" << endl;
 		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << 1.0 / largest_val << "s" << endl << endl;
 
@@ -567,22 +577,30 @@ int World::get_smallest_time_constants() {
 /*
  *  Build and output an elastic network model
  */
+
 int World::enm(set<int> blob_indices, int num_modes) {
 
-	set<int> order;
-	set<int>::iterator it, it2;
-	int i, j, k, num_nodes, num_rows;
+	int i, j;
+	int num_nodes, num_rows;
+	set<int>::iterator it;
 
-	// Calculate the modes for each blob
-	for(it = blob_indices.begin(); it != blob_indices.end(); ++it) {
-
-		// Because I'm lazy!
+	vector<string> all;
+	string traj_out_fname, base, ext, evals_out_fname, evecs_out_fname;
+	
+	// For all blobs in this set, calculate and output the elastic normal modes
+	for(it = blob_indices.begin(); it != blob_indices.end(); it++) {
+		
+		// Get the index
 		i = *it;
 		
-		/* Firstly build the linear elasticity matrix */
+		cout << "\tBlob " << i << ":" << endl << endl;
+
+		// Get an elasticity matrix
 		num_nodes = active_blob_array[i]->get_num_linear_nodes();
-		num_rows = 3 * num_nodes;
-		Eigen::SparseMatrix<double> A(num_rows, num_rows);
+		num_rows = num_nodes * 3;
+
+		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
+		
 		cout << "\t\tCalculating the Global Linearised Elasticity Matrix, A...";
 		if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
 			cout << endl;
@@ -592,124 +610,117 @@ int World::enm(set<int> blob_indices, int num_modes) {
 		}
 		cout << "done!" << endl;
 
-		/* Diagonalise it */
+		// Diagonalise to find the elastic modes
 		cout << "\t\tDiagonalising A...";
-		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(A);
+		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(A);
 		cout << "done!" << endl;
 
-		/* Find the top 'num_modes' eigenvalues by ordering the list */
-		cout << "\t\tOrdering the eigenvalues...";
-		int index[num_rows], tempi;
-		double evals_ordered[num_rows], tempd;
-		for(j = 0; j < num_rows; ++j) {
-			index[j] = j;
-			evals_ordered[j] = eigensolver.eigenvalues()[j];	
-		}
+		// This matrix 'should' contain 6 zero modes, and then num_rows - 6 actual floppy modes
+		// The most important mode corresponds to the smallest non-zero eigenvalue
 
-		int fin = 0;
-		while(fin == 0) {
-			fin = 1;
-			for(j = 0; j < num_rows - 1; j++) {
-				if(fabs(evals_ordered[j]) < fabs(evals_ordered[j + 1])) {
-					fin = 0;
-					tempd = evals_ordered[j + 1];
-					evals_ordered[j + 1] = evals_ordered[j];
-					evals_ordered[j] = tempd;
-					tempi = index[j + 1];
-					index[j + 1] = index[j];
-					index[j] = tempi;
-				}	
-			}
-		}
-		cout << "done! " << endl;
-		for(j = 0; j < num_rows; ++j) {
-			cout << evals_ordered[j] << endl;
-		}
-
-		/* Use the eigenvalues to build mode trajectories */
-
-		// Firstly get the overall size of the top mode
-		double L = -1 * INFINITY, dx;
+		// Most important mode will have motion ~ largest system size. Get a length...
+		scalar dx = -1 * INFINITY;
 		vector3 min, max;
 		active_blob_array[i]->get_min_max(&min, &max);
-		if(max.x - min.x > L) {
-			L = max.x - min.x;
+		if(max.x - min.x > dx) {
+			dx = max.x - min.x;
 		}
-		if(max.y - min.y > L) {
-			L = max.y - min.y;
+		if(max.y - min.y > dx) {
+			dx = max.y - min.y;
 		}
-		if(max.z - min.z > L) {
-			L = max.z - min.z;
+		if(max.z - min.z > dx) {
+			dx = max.z - min.z;
 		}
 
-		// L becomes a scaling factor
-		L = 0.5 * sqrt(fabs(evals_ordered[0]) / params.kT) * L;
-		for(j = 0; j < num_modes; ++j) {
+		dx /= 20.0;
 
-			// See what eigenvector multiplier is
-			dx = L * sqrt(params.kT / fabs(evals_ordered[0])) / 25.0;
+		// Make some trajectories (ignoring the first 6)
+		cout << "\t\tMaking trajectories from eigenvectors..." << endl;
 
-			// Make 20 frames out of this
-			make_trajectory_from_eigenvector(i, j, eigensolver.eigenvectors().col(index[j]), dx);
+		// Get filename base
+		ostringstream bi;
+		bi << i;
+		boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
+		ext = "." + all.at(all.size() - 1);
+		base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
+		for(j = 6; j < 6 + num_modes; ++j) {
+			cout << "\t\t\tEigenvector " << j << " / Mode " << j - 6 << "...";
+
+			// Get a filename end
+			ostringstream mi;
+			mi << j - 6;
+			traj_out_fname = base + "_ffeaenm_blob" + bi.str() + "mode" + mi.str() + ext;
+			make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, es.eigenvectors().col(j), dx);
+			cout << "done!" << endl;
 		}
+		cout << "\t\tdone!" << endl;
+
+		// Print out relevant eigenvalues and eigenvectors
+
+		// Get a filename
+		evals_out_fname = base + "_ffeaenm_blob" + bi.str() + ".evals";
+		evecs_out_fname = base + "_ffeaenm_blob" + bi.str() + ".evecs";
+
+		print_evecs_to_file(evecs_out_fname, es.eigenvectors(), num_rows, num_modes);
+		print_evals_to_file(evals_out_fname, es.eigenvalues(), num_modes);
 	}
+
 	return FFEA_OK;
 }
 
 /*
- *  Build and output a dynamic mode model
+ *  Build and output an elastic network model
  */
+
 int World::dmm(set<int> blob_indices, int num_modes) {
 
-	set<int> order;
-	set<int>::iterator it, it2;
-	int i, j, k, num_nodes, num_rows;
+	int i, j, k;
+	int num_nodes, num_rows;
+	set<int>::iterator it;
 
-	// Calculate the modes for each blob
-	for(it = blob_indices.begin(); it != blob_indices.end(); ++it) {
+	vector<string> all;
+	string traj_out_fname, base, ext, evecs_out_fname, evals_out_fname;
 
-		// Because I'm lazy!
+	// For all blobs in this set, calculate and output the dynamic normal modes
+	for(it = blob_indices.begin(); it != blob_indices.end(); it++) {
+		
+		// Get the index
 		i = *it;
 		
-		num_nodes = active_blob_array[i]->get_num_linear_nodes();
-		num_rows = 3 * num_nodes;
-		Eigen::SparseMatrix<double> K(num_rows, num_rows);
-		Eigen::SparseMatrix<double> Q(num_rows, num_rows);
-		Eigen::SparseMatrix<double> A(num_rows, num_rows);
-		Eigen::MatrixXd Ahat(num_rows, num_rows);
-		Eigen::MatrixXd R(num_rows, num_rows);
+		cout << "\tBlob " << i << ":" << endl << endl;
 
-		/* Build K, the linear viscosity matrix */
-		cout << "\tCalculating the Global Viscosity Matrix, K...";
+		// Get a viscosity matrix
+		num_nodes = active_blob_array[i]->get_num_linear_nodes();
+		num_rows = num_nodes * 3;
+
+		Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
+		
+		cout << "\t\tCalculating the Global Linearised Viscosity Matrix, K...";
 		if(active_blob_array[i]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
 			cout << endl;
 			FFEA_error_text();
-			cout << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << i << endl;
+			cout << "In function 'Blob::build_linear_node_viscosity_matrix'" << i << endl;
 			return FFEA_ERROR;
 		}
 		cout << "done!" << endl;
 
-		/* Diagonalise it */
+		// Diagonalise the thing
 		cout << "\t\tDiagonalising K...";
 		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esK(K);
 		cout << "done!" << endl;
-		cout << esK.eigenvalues() << endl;
-		//exit(0);
 
-		/* Invert the and sqrt the elements of K evals to form Q */
+		// Use this diagonalisation to define Q
+		cout << "\t\tBuilding the matrix Q from the eigenvalues of K...";
+		Eigen::SparseMatrix<scalar> Q(num_rows, num_rows);
 		std::vector<Eigen::Triplet<double>> vals;
 		for(j = 0; j < num_rows; ++j) {
-
-			// This will catch the zero eigenvalues i.e. ridiculously small ones
-			if(esK.eigenvalues()[j] < 0) {
-				vals.push_back(Eigen::Triplet<double>(j,j, 1.0 / sqrt(-1 * esK.eigenvalues()[j])));
-			} else {
-				vals.push_back(Eigen::Triplet<double>(j,j, 1.0 / sqrt(esK.eigenvalues()[j])));
-			}		
+			vals.push_back(Eigen::Triplet<double>(j,j, 1.0 / sqrt(fabs(esK.eigenvalues()[j]))));
 		}
 		Q.setFromTriplets(vals.begin(), vals.end());
+		cout << "done!" << endl;
 
-		/* Build the linear elasticity matrix and get symmetric part (just in case) */
+		// Get an elasticity matrix
+		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
 		cout << "\t\tCalculating the Global Linearised Elasticity Matrix, A...";
 		if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
 			cout << endl;
@@ -719,76 +730,85 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 		}
 		cout << "done!" << endl;
 
-		/* Build the transformation matrix Ahat */
-		cout << "\t\tBuilding the transformation matrix, Ahat..." << endl;
+		// From A, build the transformation Ahat
+		cout << "\t\tBuilding the Transformation Matrix Ahat...";
+		Eigen::MatrixXd Ahat(num_rows, num_rows);
 		Ahat = Q.transpose() * esK.eigenvectors().transpose() * A * esK.eigenvectors() * Q;
-		cout << "done!" << endl;
-
-		/* Diagonalise it */
+		cout << "done" << endl;
+	
+		// Diagonalise to find the dynamic modes
 		cout << "\t\tDiagonalising Ahat...";
 		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esAhat(Ahat);
 		cout << "done!" << endl;
-
-		/* Finally, build the dynamical mode matrix R */
+		cout << "Building the Dynamic Modes Matrix R...";
+		Eigen::MatrixXd R;
 		R = esK.eigenvectors() * Q * esAhat.eigenvectors();
- 
-		/* Find the top 'num_modes' eigenvalues by ordering the list */
-		cout << "\t\tOrdering the eigenvalues...";
-		int index[num_rows], tempi;
-		double evals_ordered[num_rows], tempd;
-		for(j = 0; j < num_rows; ++j) {
-			index[j] = j;
-			evals_ordered[j] = esAhat.eigenvalues()[j];	
-		}
+		
+		// This matrix 'should' contain 6 zero modes, and then num_rows - 6 actual floppy modes
+		// The most important mode corresponds to the smallest non-zero eigenvalue
 
-		int fin = 0;
-		while(fin == 0) {
-			fin = 1;
-			for(j = 0; j < num_rows - 1; j++) {
-				if(evals_ordered[j] < evals_ordered[j + 1]) {
-					fin = 0;
-					tempd = evals_ordered[j + 1];
-					evals_ordered[j + 1] = evals_ordered[j];
-					evals_ordered[j] = tempd;
-					tempi = index[j + 1];
-					index[j + 1] = index[j];
-					index[j] = tempi;
-				}	
-			}
-		}
-		cout << "done! " << endl;
-		for(int j = 0; j < num_rows; ++j) {
-			cout << evals_ordered[j] << endl;
-		}
-		/* Use the eigenvalues to build mode trajectories */
-
-		// Firstly get the overall size of the top mode
-		double L = -1 * INFINITY, dx;
+		// Most important mode will have motion ~ largest system size. Get a length...
+		scalar dx = -1 * INFINITY;
 		vector3 min, max;
 		active_blob_array[i]->get_min_max(&min, &max);
-		if(max.x - min.x > L) {
-			L = max.x - min.x;
+		if(max.x - min.x > dx) {
+			dx = max.x - min.x;
 		}
-		if(max.y - min.y > L) {
-			L = max.y - min.y;
+		if(max.y - min.y > dx) {
+			dx = max.y - min.y;
 		}
-		if(max.z - min.z > L) {
-			L = max.z - min.z;
+		if(max.z - min.z > dx) {
+			dx = max.z - min.z;
 		}
 
-		// L becomes a scaling factor
-		L = 0.5 * sqrt(fabs(evals_ordered[0]) / params.kT) * L;
-		for(j = 0; j < num_modes; ++j) {
+		dx /= 20.0;
 
-			// See what eigenvector multiplier is
-			dx = L * sqrt(params.kT / fabs(evals_ordered[0])) / 25.0;
-
-			// Make 20 frames out of this
-			make_trajectory_from_eigenvector(i, j, esAhat.eigenvectors().col(index[j]), dx);
+		// Make some trajectories (ignoring the first 6)
+		// Firstly, normalise the first num_modes eigenvectors
+		scalar sum;
+		for(j = 6; j < num_modes + 6; ++j) {
+			sum = 0;
+			for(k = 0; k < num_rows; ++k) {
+				sum += R.col(j)[k] * R.col(j)[k];
+			}
+			R.col(j) *= 1.0 / sqrt(sum);
 		}
+
+		cout << "\t\tMaking trajectories from eigenvectors..." << endl;
+
+		// Get filename base
+		ostringstream bi, mi;
+		bi << i;
+		boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
+		ext = "." + all.at(all.size() - 1);
+		base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
+
+		for(j = 6; j < 6 + num_modes; ++j) {
+
+			cout << "\t\t\tEigenvector " << j << " / Mode " << j - 6 << "...";
+
+			// Get a filename end
+			ostringstream mi;
+			mi << j - 6;
+			traj_out_fname = base + "_ffeadmm_blob" + bi.str() + "mode" + mi.str() + ext;
+
+			make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, R.col(j), dx);
+			cout << "done!" << endl;
+		}
+		cout << "\t\tdone!" << endl;
+
+		// Print out relevant eigenvalues and eigenvectors
+
+		// Get a filename
+		evals_out_fname = base + "_ffeadmm_blob" + bi.str() + ".evals";
+		evecs_out_fname = base + "_ffeadmm_blob" + bi.str() + ".evecs";
+
+		print_evecs_to_file(evecs_out_fname, R, num_rows, num_modes);
+		print_evals_to_file(evals_out_fname, esAhat.eigenvalues(), num_modes);
 	}
 	return FFEA_OK;
 }
+
 
 /*
  * Update entire World for num_steps time steps
@@ -2350,22 +2370,38 @@ void World::do_es() {
     //	blob_array[0].print_phi();
 }
 
-void World::make_trajectory_from_eigenvector(int blob_index, int mode_index, Eigen::VectorXd evec, double step) {
+void World::write_eig_to_files(double *evals_ordered, double **evecs_ordered, int num_modes, int num_nodes) {
 
-	// Get a filename
-	int i, j;
-	double dx;
+	// Get some filenames
 	vector<string> all;
-	string traj_out_fname, base, ext;
-	ostringstream bi, mi;
-	bi << blob_index;
-	mi << mode_index;
+	string val_out_fname, vec_out_fname, base, ext;
 	boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
 	ext = "." + all.at(all.size() - 1);
 	base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
-	traj_out_fname = base + "_blob" + bi.str() + "mode" + mi.str() + ext;
-	int from_index = 0;
-	int to_index = 0;
+	val_out_fname = base + ".evals";
+	vec_out_fname = base + ".evecs";
+
+	// Open the files and write the modes out
+	FILE *valfout, *vecfout;
+	valfout = fopen(val_out_fname.c_str(), "w");
+	vecfout = fopen(vec_out_fname.c_str(), "w");
+	for(int i = 0; i < 3 * num_nodes; ++i) {
+		if(i < num_modes) {
+			fprintf(valfout, "%6.3e\n", evals_ordered[i]);
+		}
+		for(int j = 0; j < num_modes; ++j) {
+			fprintf(vecfout, "%6.3e ", evecs_ordered[j][i]);
+		}
+		fprintf(vecfout, "\n");
+	}
+	fclose(valfout);
+	fclose(vecfout);
+}
+
+void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXd evec, double step) {
+
+	int i, j, from_index = 0, to_index = 0;
+	scalar dx;
 
 	// Convert weird eigen thing into a nice vector3 list
 	vector3 node_trans[active_blob_array[blob_index]->get_num_linear_nodes()];
@@ -2376,7 +2412,9 @@ void World::make_trajectory_from_eigenvector(int blob_index, int mode_index, Eig
 
 	// Header Stuff
 	fprintf(fout, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs 1\nNumber of Conformations 1\nBlob 0:	Conformation 0 Nodes %d\n\n*\n", active_blob_array[blob_index]->get_num_nodes());
-
+	
+	// Initial centroid, to move around
+	active_blob_array[blob_index]->position(0,0,0);
 	for(i = 0; i < 21; ++i) {
 		
 		/* Build a frame */
@@ -2395,9 +2433,9 @@ void World::make_trajectory_from_eigenvector(int blob_index, int mode_index, Eig
 		// Get some node translations
 		int num_linear_nodes = active_blob_array[blob_index]->get_num_linear_nodes();
 		for(j = 0; j < num_linear_nodes; ++j) {
-			node_trans[j].x = evec[0 * num_linear_nodes + j] * dx;
-			node_trans[j].y = evec[1 * num_linear_nodes + j] * dx;
-			node_trans[j].z = evec[2 * num_linear_nodes + j] * dx;
+			node_trans[j].x = evec[3 * j + 0] * dx;
+			node_trans[j].y = evec[3 * j + 1] * dx;
+			node_trans[j].z = evec[3 * j + 2] * dx;
 		}
 
 		// Translate all the nodes
@@ -2407,6 +2445,35 @@ void World::make_trajectory_from_eigenvector(int blob_index, int mode_index, Eig
 		fprintf(fout, "*\n");
 		print_trajectory_conformation_changes(fout, i, &from_index, &to_index);
 	
+	}
+	fclose(fout);
+}
+
+void World::print_evecs_to_file(string fname, Eigen::MatrixXd ev, int num_rows, int num_modes) {
+	
+	int i, j;
+	FILE *fout;
+	fout = fopen(fname.c_str(), "w");
+
+	// Skip the zero modes
+	for(i = 6; i < num_modes +  6; ++i) {
+		for(j = 0; j < num_rows; ++j) {
+			fprintf(fout, "%6.3f ", ev.col(i)[j]);
+		}
+		fprintf(fout, "\n");
+	}
+	fclose(fout);
+}
+
+void World::print_evals_to_file(string fname, Eigen::VectorXd ev, int num_modes) {
+
+	int i;
+	FILE *fout;
+	fout = fopen(fname.c_str(), "w");
+
+	// Skip the zero modes
+	for(i = 6; i < num_modes +  6; ++i) {
+		fprintf(fout, "%6.3e\n", ev[i]);
 	}
 	fclose(fout);
 }

@@ -32,7 +32,7 @@ for i in range(num_modes):
 print("done!")
 
 # Print to file
-print("Writing Matrix to file " + os.path.basename(outfile) + "...")
+print("Writing Matrix to file " + os.path.basename(out_fname) + "...")
 outfile = open(out_fname, "w")
 outfile.write("Compare pyPca modes\n\nEigen Set 1 x Eigen Set 2\n\n")
 for i in range(num_modes):

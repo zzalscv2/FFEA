@@ -46,7 +46,6 @@ class FFEA_trajectory:
 			try:
 				self.num_conformations = [1 for i in range(self.num_blobs)]
 				self.num_nodes = [[int(sline[4 * i + 3]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
-				self.num_subblobs = [[1 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 				fin.readline()
 			except:
 				print("Error. Expected:\nBlob 0 Nodes %d Blob 1 Nodes %d ... Blob %d Nodes %d")
@@ -57,7 +56,6 @@ class FFEA_trajectory:
 			try:
 				self.num_conformations = [int(sline[3 + i]) for i in range(self.num_blobs)]
 				self.num_nodes = [[0 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
-				self.num_subblobs = [[1 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 
 			except(ValueError, IndexError):
 				print("Error. Expected:\nNumber of Conformations %d %d ... %d")
@@ -80,7 +78,6 @@ class FFEA_trajectory:
 
 		# Initialise the trajectory object
 		self.blob = [[FFEA_traj_blob(self.num_nodes[i][j]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
-		self.subblob = [[[FFEA_traj_subblob(range(self.num_nodes[i][j]))] for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 
 		# Begin traj
 		if fin.readline().rstrip() != "*":
@@ -117,7 +114,6 @@ class FFEA_trajectory:
 
 			for i in range(self.num_blobs):
 				frame = FFEA_traj_blob_frame(self.num_nodes[i][active_conformation[i]])
-				subframe = FFEA_traj_subblob_frame()
 				try:
 					line = fin.readline()
 					if line == "" or line == []:
@@ -169,10 +165,8 @@ class FFEA_trajectory:
 				for j in range(self.num_conformations[i]):
 					if j == active_conformation[i]:
 						self.blob[i][active_conformation[i]].frame.append(frame)
-						self.subblob[i][active_conformation[i]][0].frame.append(subframe)
 					else:
 						self.blob[i][j].frame.append(None)
-						self.subblob[i][j][0].frame.append(None)
 
 			# Maybe we've finished
 			if(not_completed):
@@ -347,28 +341,12 @@ class FFEA_trajectory:
 		fout.write("*")
 		fout.close()
 
-	def define_subblob(self, blob_index, conformation_index, indices):
-
-		self.num_subblobs[blob_index][conformation_index] += 1
-		self.subblob[blob_index][conformation_index].append(FFEA_traj_subblob(indices))
-		for i in range(self.num_frames):
-			self.subblob[blob_index][conformation_index][-1].frame.append(FFEA_traj_subblob_frame())		
-	
-		self.calc_centroid_trajectory(blob_index, conformation_index, self.num_subblobs[blob_index][conformation_index] - 1)
-
-	def calc_centroid_trajectory(self, blob_index, conformation_index, subblob_index = 0):
-
-		self.subblob[blob_index][conformation_index][subblob_index].calc_trajectory(self.blob[blob_index][conformation_index])
-		return np.array([f.centroid for f in self.subblob[blob_index][conformation_index][subblob_index].frame])
-
 	def reset(self):
 		self.type = "NEW"
 		self.num_blobs = 0
 		self.num_conformations = []
 		self.num_nodes = []
 		self.blob = []
-		self.num_subblobs = []
-		self.subblob = []
 		self.num_frames = 0
 
 class FFEA_traj_blob:
@@ -376,32 +354,41 @@ class FFEA_traj_blob:
 	def __init__(self, num_nodes):
 		self.num_nodes = num_nodes
 		self.frame = []
+		self.subblob = []
+		self.num_subblobs = 0
 		self.motion_state = "DYNAMIC"
 
-class FFEA_traj_subblob:
+	def define_subblob(self, indices):
 	
-	def __init__(self, indices):
+		self.subblob.append(indices)
+		self.num_subblobs += 1
+		return self.subblob[-1]
 
-		self.num_nodes = len(indices)
-		self.node_indices = indices
-		self.frame = []
+	def get_centroid_trajectory(self, subblob_index = -1):
 
-	def calc_trajectory(self, blob):
+		# Total blob
+		if subblob_index == -1:
+			nodes = range(self.num_nodes)		
+		elif self.num_subblobs <= subblob_index:
+				print("Error. Blob only contains ", self.num_subblobs, " subblobs.")
+				return None
+		else:
+			nodes = self.subblob[subblob_index]
 
-		for i in range(len(self.frame)):
-			for n in self.node_indices:
-				self.frame[i].centroid += blob.frame[i].pos[n]
-			self.frame[i].centroid *= 1.0 / self.num_nodes
+		centroid = np.array([[0.0,0.0,0.0] for i in range(len(self.frame))])
+		i = -1
+		for f in self.frame:
+			i += 1
+			for n in nodes:
+				centroid[i] += f.pos[n]
+			centroid[i] *= 1.0 / self.num_nodes
 
+		return centroid
+			
 class FFEA_traj_blob_frame:
 
 	def __init__(self, num_nodes):
 		self.pos = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
-
-class FFEA_traj_subblob_frame:
-
-	def __init__(self):
-		self.centroid =  np.array([0.0 for i in range(3)])
 
 # Faster than loading a whole trajectory
 def get_num_frames(fname):
