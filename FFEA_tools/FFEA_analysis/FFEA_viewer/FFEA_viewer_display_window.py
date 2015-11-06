@@ -799,7 +799,6 @@ class FFEA_viewer_display_window():
 				# Now draw if not hidden
 				if hidden == False:
 					for j in range(self.num_conformations[i]):
-						print i, j
 						self.blob_list[i][j].draw_frame(self.frame, self.display_flags)
 
 						
