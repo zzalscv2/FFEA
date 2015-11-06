@@ -279,6 +279,7 @@ class Blob:
 		for n in xrange(self.num_nodes):
 			line = traj_file.readline().split()
 			el_nodes = [float(line[i])*self.scale for i in xrange(10)]
+			print self.scale
 			nodes.append(el_nodes)
 		
 			centroid_x += el_nodes[0]
@@ -599,7 +600,6 @@ class Blob:
 		return f.centroid_x, f.centroid_y, f.centroid_z
 
 	def draw_frame(self, i, display_flags):
-		
 		if self.state == "STATIC":
 			i = 0
 
@@ -779,7 +779,9 @@ class Blob:
 				n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
 				n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
 				n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
-
+				#if f == 0:
+				#	print n1
+				#	print display_flags['selected_blob'], display_flags['selected_conformation']
 				norm1 = self.frames[i].normal_list[self.surface[f][1]]
 				norm2 = self.frames[i].normal_list[self.surface[f][2]]
 				norm3 = self.frames[i].normal_list[self.surface[f][3]]
@@ -1251,6 +1253,7 @@ class Blob:
 		self.hide_blob = False
 
 	def hide(self):
+		print "Hi"
 		self.hide_blob = True
 
 	def find_shortest_edge(self, frame_i):
