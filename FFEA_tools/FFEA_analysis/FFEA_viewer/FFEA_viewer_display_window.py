@@ -415,13 +415,20 @@ class FFEA_viewer_display_window():
 		# Shift to the global centroid if static, else load nodes from traj
 		if trajectory_out_fname == None:
 			for blob in self.blob_list:
-				blob[0].frames[0].translate(shift)
+				for c in blob:
+					if blob.index(c) == 0:
+						c.frames[0].translate(shift)
+					c.set_scale(global_scale * blob[0].scale)
+		
 		else:
 			for blob in self.blob_list:
 				if blob[0].state == "STATIC":
-					blob[0].frames[0].translate(shift)
+					for c in blob:
+						if blob.index(c) == 0:
+							c.frames[0].translate(shift)
 				else:
-					blob[0].set_scale(global_scale)
+					for c in blob:
+						c.set_scale(global_scale)
 
 			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
 			self.load_trajectory_thread.start()
@@ -791,7 +798,8 @@ class FFEA_viewer_display_window():
 				
 				# Now draw if not hidden
 				if hidden == False:
-					for j in range(self.num_conformations[i]):	
+					for j in range(self.num_conformations[i]):
+						print i, j
 						self.blob_list[i][j].draw_frame(self.frame, self.display_flags)
 
 						
