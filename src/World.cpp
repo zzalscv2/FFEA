@@ -482,8 +482,8 @@ int World::get_smallest_time_constants() {
 
 		Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
 		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
-		Eigen::SparseMatrix<scalar> K_inv(num_rows, num_rows);
-		Eigen::SparseMatrix<scalar> I(num_rows, num_rows);
+		Eigen::MatrixXd K_inv(num_rows, num_rows);
+		Eigen::MatrixXd I(num_rows, num_rows);
 		Eigen::MatrixXd tau_inv(num_rows, num_rows);
 
 		/* Build K */
