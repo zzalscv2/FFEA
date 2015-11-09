@@ -1299,6 +1299,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 	vector<int>::iterator maps_conf_ind_it;
 
 	scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
+        Dimensions dimens;
 
 	// Get Interactions Lines
 	int error_code;
@@ -1565,8 +1566,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 			} else if(lrvalue[0] == "scale") {
 				scale = atof(lrvalue[1].c_str());
 				set_scale = 1;
+                                scale /= dimens.is.length;
 			} else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
-				
+                                /** centroid will be rescaled later **/
 				centroid = new scalar[3];
 
 				lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
@@ -1574,7 +1576,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 				systemreader->split_string(lrvalue[1], centroid, ",");
 
 			} else if(lrvalue[0] == "velocity") {
-				
+				/** velocity will be rescaled later **/
 				velocity = new scalar[3];
 				
 				lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
@@ -2017,6 +2019,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	int i, j, MAX_BUF_SIZE = 255, num_kinetic_states;
 	char buf[MAX_BUF_SIZE];
 	string string_buf;
+        Dimensions dimens; 
 
 	cout << "\t\tReading rates file '" << rates_fname << "'" << endl;
 	ifstream fin;
@@ -2056,6 +2059,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		total_prob = 0.0;
 		for(j = 0; j < num_kinetic_states; ++j) {
 			fin >> kinetic_rate[blob_index][i][j];
+                        kinetic_rate[blob_index][i][j] *= dimens.is.time;
 
 			// Change to probabilities
 			kinetic_rate[blob_index][i][j] *= params.dt * params.kinetics_update;
@@ -2173,6 +2177,7 @@ int World::load_springs(const char *fname) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
+    Dimensions dimens;
 
     // open the spring file
     if ((in = fopen(fname, "r")) == NULL) {
@@ -2210,6 +2215,8 @@ int World::load_springs(const char *fname) {
             printf("blob_index_0 conformation_index_0 node_index_0 blob_index_1 conformation_index_1 node_index_1 k l\n\n");
             return FFEA_ERROR;
         }
+        spring_array[i].k *= dimens.is.length * dimens.is.length / dimens.is.Energy;
+        spring_array[i].l /= dimens.is.length;
 
 	// Error checking
 	for(int j = 0; j < 2; ++j) {

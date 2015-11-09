@@ -5,11 +5,12 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <iostream>
 #include <math.h>
 #include <boost/algorithm/string.hpp>
 #include "FFEA_return_codes.h"
+#include "dimensions.h"
 
-#include <iostream>
 
 #include "mat_vec_types.h"
 // WARNING: Blob.h will be included after defining PreComp_params! 
