@@ -3,22 +3,28 @@
 
 
 typedef struct {
-   double length;
-   double Energy;
-   double time;
-   double pressure;
-   double Temperature;
-   double velocity;
-   double mass;
-   double permittivity;
-   double charge;
+   const double length;
+   const double area; 
+   const double volume; 
+   const double Energy;
+   const double force;
+   const double time;
+   const double pressure;
+   const double Temperature;
+   const double velocity;
+   const double mass;
+   const double permittivity;
+   const double charge;
 } dimset;
 
 class Dimensions{
   public:
     dimset atomic {
           5.2917721092e-11,
+          2.8002852055707021e-21,
+          1.4818471148644432e-31,
           4.35974417e-18,
+          8.2387224544692213e-08,
           2.418884326505e-17,
           2.9421912e13,
           3.1577464e5,
@@ -29,6 +35,9 @@ class Dimensions{
     };
     
     dimset is {
+          1,
+          1,
+          1,
           1,
           1,
           1,
