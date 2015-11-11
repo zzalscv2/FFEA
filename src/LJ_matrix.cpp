@@ -56,8 +56,8 @@ int LJ_matrix::init(const char *vdw_params_fname) {
                 FFEA_ERROR_MESSG("Required: 'vdw_r_eq' must be greater than 0 if you wish to use vdw (calc_vdw is 1)\n")
             }
 
-            params[LJI(i, j)].vdw_eps = vdw_eps / dimens.is.Energy ;
-            params[LJI(i, j)].vdw_r_eq = vdw_r_eq / dimens.is.length ;
+            params[LJI(i, j)].vdw_eps = vdw_eps * dimens.atomic.area * dimens.atomic.area / dimens.atomic.Energy ;
+            params[LJI(i, j)].vdw_r_eq = vdw_r_eq / dimens.atomic.length ;
         }
     }
 

@@ -146,7 +146,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "dt") {
 		dt = atof(rvalue.c_str());
 		cout << "\tSetting " << lvalue << " = " << dt << endl;
-                dt /= dimens.is.time;
+                dt /= dimens.atomic.time;
 
 	} else if (lvalue == "epsilon") {
 		epsilon2 = atof(rvalue.c_str());
@@ -246,12 +246,12 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     	} else if (lvalue == "kT") {
         	kT = atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << kT << endl;
-                kT /= dimens.is.Energy;
+                kT /= dimens.atomic.Energy;
 
 	} else if (lvalue == "kappa") {
         	kappa = atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << kappa << endl;
-        	kappa *= dimens.is.length;
+        	kappa *= dimens.atomic.length;
 
     	} else if (lvalue == "dielec_ext") {
         	dielec_ext = atof(rvalue.c_str());
@@ -288,7 +288,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "stokes_visc") {
         	stokes_visc = atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << stokes_visc << endl;
-                stokes_visc /= dimens.is.pressure * dimens.is.time;
+                stokes_visc /= dimens.atomic.pressure * dimens.atomic.time;
 
 	} else if (lvalue == "wall_x_1") {
 		if (rvalue == "PBC") {
