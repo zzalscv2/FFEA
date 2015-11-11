@@ -395,7 +395,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		}
 		printf("...done\n");
 
-		printf("Box has volume %e cubic angstroms\n", (box_dim.x * box_dim.y * box_dim.z) * dimens.atomic.volume * 1e30);
+		printf("Box has volume %e cubic angstroms\n", (box_dim.x * box_dim.y * box_dim.z) * dimens.meso.volume * 1e30);
 
 		// Add all the faces from each Blob to the lookup pool
 		printf("Adding all faces to nearest neighbour grid lookup pool\n");
@@ -815,7 +815,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
  * Update entire World for num_steps time steps
  * */
 int World::run() {
-    int es_count = 1;
+    int es_count = params.es_update;
     double wtime = omp_get_wtime();
     for (long long step = step_initial; step < params.num_steps; step++) {
 
@@ -1567,7 +1567,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 			} else if(lrvalue[0] == "scale") {
 				scale = atof(lrvalue[1].c_str());
 				set_scale = 1;
-                                scale /= dimens.atomic.length;
+                                scale /= dimens.meso.length;
 			} else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
                                 /** centroid will be rescaled later **/
 				centroid = new scalar[3];
@@ -2060,7 +2060,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		total_prob = 0.0;
 		for(j = 0; j < num_kinetic_states; ++j) {
 			fin >> kinetic_rate[blob_index][i][j];
-                        kinetic_rate[blob_index][i][j] *= dimens.atomic.time;
+                        kinetic_rate[blob_index][i][j] *= dimens.meso.time;
 
 			// Change to probabilities
 			kinetic_rate[blob_index][i][j] *= params.dt * params.kinetics_update;
@@ -2216,8 +2216,8 @@ int World::load_springs(const char *fname) {
             printf("blob_index_0 conformation_index_0 node_index_0 blob_index_1 conformation_index_1 node_index_1 k l\n\n");
             return FFEA_ERROR;
         }
-        spring_array[i].k *= dimens.atomic.area / dimens.atomic.Energy;
-        spring_array[i].l /= dimens.atomic.length;
+        spring_array[i].k *= dimens.meso.area / dimens.meso.Energy;
+        spring_array[i].l /= dimens.meso.length;
 
 	// Error checking
 	for(int j = 0; j < 2; ++j) {
