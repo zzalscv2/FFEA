@@ -369,7 +369,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
         // const scalar charge_density = 6.0e25;
         Dimensions dimens; 
-        const scalar charge_density = 6.0e25 * dimens.atomic.volume / dimens.atomic.charge;
+        const scalar charge_density = 6.0e25 * dimens.meso.volume / dimens.meso.charge;
         for (int n = 0; n < num_elements; n++) {
             for (int i = 0; i < 10; i++) {
                 q[elem[n].n[i]->index] += charge_density * elem[n].vol_0;
@@ -833,10 +833,10 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
 
     for (int i = 0; i < num_nodes; i++) {
         fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
-            node[i].pos.x*dimens.atomic.length, node[i].pos.y*dimens.atomic.length, node[i].pos.z*dimens.atomic.length, 
-            node[i].vel.x*dimens.atomic.velocity, node[i].vel.y*dimens.atomic.velocity, node[i].vel.z*dimens.atomic.velocity, 
+            node[i].pos.x*dimens.meso.length, node[i].pos.y*dimens.meso.length, node[i].pos.z*dimens.meso.length, 
+            node[i].vel.x*dimens.meso.velocity, node[i].vel.y*dimens.meso.velocity, node[i].vel.z*dimens.meso.velocity, 
             node[i].phi, 
-            force[i].x*dimens.atomic.force, force[i].y*dimens.atomic.force, force[i].z*dimens.atomic.force);
+            force[i].x*dimens.meso.force, force[i].y*dimens.meso.force, force[i].z*dimens.meso.force);
     }
 }
 
@@ -866,15 +866,15 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
         if (fscanf(trajectory_out, "%le %le %le %le %le %le %le %le %le %le\n", &node[i].pos.x, &node[i].pos.y, &node[i].pos.z, &node[i].vel.x, &node[i].vel.y, &node[i].vel.z, &node[i].phi, &force[i].x, &force[i].y, &force[i].z) != 10) {
             FFEA_ERROR_MESSG("(When restarting) Error reading from trajectory file, for node %d\n", i)
         } else {
-          node[i].pos.x /= dimens.atomic.length;
-          node[i].pos.y /= dimens.atomic.length;
-          node[i].pos.z /= dimens.atomic.length;
-          node[i].vel.x /= dimens.atomic.velocity; 
-          node[i].vel.y /= dimens.atomic.velocity; 
-          node[i].vel.z /= dimens.atomic.velocity; 
-          force[i].x /= dimens.atomic.force;
-          force[i].y /= dimens.atomic.force;
-          force[i].z /= dimens.atomic.force;
+          node[i].pos.x /= dimens.meso.length;
+          node[i].pos.y /= dimens.meso.length;
+          node[i].pos.z /= dimens.meso.length;
+          node[i].vel.x /= dimens.meso.velocity; 
+          node[i].vel.y /= dimens.meso.velocity; 
+          node[i].vel.z /= dimens.meso.velocity; 
+          force[i].x /= dimens.meso.force;
+          force[i].y /= dimens.meso.force;
+          force[i].z /= dimens.meso.force;
         }
 
     }
@@ -1111,13 +1111,13 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
         // print out all measurements to file
         fprintf(measurement_out, 
          "%d\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\n", 
-         step, ke*dimens.atomic.Energy, pe*dimens.atomic.Energy, 
-         com_x*dimens.atomic.length, com_y*dimens.atomic.length, com_z*dimens.atomic.length, 
-         L_x*dimens.atomic.length, L_y*dimens.atomic.length, L_z*dimens.atomic.length, 
-         rmsd*dimens.atomic.length, 
-         mag(&total_vdw_xz_force)*dimens.atomic.force,
-         total_vdw_xz_energy*dimens.atomic.Energy,
-         total_vdw_xz_area*dimens.atomic.area);
+         step, ke*dimens.meso.Energy, pe*dimens.meso.Energy, 
+         com_x*dimens.meso.length, com_y*dimens.meso.length, com_z*dimens.meso.length, 
+         L_x*dimens.meso.length, L_y*dimens.meso.length, L_z*dimens.meso.length, 
+         rmsd*dimens.meso.length, 
+         mag(&total_vdw_xz_force)*dimens.meso.force,
+         total_vdw_xz_energy*dimens.meso.Energy,
+         total_vdw_xz_area*dimens.meso.area);
     }
 }
 
@@ -1148,7 +1148,7 @@ void Blob::calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_
               total_vdw_bb_area += surface[i].area;
           }
       }
-      fprintf(vdw_measurement_out, "%e %e %e ", total_vdw_bb_area*dimens.atomic.area, mag(&total_vdw_bb_force)*dimens.atomic.force, total_vdw_bb_energy*dimens.atomic.Energy);
+      fprintf(vdw_measurement_out, "%e %e %e ", total_vdw_bb_area*dimens.meso.area, mag(&total_vdw_bb_force)*dimens.meso.force, total_vdw_bb_energy*dimens.meso.Energy);
     } else {
       fprintf(vdw_measurement_out, "%e %e %e ", 0e0, 0e0, 0e0);
     }
@@ -1981,7 +1981,7 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
     fclose(in);
 
     Dimensions dimens; 
-    printf("\t\t\tSmallest Face Area = %e\n", smallest_A * dimens.atomic.area);
+    printf("\t\t\tSmallest Face Area = %e\n", smallest_A * dimens.meso.area);
     if (i == 1)
         printf("\t\t\tRead 1 surface face from %s\n", surface_filename);
     else
@@ -2112,11 +2112,11 @@ int Blob::load_material_params(const char *material_params_filename) {
             fclose(in);
             FFEA_ERROR_MESSG("Error reading from material params file at element %d. There should be 6 space separated real values (density, shear_visc, bulk_visc, shear_mod, bulk_mod, dielectric).\n", i);
         }
-        elem[i].rho = density * dimens.atomic.volume / dimens.atomic.mass ;
-        elem[i].A = shear_visc / (dimens.atomic.pressure * dimens.atomic.time);
-        elem[i].B = bulk_visc / (dimens.atomic.pressure * dimens.atomic.time) - (2.0 / 3.0) * shear_visc; // Code uses second coefficient of viscosity
-        elem[i].G = shear_mod / dimens.atomic.pressure;
-        elem[i].E = bulk_mod / dimens.atomic.pressure;
+        elem[i].rho = density * dimens.meso.volume / dimens.meso.mass ;
+        elem[i].A = shear_visc / (dimens.meso.pressure * dimens.meso.time);
+        elem[i].B = bulk_visc / (dimens.meso.pressure * dimens.meso.time) - (2.0 / 3.0) * shear_visc; // Code uses second coefficient of viscosity
+        elem[i].G = shear_mod / dimens.meso.pressure;
+        elem[i].E = bulk_mod / dimens.meso.pressure;
         elem[i].dielectric = dielectric; // relative permittivity. 
     }
 
@@ -2569,8 +2569,8 @@ void Blob::calc_rest_state_info() {
         min_vol = 0.0;
     } else {
         Dimensions dimens; 
-        printf("\t\tTotal rest volume of Blob is %e cubic Angstroms.\n", total_vol * dimens.atomic.volume* 1e30);
-        printf("\t\tSmallest element (%i) has volume %e cubic Angstroms.\n", min_vol_elem, min_vol * dimens.atomic.volume * 1e30);
+        printf("\t\tTotal rest volume of Blob is %e cubic Angstroms.\n", total_vol * dimens.meso.volume* 1e30);
+        printf("\t\tSmallest element (%i) has volume %e cubic Angstroms.\n", min_vol_elem, min_vol * dimens.meso.volume * 1e30);
     }
 
     // Calc the total mass of this Blob
@@ -2578,7 +2578,7 @@ void Blob::calc_rest_state_info() {
         mass += elem[i].mass;
     }
     Dimensions dimens; 
-    printf("\t\tTotal mass of blob = %e\n", mass*dimens.atomic.mass);
+    printf("\t\tTotal mass of blob = %e\n", mass*dimens.meso.mass);
 }
 
 /*
