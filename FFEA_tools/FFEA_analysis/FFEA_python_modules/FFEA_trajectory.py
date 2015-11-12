@@ -348,6 +348,15 @@ class FFEA_trajectory:
 		self.num_nodes = []
 		self.blob = []
 		self.num_frames = 0
+  
+	def calc_distance_between_subblobs(self, blob_index, conformation_index, subblob_1_id, subblob_2_id):
+		traj1 = self.blob[blob_index][conformation_index].get_centroid_trajectory(subblob_1_id)
+		traj2 = self.blob[blob_index][conformation_index].get_centroid_trajectory(subblob_2_id)
+		dists = np.zeros(len(traj1))
+		for frame_num in range(len(traj1)):		
+			dist = np.sqrt( np.power(traj1[frame_num][0] - traj2[frame_num][0], 2) + np.power(traj1[frame_num][1] - traj2[frame_num][1], 2) + np.power(traj1[frame_num][2] - traj2[frame_num][2], 2) )
+			dists[frame_num] = dist
+		return np.array(dists)
 
 class FFEA_traj_blob:
 
@@ -362,7 +371,8 @@ class FFEA_traj_blob:
 	
 		self.subblob.append(indices)
 		self.num_subblobs += 1
-		return self.subblob[-1]
+		#return self.subblob[-1]
+		return self.num_subblobs - 1 #returns index of subblob as variable
 
 	def get_centroid_trajectory(self, subblob_index = -1):
 
@@ -384,11 +394,16 @@ class FFEA_traj_blob:
 			centroid[i] *= 1.0 / self.num_nodes
 
 		return centroid
-			
+
 class FFEA_traj_blob_frame:
 
 	def __init__(self, num_nodes):
 		self.pos = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
+	def get_subblob_frame(self, nodes_list):
+		subblob_frame = np.zeros([len(nodes_list), 3])
+		for i in range(len(nodes_list)):
+			subblob_frame[i] = self.pos[i]
+		return subblob_frame
 
 # Faster than loading a whole trajectory
 def get_num_frames(fname):

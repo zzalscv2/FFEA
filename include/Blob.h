@@ -32,6 +32,7 @@
 #include "LJ_matrix.h"
 #include "BindingSite.h"
 #include "PreComp_solver.h"
+#include "dimensions.h"
 
 /*
  * The "Blob" class

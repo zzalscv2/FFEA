@@ -39,6 +39,7 @@
 #include "KineticState.h"
 #include "KineticBindingSite.h"
 
+#include "dimensions.h"
 using namespace std;
 
 class World {

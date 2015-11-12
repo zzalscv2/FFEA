@@ -341,6 +341,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 	}
 	    // Initialise the Van der Waals solver
+            Dimensions dimens;
 	    if(params.calc_vdw == 1 || params.calc_es == 1) {
 		vector3 world_centroid, shift;
 	        get_system_centroid(&world_centroid);
@@ -394,7 +395,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		}
 		printf("...done\n");
 
-		printf("Box has volume %e cubic angstroms\n", (box_dim.x * box_dim.y * box_dim.z) * 1e30);
+		printf("Box has volume %e cubic angstroms\n", (box_dim.x * box_dim.y * box_dim.z) * dimens.meso.volume * 1e30);
 
 		// Add all the faces from each Blob to the lookup pool
 		printf("Adding all faces to nearest neighbour grid lookup pool\n");
@@ -987,7 +988,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
  * Update entire World for num_steps time steps
  * */
 int World::run() {
-    int es_count = 1;
+    int es_count = params.es_update;
     double wtime = omp_get_wtime();
     for (long long step = step_initial; step < params.num_steps; step++) {
 
@@ -1472,6 +1473,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 	vector<int>::iterator maps_conf_ind_it;
 
 	scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
+        Dimensions dimens;
 
 	// Get Interactions Lines
 	int error_code;
@@ -1738,8 +1740,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 			} else if(lrvalue[0] == "scale") {
 				scale = atof(lrvalue[1].c_str());
 				set_scale = 1;
+                                scale /= dimens.meso.length;
 			} else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
-				
+                                /** centroid will be rescaled later **/
 				centroid = new scalar[3];
 
 				lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
@@ -1747,7 +1750,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 				systemreader->split_string(lrvalue[1], centroid, ",");
 
 			} else if(lrvalue[0] == "velocity") {
-				
+				/** velocity will be rescaled later **/
 				velocity = new scalar[3];
 				
 				lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
@@ -2184,6 +2187,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	int i, j, MAX_BUF_SIZE = 255, num_kinetic_states;
 	char buf[MAX_BUF_SIZE];
 	string string_buf;
+        Dimensions dimens; 
 
 	cout << "\t\tReading rates file '" << rates_fname << "'" << endl;
 	ifstream fin;
@@ -2223,6 +2227,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		total_prob = 0.0;
 		for(j = 0; j < num_kinetic_states; ++j) {
 			fin >> kinetic_rate[blob_index][i][j];
+                        kinetic_rate[blob_index][i][j] *= dimens.meso.time;
 
 			// Change to probabilities
 			kinetic_rate[blob_index][i][j] *= params.dt * params.kinetics_update;
@@ -2340,6 +2345,7 @@ int World::load_springs(const char *fname) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
+    Dimensions dimens;
 
     // open the spring file
     if ((in = fopen(fname, "r")) == NULL) {
@@ -2377,6 +2383,8 @@ int World::load_springs(const char *fname) {
             printf("blob_index_0 conformation_index_0 node_index_0 blob_index_1 conformation_index_1 node_index_1 k l\n\n");
             return FFEA_ERROR;
         }
+        spring_array[i].k *= dimens.meso.area / dimens.meso.Energy;
+        spring_array[i].l /= dimens.meso.length;
 
 	// Error checking
 	for(int j = 0; j < 2; ++j) {
