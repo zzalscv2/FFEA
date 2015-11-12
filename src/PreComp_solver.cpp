@@ -121,10 +121,12 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    F = new scalar[n_values * nint];    
       
    // and load potentials and forces:
-   read_tabulated_values(*pc_params, "pot", U, pc_params->E_to_J);
+   Dimensions dimens; 
+   read_tabulated_values(*pc_params, "pot", U, pc_params->E_to_J / dimens.meso.Energy);
    if (pc_params->inputData == 1) {
-     scalar F_to_Jm = pc_params->E_to_J / pc_params->dist_to_m;
-     read_tabulated_values(*pc_params, "force", F, F_to_Jm);
+     // scalar F_to_Jm = pc_params->E_to_J / pc_params->dist_to_m;
+     scalar F_scale = ( pc_params->E_to_J / pc_params->dist_to_m ) / dimens.meso.force;
+     read_tabulated_values(*pc_params, "force", F, F_scale);
    } else if (pc_params->inputData == 2) {
      calc_force_from_pot();
    } else {
@@ -132,7 +134,9 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      msg("invalid value for precomp->inputData");
      return FFEA_ERROR;
    }
-   Dx = Dx * pc_params->dist_to_m;
+   Dx = Dx * pc_params->dist_to_m / dimens.meso.length ;
+   x_range[0] /= dimens.meso.length; 
+   x_range[1] = x_range[0] + Dx * n_values;
 
 
 

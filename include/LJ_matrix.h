@@ -5,6 +5,7 @@
 #include <string.h>
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
+#include "dimensions.h"
 
 #define LJI(A,B)	((A) * num_vdw_face_types + (B))
 

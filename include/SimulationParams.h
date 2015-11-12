@@ -12,6 +12,7 @@
 #include "FFEA_return_codes.h"
 #include "FFEA_input_reader.h"
 #include "mat_vec_types.h"
+#include "dimensions.h"
 
 #define WALL_TYPE_PBC 0
 #define WALL_TYPE_HARD 1
