@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	// Boost makes sure options are valid. We check arguments are valid
 	// --mode
 	if(var_map.count("mode")) {
-		if(mode != 0 && mode != 1 && mode != 2 && mode != 3) {
+		if(mode != 0 && mode != 1 && mode != 2 && mode != 3 && mode != 4) {
 			FFEA_error_text();		
 			cout << "Unrecognised argument to --mode" << endl;
 			cout << desc << endl;
@@ -149,17 +149,22 @@ int main(int argc, char *argv[])
 
 	}
 
-	else if(mode == 1 || mode == 2) {
+	else if(mode == 1 || mode == 2 || mode == 3 || mode == 4) {
 		
 		if(mode == 1) {
 
 			/* Elastic Network Model */
 			cout << "\n\n\n***************************************************\n\tFFEA - Elastic Network Model\n***************************************************\n\n";
-		} else {
+		} else if (mode == 2) {
 
 			/* Dynamic Mode Model */
 			cout << "\n\n\n***************************************************\n\tFFEA - Dynamic Mode Model\n***************************************************\n\n";
+		} else if (mode == 4) {
+
+			/* Rotne Prager Dynamic Mode Model */
+			cout << "\n\n\n***************************************************\n\tFFEA - Rotne Prager Dynamic Mode Model\n***************************************************\n\n";
 		}
+
 		// Get the desired blobs
 		cout << "\tFirstly, lets decide which blobs to analyse!" << endl << endl;
 		set<int> blobs;
@@ -256,17 +261,24 @@ int main(int argc, char *argv[])
 				FFEA_error_text();
 				cout << "Problem when calculating elastic network models." << endl;
 			}
-		} else {
+		} else if (mode == 2) {
 			cout << endl << endl << "\tBeginning the calculation of the DMMs..." << endl;
 			if(world->dmm(blobs, num_modes) == FFEA_ERROR) {
 				cout << endl;
 				FFEA_error_text();
 				cout << "Problem when calculating dynamic mode models." << endl;
 			}
+		} else if (mode == 4) {
+			cout << endl << endl << "\tBeginning the calculation of the Rotne-Prager DMMs..." << endl;
+			if(world->dmm_rp(blobs, num_modes) == FFEA_ERROR) {
+				cout << endl;
+				FFEA_error_text();
+				cout << "Problem when calculating RP dynamic mode models." << endl;
+			}
 		}
 		cout << "\tdone!" << endl;
 
-	} else if(mode == 0){
+	} else if(mode == 0) {
 		
 		/* Full FFEA */
 
