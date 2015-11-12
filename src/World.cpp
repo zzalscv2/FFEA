@@ -669,7 +669,7 @@ int World::enm(set<int> blob_indices, int num_modes) {
 }
 
 /*
- *  Build and output an elastic network model
+ *  Build and output an dynamic mode model.
  */
 
 int World::dmm(set<int> blob_indices, int num_modes) {
@@ -809,6 +809,179 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 	return FFEA_OK;
 }
 
+/*
+ *  Build and output a Rotne Prager dynamic mode model.
+ */
+
+int World::dmm_rp(set<int> blob_indices, int num_modes) {
+
+	int i, j, k, l;
+	int num_nodes, num_rows;
+	set<int>::iterator it;
+
+	vector<string> all;
+	string traj_out_fname, base, ext, evecs_out_fname, evals_out_fname;
+
+	// For all blobs in this set, calculate and output the dynamic normal modes
+	for(it = blob_indices.begin(); it != blob_indices.end(); it++) {
+		
+		// Get the index
+		i = *it;
+		
+		cout << "\tBlob " << i << ":" << endl << endl;
+
+		// Explicitly calculate a diffusion matrix
+		num_nodes = active_blob_array[i]->get_num_linear_nodes();
+		num_rows = num_nodes * 3;
+
+		Eigen::MatrixXd D(num_rows, num_rows);
+		
+		cout << "\t\tCalculating the Rotne-Prager diffusion matrix, D..." << flush;
+		if(active_blob_array[i]->build_linear_node_rp_diffusion_matrix(&D) == FFEA_ERROR) {
+			cout << endl;
+			FFEA_error_text();
+			cout << "In function 'Blob::build_rp_diffusion_matrix'" << i << endl;
+			return FFEA_ERROR;
+		}
+		cout << "done!" << endl;
+
+		// Get an elasticity matrix
+		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
+		cout << "\t\tCalculating the Global Linearised Elasticity Matrix, A..." << flush;
+		if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
+			cout << endl;
+			FFEA_error_text();
+			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << i << endl;
+			return FFEA_ERROR;
+		}
+		cout << "done!" << endl;
+	
+		// Diagonalise DA to find the dynamic modes
+		cout << "\t\tCalculating D*A..." << flush;
+		Eigen::MatrixXd F;
+		F = D * A;
+		cout << "done!" << endl;
+		cout << "\t\tDiagonalising DA..." << flush;
+		Eigen::EigenSolver<Eigen::MatrixXd> esF(F);
+		cout << "done!" << endl;
+
+		// Order the eigenvalues
+		Eigen::MatrixXd Rvecs(num_rows, num_modes + 6);
+		Eigen::VectorXd Rvals(num_modes + 6);
+		Eigen::VectorXi Rvals_indices(num_modes + 6);
+		Rvals.setZero();
+		Rvecs.setZero();
+		scalar min_eig, max_eig, aneig;
+		int max_eig_index, fail;
+
+		// Get the 6 zero modes and the num_modes required modes in order
+		for(j = 0; j < num_modes + 6; ++j) {
+
+			// Set limits
+			max_eig = INFINITY;
+			if(j == 0) {
+				min_eig = -1 * INFINITY;
+			} else {
+				min_eig = Rvals(j - 1);
+			}
+
+			// Sweep the eigenvalue range
+			for(k = 0; k < num_rows; ++k) {
+
+				// Ignore imaginary stuff (should be none anyway, but you know how numerical errors are...)
+				if(esF.eigenvalues()[k].imag() != 0) {
+					continue;
+				}
+				aneig = fabs(esF.eigenvalues()[k].real());
+
+				// If within limits 
+				if(aneig <= max_eig && aneig >= min_eig) {
+
+					// Check if already exists in vector (probably quicker to use a set but I've started now!)
+					fail = 0;
+					for(l = 0; l < j; ++l) {
+						if(Rvals_indices(l) == k) {
+							fail = 1;
+							break;
+						}
+					}
+
+					// Change limits
+					if(fail == 0) {
+						max_eig = aneig;
+						max_eig_index = k;
+					}
+				}
+			}
+			Rvals_indices(j) = max_eig_index;
+			Rvals(j) = esF.eigenvalues()[max_eig_index].real();
+			Rvecs.col(j) = esF.eigenvectors().col(j).real();
+		}
+
+		// This matrix 'should' contain 6 zero modes, and then num_rows - 6 actual floppy modes
+		// The most important mode corresponds to the smallest non-zero eigenvalue
+
+		// Most important mode will have motion ~ largest system size. Get a length...
+		scalar dx = -1 * INFINITY;
+		vector3 min, max;
+		active_blob_array[i]->get_min_max(&min, &max);
+		if(max.x - min.x > dx) {
+			dx = max.x - min.x;
+		}
+		if(max.y - min.y > dx) {
+			dx = max.y - min.y;
+		}
+		if(max.z - min.z > dx) {
+			dx = max.z - min.z;
+		}
+
+		dx /= 20.0;
+
+		// Make some trajectories (ignoring the first 6)
+		// Firstly, normalise the first num_modes eigenvectors
+		scalar sum;
+		for(j = 6; j < num_modes + 6; ++j) {
+			sum = 0;
+			for(k = 0; k < num_rows; ++k) {
+				sum += Rvecs.col(j)[k] * Rvecs.col(j)[k];
+			}
+			Rvecs.col(j) *= 1.0 / sqrt(sum);
+		}
+
+		cout << "\t\tMaking trajectories from eigenvectors..." << endl;
+
+		// Get filename base
+		ostringstream bi, mi;
+		bi << i;
+		boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
+		ext = "." + all.at(all.size() - 1);
+		base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
+
+		for(j = 6; j < 6 + num_modes; ++j) {
+
+			cout << "\t\t\tEigenvector " << j << " / Mode " << j - 6 << "...";
+
+			// Get a filename end
+			ostringstream mi;
+			mi << j - 6;
+			traj_out_fname = base + "_ffearpdmm_blob" + bi.str() + "mode" + mi.str() + ext;
+
+			make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, Rvecs.col(j), dx);
+			cout << "done!" << endl;
+		}
+		cout << "\t\tdone!" << endl;
+
+		// Print out relevant eigenvalues and eigenvectors
+
+		// Get a filename
+		evals_out_fname = base + "_ffearpdmm_blob" + bi.str() + ".evals";
+		evecs_out_fname = base + "_ffearpdmm_blob" + bi.str() + ".evecs";
+
+		print_evecs_to_file(evecs_out_fname, Rvecs, num_rows, num_modes);
+		print_evals_to_file(evals_out_fname, Rvals, num_modes);
+	}
+	return FFEA_OK;
+}
 
 /*
  * Update entire World for num_steps time steps
@@ -1732,20 +1905,14 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 		cout << "\t\tReading map " << i << ", " << map_fnames.at(i) << ": from conformation " << map_from.at(i) << " to " << map_to.at(i) << endl;
 		ifstream fin;
 		fin.open(map_fnames.at(i).c_str());
-		
+		if(fin.is_open() == false) {
+			cout << "File " << map_fnames.at(i) << " not found. Plaese supply valid map file with correct path." << endl;
+			return FFEA_ERROR;
+		}
+
 		// Check if sparse or dense
 		fin.getline(buf, MAX_BUF_SIZE);
-		cout << buf << endl;
-		fin.getline(buf, MAX_BUF_SIZE);
-		cout << buf << endl;
-		fin.getline(buf, MAX_BUF_SIZE);
-		cout << buf << endl;
-		fin.getline(buf, MAX_BUF_SIZE);
-		cout << buf << endl;
-		fin.getline(buf, MAX_BUF_SIZE);
-		cout << buf << endl;
 		buf_string = string(buf);
-		boost::trim(buf_string);
 		if(buf_string != "FFEA Kinetic Conformation Mapping File (Sparse)") {
 			FFEA_error_text();
 			cout << "In " << map_fnames.at(i) << ", expected 'FFEA Kinetic Conformation Mapping File (Sparse)'" << endl;

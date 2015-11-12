@@ -1365,6 +1365,98 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 	return FFEA_OK;
 }
 
+int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
+
+	int i, j, n, m, num_linear_nodes;
+	scalar mod, mod2, a;
+	Eigen::Matrix3d block, rr;
+	Eigen::Vector3d sep;
+
+	// Firstly, get a mapping from all node indices to just linear node indices
+	int map[num_nodes];
+	int offset = 0;
+	for(i = 0; i < num_nodes; ++i) {
+		if(node[i].am_I_linear()) {
+			map[i] = i - offset;
+		} else {
+			offset += 1;
+			map[i] = -1;
+		}
+	}
+
+	num_linear_nodes = get_num_linear_nodes();
+
+	// Now build the matrix, one element at a time...
+	D->setZero();
+
+	// For each pair of nodes (upper triangle only)
+	for(n = 0; n < num_nodes; ++n) {
+
+		// If secondary node, continue
+		if(map[n] == -1) {
+			continue;
+		} else {
+			i = map[n];
+		}
+		for(m = n; m < num_nodes; ++m) {
+			
+			// If secondary node, continue
+			if(map[m] == -1) {
+				continue;
+			} else {
+				j = map[m];
+			}
+
+			// Initialise directional block matrix
+			block.setZero();
+
+			// If we are on the block diagonal
+			if(i == j) {
+				block = Eigen::Matrix3d::Identity() *  params->kT / node[i].stokes_drag;
+			} else {
+
+				// Get distance between nodes and the outer product of the separation
+				Eigen::Vector3d vecn(node[i].pos.x, node[i].pos.y, node[i].pos.z);
+				Eigen::Vector3d vecm(node[j].pos.x, node[j].pos.y, node[j].pos.z);		
+				sep = vecn - vecm;
+				mod = sep.norm();
+				mod2 = mod * mod;
+				rr = sep * sep.transpose();
+
+				// Effective stokes radius. Will usually equal a anyway
+
+				a = (node[i].stokes_radius + node[j].stokes_radius) / 2.0;
+
+				// Condition for positive-definiteness
+				if(mod > 2 * node[i].stokes_radius && mod > 2 * node[j].stokes_radius) {
+					block = Eigen::Matrix3d::Identity() * mod2/ 3.0;
+					block -= rr;
+					block *= 2 * a * a / mod2;
+					block += Eigen::Matrix3d::Identity() * mod2;
+					block += rr;
+					block *= params->kT / (8 * 3.14159265 * params->stokes_visc * mod2 * mod);
+
+				} else {
+					block = Eigen::Matrix3d::Identity() * (1 - ((9 * mod) / (32 * a)));
+					block += rr * (3 / (32 * a * mod));
+					block *= params->kT / (6 * 3.14159265 * params->stokes_visc * a);
+				}
+			}
+	
+			// Linear node position from global nodes
+			D->block<3,3>(i, j) = block;
+		}
+	}
+
+	// Fill in the lower trangle
+	for(i = 0; i < 3 * num_linear_nodes; ++i) {
+		for(j = i; j < 3 * num_linear_nodes; ++j) {
+			(*D)(j, i) = (*D)(i, j);
+		}
+	}
+	return FFEA_OK;
+}
+
 int Blob::solve_poisson(scalar *phi_gamma_IN, scalar *J_Gamma_OUT) {
     if (num_interior_nodes > 0) {
         /* Convert the given potential on the surface faces into the potential on each node */
@@ -2619,6 +2711,25 @@ int Blob::aggregate_forces_and_solve() {
         force[pn_index].x = 0;
         force[pn_index].y = 0;
         force[pn_index].z = 0;
+    }
+
+    // Set to zero any forces in directions that are restricted
+    for(int i = 0; i < 3; ++i) {
+	if(params->restrict_motion[i] == 1) {
+	    for(n = 0; n < num_nodes; ++i) {
+		switch(i) {
+		    case(0):
+			force[n].x = 0;
+			break;
+		    case(1):
+			force[n].y = 0;
+			break;
+		    case(2):
+			force[n].z = 0;
+			break;
+		}
+	    }
+	}
     }
 
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix, 

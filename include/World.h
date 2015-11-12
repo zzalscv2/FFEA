@@ -60,6 +60,9 @@ public:
     int dmm(set<int> blob_indices, int num_modes);
 
     /* */
+    int dmm_rp(set<int> blob_indices, int num_modes);
+
+    /* */
     int run();
 
     /* */
