@@ -41,7 +41,7 @@ int LJ_matrix::init(const char *vdw_params_fname) {
     }
 
     // Fill the matrix
-    scalar vdw_eps = 0.0, vdw_r_eq = 0.0;
+    double vdw_eps = 0.0, vdw_r_eq = 0.0;
     for (int i = 0; i < num_vdw_face_types; i++) {
         for (int j = 0; j < num_vdw_face_types; j++) {
             if (fscanf(in, " (%le,%le) ", &vdw_eps, &vdw_r_eq) != 2) {

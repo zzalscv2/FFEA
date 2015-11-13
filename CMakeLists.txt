@@ -11,11 +11,17 @@ set(PACKAGE_VERSION "${VERSION}.${MINOR}")
 
 option(USE_OPENMP "Build with OpenMP support" ON)
 set(USE_OMP_MODE 1 CACHE STRING "0: disabled; 1: threads within blob; 2: threads per blob")
+option(USE_DOUBLE "Use double precision" ON)
+mark_as_advanced(USE_DOUBLE)
 
 
 set (LIBS_TO_LINK)
 #################################
 #### LIBRARIES AND CFLAGS #######
+# 0 #### PRECISION ###
+if (USE_DOUBLE)
+  add_definitions(-DUSE_DOUBLE)
+endif(USE_DOUBLE)
 
 # 1 #### OPENMP #####
 if (USE_OPENMP)

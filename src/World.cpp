@@ -461,8 +461,8 @@ int World::get_smallest_time_constants() {
 	
 	int blob_index;
 	int num_nodes, num_rows;
-	double dt_min = INFINITY;
-	double dt_max = -1 * INFINITY;
+	scalar dt_min = INFINITY;
+	scalar dt_max = -1 * INFINITY;
 	int dt_max_bin = -1, dt_min_bin = -1;
 	cout << "\n\nFFEA mode - Calculate Maximum Allowed Timesteps" << endl << endl;
 
@@ -483,9 +483,15 @@ int World::get_smallest_time_constants() {
 
 		Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
 		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
+#ifdef USE_DOUBLE
 		Eigen::MatrixXd K_inv(num_rows, num_rows);
 		Eigen::MatrixXd I(num_rows, num_rows);
 		Eigen::MatrixXd tau_inv(num_rows, num_rows);
+#else
+		Eigen::MatrixXf K_inv(num_rows, num_rows);
+		Eigen::MatrixXf I(num_rows, num_rows);
+		Eigen::MatrixXf tau_inv(num_rows, num_rows);
+#endif 
 
 		/* Build K */
 		cout << "\tCalculating the Global Viscosity Matrix, K...";
@@ -529,7 +535,11 @@ int World::get_smallest_time_constants() {
 
 		/* Diagonalise */
 		cout << "\tDiagonalising tau_inv..." << flush;
+#ifdef USE_DOUBLE
 		Eigen::EigenSolver<Eigen::MatrixXd> es(tau_inv);
+#else
+		Eigen::EigenSolver<Eigen::MatrixXf> es(tau_inv);
+#endif
 		//cout << es.eigenvalues() << endl;
 		/*double smallest_val = INFINITY;
 		double largest_val = -1 * INFINITY;
@@ -551,8 +561,8 @@ int World::get_smallest_time_constants() {
 		cout << "done!" << endl;
 
 		// Output. Ignore the 6 translational modes (they are the slowest 6 modes)
-		double smallest_val = fabs(es.eigenvalues()[6].real());
-		double largest_val = fabs(es.eigenvalues()[0].real());
+		scalar smallest_val = fabs(es.eigenvalues()[6].real());
+		scalar largest_val = fabs(es.eigenvalues()[0].real());
 
 		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << 1.0 / smallest_val << "s" << endl;
 		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << 1.0 / largest_val << "s" << endl << endl;
@@ -613,7 +623,11 @@ int World::enm(set<int> blob_indices, int num_modes) {
 
 		// Diagonalise to find the elastic modes
 		cout << "\t\tDiagonalising A...";
+#ifdef USE_DOUBLE
 		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(A);
+#else
+		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> es(A);
+#endif
 		cout << "done!" << endl;
 
 		// This matrix 'should' contain 6 zero modes, and then num_rows - 6 actual floppy modes
@@ -707,15 +721,19 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 
 		// Diagonalise the thing
 		cout << "\t\tDiagonalising K...";
+#ifdef USE_DOUBLE
 		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esK(K);
+#else
+		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> esK(K);
+#endif
 		cout << "done!" << endl;
 
 		// Use this diagonalisation to define Q
 		cout << "\t\tBuilding the matrix Q from the eigenvalues of K...";
 		Eigen::SparseMatrix<scalar> Q(num_rows, num_rows);
-		std::vector<Eigen::Triplet<double>> vals;
+		std::vector<Eigen::Triplet<scalar>> vals;
 		for(j = 0; j < num_rows; ++j) {
-			vals.push_back(Eigen::Triplet<double>(j,j, 1.0 / sqrt(fabs(esK.eigenvalues()[j]))));
+			vals.push_back(Eigen::Triplet<scalar>(j,j, 1.0 / sqrt(fabs(esK.eigenvalues()[j]))));
 		}
 		Q.setFromTriplets(vals.begin(), vals.end());
 		cout << "done!" << endl;
@@ -733,16 +751,28 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 
 		// From A, build the transformation Ahat
 		cout << "\t\tBuilding the Transformation Matrix Ahat...";
+#ifdef USE_DOUBLE
 		Eigen::MatrixXd Ahat(num_rows, num_rows);
+#else
+		Eigen::MatrixXf Ahat(num_rows, num_rows);
+#endif
 		Ahat = Q.transpose() * esK.eigenvectors().transpose() * A * esK.eigenvectors() * Q;
 		cout << "done" << endl;
 	
 		// Diagonalise to find the dynamic modes
 		cout << "\t\tDiagonalising Ahat...";
+#ifdef USE_DOUBLE
 		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> esAhat(Ahat);
+#else
+		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> esAhat(Ahat);
+#endif
 		cout << "done!" << endl;
 		cout << "Building the Dynamic Modes Matrix R...";
+#ifdef USE_DOUBLE
 		Eigen::MatrixXd R;
+#else
+		Eigen::MatrixXf R;
+#endif 
 		R = esK.eigenvectors() * Q * esAhat.eigenvectors();
 		
 		// This matrix 'should' contain 6 zero modes, and then num_rows - 6 actual floppy modes
@@ -816,7 +846,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
  * */
 int World::run() {
     int es_count = params.es_update;
-    double wtime = omp_get_wtime();
+    scalar wtime = omp_get_wtime();
     for (long long step = step_initial; step < params.num_steps; step++) {
 
         // Zero the force across all blobs
@@ -2055,7 +2085,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	// Get rates line
 	fin.getline(buf, MAX_BUF_SIZE);
 	fin.getline(buf, MAX_BUF_SIZE);
-	double total_prob;
+	scalar total_prob;
 	for(i = 0; i < num_kinetic_states; ++i) {
 		total_prob = 0.0;
 		for(j = 0; j < num_kinetic_states; ++j) {
@@ -2387,7 +2417,7 @@ void World::do_es() {
     //	blob_array[0].print_phi();
 }
 
-void World::write_eig_to_files(double *evals_ordered, double **evecs_ordered, int num_modes, int num_nodes) {
+void World::write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes) {
 
 	// Get some filenames
 	vector<string> all;
@@ -2415,7 +2445,11 @@ void World::write_eig_to_files(double *evals_ordered, double **evecs_ordered, in
 	fclose(vecfout);
 }
 
-void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXd evec, double step) {
+#ifdef USE_DOUBLE
+void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXd evec, scalar step) {
+#else
+void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXf evec, scalar step) {
+#endif
 
 	int i, j, from_index = 0, to_index = 0;
 	scalar dx;
@@ -2466,7 +2500,11 @@ void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_ind
 	fclose(fout);
 }
 
+#ifdef USE_DOUBLE
 void World::print_evecs_to_file(string fname, Eigen::MatrixXd ev, int num_rows, int num_modes) {
+#else
+void World::print_evecs_to_file(string fname, Eigen::MatrixXf ev, int num_rows, int num_modes) {
+#endif
 	
 	int i, j;
 	FILE *fout;
@@ -2482,7 +2520,11 @@ void World::print_evecs_to_file(string fname, Eigen::MatrixXd ev, int num_rows, 
 	fclose(fout);
 }
 
+#ifdef USE_DOUBLE
 void World::print_evals_to_file(string fname, Eigen::VectorXd ev, int num_modes) {
+#else
+void World::print_evals_to_file(string fname, Eigen::VectorXf ev, int num_modes) {
+#endif
 
 	int i;
 	FILE *fout;
@@ -2495,7 +2537,7 @@ void World::print_evals_to_file(string fname, Eigen::VectorXd ev, int num_modes)
 	fclose(fout);
 }
 
-void World::print_trajectory_and_measurement_files(int step, double wtime) {
+void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     if ((step - 1) % (params.check * 10) != 0) {
         printf("step = %d\n", step);
     } else {
@@ -2578,7 +2620,7 @@ void World::print_trajectory_conformation_changes(FILE *fout, int step, int *fro
 		delete[] from;
 	}
 }
-void World::print_static_trajectory(int step, double wtime, int blob_index) {
+void World::print_static_trajectory(int step, scalar wtime, int blob_index) {
     printf("Printing single trajectory of Blob %d for viewer\n", blob_index);
     // Write the node data for this blob
     fprintf(trajectory_out, "Blob %d, step %d\n", blob_index, step);

@@ -29,7 +29,7 @@ class KineticBindingSite {
 
 		int num_nodes;
 		vector3 centroid;
-		double area;
+		scalar area;
 };
 
 #endif

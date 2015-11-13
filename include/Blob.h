@@ -149,7 +149,7 @@ public:
 
     int calculate_deformation();
 
-    double calc_volume();
+    scalar calc_volume();
 
     void make_stress_measurements(FILE *stress_out, int blob_number);
 
@@ -234,12 +234,12 @@ public:
     /**
      * Builds a global viscosity matrix for this blob
      */
-    int build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K);
+    int build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K);
 
     /**
      * Linearises the elasticity vector and build a global elasticity matrix for this blob
      */
-    int build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A);
+    int build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A);
 
     /**
      * Returns the total mass of this Blob.
