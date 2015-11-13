@@ -213,19 +213,32 @@ private:
 
     void do_es();
 
-    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXd evec, double step);
+#ifdef USE_DOUBLE
+    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXd evec, scalar step);
+#else
+    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXf evec, scalar step);
+#endif
 
+#ifdef USE_DOUBLE
     void print_evecs_to_file(string fname, Eigen::MatrixXd ev, int num_rows, int num_modes);
+#else
+    void print_evecs_to_file(string fname, Eigen::MatrixXf ev, int num_rows, int num_modes);
+#endif
 
+#ifdef USE_DOUBLE
     void print_evals_to_file(string fname, Eigen::VectorXd ev, int num_modes);
+#else
+    void print_evals_to_file(string fname, Eigen::VectorXf ev, int num_modes);
+#endif
 
-    void write_eig_to_files(double *evals_ordered, double **evecs_ordered, int num_modes, int num_nodes);
+
+    void write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes);
     
-    void print_trajectory_and_measurement_files(int step, double wtime);
+    void print_trajectory_and_measurement_files(int step, scalar wtime);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
 
-    void print_static_trajectory(int step, double wtime, int blob_index);
+    void print_static_trajectory(int step, scalar wtime, int blob_index);
 };
 
 #endif

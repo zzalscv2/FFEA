@@ -5,7 +5,11 @@
  * Defines what is meant by a scalar (essentially sets the precision of
  * the code between float or double).
  */
+#ifdef USE_DOUBLE
 typedef double scalar;
+#else
+typedef float scalar;
+#endif 
 //typedef long double scalar;
 
 /*

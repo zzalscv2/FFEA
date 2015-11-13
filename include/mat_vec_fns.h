@@ -64,7 +64,7 @@ void print_vector12(vector12 v);
 
 void print_vector3(vector3 *v);
 
-double mag(vector3 *v);
+scalar mag(vector3 *v);
 
 vector3 normalise(vector3 *v);
 
