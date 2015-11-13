@@ -237,6 +237,11 @@ public:
     int build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K);
 
     /**
+     * Builds a global diffusion matrix for this blob based on the work of Rotne and Prager (1969)
+     */
+    int build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D);
+
+    /**
      * Linearises the elasticity vector and build a global elasticity matrix for this blob
      */
     int build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A);

@@ -18,6 +18,9 @@ SimulationParams::SimulationParams() {
     es_N_x = -1;
     es_N_y = -1;
     es_N_z = -1;
+    restrict_motion[0] = 0;
+    restrict_motion[1] = 0;
+    restrict_motion[2] = 0;
     kappa = 0;
     dielec_ext = 0;
     epsilon_0 = 0;
@@ -75,6 +78,9 @@ SimulationParams::~SimulationParams() {
     es_N_x = -1;
     es_N_y = -1;
     es_N_z = -1;
+    restrict_motion[0] = 0;
+    restrict_motion[1] = 0;
+    restrict_motion[2] = 0;
     kappa = 0;
     dielec_ext = 0;
     epsilon_0 = 0;
@@ -226,7 +232,19 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "es_N_z") {
         	es_N_z = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << es_N_z << endl;
-    
+
+        } else if (lvalue == "restrict_x") {
+		restrict_motion[0] = atoi(rvalue.c_str());
+		cout << "\tSetting " << lvalue << " = " << restrict_motion[0] << endl;
+
+        } else if (lvalue == "restrict_y") {
+		restrict_motion[1] = atoi(rvalue.c_str());
+		cout << "\tSetting " << lvalue << " = " << restrict_motion[1] << endl;
+
+        } else if (lvalue == "restrict_z") {
+		restrict_motion[2] = atoi(rvalue.c_str());
+		cout << "\tSetting " << lvalue << " = " << restrict_motion[2] << endl;
+
 	} else if (lvalue == "sticky_wall_xz") {
         	sticky_wall_xz = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << sticky_wall_xz << endl;
@@ -478,6 +496,13 @@ int SimulationParams::validate() {
 		es_N_x = 0;
 		es_N_y = 0;
 		es_N_z = 0;
+    }
+
+    // Check for motion restriction conditions
+    for(int i = 0; i < 3; ++i) {
+        if(restrict_motion[i] != 0 && restrict_motion[i] != 1) {
+            FFEA_ERROR_MESSG("restrict_x, restrict_y and restrict_z must all be either 0 (no restriction) or 1 (motion restricted).\n")
+        }
     }
 
     // Default the kinetics update value just in case

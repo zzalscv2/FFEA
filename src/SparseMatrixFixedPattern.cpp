@@ -76,7 +76,7 @@ void SparseMatrixFixedPattern::apply(scalar *in, scalar *result) {
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'vector3's */
 /* Designed for use in NoMassCGSolver */
-void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
+/*void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
     int i, j;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none) private(i, j) shared(result, in)
@@ -112,6 +112,42 @@ void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
                 result[i].z += entry[j].val * in[entry[j].column_index / 3].z;
             }
         }
+    }
+}*/
+
+/* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'vector3's */
+/* Designed for use in NoMassCGSolver */
+void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
+
+    int i, j;
+
+    // To get rid of conditionals, define an array 'num_rows' long, and copy into result at end
+    scalar work_in[num_rows];
+    scalar work_result[num_rows];
+
+    for(i = 0; i < num_rows / 3; ++i) {
+	work_in[3 * i] = in[i].x;
+	work_in[3 * i + 1] = in[i].y;
+	work_in[3 * i + 2] = in[i].z;
+    }
+
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+#pragma omp parallel for default(none) private(i, j) shared(result, work_result, in, work_in)
+#endif
+    for (i = 0; i < num_rows; i++) {
+
+        // Zero array first
+    	work_result[i] = 0.0;
+
+	for(j = key[i]; j < key[i + 1]; ++j) {
+	    work_result[i] += entry[j].val * work_in[entry[j].column_index];
+	}
+    }
+
+    for(i = 0; i < num_rows / 3; ++i) {
+	result[i].x = work_result[3 * i];
+	result[i].y = work_result[3 * i + 1];
+	result[i].z = work_result[3 * i + 2];
     }
 }
 
