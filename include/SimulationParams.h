@@ -46,7 +46,8 @@ public:
     int es_update; ///< Every how many steps should the electrostatic potential be recalculated   
     int es_N_x; ///< X dimension of the 3D lookup grid (in number of cells)   
     int es_N_y; ///< Y dimension of the 3D lookup grid (in number of cells)   
-    int es_N_z; ///< Z dimension of the 3D lookup grid (in number of cells)   
+    int es_N_z; ///< Z dimension of the 3D lookup grid (in number of cells)
+    int restrict_motion[3]; ///< [x,y,z] array defining whether motion in the given direction should be nullified
     scalar es_h; ///< Dimension of each cell in the lookup grid (in multiples of inverse kappa)   
 
     scalar kappa; ///< Inverse Debye Screening length   
