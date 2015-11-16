@@ -1399,12 +1399,12 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 	return FFEA_OK;
 }
 
-int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
+int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
 
 	int i, j, n, m, num_linear_nodes;
 	scalar mod, mod2, a;
-	Eigen::Matrix3d block, rr;
-	Eigen::Vector3d sep;
+	Eigen_Matrix3 block, rr;
+	Eigen_Vector3 sep;
 
 	// Firstly, get a mapping from all node indices to just linear node indices
 	int map[num_nodes];
@@ -1446,12 +1446,12 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
 
 			// If we are on the block diagonal
 			if(i == j) {
-				block = Eigen::Matrix3d::Identity() *  params->kT / node[i].stokes_drag;
+				block = Eigen_Matrix3::Identity() *  params->kT / node[i].stokes_drag;
 			} else {
 
 				// Get distance between nodes and the outer product of the separation
-				Eigen::Vector3d vecn(node[i].pos.x, node[i].pos.y, node[i].pos.z);
-				Eigen::Vector3d vecm(node[j].pos.x, node[j].pos.y, node[j].pos.z);		
+				Eigen_Vector3 vecn(node[i].pos.x, node[i].pos.y, node[i].pos.z);
+				Eigen_Vector3 vecm(node[j].pos.x, node[j].pos.y, node[j].pos.z);		
 				sep = vecn - vecm;
 				mod = sep.norm();
 				mod2 = mod * mod;
@@ -1463,15 +1463,15 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
 
 				// Condition for positive-definiteness
 				if(mod > 2 * node[i].stokes_radius && mod > 2 * node[j].stokes_radius) {
-					block = Eigen::Matrix3d::Identity() * mod2/ 3.0;
+					block = Eigen_Matrix3::Identity() * mod2/ 3.0;
 					block -= rr;
 					block *= 2 * a * a / mod2;
-					block += Eigen::Matrix3d::Identity() * mod2;
+					block += Eigen_Matrix3::Identity() * mod2;
 					block += rr;
 					block *= params->kT / (8 * 3.14159265 * params->stokes_visc * mod2 * mod);
 
 				} else {
-					block = Eigen::Matrix3d::Identity() * (1 - ((9 * mod) / (32 * a)));
+					block = Eigen_Matrix3::Identity() * (1 - ((9 * mod) / (32 * a)));
 					block += rr * (3 / (32 * a * mod));
 					block *= params->kT / (6 * 3.14159265 * params->stokes_visc * a);
 				}

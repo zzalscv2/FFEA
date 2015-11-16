@@ -216,23 +216,11 @@ private:
 
     void do_es();
 
-#ifdef USE_DOUBLE
-    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXd evec, scalar step);
-#else
-    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXf evec, scalar step);
-#endif
+    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen_VectorX evec, scalar step);
 
-#ifdef USE_DOUBLE
-    void print_evecs_to_file(string fname, Eigen::MatrixXd ev, int num_rows, int num_modes);
-#else
-    void print_evecs_to_file(string fname, Eigen::MatrixXf ev, int num_rows, int num_modes);
-#endif
+    void print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, int num_modes);
 
-#ifdef USE_DOUBLE
-    void print_evals_to_file(string fname, Eigen::VectorXd ev, int num_modes);
-#else
-    void print_evals_to_file(string fname, Eigen::VectorXf ev, int num_modes);
-#endif
+    void print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes);
 
 
     void write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes);
