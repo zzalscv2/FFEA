@@ -358,11 +358,11 @@ class FFEA_trajectory:
 			dists[frame_num] = dist
 		return np.array(dists)
   
-	def get_lever_angle_trajectory(self, node1, node2, node3):
-		lever_angle_trajectory=np.zeros([self.num_frames, 3])
-		for i in range(self.num_frames):
-			frame_angles = np.array(self.blob[0][0].frame[i].get_lever_angle(node1, node2, node3))
-			lever_angle_trajectory[i,0] = frame_angles[0]
+	def get_lever_angle_trajectory(self, node1, node2, node3, blob_index=0, conformation_index=0):
+		lever_angle_trajectory=np.zeros([self.num_frames, 3]) # create empty array
+		for i in range(self.num_frames): # for each frame
+			frame_angles = np.array(self.blob[blob_index][conformation_index].frame[i].get_lever_angle(node1, node2, node3)) # get angular distribution for frame
+			lever_angle_trajectory[i,0] = frame_angles[0] # assign values to elements in array accordingly
 			lever_angle_trajectory[i,1] = frame_angles[1]
 			lever_angle_trajectory[i,2] = frame_angles[2]
 		return lever_angle_trajectory   
@@ -414,7 +414,8 @@ class FFEA_traj_blob_frame:
 			subblob_frame[i] = self.pos[i]
 		return subblob_frame
 	def get_lever_angle(self, point1_no, point2_no, point3_no):
-
+		# get angle between two lines formed by 2d projections of 3 points
+ 		# with those lines being drawn from points 1 to 2 and points 2 to 3
 		def get_angle_between_three_points(first_point, second_point, third_point):
 			line_gradient_1 = get_line_gradient(first_point, second_point)
 			line_gradient_2 = get_line_gradient(second_point, third_point)
@@ -426,7 +427,7 @@ class FFEA_traj_blob_frame:
       			# note: this takes 2D points! slice them with slice_axes first!
 			line_gradient = (first_point[0] - second_point[0])/(first_point[1] - second_point[1])
 			return line_gradient
-		def slice_axes(point, axis1, axis2):
+		def slice_axes(point, axis1, axis2): #turn a 3d point into a 2d one by removing 1 axis (0 for x, 1 for y, 2 for z)
 			point_sliced = np.array([point[axis1], point[axis2] ])
 			return point_sliced
 		def slice_multiple_axes(points_list, axis1, axis2):
