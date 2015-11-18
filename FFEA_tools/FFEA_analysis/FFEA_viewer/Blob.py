@@ -767,7 +767,7 @@ class Blob:
 
 		bc = display_flags['blob_colour']
 		if self.blob_index == display_flags['selected_blob']:
-			bc = [1.0,0,0]
+			bc = [0.,0.5176,0.792]
 
 		if display_flags['show_solid'] == 1:
 			glBegin(GL_TRIANGLES)
