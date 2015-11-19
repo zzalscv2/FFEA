@@ -34,6 +34,19 @@
 #include "PreComp_solver.h"
 #include "dimensions.h"
 
+#ifdef USE_DOUBLE
+typedef Eigen::MatrixXd Eigen_MatrixX;
+typedef Eigen::VectorXd Eigen_VectorX;
+typedef Eigen::Matrix3d Eigen_Matrix3;
+typedef Eigen::Vector3d Eigen_Vector3;
+#else
+typedef Eigen::MatrixXf Eigen_MatrixX;
+typedef Eigen::VectorXf Eigen_VectorX;
+typedef Eigen::Matrix3f Eigen_Matrix3;
+typedef Eigen::Vector3f Eigen_Vector3;
+#endif
+
+
 /*
  * The "Blob" class
  */
@@ -149,7 +162,7 @@ public:
 
     int calculate_deformation();
 
-    double calc_volume();
+    scalar calc_volume();
 
     void make_stress_measurements(FILE *stress_out, int blob_number);
 
@@ -234,17 +247,17 @@ public:
     /**
      * Builds a global viscosity matrix for this blob
      */
-    int build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K);
+    int build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K);
 
     /**
      * Builds a global diffusion matrix for this blob based on the work of Rotne and Prager (1969)
      */
-    int build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D);
+    int build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D);
 
     /**
      * Linearises the elasticity vector and build a global elasticity matrix for this blob
      */
-    int build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A);
+    int build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A);
 
     /**
      * Returns the total mass of this Blob.
