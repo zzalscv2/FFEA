@@ -500,7 +500,7 @@ int Blob::update() {
 
     // Update node velocities and positions
     euler_integrate();
-	
+
     // Linearise the 2nd order elements
     for (n = 0; n < num_elements; n++) {
         elem[n].linearise_element();
@@ -1445,13 +1445,13 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
 			block.setZero();
 
 			// If we are on the block diagonal
-			if(i == j) {
-				block = Eigen::Matrix3d::Identity() *  params->kT / node[i].stokes_drag;
+			if(n == m) {
+				block = Eigen::Matrix3d::Identity() *  params->kT / node[n].stokes_drag;
 			} else {
 
 				// Get distance between nodes and the outer product of the separation
-				Eigen::Vector3d vecn(node[i].pos.x, node[i].pos.y, node[i].pos.z);
-				Eigen::Vector3d vecm(node[j].pos.x, node[j].pos.y, node[j].pos.z);		
+				Eigen::Vector3d vecn(node[n].pos.x, node[n].pos.y, node[n].pos.z);
+				Eigen::Vector3d vecm(node[m].pos.x, node[m].pos.y, node[m].pos.z);		
 				sep = vecn - vecm;
 				mod = sep.norm();
 				mod2 = mod * mod;
@@ -1459,10 +1459,10 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
 
 				// Effective stokes radius. Will usually equal a anyway
 
-				a = (node[i].stokes_radius + node[j].stokes_radius) / 2.0;
+				a = (node[n].stokes_radius + node[m].stokes_radius) / 2.0;
 
 				// Condition for positive-definiteness
-				if(mod > 2 * node[i].stokes_radius && mod > 2 * node[j].stokes_radius) {
+				if(mod > 2 * node[n].stokes_radius && mod > 2 * node[m].stokes_radius) {
 					block = Eigen::Matrix3d::Identity() * mod2/ 3.0;
 					block -= rr;
 					block *= 2 * a * a / mod2;
@@ -1471,14 +1471,14 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
 					block *= params->kT / (8 * 3.14159265 * params->stokes_visc * mod2 * mod);
 
 				} else {
-					block = Eigen::Matrix3d::Identity() * (1 - ((9 * mod) / (32 * a)));
-					block += rr * (3 / (32 * a * mod));
+					block = Eigen::Matrix3d::Identity() * (1 - ((9 * mod) / (32.0 * a)));
+					block += rr * (3 / (32.0 * a * mod));
 					block *= params->kT / (6 * 3.14159265 * params->stokes_visc * a);
 				}
 			}
 	
 			// Linear node position from global nodes
-			D->block<3,3>(i, j) = block;
+			D->block<3,3>(3 * i, 3 * j) = block;
 		}
 	}
 
@@ -2725,8 +2725,12 @@ int Blob::aggregate_forces_and_solve() {
             }
         } else {
             if (params->calc_noise == 1) {
+
+		// Noise depends on the number of dimensions available
+		int prefactor = 3 * (2 ^ params->num_dimensions);
+
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) schedule(guided)
+#pragma omp parallel for default(none) schedule(guided) shared(prefactor)
 #endif
                 for (int i = 0; i < num_nodes; i++) {
 #ifdef USE_OPENMP
@@ -2734,9 +2738,9 @@ int Blob::aggregate_forces_and_solve() {
 #else
                     int thread_id = 0;
 #endif
-                    force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                    force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                    force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                    force[i].x -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
+                    force[i].y -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
+                    force[i].z -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
                 }
             }
         }
@@ -2754,18 +2758,24 @@ int Blob::aggregate_forces_and_solve() {
     // Set to zero any forces in directions that are restricted
     for(int i = 0; i < 3; ++i) {
 	if(params->restrict_motion[i] == 1) {
-	    for(n = 0; n < num_nodes; ++i) {
-		switch(i) {
-		    case(0):
+	    switch(i) {
+		case(0):
+		    for(n = 0; n < num_nodes; ++n) {
 			force[n].x = 0;
-			break;
-		    case(1):
+		    }
+		    break;
+
+		case(1):
+		    for(n = 0; n < num_nodes; ++n) {
 			force[n].y = 0;
-			break;
-		    case(2):
+		    }
+		    break;
+
+		case(2):
+		    for(n = 0; n < num_nodes; ++n) {
 			force[n].z = 0;
-			break;
-		}
+		    }
+		    break;
 	    }
 	}
     }

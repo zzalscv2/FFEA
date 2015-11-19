@@ -270,6 +270,26 @@ class FFEA_trajectory:
 
 		fout.close()
 
+	def build_from_pdb(self, pdb, scale = 1.0):
+
+		# Reset entire trajectory
+		self.reset()
+		
+		# Set properties
+		self.type = "NEW"
+		self.num_blobs = pdb.num_blobs
+		self.num_conformations = [1 for i in range(self.num_blobs)]
+		self.num_nodes = [[b.num_atoms] for b in pdb.blob]
+		self.num_frames = pdb.num_frames
+		self.blob = [[FFEA_traj_blob(self.num_nodes[i][0])] for i in range(self.num_blobs)]
+
+		# Fill up the blobs
+		for i in range(self.num_frames):
+			for j in range(self.num_blobs):
+				aframe = FFEA_traj_blob_frame(self.blob[j][0].num_nodes)
+				aframe.pos = pdb.blob[j].frame[i].pos * scale
+				self.blob[j][0].frame.append(aframe)
+
 	def write_to_file(self, fname):
 
 		print "Writing trajectory to " + fname + "..."
@@ -399,6 +419,7 @@ class FFEA_traj_blob_frame:
 
 	def __init__(self, num_nodes):
 		self.pos = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
+
 	def get_subblob_frame(self, nodes_list):
 		subblob_frame = np.zeros([len(nodes_list), 3])
 		for i in range(len(nodes_list)):

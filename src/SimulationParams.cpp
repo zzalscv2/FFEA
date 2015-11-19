@@ -21,6 +21,7 @@ SimulationParams::SimulationParams() {
     restrict_motion[0] = 0;
     restrict_motion[1] = 0;
     restrict_motion[2] = 0;
+    num_dimensions = 0;
     kappa = 0;
     dielec_ext = 0;
     epsilon_0 = 0;
@@ -81,6 +82,7 @@ SimulationParams::~SimulationParams() {
     restrict_motion[0] = 0;
     restrict_motion[1] = 0;
     restrict_motion[2] = 0;
+    num_dimensions = 0;
     kappa = 0;
     dielec_ext = 0;
     epsilon_0 = 0;
@@ -502,7 +504,10 @@ int SimulationParams::validate() {
     for(int i = 0; i < 3; ++i) {
         if(restrict_motion[i] != 0 && restrict_motion[i] != 1) {
             FFEA_ERROR_MESSG("restrict_x, restrict_y and restrict_z must all be either 0 (no restriction) or 1 (motion restricted).\n")
-        }
+        } else if (restrict_motion[i] == 0) {
+	    num_dimensions += 1;
+	}
+	
     }
 
     // Default the kinetics update value just in case

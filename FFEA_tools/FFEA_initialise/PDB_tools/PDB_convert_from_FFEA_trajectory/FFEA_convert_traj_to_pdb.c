@@ -70,10 +70,13 @@ int main(int argc, char **argv)
 		start = 0;
 		fprintf(pdb_out, "MODEL     %4d\n", frame - 1);
 		for(i = 0; i < num_blobs; ++i) {
-			if(fscanf(traj, "Blob %*d, Conformation %*d, step %lld\n", &step) != 1) {
+			if(fscanf(traj, "Blob %*d, Conformation %*d, step %lld", &step) != 1) {
 				printf("Error when reading 'Blob x, Conformation y, step z' line after or on step %lld\n", step);
 				return -1;
 			}
+
+			// Rest of line
+			fgets(buf, 255, traj);
 			fscanf(traj, "%s\n", motion_state);
 			if(strcmp(motion_state, "STATIC") == 0) {
 				continue;

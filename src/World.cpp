@@ -916,7 +916,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 			}
 			Rvals_indices(j) = max_eig_index;
 			Rvals(j) = esF.eigenvalues()[max_eig_index].real();
-			Rvecs.col(j) = esF.eigenvectors().col(j).real();
+			Rvecs.col(j) = esF.eigenvectors().col(max_eig_index).real();
 		}
 
 		// This matrix 'should' contain 6 zero modes, and then num_rows - 6 actual floppy modes
@@ -1126,7 +1126,7 @@ int World::run() {
 	
         // Sort internal forces out
         int fatal_errors = 0;
-	
+
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
 #endif
@@ -1140,6 +1140,7 @@ int World::run() {
                 	fatal_errors++;
             	}
         }
+	
         if (fatal_errors > 0) {
             FFEA_error_text();
             printf("Detected %d fatal errors in this system update. Exiting now...\n", fatal_errors);
