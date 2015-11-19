@@ -216,19 +216,20 @@ private:
 
     void do_es();
 
-    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen::VectorXd evec, double step);
+    void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen_VectorX evec, scalar step);
 
-    void print_evecs_to_file(string fname, Eigen::MatrixXd ev, int num_rows, int num_modes);
+    void print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, int num_modes);
 
-    void print_evals_to_file(string fname, Eigen::VectorXd ev, int num_modes);
+    void print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes);
 
-    void write_eig_to_files(double *evals_ordered, double **evecs_ordered, int num_modes, int num_nodes);
+
+    void write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes);
     
-    void print_trajectory_and_measurement_files(int step, double wtime);
+    void print_trajectory_and_measurement_files(int step, scalar wtime);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
 
-    void print_static_trajectory(int step, double wtime, int blob_index);
+    void print_static_trajectory(int step, scalar wtime, int blob_index);
 };
 
 #endif

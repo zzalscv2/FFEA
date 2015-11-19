@@ -178,49 +178,49 @@ MTRand::uint32 MTRand::randInt(const uint32 n) {
     return i;
 }
 
-double MTRand::rand() {
-    return double(randInt()) * (1.0 / 4294967295.0);
+scalar MTRand::rand() {
+    return scalar(randInt()) * (1.0 / 4294967295.0);
 }
 
-double MTRand::rand(const double n) {
+scalar MTRand::rand(const scalar n) {
     return rand() * n;
 }
 
-double MTRand::randExc() {
-    return double(randInt()) * (1.0 / 4294967296.0);
+scalar MTRand::randExc() {
+    return scalar(randInt()) * (1.0 / 4294967296.0);
 }
 
-double MTRand::randExc(const double n) {
+scalar MTRand::randExc(const scalar n) {
     return randExc() * n;
 }
 
-double MTRand::randDblExc() {
-    return (double(randInt()) + 0.5) * (1.0 / 4294967296.0);
+scalar MTRand::randDblExc() {
+    return (scalar(randInt()) + 0.5) * (1.0 / 4294967296.0);
 }
 
-double MTRand::randDblExc(const double n) {
+scalar MTRand::randDblExc(const scalar n) {
     return randDblExc() * n;
 }
 
-double MTRand::rand53() {
+scalar MTRand::rand53() {
     uint32 a = randInt() >> 5, b = randInt() >> 6;
     return ( a * 67108864.0 + b) * (1.0 / 9007199254740992.0); // by Isaku Wada
 }
 
-double MTRand::randNorm(const double mean, const double stddev) {
+scalar MTRand::randNorm(const scalar mean, const scalar stddev) {
     // Return a real number from a normal (Gaussian) distribution with given
     // mean and standard deviation by polar form of Box-Muller transformation
-    double x, y, r;
+    scalar x, y, r;
     do {
         x = 2.0 * rand() - 1.0;
         y = 2.0 * rand() - 1.0;
         r = x * x + y * y;
     } while (r >= 1.0 || r == 0.0);
-    double s = sqrt(-2.0 * log(r) / r);
+    scalar s = sqrt(-2.0 * log(r) / r);
     return mean + x * s * stddev;
 }
 
-double MTRand::operator()() {
+scalar MTRand::operator()() {
     return rand();
 }
 

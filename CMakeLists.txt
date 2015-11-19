@@ -11,11 +11,19 @@ set(PACKAGE_VERSION "${VERSION}.${MINOR}")
 
 option(USE_OPENMP "Build with OpenMP support" ON)
 set(USE_OMP_MODE 1 CACHE STRING "0: disabled; 1: threads within blob; 2: threads per blob")
+option(USE_FAST "Add automatic compiler flags" OFF)
+mark_as_advanced(USE_FAST)
+option(USE_DOUBLE "Use double precision" ON)
+mark_as_advanced(USE_DOUBLE)
 
 
 set (LIBS_TO_LINK)
 #################################
 #### LIBRARIES AND CFLAGS #######
+# 0 #### PRECISION ###
+if (USE_DOUBLE)
+  add_definitions(-DUSE_DOUBLE)
+endif(USE_DOUBLE)
 
 # 1 #### OPENMP #####
 if (USE_OPENMP)
@@ -139,6 +147,21 @@ endif(DOXYGEN_FOUND)
 
 # 7 ### DEBUG FLAGS ####
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+
+
+# 8 ### FAST! ##########
+if (USE_FAST)
+  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -ffast-math -fipa-pta")
+    else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -ffast-math -fipa-pta -march=native")
+    endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
+  elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ipo -no-prec-div -fp-model fast=2 -xHost")
+  endif()
+  message(STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}")
+endif(USE_FAST)
 
 ######## END OF LIBRARIES #######
 #################################

@@ -911,9 +911,9 @@ int Blob::calculate_deformation() {
 
 }
 
-double Blob::calc_volume() {
+scalar Blob::calc_volume() {
 	
-	double volume = 0.0;
+	scalar volume = 0.0;
 	for(int i = 0; i < num_elements; ++i) {
 		volume += elem[i].calc_volume();
 	}
@@ -1233,14 +1233,14 @@ scalar Blob::get_vdw_area() {
 //		 *
 //		 */
 
-int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
+int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 
 	int elem_index, a, b, i, j, global_a, global_a_lin, global_b, global_b_lin;
 	int row, column;
 	scalar dx, dxtemp, val;
 	matrix3 J, stress;
 	vector12 elastic_force[2];
-	vector<Eigen::Triplet<double> > components;
+	vector<Eigen::Triplet<scalar> > components;
 
 	// Firstly, get a mapping from all node indices to just linear node indices
 	int num_linear_nodes = get_num_linear_nodes();
@@ -1315,13 +1315,13 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<double> *A) {
 	return FFEA_OK;
 }
 
-int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
+int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 
 	int i, j, a, b, global_a, global_b, row, column;
 	int elem_index, num_linear_nodes;
 	scalar val;
 	matrix3 J;
-	vector<Eigen::Triplet<double> > components;
+	vector<Eigen::Triplet<scalar> > components;
 
 	// Firstly, get a mapping from all node indices to just linear node indices
 	int map[num_nodes];
@@ -1362,7 +1362,7 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 						//column = num_linear_nodes * j + global_b;
 						row = 3 * global_a + i;
 						column = 3 * global_b + j;
-						components.push_back(Eigen::Triplet<double>(row, column, val));
+						components.push_back(Eigen::Triplet<scalar>(row, column, val));
 					}
 				}
 			}
@@ -1380,7 +1380,7 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 					//row = 4 * i + map[global_a];
 					row = 3 * map[global_a] + i;					
 					column = row;
-					components.push_back(Eigen::Triplet<double>(row, column, val));
+					components.push_back(Eigen::Triplet<scalar>(row, column, val));
 				}
 			}
 		}
@@ -1390,21 +1390,21 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<double> *K) {
 	K->setFromTriplets(components.begin(), components.end());
 	components.clear();
 	for(j = 0; j < K->outerSize(); ++j) {
-		for(Eigen::SparseMatrix<double>::InnerIterator it(*K,j); it; ++it) {
-			components.push_back(Eigen::Triplet<double>(it.row(), it.col(), 0.5 * it.value()));
-			components.push_back(Eigen::Triplet<double>(it.col(), it.row(), 0.5 * it.value()));
+		for(Eigen::SparseMatrix<scalar>::InnerIterator it(*K,j); it; ++it) {
+			components.push_back(Eigen::Triplet<scalar>(it.row(), it.col(), 0.5 * it.value()));
+			components.push_back(Eigen::Triplet<scalar>(it.col(), it.row(), 0.5 * it.value()));
 		}
 	}
 	K->setFromTriplets(components.begin(), components.end());
 	return FFEA_OK;
 }
 
-int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
+int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
 
 	int i, j, n, m, num_linear_nodes;
 	scalar mod, mod2, a;
-	Eigen::Matrix3d block, rr;
-	Eigen::Vector3d sep;
+	Eigen_Matrix3 block, rr;
+	Eigen_Vector3 sep;
 
 	// Firstly, get a mapping from all node indices to just linear node indices
 	int map[num_nodes];
@@ -1452,6 +1452,7 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
 				// Get distance between nodes and the outer product of the separation
 				Eigen::Vector3d vecn(node[n].pos.x, node[n].pos.y, node[n].pos.z);
 				Eigen::Vector3d vecm(node[m].pos.x, node[m].pos.y, node[m].pos.z);		
+
 				sep = vecn - vecm;
 				mod = sep.norm();
 				mod2 = mod * mod;
@@ -1464,9 +1465,10 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen::MatrixXd *D) {
 				// Condition for positive-definiteness
 				if(mod > 2 * node[n].stokes_radius && mod > 2 * node[m].stokes_radius) {
 					block = Eigen::Matrix3d::Identity() * mod2/ 3.0;
+
 					block -= rr;
 					block *= 2 * a * a / mod2;
-					block += Eigen::Matrix3d::Identity() * mod2;
+					block += Eigen_Matrix3::Identity() * mod2;
 					block += rr;
 					block *= params->kT / (8 * 3.14159265 * params->stokes_visc * mod2 * mod);
 

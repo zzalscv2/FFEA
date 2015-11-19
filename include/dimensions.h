@@ -1,18 +1,20 @@
 #ifndef DIMENSIONS_H_INCLUDED
 #define DIMENSIONS_H_INCLUDED
 
+#include "mat_vec_types.h"
+
 
 typedef struct {
-   const double length; /* fundamental */ 
-   const double Energy; /* fundamental */ 
-   const double mass; /* fundamental */ 
-   const double charge; /* fundamental */ 
-   const double area; 
-   const double volume; 
-   const double force;
-   const double time;
-   const double pressure;
-   const double velocity;
+   const scalar length;
+   const scalar Energy;
+   const scalar mass;
+   const scalar charge;
+   const scalar area; 
+   const scalar volume; 
+   const scalar force;
+   const scalar time;
+   const scalar pressure;
+   const scalar velocity;
 } dimset;
 
 class Dimensions{
@@ -20,8 +22,8 @@ class Dimensions{
     dimset meso {
           1.7e-10, /* length = C atom VdW radius */
           4.142e-21, /* Energy = KbT */
-          1.994307387553024e-26, /* mass C atom mass */
-          1.602176565e-19,  /* charge electron charge */
+          1.994307387553024e-26, /* mass = C atom mass */
+          1.602176565e-19,  /* charge = electron charge */
           2.89e-20, /* area */ 
           4.913e-30, /* volume */ 
           2.4364705882352941e-11, /* force = E/l */

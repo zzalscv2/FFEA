@@ -565,9 +565,10 @@ int SimulationParams::validate() {
 
     printf("...done\n");
 
+    Dimensions dimens;
     printf("Parameters:\n");
     printf("\trestart = %d\n", restart);
-    printf("\tdt = %e\n", dt);
+    printf("\tdt = %e\n", dt*dimens.meso.time);
     printf("\tnum_steps = %lld\n", num_steps);
     printf("\tcheck = %d\n", check);
     printf("\tnum_blobs = %d\n", num_blobs);
@@ -577,7 +578,7 @@ int SimulationParams::validate() {
         printf("\t\tnum_states = %d\n", num_states[i]);
     }
     printf("\trng_seed = %d\n", rng_seed);
-    printf("\tkT = %e\n", kT);
+    printf("\tkT = %e\n", kT*dimens.meso.Energy);
     printf("\ttrajectory_out_fname = %s\n", trajectory_out_fname);
     for (int i = 0; i < num_blobs + 1; ++i) {
         printf("\tmeasurement_out_fname %d = %s\n", i, measurement_out_fname[i]);
@@ -590,7 +591,7 @@ int SimulationParams::validate() {
     printf("\tes_N_y = %d\n", es_N_y);
     printf("\tes_N_z = %d\n", es_N_z);
     printf("\tes_h = %e x inverse kappa\n", es_h);
-    printf("\tkappa = %e\n", kappa);
+    printf("\tkappa = %e\n", kappa/dimens.meso.length);
     printf("\tepsilon_0 = %e\n", epsilon_0);
     printf("\tdielec_ext = %e\n", dielec_ext);
     printf("\tcalc_vdw = %d\n", calc_vdw);
@@ -599,7 +600,7 @@ int SimulationParams::validate() {
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
     printf("\tcalc_preComp = %d\n", calc_preComp);
     printf("\tcalc_stokes = %d\n", calc_stokes);
-    printf("\tstokes_visc = %f\n", stokes_visc);
+    printf("\tstokes_visc = %f\n", stokes_visc*dimens.meso.pressure*dimens.meso.time);
 
     return FFEA_OK;
 }

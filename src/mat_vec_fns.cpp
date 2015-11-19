@@ -278,12 +278,12 @@ void print_vector3(vector3 *v) {
     printf("%e %e %e\n", v->x, v->y, v->z);
 }
 
-double mag(vector3 *v) {
+scalar mag(vector3 *v) {
     return sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
 }
 
 vector3 normalise(vector3 *v) {
-    double magnitude;
+    scalar magnitude;
     vector3 norm;
     magnitude = mag(v);
     norm.x = v->x / magnitude;
