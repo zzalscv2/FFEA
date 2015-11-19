@@ -279,7 +279,6 @@ class Blob:
 		for n in xrange(self.num_nodes):
 			line = traj_file.readline().split()
 			el_nodes = [float(line[i])*self.scale for i in xrange(10)]
-			print self.scale
 			nodes.append(el_nodes)
 		
 			centroid_x += el_nodes[0]

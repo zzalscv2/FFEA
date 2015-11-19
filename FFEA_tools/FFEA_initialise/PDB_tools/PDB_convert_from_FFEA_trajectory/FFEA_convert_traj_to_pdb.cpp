@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	char motion_state[7];
 
 	// Scan through initial crap
-	fscanf(traj, "%s\n", &line);
+	fscanf(traj, "%s\n", line);
 	if(strcmp(line, "FFEA_trajectory_file") != 0) {
 		printf("Error. Expected 'FFEA_trajectory_file' but got %s. May not be an FFEA_trajectory_file.\n", line);
 		exit(0);
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 	fgets(buf,100, traj);
 	for(i = 0; i < num_blobs; ++i) {
 		if(fscanf(traj, "Blob %*d: Conformation %*d Nodes %d\n", &num_nodes[i][0]) != 1) {
-			printf("Error. Expected 'Blob %*d: Conformation %*d Nodes %d\n", i);
+			printf("Error. Expected 'Blob %%*d: Conformation %%*d Nodes %d\n", i);
 			exit(0);
 		}
 		
@@ -80,10 +80,16 @@ int main(int argc, char **argv)
 		start = 0;
 		fprintf(pdb_out, "MODEL     %4d\n", frame - 1);
 		for(i = 0; i < num_blobs; ++i) {
-			if(fscanf(traj, "Blob %*d, Conformation %*d, step %lld\n", &step) != 1) {
+			fgets(buf,255,traj);
+			cout << buf << endl;
+			exit(0);
+			if(fscanf(traj, "Blob %*d, Conformation %*d, step %lld", &step) != 1) {
 				printf("Error when reading 'Blob x, Conformation y, step z' line after or on step %lld\n", step);
 				return -1;
 			}
+
+			// Rest of line
+			fgets(buf, 255, traj);
 			fscanf(traj, "%s\n", motion_state);
 			if(strcmp(motion_state, "STATIC") == 0) {
 				continue;
