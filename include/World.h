@@ -113,8 +113,8 @@ private:
     int *active_state_index;
 
     /** @brief Maps for kinetic switching of conformations */
-    SparseMatrixFixedPattern ***kinetic_map_array;
-    SparseMatrixFixedPattern ****kinetic_double_map_array;
+    SparseMatrixFixedPattern ***kinetic_map;
+    SparseMatrixFixedPattern ****kinetic_return_map;
 
     /** @brief Kinetic State and Rate objects */
     KineticState **kinetic_state;

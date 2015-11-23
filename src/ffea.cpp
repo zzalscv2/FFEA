@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	desc.add_options()
 		("help,h", "print usage message")
 		("input-file,i", b_po::value<string>(&script_fname), "Input Script Filename")
-		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model, 2 - Dynamic Mode Model\n\t3 - Timestep Calculator)")
+		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator)\n")
 		("delete-frames,l", b_po::value<int>(&frames_to_delete)->default_value(0), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
 	;
 		
@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
 	}
 	
 	/* World is initialised. How shall we run FFEA? */
+	int myreturn;
 	if(mode == 0) {
 		
 		// Full FFEA
@@ -137,9 +138,9 @@ int main(int argc, char *argv[])
 		} else {
 			cout << "...done\n" << endl;
 			myreturn = FFEA_OK;
-	}
+		}
 
-	else if(mode == 1 || mode == 2 || mode == 4) {
+	} else if(mode == 1 || mode == 2 || mode == 4) {
 		
 		// Some form of network model
 		if(mode == 1) {
@@ -170,21 +171,21 @@ int main(int argc, char *argv[])
 				cout << "\t\tEnter an index for the blob you would like an elastic network model for, or type 'q' to finish?:";
 
 				// Get index as string
-				scanf("%S", &buf);
-				if(strcmp(buf, "q") == 0 or strcmp(buf, "Q") == 0) {
+				scanf("%c", &buf);
+				if(buf == 'q' or buf == 'Q') {
 					cout << endl << "\tThat's all the blobs!" << endl;
 					break;
 				}
 			
 				// Check string
-				if(isalpha(buf[i])) {
+				if(isalpha(buf)) {
 					FFEA_error_text();
 					cout << "\tPlease enter a valid blob index (0 <= x <" << world->get_num_blobs() << ")" << endl;
 					continue;
 				}
 
 				// Convert to int
-				ablob = atoi(buf);
+				ablob = buf - '0';
 
 				// Check int
 				if(ablob < 0 || ablob >= world->get_num_blobs()) {
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
 				cout << "\n\tHow many modes would you like to visualise?:";
 
 				// Get index as string
-				scanf("%s", &buf);
+				scanf("%c", &buf);
 
 				// Check string
 				if(isalpha(buf)) {
@@ -223,7 +224,7 @@ int main(int argc, char *argv[])
 				}
 
 				// Convert to int
-				num_modes = atoi(buf);
+				num_modes = buf - '0';
 
 				// Check int
 				if(num_modes <= 0) {
@@ -246,7 +247,7 @@ int main(int argc, char *argv[])
 		for(it = blobs.begin(); it != blobs.end(); ++it) {
 			cout << *it << " ";
 		}
-
+		exit(0);
 		if(mode == 1) {
 
 			/* Elastic Network Model */

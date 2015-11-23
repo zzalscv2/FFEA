@@ -7,8 +7,8 @@ World::World() {
     active_conformation_index = NULL;
     active_state_index = NULL;
     spring_array = NULL;
-    kinetic_map_array = NULL;
-    kinetic_double_map_array = NULL;
+    kinetic_map = NULL;
+    kinetic_return_map = NULL;
     kinetic_state = NULL;
     kinetic_rate = NULL;
     num_blobs = 0;
@@ -46,11 +46,11 @@ World::~World() {
     spring_array = NULL;
     num_springs = 0;
   
-    delete[] kinetic_map_array;
-    kinetic_map_array = NULL;
+    delete[] kinetic_map;
+    kinetic_map = NULL;
 
-    delete[] kinetic_double_map_array;
-    kinetic_double_map_array = NULL;
+    delete[] kinetic_return_map;
+    kinetic_return_map = NULL;
 
     delete[] kinetic_state;
     kinetic_state = NULL;
@@ -118,29 +118,40 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		printf("Parameters found to be inconsistent in SimulationParams::validate()\n");
 		return FFEA_ERROR;
 	}
-	
-	// Build kinetic maps if necessary (and rates and binding site matrix)
+
+	// Build kinetic maps if necessary (and rates and binding site matrix). These are at the World level in case global kinetic calculations are ever included
 	if(params.calc_kinetics == 1) {
+
+		// Load the binding params matrix
+		if(binding_matrix.init(params.binding_params_fname) == FFEA_ERROR) {
+			FFEA_ERROR_MESSG("Error when reading from binding site params file.\n")
+		}
+
+		// A 3D matrix describing the switching rates for each blob i.e. kinetic_rate[blob_index][from_conf][to_conf] 
 		kinetic_rate = new scalar**[params.num_blobs];
+
+		// A 3D matrix holding the position maps enabline the switch from one conformation to another i.e. kinetic_map[blob_index][from_conf][to_conf]
+		kinetic_map = new SparseMatrixFixedPattern**[params.num_blobs];
+
+		// A 3D matrix holding pointers to the products of the above maps to make an 'identity' map i.e.:
+			//kinetic_double_map[blob_index][conf_index][via_conf_index] = kinetic_map[blob_index][via_conf_index][conf_index] * kinetic_map[blob_index][conf_index][via_conf_index]
+		// Used to compare energies between conformers before actually switching
+		kinetic_return_map = new SparseMatrixFixedPattern***[params.num_blobs];
+
+		// A 2D matrix holding the information about the 'num_states' kinetic states for each blob
 		kinetic_state = new KineticState*[params.num_blobs];
-		kinetic_map_array = new SparseMatrixFixedPattern**[params.num_blobs];
-		kinetic_double_map_array = new SparseMatrixFixedPattern***[params.num_blobs];
+
+		// Assign all memory
 		for(i = 0; i < params.num_blobs; ++i) {
-			kinetic_map_array[i] = new SparseMatrixFixedPattern*[params.num_conformations[i]];
-			kinetic_double_map_array[i] = new SparseMatrixFixedPattern**[params.num_conformations[i]];
+			kinetic_map[i] = new SparseMatrixFixedPattern*[params.num_conformations[i]];
+			kinetic_return_map[i] = new SparseMatrixFixedPattern**[params.num_conformations[i]];
 			for(j = 0; j < params.num_conformations[i]; ++j) {
-				kinetic_map_array[i][j] = new SparseMatrixFixedPattern[params.num_conformations[i]];
-				kinetic_double_map_array[i][j] = new SparseMatrixFixedPattern*[params.num_conformations[i]];
+				kinetic_map[i][j] = new SparseMatrixFixedPattern[params.num_conformations[i]];
+				kinetic_return_map[i][j] = new SparseMatrixFixedPattern*[params.num_conformations[i]];
 			}
 		}
 
-		kinetic_rng.seed(params.rng_seed);
-
-		//if(binding_matrix.init(params.binding_params_fname) == FFEA_ERROR) {
-		//	FFEA_ERROR_MESSG("Error when reading from binding site params file.\n")
-		//}
-		
-		
+		kinetic_rng.seed(params.rng_seed);		
 	}
 
 	// Load the vdw forcefield params matrix
@@ -261,7 +272,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			off_t last_asterisk_pos = ftello(trajectory_out);
 
 			int num_asterisks = 0;
-			int num_asterisks_to_find = 3 + (frames_to_delete) * 2;
+			int num_asterisks_to_find = 3 + (frames_to_delete) * 2 + 1; // 3 to get to top of last frame, then two for every subsequent frame. Final 1 to find ending conformations of last step
 			while (num_asterisks != num_asterisks_to_find) {
 			    if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
 				perror(NULL);
@@ -273,9 +284,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 				printf("Found %d\n", num_asterisks);
 
 				// get the position in the file of this last asterisk
-				if (num_asterisks == num_asterisks_to_find - 2) {
-				    last_asterisk_pos = ftello(trajectory_out);
-				}
+				//if (num_asterisks == num_asterisks_to_find - 2) {
+				  //  last_asterisk_pos = ftello(trajectory_out);
+				//}
 			    }
 			}
 
@@ -285,6 +296,16 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			} else {
 				last_asterisk_pos = ftello(trajectory_out);
 			}
+
+			// Get the conformations for the last snapshot
+			int current_conf;
+			fscanf(trajectory_out, "Conformation Changes:\n");
+			for(i = 0; i < params.num_blobs; ++i) {
+				fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %d\n", &current_conf);
+				active_blob_array[i] = &blob_array[i][current_conf];
+			}
+			fscanf(trajectory_out, "*\n");
+			last_asterisk_pos = ftello(trajectory_out);
 
 			printf("Loading Blob position and velocity data from last completely written snapshot \n");
 			int blob_id, conformation_id;
@@ -1165,7 +1186,7 @@ int World::run() {
 		from[i] = active_blob_array[i]->conformation_index;
 	}
 
-	if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
+	/*if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
 
 		// Get base rates
 		scalar ***switching_probs;
@@ -1238,14 +1259,14 @@ int World::run() {
 	}
 	
 	delete[] from;
-	delete[] to;
+	delete[] to;*/
     }
     printf("Time taken: %2f seconds\n", (omp_get_wtime() - wtime));
 
     return FFEA_OK;
 }
 
-int World::change_blob_state(int blob_index, int new_state_index) {
+/*int World::change_blob_state(int blob_index, int new_state_index) {
 
 	// First check if work needs to be done at all
 	if(new_state_index == active_state_index[blob_index]) {
@@ -1291,7 +1312,7 @@ int World::change_blob_state(int blob_index, int new_state_index) {
 			vector3 **to_nodes = blob_array[blob_index][to_conf].get_actual_node_positions();
 
 			// Apply map
-			kinetic_map_array[blob_index][from_conf][to_conf].block_apply(from_nodes, to_nodes);
+			kinetic_map[blob_index][from_conf][to_conf].block_apply(from_nodes, to_nodes);
 			
 			// Reassign active_blob and conformation
 			active_conformation_index[blob_index] = to_conf;
@@ -1434,7 +1455,7 @@ int World::change_blob_state(int blob_index, int new_state_index) {
 	}
 
 	return FFEA_OK;
-}
+}*/
 
 /** 
  * @brief Parses <blobs>, <springs> and <precomp>. 
@@ -1585,8 +1606,13 @@ int World::read_and_build_system(vector<string> script_vector) {
 					vdw.push_back(lrvalue[1]);
 					set_vdw = 1;
 				} else if (lrvalue[0] == "binding_sites") {
-					binding.push_back(lrvalue[1]);
-					set_binding = 1;
+					
+					// Only if kinetics are active
+					if(params.calc_kinetics == 1) {
+						binding.push_back(lrvalue[1]);
+						set_binding = 1;
+					}
+
 				} else if (lrvalue[0] == "pin") {
 					pin.push_back(lrvalue[1]);
 					set_pin = 1;
@@ -1638,18 +1664,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 				}
 			}
 
-			if(params.calc_kinetics == 0) {
-				if(set_binding == 1) {
-					cout << "In blob " << i << ", conformation " << j << ":\nIf 'calc_kinetics' is set to 0, 'binding_sites' will be ignored." << endl;
-					binding.pop_back();
-				}
+			// Binding sites optional anyway
+			if(set_binding == 0) {
 				binding.push_back("");
-			} else {
-				/*if(set_binding == 0) {
-					FFEA_error_text();
-					cout << "In blob " << i << ", conformation " << j << ":\nIf 'calc_kinetics' is set to 1, 'binding_sites' must be set (can contain 0 sites if necessary)." << endl;
-					return FFEA_ERROR;
-				}*/
 			}
 			
 			// Clear conformation vector and set values for next round
@@ -1666,7 +1683,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		}
 
 		// Read kinetic info if necessary
-		if(params.calc_kinetics == 1 && params.num_states[i] > 1) {
+		if(params.calc_kinetics == 1) {
 
 			// Get kinetic data
 			systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector);
@@ -1714,7 +1731,6 @@ int World::read_and_build_system(vector<string> script_vector) {
 		}		
 
 		// Finally, get the extra blob data (solver, scale, centroid etc)
-
 		int rotation_type = -1;
 
 		for(it = blob_vector.begin(); it != blob_vector.end(); ++it) {
@@ -1788,7 +1804,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		//Build conformations
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
-			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), beads.at(j).c_str(), 
+			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), binding.at(j).c_str(), beads.at(j).c_str(), 
                        		scale, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
                        		FFEA_error_text();
                         	cout << "\tError when trying to initialise Blob " << i << ", conformation " << j << "." << endl;
@@ -1835,35 +1851,41 @@ int World::read_and_build_system(vector<string> script_vector) {
 			cout << "\t...done!" << endl;
 		}
 
-		// Build kinetics
-		if(params.calc_kinetics == 1 && params.num_states[i] > 1) {
+		// Build kinetic system (at world level, for future potential global kinetics)
+		if(params.calc_kinetics == 1) {
 			cout << "\tInitialising kinetics for blob " << i << "..." << endl;
-			if(load_kinetic_maps(maps, maps_conf_index_from, maps_conf_index_to, i) == FFEA_ERROR) {
-				FFEA_error_text();
-				cout << "Problem reading kinetic maps in 'read_kinetic_maps' function" << endl;			
-				return FFEA_ERROR;
-			}
-			
+			cout << "\t\tLoading kinetic states...";
 			if(load_kinetic_states(states, i) == FFEA_ERROR) {
 				FFEA_error_text();
-				cout << "Problem reading kinetic states in 'read_kinetic_states' function" << endl;			
+				cout << "\nProblem reading kinetic states in 'read_kinetic_states' function" << endl;			
 				return FFEA_ERROR;
 			}
-			
+			cout << "...done!" << endl;
+			cout << "\t\tLoading kinetic rates...";
 			if(load_kinetic_rates(rates, i) == FFEA_ERROR) {
 				FFEA_error_text();
-				cout << "Problem reading kinetic rates in 'read_kinetic_rates' function" << endl;			
+				cout << "\nProblem reading kinetic rates in 'read_kinetic_rates' function" << endl;			
 				return FFEA_ERROR;
 			}
-			cout << "\t...done!" << endl;
-		
-			cout << "\tBuilding extra maps for energy comparison..." << endl;
-			if(build_kinetic_identity_maps() == FFEA_ERROR) {
-				FFEA_error_text();
-				cout << "Problem reading kinetic maps in 'build_kinetic_identity_maps' function" << endl;			
-				return FFEA_ERROR;
-			}
+			cout << "...done!" << endl;
 
+			// Maps only if num_conforamtions for this blob > 1
+			if(params.num_conformations[i] > 1) {
+				cout << "\t\tBuilding maps for energy comparison...";
+				if(load_kinetic_maps(maps, maps_conf_index_from, maps_conf_index_to, i) == FFEA_ERROR) {
+					FFEA_error_text();
+					cout << "\nProblem reading kinetic maps in 'read_kinetic_maps' function" << endl;			
+					return FFEA_ERROR;
+				}
+				cout << "...done!" << endl;
+				cout << "\t\tBuilding 'identity' maps for energy comparison..." << endl;
+				if(build_kinetic_identity_maps() == FFEA_ERROR) {
+					FFEA_error_text();
+					cout << "\nProblem reading kinetic maps in 'build_kinetic_identity_maps' function" << endl;			
+					return FFEA_ERROR;
+				}
+				cout << "...done!" << endl;
+			}
 			cout << "\t...done!" << endl;
 		}
 		
@@ -1974,7 +1996,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 		fin.close();
 
 		// Create sparse matrix
-		kinetic_map_array[blob_index][map_from[i]][map_to[i]].init(num_rows, num_entries, entries, key, col_index);
+		kinetic_map[blob_index][map_from[i]][map_to[i]].init(num_rows, num_entries, entries, key, col_index);
 	}
 
 	return FFEA_OK;
@@ -1991,15 +2013,15 @@ int World::build_kinetic_identity_maps() {
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			for(k = j + 1; k < params.num_conformations[i]; ++k) {
 
-				kinetic_double_map_array[i][j][k] = kinetic_map_array[i][k][j].apply(&kinetic_map_array[i][j][k]);
-				kinetic_double_map_array[i][k][j] = kinetic_map_array[i][j][k].apply(&kinetic_map_array[i][k][j]);
+				kinetic_return_map[i][j][k] = kinetic_map[i][k][j].apply(&kinetic_map[i][j][k]);
+				kinetic_return_map[i][k][j] = kinetic_map[i][j][k].apply(&kinetic_map[i][k][j]);
 			}
 		}
 	}
 	return FFEA_OK;
 }
 
-int World::rescale_kinetic_rates(scalar ***rates) {
+/*int World::rescale_kinetic_rates(scalar ***rates) {
 
 	return FFEA_OK;
 	int i, j, current_state, case_index;
@@ -2053,7 +2075,7 @@ int World::rescale_kinetic_rates(scalar ***rates) {
 				// Binding
 				case(1):
 
-					/*for(k = 0; k < num_binding_sites; ++k) {
+					for(k = 0; k < num_binding_sites; ++k) {
 
 						// Binding site on our molecule
 						if(kinetic_binding_sites[k].blob_index == i && kinetic_binding_sites[k].conf_index == j) {
@@ -2077,7 +2099,7 @@ int World::rescale_kinetic_rates(scalar ***rates) {
 								
 							}
 						}	
-					}*/				
+					}			
 					break;
 		
 				// Unbinding
@@ -2103,134 +2125,139 @@ int World::rescale_kinetic_rates(scalar ***rates) {
 	}
 
 	return FFEA_OK;
-}
+}*/
 
 int World::load_kinetic_states(string states_fname, int blob_index) {
+
+	int i, j, num_states, conf_index, site_index, site_active[binding_matrix.num_interaction_types];
+	char buf[255];
+	string buf_string;
+	vector<string> sline;
+	vector<string>::iterator it;
+	FILE *fin;
+
+	// Open the file
+	fin = fopen(states_fname.c_str(), "r");
 	
-	int i, MAX_BUF_SIZE = 255, num_kinetic_states;
-	int conf_index, bound_state, binding_site_type_from, binding_site_type_to;
-	char buf[MAX_BUF_SIZE];
-	string string_buf;
-
-	cout << "\t\tReading states file '" << states_fname << "'" << endl;
-	ifstream fin;
-	fin.open(states_fname.c_str());
-
-	// Check filetype
-	fin.getline(buf, MAX_BUF_SIZE);
-	string_buf = string(buf);
-	boost::trim(string_buf);
-	if(string_buf != "ffea kinetic states file") {
-		FFEA_error_text();
-		cout << "In '" << states_fname << "', expected 'ffea kinetic states file' but got " << buf << endl;
-		return FFEA_ERROR;
+	// Get header stuff and check for errors
+	fgets(buf, 255, fin);
+	if(strcmp(buf, "ffea kinetic states file\n") != 0) {
+		FFEA_ERROR_MESSG("\nExpected 'ffea kinetic states file' as first line. This may not be an FFEA kinetic states file\n")
 	}
 	
-	// Get num_states
-	fin >> buf >> num_kinetic_states;
-
-	// Check against params
-	if(params.num_states[blob_index] != num_kinetic_states) {
-		FFEA_error_text();
-		cout << "Read 'num_states " << num_kinetic_states << "' from " << states_fname << " but expected " << params.num_states[blob_index] << " from .ffea script." << endl;
-		return FFEA_ERROR;
+	if(fscanf(fin, "num_states %d\n", &num_states) != 1) {
+		FFEA_ERROR_MESSG("\nExpected 'num_states %%d' as second line. Unable to read further.\n")
 	}
+	if(num_states != params.num_states[blob_index]) {
+		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", states_fname.c_str(), num_states, params.num_states[i])
+	}
+	fgets(buf, 255, fin);
 
-	// Create states objects
-	kinetic_state[blob_index] = new KineticState[num_kinetic_states];
+	// Create state objects
+	kinetic_state[blob_index] = new KineticState[num_states];
 
-	// Get states line
-	fin.getline(buf, MAX_BUF_SIZE);
-	fin.getline(buf, MAX_BUF_SIZE);
+	// Get actual states (each line varies)
+	for(i = 0; i < num_states; ++i) {
 
-	// Initialise states
-	for(i = 0; i < num_kinetic_states; ++i) {
-
-		// Get conformation index
-		fin >> conf_index;
-		if(conf_index >= params.num_conformations[blob_index]) {
-			FFEA_error_text();
-			cout << "In kinetic states file '" << states_fname << "', state " << i << " references a conformation index which is out of the range of the number of conformation defined in the script" << endl;
-			return FFEA_ERROR;
+		// Set all bsite_interactions as off
+		for(j = 0; j < binding_matrix.num_interaction_types; ++j) {
+			site_active[j] = 0;
 		}
 
-		// Get bound state
-		fin >> string_buf;
-		if(string_buf == "u" or string_buf == "unbound") {
-			bound_state = 0;
+		// Reset counter
+		j = -1;
 
-		} else if (string_buf == "b" or string_buf == "bound") {
-			bound_state = 1;
+		// Get state line
+		fgets(buf, 255, fin);
+		boost::split(sline, buf, boost::is_any_of(" "));
 
-		} else {
-			FFEA_error_text();
-			cout << "Expected bound/unbound, got " << string_buf << endl;
-			return FFEA_ERROR;
+		// Parse line
+		for(it = sline.begin(); it != sline.end(); ++it) {
+
+			// Increment counter
+			j++;
+
+			// First is active conformation
+			if(j == 0) {
+				conf_index = atoi((*it).c_str());
+				if(conf_index >= params.num_conformations[blob_index]) {
+					FFEA_ERROR_MESSG("\nConformation index %d, %d,  exceeds 'num_conformations', %d, set in the initial script file.\n", i, conf_index, params.num_conformations[i])
+				}
+
+			// Then active binding sites
+			} else {
+				site_index = atoi((*it).c_str());
+				if(site_index >= binding_matrix.num_interaction_types) {
+					FFEA_ERROR_MESSG("\nBinding site index %d for state %d, %d,  exceeds 'num_conformations', %d, set in the initial script file.\n", j - 1, i, site_index, binding_matrix.num_interaction_types)
+				}
+				site_active[site_index] = 1;
+			}
 		}
 
-		// Get site types in binding event
-		fin >> binding_site_type_from;
-		fin >> binding_site_type_to;
-	//	if(binding_site_type_from >= binding_matrix.num_interaction_types || binding_site_type_to >= binding_matrix.num_interaction_types) {
-	//		FFEA_error_text();
-		//	cout << "In kinetic states file '" << states_fname << "', state " << i << " references a state type which is out of the range of the number of types defined in 'binding_params'" << endl;
-	//		return FFEA_ERROR; 
-		//}
-
-		// Initialise state
-		kinetic_state[blob_index][i].init(conf_index, bound_state, binding_site_type_from, binding_site_type_to);
+		// Initialise kinetic state from this
+		kinetic_state[blob_index][i].init(conf_index, site_active, binding_matrix.num_interaction_types);
 	}
+
+	// Close and return
+	fclose(fin);
 	return FFEA_OK;
 }
 
 int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	
-	int i, j, MAX_BUF_SIZE = 255, num_kinetic_states;
-	char buf[MAX_BUF_SIZE];
-	string string_buf;
-        Dimensions dimens; 
+	int i, j, num_states;
+	char buf[255];
+	string buf_string;
+	vector<string> sline;
+	vector<string>::iterator it;
+	FILE *fin;
+	Dimensions dimens;
 
-	cout << "\t\tReading rates file '" << rates_fname << "'" << endl;
-	ifstream fin;
-	fin.open(rates_fname.c_str());
-
-	// Check filetype
-	fin.getline(buf, MAX_BUF_SIZE);
-	string_buf = string(buf);
-	boost::trim(string_buf);
-	if(string_buf != "ffea kinetic rates file") {
-		FFEA_error_text();
-		cout << "In '" << rates_fname << "', expected 'ffea kinetic rates file' but got " << buf << endl;
-		return FFEA_ERROR;
+	// Open the file
+	fin = fopen(rates_fname.c_str(), "r");
+	
+	// Get header stuff and check for errors
+	fgets(buf, 255, fin);
+	if(strcmp(buf, "ffea kinetic rates file\n") != 0) {
+		FFEA_ERROR_MESSG("\nExpected 'ffea kinetic rates file' as first line. This may not be an FFEA kinetic rates file\n")
 	}
 	
-	// Get num_states
-	fin >> buf >> num_kinetic_states;
-	
-	// Check against params
-	if(params.num_states[blob_index] != num_kinetic_states) {
-		FFEA_error_text();
-		cout << "Read 'num_states " << num_kinetic_states << "' from " << rates_fname << " but expected " << params.num_states[blob_index] << " from .ffea script." << endl;
-		return FFEA_ERROR;
+	if(fscanf(fin, "num_states %d\n", &num_states) != 1) {
+		FFEA_ERROR_MESSG("\nExpected 'num_states %%d' as second line. Unable to read further.\n")
 	}
+	if(num_states != params.num_states[blob_index]) {
+		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", rates_fname.c_str(), num_states, params.num_states[i])
+	}
+	fgets(buf, 255, fin);
 
 	// Create rates matrix
-	kinetic_rate[blob_index] = new scalar*[num_kinetic_states];
-	for(i = 0; i < num_kinetic_states; ++i) {
-		kinetic_rate[blob_index][i] = new scalar[num_kinetic_states];	
+	kinetic_rate[blob_index] = new scalar*[num_states];
+	for(i = 0; i < num_states; ++i) {
+		kinetic_rate[blob_index][i] = new scalar[num_states];	
 	}
 
-	// Get rates line
-	fin.getline(buf, MAX_BUF_SIZE);
-	fin.getline(buf, MAX_BUF_SIZE);
 	scalar total_prob;
-	for(i = 0; i < num_kinetic_states; ++i) {
+
+	// Get each state's rates and check total probability is conserved
+	for(i = 0; i < num_states; ++i) {
 		total_prob = 0.0;
-		for(j = 0; j < num_kinetic_states; ++j) {
-			fin >> kinetic_rate[blob_index][i][j];
+		
+		// Get a line and split it
+		fgets(buf, 255, fin);
+		boost::split(sline, buf, boost::is_any_of(" "));
+		if(sline.size() > num_states) {
+			FFEA_ERROR_MESSG("\nState %d contains %d rate values, instead of 'num_states', %d.\n", i, sline.size(), num_states)
+		}
+
+		j = -1;
+		for(it = sline.begin(); it != sline.end(); ++it) {
+
+			// Increment counter
+			j++;
+			kinetic_rate[blob_index][i][j] = atof((*it).c_str());
                         kinetic_rate[blob_index][i][j] *= dimens.meso.time;
 
-			// Change to probabilities
+			// Change to probabilities and ignore diagonal
 			kinetic_rate[blob_index][i][j] *= params.dt * params.kinetics_update;
 			if(i != j) {
 				total_prob += kinetic_rate[blob_index][i][j];
@@ -2247,7 +2274,6 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		}
 		kinetic_rate[blob_index][i][i] = 1 - total_prob;
 	}
-
 	return FFEA_OK;
 }
 

@@ -7,7 +7,7 @@
 #include "FFEA_return_codes.h"
 #include <stdio.h>
 #include <iostream>
-
+#include <vector>
 using namespace std;
 
 class KineticState {
@@ -18,15 +18,14 @@ class KineticState {
 
 		~KineticState();
 
-		int init(int conf_ind, int bound_state, int site_type_from, int site_type_to);
+		int init(int conf_index, int *active_bsites, int num_bsite_types);
+
+		void print_details();
 
 		// Active Conformation
 		int conformation_index;
 
-		// Bound or Unbound
-		int bound;
-		int binding_site_type_from;
-		int binding_site_type_to;
-		
+		// What binds to what for all binding site types
+		vector<int> active_site;		
 };
 #endif
