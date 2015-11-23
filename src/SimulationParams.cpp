@@ -394,13 +394,13 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	vdw_params_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << vdw_params_fname << endl;
 
-	/*} else if (lvalue == "binding_site_params") {
+	} else if (lvalue == "binding_site_params") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("binding_site_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
 		sprintf(binding_params_fname, "%s", rvalue.c_str());
         	binding_params_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << binding_params_fname << endl;*/
+		cout << "\tSetting " << lvalue << " = " << binding_params_fname << endl;
 
     	} else if (lvalue == "stress_out_fname") {
 		cout << lvalue << " no longer recognised" << endl;
@@ -435,6 +435,7 @@ int SimulationParams::validate() {
     if (state_array_size != num_blobs) {
 	FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states', must have 'num_blobs' elements. We read %d elements but only %d blobs\n", state_array_size, num_blobs);
     }
+
     for (int i = 0; i < num_blobs; ++i) {
         if (num_conformations[i] <= 0) {
             FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations[%d]', must be greater than 0.\n", i);
@@ -510,20 +511,6 @@ int SimulationParams::validate() {
 	
     }
 
-    // Default the kinetics update value just in case
-    if (calc_kinetics == 0) {
-	kinetics_update = 0;
-    }
-
-    if (calc_kinetics == 1) {
-	if(kinetics_update <= 0) {
-		FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
-	}
-	/*if(binding_params_fname_set != 1) {
-		FFEA_ERROR_MESSG("Required: If 'calc_kinetics' = 1, then 'binding_site_params' must be set.\n");
-	}*/
-    }
-
     if (calc_noise != 0 && calc_noise != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_noise', must be 0 (no) or 1 (yes).\n");
     }
@@ -563,6 +550,28 @@ int SimulationParams::validate() {
         FFEA_ERROR_MESSG("calc_stokes flag is set, so stokes_visc must be set to a value greater than 0.\n");
     }
 
+    if (calc_kinetics == 1) {
+	if(kinetics_update <= 0) {
+		FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
+	}
+	for(int i = 0; i < num_blobs; ++i) {
+
+		// Only states are check. Can still have only 1 conformation but include the potential for kinetic binding
+		if(num_states[i] == 1) {
+			FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be greater than 1 if 'calc_kinetics = 0'.\n", i);
+		}
+	}
+
+    } else {
+	for(int i = 0; i < num_blobs; ++i) {
+		if(num_conformations[i] != 1) {
+			FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations[%d]', must be equal to 1 if 'calc_kinetics = 0'.\n", i);
+		}
+		if(num_states[i] != 1) {
+			FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be equal to 1 if 'calc_kinetics = 0'.\n", i);
+		}
+	}
+    }
     printf("...done\n");
 
     Dimensions dimens;
@@ -601,7 +610,11 @@ int SimulationParams::validate() {
     printf("\tcalc_preComp = %d\n", calc_preComp);
     printf("\tcalc_stokes = %d\n", calc_stokes);
     printf("\tstokes_visc = %f\n", stokes_visc*dimens.meso.pressure*dimens.meso.time);
+    printf("\tcalc_kinetics = %d\n", calc_kinetics);
 
+    if(calc_kinetics == 1 && binding_params_fname_set == 1) {
+	printf("\tbinding_params_fname = %s\n", binding_params_fname);
+    }
     return FFEA_OK;
 }
 

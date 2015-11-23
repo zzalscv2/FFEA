@@ -40,18 +40,34 @@ int BindingSite_matrix::init(string fname) {
 	for(int i = 0; i < num_interaction_types; ++i) {
 		interaction[i] = new int[num_interaction_types];
 		for(int j = 0; j < num_interaction_types; ++j) {
+			if(fin.eof()) {
+				FFEA_ERROR_MESSG("EOF reached prematurely. For 'num_interaction types = %d', expected at %d x %d matrix of 0's and 1's\n", num_interaction_types, num_interaction_types, num_interaction_types)
+			}
 			fin >> interaction[i][j];
+			if(interaction[i][j] != 0 && interaction[i][j] != 1) {
+				FFEA_ERROR_MESSG("Binding Site Param Row %d Column %d must be either 0 or 1\n", i + 1, j + 1)
+			}
 		}
 	}
 	fin.close();
 	return FFEA_OK;
 }
 
-int BindingSite_matrix::get_num_types() {
+int BindingSite_matrix::get_num_interaction_types() {
 	
 	return num_interaction_types;
 }
 
+void BindingSite_matrix::print_to_screen() {
+	
+	int i, j;
+	for(i = 0; i < num_interaction_types; ++i) {
+		for(j = 0; j < num_interaction_types; ++j) {
+			cout << interaction[i][j] << " ";
+		}
+		cout << endl;
+	}
+}
 BindingSite::BindingSite() {
 	num_faces = 0;
 	site_type = -1;
@@ -82,7 +98,7 @@ void BindingSite::add_face(Face *aface) {
 	faces.push_back(aface);
 }
 
-vector3 * BindingSite::calc_centroid() {
+void BindingSite::calc_centroid(vector3 centroid) {
 	
 	vector3_set_zero(&centroid);
 	vector3 *face_centroid;
@@ -94,7 +110,6 @@ vector3 * BindingSite::calc_centroid() {
 		centroid.z += face_centroid->z;
 	}
 	vec3_scale(&centroid, 1.0/num_faces);
-	return &centroid;
 }
 
 scalar BindingSite::calc_area() {
@@ -109,8 +124,8 @@ scalar BindingSite::calc_size() {
 	return length;
 }
 
-void BindingSite::calc_site_shape() {
+void BindingSite::calc_site_shape(vector3 centroid) {
 	
-	calc_centroid();
+	calc_centroid(centroid);
 	calc_size();
 }

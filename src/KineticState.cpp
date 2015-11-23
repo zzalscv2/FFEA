@@ -2,32 +2,37 @@
 
 KineticState::KineticState() {
 	conformation_index = 0;
-	bound = FFEA_KINETIC_STATE_UNBOUND;
-	binding_site_type_from = -1;
-	binding_site_type_to = -1;
+	active_site.clear();
 }
 
 KineticState::~KineticState() {
 	conformation_index = 0;
-	bound = FFEA_KINETIC_STATE_UNBOUND;
-	binding_site_type_from = -1;
-	binding_site_type_to = -1;
+	active_site.clear();
 }
 
-int KineticState::init(int conf_ind, int bound_state, int site_type_from, int site_type_to) {
+int KineticState::init(int conf_index, int *active_bsites, int num_bsite_types) {
 
-	conformation_index = conf_ind;
+	// Set conformation index
+	conformation_index = conf_index;
 
-	if(bound_state != FFEA_KINETIC_STATE_UNBOUND && bound_state != FFEA_KINETIC_STATE_BOUND) {
-		FFEA_error_text();
-		cout << "In 'KineticState::init', expected bound_state = 0 or bound_state = 1. Got bound_state = " << bound_state << "." << endl;
-		return FFEA_ERROR;
-	} else {
-		bound = bound_state;
+	// Set some active binding sites
+	for(int i = 0; i < num_bsite_types; ++i) {
+		if(active_bsites[i] == 1) {
+			active_site.push_back(i);
+		}
 	}
 
-	binding_site_type_from = site_type_from;
-	binding_site_type_to = site_type_to;
 	return FFEA_OK;
+}
+
+void KineticState::print_details() {
+
+	cout << "Kinetic Site:" << endl << endl;
+	cout << "Conformation Index = " << conformation_index << endl;
+	cout << "Active binding sites = ";
+	for(vector<int>::iterator it = active_site.begin(); it != active_site.end(); ++it) {
+		cout << *it << " ";
+	}
+	cout << endl;
 }
 
