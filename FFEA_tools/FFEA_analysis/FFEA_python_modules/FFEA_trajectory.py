@@ -377,7 +377,16 @@ class FFEA_trajectory:
 			dist = np.sqrt( np.power(traj1[frame_num][0] - traj2[frame_num][0], 2) + np.power(traj1[frame_num][1] - traj2[frame_num][1], 2) + np.power(traj1[frame_num][2] - traj2[frame_num][2], 2) )
 			dists[frame_num] = dist
 		return np.array(dists)
-
+  
+	def get_lever_angle_trajectory(self, node1, node2, node3, blob_index=0, conformation_index=0):
+		lever_angle_trajectory=np.zeros([self.num_frames, 3]) # create empty array
+		for i in range(self.num_frames): # for each frame
+			frame_angles = np.array(self.blob[blob_index][conformation_index].frame[i].get_lever_angle(node1, node2, node3)) # get angular distribution for frame
+			lever_angle_trajectory[i,0] = frame_angles[0] # assign values to elements in array accordingly
+			lever_angle_trajectory[i,1] = frame_angles[1]
+			lever_angle_trajectory[i,2] = frame_angles[2]
+		return lever_angle_trajectory   
+   
 class FFEA_traj_blob:
 
 	def __init__(self, num_nodes):
@@ -425,6 +434,38 @@ class FFEA_traj_blob_frame:
 		for i in range(len(nodes_list)):
 			subblob_frame[i] = self.pos[i]
 		return subblob_frame
+	def get_lever_angle(self, point1_no, point2_no, point3_no):
+		# get angle between two lines formed by 2d projections of 3 points
+ 		# with those lines being drawn from points 1 to 2 and points 2 to 3
+		def get_angle_between_three_points(first_point, second_point, third_point):
+			line_gradient_1 = get_line_gradient(first_point, second_point)
+			line_gradient_2 = get_line_gradient(second_point, third_point)
+			angle_rads = get_angle_between_two_gradients(line_gradient_1, line_gradient_2)
+			return angle_rads
+		def get_angle_between_two_gradients(m1, m2): #in radians
+			return np.arctan( (m2-m1)/(1 + (m2*m1))  )
+		def get_line_gradient(first_point, second_point):
+      			# note: this takes 2D points! slice them with slice_axes first!
+			line_gradient = (first_point[0] - second_point[0])/(first_point[1] - second_point[1])
+			return line_gradient
+		def slice_axes(point, axis1, axis2): #turn a 3d point into a 2d one by removing 1 axis (0 for x, 1 for y, 2 for z)
+			point_sliced = np.array([point[axis1], point[axis2] ])
+			return point_sliced
+		def slice_multiple_axes(points_list, axis1, axis2):
+			new_points_list = []			
+			for point in points_list:
+				new_points_list.append(slice_axes(point, axis1, axis2))
+			return new_points_list
+
+		points_list = [self.pos[point1_no], self.pos[point2_no], self.pos[point3_no]]
+		points_xy = slice_multiple_axes(points_list, 0, 1)
+		points_xz = slice_multiple_axes(points_list, 0, 2)
+		points_yz = slice_multiple_axes(points_list, 1, 2)
+		xy_angle = get_angle_between_three_points(points_xy[0], points_xy[1], points_xy[2])
+		xz_angle = get_angle_between_three_points(points_xz[0], points_xz[1], points_xz[2])
+		yz_angle = get_angle_between_three_points(points_yz[0], points_yz[1], points_yz[2])
+		return xy_angle, xz_angle, yz_angle
+		# x= 0, y=1, z=2
 
 # Faster than loading a whole trajectory
 def get_num_frames(fname):
