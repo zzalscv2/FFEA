@@ -4,6 +4,7 @@ Face::Face() {
     n[0] = NULL;
     n[1] = NULL;
     n[2] = NULL;
+    n[3] = NULL;
     e = NULL;
     vdw_interaction_type = -1;
     area_0 = 0;
@@ -22,6 +23,7 @@ Face::~Face() {
     n[0] = NULL;
     n[1] = NULL;
     n[2] = NULL;
+    n[3] = NULL; 
     e = NULL;
     vdw_interaction_type = -1;
     area_0 = 0;

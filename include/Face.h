@@ -14,8 +14,9 @@ public:
 
     ~Face();
 
-    /* Pointers to the surface nodes that define this face */
-    mesh_node *n[3];
+    /** The first 3 pointers are to those surface nodes that define this face,
+      * while the last one belongs to the opposite node of the linear tetrahedron **/
+    mesh_node *n[4];
 
     /* Pointer to the element this is a face of */
     tetra_element_linear *e;
