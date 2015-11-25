@@ -119,6 +119,7 @@ private:
     /** @brief Kinetic State and Rate objects */
     KineticState **kinetic_state;
     scalar ***kinetic_rate;
+    scalar ***kinetic_base_rate;
 
     /** @brief An array of springs which connect nodes if necessary */
     Spring *spring_array;
@@ -206,7 +207,7 @@ private:
 
     void apply_springs();
 
-    int rescale_kinetic_rates(scalar ***rates);
+    int rescale_kinetic_rates();
 	
     int change_blob_state(int blob_index, int new_state_index);
 

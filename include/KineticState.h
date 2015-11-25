@@ -25,7 +25,10 @@ class KineticState {
 		// Active Conformation
 		int conformation_index;
 
-		// What binds to what for all binding site types
-		vector<int> active_site;		
+		// Set of active binding site types
+		vector<int> active_site;
+
+		// And how many are active?
+		int num_active_bsites;	
 };
 #endif

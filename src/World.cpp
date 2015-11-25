@@ -11,6 +11,7 @@ World::World() {
     kinetic_return_map = NULL;
     kinetic_state = NULL;
     kinetic_rate = NULL;
+    kinetic_base_rate = NULL;
     num_blobs = 0;
     num_conformations = NULL;
     num_springs = 0;
@@ -56,6 +57,8 @@ World::~World() {
     kinetic_state = NULL;
     delete[] kinetic_rate;
     kinetic_rate = NULL;
+    delete[] kinetic_base_rate;
+    kinetic_base_rate = NULL;
 
     delete[] phi_Gamma;
     phi_Gamma = NULL;
@@ -129,6 +132,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 		// A 3D matrix describing the switching rates for each blob i.e. kinetic_rate[blob_index][from_conf][to_conf] 
 		kinetic_rate = new scalar**[params.num_blobs];
+		kinetic_base_rate = new scalar**[params.num_blobs];
 
 		// A 3D matrix holding the position maps enabline the switch from one conformation to another i.e. kinetic_map[blob_index][from_conf][to_conf]
 		kinetic_map = new SparseMatrixFixedPattern**[params.num_blobs];
@@ -1181,40 +1185,34 @@ int World::run() {
 	/* Kinetic Part of each step */
 
 	// Get a list of old conformations for writing to traj
-	int *from = new int[params.num_blobs];
+	int from[params.num_blobs];
 	for(int i = 0; i < params.num_blobs; ++i) {
 		from[i] = active_blob_array[i]->conformation_index;
 	}
 
-	/*if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
+	if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
 
-		// Get base rates
-		scalar ***switching_probs;
-		switching_probs = new scalar**[params.num_blobs];
-		for(int i = 0; i < params.num_blobs; ++i) {
-			switching_probs[i] = new scalar*[params.num_states[i]];
-			for(int j = 0; j < params.num_states[i]; ++j) {
-				switching_probs[i][j] = new scalar[params.num_states[i]];
-				for(int k = 0; k < params.num_states[i]; ++k) {
-					if(params.num_states[i] > 1) {
-						switching_probs[i][j][k] = kinetic_rate[i][j][k];
-					} else {
-						switching_probs[i][j][k] = 1;
-					}	
-				}
-			}
-		}
+		// Rescale base rates based on energies
+		if(rescale_kinetic_rates() != FFEA_OK) {
 
-		// Rescale rates based on energies
-		if(rescale_kinetic_rates(switching_probs) != FFEA_OK) {
-
-			delete[] from;
-			delete[] switching_probs;
 			cout << "Error in 'rescale_kinetic_rates' function." << endl;
 			return FFEA_ERROR;
 		}
 		
-		// Change conformation based on these rates
+		for(int i = 0; i < params.num_blobs; ++i) {
+			scalar sum = 0.0;
+			cout << "Blob " << i << ":" << endl;
+			for(int j = 0; j < params.num_states[i]; ++j) {
+				for(int k = 0; k < params.num_states[i]; ++k) {
+					cout << "P(" << j << ", " << k << ") = " << kinetic_rate[i][j][k] << endl;
+					sum += kinetic_rate[i][j][k];
+				}
+				cout << "P_T(" << j << ") = " << sum << endl << endl;
+			}
+		}
+		exit(0);
+
+		/*// Change conformation based on these rates
 		// Make some bins for the random number generator
 		scalar prob_sum;
 		scalar **bin_limits = new scalar*[params.num_blobs];
@@ -1244,11 +1242,11 @@ int World::run() {
 		}
 
 		delete[] bin_limits;
-		delete[] switching_probs;
+		delete[] switching_probs;*/
 	}
 
 	// Get a list of new conformations for writing to traj
-	int *to = new int[params.num_blobs];
+	int to[params.num_blobs];
 	for(int i = 0; i < params.num_blobs; ++i) {
 		to[i] = active_blob_array[i]->conformation_index;
 	}
@@ -1257,9 +1255,6 @@ int World::run() {
 	if(step % params.check == 0) {
 		print_trajectory_conformation_changes(trajectory_out, step + 1, from, to);
 	}
-	
-	delete[] from;
-	delete[] to;*/
     }
     printf("Time taken: %2f seconds\n", (omp_get_wtime() - wtime));
 
@@ -1871,14 +1866,15 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 			// Maps only if num_conforamtions for this blob > 1
 			if(params.num_conformations[i] > 1) {
-				cout << "\t\tBuilding maps for energy comparison...";
+				cout << "\t\tLoading kinetic maps..." << endl;
 				if(load_kinetic_maps(maps, maps_conf_index_from, maps_conf_index_to, i) == FFEA_ERROR) {
 					FFEA_error_text();
 					cout << "\nProblem reading kinetic maps in 'read_kinetic_maps' function" << endl;			
 					return FFEA_ERROR;
 				}
-				cout << "...done!" << endl;
-				cout << "\t\tBuilding 'identity' maps for energy comparison..." << endl;
+				cout << "\t\t...done!" << endl;
+
+				cout << "\t\tBuilding 'identity' maps for energy comparison...";
 				if(build_kinetic_identity_maps() == FFEA_ERROR) {
 					FFEA_error_text();
 					cout << "\nProblem reading kinetic maps in 'build_kinetic_identity_maps' function" << endl;			
@@ -1923,12 +1919,12 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 	
 	int MAX_BUF_SIZE = 255;
 	char buf[MAX_BUF_SIZE];
-	unsigned int i, j, num_rows, num_entries;
+	unsigned int i, j, num_rows, num_cols, num_entries;
 	string buf_string;
 	vector<string> string_vec;
 	for(i = 0; i < map_fnames.size(); ++i) {
 
-		cout << "\t\tReading map " << i << ", " << map_fnames.at(i) << ": from conformation " << map_from.at(i) << " to " << map_to.at(i) << endl;
+		cout << "\t\t\tReading map " << i << ", " << map_fnames.at(i) << ": from conformation " << map_from.at(i) << " to " << map_to.at(i) << endl;
 		ifstream fin;
 		fin.open(map_fnames.at(i).c_str());
 		if(fin.is_open() == false) {
@@ -1946,12 +1942,28 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 			return FFEA_ERROR;
 		}
 
-		// Get nodes to and from
+		// Get nodes to and from and check against the structures
 		fin.getline(buf, MAX_BUF_SIZE);
+		buf_string = string(buf);
+		boost::split(string_vec, buf_string, boost::is_space());
+		num_cols = atoi(string_vec.at(string_vec.size() - 1).c_str());
+
+		if(num_cols != blob_array[blob_index][map_from.at(i)].get_num_nodes()) {
+			FFEA_error_text();
+			cout << "In " << map_fnames.at(i) << ", 'num_nodes_from', " << num_cols << ", does not correspond to the number of nodes in blob " << i << " conformation " << map_from.at(i) << endl;
+			return FFEA_ERROR;
+		}
+
 		fin.getline(buf, MAX_BUF_SIZE);
 		buf_string = string(buf);
 		boost::split(string_vec, buf_string, boost::is_space());
 		num_rows = atoi(string_vec.at(string_vec.size() - 1).c_str());
+
+		if(num_rows != blob_array[blob_index][map_to.at(i)].get_num_nodes()) {
+			FFEA_error_text();
+			cout << "In " << map_fnames.at(i) << ", 'num_nodes_to', " << num_rows << ", does not correspond to the number of nodes in blob " << i << " conformation " << map_to.at(i) << endl;
+			return FFEA_ERROR;
+		}
 		
 		// Get num_entries
 		fin.getline(buf, MAX_BUF_SIZE);
@@ -2021,111 +2033,57 @@ int World::build_kinetic_identity_maps() {
 	return FFEA_OK;
 }
 
-/*int World::rescale_kinetic_rates(scalar ***rates) {
+int World::rescale_kinetic_rates() {
 
-	return FFEA_OK;
-	int i, j, current_state, case_index;
-	scalar total_prob, current_energy, final_energy;
+	int i, j;
+	int current_state;
+	scalar total_prob;
+
+	// Rescale for every blob
 	for(i = 0; i < params.num_blobs; ++i) {
 		
-		// Get current energy
-		current_state = active_state_index[i];
-		current_energy = active_blob_array[i]->calculate_strain_energy();
-		//cout << i << " " << current_energy / (params.kT * (3 * active_blob_array[i]->get_num_linear_nodes() - 6)) << endl;
+		// Get current state
+		current_state = active_state_index[i];		
 
 		total_prob = 0.0;
 		for(j = 0; j < params.num_states[i]; ++j) {
-
-			// Calculate remainder at end
+			
+			// Probability of staying is calculated at the end
 			if(j == current_state) {
 				continue;
 			}
 
-			// Rates change depending on situation
-			if(kinetic_state[i][current_state].bound == kinetic_state[i][j].bound && kinetic_state[i][current_state].conformation_index == kinetic_state[i][j].conformation_index)
-			{
-				// Null transform
-				case_index = 0;
-
-			} else if(kinetic_state[i][current_state].bound == 0 && kinetic_state[i][j].bound == 1) {
+			// How the state changes is dependent upon whether we are binding, unbinding or conf changing
+			if(kinetic_state[i][current_state].num_active_bsites == 0 && kinetic_state[i][j].num_active_bsites != 0) {
 				
-				// Unbound to bound
-				case_index = 1;
+				// Binding
+				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 
-			} else if(kinetic_state[i][current_state].bound == 1 && kinetic_state[i][j].bound == 0) {
-		
-				// Bound to unbound
-				case_index = 2;
+			} else if (kinetic_state[i][current_state].num_active_bsites != 0 && kinetic_state[i][j].num_active_bsites == 0) {
+				
+				// Unbinding
+				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 
 			} else if (kinetic_state[i][current_state].conformation_index != kinetic_state[i][j].conformation_index) {
-			
-				// Conformation change
-				case_index = 3;
+				
+				// Conf change
+				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j]; // multiply by a prefactor from monte carlo in future
 			} else {
-				FFEA_ERROR_MESSG("Error when trying to rescale kinetic rate: Blob %d from state %d to state %d\n", i, current_state, j);
-				return FFEA_ERROR;
+				
+				// Identity change
+				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 			}
 
-			switch(case_index) {
-				
-				// Null
-				case(0):
-					break;
-
-				// Binding
-				case(1):
-
-					for(k = 0; k < num_binding_sites; ++k) {
-
-						// Binding site on our molecule
-						if(kinetic_binding_sites[k].blob_index == i && kinetic_binding_sites[k].conf_index == j) {
-							kinetic_binding_sites[k].calc_centroid();
-							radius[0] = sqrt(kinetic_binding_sites[k].area / 3.1415926);
-							for(l = 0; l < num_binding_sites; ++l) {
-								if(l == k) {
-									continue;
-								}
-								kinetic_binding_sites[l].calc_centroid();
-								radius[1] = sqrt(kinetic_binding_sites[l].area / 3.1415926);
-								distance.x = kinetic_binding_sites[k].centroid.x - kinetic_binding_sites[l].centroid.x;
-								distance.y = kinetic_binding_sites[k].centroid.y - kinetic_binding_sites[l].centroid.y;
-								distance.z = kinetic_binding_sites[k].centroid.z - kinetic_binding_sites[l].centroid.z;
-								
-								// Successful binding!
-								if(mag(&distance) < radius[0] + radius[1]) {
-
-								}
-
-								
-							}
-						}	
-					}			
-					break;
-		
-				// Unbinding
-				case(2):
-
-					
-					break;
-
-				// Conformation change
-				case(3):
-				
-					
-					break;
-			}
-
-			total_prob += rates[i][current_state][j];
-			
+			// Add to the total probability of switching
+			total_prob += kinetic_rate[i][current_state][j];
 			
 		}
-
-		// Prob of staying put
-		rates[i][current_state][current_state] = 1 - total_prob;
+		
+		// Probability of staying put
+		kinetic_rate[i][current_state][current_state] = 1 - total_prob;
 	}
-
 	return FFEA_OK;
-}*/
+}
 
 int World::load_kinetic_states(string states_fname, int blob_index) {
 
@@ -2232,8 +2190,10 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 
 	// Create rates matrix
 	kinetic_rate[blob_index] = new scalar*[num_states];
+	kinetic_base_rate[blob_index] = new scalar*[num_states];
 	for(i = 0; i < num_states; ++i) {
-		kinetic_rate[blob_index][i] = new scalar[num_states];	
+		kinetic_rate[blob_index][i] = new scalar[num_states];
+		kinetic_base_rate[blob_index][i] = new scalar[num_states];
 	}
 
 	scalar total_prob;
@@ -2254,13 +2214,13 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 
 			// Increment counter
 			j++;
-			kinetic_rate[blob_index][i][j] = atof((*it).c_str());
-                        kinetic_rate[blob_index][i][j] *= dimens.meso.time;
+			kinetic_base_rate[blob_index][i][j] = atof((*it).c_str());
+                        kinetic_base_rate[blob_index][i][j] *= dimens.meso.time;
 
 			// Change to probabilities and ignore diagonal
-			kinetic_rate[blob_index][i][j] *= params.dt * params.kinetics_update;
+			kinetic_base_rate[blob_index][i][j] *= params.dt * params.kinetics_update;
 			if(i != j) {
-				total_prob += kinetic_rate[blob_index][i][j];
+				total_prob += kinetic_base_rate[blob_index][i][j];
 			}
 		}
 		
@@ -2272,7 +2232,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 			cout << "Best solution - Reduce 'kinetics_update' parameter" << endl;
 			return FFEA_ERROR;
 		}
-		kinetic_rate[blob_index][i][i] = 1 - total_prob;
+		kinetic_base_rate[blob_index][i][i] = 1 - total_prob;
 	}
 	return FFEA_OK;
 }

@@ -3,11 +3,13 @@
 KineticState::KineticState() {
 	conformation_index = 0;
 	active_site.clear();
+	num_active_bsites = 0;
 }
 
 KineticState::~KineticState() {
 	conformation_index = 0;
 	active_site.clear();
+	num_active_bsites = 0;
 }
 
 int KineticState::init(int conf_index, int *active_bsites, int num_bsite_types) {
@@ -22,6 +24,7 @@ int KineticState::init(int conf_index, int *active_bsites, int num_bsite_types) 
 		}
 	}
 
+	num_active_bsites = active_site.size();
 	return FFEA_OK;
 }
 
