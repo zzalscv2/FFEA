@@ -23,7 +23,8 @@ ffea_tools = 	{
 		"trajtoxyz": "FFEA_analysis/FFEA_traj_tools/FFEA_extract_positions",
 		"xyztodx": "FFEA_analysis/FFEA_traj_tools/Dx_convert_from_xyz_position_trajectory.py",
 		"cgsurf": "FFEA_initialise/Surface_tools/surface_coarse_grainer/surface_coarse_grainer_final",
-		"cuboid": "FFEA_initialise/Volume_tools/make_cuboid_mesh/make_cuboid_mesh"
+		"cuboid": "FFEA_initialise/Volume_tools/make_cuboid_mesh/make_cuboid_mesh",
+                "view": "FFEA_analysis/FFEA_viewer/FFEA_viewer.py"
 		}
 
 if len(sys.argv) == 1:
@@ -37,7 +38,11 @@ args = " ".join(sys.argv[2:])
 if action not in ffea_tools.keys():
 	sys.exit("Unrecognised ACTION '" + action + "'\nACTION must be one of:\n" + " ".join(ffea_tools.keys()) + "\n")
 
-command = FFEA_TOOLS_PATH + ffea_tools[action] + " " + args
+# if it is a python script: 
+if ffea_tools[action][-3:] == ".py":
+  command = "python " + FFEA_TOOLS_PATH + ffea_tools[action] + " " + args
+else:
+  command = FFEA_TOOLS_PATH + ffea_tools[action] + " " + args
 
 print "ACTION = '" + action + "' => Using command '" + command + "'\n"
 
