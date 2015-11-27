@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.5)
-project(FFEA CXX)
+project(FFEA CXX C)
 cmake_policy(VERSION 2.8)
 
 # set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
@@ -168,6 +168,20 @@ endif(USE_FAST)
 
 
 
-#################################
-###### SOURCES TO BUILD  ########
+#############################################
+###### SOURCES TO BUILD AND INSTALL  ########
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
+
+
+#######################################
+######## INSTALL THE FFEA TOOLS  ######
+# 1 - Set up the install python path
+include(${CMAKE_ROOT}/Modules/FindPythonInterp.cmake)
+set(PYTHONSTUFF "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
+
+# 2 - and go through the folders:
+# PENDING # Unify or rename make_structure_map.cpp Matrices.hpp and Vectors.hpp in
+#               FFEA_mapping_tools and FFEA_node_tools
+# PENDING # FFEA_initialise/PDB_tools # deprecate FFEA_convert_traj_to_pdb.c (?)
+# EVEN WORSE: make_structure_map2 in FFEA_initialise/FFEA_node_tools
+add_subdirectory("${PROJECT_SOURCE_DIR}/FFEA_tools")

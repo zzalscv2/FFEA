@@ -3,12 +3,13 @@ import os, sys
 
 # Get the path to FFEA_tools
 FFEA_TOOLS_PATH = os.path.abspath(os.path.dirname(sys.argv[0]))
+FFEA_TOOLS_PATH += "/"
 
 # Make sure it is in the "FFEA_tools/" folder. If not, then it has erroneously been moved and the relative paths in the rest of this script will not work.
-if FFEA_TOOLS_PATH.endswith("/FFEA_tools"):
-	FFEA_TOOLS_PATH = FFEA_TOOLS_PATH + "/" # so we get the base path to FFEA_tools
-else:
-	sys.exit("Error: FFEA_tools.py must be in the FFEA_tools/ folder. Relative paths will not work otherwise.\n")
+# if FFEA_TOOLS_PATH.endswith("/FFEA_tools"):
+	# FFEA_TOOLS_PATH = FFEA_TOOLS_PATH + "/" # so we get the base path to FFEA_tools
+# else:
+	# sys.exit("Error: FFEA_tools.py must be in the FFEA_tools/ folder. Relative paths will not work otherwise.\n")
 
 # Build the lookup dictionary for all FFEA tools
 ffea_tools = 	{
