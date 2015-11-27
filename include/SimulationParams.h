@@ -106,6 +106,8 @@ public:
     /** Expects a parameter label and value, which will be assigned if valid and rejected if not */
     int assign(string lvalue, string rvalue);
 
+    int get_max_num_states();
+
 private:
     int trajectory_out_fname_set;
     int measurement_out_fname_set;
