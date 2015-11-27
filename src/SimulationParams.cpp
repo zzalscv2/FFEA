@@ -618,6 +618,17 @@ int SimulationParams::validate() {
     return FFEA_OK;
 }
 
+int SimulationParams::get_max_num_states() {
+	
+    int i, max_num_states = 0;
+    for(i = 0; i < num_blobs; ++i) {
+	if(num_states[i] > max_num_states) {
+	    max_num_states = num_states[i];
+	} 
+    }
+    return max_num_states;
+}
+
 /*
  * Expects a string of the form "lvalue = rvalue" where lvalue must be a recognised parameter name.
  */
