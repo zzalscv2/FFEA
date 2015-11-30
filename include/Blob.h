@@ -293,9 +293,10 @@ public:
 
     void get_min_max(vector3 *blob_min, vector3 *blob_max);
 
-    /** Blob and conformation indices */
+    /** Blob, conformation and state indices */
     int blob_index;
     int conformation_index;
+    int state_index;
 
     /** Binding sites must be known publicly */
     int num_binding_sites;

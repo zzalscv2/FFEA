@@ -48,11 +48,13 @@ SimulationParams::SimulationParams() {
     vdw_eps = -1;
 
     trajectory_out_fname_set = 0;
+    kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
     binding_params_fname_set = 0;
     vdw_params_fname_set = 0;
 
     sprintf(trajectory_out_fname, "\n");
+    sprintf(kinetics_out_fname, "\n");
     sprintf(temp_fname, "\n");
     measurement_out_fname = NULL;
     sprintf(vdw_params_fname, "\n");
@@ -109,11 +111,13 @@ SimulationParams::~SimulationParams() {
     vdw_eps = -1;
 
     trajectory_out_fname_set = 0;
+    kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
     binding_params_fname_set = 0;
     vdw_params_fname_set = 0;
 
     sprintf(trajectory_out_fname, "\n");
+    sprintf(kinetics_out_fname, "\n");
     sprintf(temp_fname, "\n");
     delete[] measurement_out_fname;
     sprintf(binding_params_fname, "\n");
@@ -385,6 +389,14 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		sprintf(temp_fname, "%s", rvalue.c_str());
 	        measurement_out_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
+
+    	} else if (lvalue == "kinetics_out_fname") {
+		if (rvalue.length() >= MAX_FNAME_SIZE) {
+			FFEA_ERROR_MESSG("kinetics_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
+		}
+		sprintf(kinetics_out_fname, "%s", rvalue.c_str());
+	        kinetics_out_fname_set = 1;
+		cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
    
 	} else if (lvalue == "vdw_forcefield_params") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
@@ -554,6 +566,9 @@ int SimulationParams::validate() {
 	if(kinetics_update <= 0) {
 		FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
 	}
+	if(kinetics_update < check) {
+		FFEA_CAUTION_MESSG("\tIf 'calc_kinetics' = 1, then kinetics_update should be > check. Kinetic updates will be printed to file at the same rate at check.")
+	}
 	for(int i = 0; i < num_blobs; ++i) {
 
 		// Only states are check. Can still have only 1 conformation but include the potential for kinetic binding
@@ -592,6 +607,7 @@ int SimulationParams::validate() {
     for (int i = 0; i < num_blobs + 1; ++i) {
         printf("\tmeasurement_out_fname %d = %s\n", i, measurement_out_fname[i]);
     }
+    printf("\tkinetics_out_fname = %s\n", kinetics_out_fname);
     printf("\tvdw_forcefield_params = %s\n", vdw_params_fname);
     printf("\tmax_iterations_cg = %d\n", max_iterations_cg);
     printf("\tepsilon2 = %e\n", epsilon2);
