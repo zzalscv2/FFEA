@@ -1,5 +1,8 @@
 add_executable(make_structure_map2 make_structure_map.cpp)
 
+set_target_properties(make_structure_map2 
+         PROPERTIES OUTPUT_NAME make_structure_map)
+
 install (TARGETS make_structure_map2 
          DESTINATION "${PYTHONSTUFF}/FFEA_initialise/FFEA_node_tools")
 
