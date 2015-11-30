@@ -1210,18 +1210,16 @@ int World::run() {
 				cout << "P_T(" << j << ") = " << sum << endl << endl;
 			}
 		}
-		exit(0);
 
-		/*// Change conformation based on these rates
+		// Change conformation based on these rates
 		// Make some bins for the random number generator
 		scalar prob_sum;
-		scalar **bin_limits = new scalar*[params.num_blobs];
+		scalar bin_limits[params.num_blobs][params.get_max_num_states()];
 		for(int i = 0; i < params.num_blobs; ++i) {
-			bin_limits[i] = new scalar[params.num_states[i] + 1];
 			prob_sum = 0.0;
 			for(int j = 0; j < params.num_states[i]; ++j) {
 				bin_limits[i][j] = prob_sum;
-				prob_sum += switching_probs[i][active_state_index[i]][j];
+				prob_sum += kinetic_rate[i][active_state_index[i]][j];
 			}
 			bin_limits[i][params.num_states[i]] = prob_sum;	
 		}
@@ -1236,13 +1234,11 @@ int World::run() {
 				
 				// Change state based on this random number!
 				if(switch_check >= bin_limits[i][j] && switch_check < bin_limits[i][j + 1]) {
-					change_blob_state(i, j);
+					//change_blob_state(i, j);
+					break;
 				}
 			}
 		}
-
-		delete[] bin_limits;
-		delete[] switching_probs;*/
 	}
 
 	// Get a list of new conformations for writing to traj
