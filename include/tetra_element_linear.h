@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <map>
 #include "mat_vec_fns.h"
 #include "SimulationParams.h"
 #include "FFEA_return_codes.h"
@@ -276,6 +277,7 @@ public:
 
     void calc_centroid();
 
+    int get_opposite_node(int n1, int n2, int n3); 
 
 private:
 
