@@ -110,6 +110,7 @@ private:
     /** @brief Which conformation is active in each blob */
     Blob **active_blob_array;
     int *active_conformation_index;
+    int *previous_conformation_index;
     int *active_state_index;
 
     /** @brief Maps for kinetic switching of conformations */
@@ -150,6 +151,9 @@ private:
 
     /** @brief * Output trajectory file */
     FILE *trajectory_out;
+
+    /** @brief * Output kinetics file */
+    FILE *kinetics_out;
 
     /** @brief * Output measurement file */
     FILE **measurement_out;

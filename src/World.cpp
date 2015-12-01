@@ -5,6 +5,7 @@ World::World() {
     // Initialise everything to zero
     blob_array = NULL;
     active_conformation_index = NULL;
+    previous_conformation_index = NULL;
     active_state_index = NULL;
     spring_array = NULL;
     kinetic_map = NULL;
@@ -25,6 +26,7 @@ World::World() {
     step_initial = 0;
     trajectory_out = NULL;
     measurement_out = NULL;
+    kinetics_out = NULL;
 }
 
 World::~World() {
@@ -39,7 +41,10 @@ World::~World() {
     num_conformations = NULL;
 
     delete[] active_conformation_index;
+
     active_conformation_index = NULL;
+    delete[] previous_conformation_index;
+    previous_conformation_index = NULL;
     delete[] active_state_index;
     active_state_index = NULL;
 
@@ -73,7 +78,9 @@ World::~World() {
     trajectory_out = NULL;
 
     delete[] measurement_out;
-    measurement_out = NULL;   
+    measurement_out = NULL;  
+
+    kinetics_out = NULL; 
 }
 
 /**
@@ -255,6 +262,23 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			fprintf(measurement_out[params.num_blobs], "\n");
 			fflush(measurement_out[params.num_blobs]);
 
+			// Open the kinetics output file for writing (if neccessary) and write initial stuff
+			if (params.kinetics_out_fname_set == 1) {
+				if ((kinetics_out = fopen(params.kinetics_out_fname, "w")) == NULL) {
+				    FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname)
+				}
+				fprintf(kinetics_out, "FFEA_kinetic_trajectory_file\n\nNumber of Blobs %d\n\n", params.num_blobs);
+				for(i = 0; i < params.num_blobs; ++i) {
+				    fprintf(kinetics_out, "              Blob %d         ", i);
+				}
+				fprintf(kinetics_out, "\n# step ");
+				for(i = 0; i < params.num_blobs; ++i) {
+				    fprintf(kinetics_out, "|state | conformation |");
+				}
+				fprintf(kinetics_out, "\n");
+				fflush(kinetics_out);
+			}
+
 		} else {
 
 			// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
@@ -356,11 +380,24 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			}
 
 			// Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
-			//fprintf(trajectory_out, "\n");
-
 			for (i = 0; i < params.num_blobs + 1; ++i) {
 			    fprintf(measurement_out[i], "#==RESTART==\n");
 			}
+
+			// And kinetic file
+			if(params.kinetics_out_fname_set == 1) {
+			    if ((kinetics_out = fopen(params.kinetics_out_fname, "a")) == NULL) {
+				FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname)
+			    }
+			    fprintf(kinetics_out, "#==RESTART==\n");
+			}
+			
+			/*
+			*
+			*
+			* Fix restart for measurements and kinetics in future. Use rstep to find appropriate line
+			*
+			*/
 
 		}
 
@@ -467,7 +504,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	    if (params.restart == 0 && mode == 0) {
 		// Carry out measurements on the system before carrying out any updates (if this is step 0)
 		print_trajectory_and_measurement_files(0, 0);
-		print_trajectory_conformation_changes(trajectory_out, 0, NULL, NULL);
 	    }
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
@@ -1112,7 +1148,6 @@ int World::run() {
                     // attempt to print out the final (bad) time step
                     printf("Dumping final step:\n");
                     print_trajectory_and_measurement_files(step, wtime);
-		    print_trajectory_conformation_changes(trajectory_out, 0, NULL, NULL);
 
                     return FFEA_ERROR;
                 }
@@ -1151,7 +1186,6 @@ int World::run() {
 	
         // Sort internal forces out
         int fatal_errors = 0;
-
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
 #endif
@@ -1173,21 +1207,14 @@ int World::run() {
             // attempt to print out the final (bad) time step
             printf("Dumping final step:\n");
             print_trajectory_and_measurement_files(step, wtime);
-	    print_trajectory_conformation_changes(trajectory_out, 0, NULL, NULL);
 
             return FFEA_ERROR;
         }
 
-        if (step % params.check == 0) {
-            print_trajectory_and_measurement_files(step + 1, wtime);
-        }
-
 	/* Kinetic Part of each step */
-
 	// Get a list of old conformations for writing to traj
-	int from[params.num_blobs];
 	for(int i = 0; i < params.num_blobs; ++i) {
-		from[i] = active_blob_array[i]->conformation_index;
+		previous_conformation_index[i] = active_blob_array[i]->conformation_index;
 	}
 
 	if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
@@ -1204,10 +1231,8 @@ int World::run() {
 			cout << "Blob " << i << ":" << endl;
 			for(int j = 0; j < params.num_states[i]; ++j) {
 				for(int k = 0; k < params.num_states[i]; ++k) {
-					cout << "P(" << j << ", " << k << ") = " << kinetic_rate[i][j][k] << endl;
 					sum += kinetic_rate[i][j][k];
 				}
-				cout << "P_T(" << j << ") = " << sum << endl << endl;
 			}
 		}
 
@@ -1242,15 +1267,15 @@ int World::run() {
 	}
 
 	// Get a list of new conformations for writing to traj
-	int to[params.num_blobs];
 	for(int i = 0; i < params.num_blobs; ++i) {
-		to[i] = active_blob_array[i]->conformation_index;
+		active_conformation_index[i] = active_blob_array[i]->conformation_index;
+		active_state_index[i] = active_blob_array[i]->state_index;
 	}
 
-	// Print Trajectory Conf change data and free data
-	if(step % params.check == 0) {
-		print_trajectory_conformation_changes(trajectory_out, step + 1, from, to);
-	}
+	// Output to files
+        if (step % params.check == 0) {
+            print_trajectory_and_measurement_files(step + 1, wtime);
+        }
     }
     printf("Time taken: %2f seconds\n", (omp_get_wtime() - wtime));
 
@@ -1460,11 +1485,13 @@ int World::read_and_build_system(vector<string> script_vector) {
    	blob_array = new Blob*[params.num_blobs];
 	active_blob_array = new Blob*[params.num_blobs];
 	active_conformation_index = new int[params.num_blobs];
+	previous_conformation_index = new int[params.num_blobs];
 	active_state_index = new int[params.num_blobs];
 	for (int i = 0; i < params.num_blobs; ++i) {
 	        blob_array[i] = new Blob[params.num_conformations[i]];
 	        active_blob_array[i] = &blob_array[i][0];
 		active_conformation_index[i] = 0;
+		previous_conformation_index[i] = 0;
 		active_state_index[i] = 0;
 	}
 
@@ -2680,9 +2707,38 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
     fprintf(trajectory_out, "*\n");
 
+    // And now the kinetics, if necessary
+
+    // Inform whoever is watching of changes (print to screen)
+    if(params.calc_kinetics == 1) {
+	printf("Conformation Changes:\n");
+    }
+
+    fprintf(trajectory_out, "Conformation Changes:\n");
+
+    for(int i = 0; i < params.num_blobs; ++i) {
+    	if(params.calc_kinetics == 1) {
+	    printf("\tBlob %d - Conformation %d -> Conformation %d\n", i, previous_conformation_index[i], active_conformation_index[i]);	
+	}
+
+	// Print to file
+	fprintf(trajectory_out, "Blob %d: Conformation %d -> Conformation %d\n", i, previous_conformation_index[i], active_conformation_index[i]);
+    }
+    fprintf(trajectory_out, "*\n");
+
+    // And print to specific file too
+   if(kinetics_out != NULL) {
+	fprintf(kinetics_out, "%d", step);
+	for(int i = 0; i < params.num_blobs; ++i) {
+	    fprintf(kinetics_out, " %d %d", active_state_index[i], active_conformation_index[i]);
+	}
+	fprintf(kinetics_out, "\n");
+	fflush(kinetics_out);
+    }
+
     // Force all output in buffers to be written to the output files now
     fflush(trajectory_out);
-    for (int i = 0; i < num_blobs + 1; ++i) {
+    for (int i = 0; i < params.num_blobs + 1; ++i) {
         fflush(measurement_out[i]);
     }
 }

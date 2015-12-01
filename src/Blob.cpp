@@ -4,6 +4,7 @@ Blob::Blob() {
     /* Initialise everything to zero */
     blob_index = 0;
     conformation_index = 0;
+    state_index = 0;
     num_nodes = 0;
     num_elements = 0;
     num_surface_faces = 0;
@@ -85,6 +86,7 @@ Blob::~Blob() {
     /* Set relevant data to zero */
     blob_index = 0;
     conformation_index = 0;
+    state_index = 0;
     num_nodes = 0;
     num_elements = 0;
     num_surface_elements = 0;
