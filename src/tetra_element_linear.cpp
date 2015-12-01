@@ -587,3 +587,38 @@ void tetra_element_linear::add_diffusion_matrix(matrix12 V) {
     }
 }
 
+/** Returns the opposite node for a 2nd order face,
+ *    e. g., returns 3 for face [0,4,5].
+ *  The 2nd order nodes were created at setup time, in:
+ *    FFEA_initialise/FFEA_convert_from_volume/convert_tetrahedra_linear_to_quadratic.py
+ */
+int tetra_element_linear::get_opposite_node(int n1, int n2, int n3) { 
+  
+   // get a hash for the face:
+   int hash = n1 * n1 + n2 * n2 + n3 * n3;
+   
+   map<int,int> opposite;
+   opposite[41]  = 3; // [0, 4, 5]
+   opposite[52]  = 2; // [52, [0, 4, 6]]   # 2
+   opposite[61]  = 1; // [61, [0, 5, 6]]   # 1
+   opposite[66]  = 3; // [66, [1, 4, 7]]   # 3
+   opposite[81]  = 2; // [81, [1, 4, 8]]   # 2
+   opposite[114] = 0; // [114, [1, 7, 8]]  # 0
+   opposite[110] = 1; // [110, [2, 5, 9]]  # 1
+   opposite[78]  = 3; // [78, [2, 5, 7]]   # 3
+   opposite[134] = 0; // [134, [2, 7, 9]]  # 0
+   opposite[109] = 2; // [109, [3, 6, 8]]  # 2
+   opposite[126] = 1; // [126, [3, 6, 9]]  # 1
+   opposite[154] = 0; // [154, [3, 8, 9]]  # 0
+   opposite[116] = 2; // [116, [4, 6, 8]]  # 2
+   opposite[90]  = 3; // [90, [4, 5, 7]]   # 3
+   opposite[142] = 1; // [142, [5, 6, 9]]  # 1
+   opposite[194] = 0; // [194, [7, 8, 9]]  # 0
+
+   // check whether this hash exists and:
+   //   either fail:
+   if (opposite.count(hash) != 1) return -1;
+   //   or return the opposite node
+   else return opposite[hash];
+
+}

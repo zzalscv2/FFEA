@@ -55,9 +55,9 @@ public:
 
     Blob *daddy_blob;
 
-    void init(tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params);
+    void init(tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *oposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params);
 
-    void init(mesh_node *n0, mesh_node *n1, mesh_node *n2, Blob *daddy_blob, SimulationParams *params);
+    void init(mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params);
 
     void set_vdw_interaction_type(int vdw_interaction_type);
 

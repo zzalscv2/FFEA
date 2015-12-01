@@ -2066,7 +2066,14 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
                 (n1_stu.u + n2_stu.u + n3_stu.u) / 3.0
             };
 
-            surface[i].init(&elem[element], &node[n1], &node[n2], &node[n3], centroid_stu, this, params);
+            int n_op = elem[element].get_opposite_node(n1_el, n2_el, n3_el); 
+            if (n_op == -1)
+              FFEA_ERROR_MESSG("Error: Could not find the opposite node\n");
+            // now the node that we can pass is: elem[element].n[n_op]
+            // elem[element].n[n1_el]->print()  =  node[n1].print();
+         
+   
+            surface[i].init(&elem[element], &node[n1], &node[n2], &node[n3], elem[element].n[n_op], centroid_stu, this, params);
             if (surface[i].area_0 < smallest_A) {
                 smallest_A = surface[i].area_0;
             }
@@ -2142,7 +2149,15 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
                 FFEA_ERROR_MESSG("Error: Surface face %d references an out of bounds node index\n", i);
             }
 
-            surface[i].init(&node[n1], &node[n2], &node[n3], this, params);
+            int n1_el = elem[element].what_node_is_this(n1), n2_el = elem[element].what_node_is_this(n2), n3_el = elem[element].what_node_is_this(n3);
+            int n_op = elem[element].get_opposite_node(n1_el, n2_el, n3_el); 
+            if (n_op == -1)
+              FFEA_ERROR_MESSG("Error: Could not find the opposite node\n");
+            // now the node that we can pass is: elem[element].n[n_op]
+            // elem[element].n[n1_el]->print()  =  node[n1].print();
+         
+   
+            surface[i].init(&node[n1], &node[n2], &node[n3], elem[element].n[n_op], this, params);
 
             if (surface[i].area_0 < smallest_A) {
                 smallest_A = surface[i].area_0;
