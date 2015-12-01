@@ -22,7 +22,7 @@ class BindingSite{
 		~BindingSite();
 
 		// Structure
-		int num_faces, site_type;
+		int num_faces;
 		vector<Face*> faces;
 
 		// Properties
@@ -31,11 +31,16 @@ class BindingSite{
 		
 		void set_num_faces(int num_faces);
 		void set_type(int site_type);
+		int get_type();
 		void add_face(Face *aface);
 		void calc_centroid(vector3 cent);
 		void calc_site_shape(vector3 cent);
 		scalar calc_size();
 		scalar calc_area();
+
+	private:
+
+		int site_type;
 };
 
 class BindingSite_matrix{

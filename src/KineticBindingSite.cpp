@@ -86,3 +86,8 @@ void KineticBindingSite::calc_area() {
 		
 	}
 }
+
+int KineticBindingSite::get_type() {
+
+	return site_type;
+}
