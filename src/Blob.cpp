@@ -749,17 +749,16 @@ vector3 ** Blob::get_actual_node_positions() {
 	return node_position;
 }
 
-vector3 * Blob::get_node_positions_copy() {
-	vector3 *copy = new vector3[num_nodes];		
+void Blob::copy_node_positions(vector3 *nodes) {
+
 	for(int i = 0; i < num_nodes; ++i) {
-		copy[i].x = node_position[i]->x;
-		copy[i].y = node_position[i]->y;
-		copy[i].z = node_position[i]->z;
+		nodes[i].x = node[i].pos.x;
+		nodes[i].y = node[i].pos.y;
+		nodes[i].z = node[i].pos.z;
 	}
-	return copy;
 }
 
-void Blob::set_nodes(vector3 *node_pos) {
+void Blob::set_node_positions(vector3 *node_pos) {
 
 	for (int i = 0; i < num_nodes; i++) {
         	node[i].pos.x = node_pos[i].x;

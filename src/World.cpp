@@ -1259,7 +1259,7 @@ int World::run() {
 				
 				// Change state based on this random number!
 				if(switch_check >= bin_limits[i][j] && switch_check < bin_limits[i][j + 1]) {
-					//change_blob_state(i, j);
+					change_blob_state(i, j);
 					break;
 				}
 			}
@@ -1282,7 +1282,99 @@ int World::run() {
     return FFEA_OK;
 }
 
-/*int World::change_blob_state(int blob_index, int new_state_index) {
+int World::change_blob_state(int blob_index, int new_state_index) {
+
+	int old_state_index = active_state_index[blob_index];
+
+	// Check if we need to change at all
+	if(new_state_index == old_state_index) {
+		return FFEA_OK;
+	}
+
+	int old_conformation_index = active_conformation_index[blob_index];
+	int new_conformation_index = kinetic_state[blob_index][new_state_index].conformation_index;
+
+	// Now, what type of state change do we have hmmmmm? We already checked in rescale_kinetic_rates() so maybe combine in the future
+	if(new_conformation_index != old_conformation_index) {
+				
+		// Conformation Change! Strangely easy, as the mapping to the other conformation was done in rescale_kinetic_rates() to check energies
+		active_blob_array[blob_index] = &blob_array[blob_index][new_conformation_index];
+		active_conformation_index[blob_index] = new_conformation_index;
+
+	} else if (kinetic_state[blob_index][old_state_index].num_active_bsites == 0 && kinetic_state[blob_index][new_state_index].num_active_bsites != 0) {
+		
+		bool active;
+		int i, j, other_blob_index;
+		scalar separation;
+		Blob *other_blob;
+	
+		// Binding. But only if in range of a binding site! The rate we have is the (constant) free energy of binding. Simulation itself accounts for entropy...
+		// Should this check be made in the rescale rates section?
+
+		// For every site on this blob
+		for(i = 0; i < active_blob_array[i]->num_binding_sites; ++i) {
+
+			// Is this binding site active?
+			active = false;
+			for(vector<int>::iterator it = kinetic_state[blob_index][new_state_index].active_site.begin(); it != kinetic_state[blob_index][new_state_index].active_site.end(); ++it) {
+				if(active_blob_array[i]->binding_site[i].get_type() == *it) {
+					active = true;
+					break;
+				}
+			}
+
+			if(!active) {
+				continue;
+			}
+
+			// So this site is definitely up for binding! If it's in range of another site of course
+			// Check all sites on the other blobs
+			for(other_blob_index = 0; other_blob_index < num_blobs; ++other_blob_index) {
+
+				// Get pointer to other blob
+				other_blob = &blob_array[other_blob_index][active_conformation_index[other_blob_index]];
+
+				for(j = 0; j < other_blob->num_binding_sites; ++j) {
+
+					// Can't bind to the same site! That would be daft...
+					if(other_blob_index == blob_index && active_blob_array[blob_index]->binding_site[i].get_type() == other_blob->binding_site[j].get_type()) {
+						continue;
+					}
+
+					// If binding isn't allowed between these sites, continue again
+					if(binding_matrix.interaction[active_blob_array[blob_index]->binding_site[i].get_type()][other_blob->binding_site[j].get_type()] == 0) {
+						continue;
+					}
+
+					// Get site dimensions
+					//active_blob_array[blob_index]->binding_site[i].calc_dimensions();
+					//other_blob->binding_site[j].calc_dimensions();
+
+					// Get distance between sites
+					//separation = KineticBindingSite::calculate_separation(active_blob_array[blob_index]->binding_site[i], other_blob->binding_site[j]);
+
+					// Are we in range?
+					//if(separation <= active_blob_array[blob_index]->binding_site[i].radius + other_blob->binding_site[j].radius) {
+						
+						// We're binding! Add springs and stuff
+					//}
+				}
+			}
+		}
+
+	} else if (kinetic_state[blob_index][old_state_index].num_active_bsites != 0 && kinetic_state[blob_index][new_state_index].num_active_bsites == 0) {
+				
+		// Unbinding
+	} else {
+				
+		// Identity change. Do nothing. How dull...
+	}
+
+	// Change World pointers to states and stuff
+	active_state_index[blob_index] = new_state_index;
+	return FFEA_OK;
+}
+/* int World::change_blob_state(int blob_index, int new_state_index) {
 
 	// First check if work needs to be done at all
 	if(new_state_index == active_state_index[blob_index]) {
@@ -2067,7 +2159,7 @@ int World::rescale_kinetic_rates() {
 		
 		// Get current state
 		current_state = active_state_index[i];		
-
+		int current_conf = active_conformation_index[i];
 		total_prob = 0.0;
 		for(j = 0; j < params.num_states[i]; ++j) {
 			
@@ -2076,6 +2168,7 @@ int World::rescale_kinetic_rates() {
 				continue;
 			}
 
+			int new_conf = kinetic_state[i][j].conformation_index;
 			// How the state changes is dependent upon whether we are binding, unbinding or conf changing
 			if(kinetic_state[i][current_state].num_active_bsites == 0 && kinetic_state[i][j].num_active_bsites != 0) {
 				
@@ -2087,10 +2180,36 @@ int World::rescale_kinetic_rates() {
 				// Unbinding
 				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 
-			} else if (kinetic_state[i][current_state].conformation_index != kinetic_state[i][j].conformation_index) {
+			} else if (current_conf != new_conf) {
 				
-				// Conf change
-				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j]; // multiply by a prefactor from monte carlo in future
+				// Conf change. Dependent on energies
+				scalar E_cur = 0.0, E_new = 0.0;
+
+				// Firstly, store the current node positions
+				vector3 node_copy[active_blob_array[i]->get_num_nodes()];
+				active_blob_array[i]->copy_node_positions(node_copy);
+
+				// Apply the 'return map' to the actual nodes to update the blob
+				vector3 **nodes = active_blob_array[i]->get_actual_node_positions();
+				kinetic_return_map[i][current_conf][new_conf]->block_apply(nodes);
+
+				// Calculate current energy
+				E_cur = active_blob_array[i]->calculate_strain_energy();
+
+				// Map onto the new strucure
+				vector3 **new_nodes = blob_array[i][new_conf].get_actual_node_positions();
+				kinetic_map[i][current_conf][new_conf].block_apply(nodes, new_nodes);
+
+				// Calculate new energy
+				E_new =  blob_array[i][new_conf].calculate_strain_energy();
+
+				// Now, scale kinetic rates
+				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j]; // multiply by a prefactor from monte carlo in future. Or account for the monte carlo in the initialisation of the rates
+				kinetic_rate[i][current_state][j] *= exp(0.5 * (E_cur - E_new) / params.kT); // 0.5 from Arrhenius
+
+				// Reset old nodes, incase we don't switch
+				active_blob_array[i]->set_node_positions(node_copy);
+				
 			} else {
 				
 				// Identity change
@@ -2165,7 +2284,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 					FFEA_ERROR_MESSG("\nConformation index %d, %d,  exceeds 'num_conformations', %d, set in the initial script file.\n", i, conf_index, params.num_conformations[i])
 				}
 
-			// Then active binding sites
+			// Then active binding site types
 			} else {
 				site_index = atoi((*it).c_str());
 				if(site_index >= binding_matrix.num_interaction_types) {
