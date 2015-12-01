@@ -79,6 +79,7 @@ public:
     scalar vdw_r_eq, vdw_eps;
 
     char trajectory_out_fname[MAX_FNAME_SIZE];
+    char kinetics_out_fname[MAX_FNAME_SIZE];
     char **measurement_out_fname;
     char temp_fname[MAX_FNAME_SIZE];
 
@@ -107,6 +108,9 @@ public:
     int assign(string lvalue, string rvalue);
 
     int get_max_num_states();
+
+    // These set parameters are not private because the World needs them!!
+    int kinetics_out_fname_set;
 
 private:
     int trajectory_out_fname_set;
