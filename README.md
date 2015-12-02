@@ -1,7 +1,4 @@
-
-# Eat my shorts, Doxygen! This header line is ignored!\n 
-
-
+#
 Install 
 =======
 
@@ -78,13 +75,4 @@ Optionally, you can build the documentation typing:
 
 Finally, you can install FFEA:
 
-    make install 
-
-
-
-
-
-  
-
-
-
+    make install
