@@ -29,9 +29,11 @@ where the only fields that are taken into account are
    ` B1 `, ` B2 `, ... standing for the bead type (single word, no further restrictions)
  and the position of each bead ` x `, `y`, `z` 
  (using the same units as the ` nodes ` file). 
- This file is entered as ` beads ` within block ` conformation `. 
+ This file is entered as ` beads ` within block ` <conformation> `:
 
-The rest of the input flags are passed within block ` precomp ` in ` interactions `. 
+     <beads = beadsForBlobXConfY.pdb> 
+
+Finally, the rest of the input flags are passed within block ` <precomp> ` in ` <interactions> `. 
  Fields to be provided are: 
  * ` types ` - a comma separated list between parenthesis with the bead type names, e. g., 
                  (B1, B2, B3, B4).
