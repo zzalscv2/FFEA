@@ -220,11 +220,11 @@ public:
 
     vector3 get_node(int index);
 
-    vector3 **get_actual_node_positions();
+    void copy_node_positions(vector3 *nodes);
 
-    vector3 *get_node_positions_copy();
+    vector3 ** get_actual_node_positions();
 
-    void set_nodes(vector3 *node_pos);
+    void set_node_positions(vector3 *node_pos);
 
     void add_force_to_node(vector3 f, int index);
 
@@ -311,6 +311,7 @@ public:
 
     void print_node_positions();
     void print_bead_positions();
+
 private:
 
     /** Total number of nodes in Blob */
