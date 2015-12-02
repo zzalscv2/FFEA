@@ -94,6 +94,11 @@ void BindingSite::set_type(int site_type) {
 	this->site_type = site_type;
 }
 
+int BindingSite::get_type() {
+
+	return site_type;
+}
+
 void BindingSite::add_face(Face *aface) {
 	faces.push_back(aface);
 }

@@ -21,8 +21,7 @@ class KineticBindingSite {
 		void calc_num_nodes();
 		void calc_centroid();
 		void calc_area();
-
-		int site_type;
+		int get_type();
 		int blob_index;
 		int conf_index;
 		vector<Face*> faces;
@@ -30,6 +29,10 @@ class KineticBindingSite {
 		int num_nodes;
 		vector3 centroid;
 		scalar area;
+
+	private:
+
+		int site_type;
 };
 
 #endif
