@@ -1259,7 +1259,7 @@ int World::run() {
 				
 				// Change state based on this random number!
 				if(switch_check >= bin_limits[i][j] && switch_check < bin_limits[i][j + 1]) {
-					change_blob_state(i, j);
+					//change_blob_state(i, j);
 					break;
 				}
 			}
@@ -1282,7 +1282,7 @@ int World::run() {
     return FFEA_OK;
 }
 
-int World::change_blob_state(int blob_index, int new_state_index) {
+/* int World::change_blob_state(int blob_index, int new_state_index) {
 
 	int old_state_index = active_state_index[blob_index];
 
@@ -1347,17 +1347,17 @@ int World::change_blob_state(int blob_index, int new_state_index) {
 					}
 
 					// Get site dimensions
-					//active_blob_array[blob_index]->binding_site[i].calc_dimensions();
-					//other_blob->binding_site[j].calc_dimensions();
+					active_blob_array[blob_index]->binding_site[i].calc_dimensions();
+					other_blob->binding_site[j].calc_dimensions();
 
 					// Get distance between sites
-					//separation = KineticBindingSite::calculate_separation(active_blob_array[blob_index]->binding_site[i], other_blob->binding_site[j]);
+					separation = KineticBindingSite::calculate_separation(active_blob_array[blob_index]->binding_site[i], other_blob->binding_site[j]);
 
 					// Are we in range?
-					//if(separation <= active_blob_array[blob_index]->binding_site[i].radius + other_blob->binding_site[j].radius) {
+					if(separation <= active_blob_array[blob_index]->binding_site[i].radius + other_blob->binding_site[j].radius) {
 						
 						// We're binding! Add springs and stuff
-					//}
+					}
 				}
 			}
 		}
@@ -1373,7 +1373,8 @@ int World::change_blob_state(int blob_index, int new_state_index) {
 	// Change World pointers to states and stuff
 	active_state_index[blob_index] = new_state_index;
 	return FFEA_OK;
-}
+}*/
+
 /* int World::change_blob_state(int blob_index, int new_state_index) {
 
 	// First check if work needs to be done at all

@@ -164,28 +164,21 @@ int main(int argc, char *argv[])
 		set<int> blobs;
 		int ablob;
 		int error;
-		char buf;
+		string buf;
 		while(true) {
 			error = 0;
 			try{
 				cout << "\t\tEnter an index for the blob you would like an elastic network model for, or type 'q' to finish?:";
 
 				// Get index as string
-				scanf("%c", &buf);
-				if(buf == 'q' or buf == 'Q') {
+				cin >> buf;
+				if(buf.compare("q") == 0 or buf.compare("Q") == 0) {
 					cout << endl << "\tThat's all the blobs!" << endl;
 					break;
 				}
-			
-				// Check string
-				if(isalpha(buf)) {
-					FFEA_error_text();
-					cout << "\tPlease enter a valid blob index (0 <= x <" << world->get_num_blobs() << ")" << endl;
-					continue;
-				}
 
 				// Convert to int
-				ablob = buf - '0';
+				ablob = atoi(buf.c_str());
 
 				// Check int
 				if(ablob < 0 || ablob >= world->get_num_blobs()) {
@@ -214,17 +207,10 @@ int main(int argc, char *argv[])
 				cout << "\n\tHow many modes would you like to visualise?:";
 
 				// Get index as string
-				scanf("%c", &buf);
-
-				// Check string
-				if(isalpha(buf)) {
-					FFEA_error_text();
-					cout << "\tYou must choose a whole number i > 0 and i < 3N" << endl;
-					continue;
-				}
+				cin >> buf;
 
 				// Convert to int
-				num_modes = buf - '0';
+				num_modes = atoi(buf.c_str());
 
 				// Check int
 				if(num_modes <= 0) {
@@ -247,7 +233,7 @@ int main(int argc, char *argv[])
 		for(it = blobs.begin(); it != blobs.end(); ++it) {
 			cout << *it << " ";
 		}
-		exit(0);
+
 		if(mode == 1) {
 
 			/* Elastic Network Model */
