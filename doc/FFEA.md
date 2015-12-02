@@ -2,7 +2,8 @@
 Fluctuating Finite Element Method
 =================================
 
-# Theoretical introduction # {#ffea}
+Theoretical introduction {#ffea}
+========================
 
 Fluctuating Finite Element Analysis models proteins as visco-elastic bodies subjected to 
  thermal fluctuations. Details on this approach can be found in this
@@ -14,7 +15,8 @@ Specific interactions can be defined using precomputed potentials. Read the
 
 
 
-## User documentation ## {#ffea_user}
+User documentation  {#ffea_user}
+==================
 
 It all starts with:
 
@@ -62,6 +64,6 @@ Attributes within blocks are defined between ` < ` `  > `, using International S
      <KT = 4.11e-21>
 
 Finally, comments are allowed when enclosed between ` &lt;!-- ` and ` --> ` signs, 
-  e. g. <!-- this is a comment :) and the next one will show off in the HTML version --> 
+  e. g. <!-- this is a comment that does not show off in the HTML version :) --> 
   ` &lt;!--  this is a comment :) --> `.
 
