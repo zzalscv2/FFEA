@@ -26,6 +26,8 @@ DOXYFILE_ENCODING      = UTF-8
 # by quotes) that should identify the project.
 
 PROJECT_NAME           = FFEA
+PROJECT_BRIEF          = "Fluctuating Finite Element Analysis"
+
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number.
 # This could be handy for archiving the generated documentation or
