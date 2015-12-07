@@ -18,6 +18,8 @@ SimulationParams::SimulationParams() {
     es_N_x = -1;
     es_N_y = -1;
     es_N_z = -1;
+    move_into_box = 1;
+
     restrict_motion[0] = 0;
     restrict_motion[1] = 0;
     restrict_motion[2] = 0;
@@ -81,6 +83,7 @@ SimulationParams::~SimulationParams() {
     es_N_x = -1;
     es_N_y = -1;
     es_N_z = -1;
+    move_into_box = 0;
     restrict_motion[0] = 0;
     restrict_motion[1] = 0;
     restrict_motion[2] = 0;
@@ -238,6 +241,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "es_N_z") {
         	es_N_z = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << es_N_z << endl;
+
+	} else if (lvalue == "move_into_box") {
+        	move_into_box = atoi(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << move_into_box << endl;
 
         } else if (lvalue == "restrict_x") {
 		restrict_motion[0] = atoi(rvalue.c_str());
@@ -506,6 +513,11 @@ int SimulationParams::validate() {
             		FFEA_ERROR_MESSG("Required: Nearest neighbour lookup grid cell dimension, 'es_h', must be greater than 0.\n");
         	}
     	}
+
+	if (move_into_box != 0 && move_into_box != 1) {
+		FFEA_ERROR_MESSG("'move_into_box' must all be either 0 (system centroid preserved) or 1 (system centroid will move to centroid of simulation box).\n")
+	}
+
     } else {
 		printf("\tFRIENDLY WARNING: No electrostatic or vdw interactions will be simulated\n");
 		es_N_x = 0;
