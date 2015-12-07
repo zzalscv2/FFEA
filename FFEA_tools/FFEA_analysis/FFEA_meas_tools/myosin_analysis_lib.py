@@ -12,7 +12,7 @@ import matplotlib.pyplot as plot
 
 def run_sequential_tests(input_ffea_file,
                          head_pin_file,
-                         center_pin_file,
+#                         center_pin_file,
                          tail_pin_file,
                          head_point_index,
                          tail_point_index,
@@ -30,7 +30,6 @@ def run_sequential_tests(input_ffea_file,
     trajectory = script.load_trajectory()
     head_pin = FFEA_pin.FFEA_pin(head_pin_file)
     tail_pin = FFEA_pin.FFEA_pin(tail_pin_file)
-    center_pin = FFEA_pin.FFEA_pin(center_pin_file)
     head_subblob = trajectory.blob[0][0].define_subblob(head_pin.get_node_indices())
     tail_subblob = trajectory.blob[0][0].define_subblob(tail_pin.get_node_indices())
     
@@ -39,16 +38,20 @@ def run_sequential_tests(input_ffea_file,
     results = {}
     results["dist_trajectory"] = np.array([])
     results["lever_angle_trajectory"] = np.array([])
-    results["head_angles"] = np.array([])
+    results["twist_angles"] = np.array([])
+    results["twist_amount"] = np.array([])
     
     if dist_test:
         results["dist_trajectory"] = trajectory.calc_distance_between_subblobs(0, 0, head_subblob, tail_subblob)
     
     if twist_test:
-        results["head_angles"], results["tail_angles"] = twist_analysis(trajectory, head_pin, tail_pin, center_pin, head_line_indices, tail_line_indices)
+        results["twist_angles"] = twist_analysis(trajectory, head_pin, tail_pin, head_line_indices, tail_line_indices)
 
     if angular_distribution:
         results["lever_angle_trajectory"] = trajectory.get_lever_angle_trajectory(head_point_index, center_point_index, tail_point_index)
+
+    if twist_test and dist_test:
+        results["twist_amount"] = results["twist_angles"]/results["dist_trajectory"]
 
     if save_plots:
         filename = input_ffea_file.split(".")[0]
@@ -69,6 +72,7 @@ def plot_results(results, time_axis, filename, molecule_name):
     plot.xlabel("Time (s)")
     
     if results["dist_trajectory"].any():
+        plot.xlabel("Time (s)")
         plot.plot(time_axis, results["dist_trajectory"])
         plot.title(molecule_name+" End-to-end Distance")
         plot.ylabel("End-to-end distance (m)")
@@ -76,24 +80,24 @@ def plot_results(results, time_axis, filename, molecule_name):
         plot.cla()
         
     if results["lever_angle_trajectory"].any():
+        plot.xlabel("Time (s)")
         plot.plot(time_axis, results["lever_angle_trajectory"])
         plot.title(molecule_name+" Lever Angle Evolution")
         plot.ylabel("Lever angle (rads)")
         plot.savefig(filename+"_leverangle.pdf", format="pdf")
         plot.cla()
         
-    if results["head_angles"].any():
-        plot.plot(time_axis, results["head_angles"], label="Head")
-        plot.plot(time_axis, results["tail_angles"], label="Tail")
-        plot.title(molecule_name+" Twist Angle")
-        plot.ylabel("Angle (rad)")
-        plot.legend()
-        plot.savefig(filename+"_twist.pdf", format="pdf")
+    if results["twist_amount"].any():
+        plot.xlabel("Time (s)")
+        plot.plot(time_axis, results["twist_amount"])
+        plot.title(molecule_name+" Twist Amount")
+        plot.ylabel("Twist amount (rads/m)")
+        plot.savefig(filename+"_twist_amount.pdf", format="pdf")
         plot.cla()
         
     return
 
-def twist_analysis(trajectory, head_pin, tail_pin, center_pin, head_line_indices, tail_line_indices):
+def twist_analysis(trajectory, head_pin, tail_pin, head_line_indices, tail_line_indices):
 
     #load in data
 
@@ -104,16 +108,13 @@ def twist_analysis(trajectory, head_pin, tail_pin, center_pin, head_line_indices
 
     head = trajectory.blob[0][0].define_subblob(head_pin.get_node_indices())
     tail = trajectory.blob[0][0].define_subblob(tail_pin.get_node_indices())
-    center = trajectory.blob[0][0].define_subblob(center_pin.get_node_indices())
 
     print("Getting centroids...")    
     
     head_centroid = trajectory.blob[0][0].get_centroid_trajectory(head)
     tail_centroid = trajectory.blob[0][0].get_centroid_trajectory(tail)
-    center_centroid = trajectory.blob[0][0].get_centroid_trajectory(center)
     
-    head_angles = np.zeros(len(head_centroid))
-    tail_angles = np.zeros(len(head_centroid))
+    twist_angles = np.zeros(len(head_centroid))
 
     print("Projecting and calculating angles...")    
     
@@ -121,7 +122,6 @@ def twist_analysis(trajectory, head_pin, tail_pin, center_pin, head_line_indices
         
         head_point = head_centroid[frame_num]
         tail_point = tail_centroid[frame_num]
-        center_point = center_centroid[frame_num]
         
         head_line_transformed = np.zeros([len(head_line_indices), 3])
         tail_line_transformed = np.zeros([len(tail_line_indices), 3])
@@ -129,44 +129,20 @@ def twist_analysis(trajectory, head_pin, tail_pin, center_pin, head_line_indices
         # transfooorm!
 
         for i in range(len(head_line_indices)):
-            head_line_transformed[i] = transform_point(trajectory.blob[0][0].frame[frame_num].pos[head_line_indices[i]], head_point, center_point)
+            head_line_transformed[i] = transform_point(trajectory.blob[0][0].frame[frame_num].pos[head_line_indices[i]], head_point, tail_point)
         for i in range(len(tail_line_indices)):
-            tail_line_transformed[i] = transform_point(trajectory.blob[0][0].frame[frame_num].pos[tail_line_indices[i]], center_point, tail_point)
-        
-        #project into 2d        
-        
-        head_line_transformed_projection = head_line_transformed[:,0:2] # get only the 1st 2 dimensions
-        tail_line_transformed_projection = tail_line_transformed[:,0:2] # change this if that's wrong
-        
-        frame_head_gradient = get_gradient_from_points(head_line_transformed_projection)
-        frame_tail_gradient = get_gradient_from_points(tail_line_transformed_projection)
-        
-        if frame_num==0:
-            head_angles[0] = 0
-            first_head_gradient = frame_head_gradient
-            first_tail_gradient = frame_tail_gradient
-        else:
-            head_angles[frame_num] = get_angle_between_two_gradients(first_head_gradient, frame_head_gradient)
-            tail_angles[frame_num] = get_angle_between_two_gradients(first_tail_gradient, frame_tail_gradient)
-    
-    print("Done!")    
-    
-    return head_angles, tail_angles
+            tail_line_transformed[i] = transform_point(trajectory.blob[0][0].frame[frame_num].pos[tail_line_indices[i]], head_point, tail_point)
 
-################
-#              #
-#  MISCELLANY  #
-#              #
-################
-
-def get_angle_between_two_gradients(m1, m2): #in radians
-    return np.arctan( (m2-m1)/(1 + (m2*m1))  )
+        head_vector = get_vector_from_average_points(head_line_transformed)
+        tail_vector = get_vector_from_average_points(tail_line_transformed)
+        
+        angle = get_angle_between_vectors(head_vector, tail_vector)
+        
+        twist_angles[frame_num] = angle
+         
+    print("Done calculating twist angles!")    
     
-def get_gradient_from_points(points): # a 2-d array wherein each point has its own row
-    A = np.rot90(np.array([points[:,0], np.ones(len(points[:,0]))]), 3) #why numpy wants it in this format i have no idea
-    y = points[:,1]
-    m, c = np.linalg.lstsq(A, y)[0]
-    return m
+    return twist_angles
 
 ##################
 #                #
@@ -195,3 +171,12 @@ def get_t_from_plane_normal_and_position(plane_normal, plane_position, point):
     
 def get_new_point_coords(plane_normal, point, t):
     return point + plane_normal*t
+    
+def get_vector_from_average_points(points_array): # a 2-d array with cols for x y and z
+    return np.array([np.sum(points_array[:,0]), np.sum(points_array[:,1]), np.sum(points_array[:,2])]  )
+    
+def get_angle_between_vectors(vec1, vec2): #it's sad that these are for 3d points only they should be n-dimensional really
+    dot_product = np.sum(vec1*vec2)
+    mag1 = np.sqrt(vec1[0]**2+vec1[1]**2+vec1[2]**2)
+    mag2 = np.sqrt(vec2[0]**2+vec2[1]**2+vec2[2]**2)
+    return np.arccos(dot_product/(mag1*mag2))
