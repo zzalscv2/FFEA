@@ -413,7 +413,6 @@ class FFEA_traj_blob:
 				return None
 		else:
 			nodes = self.subblob[subblob_index]
-			print(nodes)
 
 		centroid = np.array([[0.0,0.0,0.0] for i in range(len(self.frame))])
 		i = -1
