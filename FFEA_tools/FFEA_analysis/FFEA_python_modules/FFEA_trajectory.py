@@ -156,7 +156,7 @@ class FFEA_trajectory:
 							frame.pos[j][k] = float(sline[k])
 
 					except(ValueError, IndexError):
-						print("Error. Expected '%f %f %f' at the very least.")
+						print("Error on frame "+str(num_frames_read+num_frames_skipped-1)+" pos "+str(j)+". Expected '%f %f %f' at the very least.")
 						print sline
 						self.reset()
 						fin.close()
@@ -413,6 +413,7 @@ class FFEA_traj_blob:
 				return None
 		else:
 			nodes = self.subblob[subblob_index]
+			print(nodes)
 
 		centroid = np.array([[0.0,0.0,0.0] for i in range(len(self.frame))])
 		i = -1
