@@ -41,3 +41,19 @@ if (RESULT_VAR)
 else ()
   message(FATAL_ERROR "Checking C++11 support for fstream-string - Failed")
 endif ()
+
+
+##############################
+# CHECK 3 #### Check for initalising structures: 
+# message(STATUS "Checking C++11 support for extended initialiser lists")
+# try_compile(RESULT_VAR 
+#            "${CMAKE_CURRENT_BINARY_DIR}/cxx11_fstream-string"
+#            "${PROJECT_SOURCE_DIR}/cmake/tests/initialiseStruct.cpp"
+#            COMPILE_DEFINITIONS "${CXX11_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}"
+#            OUTPUT_VARIABLE OUTPUT)
+# 
+# if (RESULT_VAR)
+#   message(STATUS "Checking C++11 support for extended initialiser lists - Success")
+# else ()
+#   message(FATAL_ERROR "Checking C++11 support for extended initialiser lists - Failed")
+# endif ()
