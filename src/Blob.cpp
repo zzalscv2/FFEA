@@ -369,8 +369,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         }
 
         // const scalar charge_density = 6.0e25;
-        Dimensions dimens; 
-        const scalar charge_density = 6.0e25 * dimens.meso.volume / dimens.meso.charge;
+        const scalar charge_density = 6.0e25 * mesoDimensions::volume / mesoDimensions::charge;
         for (int n = 0; n < num_elements; n++) {
             for (int i = 0; i < 10; i++) {
                 q[elem[n].n[i]->index] += charge_density * elem[n].vol_0;
@@ -821,7 +820,6 @@ int Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
 
 void Blob::write_nodes_to_file(FILE *trajectory_out) {
     // If this is a static blob, then don't bother printing out all the node positions (since there will be no change)
-    Dimensions dimens;
     if (blob_state == FFEA_BLOB_IS_STATIC) {
         fprintf(trajectory_out, "STATIC\n");
         return;
@@ -833,17 +831,16 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
 
     for (int i = 0; i < num_nodes; i++) {
         fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
-            node[i].pos.x*dimens.meso.length, node[i].pos.y*dimens.meso.length, node[i].pos.z*dimens.meso.length, 
-            node[i].vel.x*dimens.meso.velocity, node[i].vel.y*dimens.meso.velocity, node[i].vel.z*dimens.meso.velocity, 
+            node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length, 
+            node[i].vel.x*mesoDimensions::velocity, node[i].vel.y*mesoDimensions::velocity, node[i].vel.z*mesoDimensions::velocity, 
             node[i].phi, 
-            force[i].x*dimens.meso.force, force[i].y*dimens.meso.force, force[i].z*dimens.meso.force);
+            force[i].x*mesoDimensions::force, force[i].y*mesoDimensions::force, force[i].z*mesoDimensions::force);
     }
 }
 
 int Blob::read_nodes_from_file(FILE *trajectory_out) {
     char state_str[20];
     char *result = NULL;
-    Dimensions dimens;
 
     // If blob is static, don't read any nodes. Simply read the word "STATIC"
     if (blob_state == FFEA_BLOB_IS_STATIC) {
@@ -866,15 +863,15 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
         if (fscanf(trajectory_out, "%le %le %le %le %le %le %le %le %le %le\n", &node[i].pos.x, &node[i].pos.y, &node[i].pos.z, &node[i].vel.x, &node[i].vel.y, &node[i].vel.z, &node[i].phi, &force[i].x, &force[i].y, &force[i].z) != 10) {
             FFEA_ERROR_MESSG("(When restarting) Error reading from trajectory file, for node %d\n", i)
         } else {
-          node[i].pos.x /= dimens.meso.length;
-          node[i].pos.y /= dimens.meso.length;
-          node[i].pos.z /= dimens.meso.length;
-          node[i].vel.x /= dimens.meso.velocity; 
-          node[i].vel.y /= dimens.meso.velocity; 
-          node[i].vel.z /= dimens.meso.velocity; 
-          force[i].x /= dimens.meso.force;
-          force[i].y /= dimens.meso.force;
-          force[i].z /= dimens.meso.force;
+          node[i].pos.x /= mesoDimensions::length;
+          node[i].pos.y /= mesoDimensions::length;
+          node[i].pos.z /= mesoDimensions::length;
+          node[i].vel.x /= mesoDimensions::velocity; 
+          node[i].vel.y /= mesoDimensions::velocity; 
+          node[i].vel.z /= mesoDimensions::velocity; 
+          force[i].x /= mesoDimensions::force;
+          force[i].y /= mesoDimensions::force;
+          force[i].z /= mesoDimensions::force;
         }
 
     }
@@ -938,7 +935,6 @@ scalar Blob::calculate_strain_energy() {
 
 void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_CoM) {
     // Only calculate and write out measurements if there is an open measurement output file
-    Dimensions dimens; 
     if (measurement_out != NULL) {
         int n, i, j;
         scalar ke, pe, com_x, com_y, com_z, L_x, L_y, L_z;
@@ -1111,13 +1107,13 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
         // print out all measurements to file
         fprintf(measurement_out, 
          "%d\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\n", 
-         step, ke*dimens.meso.Energy, pe*dimens.meso.Energy, 
-         com_x*dimens.meso.length, com_y*dimens.meso.length, com_z*dimens.meso.length, 
-         L_x*dimens.meso.length, L_y*dimens.meso.length, L_z*dimens.meso.length, 
-         rmsd*dimens.meso.length, 
-         mag(&total_vdw_xz_force)*dimens.meso.force,
-         total_vdw_xz_energy*dimens.meso.Energy,
-         total_vdw_xz_area*dimens.meso.area);
+         step, ke*mesoDimensions::Energy, pe*mesoDimensions::Energy, 
+         com_x*mesoDimensions::length, com_y*mesoDimensions::length, com_z*mesoDimensions::length, 
+         L_x*mesoDimensions::length, L_y*mesoDimensions::length, L_z*mesoDimensions::length, 
+         rmsd*mesoDimensions::length, 
+         mag(&total_vdw_xz_force)*mesoDimensions::force,
+         total_vdw_xz_energy*mesoDimensions::Energy,
+         total_vdw_xz_area*mesoDimensions::area);
     }
 }
 
@@ -1138,7 +1134,6 @@ void Blob::calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_
       scalar total_vdw_bb_energy = 0.0;
       scalar total_vdw_bb_area = 0.0;
       vector3_set_zero(&total_vdw_bb_force);
-      Dimensions dimens; 
       for (int i = 0; i < num_surface_faces; ++i) {
           if (surface[i].vdw_bb_interaction_flag[other_blob_index] == true) {
               total_vdw_bb_force.x += surface[i].vdw_bb_force[other_blob_index].x;
@@ -1148,7 +1143,7 @@ void Blob::calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_
               total_vdw_bb_area += surface[i].area;
           }
       }
-      fprintf(vdw_measurement_out, "%e %e %e ", total_vdw_bb_area*dimens.meso.area, mag(&total_vdw_bb_force)*dimens.meso.force, total_vdw_bb_energy*dimens.meso.Energy);
+      fprintf(vdw_measurement_out, "%e %e %e ", total_vdw_bb_area*mesoDimensions::area, mag(&total_vdw_bb_force)*mesoDimensions::force, total_vdw_bb_energy*mesoDimensions::Energy);
     } else {
       fprintf(vdw_measurement_out, "%e %e %e ", 0e0, 0e0, 0e0);
     }
@@ -2081,8 +2076,7 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
     }
     fclose(in);
 
-    Dimensions dimens; 
-    printf("\t\t\tSmallest Face Area = %e\n", smallest_A * dimens.meso.area);
+    printf("\t\t\tSmallest Face Area = %e\n", smallest_A * mesoDimensions::area);
     if (i == 1)
         printf("\t\t\tRead 1 surface face from %s\n", surface_filename);
     else
@@ -2213,7 +2207,6 @@ int Blob::load_material_params(const char *material_params_filename) {
     }
 
     // Set the material parameters for each element in the Blob
-    Dimensions dimens;
     scalar density = 0.0, shear_visc = 0.0, bulk_visc = 0.0, shear_mod = 0.0, bulk_mod = 0.0, dielectric = 0.0;
     int i;
     for (i = 0; i < num_elements; i++) {
@@ -2221,11 +2214,11 @@ int Blob::load_material_params(const char *material_params_filename) {
             fclose(in);
             FFEA_ERROR_MESSG("Error reading from material params file at element %d. There should be 6 space separated real values (density, shear_visc, bulk_visc, shear_mod, bulk_mod, dielectric).\n", i);
         }
-        elem[i].rho = density * dimens.meso.volume / dimens.meso.mass ;
-        elem[i].A = shear_visc / (dimens.meso.pressure * dimens.meso.time);
-        elem[i].B = bulk_visc / (dimens.meso.pressure * dimens.meso.time) - (2.0 / 3.0) * shear_visc; // Code uses second coefficient of viscosity
-        elem[i].G = shear_mod / dimens.meso.pressure;
-        elem[i].E = bulk_mod / dimens.meso.pressure;
+        elem[i].rho = density * mesoDimensions::volume / mesoDimensions::mass ;
+        elem[i].A = shear_visc / (mesoDimensions::pressure * mesoDimensions::time);
+        elem[i].B = bulk_visc / (mesoDimensions::pressure * mesoDimensions::time) - (2.0 / 3.0) * shear_visc; // Code uses second coefficient of viscosity
+        elem[i].G = shear_mod / mesoDimensions::pressure;
+        elem[i].E = bulk_mod / mesoDimensions::pressure;
         elem[i].dielectric = dielectric; // relative permittivity. 
     }
 
@@ -2680,17 +2673,15 @@ void Blob::calc_rest_state_info() {
         printf("\t\tAll elements have volume 0 cubic Angstroms.\n");
         min_vol = 0.0;
     } else {
-        Dimensions dimens; 
-        printf("\t\tTotal rest volume of Blob is %e cubic Angstroms.\n", total_vol * dimens.meso.volume* 1e30);
-        printf("\t\tSmallest element (%i) has volume %e cubic Angstroms.\n", min_vol_elem, min_vol * dimens.meso.volume * 1e30);
+        printf("\t\tTotal rest volume of Blob is %e cubic Angstroms.\n", total_vol * mesoDimensions::volume* 1e30);
+        printf("\t\tSmallest element (%i) has volume %e cubic Angstroms.\n", min_vol_elem, min_vol * mesoDimensions::volume * 1e30);
     }
 
     // Calc the total mass of this Blob
     for (int i = 0; i < num_elements; i++) {
         mass += elem[i].mass;
     }
-    Dimensions dimens; 
-    printf("\t\tTotal mass of blob = %e\n", mass*dimens.meso.mass);
+    printf("\t\tTotal mass of blob = %e\n", mass*mesoDimensions::mass);
 }
 
 /*
