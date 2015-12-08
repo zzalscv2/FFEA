@@ -154,6 +154,7 @@ class FFEA_viewer_display_window():
 		es_N_y = None
 		es_N_z = None
 		es_h = None
+		move_into_box = 1
 		self.num_blobs = 0
 		self.total_num_blobs = 0
 		self.num_conformations = []
@@ -198,6 +199,8 @@ class FFEA_viewer_display_window():
 				es_h = int(rvalue)
 			elif lvalue == "num_blobs":
 				self.num_blobs = int(rvalue)
+			elif lvalue == "move_into_box":
+				self.move_into_box = int(rvalue)
 
 			elif lvalue == "num_conformations":
 
@@ -406,11 +409,12 @@ class FFEA_viewer_display_window():
 		world_centroid[1] *= 1.0 / total_num_nodes
 		world_centroid[2] *= 1.0 / total_num_nodes
 
-		# Translation to box center
+		# Translation to box center (if necessary)
 		shift = [0.0,0.0,0.0]
-		shift[0] = self.box_x / 2.0 - world_centroid[0]
-		shift[1] = self.box_y / 2.0 - world_centroid[1]
-		shift[2] = self.box_z / 2.0 - world_centroid[2]
+		if move_into_box == 0:
+			shift[0] = self.box_x / 2.0 - world_centroid[0]
+			shift[1] = self.box_y / 2.0 - world_centroid[1]
+			shift[2] = self.box_z / 2.0 - world_centroid[2]
 
 		# Shift to the global centroid if static, else load nodes from traj
 		if trajectory_out_fname == None:

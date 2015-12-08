@@ -13,7 +13,7 @@ class FFEA_binding_sites:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found. Creating empty object...done!"
+			print "File " + fname  + " not found.\nCreating empty object...done!"
 			self.reset()
 			return
 
@@ -29,7 +29,7 @@ class FFEA_binding_sites:
 
 		except(ValueError):
 			print "Error. Expected to read:"
-			print "num_binding_sites = %d"
+			print "num_binding_sites %d"
 			self.reset()
 			fin.close()
 			return
@@ -43,17 +43,18 @@ class FFEA_binding_sites:
 
 		for i in range(self.num_binding_sites):
 			indices = []
-			num_faces
 			try:
 				line = fin.readline()
 				if line == [] or line == None or line == "":
 					raise EOFError
 
 				sline = line.split()
-				num_faces = int(sline[0])
-				if num_faces != len(sline) - 1:
+				site_type = int(sline[0])
+				num_faces = int(sline[1])
+				if num_faces != len(sline) - 2:
 					raise IndexError
 
+				self.bsites[i].set_type(site_type)
 				self.bsites[i].set_structure([int(index) for index in sline[1:]])
 
 			except(EOFError):
@@ -63,23 +64,23 @@ class FFEA_binding_sites:
 				return
 
 			except(IndexError, ValueError):
-				print "Error. Expected " + str(num_faces) + " faces for binding site " + str(i) + ", but found " + str(len(sline) - 1)
+				print "Error. Expected " + str(num_faces) + " faces for binding site " + str(i) + ", but found " + str(len(sline) - 2)
 				self.reset()
 				fin.close()
 				return
 		
 		fin.close()
 
-	def write_to_file(fname)
+	def write_to_file(self, fname):
 
 		fout = open(fname, "w")
 
 		# Write the header info
-		fout.write("ffea binding sites file\nnum_binding_sites = %d\nbinding sites:\n" % (self.num_binding_sites))
+		fout.write("ffea binding sites file\nnum_binding_sites %d\nbinding sites:\n" % (self.num_binding_sites))
 		
 		# Write the sites
 		for s in self.bsites:
-			fout.write("%d" % (s.num_faces))
+			fout.write("%d %d" % (s.site_type, s.num_faces))
 			
 			for f in s.face_index:
 				fout.write(" %d" % (f))
@@ -88,8 +89,11 @@ class FFEA_binding_sites:
 
 	def add_site(self, bsite):
 
-		self.bsites.append(bsite)
-		self.num_binding_sites += 1
+		if bsite.num_faces == 0:
+			print("Your binding site has no faces i.e. is empty. Will not add to structure.\n")
+		else:
+			self.bsites.append(bsite)
+			self.num_binding_sites += 1
 
 	def reset(self):
 		self.bsites = []
@@ -103,8 +107,13 @@ class FFEA_binding_site:
 
 	def reset(self):
 
+		self.site_type = -1
 		self.num_faces = 0
 		self.face_index = []
+
+	def set_type(self, site_type):
+
+		self.site_type = site_type
 
 	def set_structure(self, faces):
 		
