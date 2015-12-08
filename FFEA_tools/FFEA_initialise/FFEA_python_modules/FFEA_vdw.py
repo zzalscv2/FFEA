@@ -13,7 +13,7 @@ class FFEA_vdw:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found."
+			print "File " + fname  + " not found.\nReturning empty object."
 			return
 
 		# Header
@@ -28,7 +28,7 @@ class FFEA_vdw:
 
 		except(ValueError):
 			print "Error. Expected to read:"
-			print "num_faces = %d"
+			print "num_faces %d"
 			self.reset()
 			fin.close()
 			return
@@ -60,8 +60,29 @@ class FFEA_vdw:
 				fin.close()
 				return
 		
-		print self.vdw_index
 		fin.close()
+
+	def write_to_file(self, fname):
+
+		fout = open(fname, "w")
+
+		# Write header info
+		fout.write("ffea vdw file\nnum_faces %d\nvdw params:\n" % (self.num_faces))
+
+		# Write indices
+		for ind in self.vdw_index:
+			fout.write(str(ind) + "\n")
+
+		fout.close()
+
+	def set_num_faces(self, num_faces):
+	
+		self.num_faces = num_faces
+		self.make_inactive()
+
+	def make_inactive(self):
+
+		self.vdw_index = [-1 for i in range(self.num_faces)]
 
 	def reset(self):
 		self.vdw_index = []

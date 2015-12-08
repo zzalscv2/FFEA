@@ -75,7 +75,14 @@ class FFEA_face:
 	def calc_centroid(self, node):
 
 		centroid = np.array([0.0,0.0,0.0])
-		for n in self.n
+		for n in self.n:
 			centroid += node.pos[n]
 		
 		return centroid * 1.0/3.0
+
+	def get_normal(self, node):
+
+		v1 = node.pos[self.n[1]] - node.pos[self.n[0]]
+		v2 = node.pos[self.n[2]] - node.pos[self.n[1]]
+		norm = np.cross(v1,v2)
+		return norm * 1.0 / np.linalg.norm(norm)
