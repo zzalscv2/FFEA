@@ -335,19 +335,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			fscanf(trajectory_out, "*\n");
 			last_asterisk_pos = ftello(trajectory_out);
 
+			// Load next frame
 			printf("Loading Blob position and velocity data from last completely written snapshot \n");
 			int blob_id, conformation_id;
 			long long rstep;
 			for (int b = 0; b < params.num_blobs; b++) {
 				if (fscanf(trajectory_out, "Blob %d, Conformation %d, step %lld\n", &blob_id, &conformation_id, &rstep) != 3) {
-					fgets(sline, 255, trajectory_out);
-					cout << sline << endl;
-					fgets(sline, 255, trajectory_out);
-					cout << sline << endl;
-					fgets(sline, 255, trajectory_out);
-					cout << sline << endl;
-					fgets(sline, 255, trajectory_out);
-					cout << sline << endl;
 					FFEA_ERROR_MESSG("Error reading header info for Blob %d\n", b)
 			    	}
 			    if (blob_id != b) {
@@ -358,6 +351,16 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 				FFEA_ERROR_MESSG("Error restarting blob %d\n", blob_id)
 			    }
 			}
+
+			// Final conformation bit
+			fscanf(trajectory_out, "*\nConformation Changes:\n");
+			for(i = 0; i < params.num_blobs; ++i) {
+				fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %*d\n");
+			}
+			fscanf(trajectory_out, "*\n");
+
+			// Set truncation location
+			last_asterisk_pos = ftello(trajectory_out);
 			step_initial = rstep;
 			printf("...done. Simulation will commence from step %lld\n", step_initial);
 			fclose(trajectory_out);
