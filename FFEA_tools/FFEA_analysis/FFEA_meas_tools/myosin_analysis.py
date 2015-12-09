@@ -36,11 +36,11 @@ def convert_array_in_dict_to_list(dict):
 parser = argparse.ArgumentParser(description="CLI for analysing Myosin-7 trajectory files")
 
 parser.add_argument("FFEA_filename", action="store", help="Path to input .ffea file")
-parser.add_argument("head_pin_file", action="store", help="Path to pinfile containing head")
-parser.add_argument("tail_pin_file", action="store", help="Path to pinfile containing tail")
-parser.add_argument("head_point_index", action="store", help="Index of a node in the center of the head")
-parser.add_argument("middle_point_index", action="store", help="Index of a node in the center of the molecule (ideally in the bendiest possible part)")
-parser.add_argument("tail_point_index", action="store", help="Index of a node in the center of the tail")
+parser.add_argument("-head_pin_file", action="store", help="Path to pinfile containing head")
+parser.add_argument("-tail_pin_file", action="store", help="Path to pinfile containing tail")
+parser.add_argument("-head_point_index", action="store", help="Index of a node in the center of the head")
+parser.add_argument("-middle_point_index", action="store", help="Index of a node in the center of the molecule (ideally in the bendiest possible part)")
+parser.add_argument("-tail_point_index", action="store", help="Index of a node in the center of the tail")
 parser.add_argument("-twist", action="store_true", help="Whether to perform a twist test")
 parser.add_argument("-head_line", action="store", nargs="+", help="Indices of points forming a line through the molecule\'s head, orthogonal to the principal axis (e.g. 3 34 51 57).")
 parser.add_argument("-tail_line", action="store", nargs="+", help="Indices of points forming a line through the molecule\'s tail, orthogonal to the principal axis.")
@@ -57,9 +57,9 @@ args.tail_line = convert_string_list(args.tail_line)
 results = myosin_analysis_lib.run_sequential_tests(args.FFEA_filename,
                                                    args.head_pin_file,
                                                    args.tail_pin_file,
-                                                   args.head_point_index,
-                                                   args.tail_point_index,
-                                                   args.middle_point_index,
+                                                   int(args.head_point_index),
+                                                   int(args.tail_point_index),
+                                                   int(args.middle_point_index),
                                                    args.head_line,
                                                    args.tail_line,
                                                    args.twist,
@@ -73,4 +73,4 @@ results = convert_array_in_dict_to_list(results)
 out_filename = args.FFEA_filename.split('.')[0]+"_myosin_analysis.json"
 
 with open(out_filename, 'w') as outfile:
-    json.dump(results)
+    json.dump(results, outfile)
