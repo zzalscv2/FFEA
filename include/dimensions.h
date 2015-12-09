@@ -4,6 +4,47 @@
 #include "mat_vec_types.h"
 
 
+namespace mesoDimensions {
+   const scalar length = 1.7e-10; /* length = C atom VdW radius */
+   const scalar Energy = 4.142e-21; /* Energy = KbT */
+   const scalar mass = 1.994307387553024e-26; /* mass = C atom mass */
+   const scalar charge = 1.602176565e-19;  /* charge = electron charge */ 
+   const scalar area = 2.89e-20; /* area */ 
+   const scalar volume = 4.913e-30; /* volume */ 
+   const scalar force = 2.4364705882352941e-11; /* force = E/l */
+   const scalar time = 3.7302670416342907e-13; /* time = sqrt(m*l/f) */
+   const scalar pressure = 8.4306940769387329e8; /* pressure */
+   const scalar velocity = 4.5573144791671604e2; /* velocity */
+}
+
+namespace atomicDimensions {
+   const scalar length = 5.2917721092e-11; /* length */
+   const scalar Energy = 4.35974417e-18; /* Energy */
+   const scalar mass = 9.10938291e-31; /* mass */
+   const scalar charge = 1.602176565e-19; /* charge */
+   const scalar area = 2.8002852055707021e-21; /* area */ 
+   const scalar volume = 1.4818471148644432e-31; /* volume */ 
+   const scalar force = 8.2387224544692213e-08; /* force */
+   const scalar time = 2.418884326505e-17; /* time */
+   const scalar pressure = 2.9421912e13; /* pressure */
+   const scalar velocity = 2.1876912633e6; /* velocity */
+}
+
+
+namespace isDimensions {
+   const scalar length = 1;
+   const scalar Energy = 1;
+   const scalar mass = 1;
+   const scalar charge = 1;
+   const scalar area = 1;
+   const scalar volume = 1;
+   const scalar force = 1;
+   const scalar time = 1;
+   const scalar pressure = 1;
+   const scalar velocity = 1;
+}
+
+
 typedef struct {
    const scalar length;
    const scalar Energy;
@@ -17,48 +58,5 @@ typedef struct {
    const scalar velocity;
 } dimset;
 
-class Dimensions{
-  public:
-    dimset meso {
-          1.7e-10, /* length = C atom VdW radius */
-          4.142e-21, /* Energy = KbT */
-          1.994307387553024e-26, /* mass = C atom mass */
-          1.602176565e-19,  /* charge = electron charge */
-          2.89e-20, /* area */ 
-          4.913e-30, /* volume */ 
-          2.4364705882352941e-11, /* force = E/l */
-          3.7302670416342907e-13, /* time = sqrt(m*l/f) */
-          8.4306940769387329e8, /* pressure */
-          4.5573144791671604e2 /* velocity */
-    };
-
-    dimset atomic {
-          5.2917721092e-11, /* length */ 
-          4.35974417e-18, /* Energy */
-          9.10938291e-31, /* mass */
-          1.602176565e-19, /* charge */
-          2.8002852055707021e-21, /* area */
-          1.4818471148644432e-31, /* volume */
-          8.2387224544692213e-08, /* force */
-          2.418884326505e-17, /* time */
-          2.9421912e13, /* pressure */
-          2.1876912633e6 /* velocity */
-    };
-    
-    dimset is {
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
-    };
-    
-    
-};
 
 #endif

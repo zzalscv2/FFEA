@@ -152,7 +152,6 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 
 int SimulationParams::assign(string lvalue, string rvalue) {
 	
-        Dimensions dimens;
 	// Carry out parameter assignments
 	if (lvalue == "restart") {
 		restart = atoi(rvalue.c_str());
@@ -161,7 +160,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "dt") {
 		dt = atof(rvalue.c_str());
 		cout << "\tSetting " << lvalue << " = " << dt << endl;
-                dt /= dimens.meso.time;
+                dt /= mesoDimensions::time;
 
 	} else if (lvalue == "epsilon") {
 		epsilon2 = atof(rvalue.c_str());
@@ -277,12 +276,12 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     	} else if (lvalue == "kT") {
         	kT = atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << kT << endl;
-                kT /= dimens.meso.Energy;
+                kT /= mesoDimensions::Energy;
 
 	} else if (lvalue == "kappa") {
         	kappa = atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << kappa << endl;
-        	kappa *= dimens.meso.length;
+        	kappa *= mesoDimensions::length;
 
     	} else if (lvalue == "dielec_ext") {
         	dielec_ext = atof(rvalue.c_str());
@@ -319,7 +318,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "stokes_visc") {
         	stokes_visc = atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << stokes_visc << endl;
-                stokes_visc /= dimens.meso.pressure * dimens.meso.time;
+                stokes_visc /= mesoDimensions::pressure * mesoDimensions::time;
 
 	} else if (lvalue == "wall_x_1") {
 		if (rvalue == "PBC") {
@@ -601,10 +600,9 @@ int SimulationParams::validate() {
     }
     printf("...done\n");
 
-    Dimensions dimens;
     printf("Parameters:\n");
     printf("\trestart = %d\n", restart);
-    printf("\tdt = %e\n", dt*dimens.meso.time);
+    printf("\tdt = %e\n", dt*mesoDimensions::time);
     printf("\tnum_steps = %lld\n", num_steps);
     printf("\tcheck = %d\n", check);
     printf("\tnum_blobs = %d\n", num_blobs);
@@ -614,7 +612,7 @@ int SimulationParams::validate() {
         printf("\t\tnum_states = %d\n", num_states[i]);
     }
     printf("\trng_seed = %d\n", rng_seed);
-    printf("\tkT = %e\n", kT*dimens.meso.Energy);
+    printf("\tkT = %e\n", kT*mesoDimensions::Energy);
     printf("\ttrajectory_out_fname = %s\n", trajectory_out_fname);
     for (int i = 0; i < num_blobs + 1; ++i) {
         printf("\tmeasurement_out_fname %d = %s\n", i, measurement_out_fname[i]);
@@ -628,7 +626,7 @@ int SimulationParams::validate() {
     printf("\tes_N_y = %d\n", es_N_y);
     printf("\tes_N_z = %d\n", es_N_z);
     printf("\tes_h = %e x inverse kappa\n", es_h);
-    printf("\tkappa = %e\n", kappa/dimens.meso.length);
+    printf("\tkappa = %e\n", kappa/mesoDimensions::length);
     printf("\tepsilon_0 = %e\n", epsilon_0);
     printf("\tdielec_ext = %e\n", dielec_ext);
     printf("\tcalc_vdw = %d\n", calc_vdw);
@@ -637,7 +635,7 @@ int SimulationParams::validate() {
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
     printf("\tcalc_preComp = %d\n", calc_preComp);
     printf("\tcalc_stokes = %d\n", calc_stokes);
-    printf("\tstokes_visc = %f\n", stokes_visc*dimens.meso.pressure*dimens.meso.time);
+    printf("\tstokes_visc = %f\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
 
     if(calc_kinetics == 1 && binding_params_fname_set == 1) {
