@@ -3,7 +3,7 @@
 	<dt = 1e-14>
 	<kT = 4.11e-21>
 	<check = 1e3>
-	<num_steps = 5e4>
+	<num_steps = 1e4>
 	<rng_seed = time>
 	<trajectory_out_fname = sphere_63_120_nomass/sphere_63_120_nomass_trajectory.out>
 	<measurement_out_fname = sphere_63_120_nomass/sphere_63_120_nomass_measurement.out>
