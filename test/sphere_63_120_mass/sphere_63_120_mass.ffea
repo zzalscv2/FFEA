@@ -50,6 +50,6 @@
 		</conformation>
 		<solver = CG>
 		<scale = 5e-9>
-		<centroid = (0.0,0.0,0.0)>
+		<centroid_pos = (0.0,0.0,0.0)>
 	</blob>
 </system>

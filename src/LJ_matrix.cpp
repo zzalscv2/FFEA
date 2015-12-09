@@ -9,7 +9,6 @@ int LJ_matrix::init(const char *vdw_params_fname) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
-    Dimensions dimens;
 
     if ((in = fopen(vdw_params_fname, "r")) == NULL) {
         FFEA_FILE_ERROR_MESSG(vdw_params_fname)
@@ -56,8 +55,8 @@ int LJ_matrix::init(const char *vdw_params_fname) {
                 FFEA_ERROR_MESSG("Required: 'vdw_r_eq' must be greater than 0 if you wish to use vdw (calc_vdw is 1)\n")
             }
 
-            params[LJI(i, j)].vdw_eps = vdw_eps * dimens.meso.area * dimens.meso.area / dimens.meso.Energy ;
-            params[LJI(i, j)].vdw_r_eq = vdw_r_eq / dimens.meso.length ;
+            params[LJI(i, j)].vdw_eps = vdw_eps * mesoDimensions::area * mesoDimensions::area / mesoDimensions::Energy ;
+            params[LJI(i, j)].vdw_r_eq = vdw_r_eq / mesoDimensions::length ;
         }
     }
 
