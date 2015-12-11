@@ -111,6 +111,7 @@ private:
     Blob **active_blob_array;
     int *active_conformation_index;
     int *previous_conformation_index;
+    int *previous_state_index;
     int *active_state_index;
 
     /** @brief Maps for kinetic switching of conformations */
@@ -230,6 +231,8 @@ private:
 
     void write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes);
     
+    void print_kinetics();
+
     void print_trajectory_and_measurement_files(int step, scalar wtime);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);

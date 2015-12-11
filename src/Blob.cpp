@@ -33,6 +33,7 @@ Blob::Blob() {
     poisson_rhs = NULL;
     num_pinned_nodes = 0;
     pinned_nodes_list = NULL;
+    bsite_pinned_nodes_list.clear();
 }
 
 Blob::~Blob() {
@@ -99,6 +100,7 @@ Blob::~Blob() {
     mass = 0;
     rng = NULL;
     num_pinned_nodes = 0;
+    bsite_pinned_nodes_list.clear();
 }
 
 
@@ -204,7 +206,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
         // Initialise the Solver (whatever it may be)
         printf("\t\tBuilding solver:\n");
-        if (solver->init(num_nodes, num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list) == FFEA_ERROR) {
+        if (solver->init(num_nodes, num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error initialising solver.\n")
         }
     }
@@ -507,6 +509,18 @@ int Blob::update() {
     }
 
     return FFEA_OK;
+}
+
+int Blob::reinit_solver() {
+
+	// Delete and rebuild (to make sure everything is overwritten)
+	
+        if (solver->init(num_nodes, num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
+            FFEA_ERROR_MESSG("Error reinitialising solver.\n")
+        } else {
+		return FFEA_OK;
+	}
+	params->calc_noise = 0;
 }
 
 void Blob::translate_linear(vector3 *vec) {
@@ -2143,15 +2157,21 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
                 FFEA_ERROR_MESSG("Error: Surface face %d references an out of bounds node index\n", i);
             }
 
-            int n1_el = elem[element].what_node_is_this(n1), n2_el = elem[element].what_node_is_this(n2), n3_el = elem[element].what_node_is_this(n3);
-            int n_op = elem[element].get_opposite_node(n1_el, n2_el, n3_el); 
-            if (n_op == -1)
-              FFEA_ERROR_MESSG("Error: Could not find the opposite node\n");
-            // now the node that we can pass is: elem[element].n[n_op]
-            // elem[element].n[n1_el]->print()  =  node[n1].print();
-         
-   
-            surface[i].init(&node[n1], &node[n2], &node[n3], elem[element].n[n_op], this, params);
+	    /*try {
+	            int n1_el = elem[element].what_node_is_this(n1), n2_el = elem[element].what_node_is_this(n2), n3_el = elem[element].what_node_is_this(n3);
+        	    int n_op = elem[element].get_opposite_node(n1_el, n2_el, n3_el);
+		    if (n_op == -1) 
+		      FFEA_ERROR_MESSG("Error: Could not find the opposite node\n");
+		    // now the node that we can pass is: elem[element].n[n_op]
+		    // elem[element].n[n1_el]->print()  =  node[n1].print();
+		    surface[i].init(&node[n1], &node[n2], &node[n3], elem[element].n[n_op], this, params);
+	    } catch(...) {
+		    surface[i].init(&node[n1], &node[n2], &node[n3], NULL, this, params);
+	    }*/
+
+	    // &element is 0 because there is only 1 element i.e. the entire structure. This function should only be used for static objects for which topologies do not need to be defined
+            surface[i].init(&node[n1], &node[n2], &node[n3], NULL, this, params);
+
 
             if (surface[i].area_0 < smallest_A) {
                 smallest_A = surface[i].area_0;
@@ -2499,12 +2519,11 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 	fin.getline(buf, MAX_BUF_SIZE);
 	buf_string = string(buf);
 	boost::trim(buf_string);
-	if(buf_string != "ffea binding site file") {
+	if(buf_string != "ffea binding sites file") {
 		FFEA_ERROR_MESSG("This is not a 'ffea binding site file' (read '%s') \n", buf)
 	}
 	
 	// read in the number of binding sites in the file
-	int num_binding_sites = 0;
 	fin >> buf_string >> num_binding_sites;
 	cout << "\t\t\tNumber of binding sites = " << num_binding_sites << endl;
 
@@ -2524,8 +2543,8 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 	fin.getline(buf, MAX_BUF_SIZE);
 	buf_string = string(buf);
 	boost::trim(buf_string);
-	if(buf_string != "binding_sites:") {
-		FFEA_ERROR_MESSG("Could not find 'binding_sites:' line (found '%s' instead)\n", buf)
+	if(buf_string != "binding sites:") {
+		FFEA_ERROR_MESSG("Could not find 'binding sites:' line (found '%s' instead)\n", buf)
 	}
 
 	// Get all binding sites
@@ -2766,6 +2785,12 @@ int Blob::aggregate_forces_and_solve() {
         force[pn_index].z = 0;
     }
 
+    for(set<int>::iterator it = bsite_pinned_nodes_list.begin(); it != bsite_pinned_nodes_list.end(); ++it) {
+	force[*it].x = 0;
+	force[*it].y = 0;
+	force[*it].z = 0;
+    }
+
     // Set to zero any forces in directions that are restricted
     for(int i = 0; i < 3; ++i) {
 	if(params->restrict_motion[i] == 1) {
@@ -2888,50 +2913,20 @@ int Blob::calculate_node_element_connectivity() {
     return FFEA_OK;
 }
 
-void Blob::kinetic_bind(int site_index) {
-
-	// To bind, we must add all nodes of the binding site to the pinned node list
-	int i;
-	vector<Face*>::iterator it;
-	set<int> new_pinned;
-
-	// Add current pinned to set
-	for(i = 0; i < num_pinned_nodes; ++i) {
-		new_pinned.insert(pinned_nodes_list[i]);
+void Blob::pin_binding_site(set<int> node_indices) {
+	
+	set<int>::iterator it;
+	for(it = node_indices.begin(); it != node_indices.end(); ++it) {
+		bsite_pinned_nodes_list.insert(*it);
 	}
-
-	// Now add binding site indices
-	for(it = binding_site[site_index].faces.begin(); it != binding_site[site_index].faces.end(); ++it) {
-		for(i = 0; i < 3; ++i) {
-			new_pinned.insert((*it)->n[i]->index);
-		}
-	}
-
-	// Finally create new pinned node list
-	create_pinned_nodes(new_pinned);
 }
 
-void Blob::kinetic_unbind(int site_index) {
-
-	// To unbind, we must remove all nodes of the binding site from the pinned node list
-	int i;
-	vector<Face*>::iterator it;
-	set<int> new_pinned;
-
-	// Add current pinned to set
-	for(i = 0; i < num_pinned_nodes; ++i) {
-		new_pinned.insert(pinned_nodes_list[i]);
+void Blob::unpin_binding_site(set<int> node_indices) {
+	
+	set<int>::iterator it;
+	for(it = node_indices.begin(); it != node_indices.end(); ++it) {
+		bsite_pinned_nodes_list.erase(*it);
 	}
-
-	// Now add binding site indices
-	for(it = binding_site[site_index].faces.begin(); it != binding_site[site_index].faces.end(); ++it) {
-		for(i = 0; i < 3; ++i) {
-			new_pinned.erase((*it)->n[i]->index);
-		}
-	}
-
-	// Finally create new pinned node list
-	create_pinned_nodes(new_pinned);
 }
 
 void Blob::create_pinned_nodes(set<int> list) {

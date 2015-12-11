@@ -2,6 +2,8 @@
 #define SOLVER_H_INCLUDED
 
 #include "tetra_element_linear.h"
+#include <set>
+
 class Solver {
 public:
 
@@ -17,7 +19,7 @@ public:
      * Initialises the solver (by building whatever representation of the mass matrix it needs)
      * using the given node-element connectivity.
      */
-    virtual int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list) = 0;
+    virtual int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_nodes_list) = 0;
 
     /*
      * Solves the linear system Mx = f where f is the force vector (should be 'x' on input), and the mass matrix

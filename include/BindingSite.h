@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <set>
 #include <cmath>
 #include <boost/algorithm/string.hpp>
 #include "FFEA_return_codes.h"
@@ -27,16 +28,18 @@ class BindingSite{
 
 		// Properties
 		vector3 centroid;
-		scalar area, length;
+		scalar area, radius;
 		
 		void set_num_faces(int num_faces);
 		void set_type(int site_type);
 		int get_type();
 		void add_face(Face *aface);
-		void calc_centroid(vector3 cent);
-		void calc_site_shape(vector3 cent);
+		vector3 calc_centroid();
+		void calc_dimensions();
 		scalar calc_size();
 		scalar calc_area();
+		set<int> get_nodes();
+		vector3 get_centroid();
 
 	private:
 

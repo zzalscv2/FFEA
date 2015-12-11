@@ -31,6 +31,8 @@ class Blob:
 		self.calculated_first_frame_J_inv = False
 		self.do_Fij = False
 		self.energy_thresh = energy_thresh
+		self.scale = 1.0
+		self.global_scale = 1.0
 
 	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, binding_fname, blob_centroid_pos, blob_rotation):
 		self.id_num = idnum
@@ -38,7 +40,7 @@ class Blob:
 		self.conformation_index = conformation_index
 		self.nodes_fname = nodes_fname
 		self.scale = scale
-
+		
 		if blob_centroid_pos != None:
 			self.init_centroid = blob_centroid_pos
 			self.offset = blob_centroid_pos
@@ -212,8 +214,9 @@ class Blob:
 		print "Reading in binding sites file " + fname
 		fin = open(fname, "r")
 		line = fin.readline().strip()
-		if line != "ffea binding site file":
+		if line != "ffea binding sites file":
 			print "Error: binding site file " + fname + " missing 'ffea binding site file' first line"
+			return
 
 		self.num_binding_sites = int(fin.readline().split()[1])
 		print "num_binding_sites according to binding site file = ", self.num_binding_sites
@@ -257,7 +260,7 @@ class Blob:
 		print "Finished writing vdw file " + vdw_fname
 
 	def load_frame(self, traj_file):
-		
+
 		# Inactive conf
 		if traj_file == None:
 			self.frames.append(None)
@@ -278,7 +281,7 @@ class Blob:
 		#cdef int n
 		for n in xrange(self.num_nodes):
 			line = traj_file.readline().split()
-			el_nodes = [float(line[i])*self.scale for i in xrange(10)]
+			el_nodes = [float(line[i])* self.global_scale for i in xrange(10)]
 			nodes.append(el_nodes)
 		
 			centroid_x += el_nodes[0]
@@ -398,6 +401,7 @@ class Blob:
 	def delete_all_frames(self):
 		self.num_frames = 0
 		self.frames = []
+
 	def load_nodes_file_as_frame(self):
 		print "Reading in nodes file " + self.nodes_fname
 		nodes_file = open(self.nodes_fname, "r")
@@ -424,7 +428,7 @@ class Blob:
 			print line
 			return
 
-		print "Scaling by " + str(self.scale)
+		print "Scaling by " + str(self.scale * self.global_scale)
 
 		nodes = []
 		centroid_x = 0.0
@@ -435,13 +439,15 @@ class Blob:
 			if "interior" in line[0]:
 				print "Skipping 'interior nodes:' line"
 				line = nodes_file.readline().split()
-			el_nodes = [float(line[i])*self.scale for i in xrange(3)]
+			
+			el_nodes = [float(line[i])*self.scale*self.global_scale for i in xrange(3)]
 			el_nodes.extend([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 			nodes.append(el_nodes)
 		
 			centroid_x += el_nodes[0]
 			centroid_y += el_nodes[1]
 			centroid_z += el_nodes[2]
+
 		centroid_x/= self.num_nodes
 		centroid_y/= self.num_nodes
 		centroid_z/= self.num_nodes
@@ -451,14 +457,15 @@ class Blob:
 
 		if self.init_centroid != None:
 			print "Moving to starting position..."
-			translate = [self.init_centroid[0] - centroid_x, self.init_centroid[1] - centroid_y, self.init_centroid[2] - centroid_z]
+			translate = [self.init_centroid[0]*self.scale*self.global_scale - centroid_x, self.init_centroid[1]*self.scale*self.global_scale - centroid_y, self.init_centroid[2]*self.scale*self.global_scale - centroid_z]
+					
 			for i in range(len(nodes)):
 				for j in range(3):
 					nodes[i][j] += translate[j]
 
-			centroid_x = self.init_centroid[0]
-			centroid_y = self.init_centroid[1]
-			centroid_z = self.init_centroid[2]
+			centroid_x = self.init_centroid[0]*self.scale*self.global_scale
+			centroid_y = self.init_centroid[1]*self.scale*self.global_scale
+			centroid_z = self.init_centroid[2]*self.scale*self.global_scale
 			print "...done!\n"
 		
 		# Apply a rotation if necessary
@@ -570,6 +577,9 @@ class Blob:
 
 	def set_scale(self, scale):
 		self.scale = scale
+
+	def set_global_scale(self, global_scale):
+		self.global_scale = global_scale
 
 	def calc_normal(self, n1, n2, n3):
 		ax = n2[0] - n1[0]
