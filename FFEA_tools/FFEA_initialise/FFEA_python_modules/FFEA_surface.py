@@ -62,6 +62,31 @@ class FFEA_surface:
 				fin.close()
 				return
 
+	def calculate_structure_dimensions(self, node):
+
+		xlim = [float("inf"), -1 * float("inf")]
+		ylim = [float("inf"), -1 * float("inf")]
+		zlim = [float("inf"), -1 * float("inf")]
+
+		for f in self.face:
+			for n in f.n:
+				if node.pos[n][0] < xlim[0]:
+					xlim[0] = node.pos[n][0]
+				elif node.pos[n][0] > xlim[1]:
+					xlim[1] = node.pos[n][0]
+
+				if node.pos[n][1] < ylim[0]:
+					ylim[0] = node.pos[n][1]
+				elif node.pos[n][1] > ylim[1]:
+					ylim[1] = node.pos[n][1]
+
+				if node.pos[n][2] < zlim[0]:
+					zlim[0] = node.pos[n][2]
+				elif node.pos[n][2] > zlim[1]:
+					zlim[1] = node.pos[n][2]
+
+		return np.array([xlim[1]-xlim[0], ylim[1]-ylim[0], zlim[1]-zlim[0]]), np.array([xlim, ylim, zlim])
+
 	def reset(self):
 		self.num_faces = 0
 		self.face = []

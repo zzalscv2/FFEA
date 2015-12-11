@@ -2,40 +2,50 @@
 
 KineticState::KineticState() {
 	conformation_index = 0;
-	active_site.clear();
-	num_active_bsites = 0;
+	bound_sites.clear();
 }
 
 KineticState::~KineticState() {
 	conformation_index = 0;
-	active_site.clear();
-	num_active_bsites = 0;
+	bound_sites.clear();
 }
 
-int KineticState::init(int conf_index, int *active_bsites, int num_bsite_types) {
+int KineticState::init() {
+
+	// Set conformation index
+	conformation_index = 0;
+
+	// No sites to bind
+	bound_sites.clear();
+
+	return FFEA_OK;
+}
+
+int KineticState::init(int conf_index, int *bound_site_types, int num_bsite_types, BindingSite *binding_sites, int total_num_binding_sites) {
 
 	// Set conformation index
 	conformation_index = conf_index;
 
-	// Set some active binding sites
+	// Set some bound binding sites for this state
 	for(int i = 0; i < num_bsite_types; ++i) {
-		if(active_bsites[i] == 1) {
-			active_site.push_back(i);
+		if(bound_site_types[i] == 1) {
+			for(int j = 0; j < total_num_binding_sites; ++j) {
+				bound_sites.insert(&binding_sites[j]);
+			}
 		}
 	}
 
-	num_active_bsites = active_site.size();
 	return FFEA_OK;
 }
 
-void KineticState::print_details() {
+/*void KineticState::print_details() {
 
 	cout << "Kinetic Site:" << endl << endl;
 	cout << "Conformation Index = " << conformation_index << endl;
 	cout << "Active binding sites = ";
-	for(vector<int>::iterator it = active_site.begin(); it != active_site.end(); ++it) {
+	for(set<int>::iterator it = bound_site.begin(); it != bound_site.end(); ++it) {
 		cout << *it << " ";
 	}
 	cout << endl;
-}
+}*/
 

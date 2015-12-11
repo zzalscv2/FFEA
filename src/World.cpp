@@ -6,6 +6,7 @@ World::World() {
     blob_array = NULL;
     active_conformation_index = NULL;
     previous_conformation_index = NULL;
+    previous_state_index = NULL;
     active_state_index = NULL;
     spring_array = NULL;
     kinetic_map = NULL;
@@ -45,6 +46,8 @@ World::~World() {
     active_conformation_index = NULL;
     delete[] previous_conformation_index;
     previous_conformation_index = NULL;
+    delete[] previous_state_index;
+    previous_state_index = NULL;
     delete[] active_state_index;
     active_state_index = NULL;
 
@@ -419,7 +422,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			params.es_N_z = 2 * (int)ceil(dimension_vector.z * (params.kappa / params.es_h));
 			cout << " " << params.es_N_x << " " << params.es_N_y << " " << params.es_N_z << endl;
 		}
-
+		
 		// Move to box centre
 		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
@@ -428,12 +431,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		shift.x = box_dim.x / 2.0 - world_centroid.x;
 		shift.y = box_dim.y / 2.0 - world_centroid.y;
 		shift.z = box_dim.z / 2.0 - world_centroid.z;
-
-		for (i = 0; i < params.num_blobs; i++) {
-			active_blob_array[i]->get_centroid(&world_centroid);
-			active_blob_array[i]->move(shift.x, shift.y, shift.z);
+		if(params.move_into_box == 1) {
+			for (i = 0; i < params.num_blobs; i++) {
+				active_blob_array[i]->get_centroid(&world_centroid);
+				active_blob_array[i]->move(shift.x, shift.y, shift.z);
+			}
 		}
 	    }
+	vector3 world_centroid;
 
 	    box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
@@ -1217,6 +1222,7 @@ int World::run() {
 	// Get a list of old conformations for writing to traj
 	for(int i = 0; i < params.num_blobs; ++i) {
 		previous_conformation_index[i] = active_blob_array[i]->conformation_index;
+		previous_state_index[i] = active_blob_array[i]->state_index;
 	}
 
 	if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
@@ -1226,16 +1232,6 @@ int World::run() {
 
 			cout << "Error in 'rescale_kinetic_rates' function." << endl;
 			return FFEA_ERROR;
-		}
-		
-		for(int i = 0; i < params.num_blobs; ++i) {
-			scalar sum = 0.0;
-			cout << "Blob " << i << ":" << endl;
-			for(int j = 0; j < params.num_states[i]; ++j) {
-				for(int k = 0; k < params.num_states[i]; ++k) {
-					sum += kinetic_rate[i][j][k];
-				}
-			}
 		}
 
 		// Change conformation based on these rates
@@ -1258,10 +1254,10 @@ int World::run() {
 			// Get a random number between 0 and 1
 			switch_check = kinetic_rng.rand();
 			for(int j = 0; j < params.num_states[i]; ++j) {
-				
+
 				// Change state based on this random number!
 				if(switch_check >= bin_limits[i][j] && switch_check < bin_limits[i][j + 1]) {
-					//change_blob_state(i, j);
+					change_blob_state(i, j);
 					break;
 				}
 			}
@@ -1284,8 +1280,9 @@ int World::run() {
     return FFEA_OK;
 }
 
-/* int World::change_blob_state(int blob_index, int new_state_index) {
+int World::change_blob_state(int blob_index, int new_state_index) {
 
+	int state_change_success = 0;
 	int old_state_index = active_state_index[blob_index];
 
 	// Check if we need to change at all
@@ -1295,7 +1292,7 @@ int World::run() {
 
 	int old_conformation_index = active_conformation_index[blob_index];
 	int new_conformation_index = kinetic_state[blob_index][new_state_index].conformation_index;
-
+	
 	// Now, what type of state change do we have hmmmmm? We already checked in rescale_kinetic_rates() so maybe combine in the future
 	if(new_conformation_index != old_conformation_index) {
 				
@@ -1303,79 +1300,93 @@ int World::run() {
 		active_blob_array[blob_index] = &blob_array[blob_index][new_conformation_index];
 		active_conformation_index[blob_index] = new_conformation_index;
 
-	} else if (kinetic_state[blob_index][old_state_index].num_active_bsites == 0 && kinetic_state[blob_index][new_state_index].num_active_bsites != 0) {
-		
+		state_change_success = 1;
+
+	} else if (kinetic_state[blob_index][old_state_index].bound_sites.size() == 0 && kinetic_state[blob_index][new_state_index].bound_sites.size() != 0) {
 		bool active;
 		int i, j, other_blob_index;
+		set<BindingSite*>::iterator ita;
 		scalar separation;
 		Blob *other_blob;
-	
+		vector3 centa, centb;
+
+
 		// Binding. But only if in range of a binding site! The rate we have is the (constant) free energy of binding. Simulation itself accounts for entropy...
 		// Should this check be made in the rescale rates section?
 
-		// For every site on this blob
-		for(i = 0; i < active_blob_array[i]->num_binding_sites; ++i) {
+		// For every site on this blob which is active in this state
+		for(ita = kinetic_state[blob_index][new_state_index].bound_sites.begin(); ita != kinetic_state[blob_index][new_state_index].bound_sites.end(); ++ita) {
 
-			// Is this binding site active?
-			active = false;
-			for(vector<int>::iterator it = kinetic_state[blob_index][new_state_index].active_site.begin(); it != kinetic_state[blob_index][new_state_index].active_site.end(); ++it) {
-				if(active_blob_array[i]->binding_site[i].get_type() == *it) {
-					active = true;
-					break;
-				}
-			}
-
-			if(!active) {
-				continue;
-			}
-
-			// So this site is definitely up for binding! If it's in range of another site of course
-			// Check all sites on the other blobs
-			for(other_blob_index = 0; other_blob_index < num_blobs; ++other_blob_index) {
-
+			// Check all of the other sites on all other objects
+			for(other_blob_index = 0; other_blob_index < params.num_blobs; ++other_blob_index) {
+				
 				// Get pointer to other blob
 				other_blob = &blob_array[other_blob_index][active_conformation_index[other_blob_index]];
 
 				for(j = 0; j < other_blob->num_binding_sites; ++j) {
 
 					// Can't bind to the same site! That would be daft...
-					if(other_blob_index == blob_index && active_blob_array[blob_index]->binding_site[i].get_type() == other_blob->binding_site[j].get_type()) {
+					if(*ita == &other_blob->binding_site[j]) {
 						continue;
 					}
 
 					// If binding isn't allowed between these sites, continue again
-					if(binding_matrix.interaction[active_blob_array[blob_index]->binding_site[i].get_type()][other_blob->binding_site[j].get_type()] == 0) {
+					if(binding_matrix.interaction[(*ita)->get_type()][other_blob->binding_site[j].get_type()] == 0) {
 						continue;
 					}
 
 					// Get site dimensions
-					active_blob_array[blob_index]->binding_site[i].calc_dimensions();
+					(*ita)->calc_dimensions();
+					centa = (*ita)->get_centroid();
+
 					other_blob->binding_site[j].calc_dimensions();
+					centb = other_blob->binding_site[j].get_centroid();
 
 					// Get distance between sites
-					separation = KineticBindingSite::calculate_separation(active_blob_array[blob_index]->binding_site[i], other_blob->binding_site[j]);
+					separation = sqrt(pow(centa.x - centb.x, 2) + pow(centa.y - centb.y, 2) + pow(centa.z - centb.z, 2));
 
 					// Are we in range?
-					if(separation <= active_blob_array[blob_index]->binding_site[i].radius + other_blob->binding_site[j].radius) {
-						
-						// We're binding! Add springs and stuff
+					if(separation <= (*ita)->radius + other_blob->binding_site[j].radius) {
+
+						// We're binding! Add springs and stuff (or freeze, for now)
+						active_blob_array[blob_index]->pin_binding_site((*ita)->get_nodes());
+
+						other_blob_index = params.num_blobs;
+						ita = kinetic_state[blob_index][new_state_index].bound_sites.end();
+						state_change_success = 1;
+						break;
 					}
 				}
 			}
 		}
+		if(state_change_success == 1) {
+			active_blob_array[blob_index]->reinit_solver();
+		}
 
-	} else if (kinetic_state[blob_index][old_state_index].num_active_bsites != 0 && kinetic_state[blob_index][new_state_index].num_active_bsites == 0) {
-				
+	} else if (kinetic_state[blob_index][old_state_index].bound_sites.size() != 0 && kinetic_state[blob_index][new_state_index].bound_sites.size() == 0) {
+		
+		set<BindingSite*>::iterator ita;
+	
 		// Unbinding
+		for(ita = kinetic_state[blob_index][old_state_index].bound_sites.begin(); ita != kinetic_state[blob_index][old_state_index].bound_sites.end(); ++ita) {
+			active_blob_array[blob_index]->unpin_binding_site((*ita)->get_nodes());
+			state_change_success = 1;
+		}
+		if(state_change_success == 1) {
+			active_blob_array[blob_index]->reinit_solver();
+		}
 	} else {
 				
 		// Identity change. Do nothing. How dull...
 	}
 
 	// Change World pointers to states and stuff
-	active_state_index[blob_index] = new_state_index;
+	if(state_change_success == 1) {
+		active_blob_array[blob_index]->state_index = new_state_index;
+		active_blob_array[blob_index]->conformation_index = new_conformation_index;
+	}
 	return FFEA_OK;
-}*/
+}
 
 /* int World::change_blob_state(int blob_index, int new_state_index) {
 
@@ -1581,12 +1592,14 @@ int World::read_and_build_system(vector<string> script_vector) {
 	active_blob_array = new Blob*[params.num_blobs];
 	active_conformation_index = new int[params.num_blobs];
 	previous_conformation_index = new int[params.num_blobs];
+	previous_state_index = new int[params.num_blobs];
 	active_state_index = new int[params.num_blobs];
 	for (int i = 0; i < params.num_blobs; ++i) {
 	        blob_array[i] = new Blob[params.num_conformations[i]];
 	        active_blob_array[i] = &blob_array[i][0];
 		active_conformation_index[i] = 0;
 		previous_conformation_index[i] = 0;
+		previous_state_index[i] = 0;
 		active_state_index[i] = 0;
 	}
 
@@ -1601,7 +1614,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 	vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, maps, beads;
 	string states, rates, map_fname;
 	int map_indices[2];
-	int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0;
+	int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0;
 	scalar scale = 1;
 	int solver = FFEA_NOMASS_CG_SOLVER;
 	vector<int> motion_state, maps_conf_index_to, maps_conf_index_from;
@@ -1718,12 +1731,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 					vdw.push_back(lrvalue[1]);
 					set_vdw = 1;
 				} else if (lrvalue[0] == "binding_sites") {
-					
-					// Only if kinetics are active
-					if(params.calc_kinetics == 1) {
-						binding.push_back(lrvalue[1]);
-						set_binding = 1;
-					}
+
+					binding.push_back(lrvalue[1]);
+					set_binding = 1;
 
 				} else if (lrvalue[0] == "pin") {
 					pin.push_back(lrvalue[1]);
@@ -1750,9 +1760,6 @@ int World::read_and_build_system(vector<string> script_vector) {
 					return FFEA_ERROR; 
 
 				} 
-				if(set_preComp == 0) {
-                                        beads.push_back("");
-                                } 
 
 				if(motion_state.back() == FFEA_BLOB_IS_DYNAMIC) {
 					if(set_top == 0 || set_mat == 0 || set_stokes == 0 || set_pin == 0) {
@@ -1771,15 +1778,18 @@ int World::read_and_build_system(vector<string> script_vector) {
 					set_pin = 1;
 				}
 
+				// Optional stuff
 				if(set_preComp == 0) {
 					beads.push_back("");
+					set_preComp = 1;
+				}
+
+				if(set_binding == 0) {
+					binding.push_back("");
+					set_binding = 1;
 				}
 			}
 
-			// Binding sites optional anyway
-			if(set_binding == 0) {
-				binding.push_back("");
-			}
 			
 			// Clear conformation vector and set values for next round
 			set_nodes = 0;
@@ -1822,23 +1832,31 @@ int World::read_and_build_system(vector<string> script_vector) {
 				}
 			}
 
-			// Then, states and rates data
-			for(it = kinetics_vector.begin(); it != kinetics_vector.end(); ++it) {
-				systemreader->parse_tag(*it, lrvalue);
-				if(lrvalue[0] == "maps" || lrvalue[0] == "/maps") {
-					continue;
-				} else if(lrvalue[0] == "states") {
-					states = lrvalue[1];
-				} else if (lrvalue[0] == "rates") {
-					rates = lrvalue[1];
+			// Then, states and rates data if necessary
+			if(params.num_states[i] > 1) {
+				for(it = kinetics_vector.begin(); it != kinetics_vector.end(); ++it) {
+					systemreader->parse_tag(*it, lrvalue);
+					if(lrvalue[0] == "maps" || lrvalue[0] == "/maps") {
+						continue;
+					} else if(lrvalue[0] == "states") {
+						states = lrvalue[1];
+						set_states = 1;
+					} else if (lrvalue[0] == "rates") {
+						rates = lrvalue[1];
+						set_rates = 1;
+					}
 				}
-			}
 
-			// Error check
-			if(states.size() == 0 || rates.size() == 0) {
-				FFEA_error_text();
-				cout << "In blob " << i << ", for kinetics, we require both a 'states' file and a 'rates' file." << endl;
-				return FFEA_ERROR;
+				// Error check
+				if(set_states == 0) {
+					FFEA_ERROR_MESSG("Expected a .states files for blob %d, as num_states = %d\n", i, params.num_states[i])
+				}
+				if(set_rates == 0) {
+					FFEA_ERROR_MESSG("Expected a .rates files for blob %d, as num_states = %d\n", i, params.num_states[i])
+				}
+			} else {
+				states = "";
+				rates = "";
 			}
 		}		
 
@@ -1913,7 +1931,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		}
 
 		// Build blob
-		//Build conformations
+		// Build conformations (structural data)
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
 			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), binding.at(j).c_str(), beads.at(j).c_str(), 
@@ -1966,13 +1984,17 @@ int World::read_and_build_system(vector<string> script_vector) {
 		// Build kinetic system (at world level, for future potential global kinetics)
 		if(params.calc_kinetics == 1) {
 			cout << "\tInitialising kinetics for blob " << i << "..." << endl;
+
+			// Will load a default state if params.num_states[i] == 1
 			cout << "\t\tLoading kinetic states...";
+
 			if(load_kinetic_states(states, i) == FFEA_ERROR) {
 				FFEA_error_text();
 				cout << "\nProblem reading kinetic states in 'read_kinetic_states' function" << endl;			
 				return FFEA_ERROR;
 			}
 			cout << "...done!" << endl;
+
 			cout << "\t\tLoading kinetic rates...";
 			if(load_kinetic_rates(rates, i) == FFEA_ERROR) {
 				FFEA_error_text();
@@ -2000,6 +2022,8 @@ int World::read_and_build_system(vector<string> script_vector) {
 				cout << "...done!" << endl;
 			}
 			cout << "\t...done!" << endl;
+
+				
 		}
 		
 		// Clear blob vector and other vectors for next round
@@ -2024,11 +2048,14 @@ int World::read_and_build_system(vector<string> script_vector) {
 		rotation = NULL;
 		set_scale = 0;
 		set_solver = 0;
+		set_rates = 0;
+		set_states = 0;
 	}
 
 	cout << "\t...done!" << endl;
-
-
+	if(params.calc_kinetics == 1) {
+		print_kinetics();
+	}
 	return FFEA_OK;
 }
 
@@ -2160,7 +2187,8 @@ int World::rescale_kinetic_rates() {
 	for(i = 0; i < params.num_blobs; ++i) {
 		
 		// Get current state
-		current_state = active_state_index[i];		
+		
+		current_state = active_state_index[i];
 		int current_conf = active_conformation_index[i];
 		total_prob = 0.0;
 		for(j = 0; j < params.num_states[i]; ++j) {
@@ -2172,12 +2200,12 @@ int World::rescale_kinetic_rates() {
 
 			int new_conf = kinetic_state[i][j].conformation_index;
 			// How the state changes is dependent upon whether we are binding, unbinding or conf changing
-			if(kinetic_state[i][current_state].num_active_bsites == 0 && kinetic_state[i][j].num_active_bsites != 0) {
+			if(kinetic_state[i][current_state].bound_sites.size() == 0 && kinetic_state[i][j].bound_sites.size() != 0) {
 				
 				// Binding
 				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 
-			} else if (kinetic_state[i][current_state].num_active_bsites != 0 && kinetic_state[i][j].num_active_bsites == 0) {
+			} else if (kinetic_state[i][current_state].bound_sites.size() != 0 && kinetic_state[i][j].bound_sites.size() == 0) {
 				
 				// Unbinding
 				kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
@@ -2231,12 +2259,23 @@ int World::rescale_kinetic_rates() {
 
 int World::load_kinetic_states(string states_fname, int blob_index) {
 
-	int i, j, num_states, conf_index, site_index, site_active[binding_matrix.num_interaction_types];
+	int i, j, num_states, conf_index, site_index, bound_site_type[binding_matrix.num_interaction_types];
 	char buf[255];
 	string buf_string;
 	vector<string> sline;
 	vector<string>::iterator it;
 	FILE *fin;
+	
+	// Load a default, single state
+	if(states_fname == "") {
+
+		kinetic_state[blob_index] = new KineticState[1];
+		kinetic_state[blob_index][0].init();
+
+		return FFEA_OK;
+	}
+
+	// Else
 
 	// Open the file
 	fin = fopen(states_fname.c_str(), "r");
@@ -2263,7 +2302,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 
 		// Set all bsite_interactions as off
 		for(j = 0; j < binding_matrix.num_interaction_types; ++j) {
-			site_active[j] = 0;
+			bound_site_type[j] = 0;
 		}
 
 		// Reset counter
@@ -2271,7 +2310,9 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 
 		// Get state line
 		fgets(buf, 255, fin);
-		boost::split(sline, buf, boost::is_any_of(" "));
+		buf_string = string(buf);
+		boost::trim(buf_string);
+		boost::split(sline, buf_string, boost::is_any_of(" "));
 
 		// Parse line
 		for(it = sline.begin(); it != sline.end(); ++it) {
@@ -2292,12 +2333,19 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 				if(site_index >= binding_matrix.num_interaction_types) {
 					FFEA_ERROR_MESSG("\nBinding site index %d for state %d, %d,  exceeds 'num_conformations', %d, set in the initial script file.\n", j - 1, i, site_index, binding_matrix.num_interaction_types)
 				}
-				site_active[site_index] = 1;
+				bound_site_type[site_index] = 1;
 			}
 		}
 
 		// Initialise kinetic state from this
-		kinetic_state[blob_index][i].init(conf_index, site_active, binding_matrix.num_interaction_types);
+		kinetic_state[blob_index][i].init(conf_index, bound_site_type, binding_matrix.num_interaction_types, blob_array[blob_index][conf_index].binding_site, blob_array[blob_index][conf_index].num_binding_sites);
+
+		// Set target sites
+		for(j = 0; j < params.num_blobs; ++j) {
+			if(j == blob_index) {
+				continue;
+			}
+		}	
 	}
 
 	// Close and return
@@ -2313,6 +2361,22 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	vector<string> sline;
 	vector<string>::iterator it;
 	FILE *fin;
+
+	// Load a default, single rate
+	if(rates_fname == "") {
+
+		// Create rates matrix
+		kinetic_rate[blob_index] = new scalar*[1];
+		kinetic_base_rate[blob_index] = new scalar*[1];
+
+		kinetic_rate[blob_index][0] = new scalar[1];
+		kinetic_base_rate[blob_index][0] = new scalar[1];
+
+		kinetic_rate[blob_index][0][0] = 1.0;
+		kinetic_base_rate[blob_index][0][0] = 1.0;
+
+		return FFEA_OK;
+	}
 
 	// Open the file
 	fin = fopen(rates_fname.c_str(), "r");
@@ -2791,6 +2855,25 @@ void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes) {
 	fclose(fout);
 }
 
+void World::print_kinetics() {
+
+	cout << "\n\nKinetics:" << endl;
+	for(int i = 0; i < params.num_blobs; ++i) {
+		
+		cout << "\nBlob " << i << ":" << endl;
+		for(int j = 0; j < params.num_states[i]; ++j) {
+			cout << "\n\tState " << j << ":" << endl;
+			cout << "\t\tConf index = " << kinetic_state[i][j].conformation_index << endl;
+			cout << "\t\tBound Binding Sites = ";
+			for(set<BindingSite*>::iterator it = kinetic_state[i][j].bound_sites.begin(); it != kinetic_state[i][j].bound_sites.end(); ++it) {
+				cout << "(Type = " << (*it)->get_type() << ", Size (num_faces) = " << (*it)->faces.size() << "), ";
+			}
+			cout << endl;
+		}
+		
+	}
+}
+
 void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     if ((step - 1) % (params.check * 10) != 0) {
         printf("step = %d\n", step);
@@ -2837,7 +2920,8 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     for(int i = 0; i < params.num_blobs; ++i) {
     	if(params.calc_kinetics == 1) {
-	    printf("\tBlob %d - Conformation %d -> Conformation %d\n", i, previous_conformation_index[i], active_conformation_index[i]);	
+	    printf("\tBlob %d - Conformation %d -> Conformation %d\n", i, previous_conformation_index[i], active_conformation_index[i]);
+	    printf("\t		State %d -> State %d\n", previous_state_index[i], active_state_index[i]);	
 	}
 
 	// Print to file
