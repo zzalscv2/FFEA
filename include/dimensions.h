@@ -30,33 +30,4 @@ namespace atomicDimensions {
    const scalar velocity = 2.1876912633e6; /* velocity */
 }
 
-
-namespace isDimensions {
-   const scalar length = 1;
-   const scalar Energy = 1;
-   const scalar mass = 1;
-   const scalar charge = 1;
-   const scalar area = 1;
-   const scalar volume = 1;
-   const scalar force = 1;
-   const scalar time = 1;
-   const scalar pressure = 1;
-   const scalar velocity = 1;
-}
-
-
-typedef struct {
-   const scalar length;
-   const scalar Energy;
-   const scalar mass;
-   const scalar charge;
-   const scalar area; 
-   const scalar volume; 
-   const scalar force;
-   const scalar time;
-   const scalar pressure;
-   const scalar velocity;
-} dimset;
-
-
 #endif
