@@ -19,6 +19,9 @@ typedef struct {
     scalar x, y, z;
 } vector3;
 
+/** arr3 will hopefully substitute vector3 one day */ 
+typedef scalar arr3[3]; 
+
 /*
  * Defines a 12 vector (just for ease of use, clarity and compiler type checking)
  */

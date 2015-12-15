@@ -262,3 +262,36 @@ bool Face::is_vdw_active() {
         return true;
     }
 }
+
+bool Face::checkTetraIntersection(Face *f2) {
+  
+  // V1 = n
+  // V2 = f2->n
+  scalar tetA[4][3], tetB[4][3]; 
+  for (int i=0; i<4; i++) {
+     tetA[i][0] = n[i]->pos.x;
+     tetA[i][1] = n[i]->pos.y;
+     tetA[i][2] = n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x;
+     tetB[i][1] = f2->n[i]->pos.y;
+     tetB[i][2] = f2->n[i]->pos.z;
+  }
+  return (tet_a_tet(tetA, tetB)); 
+ 
+} 
+
+scalar Face::getTetraIntersectionVolume(Face *f2){
+
+  scalar tetA[4][3], tetB[4][3]; 
+  for (int i=0; i<4; i++) {
+     tetA[i][0] = n[i]->pos.x;
+     tetA[i][1] = n[i]->pos.y;
+     tetA[i][2] = n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x;
+     tetB[i][1] = f2->n[i]->pos.y;
+     tetB[i][2] = f2->n[i]->pos.z;
+  }
+  return volumeIntersection(tetA, tetB);
+
+
+} 
