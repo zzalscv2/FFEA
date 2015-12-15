@@ -2,6 +2,7 @@
 #define NOMASSCGSOLVER_HPP_INCLUDED
 
 #include <stdio.h>
+#include <set>
 
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
@@ -24,7 +25,7 @@ public:
     ~NoMassCGSolver();
 
     /* Builds a sparse matrix pattern for blob viscosity matrix from initial structure. Doesn't build the matrix though, just the key and whatnot */
-    int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list);
+    int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list);
 
     /* Adds values to sparse viscosity matrix and uses it to solve the system Kv = f using conjugate gradient*/
     int solve(vector3* x);

@@ -22,7 +22,7 @@ public:
     ~ConjugateGradientSolver();
 
     /* Builds the sparse mass matrix and allocates the various work vectors required for conjugate gradient */
-    int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list);
+    int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list);
 
     /* Applies conjugate gradient with a Jacobi preconditioner to solve the system Mx = f */
     int solve(vector3 *x);

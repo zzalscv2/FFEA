@@ -24,7 +24,7 @@ public:
     ~SparseSubstitutionSolver();
 
     /* Builds the lower triangular Cholesky decomposed mass matrix */
-    int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list);
+    int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list);
 
     /*
      * Solves the equation Ax = b for the unknown vector x, for

@@ -86,6 +86,11 @@ public:
     int update();
 
     /**
+     * If the system changes mid run (binding event, say) we may need to reinitialise the solver
+     */
+    int reinit_solver();
+
+    /**
       * Translates the linear nodes, then linearises the secondary nodes 
       */
     void translate_linear(vector3 *vec);
@@ -305,9 +310,10 @@ public:
     /*
      *
      */
-    void kinetic_bind(int site_index);
-    void kinetic_unbind(int site_index);
-
+    //void kinetic_bind(int site_index);
+    //void kinetic_unbind(int site_index);
+    void pin_binding_site(set<int> node_indices);
+    void unpin_binding_site(set<int> node_indices);
 
     void print_node_positions();
     void print_bead_positions();
@@ -364,6 +370,9 @@ private:
 
     /** List of fixed ('pinned') nodes */
     int *pinned_nodes_list;
+
+    /** Additional pinned node list for binding processes */
+    set<int> bsite_pinned_nodes_list;
 
     /** Array with bead positions xyzxyzxyz.... [precomp] */
     scalar *bead_position;

@@ -34,7 +34,7 @@ NoMassCGSolver::~NoMassCGSolver() {
 }
 
 /* */
-int NoMassCGSolver::init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list) {
+int NoMassCGSolver::init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
 
     this->num_rows = 3 * num_nodes;
     this->num_nodes = num_nodes;
@@ -59,6 +59,9 @@ int NoMassCGSolver::init(int num_nodes, int num_elements, mesh_node *node, tetra
     }
     for (i = 0; i < num_pinned_nodes; i++) {
         is_pinned[pinned_nodes_list[i]] = 1;
+    }
+    for(set<int>::iterator it = bsite_pinned_node_list.begin(); it != bsite_pinned_node_list.end(); ++it) {
+        is_pinned[*it] = 1;
     }
 
     for (n = 0; n < num_elements; n++) {
