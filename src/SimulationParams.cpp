@@ -461,9 +461,6 @@ int SimulationParams::validate() {
         if (num_states[i] <= 0) {
             FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be greater than 0.\n", i);
         }
-        if (num_conformations[i] > num_states[i]) {
-            FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations[%d]', must be less than or equal to Number of States, 'num_states[%d]'.\n", i, i);
-        }
     }
 
     if (kappa < 0) {
@@ -577,15 +574,13 @@ int SimulationParams::validate() {
 	if(kinetics_update <= 0) {
 		FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
 	}
-	if(kinetics_update < check) {
-		FFEA_CAUTION_MESSG("\tIf 'calc_kinetics' = 1, then kinetics_update should be > check. Kinetic updates will be printed to file at the same rate at check.")
-	}
+
 	for(int i = 0; i < num_blobs; ++i) {
 
-		// Only states are check. Can still have only 1 conformation but include the potential for kinetic binding
-		if(num_states[i] == 1) {
-			FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be greater than 1 if 'calc_kinetics = 0'.\n", i);
-		}
+		// Only states are checked. Can still have only 1 conformation but include the potential for kinetic binding
+	//	if(num_states[i] == 1) {
+	//		FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be greater than 1 if 'calc_kinetics = 1'.\n", i);
+		//}
 	}
 
     } else {
@@ -596,6 +591,9 @@ int SimulationParams::validate() {
 		if(num_states[i] != 1) {
 			FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be equal to 1 if 'calc_kinetics = 0'.\n", i);
 		}
+	        if (num_conformations[i] > num_states[i]) {
+            	        FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations[%d]', must be less than or equal to Number of States, 'num_states[%d]'.\n", i, i);
+        	}
 	}
     }
     printf("...done\n");

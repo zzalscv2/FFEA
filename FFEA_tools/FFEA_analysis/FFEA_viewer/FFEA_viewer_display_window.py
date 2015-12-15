@@ -154,7 +154,7 @@ class FFEA_viewer_display_window():
 		es_N_y = None
 		es_N_z = None
 		es_h = None
-		move_into_box = 1
+		self.move_into_box = 1
 		self.num_blobs = 0
 		self.total_num_blobs = 0
 		self.num_conformations = []
@@ -201,7 +201,7 @@ class FFEA_viewer_display_window():
 				self.num_blobs = int(rvalue)
 			elif lvalue == "move_into_box":
 				self.move_into_box = int(rvalue)
-
+				
 			elif lvalue == "num_conformations":
 
 				rvalue_split = rvalue[1:-1].split(",")
@@ -288,7 +288,7 @@ class FFEA_viewer_display_window():
 									blob_mat.append("")
 									blob_stokes.append("")
 									blob_pin.append("")
-									blob_binding.append("")
+
 							elif lvalue == "nodes":
 								blob_nodes.append(rvalue)
 							elif lvalue == "topology":
@@ -398,9 +398,10 @@ class FFEA_viewer_display_window():
 		for blob in self.blob_list:
 
 			# First conformations only
-			blob[0].set_scale(global_scale * blob[0].scale)
+			blob[0].set_global_scale(global_scale)
 			blob[0].load_nodes_file_as_frame()
 			x,y,z = blob[0].get_centroid(0)
+
 			world_centroid[0] += x * blob[0].num_nodes
 			world_centroid[1] += y * blob[0].num_nodes
 			world_centroid[2] += z * blob[0].num_nodes
@@ -411,7 +412,8 @@ class FFEA_viewer_display_window():
 
 		# Translation to box center (if necessary)
 		shift = [0.0,0.0,0.0]
-		if move_into_box == 0:
+		if self.move_into_box == 1:
+			print "hi"
 			shift[0] = self.box_x / 2.0 - world_centroid[0]
 			shift[1] = self.box_y / 2.0 - world_centroid[1]
 			shift[2] = self.box_z / 2.0 - world_centroid[2]
@@ -422,7 +424,7 @@ class FFEA_viewer_display_window():
 				for c in blob:
 					if blob.index(c) == 0:
 						c.frames[0].translate(shift)
-					c.set_scale(global_scale * blob[0].scale)
+					c.set_global_scale(global_scale)
 		
 		else:
 			for blob in self.blob_list:
@@ -432,34 +434,13 @@ class FFEA_viewer_display_window():
 							c.frames[0].translate(shift)
 				else:
 					for c in blob:
-						c.set_scale(global_scale)
+						c.set_global_scale(global_scale)
 
 			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
 			self.load_trajectory_thread.start()
 
-		# Load frames from the trajectory file
-		#if trajectory_out_fname != None:
-		#	# if any of the blobs are STATIC, just load their node positions from the node file
-		#	for blob in self.blob_list:
-		#		for conf in blob:
-		#			if conf.get_state() == "STATIC":
-		#				conf.set_scale(global_scale * conf.scale)
-		#				conf.load_nodes_file_as_frame()
-		#			else:
-		#				conf.set_scale(global_scale)
-			# Start loading frames for each blob from the trajectory file
-#
-#			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
-#			self.load_trajectory_thread.start()
-			#self.load_trajectory(trajectory_out_fname)
-
-		# else just use the nodes files (if traj file not given or found)
-#		else:
-#			print "WARNING: Trajectory file is missing. Loading positions from node files."
-#			for blob in self.blob_list:
-#				#for conf in blob:
-#				blob[0].set_scale(global_scale * blob[0].scale)
-#				blob[0].load_nodes_file_as_frame()
+		for b in self.blob_list:
+			print b[0].get_centroid(0)
 
 	def load_trajectory(self, trajectory_out_fname,):
 
@@ -788,6 +769,7 @@ class FFEA_viewer_display_window():
 			m[14] = -self.z;
 			glLoadMatrixd(m);
 			glTranslated(-centroid_x, -centroid_y, -centroid_z);
+
 			if self.show_box == 1:
 				self.draw_box()
 

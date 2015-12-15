@@ -68,13 +68,14 @@ void BindingSite_matrix::print_to_screen() {
 		cout << endl;
 	}
 }
+
 BindingSite::BindingSite() {
 	num_faces = 0;
 	site_type = -1;
 	faces.clear();
 	vector3_set_zero(&centroid);
 	area = 0.0;
-	length = 0.0;
+	radius = 0.0;
 }
 
 BindingSite::~BindingSite() {
@@ -83,7 +84,7 @@ BindingSite::~BindingSite() {
 	faces.clear();
 	vector3_set_zero(&centroid);
 	area = 0.0;
-	length = 0.0;
+	radius = 0.0;
 }
 
 void BindingSite::set_num_faces(int num_faces) {
@@ -103,7 +104,12 @@ void BindingSite::add_face(Face *aface) {
 	faces.push_back(aface);
 }
 
-void BindingSite::calc_centroid(vector3 centroid) {
+vector3 BindingSite::get_centroid() {
+	
+	return centroid;
+}
+
+vector3 BindingSite::calc_centroid() {
 	
 	vector3_set_zero(&centroid);
 	vector3 *face_centroid;
@@ -115,22 +121,41 @@ void BindingSite::calc_centroid(vector3 centroid) {
 		centroid.z += face_centroid->z;
 	}
 	vec3_scale(&centroid, 1.0/num_faces);
+	return centroid;
 }
 
 scalar BindingSite::calc_area() {
 
+	area = 0.0;
+	vector<Face*>::iterator it;
+	for(it = faces.begin(); it != faces.end(); ++it) {
+		area += (*it)->get_area();
+	}
 	return area;
 }
 
 scalar BindingSite::calc_size() {
 	
 	calc_area();
-	length = sqrt(area / M_PI);
-	return length;
+	radius = sqrt(area / M_PI);
+	return radius;
 }
 
-void BindingSite::calc_site_shape(vector3 centroid) {
+void BindingSite::calc_dimensions() {
 	
-	calc_centroid(centroid);
+	calc_centroid();
 	calc_size();
+}
+
+set<int> BindingSite::get_nodes() {
+	
+	set<int> nodes;
+	vector<Face*>::iterator it;
+	for(it = faces.begin(); it != faces.end(); ++it) {
+		for(int i = 0; i < 3; ++i) {
+			nodes.insert((*it)->n[i]->index);
+		}	
+	}
+
+	return nodes;
 }
