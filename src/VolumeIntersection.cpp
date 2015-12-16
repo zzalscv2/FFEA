@@ -3,7 +3,7 @@
 #include "VolumeIntersection.h"
 
 
-/* Given the face formed by tetA[0]:tetA[1]:tetA[2] and the tangent unit vector t:
+/** Given the face formed by tetA[0]:tetA[1]:tetA[2] and the tangent unit vector t:
  * get b: the normal to a face pointing inwards.
  *     n: the normal to t, on the face 
  * the code assumes that tetA has its vertices in the right order. 
@@ -37,7 +37,7 @@ void getBAndN_Order(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &t, arr3 &b, a
 }
 
 
-/* Given the face formed by tetA[0]:tetA[1]:tetA[2] and the tangent unit vector t:
+/** Given the face formed by tetA[0]:tetA[1]:tetA[2] and the tangent unit vector t:
  * get b: the normal to a face pointing inwards.
  *     n: the normal to t, on the face 
  */
@@ -214,6 +214,7 @@ scalar volumeForIntPoint(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)
 }
 
 
+/** Return the volume intersection between two tetrahedra */ 
 scalar volumeIntersection(arr3 (&tetA)[4], arr3 (&tetB)[4]){
 
   scalar vol = 0.0; 
