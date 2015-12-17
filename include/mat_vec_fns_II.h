@@ -7,13 +7,6 @@
 ///////////////// SECTION 0 ////////////////////
 ////////  Constants and scalar functions ///////
 ////////////////////////////////////////////////
-namespace ffea_const {
-   const scalar mOne = -1.0;
-   const scalar zero = 0.0;
-   const scalar one = 1.0;
-   const scalar two = 2.0;
-   const scalar oneOverSix = 0.166666666666666667;
-}
 
 /** check whether two scalars have the same sign */
 bool sameSign(scalar a, scalar b);
@@ -46,12 +39,20 @@ scalar arr3arr3DotProduct(arr3 &vecA, arr3 &vecB);
 /** Normalise vector arr3 e */
 void arr3Normalise(arr3 &e);
 
-/** get the normalised vector of arr3 e into arr3 n */
+/** Get the normalised vector of arr3 e into arr3 n */
 void arr3Normalise2(arr3 &e, arr3 &n);
 
 /** Given a scalar f, resize vector u*/ 
 void arr3Resize(scalar f, arr3 &u);
 
+/** Given a scalar f, resize vector u into vector v */
+void arr3Resize2(scalar f, arr3 &u, arr3 &v);
+
+/** Return the length of a vector v */ 
+scalar mag(arr3 &v); 
+
+/** Initialise the input vector with (0, 0, 0) */ 
+void arr3Initialise(arr3 &v); 
 
 ///////////////// SECTION 2 ////////////////////
 ///// Geometric  functions for arr3 types ////// 
@@ -113,11 +114,27 @@ bool intersectionPoint(arr3 &(ip), arr3 (&e1), arr3 (&e2), arr3 (&tet)[4], int f
 bool isPointInFace(arr3 &ip, arr3 &p1, arr3 &p2, arr3 &p3);
 
 
+/** Return the center of coordinates for three points p1, p2, p3 in c */
+void faceCentroid(arr3 &p1, arr3 &p2, arr3 &p3, arr3 &c);
+
+
+/** Chech whether 4 points are on the same plane */ 
+bool samePlane(arr3 &p1, arr3 &p2, arr3 &p3, arr3 &p4);
 
 ///////////////// SECTION 3 ////////////////////
 /// Transition functions from vector3 to arr3 // 
 ////////////////////////////////////////////////
 void vec3Vec3SubsToArr3(vector3 &u, vector3 &v, arr3 (&w));
+void vec3Arr3SubsToArr3(vector3 &u, arr3 &v, arr3 &w); 
+
+void vec3Arr3AddToArr3(vector3 &u, arr3 (&v), arr3 (&w));
+void vec3Vec3AddToArr3(vector3 &u, vector3 &v, arr3 (&w));
+
+/** Given a scalar f, resize vec3 u into arr3 u*/ 
+void vec3ResizeToArr3(scalar f, vector3 &u, arr3 &v);
+
+scalar vec3Arr3DotProduct(vector3 &u, arr3 &v); 
+
 
 
 
