@@ -93,10 +93,12 @@ public:
     scalar get_normal_flux();
 
     void add_force_to_node(int i, vector3 *f);
+    void add_force_to_node(int i, arr3 (&f));
 
     void add_force_to_node_atomic(int i, vector3 *f);
 
     void add_bb_vdw_force_to_record(vector3 *f, int other_blob_index);
+    void add_bb_vdw_force_to_record(arr3 &f, int other_blob_index);
 
     void add_bb_vdw_energy_to_record(scalar energy, int other_blob_index);
 
