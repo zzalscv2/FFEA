@@ -2,6 +2,7 @@
 #include <cmath>
 #include "VolumeIntersection.h"
 
+using namespace std; 
 
 /** Given the face formed by tetA[0]:tetA[1]:tetA[2] and the tangent unit vector t:
  * get b: the normal to a face pointing inwards.
@@ -50,6 +51,7 @@ void getBAndN(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &t, arr3 &b, arr3 &n
    // aux is a vector normal to the face:
    arr3arr3VectorProduct(t, pl2, aux);
    arr3Normalise2(aux, b);
+   arr3arr3Add(aux, tetA[n0], aux); 
    // but it must be inwards, i. e., on the same side of the plane than n3. 
    int n3 = getMissingNode(n0, n1, n2); 
    scalar d = - arr3arr3DotProduct(b, tetA[n0]);
@@ -124,17 +126,18 @@ scalar volumeForIntPoint(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)
    // arr3 T[3] will store the unit vectors of these edges.
    arr3 T[3]; 
    //
-   // Finally, we will go through the loop edges x faces
+   // Finally, we will go through the loop edges x faces. 
    //
-   /*
-   cout << "intersection between edge tetA[" << e1 << "]:tetA[" << e2 << "] and " 
-             << "face tetB[0]:tetB[1]:tetB[2] " << endl; 
-   cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
-   */ 
+   // Let's start:
    // Firstly, the normal to tetB[f1]:tetB[f2]:tetB[f3]:
    getNormalInwards(tetB, f1, f2, f3, B[0]); 
    //  and the easy tangent:  
    tangent(tetA[e2], tetA[e1], T[0]); 
+   // but check whether we are entering or escaping: 
+   int f4 = getMissingNode(f1,f2,f3); 
+   //   so if escaping:
+   if (sameSidePlane(tetA[e1], tetB[f4], tetB[f1], tetB[f2], tetB[f3])) 
+     arr3Resize(ffea_const::mOne, T[0]); 
  
    // Secondly, normals and tangents for the tetA faces: 
    int cnt = 0; 
@@ -160,6 +163,39 @@ scalar volumeForIntPoint(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)
      }
    }
 
+  /////////////////////
+  ////// CHECK ////////
+  arr3 aux; 
+  /*
+  arr3 C[3]; 
+  faceCentroid(tetB[f1], tetB[f2], tetB[f3], C[0]);
+  faceCentroid(tetA[e1], tetA[e2], tetA[F[0]], C[1]);
+  faceCentroid(tetA[e1], tetA[e2], tetA[F[1]], C[2]);
+  arr3arr3Add(C[0], B[0], aux); 
+  cout << "C: " << C[0][0] << ", " << C[0][1] << ", " << C[0][2] << endl; 
+  cout << "B: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
+  cout << endl << endl; 
+
+  arr3arr3Add(C[1], B[1], aux); 
+  cout << "C: " << C[1][0] << ", " << C[1][1] << ", " << C[1][2] << endl; 
+  cout << "B: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
+  cout << endl << endl; 
+  arr3arr3Add(C[2], B[2], aux); 
+  cout << "C: " << C[2][0] << ", " << C[2][1] << ", " << C[2][2] << endl; 
+  cout << "B: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
+  cout << endl << endl; 
+  */ 
+  ///////////////////////////
+  /*
+  for (int i=0; i<3; i++) { 
+    arr3arr3Add(ip, T[i], aux); 
+    cout << "P: " << ip[0] << " " << ip[1] << " " << ip[2] << endl; 
+    cout << "T: " << aux[0] << " " << aux[1] << " " << aux[2] << endl; 
+    cout << endl << endl; 
+  } 
+  */ 
+  ////// CHECK ////////
+  /////////////////////
   
    // Now we'll get the (partial) volumes: 
    //  Firstly the contribution of the edge tetA[e1]:tetA[e2],
@@ -178,6 +214,23 @@ scalar volumeForIntPoint(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)
       arr3 vaux;
       arr3arr3Add(ip, n, vaux);
       if (!sameSideLine(vaux, tetA[F[i]], tetA[e2], tetA[e1])) arr3Resize(ffea_const::mOne, n); 
+      /////////////////
+      /* // CHECK ! // 
+      arr3 aux; 
+      cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
+      arr3arr3Add(ip, T[0], aux); 
+      cout << "t: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
+      cout << endl << endl; 
+      arr3arr3Add(ip, B[i+1], aux); 
+      cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
+      cout << "b: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
+      cout << endl << endl; 
+      arr3arr3Add(ip, n, aux); 
+      cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
+      cout << "n: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
+      cout << endl << endl; 
+      // CHECK ! // */
+      /////////////////
       volume += ipT[0] * arr3arr3DotProduct(ip, n) * ipB[i+1]; //  arr3arr3DotProduct(ip, B[i+1]);
    } 
   
@@ -218,18 +271,24 @@ scalar volumeForIntPoint(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)
 scalar volumeIntersection(arr3 (&tetA)[4], arr3 (&tetB)[4]){
 
   scalar vol = 0.0; 
-  scalar aux;
-  
+
+  scalar aux;   
   // Check for interior points. 
   for (int i=0; i<4; i++) {
     // if point tetA[i] is inside tetB -> account for its contribution. 
     if (nodeInTet(tetA[i], tetB)) { 
       vol += volumeForNode(tetA, i);
+      /*aux = volumeForNode(tetA, i);
+      cout << "tetA-node[" << i << "] accounts: " << aux << endl; 
+      vol += aux;*/ 
     } 
     // if point tetB[i] is inside tetA -> account for its contribution. 
     // PENDING: what happens if a node belongs to both tetA and tetB? 
     if (nodeInTet(tetB[i], tetA)) { 
       vol += volumeForNode(tetB, i);
+      /*aux = volumeForNode(tetB, i);
+      cout << "tetB-node[" << i << "] accounts: " << aux << endl; 
+      vol += aux;*/ 
     } 
   } 
 
@@ -244,15 +303,53 @@ scalar volumeIntersection(arr3 (&tetA)[4], arr3 (&tetB)[4]){
       // check intersection for edge tetA:ij and every tetB face: 
       if (intersectionPoint(ip, tetA[i], tetA[j], tetB, 0, 1, 2)) {
         vol += volumeForIntPoint(ip, tetA, i, j, tetB, 0, 1, 2); 
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+             << "face tetB[0]:tetB[1]:tetB[2] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
       }
       if (intersectionPoint(ip, tetA[i], tetA[j], tetB, 1, 2, 3)){
         vol += volumeForIntPoint(ip, tetA, i, j, tetB, 1, 2, 3); 
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+             << "face tetB[1]:tetB[2]:tetB[3] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
       }
       if (intersectionPoint(ip, tetA[i], tetA[j], tetB, 2, 3, 0)){
         vol += volumeForIntPoint(ip, tetA, i, j, tetB, 2, 3, 0); 
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+             << "face tetB[2]:tetB[3]:tetB[0] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
       }
       if (intersectionPoint(ip, tetA[i], tetA[j], tetB, 3, 0, 1)){
         vol += volumeForIntPoint(ip, tetA, i, j, tetB, 3, 0, 1); 
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+             << "face tetB[3]:tetB[0]:tetB[1] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+      }
+
+      // check intersection for edge tetB:ij and every tetA face: 
+      if (intersectionPoint(ip, tetB[i], tetB[j], tetA, 0, 1, 2)) {
+        vol += volumeForIntPoint(ip, tetB, i, j, tetA, 0, 1, 2); 
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+             << "face tetA[0]:tetA[1]:tetA[2] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+      }
+      if (intersectionPoint(ip, tetB[i], tetB[j], tetA, 1, 2, 3)){
+        vol += volumeForIntPoint(ip, tetB, i, j, tetA, 1, 2, 3); 
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+             << "face tetA[1]:tetA[2]:tetA[3] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+      }
+      if (intersectionPoint(ip, tetB[i], tetB[j], tetA, 2, 3, 0)){
+        vol += volumeForIntPoint(ip, tetB, i, j, tetA, 2, 3, 0); 
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+             << "face tetA[2]:tetA[3]:tetA[0] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+      }
+      if (intersectionPoint(ip, tetB[i], tetB[j], tetA, 3, 0, 1)){
+        vol += volumeForIntPoint(ip, tetB, i, j, tetA, 3, 0, 1); 
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+             << "face tetA[3]:tetA[0]:tetA[1] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
       }
     } 
   } 
