@@ -1,4 +1,6 @@
 #include "mat_vec_fns_II.h"
+#include <iostream>
+using namespace std; 
 
 ///////////////// SECTION 0 ////////////////////
 ////////  Constants and scalar functions ///////
@@ -108,7 +110,7 @@ void arr3Normalise2(arr3 &e, arr3 &n){
 }
 
 
-/** resize vector u, given scalar v */
+/** resize vector u, given scalar f */
 void arr3Resize(scalar f, arr3 &u){
 
    for (int i=0; i<3; i++) {
@@ -116,6 +118,37 @@ void arr3Resize(scalar f, arr3 &u){
     }
 
 }
+
+/** resize vector u into vector v, given scalar f */
+void arr3Resize2(scalar f, arr3 &u, arr3 &v){
+
+   for (int i=0; i<3; i++) {
+      v[i] = f*u[i];
+    }
+
+}
+
+/** Return the length of a vector v */
+scalar mag(arr3 &v) {
+   
+   scalar s;
+   for (int i=0; i<3; i++) {
+      s += v[i] * v[i];
+   } 
+   return sqrt(s); 
+
+}
+
+void arr3Initialise(arr3 &v){ 
+  
+    for (int i=0; i<3; i++) {
+      v[i] = ffea_const::zero; 
+    }
+
+} 
+ 
+
+
 
 ////////////////////////////////////////////////
 ////////////// END OF SECTION 1 ////////////////
@@ -181,6 +214,7 @@ void getNormalInwards(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &n){
    arr3Normalise2(aux, n);
    // but it must be inwards, i. e., on the same side of the plane than n3. 
    int n3 = getMissingNode(n0, n1, n2);
+   arr3arr3Add(aux, tetA[n0], aux); 
    scalar d = - arr3arr3DotProduct(n, tetA[n0]);
    scalar t1 = arr3arr3DotProduct(tetA[n3], n) + d;
    scalar t2 = arr3arr3DotProduct(aux, n) + d;
@@ -198,11 +232,31 @@ bool sameSidePlane(arr3 &vec, arr3 &test, arr3 &p1, arr3 &p2, arr3 &p3){
    arr3arr3Substract(p2, p1, pl1);
    arr3arr3Substract(p3, p1, pl2);
    arr3arr3VectorProduct(pl1, pl2, n);
+   arr3Normalise(n); 
    scalar d = - arr3arr3DotProduct(n, p1);
    scalar t1 = arr3arr3DotProduct(vec, n) + d;
    scalar t2 = arr3arr3DotProduct(test, n) + d;
-   if ((t1 * t2) >= 0 ) return true;
+   // if ((t1 * t2) >= 0 ) return true;
+   // cout << "t1: " << t1 << " t2: " << t2 << endl; 
+   if (sameSign(t1,t2)) return true; 
    else return false;
+
+}
+
+/**
+ */
+bool samePlane(arr3 &p1, arr3 &p2, arr3 &p3, arr3 &p4){
+ 
+   arr3 pl21, pl31, pl41; 
+   arr3arr3Substract(p2, p1, pl21);
+   arr3arr3Substract(p3, p1, pl31);
+   arr3arr3Substract(p4, p1, pl41);
+   scalar s = (pl21[1] * pl31[2] - pl21[2] * pl31[1])* pl41[0] + 
+              (pl21[2] * pl31[0] - pl21[0] * pl31[2]) * pl41[1] + 
+              (pl21[0] * pl31[1] - pl21[1] * pl31[0]) * pl41[2]; 
+   if (fabs(s) > ffea_const::threeErr) return false; 
+   else return true; 
+   
 
 }
 
@@ -213,6 +267,7 @@ bool sameSidePlane(arr3 &vec, arr3 &test, arr3 &p1, arr3 &p2, arr3 &p3){
  */
 bool sameSideLine(arr3 &e, arr3 &p1, arr3 &p2, arr3 &p3) {
 
+   // if (!samePlane(e, p1, p2, p3)) cout << "alarm" << endl;
    arr3 pl23, pl21, pl2e, v1, ve;
    arr3arr3Substract(p3, p2, pl23);
    arr3arr3Substract(p1, p2, pl21);
@@ -304,8 +359,14 @@ bool isPointInFace(arr3 &ip, arr3 &p1, arr3 &p2, arr3 &p3) {
   return true;
 }
 
+/** Return the center of coordinates for three points p1, p2, p3 in c */
+void faceCentroid(arr3 &p1, arr3 &p2, arr3 &p3, arr3 &c){
 
+   for (int i=0; i<3; i++){
+     c[i] = ffea_const::oneOverThree * (p1[i] + p2[i] + p3[i]); 
+   } 
 
+}
 
 ///////////////// SECTION 3 ////////////////////
 /// Transition functions from vector3 to arr3 // 
@@ -317,6 +378,42 @@ void vec3Vec3SubsToArr3(vector3 &u, vector3 &v, arr3 (&w)){
     w[2] = u.z - v.z;
 
 }
+
+void vec3Arr3SubsToArr3(vector3 &u, arr3 (&v), arr3 (&w)){
+
+    w[0] = u.x - v[0]; 
+    w[1] = u.y - v[1]; 
+    w[2] = u.z - v[2]; 
+
+}
+
+void vec3Arr3AddToArr3(vector3 &u, arr3 (&v), arr3 (&w)){
+
+    w[0] = u.x + v[0]; 
+    w[1] = u.y + v[1]; 
+    w[2] = u.z + v[2]; 
+
+}
+
+void vec3ResizeToArr3(scalar f, vector3 &u, arr3 (&v)){
+
+    v[0] = f*u.x;
+    v[1] = f*u.y;
+    v[2] = f*u.z;
+
+}
+
+scalar vec3Arr3DotProduct(vector3 &u, arr3 &v) {
+    
+     scalar s;
+     s = u.x * v[0]; 
+     s += u.y * v[1];
+     s += u.z * v[2]; 
+     return s; 
+
+}
+
+
 ////////////// END OF SECTION 3 ////////////////
 
 

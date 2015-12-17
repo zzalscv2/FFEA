@@ -1,6 +1,8 @@
 #ifndef MAT_VEC_TYPES_H_INCLUDED
 #define MAT_VEC_TYPES_H_INCLUDED
 
+#include <limits>
+
 /*
  * Defines what is meant by a scalar (essentially sets the precision of
  * the code between float or double).
@@ -11,6 +13,18 @@ typedef double scalar;
 typedef float scalar;
 #endif 
 //typedef long double scalar;
+
+////////  Constants and scalar functions ///////
+namespace ffea_const {
+   const scalar threeErr = 3.0*std::numeric_limits<double>::epsilon();
+   const scalar mOne = -1.0;
+   const scalar zero = 0.0;
+   const scalar one = 1.0;
+   const scalar two = 2.0;
+   const scalar oneOverThree = 0.33333333333333333;
+   const scalar oneOverSix = 0.166666666666666667;
+   const scalar oneOverEight = 0.12500000000000000; 
+}
 
 /*
  * A simple 3 dimensional vector (x, y, z)
