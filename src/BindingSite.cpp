@@ -22,7 +22,7 @@ int BindingSite_matrix::init(string fname) {
 	}
 
 	// Check if correct file
-	int MAX_BUF_SIZE = 255;
+	int MAX_BUF_SIZE = 255, inter;
 	char buf[MAX_BUF_SIZE];
 	string buf_string;
 	fin.getline(buf, MAX_BUF_SIZE);
@@ -34,19 +34,41 @@ int BindingSite_matrix::init(string fname) {
 
 	// Get num_site_types
 	fin >> buf_string >> num_interaction_types;
-	
+	if (num_interaction_types <= 0 || num_interaction_types > 10) {
+		FFEA_ERROR_MESSG("In %s, %d is an invalid value for 'num_interaction_types'. Value should be 0 < num_interaction_types <= 10.\n", fname.c_str(), num_interaction_types)
+	}
+
 	// Get all interactions
-	interaction = new int*[num_interaction_types];
+	interaction = new bool*[num_interaction_types];
 	for(int i = 0; i < num_interaction_types; ++i) {
-		interaction[i] = new int[num_interaction_types];
+		interaction[i] = new bool[num_interaction_types];
 		for(int j = 0; j < num_interaction_types; ++j) {
 			if(fin.eof()) {
 				FFEA_ERROR_MESSG("EOF reached prematurely. For 'num_interaction types = %d', expected at %d x %d matrix of 0's and 1's\n", num_interaction_types, num_interaction_types, num_interaction_types)
 			}
-			fin >> interaction[i][j];
-			if(interaction[i][j] != 0 && interaction[i][j] != 1) {
+
+			try {
+				fin >> inter;
+			} catch (...) {
+				FFEA_ERROR_MESSG("In %s, error reading interaction value at Row %d Column %d\n", fname.c_str(), i + 1, j + 1)		
+			}
+
+			if (inter == 0) {
+				interaction[i][j] = false;
+			} else if (inter == 1) {
+				interaction[i][j] = true;
+			} else {
 				FFEA_ERROR_MESSG("Binding Site Param Row %d Column %d must be either 0 or 1\n", i + 1, j + 1)
 			}
+		}
+	}
+
+	// Is it symmetric ? It should be, really
+	for(int i = 0; i < num_interaction_types; ++i) {
+		for(int j = i; j < num_interaction_types; ++j) {
+			if(interaction[i][j] != interaction[j][i]) {
+				FFEA_ERROR_MESSG("Binding Site Param Row %d Column %d must equal to Binding Site Param Row %d Column %d (symettric)\n", i + 1, j + 1, j + 1, i + 1)				
+			} 
 		}
 	}
 	fin.close();
@@ -61,9 +83,15 @@ int BindingSite_matrix::get_num_interaction_types() {
 void BindingSite_matrix::print_to_screen() {
 	
 	int i, j;
+	cout << "Binding Params Matrix:\n" << endl;
 	for(i = 0; i < num_interaction_types; ++i) {
+		cout << "\tType " << i;
+	}
+	cout << endl;
+	for(i = 0; i < num_interaction_types; ++i) {
+		cout << "Type " << i << "\t";
 		for(j = 0; j < num_interaction_types; ++j) {
-			cout << interaction[i][j] << " ";
+			cout << interaction[i][j] << "\t";
 		}
 		cout << endl;
 	}
@@ -75,7 +103,7 @@ BindingSite::BindingSite() {
 	faces.clear();
 	vector3_set_zero(&centroid);
 	area = 0.0;
-	radius = 0.0;
+	characteristic_length = 0.0;
 }
 
 BindingSite::~BindingSite() {
@@ -84,9 +112,20 @@ BindingSite::~BindingSite() {
 	faces.clear();
 	vector3_set_zero(&centroid);
 	area = 0.0;
-	radius = 0.0;
+	characteristic_length = 0.0;
 }
 
+void BindingSite::print_to_screen() {
+
+	vector<Face*>::iterator it;
+	cout << "Binding Site:";
+	cout << "type = " << site_type << ", num_faces = " << num_faces << endl;
+	cout << "Faces: ";
+	for(it = faces.begin(); it != faces.end(); ++it) {
+		cout << (*it)->index << " ";
+	}
+	cout << endl << endl;
+}
 void BindingSite::set_num_faces(int num_faces) {
 	this->num_faces = num_faces;
 }
@@ -109,7 +148,7 @@ vector3 BindingSite::get_centroid() {
 	return centroid;
 }
 
-vector3 BindingSite::calc_centroid() {
+void BindingSite::calculate_centroid() {
 	
 	vector3_set_zero(&centroid);
 	vector3 *face_centroid;
@@ -121,30 +160,6 @@ vector3 BindingSite::calc_centroid() {
 		centroid.z += face_centroid->z;
 	}
 	vec3_scale(&centroid, 1.0/num_faces);
-	return centroid;
-}
-
-scalar BindingSite::calc_area() {
-
-	area = 0.0;
-	vector<Face*>::iterator it;
-	for(it = faces.begin(); it != faces.end(); ++it) {
-		area += (*it)->get_area();
-	}
-	return area;
-}
-
-scalar BindingSite::calc_size() {
-	
-	calc_area();
-	radius = sqrt(area / M_PI);
-	return radius;
-}
-
-void BindingSite::calc_dimensions() {
-	
-	calc_centroid();
-	calc_size();
 }
 
 set<int> BindingSite::get_nodes() {
@@ -158,4 +173,51 @@ set<int> BindingSite::get_nodes() {
 	}
 
 	return nodes;
+}
+
+void BindingSite::calculate_area() {
+
+	area = 0.0;
+	vector<Face*>::iterator it;
+	for(it = faces.begin(); it != faces.end(); ++it) {
+		area += (*it)->get_area();
+	}
+}
+
+scalar BindingSite::get_area() {
+
+	return area;
+}
+
+void BindingSite::calculate_characteristic_length() {
+
+	calculate_area();
+	characteristic_length = sqrt(area);
+}
+
+scalar BindingSite::get_characteristic_length() {
+
+	return characteristic_length;
+}
+
+bool BindingSite::sites_in_range(BindingSite a, BindingSite b) {
+
+	// Calculate separation and see if less than sum of characteristic length scales / radii
+	scalar separation;
+	vector3 a_cent, b_cent;
+	a.calculate_characteristic_length();
+	b.calculate_characteristic_length();
+
+	a.calculate_centroid();
+	b.calculate_centroid();
+	a_cent = a.get_centroid();
+	b_cent = b.get_centroid();
+	separation = sqrt(pow(a_cent.x - b_cent.x, 2) + pow(a_cent.y - b_cent.y, 2) + pow(a_cent.z - b_cent.z, 2));
+	//cout << "Separation = " << separation << ", Limiting distance = " << a.get_characteristic_length() + b.get_characteristic_length() << endl;
+	//cout << "Char length a = " << a.get_characteristic_length() << ", Char length b = " << b.get_characteristic_length() << endl;
+	if(separation < a.get_characteristic_length() + b.get_characteristic_length()) {
+		return true;
+	} else {
+		return false;
+	}
 }

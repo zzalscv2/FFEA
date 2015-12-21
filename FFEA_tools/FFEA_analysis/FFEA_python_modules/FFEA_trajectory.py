@@ -424,6 +424,16 @@ class FFEA_traj_blob:
 
 		return centroid
 
+	def write_frame_as_nodes(self, fname, frame_index, scale):
+
+		fout = open(fname, "w")
+		fout.write("ffea node file\nnum_nodes %d\nnum_surface_nodes %d\nnum_interior_nodes %d\nsurface nodes:\n" % (self.num_nodes, self.num_nodes, 0))
+		for i in range(self.num_nodes):
+			fout.write("%8.6f %8.6f %8.6f\n" % (self.frame[frame_index].pos[i][0] * scale, self.frame[frame_index].pos[i][1] * scale, self.frame[frame_index].pos[i][2] * scale))
+		fout.write("interior nodes:\n")
+		fout.close()
+
+
 class FFEA_traj_blob_frame:
 
 	def __init__(self, num_nodes):
