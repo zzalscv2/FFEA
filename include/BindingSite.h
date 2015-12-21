@@ -23,27 +23,37 @@ class BindingSite{
 		~BindingSite();
 
 		// Structure
-		int num_faces;
-		vector<Face*> faces;
+		int num_faces, site_type;
 
-		// Properties
-		vector3 centroid;
-		scalar area, radius;
+		/** List of faces making up the site */
+		vector<Face*> faces;
 		
+		void print_to_screen();
 		void set_num_faces(int num_faces);
 		void set_type(int site_type);
 		int get_type();
 		void add_face(Face *aface);
-		vector3 calc_centroid();
-		void calc_dimensions();
-		scalar calc_size();
-		scalar calc_area();
 		set<int> get_nodes();
+
+		void calculate_centroid();
 		vector3 get_centroid();
+		void calculate_area();
+		scalar get_area();
+		void calculate_characteristic_length();
+		scalar get_characteristic_length();
+
+		static bool sites_in_range(BindingSite a, BindingSite b);
 
 	private:
 
-		int site_type;
+		/** Centroid of the whole site (needs recalculating if simulation has continued) */
+		vector3 centroid;
+
+		/** Area of the whole site (needs recalculating if simulation has continued) */
+		scalar area;
+
+		/** Area of the whole site (needs recalculating if area has updated */
+		scalar characteristic_length;
 };
 
 class BindingSite_matrix{
@@ -57,9 +67,11 @@ class BindingSite_matrix{
 		int get_num_interaction_types();
 		void print_to_screen();
 
-		// Public variables
+		/** Number of interaction types allowed */
 		int num_interaction_types;
-		int **interaction;
+		
+		/** 2D matrix defining allowed interactions between site types */
+		bool **interaction;
 };
 
 #endif

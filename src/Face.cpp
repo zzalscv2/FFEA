@@ -43,7 +43,9 @@ Face::~Face() {
     daddy_blob = NULL;
 }
 
-void Face::init(tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params) {
+void Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params) {
+    
+    this->index = index;
     this->e = e;
     n[0] = n0;
     n[1] = n1;
@@ -75,7 +77,9 @@ void Face::init(tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node
     this->daddy_blob = daddy_blob;
 }
 
-void Face::init(mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params) {
+void Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params) {
+
+    this->index = index;
     this->e = NULL;
     n[0] = n0;
     n[1] = n1;
@@ -152,7 +156,7 @@ scalar Face::get_area() {
     temp.y = a.z * b.x - a.x * b.z;
     temp.z = a.x * b.y - a.y * b.x;
 
-    scalar normal_mag = sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+    scalar normal_mag = sqrt(temp.x * temp.x + temp.y * temp.y + temp.z * temp.z);
 
     area = .5 * normal_mag;
     return area;

@@ -18,6 +18,9 @@ public:
       * while the last one belongs to the opposite node of the linear tetrahedron **/
     mesh_node *n[4];
 
+    /* Index of this face */
+    int index;
+
     /* Pointer to the element this is a face of */
     tetra_element_linear *e;
 
@@ -55,9 +58,9 @@ public:
 
     Blob *daddy_blob;
 
-    void init(tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *oposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params);
+    void init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *oposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params);
 
-    void init(mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params);
+    void init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params);
 
     void set_vdw_interaction_type(int vdw_interaction_type);
 

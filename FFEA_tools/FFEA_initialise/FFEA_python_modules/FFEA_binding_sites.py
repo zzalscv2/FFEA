@@ -44,18 +44,30 @@ class FFEA_binding_sites:
 		for i in range(self.num_binding_sites):
 			indices = []
 			try:
+
+				# Shouldn't be at the end yet!
 				line = fin.readline()
 				if line == [] or line == None or line == "":
 					raise EOFError
 
+				# First line (type and stuff)
 				sline = line.split()
-				site_type = int(sline[0])
-				num_faces = int(sline[1])
-				if num_faces != len(sline) - 2:
+				site_type = int(sline[1])
+				num_faces = int(sline[3])
+				
+				# Second line is face list
+				line = fin.readline()
+
+				# Shouldn't be at the end yet!
+				if line == [] or line == None or line == "":
+					raise EOFError
+
+				sline = line.split()[1:]
+				if(len(sline) != num_faces):
 					raise IndexError
 
 				self.bsites[i].set_type(site_type)
-				self.bsites[i].set_structure([int(index) for index in sline[1:]])
+				self.bsites[i].set_structure([int(index) for index in sline])
 
 			except(EOFError):
 				print "Error. EOF may have been reached prematurely:\nnum_faces = " + str(self.num_faces) + "\nnum_faces read = " + str(i)
@@ -80,7 +92,7 @@ class FFEA_binding_sites:
 		
 		# Write the sites
 		for s in self.bsites:
-			fout.write("%d %d" % (s.site_type, s.num_faces))
+			fout.write("type %d num_faces %d\nfaces:" % (s.site_type, s.num_faces))
 			
 			for f in s.face_index:
 				fout.write(" %d" % (f))
