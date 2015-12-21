@@ -194,6 +194,12 @@ scalar Face::get_normal_flux() {
  */
 
 
+void Face::add_force_to_node(int i, arr3 (&f)) {
+    force[i].x += f[0];
+    force[i].y += f[1];
+    force[i].z += f[2];
+}
+
 void Face::add_force_to_node(int i, vector3 *f) {
     force[i].x += f->x;
     force[i].y += f->y;
@@ -210,6 +216,12 @@ void Face::add_bb_vdw_force_to_record(vector3 *f, int other_blob_index) {
     vdw_bb_force[other_blob_index].x += f->x;
     vdw_bb_force[other_blob_index].y += f->y;
     vdw_bb_force[other_blob_index].z += f->z;
+}
+
+void Face::add_bb_vdw_force_to_record(arr3 &f, int other_blob_index) {
+    vdw_bb_force[other_blob_index].x += f[0];
+    vdw_bb_force[other_blob_index].y += f[1];
+    vdw_bb_force[other_blob_index].z += f[2];
 }
 
 void Face::add_bb_vdw_energy_to_record(scalar energy, int other_blob_index) {
@@ -266,3 +278,47 @@ bool Face::is_vdw_active() {
         return true;
     }
 }
+
+bool Face::checkTetraIntersection(Face *f2) {
+  
+  // V1 = n
+  // V2 = f2->n
+  scalar tetA[4][3], tetB[4][3]; 
+  for (int i=0; i<4; i++) {
+     tetA[i][0] = n[i]->pos.x;
+     tetA[i][1] = n[i]->pos.y;
+     tetA[i][2] = n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x;
+     tetB[i][1] = f2->n[i]->pos.y;
+     tetB[i][2] = f2->n[i]->pos.z;
+  }
+  return (tet_a_tet(tetA, tetB)); 
+ 
+} 
+
+scalar Face::getTetraIntersectionVolume(Face *f2){
+
+  scalar tetA[4][3], tetB[4][3]; 
+  arr3 c;
+  c[0] = ffea_const::oneOverEight *
+        (   n[0]->pos.x +     n[1]->pos.x +     n[2]->pos.x +     n[3]->pos.x + 
+        f2->n[0]->pos.x + f2->n[1]->pos.x + f2->n[2]->pos.x + f2->n[3]->pos.x);
+  c[1] = ffea_const::oneOverEight *
+        (   n[0]->pos.y +     n[1]->pos.y +     n[2]->pos.y +     n[3]->pos.y + 
+        f2->n[0]->pos.y + f2->n[1]->pos.y + f2->n[2]->pos.y + f2->n[3]->pos.y);
+  c[2] = ffea_const::oneOverEight *
+        (   n[0]->pos.z +     n[1]->pos.z +     n[2]->pos.z +     n[3]->pos.z + 
+        f2->n[0]->pos.z + f2->n[1]->pos.z + f2->n[2]->pos.z + f2->n[3]->pos.z);
+
+  for (int i=0; i<4; i++) {
+     tetA[i][0] = n[i]->pos.x - c[0];
+     tetA[i][1] = n[i]->pos.y - c[1];
+     tetA[i][2] = n[i]->pos.z - c[2];
+     tetB[i][0] = f2->n[i]->pos.x - c[0];
+     tetB[i][1] = f2->n[i]->pos.y - c[1];
+     tetB[i][2] = f2->n[i]->pos.z - c[2];
+  }
+  return volumeIntersection(tetA, tetB);
+
+
+} 
