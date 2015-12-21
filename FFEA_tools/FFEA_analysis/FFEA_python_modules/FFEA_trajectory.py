@@ -156,7 +156,7 @@ class FFEA_trajectory:
 							frame.pos[j][k] = float(sline[k])
 
 					except(ValueError, IndexError):
-						print("Error. Expected '%f %f %f' at the very least.")
+						print("Error on frame "+str(num_frames_read+num_frames_skipped-1)+" pos "+str(j)+". Expected '%f %f %f' at the very least.")
 						print sline
 						self.reset()
 						fin.close()
