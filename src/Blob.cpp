@@ -1045,21 +1045,17 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
 
 
             /* Calculate angular momentum */
-#ifdef FFEA_PARALLEL_WITHIN_BLOB
-#if defined(__GNUC__)
-#pragma omp parallel for default(none) reduction(+:L_x,L_y,L_z) shared(system_CoM) private(n, r, temp1, temp2, temp3, i, j)
-#elif defined(__ICC)
-#pragma omp parallel for default(none) reduction(+:L_x,L_y,L_z) shared(system_CoM) private(n, r, temp1, temp2, temp3, i, j)
-#endif
-#endif
-            for (n = 0; n < num_elements; n++) {
-
-                // mass matrix
-                const matrix4 M = {
+            // mass matrix
+            const matrix4 MM = {
                     {.1, .05, .05, .05},
                     {.05, .1, .05, .05},
                     {.05, .05, .1, .05},
                     {.05, .05, .05, .1}};
+
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+#pragma omp parallel for default(none) reduction(+:L_x,L_y,L_z) shared(MM, system_CoM) private(n, r, temp1, temp2, temp3, i, j)
+#endif
+            for (n = 0; n < num_elements; n++) {
 
                 // Find the separation vectors for this element
                 for (i = 0; i < 4; i++) {
@@ -1074,9 +1070,9 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
                 temp3 = 0;
                 for (i = 0; i < 4; i++) {
                     for (j = 0; j < 4; j++) {
-                        temp1 += M[i][j] * (r[j][1] * elem[n].n[i]->vel.z - r[j][2] * elem[n].n[i]->vel.y);
-                        temp2 += M[i][j] * (r[j][2] * elem[n].n[i]->vel.x - r[j][0] * elem[n].n[i]->vel.z);
-                        temp3 += M[i][j] * (r[j][0] * elem[n].n[i]->vel.y - r[j][1] * elem[n].n[i]->vel.x);
+                        temp1 += MM[i][j] * (r[j][1] * elem[n].n[i]->vel.z - r[j][2] * elem[n].n[i]->vel.y);
+                        temp2 += MM[i][j] * (r[j][2] * elem[n].n[i]->vel.x - r[j][0] * elem[n].n[i]->vel.z);
+                        temp3 += MM[i][j] * (r[j][0] * elem[n].n[i]->vel.y - r[j][1] * elem[n].n[i]->vel.x);
                     }
                 }
 
