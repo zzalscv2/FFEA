@@ -56,6 +56,7 @@ for f in faces:
 
 # Now check the angle between normals of these faces
 centnorm = centface.get_normal(node)
+
 for f in faces:
 	if f == centface:
 		continue

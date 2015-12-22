@@ -573,27 +573,24 @@ int SimulationParams::validate() {
     if (calc_kinetics == 1) {
 	if(kinetics_update <= 0) {
 		FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
+	} else if (kinetics_update <= check) {
+
+		// This could be fixed by changing how the output files are printed. Fix later, busy now!
+		FFEA_CAUTION_MESSG("\t'kinetics_update' < 'check'. A kinetic switch therefore maybe missed i.e. not printed to the output files.\n")
 	}
 
-	for(int i = 0; i < num_blobs; ++i) {
-
-		// Only states are checked. Can still have only 1 conformation but include the potential for kinetic binding
-	//	if(num_states[i] == 1) {
-	//		FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be greater than 1 if 'calc_kinetics = 1'.\n", i);
-		//}
-	}
+	// num_conformations[i] can be > num_states[i], so long as none of the states reference an out of bounds conformation
 
     } else {
 	for(int i = 0; i < num_blobs; ++i) {
 		if(num_conformations[i] != 1) {
-			FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations[%d]', must be equal to 1 if 'calc_kinetics = 0'.\n", i);
+			FFEA_CAUTION_MESSG("\tNumber of Conformations, 'num_conformations[%d]', not equal to 1. Only first conformation will be loaded.\n", i);
+			num_conformations[i] = 1;
 		}
 		if(num_states[i] != 1) {
-			FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be equal to 1 if 'calc_kinetics = 0'.\n", i);
+			FFEA_CAUTION_MESSG("\tNumber of States, 'num_states[%d]', not equal to 1. Default first state will be loaded.\n", i);
+			num_conformations[i] = 1;
 		}
-	        if (num_conformations[i] > num_states[i]) {
-            	        FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations[%d]', must be less than or equal to Number of States, 'num_states[%d]'.\n", i, i);
-        	}
 	}
     }
     printf("...done\n");

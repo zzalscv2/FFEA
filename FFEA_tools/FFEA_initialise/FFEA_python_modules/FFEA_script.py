@@ -18,7 +18,8 @@ class FFEA_script:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found."
+			print "Error. File " + fname  + " not found. Returning empty object..."
+			self.reset()
 			return
 
 		if "<param>\n" not in fin.readlines():
@@ -43,9 +44,18 @@ class FFEA_script:
 				self.reset()
 				return
 
+		# Get springs
+		try:
+			self.spring = self.read_springs_from_file(fname)
+		except:
+			print "Error. Failed to load <spring>...</spring> "
+			self.reset()
+			return
+
 	def reset(self):
 		self.params = None
 		self.blob = []
+		self.spring = []
 
 	def read_params_from_file(self, fname):
 
@@ -99,6 +109,10 @@ class FFEA_script:
 					params.measurement_out_basefname = get_path_from_script(rvalue, scriptdir)
 				elif lvalue == "vdw_forcefield_params":
 					params.vdw_forcefield_params = get_path_from_script(rvalue, scriptdir)
+				elif lvalue == "kinetics_out_fname":
+					params.kinetics_out_fname = get_path_from_script(rvalue, scriptdir)
+				elif lvalue == "binding_site_params":
+					params.binding_site_params = get_path_from_script(rvalue, scriptdir)
 				elif lvalue == "epsilon":
 					params.epsilon = float(rvalue)
 				elif lvalue == "max_iterations_cg":
@@ -131,6 +145,8 @@ class FFEA_script:
 					params.es_N_y = int(rvalue)
 				elif lvalue == "es_N_z":
 					params.es_N_z = int(rvalue)
+				elif lvalue == "move_into_box":
+					params.move_into_box = int(rvalue)
 				elif lvalue == "sticky_wall_xz":
 					params.sticky_wall_xz = int(rvalue)
 				elif lvalue == "wall_x_1":
@@ -225,6 +241,8 @@ class FFEA_script:
 						conformation.vdw = get_path_from_script(rvalue, scriptdir)
 					elif lvalue == "pin":
 						conformation.pin = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "binding_sites":
+						conformation.bsites = get_path_from_script(rvalue, scriptdir)
 					else:
 						print "Unrecognised conformation tag '" + line + "'. Ignoring..."
 						continue
@@ -235,6 +253,57 @@ class FFEA_script:
 			
 			blob.conformation.append(conformation)
 			blob.num_conformations += 1
+
+		# Now get kinetic stuff (if it's there)
+		kinetic_lines = extract_block_from_lines('kinetics', 0, blob_lines)
+		
+		# States and rates
+		for line in kinetic_lines:
+			try:
+				line = line.strip().replace("<", "").replace(">", "")
+				lvalue = line.split("=")[0].rstrip()
+				rvalue = line.split("=")[1].lstrip()
+			except(IndexError):
+				continue
+			except:
+				print "Error. Could not parse blob tag '" + line + "'"
+				return None
+
+			try:
+				if lvalue == "states":
+					blob.states = rvalue
+				elif lvalue == "rates":
+					blob.rates = rvalue
+				else:
+					continue
+
+			except(IndexError, ValueError):
+				print "Error. Couldn't parse blob tag '" + line + "'"
+				return None
+
+		# Now maps
+		map_lines = extract_block_from_lines('maps', 0, kinetic_lines)
+		blob.map_indices = []
+		blob.map = []
+		for line in map_lines:
+			
+			try:
+				line = line.strip().replace("<", "").replace(">", "")
+				lvalue = line.split("=")[0].rstrip()
+				rvalue = line.split("=")[1].lstrip()
+
+			except:
+				print "Error. Could not parse blob tag '" + line + "'"
+				return None
+
+			try:
+				blob.map_indices.append([int(lvalue.strip().split("(")[1].replace(")","").split(",")[i]) for i in range(2)])
+				blob.map_indices
+				blob.map.append(rvalue)
+
+			except:
+				print "Error. Could not parse blob tag '" + line + "'"
+				return None
 
 		# Now blob general stuff
 		for line in blob_lines:
@@ -266,14 +335,42 @@ class FFEA_script:
 
 		return blob
 
+	def read_springs_from_file(self, fname):
+
+		fin = open(fname, "r")
+		lines = fin.readlines()
+		fin.close()
+
+		spring_lines = extract_block_from_lines("springs", 0, lines)
+
+		spring = []
+		for line in spring_lines:
+			try:
+				line = line.strip().replace("<", "").replace(">", "")
+				lvalue = line.split("=")[0].rstrip()
+				rvalue = line.split("=")[1].lstrip()
+
+			except(IndexError, ValueError):
+				print "Error. Couldn't parse spring tag '" + line + "'"
+				return []
+
+			if lvalue == "springs_fname":
+				spring.append(rvalue)
+		return spring
+
 	def write_to_file(self, fname):
 
 		fout = open(fname, "w")
 		self.params.write_to_file(fout, fname)
 		fout.write("<system>\n")
 		for blob in self.blob:
-			blob.write_to_file(fout, fname)
+			blob.write_to_file(fout, fname, self.params.calc_kinetics)
 		fout.write("</system>\n")
+		if len(self.spring) != 0:
+			fout.write("<springs>\n")
+			for fname in self.spring:
+				fout.write("\t<spring_fname = %s>\n" % (os.path.relpath(fname, os.path.dirname(os.path.abspath(fname)))))
+			fout.write("</springs>\n")
 		fout.close()
 
 	def load_topology(self, blob_index, conformation_index):
@@ -292,6 +389,11 @@ class FFEA_script:
 
 		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_basefname, self.params.num_blobs, num_frames_to_read = frames_to_read)
 
+	def add_empty_blob(self):
+
+		self.blob.append(FFEA_script_blob())
+		self.params.num_blobs += 1
+
 class FFEA_script_params():
 	
 	def __init__(self):
@@ -304,6 +406,8 @@ class FFEA_script_params():
 		self.measurement_out_basefname = ""
 		self.measurement_out_fname = []
 		self.vdw_forcefield_params = ""
+		self.kinetics_out_fname = ""
+		self.binding_site_params = ""
 		self.epsilon = 0.0
 		self.max_iterations_cg = 0
 		self.kappa = 0.0
@@ -320,6 +424,7 @@ class FFEA_script_params():
 		self.es_N_x = 0
 		self.es_N_y = 0
 		self.es_N_z = 0
+		self.move_into_box = 1
 		self.sticky_wall_xz = 0
 		self.wall_x_1 = ""
 		self.wall_x_2 = ""
@@ -356,6 +461,11 @@ class FFEA_script_params():
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_basefname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<vdw_forcefield_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
+		if self.kinetics_out_fname != "":
+			astr += "\t<kinetics_out_fname = %s>\n" % (os.path.relpath(self.kinetics_out_fname, os.path.dirname(os.path.abspath(fname))))
+
+		if self.binding_site_params != "":
+			astr += "\t<binding_site_params = %s>\n" % (os.path.relpath(self.binding_site_params, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
 		astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
 		astr += "\t<kappa = %5.2e>\n" % (self.kappa)
@@ -370,6 +480,7 @@ class FFEA_script_params():
 		astr += "\t<es_N_x = %d>\n" % (self.es_N_x)
 		astr += "\t<es_N_y = %d>\n" % (self.es_N_y)
 		astr += "\t<es_N_z = %d>\n" % (self.es_N_z)
+		astr += "\t<move_into_box = %d>\n" % (self.move_into_box)
 		astr += "\t<sticky_wall_xz = %d>\n" % (self.sticky_wall_xz)
 		astr += "\t<wall_x_1 = %s>\n" % (self.wall_x_1)
 		astr += "\t<wall_x_2 = %s>\n" % (self.wall_x_2)
@@ -390,22 +501,39 @@ class FFEA_script_blob:
 		
 		self.num_conformations = 0
 		self.conformation = []
+		self.states = ""
+		self.rates = ""
+		self.map = []
+		self.map_indices = []
 		self.solver = ""
 		self.scale = 0.0
 		self.centroid = None
 		self.rotation = None
 
-	def write_to_file(self, fout, fname):
+	def write_to_file(self, fout, fname, calc_kinetics):
 
 		fout.write("\t<blob>\n")
 		need_solver = 0;
 		for conformation in self.conformation:
-			conformation.write_to_file(fout, fname)
+			conformation.write_to_file(fout, fname, calc_kinetics)
 			if conformation.motion_state == "DYNAMIC":
 				need_solver = 1
 		
+		if calc_kinetics == 1 and self.states != "":
+			fout.write("\t\t<kinetics>\n")
+			if self.num_conformations != 0:
+				fout.write("\t\t\t<maps>\n")
+				for i in range(len(self.map)):
+					fout.write("\t\t\t\t<map (%d,%d) = %s>\n" % (self.map_indices[i][0], self.map_indices[i][1], os.path.relpath(self.map[i], os.path.dirname(os.path.abspath(fname)))))
+				fout.write("\t\t\t</maps>\n")
+			
+			fout.write("\t\t\t<states = %s>\n" % (os.path.relpath(self.states, os.path.dirname(os.path.abspath(fname)))))
+			fout.write("\t\t\t<rates = %s>\n" % (os.path.relpath(self.rates, os.path.dirname(os.path.abspath(fname)))))
+			fout.write("\t\t</kinetics>\n")
+
 		if need_solver == 1:
 			fout.write("\t\t<solver = %s>\n" % (self.solver))
+
 		fout.write("\t\t<scale = %5.2e>\n" % (self.scale))
 		if self.rotation != None:
 			fout.write("\t\t<rotation = (")
@@ -425,6 +553,11 @@ class FFEA_script_blob:
 			fout.write(")>\n")
 		fout.write("\t</blob>\n")
 
+	def add_empty_conformation(self):
+
+		self.conformation.append(FFEA_script_conformation())
+		self.num_conformations += 1
+
 class FFEA_script_conformation:
 
 	def __init__(self):
@@ -437,8 +570,9 @@ class FFEA_script_conformation:
 		self.stokes = ""
 		self.vdw = ""
 		self.pin = ""
+		self.bsites = ""
 
-	def write_to_file(self, fout, fname):
+	def write_to_file(self, fout, fname, calc_kinetics):
 
 		astr = ""
 		astr += "\t\t<conformation>\n"
@@ -452,6 +586,8 @@ class FFEA_script_conformation:
 		astr += "\t\t\t<nodes = %s>\n" % (os.path.relpath(self.nodes, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t\t\t<surface = %s>\n" % (os.path.relpath(self.surface, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t\t\t<vdw = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
+		if(calc_kinetics == 1 and self.bsites != ""):
+			astr += "\t\t\t<binding_sites = %s>\n" % (os.path.relpath(self.bsites, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t\t</conformation>\n"
 		fout.write(astr)
 

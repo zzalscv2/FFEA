@@ -37,7 +37,6 @@
 #include "Spring.h"
 #include "SparseMatrixFixedPattern.h"
 #include "KineticState.h"
-#include "KineticBindingSite.h"
 
 #include "dimensions.h"
 using namespace std;
@@ -82,6 +81,9 @@ public:
     int load_kinetic_rates(string rates_fname, int blob_index);
 
     /* */
+    void print_kinetic_rates_to_screen(int type);
+
+    /* */
     void get_system_CoM(vector3 *system_CoM);
 
     /* */
@@ -109,10 +111,6 @@ private:
 
     /** @brief Which conformation is active in each blob */
     Blob **active_blob_array;
-    int *active_conformation_index;
-    int *previous_conformation_index;
-    int *previous_state_index;
-    int *active_state_index;
 
     /** @brief Maps for kinetic switching of conformations */
     SparseMatrixFixedPattern ***kinetic_map;
@@ -212,9 +210,14 @@ private:
 
     void apply_springs();
 
-    int rescale_kinetic_rates();
-	
-    int change_blob_state(int blob_index, int new_state_index);
+    /** @brief calculates the kinetic rates as a function of the energy of the system*/
+    int calculate_kinetic_rates();
+
+    /** @brief randomly chooses a new kinetic state based upon the kinetic rates / switching probabilitie */
+    int choose_new_kinetic_state(int blob_index, int *target);
+
+    /** @brief changes the kinetic state based upon the kinetic rates. Maps between conformations and adds/ removes bound sites */
+    int change_kinetic_state(int blob_index, int target_state);
 
     int get_next_script_tag(FILE *in, char *buf);
 
@@ -230,12 +233,12 @@ private:
 
 
     void write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes);
-    
-    void print_kinetics();
 
     void print_trajectory_and_measurement_files(int step, scalar wtime);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
+
+    void print_kinetic_files(int step);
 
     void print_static_trajectory(int step, scalar wtime, int blob_index);
 };

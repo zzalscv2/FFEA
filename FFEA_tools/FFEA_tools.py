@@ -14,7 +14,7 @@ FFEA_TOOLS_PATH += "/"
 # Build the lookup dictionary for all FFEA tools
 ffea_tools = 	{
 		"makeffeablob": "FFEA_initialise/FFEA_convert_from_volume/FFEA_convert_from_volumetric_mesh.py",
-		"makekineticmaps": "FFEA_initialise/Kinetic_FFEA_convert_from_FFEA/Kinetic_FFEA_create_maps.py",
+		"makekineticmaps": "FFEA_initialise/FFEA_mapping_tools/FFEA_generate_kinetic_maps.py",
 		"meshmap": "FFEA_initialise/Surface_tools/Surface_convert_from_EM_density_map/emdb_map_to_ffea",
 		"addmap": "FFEA_initialise/EM_density_map_tools/add_maps",
 		"pdbtomap": "FFEA_initialise/EM_density_map_tools/convert_pdb_to_emdb_map",
