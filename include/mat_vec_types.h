@@ -2,6 +2,7 @@
 #define MAT_VEC_TYPES_H_INCLUDED
 
 #include <limits>
+#include <cmath> 
 
 /*
  * Defines what is meant by a scalar (essentially sets the precision of
@@ -9,8 +10,10 @@
  */
 #ifdef USE_DOUBLE
 typedef double scalar;
+typedef long double geoscalar;
 #else
 typedef float scalar;
+typedef long double geoscalar;
 #endif 
 //typedef long double scalar;
 
@@ -21,9 +24,12 @@ namespace ffea_const {
    const scalar zero = 0.0;
    const scalar one = 1.0;
    const scalar two = 2.0;
+   const scalar eight = 8.0;
+   const geoscalar ten = 10.00000000000000000;
    const scalar oneOverThree = 0.33333333333333333;
    const scalar oneOverSix = 0.166666666666666667;
    const scalar oneOverEight = 0.12500000000000000; 
+   const scalar sphereFactor = 4.0000000000000000000 * 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148 / 3.0000000000000000000000;
 }
 
 /*
@@ -35,6 +41,7 @@ typedef struct {
 
 /** arr3 will hopefully substitute vector3 one day */ 
 typedef scalar arr3[3]; 
+typedef geoscalar grr3[3]; 
 
 /*
  * Defines a 12 vector (just for ease of use, clarity and compiler type checking)

@@ -161,7 +161,7 @@ void VdW_solver::do_volumeExclusion(Face *f1, Face *f2){
     /* TRIAL 2 */ 
     arr3 force1, force2, n1_b; 
     vec3Vec3SubsToArr3(f1->n[3]->pos, f2->n[3]->pos, force1);
-    arr3Normalise(force1); // that is the direction of the force for f1 (backwards). 
+    arr3Normalise<scalar,arr3>(force1); // that is the direction of the force for f1 (backwards). 
 
     /* TRIAL 1
     arr3 force1, force2, n1_b; 
@@ -174,7 +174,7 @@ void VdW_solver::do_volumeExclusion(Face *f1, Face *f2){
     /// One more check ////// One more check /////
     arr3 inwards; 
     vec3Vec3SubsToArr3(f1->n[3]->pos, f1->centroid, inwards); 
-    if (arr3arr3DotProduct(inwards, force1) < ffea_const::zero) { 
+    if (arr3arr3DotProduct<scalar,arr3>(inwards, force1) < ffea_const::zero) { 
       return; 
     } 
     // end checking //////////////////////////////
@@ -182,7 +182,10 @@ void VdW_solver::do_volumeExclusion(Face *f1, Face *f2){
     // scalar vol_f = 1
     // Finally, get the intersection volume:
     scalar vol = f1->getTetraIntersectionVolume(f2); 
-    if (vol < 0) return; 
+    /*if ((vol < 0) and (fabs(vol) > ffea_const::threeErr)) { 
+      cout << "The IntersectoMetre had a precision problem: " << vol << endl;
+      return; 
+    }*/ 
 
 
     arr3Resize(vol, force1); 
