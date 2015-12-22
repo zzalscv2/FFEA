@@ -227,21 +227,24 @@ class Blob:
 		
 		for i in range(self.num_binding_sites):
 			asite = []
-			sline = fin.readline().split()
 
-			# Include type as first element
+			# Type and size first
+			sline = fin.readline().split()
+			site_type = int(sline[1])
+			num_faces = int(sline[3])
+
+			# Now get faces
+			sline = fin.readline().strip().split()[1:]
+			if(len(sline) != num_faces):
+				sys.exit("Error. Specified 'num_faces' not equal to num_faces provided.")
+					
 			for j in range(len(sline)):
 				
 				# Ignore num_faces (can't be arsed with a new class)
-				if j == 0:
-					site_type = int(sline[0])
-				if j == 1:
-					continue
-				else:	
-					asite.append(int(sline[j]))
-
-					# Stores type and index
-					self.binding_site_type[asite[-1]][1] = i
+				asite.append(int(sline[j]))
+				
+				# Stores type and index
+				self.binding_site_type[asite[-1]][1] = i
 
 			self.binding_site.append(asite)
 
@@ -684,7 +687,7 @@ class Blob:
 				site_type = self.binding_site_type[j][0]
 
 				# All faces on site
-				for k in range(1, len(self.binding_site[j])):
+				for k in range(len(self.binding_site[j])):
 					
 					f = self.binding_site[j][k]
 					faces_dealt_with.append(f)

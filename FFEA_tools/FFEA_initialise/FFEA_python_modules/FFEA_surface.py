@@ -107,7 +107,7 @@ class FFEA_face:
 
 	def get_normal(self, node):
 
-		v1 = node.pos[self.n[1]] - node.pos[self.n[0]]
-		v2 = node.pos[self.n[2]] - node.pos[self.n[1]]
+		v1 = node.pos[self.n[2]] - node.pos[self.n[1]]
+		v2 = node.pos[self.n[1]] - node.pos[self.n[0]]
 		norm = np.cross(v1,v2)
 		return norm * 1.0 / np.linalg.norm(norm)

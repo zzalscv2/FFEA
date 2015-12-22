@@ -4,7 +4,9 @@ Blob::Blob() {
     /* Initialise everything to zero */
     blob_index = 0;
     conformation_index = 0;
+    previous_conformation_index = 0;
     state_index = 0;
+    previous_state_index = 0;
     num_nodes = 0;
     num_elements = 0;
     num_surface_faces = 0;
@@ -85,9 +87,10 @@ Blob::~Blob() {
     } 
 
     /* Set relevant data to zero */
-    blob_index = 0;
     conformation_index = 0;
+    previous_conformation_index = 0;
     state_index = 0;
+    previous_state_index = 0;
     num_nodes = 0;
     num_elements = 0;
     num_surface_elements = 0;
@@ -445,7 +448,7 @@ int Blob::update() {
             // case of an element inverting itself (determinant changing sign since last step)
             if (elem[n].calc_shape_function_derivatives_and_volume(J) == FFEA_ERROR) {
                 FFEA_error_text();
-                printf("Element %d has inverted\n", n);
+                printf("Element %d has inverted during update\n", n);
                 num_inversions++;
             }
 
@@ -511,7 +514,7 @@ int Blob::update() {
     return FFEA_OK;
 }
 
-int Blob::reinit_solver() {
+int Blob::reset_solver() {
 
 	// Delete and rebuild (to make sure everything is overwritten)
 	
@@ -906,7 +909,7 @@ int Blob::calculate_deformation() {
             // case of an element inverting itself (determinant changing sign since last step)
             if (elem[n].calc_shape_function_derivatives_and_volume(J) == FFEA_ERROR) {
                 FFEA_error_text();
-                printf("Element %d has inverted\n", n);
+                printf("Element %d has inverted during deformation calculation\n", n);
                 num_inversions++;
             }
 
@@ -2078,7 +2081,7 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
             // elem[element].n[n1_el]->print()  =  node[n1].print();
          
    
-            surface[i].init(&elem[element], &node[n1], &node[n2], &node[n3], elem[element].n[n_op], centroid_stu, this, params);
+            surface[i].init(i, &elem[element], &node[n1], &node[n2], &node[n3], elem[element].n[n_op], centroid_stu, this, params);
             if (surface[i].area_0 < smallest_A) {
                 smallest_A = surface[i].area_0;
             }
@@ -2166,7 +2169,7 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
 	    }*/
 
 	    // &element is 0 because there is only 1 element i.e. the entire structure. This function should only be used for static objects for which topologies do not need to be defined
-            surface[i].init(&node[n1], &node[n2], &node[n3], NULL, this, params);
+            surface[i].init(i, &node[n1], &node[n2], &node[n3], NULL, this, params);
 
 
             if (surface[i].area_0 < smallest_A) {
@@ -2497,7 +2500,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 	// Open file
 	if(strcmp(binding_filename, "") == 0) {
 
-		// Return successful as params.calc_kinetics == 0
+		// Return successful as params.calc_kinetics == 0 or no sites are required
 		return FFEA_OK;
 	}
 	ifstream fin;
@@ -2512,9 +2515,11 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 	int MAX_BUF_SIZE = 255;
 	char buf[MAX_BUF_SIZE];
 	string buf_string;
+	vector<string> string_vec;
 	fin.getline(buf, MAX_BUF_SIZE);
 	buf_string = string(buf);
 	boost::trim(buf_string);
+
 	if(buf_string != "ffea binding sites file") {
 		FFEA_ERROR_MESSG("This is not a 'ffea binding site file' (read '%s') \n", buf)
 	}
@@ -2548,20 +2553,37 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 	for(int i = 0; i < num_binding_sites; ++i) {
 
 		// Get structural details first
-		fin >> bind_type;
-		
+		fin.getline(buf, MAX_BUF_SIZE);
+		buf_string = string(buf);
+		boost::trim(buf_string);
+		boost::split(string_vec, buf_string, boost::is_space());
+		try {
+			bind_type = atoi(string_vec.at(1).c_str());
+			num_faces = atoi(string_vec.at(3).c_str());
+
+		} catch (...) {
+			FFEA_ERROR_MESSG("Unable to read type %%d num_faces %%d line for binding site %d in %s.\n", i, binding_filename)
+		}
+
 		if(bind_type >= num_binding_site_types) {
 			FFEA_ERROR_MESSG("Binding site %d specifies site type %d, which is outside range of types allowed by the 'binding_site_params' matrix (%d types allowed)\n", i, bind_type, num_binding_site_types)
 			return FFEA_ERROR;
 		}
 
-		fin >> num_faces;
 		binding_site[i].set_type(bind_type);
 		binding_site[i].set_num_faces(num_faces);
 
 		// Now build list of faces
+		fin.getline(buf, MAX_BUF_SIZE);
+		buf_string = string(buf);
+		boost::trim(buf_string);
+		boost::split(string_vec, buf_string, boost::is_space());
+		if(string_vec.size() != num_faces + 1) {
+			FFEA_ERROR_MESSG("In %s, num_faces specified, %d, != num_faces in following line, %d.\n", binding_filename, num_faces, string_vec.size() - 1)
+		}
+
 		for(int j = 0; j < num_faces; ++j) {
-			fin >> face_index;
+			face_index = atoi(string_vec.at(j + 1).c_str());
 			if(face_index >= num_surface_faces) {
 				FFEA_ERROR_MESSG("Face index %d specifies face outside range of surface faces defined in surface file (%d)\n", face_index, num_surface_faces)
 				return FFEA_ERROR;
@@ -2570,7 +2592,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 
 			}	
 		}
-
+		
 		// Properties continually change so no need to calculate stuff unless about to be used
 	}
 
@@ -2919,7 +2941,7 @@ void Blob::pin_binding_site(set<int> node_indices) {
 
 void Blob::unpin_binding_site(set<int> node_indices) {
 	
-	set<int>::iterator it;
+	set<int>::iterator it, it2;
 	for(it = node_indices.begin(); it != node_indices.end(); ++it) {
 		bsite_pinned_nodes_list.erase(*it);
 	}
@@ -2936,6 +2958,46 @@ void Blob::create_pinned_nodes(set<int> list) {
 	for(it = list.begin(); it != list.end(); ++it) {
 		pinned_nodes_list[i++] = *it;
 	}
+}
+
+int Blob::get_state_index() {
+
+	return state_index;
+}
+
+void Blob::set_state_index(int index) {
+
+	this->state_index = index;
+}
+
+int Blob::get_previous_state_index() {
+
+	return previous_state_index;
+}
+
+void Blob::set_previous_state_index(int index) {
+
+	this->previous_state_index = index;
+}
+
+int Blob::get_conformation_index() {
+
+	return conformation_index;
+}
+
+int Blob::get_previous_conformation_index() {
+
+	return previous_conformation_index;
+}
+
+void Blob::set_previous_conformation_index(int index) {
+
+	this->previous_conformation_index = index;
+}
+
+BindingSite* Blob::get_binding_site(int index) {
+
+	return &binding_site[index];
 }
 
 void Blob::build_mass_matrix() {

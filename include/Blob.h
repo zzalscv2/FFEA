@@ -88,7 +88,7 @@ public:
     /**
      * If the system changes mid run (binding event, say) we may need to reinitialise the solver
      */
-    int reinit_solver();
+    int reset_solver();
 
     /**
       * Translates the linear nodes, then linearises the secondary nodes 
@@ -165,6 +165,9 @@ public:
      */
     void make_measurements(FILE *measurement_out, int step, vector3 *system_CoM);
 
+    /**
+     * Calculates the current jacobian and elasticity properties of the structure
+     */
     int calculate_deformation();
 
     scalar calc_volume();
@@ -294,14 +297,23 @@ public:
 
     int get_num_beads();
 
+    int get_conformation_index();
+    int get_previous_conformation_index();
+    void set_previous_conformation_index(int index);
+    int get_state_index();
+    void set_state_index(int index);
+    int get_previous_state_index();
+    void set_previous_state_index(int index);
+    BindingSite* get_binding_site(int index);
+
     scalar calculate_strain_energy();
 
     void get_min_max(vector3 *blob_min, vector3 *blob_max);
 
     /** Blob, conformation and state indices */
     int blob_index;
-    int conformation_index;
-    int state_index;
+    int conformation_index, previous_conformation_index;
+    int state_index, previous_state_index;
 
     /** Binding sites must be known publicly */
     int num_binding_sites;
@@ -312,7 +324,11 @@ public:
      */
     //void kinetic_bind(int site_index);
     //void kinetic_unbind(int site_index);
+
+    /** Activates binding sites by adding nodes to the list */
     void pin_binding_site(set<int> node_indices);
+
+    /** Deactivates binding sites by removing nodes to the list */
     void unpin_binding_site(set<int> node_indices);
 
     void print_node_positions();
@@ -467,7 +483,7 @@ private:
 
 
     /**
-     * Opens and reads the given 'ffea binding site file', extracting all the kinetic binding sites (face list) for this Blob.
+     * Opens and reads the given 'ffea binding site file', extracting all the kinetic binding sites (types and face lists) for this Blob.
      */
     int load_binding_sites(const char *binding_filename, int num_binding_site_types);
 

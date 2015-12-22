@@ -62,8 +62,8 @@ public:
     int calc_vdw; ///< Whether or not to simulate van der waals interactions between surfaces   
     int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins   
     int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique   
-    int calc_stokes;
-    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states   
+    int calc_stokes; ///< Whether or not to include local action of the external fluid
+    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites  
     int calc_preComp; ///< Whether or not use preComputed potentials and forces   
     int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
     int wall_x_1;
@@ -108,6 +108,7 @@ public:
     /** Expects a parameter label and value, which will be assigned if valid and rejected if not */
     int assign(string lvalue, string rvalue);
 
+    /** Returns maximum number of states on any blob */
     int get_max_num_states();
 
     // These set parameters are not private because the World needs them!!

@@ -2,12 +2,20 @@
 
 KineticState::KineticState() {
 	conformation_index = 0;
-	bound_sites.clear();
+	base = -1;
+	target = -1;
+	bound = false;
+	base_site = NULL;
+	target_site = NULL;
 }
 
 KineticState::~KineticState() {
 	conformation_index = 0;
-	bound_sites.clear();
+	base = -1;
+	target = -1;
+	bound = false;
+	base_site = NULL;
+	target_site = NULL;
 }
 
 int KineticState::init() {
@@ -16,36 +24,65 @@ int KineticState::init() {
 	conformation_index = 0;
 
 	// No sites to bind
-	bound_sites.clear();
+	base = -1;
+	target = -1;
+	bound = false;
 
 	return FFEA_OK;
 }
 
-int KineticState::init(int conf_index, int *bound_site_types, int num_bsite_types, BindingSite *binding_sites, int total_num_binding_sites) {
+int KineticState::init(int conf_index, int base, int target) {
 
 	// Set conformation index
 	conformation_index = conf_index;
 
-	// Set some bound binding sites for this state
-	for(int i = 0; i < num_bsite_types; ++i) {
-		if(bound_site_types[i] == 1) {
-			for(int j = 0; j < total_num_binding_sites; ++j) {
-				bound_sites.insert(&binding_sites[j]);
-			}
-		}
+	// Set the binding site types (from type 'base' to type 'target')
+	this->base = base;
+	this->target = target;
+
+	if(base == -1 && target == -1) {
+		bound = false;
+	} else if (base == -1 && target != -1 || base != -1 && target == -1) {
+		FFEA_ERROR_MESSG("Either both site types must be -1 (not bound) or neither should be -1 (bound)")
+	} else {
+		bound = true;
 	}
 
 	return FFEA_OK;
 }
 
-/*void KineticState::print_details() {
+int KineticState::get_conformation_index() {
+	
+	return conformation_index;
+}
 
-	cout << "Kinetic Site:" << endl << endl;
-	cout << "Conformation Index = " << conformation_index << endl;
-	cout << "Active binding sites = ";
-	for(set<int>::iterator it = bound_site.begin(); it != bound_site.end(); ++it) {
-		cout << *it << " ";
-	}
-	cout << endl;
-}*/
+bool KineticState::is_bound() {
 
+	return bound;
+}
+
+int KineticState::get_base_bsite_type() {
+
+	return base;
+}
+
+int KineticState::get_target_bsite_type() {
+
+	return target;
+}
+
+void KineticState::set_sites(BindingSite *base, BindingSite *target) {
+
+	base_site = base;
+	target_site = target;
+}
+
+BindingSite * KineticState::get_base_site() {
+	
+	return base_site;
+}
+
+BindingSite * KineticState::get_target_site() {
+	
+	return target_site;
+}
