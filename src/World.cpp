@@ -439,8 +439,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
 	    box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
 	    
-            // vdw_solver = new Steric_solver();
-            vdw_solver = new VdW_solver();
+            if (params.vdw_type == "lennard-jones")
+              vdw_solver = new VdW_solver();
+            else if (params.vdw_type == "steric")
+              vdw_solver = new Steric_solver();
+            if (vdw_solver == NULL) 
+              FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
 	    vdw_solver->init(&lookup, &box_dim, &lj_matrix);
 
 	    // Calculate the total number of vdw interacting faces in the entire system

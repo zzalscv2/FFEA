@@ -60,6 +60,7 @@ public:
     int restart; ///< Whether or not to restart the simulation from the last available time step   
 
     int calc_vdw; ///< Whether or not to simulate van der waals interactions between surfaces   
+    string vdw_type;  ///<Possible values: "lennard-jones" (default) or "steric".
     int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins   
     int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique   
     int calc_stokes; ///< Whether or not to include local action of the external fluid

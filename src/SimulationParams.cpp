@@ -29,6 +29,7 @@ SimulationParams::SimulationParams() {
     epsilon_0 = 0;
     restart = 0;
     calc_vdw = -1;
+    vdw_type = "lennard-jones";
     calc_es = 0;
     calc_noise = 1;
     calc_kinetics = 0;
@@ -93,6 +94,7 @@ SimulationParams::~SimulationParams() {
     epsilon_0 = 0;
     restart = 0;
     calc_vdw = -1;
+    vdw_type = "lennard-jones";
     calc_es = 0;
     calc_noise = 0;
     calc_preComp = 0;
@@ -295,6 +297,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	calc_vdw = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_vdw << endl;
 
+    	} else if (lvalue == "vdw_type") {
+        	vdw_type = rvalue;
+        	cout << "\tSetting " << lvalue << " = " << vdw_type << endl;
+
 	} else if (lvalue == "calc_es") {
         	calc_es = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_es << endl;
@@ -484,6 +490,10 @@ int SimulationParams::validate() {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
     }
+ 
+    if (vdw_type != "lennard-jones" && vdw_type != "steric") {
+        FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'lennard-jones' (default) or 'steric'.\n");
+    }
 
     if (calc_preComp != 0 && calc_preComp != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_preComp', must be 0 (no) or 1 (yes).\n");
@@ -625,6 +635,7 @@ int SimulationParams::validate() {
     printf("\tepsilon_0 = %e\n", epsilon_0);
     printf("\tdielec_ext = %e\n", dielec_ext);
     printf("\tcalc_vdw = %d\n", calc_vdw);
+    printf("\tvdw_type = %s\n", vdw_type.c_str());
     printf("\tcalc_es = %d\n", calc_es);
     printf("\tcalc_noise = %d\n", calc_noise);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
