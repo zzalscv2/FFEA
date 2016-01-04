@@ -21,7 +21,7 @@ public:
     /** Allow protein VdW interactions along the top and bottom x-z planes */
     int solve_sticky_wall(scalar h);
 
-private:
+protected:
     int total_num_surface_faces;
     NearestNeighbourLinkedListCube *surface_face_lookup;
 
@@ -38,10 +38,10 @@ private:
         scalar eta[3];
     };
 
-    void do_interaction(Face *f1, Face *f2);
+    virtual void do_interaction(Face *f1, Face *f2);
 
     /* do_volumeExclusion calculates the force (and not the energy, yet) of two tetrahedra */
-    void do_volumeExclusion(Face *f1, Face *f2);
+    // void do_volumeExclusion(Face *f1, Face *f2);
 
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
 

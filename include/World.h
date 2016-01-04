@@ -31,6 +31,7 @@
 #include "Blob.h"
 #include "World.h"
 #include "VdW_solver.h"
+#include "Steric_solver.h"
 #include "PreComp_solver.h"
 #include "LJ_matrix.h"
 #include "BindingSite.h"
@@ -181,7 +182,7 @@ private:
     BiCGSTAB_solver nonsymmetric_solver;
 
     /* Van der Waals solver */
-    VdW_solver vdw_solver;
+    VdW_solver *vdw_solver;
 
     /** @brief LJ parameters matrix */
     LJ_matrix lj_matrix;
