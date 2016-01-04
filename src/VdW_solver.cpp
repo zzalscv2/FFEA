@@ -83,14 +83,14 @@ int VdW_solver::solve() {
             while (l_j != NULL) {
                 if (l_i->index != l_j->index) {
                     f_j = l_j->obj;
-                    // if (f_i->daddy_blob != f_j->daddy_blob) {
+                    if (f_i->daddy_blob != f_j->daddy_blob) {
                         //printf("(%d %d)\n", l_i->index, l_j->index);
                         //if((l_i->index == 1 && l_j->index == 5) || (l_i->index == 5 && l_j->index == 1))
                         f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
                         f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
                         do_interaction(f_i, f_j);
                         // do_volumeExclusion(f_i, f_j);
-                    // }
+                    }
                 }
                 l_j = l_j->next;
             }
