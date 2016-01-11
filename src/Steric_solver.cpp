@@ -10,12 +10,13 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
         return;
     }
 
-    /* Robin suspects that this was leading to unstabilities...
+    /* Robin suspects that this was leading to unstabilities... 
+     *  but this steric solver is more stable than the LJ one. */
     // Check that faces are in front of each other
     vector3 sep = {f2->centroid.x - f1->centroid.x, f2->centroid.y - f1->centroid.y, f2->centroid.z - f1->centroid.z};
     if(dot(&sep, &f1->normal) < 0 && dot(&sep, &f2->normal) > 0) {
         return;
-    }*/
+    }
 
     //  Firstly, check that no nodes are shared:
     if (f1->n[3] == f2->n[3]) {
