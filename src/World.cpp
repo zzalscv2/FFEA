@@ -24,6 +24,7 @@ World::World() {
     trajectory_out = NULL;
     measurement_out = NULL;
     kinetics_out = NULL;
+    vdw_solver = NULL;
 }
 
 World::~World() {
@@ -70,6 +71,8 @@ World::~World() {
     measurement_out = NULL;  
 
     kinetics_out = NULL; 
+    // delete [] vdw_solver;
+    vdw_solver = NULL;
 }
 
 /**
@@ -436,7 +439,13 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
 	    box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
 	    
-	    vdw_solver.init(&lookup, &box_dim, &lj_matrix);
+            if (params.vdw_type == "lennard-jones")
+              vdw_solver = new VdW_solver();
+            else if (params.vdw_type == "steric")
+              vdw_solver = new Steric_solver();
+            if (vdw_solver == NULL) 
+              FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
+	    vdw_solver->init(&lookup, &box_dim, &lj_matrix);
 
 	    // Calculate the total number of vdw interacting faces in the entire system
 	    total_num_surface_faces = 0;
@@ -1177,10 +1186,10 @@ int World::run() {
                 }
 
                 /*if (params.calc_vdw == 1) {
-                    vdw_solver.solve();
+                    vdw_solver->solve();
                 }*/
                 if (params.sticky_wall_xz == 1) {
-                    vdw_solver.solve_sticky_wall(params.es_h * (1.0 / params.kappa));
+                    vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
                 }
 
                 if (params.calc_es == 1) {
@@ -1191,7 +1200,7 @@ int World::run() {
             } else
                 es_count++;
         }
-        if (params.calc_vdw == 1) vdw_solver.solve();
+        if (params.calc_vdw == 1) vdw_solver->solve();
 
         // Update all Blobs in the World
 

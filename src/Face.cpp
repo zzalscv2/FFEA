@@ -298,27 +298,17 @@ bool Face::checkTetraIntersection(Face *f2) {
 
 scalar Face::getTetraIntersectionVolume(Face *f2){
 
-  scalar tetA[4][3], tetB[4][3]; 
-  arr3 c;
-  c[0] = ffea_const::oneOverEight *
-        (   n[0]->pos.x +     n[1]->pos.x +     n[2]->pos.x +     n[3]->pos.x + 
-        f2->n[0]->pos.x + f2->n[1]->pos.x + f2->n[2]->pos.x + f2->n[3]->pos.x);
-  c[1] = ffea_const::oneOverEight *
-        (   n[0]->pos.y +     n[1]->pos.y +     n[2]->pos.y +     n[3]->pos.y + 
-        f2->n[0]->pos.y + f2->n[1]->pos.y + f2->n[2]->pos.y + f2->n[3]->pos.y);
-  c[2] = ffea_const::oneOverEight *
-        (   n[0]->pos.z +     n[1]->pos.z +     n[2]->pos.z +     n[3]->pos.z + 
-        f2->n[0]->pos.z + f2->n[1]->pos.z + f2->n[2]->pos.z + f2->n[3]->pos.z);
+  geoscalar tetA[4][3], tetB[4][3]; 
 
   for (int i=0; i<4; i++) {
-     tetA[i][0] = n[i]->pos.x - c[0];
-     tetA[i][1] = n[i]->pos.y - c[1];
-     tetA[i][2] = n[i]->pos.z - c[2];
-     tetB[i][0] = f2->n[i]->pos.x - c[0];
-     tetB[i][1] = f2->n[i]->pos.y - c[1];
-     tetB[i][2] = f2->n[i]->pos.z - c[2];
+     tetA[i][0] = n[i]->pos.x;
+     tetA[i][1] = n[i]->pos.y;
+     tetA[i][2] = n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x;
+     tetB[i][1] = f2->n[i]->pos.y;
+     tetB[i][2] = f2->n[i]->pos.z;
   }
-  return volumeIntersection(tetA, tetB);
+  return volumeIntersection<geoscalar,grr3>(tetA, tetB);
 
 
 } 
