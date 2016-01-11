@@ -14,6 +14,8 @@ import Image
 
 import shutil
 
+import numpy as np
+
 class FFEA_viewer_display_window():
 
 	def __init__(self, speak_to_control, ffea_fname, num_frames_to_read, energy_thresh=1.0e6):
@@ -154,6 +156,7 @@ class FFEA_viewer_display_window():
 		es_N_y = None
 		es_N_z = None
 		es_h = None
+		self.calc_vdw = 0
 		self.move_into_box = 1
 		self.num_blobs = 0
 		self.total_num_blobs = 0
@@ -187,6 +190,8 @@ class FFEA_viewer_display_window():
 					print "Will load nodes file for each Blob instead, if they can actually be found..."
 					trajectory_out_fname = None
 
+			elif lvalue == "calc_vdw":
+				self.calc_vdw = int(rvalue)
 			elif lvalue == "kappa":
 				kappa = float(rvalue)
 			elif lvalue == "es_N_x":
@@ -377,70 +382,125 @@ class FFEA_viewer_display_window():
 		for i in range(self.num_blobs):
 			for j in range(self.num_conformations[i]):
 				binding_sites[i][j] = self.blob_list[i][j].num_binding_sites
-	
-		# Get a global scale
+
+		# Make everything have unitish sizes
 		global_scale = float("inf")
 		for blob in self.blob_list:
 			if blob[0].scale < global_scale:
 				global_scale = blob[0].scale
-		
+
 		global_scale = 1.0 / global_scale
 
 		# Rescale box
 		self.box_x *= global_scale
 		self.box_y *= global_scale
 		self.box_z *= global_scale
+
+		# Rescale blobs
+		for b in self.blob_list:
+			b[0].set_global_scale(global_scale)
+
+		# Move simulation into box, if necessary
+		world_centroid = np.array([0.0, 0.0, 0.0])
+		shift = np.array([0.0, 0.0, 0.0])
+		total_num_nodes = 0
+
+			
+		# Load STATIC blobs and get a global centroid
+		for b in self.blob_list:
+
+			b[0].load_nodes_file_as_frame()
+			x,y,z = b[0].get_centroid(0)
+			world_centroid[0] += x * b[0].num_nodes
+			world_centroid[1] += y * b[0].num_nodes
+			world_centroid[2] += z * b[0].num_nodes
+			total_num_nodes += b[0].num_nodes
+			print self.blob_list.index(b)
+			print x,y,z
+
+		world_centroid *= 1.0 / total_num_nodes	
 		
-		# Load nodes and shift to appropriate positions
-		# Firstly, load all nodes from node files to get a global centroid
-		world_centroid = [0.0,0.0,0.0]
-		total_num_nodes = 0.0
-		for blob in self.blob_list:
+		shift[0] = self.box_x / 2.0 - world_centroid[0]
+		shift[1] = self.box_y / 2.0 - world_centroid[1]
+		shift[2] = self.box_z / 2.0 - world_centroid[2]
+			
+		# Shift all blobs if STATIC, or if there is no trajectory; clear frame if not
+		for b in self.blob_list:
+			if blob[0].state == "STATIC" or trajectory_out_fname == None:
+				if self.calc_vdw == 1 and self.move_into_box == 1:
+					b[0].frames[0].translate(shift)
+			else:
+				b[0].frames = []
+				b[0].num_frames = 0
 
-			# First conformations only
-			blob[0].set_global_scale(global_scale)
-			blob[0].load_nodes_file_as_frame()
-			x,y,z = blob[0].get_centroid(0)
 
-			world_centroid[0] += x * blob[0].num_nodes
-			world_centroid[1] += y * blob[0].num_nodes
-			world_centroid[2] += z * blob[0].num_nodes
-			total_num_nodes += blob[0].num_nodes
-		world_centroid[0] *= 1.0 / total_num_nodes
-		world_centroid[1] *= 1.0 / total_num_nodes
-		world_centroid[2] *= 1.0 / total_num_nodes
-
-		# Translation to box center (if necessary)
-		shift = [0.0,0.0,0.0]
-		if self.move_into_box == 1:
-			print "hi"
-			shift[0] = self.box_x / 2.0 - world_centroid[0]
-			shift[1] = self.box_y / 2.0 - world_centroid[1]
-			shift[2] = self.box_z / 2.0 - world_centroid[2]
-
-		# Shift to the global centroid if static, else load nodes from traj
-		if trajectory_out_fname == None:
-			for blob in self.blob_list:
-				for c in blob:
-					if blob.index(c) == 0:
-						c.frames[0].translate(shift)
-					c.set_global_scale(global_scale)
-		
-		else:
-			for blob in self.blob_list:
-				if blob[0].state == "STATIC":
-					for c in blob:
-						if blob.index(c) == 0:
-							c.frames[0].translate(shift)
-				else:
-					for c in blob:
-						c.set_global_scale(global_scale)
-
+		# Now load trajectory
+		if trajectory_out_fname != None:
 			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
 			self.load_trajectory_thread.start()
 
-		for b in self.blob_list:
-			print b[0].get_centroid(0)
+		# Get a global scale
+#		global_scale = float("inf")
+#		for blob in self.blob_list:
+#			if blob[0].scale < global_scale:
+#				global_scale = blob[0].scale
+#		
+#		global_scale = 1.0 / global_scale
+#
+#		# Rescale box
+#		self.box_x *= global_scale
+#		self.box_y *= global_scale
+#		self.box_z *= global_scale
+#		
+#		# Load nodes and shift to appropriate positions
+#		# Firstly, load all nodes from node files to get a global centroid
+#		world_centroid = [0.0,0.0,0.0]
+#		total_num_nodes = 0.0
+#		for blob in self.blob_list:
+#
+#			# First conformations only
+#			blob[0].set_global_scale(global_scale)
+#			blob[0].load_nodes_file_as_frame()
+#			x,y,z = blob[0].get_centroid(0)
+#
+#			world_centroid[0] += x * blob[0].num_nodes
+#			world_centroid[1] += y * blob[0].num_nodes
+#			world_centroid[2] += z * blob[0].num_nodes
+#			total_num_nodes += blob[0].num_nodes
+#		world_centroid[0] *= 1.0 / total_num_nodes
+#		world_centroid[1] *= 1.0 / total_num_nodes
+#		world_centroid[2] *= 1.0 / total_num_nodes
+#
+#		# Translation to box center (if necessary)
+#		shift = [0.0,0.0,0.0]
+#		if self.move_into_box == 1:
+#			shift[0] = self.box_x / 2.0 - world_centroid[0]
+#			shift[1] = self.box_y / 2.0 - world_centroid[1]
+#			shift[2] = self.box_z / 2.0 - world_centroid[2]
+#
+#		# Shift to the global centroid if static, else load nodes from traj
+#		if trajectory_out_fname == None:
+#			for blob in self.blob_list:
+#				for c in blob:
+#					if blob.index(c) == 0:
+#						c.frames[0].translate(shift)
+#					c.set_global_scale(global_scale)
+##		
+#		else:
+#			for blob in self.blob_list:
+#				if blob[0].state == "STATIC":
+#					for c in blob:
+#						if blob.index(c) == 0:
+##							c.frames[0].translate(shift)
+#				else:
+#					for c in blob:
+#						c.set_global_scale(global_scale)
+#
+#			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
+#			self.load_trajectory_thread.start()
+#
+#		for b in self.blob_list:
+#			print b[0].get_centroid(0)
 
 	def load_trajectory(self, trajectory_out_fname,):
 
