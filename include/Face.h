@@ -74,6 +74,13 @@ public:
       **/
     scalar getTetraIntersectionVolume(Face *f2); 
 
+    /** Get the volume and area that the enclose the intersection
+      *   of the tetrahedron formed by this face an the opposite 
+      *   linear node does intersect with the corresponding tetrahedron in f2. 
+      * It calls volumeIntersection, at volumeIntersection.h 
+      **/
+    void getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area); 
+
     Blob *daddy_blob;
 
     void init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *oposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params);

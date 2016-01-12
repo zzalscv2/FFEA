@@ -60,14 +60,17 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     
     // scalar vol_f = 1
     // Finally, get the intersection volume:
-    scalar vol = f1->getTetraIntersectionVolume(f2); 
-    /*if ((vol < 0) and (fabs(vol) > ffea_const::threeErr)) { 
-      cout << "The IntersectoMetre had a precision problem: " << vol << endl;
-      return; 
-    }*/ 
+    // scalar vol = f1->getTetraIntersectionVolume(f2); 
+    geoscalar vol, area; 
+    f1->getTetraIntersectionVolumeAndArea(f2,vol,area);
 
+    // Energy is proportional to the volume of interaction: 
+    f1->add_bb_vdw_energy_to_record(vol, f2->daddy_blob->blob_index);
+    f2->add_bb_vdw_energy_to_record(vol, f1->daddy_blob->blob_index);
 
-    arr3Resize(vol, force1); 
+    // arr3Resize(vol, force1);  // the provious volume force 
+    // Force is proportional to the surface area of this volume: 
+    arr3Resize(scalar(area), force1); 
     arr3Resize2(ffea_const::mOne, force1, force2);
     
     for (int j = 0; j < 3; j++) {
