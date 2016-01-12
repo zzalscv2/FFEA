@@ -312,3 +312,19 @@ scalar Face::getTetraIntersectionVolume(Face *f2){
 
 
 } 
+
+void Face::getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area){
+
+  geoscalar tetA[4][3], tetB[4][3];
+
+  for (int i=0; i<4; i++) {
+     tetA[i][0] = n[i]->pos.x;
+     tetA[i][1] = n[i]->pos.y;
+     tetA[i][2] = n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x;
+     tetB[i][1] = f2->n[i]->pos.y;
+     tetB[i][2] = f2->n[i]->pos.z;
+  }
+  volumeAndAreaIntersection<geoscalar,grr3>(tetA, tetB, vol, area);
+
+} 

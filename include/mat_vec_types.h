@@ -22,14 +22,16 @@ namespace ffea_const {
    const scalar threeErr = 3.0*std::numeric_limits<double>::epsilon();
    const scalar mOne = -1.0;
    const scalar zero = 0.0;
+   const scalar half = 0.5;
    const scalar one = 1.0;
    const scalar two = 2.0;
    const scalar eight = 8.0;
-   const geoscalar ten = 10.00000000000000000;
+   const geoscalar ten = 10.0;
+   const scalar twentyfour = 24.0;
    const scalar oneOverThree = 0.33333333333333333;
    const scalar oneOverSix = 0.166666666666666667;
    const scalar oneOverEight = 0.12500000000000000; 
-   const scalar sphereFactor = 4.0000000000000000000 * 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148 / 3.0000000000000000000000;
+   const scalar sphereFactor = 4.0 * 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148 / 3.0;
 }
 
 /*
