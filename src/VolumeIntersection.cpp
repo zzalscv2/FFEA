@@ -9,7 +9,7 @@ template <class t_scalar, class brr3> bool exists(brr3 &p, int ips, brr3 (&W)[56
 
   for (int i=0; i<ips; i++){ 
     if (arr3arr3Distance<t_scalar,brr3>(p, W[i]) < ffea_const::threeErr) {
-      cout << "discarded" << endl;
+      // cout << "discarded" << endl;
       return true;
     }
   } 
@@ -561,7 +561,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
   for (int i=0; i<4; i++) {
     // if point tetA[i] is inside tetB -> account for its contribution. 
     if (!exists<t_scalar,brr3>(tetA[i], ips, W) && nodeInTet<t_scalar,brr3>(tetA[i], tetB)) { 
-      cout << "tetA-node[" << i << "] found int tetB " << endl; 
+      // cout << "tetA-node[" << i << "] found int tetB " << endl; 
       arr3Store(tetA[i], W[ips]);
       ips += 1; 
       vol += volumeForNode<t_scalar,brr3>(tetA, i);
@@ -569,7 +569,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
     // if point tetB[i] is inside tetA -> account for its contribution. 
     // PENDING: what happens if a node belongs to both tetA and tetB? 
     if (!exists<t_scalar,brr3>(tetB[i], ips, W) && nodeInTet<t_scalar,brr3>(tetB[i], tetA)) { 
-      cout << "tetB-node[" << i << "] found int tetA " << endl; 
+      // cout << "tetB-node[" << i << "] found int tetA " << endl; 
       arr3Store(tetB[i], W[ips]);
       ips += 1;
       vol += volumeForNode<t_scalar,brr3>(tetB, i);
@@ -586,9 +586,9 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
     for (int j=i+1; j<4; j++) {
       // check intersection for edge tetA:ij and every tetB face: 
       if (intersectionPoint<t_scalar,brr3>(ip, tetA[i], tetA[j], tetB, 0, 1, 2)) {
-        cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+        /* cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
              << "face tetB[0]:tetB[1]:tetB[2] " << endl; 
-        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
           arr3Store(ip, W[ips]);
           ips +=1;
@@ -596,9 +596,9 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
         } 
       }
       if (intersectionPoint<t_scalar,brr3>(ip, tetA[i], tetA[j], tetB, 1, 2, 3)){
-        cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
              << "face tetB[1]:tetB[2]:tetB[3] " << endl; 
-        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
           arr3Store(ip, W[ips]);
           ips +=1;
@@ -606,9 +606,9 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
         } 
       }
       if (intersectionPoint<t_scalar,brr3>(ip, tetA[i], tetA[j], tetB, 2, 3, 0)){
-        cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
              << "face tetB[2]:tetB[3]:tetB[0] " << endl; 
-        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
           arr3Store(ip, W[ips]);
           ips +=1;
@@ -616,9 +616,9 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
         }
       }
       if (intersectionPoint<t_scalar,brr3>(ip, tetA[i], tetA[j], tetB, 3, 0, 1)){
-        cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
              << "face tetB[3]:tetB[0]:tetB[1] " << endl; 
-        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
           arr3Store(ip, W[ips]);
           ips +=1;
@@ -628,9 +628,9 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
 
       // check intersection for edge tetB:ij and every tetA face: 
       if (intersectionPoint<t_scalar,brr3>(ip, tetB[i], tetB[j], tetA, 0, 1, 2)) {
-        cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
              << "face tetA[0]:tetA[1]:tetA[2] " << endl; 
-        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
           arr3Store(ip, W[ips]);
           ips +=1;
@@ -638,9 +638,9 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
         }
       }
       if (intersectionPoint<t_scalar,brr3>(ip, tetB[i], tetB[j], tetA, 1, 2, 3)){
-        cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
              << "face tetA[1]:tetA[2]:tetA[3] " << endl; 
-        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
           arr3Store(ip, W[ips]);
           ips +=1;
@@ -648,9 +648,9 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
         }
       }
       if (intersectionPoint<t_scalar,brr3>(ip, tetB[i], tetB[j], tetA, 2, 3, 0)){
-        cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
              << "face tetA[2]:tetA[3]:tetA[0] " << endl; 
-        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
           arr3Store(ip, W[ips]);
           ips +=1;
@@ -658,9 +658,9 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
         }
       }
       if (intersectionPoint<t_scalar,brr3>(ip, tetB[i], tetB[j], tetA, 3, 0, 1)){
-        cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
              << "face tetA[3]:tetA[0]:tetA[1] " << endl; 
-        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
           arr3Store(ip, W[ips]);
           ips +=1;
