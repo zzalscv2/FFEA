@@ -2070,7 +2070,7 @@ int World::calculate_kinetic_rates() {
 
 		// Finally, the probability of staying put
 		if(prob_sum > 1.0) {
-			FFEA_ERROR_MESSG("Although your original switching probabilities for blob %d totalled < 1.0, after rescaling they have gone > 1.0. Lower your 'kinetic_update' parameter!")
+			FFEA_ERROR_MESSG("Although your original switching probabilities for blob %d totalled < 1.0, after rescaling they have gone > 1.0. Lower your 'kinetic_update' parameter!", i)
 		}
 
 		kinetic_rate[i][current_state][current_state] = 1 - prob_sum;
