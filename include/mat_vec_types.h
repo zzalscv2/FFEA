@@ -19,7 +19,8 @@ typedef long double geoscalar;
 
 ////////  Constants and scalar functions ///////
 namespace ffea_const {
-   const scalar threeErr = 3.0*std::numeric_limits<double>::epsilon();
+   const scalar threeErr = 3.0*std::numeric_limits<scalar>::epsilon();
+   const scalar threeGeoErr = 3.0*std::numeric_limits<geoscalar>::epsilon();
    const scalar mOne = -1.0;
    const scalar zero = 0.0;
    const scalar half = 0.5;
