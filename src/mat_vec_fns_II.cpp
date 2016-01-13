@@ -8,7 +8,9 @@ using namespace std;
 //
 ///  check whether two scalars have the same sign 
 template <class t_scalar> bool sameSign(t_scalar a, t_scalar b){
- return a < ffea_const::zero == b < ffea_const::zero;
+ // return a <= ffea_const::zero == b <= ffea_const::zero;
+ if (a*b >= 0) return true;
+ return false;
 }
 
 /** Given 3 integers n0, n1, n2
