@@ -12,11 +12,10 @@ class FFEA_measurement:
 		self.num_blobs = num_blobs
 
 		# Split name into world and blob names
-		print fname
 		basename, ext = os.path.splitext(os.path.abspath(fname))
 		world_fname = basename + "_world" + ext
 		blob_fname = [basename + "_blob" + str(i) + ext for i in range(self.num_blobs)]
-		
+
 		# Start reading the files
 		for fname in blob_fname:
 			ablob = FFEA_blob_measurement(fname, num_frames_to_read)
@@ -156,7 +155,8 @@ class FFEA_blob_measurement:
 				sys.stdout.write("\tRead " + str(self.num_frames) + " frames")
 				if frames_to_read < float("inf"):
 					sys.stdout.write(" out of " + str(int(frames_to_read)) + "\n")
-
+				else:
+					sys.stdout.write("\n")
 			sline = line.split()
 			if len(sline) != 13:
 				print "Error. Expected 13 columns but found " + str(len(sline))
@@ -201,7 +201,7 @@ class FFEA_blob_measurement:
 
 		fin.close()
 
-		print "...done! Read %d frames." % (self.num_frames)
+		print "...done! Read %d frames.\n" % (self.num_frames)
 
 		# Numpy stuff up
 		self.step = np.array(self.step)
@@ -255,6 +255,8 @@ class FFEA_world_measurement:
 			if(self.num_frames >= frames_to_read):
 				break
 
+			if line.strip() == "#==RESTART==":
+				continue
 			if self.num_frames == -1:
 			
 				# Check correct number of columns
@@ -263,18 +265,48 @@ class FFEA_world_measurement:
 					print "Error. Expected 3 columns for each possible blob pairing (%d) but got %d columns" % (num_columns, len(sline))
 					return None
 				else:
+
 					self.num_frames += 1
 					continue
 
+			# Build data structures
+			vdw_force = [[0.0 for i in range(self.num_blobs)] for j in range(self.num_blobs)]
+			vdw_area = [[0.0 for i in range(self.num_blobs)] for j in range(self.num_blobs)]
+			vdw_energy = [[0.0 for i in range(self.num_blobs)] for j in range(self.num_blobs)]
+
+			# Read data
+			sline = line.split()[1:]
+			col = 0
+			for i in range(self.num_blobs):
+				for j in range(i + 1, self.num_blobs):
+					vdw_area[i][j] = float(sline[col])
+					vdw_area[j][i] = vdw_area[i][j]
+					col+= 1
+					vdw_force[i][j] = float(sline[col])
+					vdw_force[j][i] = vdw_force[i][j]
+					col+= 1
+					vdw_energy[i][j] = float(sline[col])
+					vdw_energy[j][i] = vdw_energy[i][j]
+					col+= 1
+
+			self.vdw_area.append(vdw_area)
+			self.vdw_force.append(vdw_force)
+			self.vdw_energy.append(vdw_energy)
+			self.num_frames += 1
+			print self.num_frames	
 			if self.num_frames % 100 == 0:
 				sys.stdout.write("\tRead " + str(self.num_frames) + " frames")
 				if frames_to_read < float("inf"):
 					sys.stdout.write(" out of " + str(int(frames_to_read)) + "\n")
+				else:
+					sys.stdout.write("\n")
 
-			self.num_frames += 1
 
 		fin.close()
 
 	def reset(self):
 		
 		self.num_frames = 0
+		self.vdw_force = []
+		self.vdw_energy = []
+		self.vdw_area = []

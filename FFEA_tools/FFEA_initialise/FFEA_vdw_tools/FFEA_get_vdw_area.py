@@ -1,5 +1,6 @@
 import sys
-import FFEA_surf, FFEA_vdw, FFEA_node
+import FFEA_surface, FFEA_node
+import FFEA_vdw
 
 if len(sys.argv) != 4:
 	sys.exit("Usage: python get_vdw_area.py [INPUT .vdw file] [INPUT .surf file] [INPUT .node file]")
@@ -11,10 +12,10 @@ nodefname = sys.argv[3]
 
 # Open files
 vdw = FFEA_vdw.FFEA_vdw(vdwfname)
-surf = FFEA_surf.FFEA_surf(surffname)
+surf = FFEA_surface.FFEA_surface(surffname)
 node = FFEA_node.FFEA_node(nodefname)
-surf.load_FFEA_nodes(node)
 
+areas = vdw.calc_active_areas(surf, node)
 for i in range(-1,6,1):
-	area = FFEA_vdw.get_area_of_index(i, vdw, surf, node)
-	print "VdW index " + str(i) + ": Area = " + str(area) 
+
+	print "VdW index " + str(i) + ": Area = " + str(areas[i + 1]) 

@@ -75,6 +75,14 @@ class FFEA_vdw:
 
 		fout.close()
 
+	def calc_active_areas(self, surf, node):
+
+		areas = [0.0 for i in range(7)]
+		for i in range(self.num_faces):
+			areas[self.vdw_index[i] + 1] += surf.face[i].calc_area(node) 
+		
+		return areas
+
 	def set_num_faces(self, num_faces):
 	
 		self.num_faces = num_faces
@@ -83,7 +91,7 @@ class FFEA_vdw:
 	def make_inactive(self):
 
 		self.vdw_index = [-1 for i in range(self.num_faces)]
-
+	
 	def reset(self):
 		self.vdw_index = []
 		self.num_faces = 0
