@@ -121,7 +121,7 @@ class FFEA_trajectory:
 						break
 					
 					sline = line.split()
-					if int(sline[1][0]) != i:
+					if int(sline[1].split(",")[0].strip()) != i:
 						raise ValueError
 
 					if self.type == "NEW" and int(sline[3][0]) != active_conformation[i]:
