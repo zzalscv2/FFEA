@@ -1,6 +1,6 @@
 <param>
 	<restart = 0>
-	<dt = 1e-14>
+	<dt = 1e-15>
 	<kT = 4.11e-21>
 	<check = 10>
 	<num_steps = 5e3>
@@ -16,6 +16,7 @@
 	<do_stokes = 1>
 	<stokes_visc = 1e-03>
 	<calc_vdw = 1>
+	<vdw_type = steric>
 	<calc_noise = 1>
 	<calc_kinetics = 0>
 	<calc_es = 0>
@@ -51,7 +52,7 @@
 		<solver = CG>
 		<scale = 5e-9>
 		<centroid = (9.0,9.0,9.0)>
-		<velocity = (1000.0,0.0,0.0)>
+		<velocity = (10.0,0.0,0.0)>
 	</blob>
 	<blob>
 		<conformation>
@@ -67,6 +68,6 @@
 		<solver = CG>
 		<scale = 5e-9>
 		<centroid = (12.0,9.0,9.0)>
-		<velocity = (-1000.0,0.0,0.0)>
+		<velocity = (-10.0,0.0,0.0)>
 	</blob>
 </system>
