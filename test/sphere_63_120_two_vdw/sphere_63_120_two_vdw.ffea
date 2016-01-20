@@ -1,6 +1,6 @@
 <param>
 	<restart = 0>
-	<dt = 1e-15>
+	<dt = 1e-14>
 	<kT = 4.11e-21>
 	<check = 10>
 	<num_steps = 5e3>
@@ -16,7 +16,7 @@
 	<do_stokes = 1>
 	<stokes_visc = 1e-03>
 	<calc_vdw = 1>
-	<vdw_type = steric>
+	<!-- <vdw_type = steric> --> 
 	<calc_noise = 1>
 	<calc_kinetics = 0>
 	<calc_es = 0>
