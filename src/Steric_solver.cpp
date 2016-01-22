@@ -19,7 +19,6 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     }
 
     //  Firstly, check that no nodes are shared:
-    /*
     if (f1->n[3] == f2->n[3]) {
           return;
     }
@@ -31,7 +30,6 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
            }
         }
     }
-    */
 
     //  Then, check whether the tetrahedra intersect.
     if (!f1->checkTetraIntersection(f2)) {
