@@ -85,6 +85,10 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    // the first file:
    ssfile << pc_params->folder << "/" << pc_params->types[0] << "-" << pc_params->types[0] << ".pot";
    fin.open(ssfile.str());
+   if (fin.fail()) {
+        FFEA_FILE_ERROR_MESSG(ssfile.str().c_str());
+        return FFEA_ERROR;
+   }
    // get the first line that does not start with "#"
    getline(fin, line);
    while (line.find("#", 0, 1) == 0) {
