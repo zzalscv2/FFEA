@@ -612,6 +612,7 @@ class Blob:
 		return f.centroid_x, f.centroid_y, f.centroid_z
 
 	def draw_frame(self, i, display_flags):
+
 		if self.state == "STATIC":
 			i = 0
 
@@ -791,6 +792,9 @@ class Blob:
 				n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
 				n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
 				n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+				#if self.blob_index == 0:
+				#	print "Frame ", i, " Blob ", self.blob_index, " Conformation ", self.conformation_index
+				#	print n1, n2, n3
 				#if f == 0:
 				#	print n1
 				#	print display_flags['selected_blob'], display_flags['selected_conformation']

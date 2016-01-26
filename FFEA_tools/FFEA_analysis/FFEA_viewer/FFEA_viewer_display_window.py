@@ -398,7 +398,8 @@ class FFEA_viewer_display_window():
 
 		# Rescale blobs
 		for b in self.blob_list:
-			b[0].set_global_scale(global_scale)
+			for c in b:
+				c.set_global_scale(global_scale)
 
 		# Move simulation into box, if necessary
 		world_centroid = np.array([0.0, 0.0, 0.0])
