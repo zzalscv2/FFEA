@@ -133,6 +133,8 @@ class FFEA_script:
 					params.stokes_visc = float(rvalue)
 				elif lvalue == "calc_vdw":
 					params.calc_vdw = int(rvalue)
+				elif lvalue == "vdw_type":
+					params.vdw_type = rvalue
 				elif lvalue == "calc_noise":
 					params.calc_noise = int(rvalue)
 				elif lvalue == "calc_es":
