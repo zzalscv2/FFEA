@@ -1,44 +1,63 @@
 import numpy as np
-import sys
+import sys, os
 import FFEA_topology
+import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
 
 class FFEA_trajectory:
 
-	def __init__(self, fname, num_frames_to_read = float("inf"), frame_rate = 1):
-		
+	def __init__(self, fname, num_frames_to_read = float("inf"), frame_rate = 1, load_all = 1):
+
 		# Initialise stuff
 		self.reset()
+		self.fname = fname
+		self.num_frames_to_read = num_frames_to_read
+		self.frame_rate = frame_rate
+		
+		# Load header information only!
+		self.load_header()
+
+		# Default behaviour is to load everything
+		self.num_frames_read = 0
+		self.num_frames_skipped = 0
+
+		if load_all == 1:
+			while self.num_frames < num_frames_to_read:
+				if self.load_frame() == 1:
+					break
+
+	def load_header(self):
 
 		# Start reading
 		try:
-			fin = open(fname, "r")
+			self.traj = open(self.fname, "r")
 		
 		except(IOError):
-			print("Error. File " + fname  + " not found.")
-			return
+			print("Error. File " + self.fname  + " not found.")
+			raise IOError
 
 		# Header
-		if fin.readline().rstrip() != "FFEA_trajectory_file":
+		if self.traj.readline().rstrip() != "FFEA_trajectory_file":
 			print("Error. Expected to read 'FFEA_trajectory_file'. This may not be an ffea traj file")
-			return
+			raise IOError
 
-		fin.readline()
-		if fin.readline().rstrip() != "Initialisation:":
+		self.traj.readline()
+		if self.traj.readline().rstrip() != "Initialisation:":
 			print("Error. Expected to read 'Initialisation:' to begin the initialisation section.")
-			return
+			raise IOError
 
 		# Blobs and conformations
 		try:
-			self.num_blobs = int(fin.readline().split()[3])
+			self.num_blobs = int(self.traj.readline().split()[3])
 
 		except(ValueError, IndexError):
 			print("Error. Expected:\nNumber of Blobs %d")
 			self.reset()
-			fin.close()
-			return
+			self.traj.close()
+			return -1
 
 		
-		sline = fin.readline().split()
+		sline = self.traj.readline().split()
 		if(sline[0].strip() != "Number"):
 			
 			# Old trajectory type! Initialise all conformation stuff to 0
@@ -46,11 +65,11 @@ class FFEA_trajectory:
 			try:
 				self.num_conformations = [1 for i in range(self.num_blobs)]
 				self.num_nodes = [[int(sline[4 * i + 3]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
-				fin.readline()
+				self.traj.readline()
 			except:
 				print("Error. Expected:\nBlob 0 Nodes %d Blob 1 Nodes %d ... Blob %d Nodes %d")
 				self.reset()
-				fin.close()
+				self.traj.close()
 				return
 		else:
 			try:
@@ -60,98 +79,109 @@ class FFEA_trajectory:
 			except(ValueError, IndexError):
 				print("Error. Expected:\nNumber of Conformations %d %d ... %d")
 				self.reset()
-				fin.close()
+				self.traj.close()
 				return
 				
 			# Nodes
 			for i in range(self.num_blobs):
 				try:
-					sline = fin.readline().split()
+					sline = self.traj.readline().split()
 					for j in range(self.num_conformations[i]):
 						self.num_nodes[i][j] = int(sline[5 + 4 * j])
 				except(ValueError, IndexError):
 					print("Error. Expected:\nBlob %d:	Conformation %d Nodes %d\n.\n.\n.\nBlob %d:	Conformation %d Nodes %d")	
 					self.reset()
-					fin.close()
+					self.traj.close()
 					return
-			fin.readline()
+			self.traj.readline()
 
 		# Initialise the trajectory object
 		self.blob = [[FFEA_traj_blob(self.num_nodes[i][j]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 
-		# Begin traj
-		if fin.readline().rstrip() != "*":
+		# Read first asterisk
+		if self.traj.readline().rstrip() != "*":
 			print("Error. Expected to read '*' to begin the trajectory.")
 			self.reset()
-			fin.close()
+			self.traj.close()
 			return
 
-		# Read frames until everything breaks!
-		not_completed = True
-		num_frames_read = 0
-		num_frames_skipped = 0
-		active_conformation = [0 for i in range(self.num_blobs)]
+	def load_frame(self):
 
-		# First one doesn't count
-		if(num_frames_to_read < float("inf")):
-			num_frames_to_read += 1
-		print("Reading FFEA_trajectory...")
-		while(num_frames_read + num_frames_skipped < num_frames_to_read):
+		# Set some parameters
+		active_conformation = 0
 
-			# Check if we are to read this frame
-			if (num_frames_skipped + num_frames_read) % frame_rate != 0:
+		# And for safety
+		start_frame_pos = self.traj.tell()
+
+		# Begin frame
+		if(self.num_frames_read + self.num_frames_skipped >= self.num_frames_to_read):
+			print("Trajectory object only allowed to read %d frames. For more, first increase 'num_frames_to_read'." % (self.num_frames_to_read))
+			return
+
+		else:
+
+			# Check if we are to read this frame or skip it
+			if (self.num_frames_skipped + self.num_frames_read) % self.frame_rate != 0:
 				num_asterisks = 0
 				while(num_asterisks != 2):
-					line = fin.readline()
+					line = self.traj.readline()
+
+					# If traj ends, return pointer to beginning of frame
 					if line == "" or line == []:
-						not_completed = False
-						break
+						self.traj.seek(start_frame_pos)
+						return 1
+
 					elif("*" in line):
 						num_asterisks += 1
 
-				num_frames_skipped += 1
-				continue
+				self.num_frames_skipped += 1
+				return 0
 
+			# Read the frame otherwise!
 			for i in range(self.num_blobs):
-				frame = FFEA_traj_blob_frame(self.num_nodes[i][active_conformation[i]])
+						
+				# Read data regarding this frame
 				try:
-					line = fin.readline()
+					line = self.traj.readline()
 					if line == "" or line == []:
-						not_completed = False
-						break
+						self.traj.seek(start_frame_pos)
+						return 1
 					
 					sline = line.split()
 					if int(sline[1].split(",")[0].strip()) != i:
 						raise ValueError
-
-					if self.type == "NEW" and int(sline[3][0]) != active_conformation[i]:
-						raise ValueError
 						
+					# Set active conformation
+					if self.type == "NEW":
+						active_conformation = int(sline[3].split(",")[0])
 
 				except(ValueError, IndexError):
-					print("Error. Expected 'Blob " + str(i) + ", Conformation " + str(active_conformation[i]) + ", step %d', but got:")
+					print("Error. Expected 'Blob " + str(i) + ", Conformation " + str(active_conformation) + ", step %d', but got:")
 					print(line)
 					self.reset()
-					fin.close()
+					self.traj.close()
 					return
 
-				if fin.readline().strip() == "STATIC":
-					if(num_frames_read + num_frames_skipped == 0):
-						self.blob[i][j].motion_state = "STATIC"
+				# Initialise a frame
+				frame = FFEA_traj_blob_frame(self.num_nodes[i][active_conformation])
 
+				# See if anything needs to be read?
+				if self.traj.readline().strip() == "STATIC":
+					self.blob[i][active_conformation].motion_state = "STATIC"
 					continue
 
 				else:
 					# num_nodes used to be here, maybe
 					if self.type == "OLD":
-						last_pos = fin.tell()
+						last_pos = self.traj.tell()
 
 						# If no 'num_nodes', return to last line
-						if len(fin.readline().split()) != 1:
-							fin.seek(last_pos)
-				for j in range(self.num_nodes[i][active_conformation[i]]):
+						if len(self.traj.readline().split()) != 1:
+							self.traj.seek(last_pos)
+
+				for j in range(self.num_nodes[i][active_conformation]):
 					try:
-						sline = fin.readline().split()
+						sline = self.traj.readline().split()
 						for k in range(3):						
 							frame.pos[j][k] = float(sline[k])
 
@@ -159,61 +189,57 @@ class FFEA_trajectory:
 						print("Error on frame "+str(num_frames_read+num_frames_skipped-1)+" pos "+str(j)+". Expected '%f %f %f' at the very least.")
 						print sline
 						self.reset()
-						fin.close()
+						self.traj.close()
 						return
 
+				# Set the frame in place. Use None if conformation is not active
 				for j in range(self.num_conformations[i]):
-					if j == active_conformation[i]:
-						self.blob[i][active_conformation[i]].frame.append(frame)
+					if j == active_conformation:
+						self.blob[i][active_conformation].frame.append(frame)
 					else:
 						self.blob[i][j].frame.append(None)
 
-			# Maybe we've finished
-			if(not_completed):
+			# Conformation changes
+			try:
+				line = self.traj.readline().rstrip()
+				if line == "" or line == []:
+					self.traj.seek(start_frame_pos)
+					return 1
 
-				# Conformation changes
-				try:
-					line = fin.readline().rstrip()
-					if self.type == "OLD" and (line == "" or line == []):
-						print line
-						num_frames_read += 1
-						break
+				if self.type == "OLD":
+					num_frames_read += 1
+					return 0
 
-					elif line != "*":
+				elif line != "*":
+					print("Error. Expected to read '*' to end the frame and begin the conformation changes section.")
+					self.reset()
+					self.traj.close()
+					return 1
+
+				if self.type == "NEW":
+
+					self.traj.readline()	#'Conformation changes:'
+					for i in range(self.num_blobs):
+						sline = self.traj.readline().split()
+						#active_conformation = int(sline[6])
+	
+					if self.traj.readline().rstrip() != "*":
 						print("Error. Expected to read '*' to end the frame and begin the conformation changes section.")
 						self.reset()
-						fin.close()
+						self.traj.close()
 						return
+			except:
+				print("Error. Could not read the conformation changes section.")
+				self.reset()
+				self.traj.close()
+				return
 
-
-					if self.type == "NEW":
-
-						fin.readline()	#'Conformation changes:'
-						for i in range(self.num_blobs):
-							sline = fin.readline().split()
-							active_conformation[i] = int(sline[6])
-	
-						if fin.readline().rstrip() != "*":
-							print("Error. Expected to read '*' to end the frame and begin the conformation changes section.")
-							self.reset()
-							fin.close()
-							return
-				except:
-					print("Error. Could not read the conformation changes section.")
-					self.reset()
-					fin.close()
-					return
-
-				num_frames_read += 1
-				if num_frames_read % 100 == 0:
-					print("\tRead " + str(num_frames_read) + " frames")
-					if num_frames_to_read < float("inf"):
-						print(" out of " + str(int(num_frames_to_read)))
-			else:
-				break
-
-		print("...done!\nRead " + str(num_frames_read) + " frames.\nSkipped " + str(num_frames_skipped) + " frames.\nTotal frames parsed = " + str(num_frames_read + num_frames_skipped))
-		self.num_frames = num_frames_read
+			self.num_frames_read += 1
+			self.num_frames += 1
+			if self.num_frames_read % 100 == 0:
+				print("\tRead " + str(self.num_frames_read) + " frames")
+				if self.num_frames_to_read < float("inf"):
+					print(" out of " + str(int(self.num_frames_to_read)))
 
 	def write_linear_to_file(self, fname, top):
 
@@ -362,6 +388,9 @@ class FFEA_trajectory:
 		fout.close()
 
 	def reset(self):
+		self.traj = None
+		self.fname = None
+		self.num_frames_to_read = 0
 		self.type = "NEW"
 		self.num_blobs = 0
 		self.num_conformations = []
@@ -433,6 +462,97 @@ class FFEA_traj_blob:
 		fout.write("interior nodes:\n")
 		fout.close()
 
+	def calc_vector_fluctuations(self, angle_type = 0, subindex = [0, 1], graph = 0, fname = None):
+
+		# First, check num_subblobs is ok
+		if self.num_subblobs < 2:
+			print("Error. Insufficient number of subblobs available.")
+			return None
+		
+		# Get the needed trajectories
+		ctraj = [self.get_centroid_trajectory(subblob_index = i) for i in subindex]
+
+		# Get coordinate system
+		axis = np.array([[0.0, 0.0, 0.0] for i in range(3)])
+		axis[0] = ctraj[1][0] - ctraj[0][0]
+		axis[0] *= 1.0 / np.linalg.norm(axis[0])
+
+		axis[1] = np.array([0.0, 1.0, 0.0])
+
+		axis[2] = np.cross(axis[0], axis[1])
+		axis[2] *= 1.0 / np.linalg.norm(axis[2])
+
+		axis[1] = np.cross(axis[2], axis[0])
+		axis[1] *= 1.0 / np.linalg.norm(axis[1])
+
+		# Get initial projections (r0xy and r0zx, to measure against) (both should be r0 itself)
+		r0 = ctraj[1][0] - ctraj[0][0]
+		r0 *= 1.0 / np.linalg.norm(r0)
+		r0proj = [r0, r0]
+
+		# Now, get angle trajectories
+		angtraj = []
+		
+		for i in range(len(ctraj[1])):
+
+			# Get the vector separation
+			r = ctraj[1][i] - ctraj[0][i]
+
+			# Get it's projections (into the two relevent planes xy and zx)
+			rproj = [r - np.dot(r, axis[j])*axis[j] for j in [2,1]]
+			rprojnorm = [rp * 1.0 / np.linalg.norm(rp) for rp in rproj]
+
+			# Get angle (in whatever units requires) (include negative angles)
+			ang = np.array([np.arccos(np.dot(rprojnorm[j], r0proj[j])) for j in [0,1]])
+			if np.dot(np.cross(rprojnorm[0], r0proj[0]), axis[2]) < 0:
+				ang[0] *= -1
+			if np.dot(np.cross(rprojnorm[1], r0proj[1]), axis[1]) < 0:
+				ang[1] *= -1	
+			if(angle_type == 1):
+				ang *= 180 / np.pi
+			
+			angtraj.append(ang)
+
+		# Analyse stuff
+		angtraj = np.array(angtraj).transpose()
+		mean = np.array([np.mean(traj) for traj in angtraj])
+		stdev = np.array([np.std(traj) for traj in angtraj])
+		err = np.array([std / np.sqrt(len(angtraj[0])) for std in stdev])
+
+		# Plot graphs if required
+		if graph == 1 and fname != None:
+			
+			base, ext = os.path.splitext(fname)
+			for i in range(2):
+
+				# Set figure
+				plt.figure(i)
+
+				# Build plots (hist and best fit)
+				n, bins, patches = plt.hist(angtraj[i], 50, normed = 1, facecolor='green', alpha=0.75, label="Angular Distribution")
+				x = np.linspace(mean[i] - 3 * stdev[i], mean[i] + 3 * stdev[i],50)
+				y = mlab.normpdf(x, mean[i], stdev[i])
+				l, = plt.plot(x, y, 'r--', linewidth=1, label=r"Best Fit Normal Distribution" + "\n" + r"$  \mu = %5.2f \pm %5.2f$" % (mean[i], err[i]) + "\n" + r"$  \sigma = %5.2f$" % (stdev[i]))
+
+				# Prettify the graphs
+				if angle_type == 0:
+					plt.xlabel("Angle (radians)")
+				else:
+					plt.xlabel("Angle (degrees)")
+
+				plt.ylabel("Probability")
+				handles, labels = plt.gca().get_legend_handles_labels()
+				plt.legend(handles[::-1], labels[::-1], loc=1, fontsize=11, fancybox=True, shadow=True)
+
+				if i == 0:
+					plt.title("Cytoplasmic Dynein Stalk\nAngular Fluctuations (Hinge)")
+					plt.savefig(base + "_hingefluctuations" + ext)
+				else:
+					plt.title("Cytoplasmic Dynein Stalk\nAngular Fluctuations (Perpendicular)")
+					plt.savefig(base + "_perpfluctuations" + ext)
+
+		data = [mean, err, stdev]
+		return data
 
 class FFEA_traj_blob_frame:
 
