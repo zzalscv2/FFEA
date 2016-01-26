@@ -105,6 +105,14 @@ class FFEA_node:
 			fout.write("%8.6f %8.6f %8.6f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
 		fout.close()
 
+	def calc_centroid(self):
+		return np.mean(self.pos, axis=0)
+
+	def translate(self, shift):
+
+		for p in self.pos:
+			p += shift
+
 	def reset(self):
 		self.pos = []
 		self.num_nodes = 0

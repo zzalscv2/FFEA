@@ -4,7 +4,7 @@ import FFEA_trajectory
 
 class FFEA_pdb:
 
-	def __init__(self, fname):
+	def __init__(self, fname, num_frames_to_read = 1000000):
 
 		# Initialise everything
 		self.reset()
@@ -59,6 +59,9 @@ class FFEA_pdb:
 			self.num_blobs = num_models
 			self.num_frames = 1
 
+		if num_frames_to_read < self.num_frames:
+			self.num_frames = num_frames_to_read
+
 		# Setup the frames and structures
 		if num_models == 0:
 			self.num_blobs = 1
@@ -80,7 +83,7 @@ class FFEA_pdb:
 
 
 			# Finished
-			if line.strip() == "END":
+			if line.strip() == "END" or self.num_frames == frame_index:
 				break
 
 			# Not interested in this
