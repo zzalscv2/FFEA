@@ -204,8 +204,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
         //   Because beads need to be related to elements, it is much easier if 
         //   it is done before moving the blobs to the latest trajectory step in 
         //   case of "restart".
-        if (params.calc_preComp ==1)
-              pc_solver.init(&pc_params, &params, blob_array);
+        if (params.calc_preComp ==1) {
+              if (pc_solver.init(&pc_params, &params, blob_array) == FFEA_ERROR){
+                 cout << "Failed to initialise PreComp_solver" << endl;
+                 return FFEA_ERROR;
+              } 
+        }
 
 
 	// Create measurement files
