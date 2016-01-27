@@ -24,7 +24,8 @@ ffea_tools = 	{
 		"xyztodx": "FFEA_analysis/FFEA_traj_tools/Dx_convert_from_xyz_position_trajectory.py",
 		"cgsurf": "FFEA_initialise/Surface_tools/surface_coarse_grainer/surface_coarse_grainer_final",
 		"cuboid": "FFEA_initialise/Volume_tools/make_cuboid_mesh/make_cuboid_mesh",
-                "view": "FFEA_analysis/FFEA_viewer/FFEA_viewer.py"
+                "view": "FFEA_analysis/FFEA_viewer/FFEA_viewer.py",
+                "split": "FFEA_analysis/FFEA_traj_tools/FFEA_split_trajectory.py"
 		}
 
 if len(sys.argv) == 1:
