@@ -2141,7 +2141,7 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
         FFEA_ERROR_MESSG("Could not find 'faces:' line (found '%s' instead)\n", line)
     }
 
-    // Read in all the faces from file
+    // Read in all the faces from file (element will always be zero here, because no internal structure exists)
     scalar smallest_A = INFINITY;
     for (i = 0; i < num_surface_faces; i++) {
         if (fscanf(in, "%d %d %d %d\n", &element, &n1, &n2, &n3) != 4) {
@@ -2156,19 +2156,6 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
                 FFEA_ERROR_MESSG("Error: Surface face %d references an out of bounds node index\n", i);
             }
 
-	    /*try {
-	            int n1_el = elem[element].what_node_is_this(n1), n2_el = elem[element].what_node_is_this(n2), n3_el = elem[element].what_node_is_this(n3);
-        	    int n_op = elem[element].get_opposite_node(n1_el, n2_el, n3_el);
-		    if (n_op == -1) 
-		      FFEA_ERROR_MESSG("Error: Could not find the opposite node\n");
-		    // now the node that we can pass is: elem[element].n[n_op]
-		    // elem[element].n[n1_el]->print()  =  node[n1].print();
-		    surface[i].init(&node[n1], &node[n2], &node[n3], elem[element].n[n_op], this, params);
-	    } catch(...) {
-		    surface[i].init(&node[n1], &node[n2], &node[n3], NULL, this, params);
-	    }*/
-
-	    // &element is 0 because there is only 1 element i.e. the entire structure. This function should only be used for static objects for which topologies do not need to be defined
             surface[i].init(i, &node[n1], &node[n2], &node[n3], NULL, this, params);
 
 
@@ -2388,6 +2375,14 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
 
     return FFEA_OK; 
 
+}
+
+void Blob::add_steric_nodes() {
+
+	int i;
+	for(i = 0; i < num_surface_faces; ++i) {
+		surface[i].build_opposite_node();
+	}
 }
 
 /** 

@@ -1,4 +1,5 @@
 import numpy as np
+from math import isnan
 import sys, os
 import FFEA_topology
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ class FFEA_trajectory:
 
 		# Initialise stuff
 		self.reset()
+		np.seterr(all='raise')
 		self.fname = fname
 		self.num_frames_to_read = num_frames_to_read
 		self.frame_rate = frame_rate
@@ -116,7 +118,7 @@ class FFEA_trajectory:
 		# Begin frame
 		if(self.num_frames_read + self.num_frames_skipped >= self.num_frames_to_read):
 			print("Trajectory object only allowed to read %d frames. For more, first increase 'num_frames_to_read'." % (self.num_frames_to_read))
-			return
+			return 1
 
 		else:
 
@@ -449,7 +451,7 @@ class FFEA_traj_blob:
 			i += 1
 			for n in nodes:
 				centroid[i] += f.pos[n]
-			centroid[i] *= 1.0 / self.num_nodes
+			centroid[i] *= 1.0 / len(nodes)
 
 		return centroid
 
@@ -503,7 +505,20 @@ class FFEA_traj_blob:
 			rprojnorm = [rp * 1.0 / np.linalg.norm(rp) for rp in rproj]
 
 			# Get angle (in whatever units requires) (include negative angles)
-			ang = np.array([np.arccos(np.dot(rprojnorm[j], r0proj[j])) for j in [0,1]])
+			try:
+				ang = np.array([np.arccos(np.dot(rprojnorm[j], r0proj[j])) for j in range(2)])
+
+			except(FloatingPointError):
+				
+				# Check for nans!
+				ang = np.array([0.0, 0.0])
+				dp = np.dot(rprojnorm[j], r0proj[j])
+				for j in range(2):
+					if dp > 1.0:
+						ang[j] = 0.0
+					elif dp < -1.0:
+						ang[j] = 180.0 * (-1 ^ np.random.random_integers(0,1))
+
 			if np.dot(np.cross(rprojnorm[0], r0proj[0]), axis[2]) < 0:
 				ang[0] *= -1
 			if np.dot(np.cross(rprojnorm[1], r0proj[1]), axis[1]) < 0:

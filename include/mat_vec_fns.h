@@ -15,6 +15,8 @@ void vec3_mat3_mult(vector3 *v, matrix3 &A, vector3 *notV);
 
 void vec3_vec3_subs(vector3 *u, vector3 *v, vector3 *w);
 
+void vec3_vec3_cross(vector3 *u, vector3 *v, vector3 *w);
+
 void mat3_mult(matrix3 A, matrix3 B, matrix3 result);
 
 void vec12_add(vector12 A, vector12 B);

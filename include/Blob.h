@@ -127,6 +127,12 @@ public:
     int forget_beads();
 
     /**
+     * Add nodes to the face objects if and only if this blob is STATIC
+     *
+     */
+     void add_steric_nodes();
+    
+    /**
      * Translate the Blob by the given vector
      */
     void move(scalar dx, scalar dy, scalar dz);

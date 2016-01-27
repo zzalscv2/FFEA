@@ -456,19 +456,6 @@ int SimulationParams::validate() {
 	FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations', must have 'num_blobs' elements. We read %d elements but only %d blobs\n", conformation_array_size, num_blobs);
     }
 
-    if (state_array_size != num_blobs) {
-	FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states', must have 'num_blobs' elements. We read %d elements but only %d blobs\n", state_array_size, num_blobs);
-    }
-
-    for (int i = 0; i < num_blobs; ++i) {
-        if (num_conformations[i] <= 0) {
-            FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations[%d]', must be greater than 0.\n", i);
-        }
-        if (num_states[i] <= 0) {
-            FFEA_ERROR_MESSG("\tRequired: Number of States, 'num_states[%d]', must be greater than 0.\n", i);
-        }
-    }
-
     if (kappa < 0) {
         FFEA_ERROR_MESSG("Required: Inverse Debye Screening length, 'kappa', cannot be negative.\n");
     }
@@ -597,10 +584,6 @@ int SimulationParams::validate() {
 			FFEA_CAUTION_MESSG("\tNumber of Conformations, 'num_conformations[%d]', not equal to 1. Only first conformation will be loaded.\n", i);
 			num_conformations[i] = 1;
 		}
-		if(num_states[i] != 1) {
-			FFEA_CAUTION_MESSG("\tNumber of States, 'num_states[%d]', not equal to 1. Default first state will be loaded.\n", i);
-			num_conformations[i] = 1;
-		}
 	}
     }
     printf("...done\n");
@@ -614,7 +597,9 @@ int SimulationParams::validate() {
     for (int i = 0; i < num_blobs; ++i) {
         printf("\tBlob %d:\n", i);
         printf("\t\tnum_conformations = %d\n", num_conformations[i]);
-        printf("\t\tnum_states = %d\n", num_states[i]);
+	if (calc_kinetics == 1) {
+	        printf("\t\tnum_states = %d\n", num_states[i]);
+    	}
     }
     printf("\trng_seed = %d\n", rng_seed);
     printf("\tkT = %e\n", kT*mesoDimensions::Energy);
