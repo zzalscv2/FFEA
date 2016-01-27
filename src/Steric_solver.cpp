@@ -65,7 +65,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     // scalar vol = f1->getTetraIntersectionVolume(f2); 
     geoscalar vol, area; 
     f1->getTetraIntersectionVolumeAndArea(f2,vol,area);
-    scalar f = 1e2;
+    scalar f = 1;
     area *= f;
     vol *=f; 
 

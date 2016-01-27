@@ -1716,6 +1716,11 @@ int World::read_and_build_system(vector<string> script_vector) {
                 	if (velocity != NULL)
                     		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
 
+			// Set up extra nodes if necessary
+			if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && params.vdw_type == "steric") {
+				blob_array[i][j].add_steric_nodes();
+			}
+
                 	// set the current node positions as pos_0 for this blob, so that all rmsd values
                 	// are calculated relative to this conformation centred at this point in space.
                 	blob_array[i][j].set_rmsd_pos_0();

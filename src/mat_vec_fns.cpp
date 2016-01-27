@@ -29,6 +29,13 @@ void vec3_vec3_subs(vector3 *u, vector3 *v, vector3 *w) {
 
 }
 
+void vec3_vec3_cross(vector3 *u, vector3 *v, vector3 *w) {
+
+	w->x = u->y * v->z - u->z * v->y;
+	w->y = u->z * v->x - u->x * v->z;
+	w->z = u->x * v->y - u->y * v->x;
+}
+
 /*
  *
  */

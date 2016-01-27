@@ -114,6 +114,34 @@ void Face::set_vdw_interaction_type(int vdw_interaction_type) {
     this->vdw_interaction_type = vdw_interaction_type;
 }
 
+void Face::build_opposite_node() {
+
+    // If opposite == NULL and VdW_type == steric, we can define a node specifically for this face, to make an 'element'
+    // It will contain nothing but position data (maybe add some error checks in future)
+
+    if(n[3] == NULL) {
+	n[3] = new mesh_node();
+
+	// Calculate where to stick it
+	vector3 a, b, c;
+	vec3_vec3_subs(&n[1]->pos, &n[0]->pos, &a);
+	vec3_vec3_subs(&n[2]->pos, &n[1]->pos, &b);
+	vec3_vec3_cross(&b, &a, &c);
+	n[3]->pos_0.x = c.x;
+	n[3]->pos_0.y = c.y;
+	n[3]->pos_0.z = c.z;
+	n[3]->pos.x = n[3]->pos_0.x;
+	n[3]->pos.y = n[3]->pos_0.y;
+	n[3]->pos.z = n[3]->pos_0.z;
+	if (n[0]->index == 96 && n[1]->index == 105) {
+		fprintf(stderr, "Face index = %d\n\n", index);
+		for(int i = 0; i < 4; ++i) {
+			fprintf(stderr, "Node Index %d,  %5.2f %5.2f %5.2f\n\n", n[i]->index, n[i]->pos.x, n[i]->pos.y, n[i]->pos.z);
+		}	
+	}
+    }
+}
+
 void Face::calc_area_normal_centroid() {
     // (1/2) * |a x b|
     vector3 a = {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z},

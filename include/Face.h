@@ -9,6 +9,8 @@
 #include "SimulationParams.h"
 #include "CheckTetrahedraOverlap.h"
 #include "VolumeIntersection.h"
+#include "mat_vec_types.h"
+#include "mat_vec_fns.h"
 
 class Face {
 public:
@@ -88,6 +90,8 @@ public:
     void init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params);
 
     void set_vdw_interaction_type(int vdw_interaction_type);
+
+    void build_opposite_node();
 
     void calc_area_normal_centroid();
 
