@@ -486,7 +486,7 @@ FILE_VERSION_FILTER    =
 # file name after the option, if omitted DoxygenLayout.xml will be used as the name
 # of the layout file.
 
-LAYOUT_FILE            =
+LAYOUT_FILE            = @CMAKE_CURRENT_SOURCE_DIR@/doc/FFEADoxygenLayout.xml
 
 #---------------------------------------------------------------------------
 # configuration options related to warning and progress messages
@@ -548,7 +548,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@ @CMAKE_CURRENT_SOURCE_DIR@/src @CMAKE_CURRENT_SOURCE_DIR@/include @CMAKE_CURRENT_SOURCE_DIR@/doc
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@ @CMAKE_CURRENT_SOURCE_DIR@/src @CMAKE_CURRENT_SOURCE_DIR@/include @CMAKE_CURRENT_SOURCE_DIR@/doc @CMAKE_CURRENT_SOURCE_DIR@/doc/1-Overview @CMAKE_CURRENT_SOURCE_DIR@/doc @CMAKE_CURRENT_SOURCE_DIR@/doc/2-UserManual
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -1479,3 +1479,7 @@ DOT_CLEANUP            = YES
 MARKDOWN_SUPPORT = YES
 USE_MDFILE_AS_MAINPAGE = README.md
 AUTOLINK_SUPPORT = YES
+
+HTML_COLORSTYLE_HUE = 220
+HTML_COLORSTYLE_SAT = 150
+HTML_COLORSTYLE_GAMMA = 160
