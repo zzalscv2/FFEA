@@ -123,22 +123,25 @@ void Face::build_opposite_node() {
 	n[3] = new mesh_node();
 
 	// Calculate where to stick it
-	vector3 a, b, c;
-	vec3_vec3_subs(&n[1]->pos, &n[0]->pos, &a);
-	vec3_vec3_subs(&n[2]->pos, &n[1]->pos, &b);
-	vec3_vec3_cross(&b, &a, &c);
-	n[3]->pos_0.x = c.x;
-	n[3]->pos_0.y = c.y;
-	n[3]->pos_0.z = c.z;
+	scalar length;
+	vector3 in;
+
+	// Get inward normal
+	calc_area_normal_centroid();
+	in.x = -1 * normal.x;
+	in.y = -1 * normal.y;
+	in.z = -1 * normal.z;
+
+	// Now get a lengthscale
+	length = sqrt(area);
+
+	// Now place new node this far above the centroid
+	n[3]->pos_0.x = centroid.x + length * in.x;
+	n[3]->pos_0.y = centroid.y + length * in.y;
+	n[3]->pos_0.z = centroid.z + length * in.z;
 	n[3]->pos.x = n[3]->pos_0.x;
 	n[3]->pos.y = n[3]->pos_0.y;
 	n[3]->pos.z = n[3]->pos_0.z;
-	if (n[0]->index == 96 && n[1]->index == 105) {
-		fprintf(stderr, "Face index = %d\n\n", index);
-		for(int i = 0; i < 4; ++i) {
-			fprintf(stderr, "Node Index %d,  %5.2f %5.2f %5.2f\n\n", n[i]->index, n[i]->pos.x, n[i]->pos.y, n[i]->pos.z);
-		}	
-	}
     }
 }
 
@@ -171,6 +174,13 @@ vector3 * Face::get_centroid() {
 	centroid.z = (1.0 / 3.0) * (n[0]->pos.z + n[1]->pos.z + n[2]->pos.z);
 	
 	return &centroid;
+}
+
+void Face::print_centroid() {
+
+	vector3 *c;
+	c = get_centroid();
+	fprintf(stderr, "Centroid: %f %f %f\n", c->x, c->y, c->z);
 }
 
 scalar Face::get_area() {
