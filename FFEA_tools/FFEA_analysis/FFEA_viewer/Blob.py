@@ -595,16 +595,19 @@ class Blob:
 		return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
 
 	def get_centroid(self, i):
+
 		if self.state == "STATIC":
 			i = 0
 
 		if self.num_frames == 0:
 			return 0.0, 0.0, 0.0
+
 		if self.frames[i] == None:
 			return None, None, None
 
 		if i < 0:
 			i == 0
+
 		elif i >= self.num_frames:
 			i = self.num_frames - 1
 
@@ -1247,12 +1250,25 @@ class Blob:
 				self.binding_site[self.active_binding_site].append(face_index)
 				#self.binding_site_type[face_index][0] = site_type
 				#self.binding_site_type[face_index][1] = len(self.binding_site) - 1
+
 	def begin_new_binding_site(self, site_type, face_index):
 		
 		self.binding_site_type[face_index][0] = site_type
 		self.binding_site_type[face_index][1] = len(self.binding_site)
 		self.binding_site.append(face_index)
 
+	def get_dimensions(self):
+
+		dims = [[float("inf"), -1* float("inf")] for i in range(3)]
+
+		for n in self.frames[0].node_list:
+			for i in range(3):
+				if n[i] < dims[i][0]:
+					dims[i][0] = n[i]
+				if n[i] > dims[i][1]:
+					dims[i][1] = n[i]
+		return dims
+	
 	def get_state(self):
 		return self.state
 
@@ -1269,7 +1285,6 @@ class Blob:
 		self.hide_blob = False
 
 	def hide(self):
-		print "Hi"
 		self.hide_blob = True
 
 	def find_shortest_edge(self, frame_i):
@@ -1393,3 +1408,18 @@ class Frame:
 		for n in self.node_list:
 			for i in range(3):
 				n[i] += trans[i]
+
+		self.calc_centroid()
+
+	def calc_centroid(self):
+		self.centroid_x = 0.0
+		self.centroid_y = 0.0
+		self.centroid_z = 0.0
+		for n in self.node_list:
+			self.centroid_x += n[0]
+			self.centroid_y += n[1]
+			self.centroid_z += n[2]
+
+		self.centroid_x *= 1.0 / len(self.node_list)
+		self.centroid_y *= 1.0 / len(self.node_list)
+		self.centroid_z *= 1.0 / len(self.node_list)
