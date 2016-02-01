@@ -90,7 +90,7 @@ World::~World() {
 int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	
 	// Set some constants and variables
-	int i, j;
+	int i, j, k;
 	const int MAX_BUF_SIZE = 255;
 	string buf_string;
 	FFEA_input_reader *ffeareader;
@@ -454,10 +454,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	    // Calculate the total number of vdw interacting faces in the entire system
 	    total_num_surface_faces = 0;
 	    for (i = 0; i < params.num_blobs; i++) {
-		total_num_surface_faces += active_blob_array[i]->get_num_faces();
+		for(j = 0; j < params.num_conformations[i]; ++j) {
+			total_num_surface_faces += blob_array[i][j].get_num_faces();
+		}
 	    }
 	    printf("Total number of surface faces in system: %d\n", total_num_surface_faces);
-
 	    if (params.es_N_x > 0 && params.es_N_y > 0 && params.es_N_z > 0) {
 
 		// Allocate memory for an NxNxN grid, with a 'pool' for the required number of surface faces
@@ -474,19 +475,21 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		// Add all the faces from each Blob to the lookup pool
 		printf("Adding all faces to nearest neighbour grid lookup pool\n");
 		for (i = 0; i < params.num_blobs; i++) {
-		    int num_faces_added = 0;
-		    for (j = 0; j < active_blob_array[i]->get_num_faces(); j++) {
-		        Face *b_face = active_blob_array[i]->get_face(j);
-		        if (b_face != NULL) {
-		            if (lookup.add_to_pool(b_face) == FFEA_ERROR) {
-		                FFEA_error_text();
-		                printf("When attempting to add a face to the lookup pool\n");
-		                return FFEA_ERROR;
-		            }
-		            num_faces_added++;
-		        }
+		    for(j = 0; j < params.num_conformations[i]; ++j) {
+			    int num_faces_added = 0;
+			    for (k = 0; k < blob_array[i][j].get_num_faces(); k++) {
+				Face *b_face = blob_array[i][j].get_face(k);
+				if (b_face != NULL) {
+				    if (lookup.add_to_pool(b_face) == FFEA_ERROR) {
+				        FFEA_error_text();
+				        printf("When attempting to add a face to the lookup pool\n");
+				        return FFEA_ERROR;
+				    }
+				    num_faces_added++;
+				}
+			    }
+			    printf("%d 'VdW active' faces, from blob %d, conformation %d, added to lookup grid.\n", num_faces_added, i, j);
 		    }
-		    printf("%d 'VdW active' faces, from blob %d, added to lookup grid.\n", num_faces_added, i);
 		}
 
 		// Initialise the BEM PBE solver
@@ -1317,6 +1320,8 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 	if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
 		// Conformation change!
+		MTRand arng;
+		arng.seed(params.rng_seed);
 
 		// Get current nodes
 		vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
@@ -1329,6 +1334,9 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 
 		// Apply map
 		kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
+
+		// Move the old one to random space so as not to interfere with calculations
+		blob_array[blob_index][current_conformation].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
 
 	} else if (!kinetic_state[blob_index][current_state].is_bound() && kinetic_state[blob_index][target_state].is_bound()) {
 
@@ -1421,6 +1429,8 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 
 	// Read in each blob one at a time
+	MTRand arng;
+       	arng.seed(params.rng_seed);
 	for(i = 0; i < params.num_blobs; ++i) {
 
 		// Get blob data
@@ -1674,6 +1684,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 		// Build blob
 		// Build conformations (structural data)
+		vector3 *cent = new vector3;
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
 			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), binding.at(j).c_str(), beads.at(j).c_str(), 
@@ -1683,48 +1694,55 @@ int World::read_and_build_system(vector<string> script_vector) {
                     		return FFEA_ERROR;
                		}
 
-			// if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
-                	if (centroid != NULL) {
+			// If not an active conforamtion, move to random area in infinity so vdw and stuff are not active (face linked list is not set up for deleting elements)
+			if (j > 0) {
+				blob_array[i][j].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
+				blob_array[i][j].get_centroid(cent);
+				cout << "Blob " << i << ", Conformation " << j << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
+			} else {
 
-                    		// Rescale first	
-                    		centroid[0] *= scale;
-                    		centroid[1] *= scale;
-                    		centroid[2] *= scale;
-                    		vector3 dv = blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
-                                // if Blob has a number of beads, transform them too:
-                                if (blob_array[i][j].get_num_beads() > 0)
-                                  blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
-                	}
-                      
-                	if(rotation != NULL) {
-				if(rotation_type == 0) {
-                                   if (blob_array[i][j].get_num_beads() > 0) {
-					blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
-                                    } else {
-					blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
-                                    }
-				} else {
-                                   if (blob_array[i][j].get_num_beads() > 0) {
-	                    		blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
-                                   } else { 
-                                      // if Blob has a number of beads, transform them too:
-                                        blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8], 1);
-                                   }
-				}        
-	        	}
+				// if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
+		        	if (centroid != NULL) {
 
-                	if (velocity != NULL)
-                    		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
+		            		// Rescale first	
+		            		centroid[0] *= scale;
+		            		centroid[1] *= scale;
+		            		centroid[2] *= scale;
+		            		vector3 dv = blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
+		                        // if Blob has a number of beads, transform them too:
+		                        if (blob_array[i][j].get_num_beads() > 0)
+		                          blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
+		        	}
+		              
+		        	if(rotation != NULL) {
+					if(rotation_type == 0) {
+		                           if (blob_array[i][j].get_num_beads() > 0) {
+						blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
+		                            } else {
+						blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
+		                            }
+					} else {
+		                           if (blob_array[i][j].get_num_beads() > 0) {
+			            		blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
+		                           } else { 
+		                              // if Blob has a number of beads, transform them too:
+		                                blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8], 1);
+		                           }
+					}        
+				}
 
-			// Set up extra nodes if necessary
-			if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && params.vdw_type == "steric") {
-				blob_array[i][j].add_steric_nodes();
+		        	if (velocity != NULL)
+		            		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
+
+				// Set up extra nodes if necessary
+				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && params.vdw_type == "steric") {
+					blob_array[i][j].add_steric_nodes();
+				}
+
+		        	// set the current node positions as pos_0 for this blob, so that all rmsd values
+		        	// are calculated relative to this conformation centred at this point in space.
+		        	blob_array[i][j].set_rmsd_pos_0();
 			}
-
-                	// set the current node positions as pos_0 for this blob, so that all rmsd values
-                	// are calculated relative to this conformation centred at this point in space.
-                	blob_array[i][j].set_rmsd_pos_0();
-
 			cout << "\t...done!" << endl;
 		}
 
