@@ -369,10 +369,10 @@ class FFEA_script:
 			blob.write_to_file(fout, fname, self.params.calc_kinetics)
 		fout.write("</system>\n")
 		if len(self.spring) != 0:
-			fout.write("<springs>\n")
+			fout.write("<interactions>\n\t<springs>\n")
 			for fname in self.spring:
-				fout.write("\t<spring_fname = %s>\n" % (os.path.relpath(fname, os.path.dirname(os.path.abspath(fname)))))
-			fout.write("</springs>\n")
+				fout.write("\t\t<spring_fname = %s>\n" % (os.path.relpath(fname, os.path.dirname(os.path.abspath(fname)))))
+			fout.write("\t</springs>\n</interactions>")
 		fout.close()
 
 	def load_topology(self, blob_index, conformation_index):
