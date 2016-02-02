@@ -431,6 +431,14 @@ class FFEA_viewer_display_window():
 				b[0].frames = []
 				b[0].num_frames = 0
 
+		# Now load trajectory
+		if trajectory_out_fname != None:
+			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
+			self.load_trajectory_thread.start()
+
+		while(self.num_frames < 1):
+			pass
+
 		# Reset initial camera (dependent upon structure size)
 		dims = self.get_system_dimensions()
 		self.dimensions = [dims[i][1] - dims[i][0] for i in range(3)]
@@ -442,10 +450,6 @@ class FFEA_viewer_display_window():
 		else:
 			self.z = self.dimensions[1] / (2 * np.tan(np.pi / 6.0))
 
-		# Now load trajectory
-		if trajectory_out_fname != None:
-			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
-			self.load_trajectory_thread.start()
 
 	def load_trajectory(self, trajectory_out_fname,):
 
