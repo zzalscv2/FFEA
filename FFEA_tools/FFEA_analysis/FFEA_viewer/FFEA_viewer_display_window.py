@@ -436,8 +436,12 @@ class FFEA_viewer_display_window():
 			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
 			self.load_trajectory_thread.start()
 
+		# Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists
 		while(self.num_frames < 1):
-			pass
+			if trajectory_out_fname == None:
+				break
+			else:
+				pass
 
 		# Reset initial camera (dependent upon structure size)
 		dims = self.get_system_dimensions()
