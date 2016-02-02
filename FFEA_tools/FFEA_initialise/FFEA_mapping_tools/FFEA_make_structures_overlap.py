@@ -101,7 +101,7 @@ while True:
 		springs.write_to_file(spring_fname)
 
 		# Update run time
-		script2.params.num_steps = script2.params.check * 50 * run
+		script2.params.num_steps = script2.params.check * 10 * run
 		if run == 1:
 			script2.params.restart = 0
 		else:
