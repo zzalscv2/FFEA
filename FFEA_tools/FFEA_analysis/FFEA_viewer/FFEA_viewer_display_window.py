@@ -82,7 +82,7 @@ class FFEA_viewer_display_window():
 	def init_vars(self):
 		# camera
 		self.orientation = Quaternion()
-		self.z = 200
+		self.z = 1
 
 		# mouse
 		self.last_x = -1
@@ -326,7 +326,7 @@ class FFEA_viewer_display_window():
 						lvalue, rvalue = line.split("=")
 						lvalue = lvalue.strip()
 						rvalue = rvalue.strip()
-						print lvalue, rvalue
+
 						if lvalue == "centroid" or lvalue == "centroid_pos":
 							rsplit = rvalue[1:-1].split(",")
 							blob_centroid_pos = [float(val) for val in rsplit]
@@ -406,7 +406,6 @@ class FFEA_viewer_display_window():
 		shift = np.array([0.0, 0.0, 0.0])
 		total_num_nodes = 0
 
-			
 		# Load STATIC blobs and get a global centroid
 		for b in self.blob_list:
 
@@ -416,8 +415,6 @@ class FFEA_viewer_display_window():
 			world_centroid[1] += y * b[0].num_nodes
 			world_centroid[2] += z * b[0].num_nodes
 			total_num_nodes += b[0].num_nodes
-			print self.blob_list.index(b)
-			print x,y,z
 
 		world_centroid *= 1.0 / total_num_nodes	
 		
@@ -434,74 +431,21 @@ class FFEA_viewer_display_window():
 				b[0].frames = []
 				b[0].num_frames = 0
 
+		# Reset initial camera (dependent upon structure size)
+		dims = self.get_system_dimensions()
+		self.dimensions = [dims[i][1] - dims[i][0] for i in range(3)]
+
+		if (self.dimensions[2] > self.dimensions[1]) and (self.dimensions[2] > self.dimensions[0]):
+			self.z = 2 * self.dimensions[2]
+		elif self.dimensions[0] > self.dimensions[1]:
+			self.z = self.dimensions[0] / (2 * np.tan(np.pi / 6.0))
+		else:
+			self.z = self.dimensions[1] / (2 * np.tan(np.pi / 6.0))
 
 		# Now load trajectory
 		if trajectory_out_fname != None:
 			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
 			self.load_trajectory_thread.start()
-
-		# Get a global scale
-#		global_scale = float("inf")
-#		for blob in self.blob_list:
-#			if blob[0].scale < global_scale:
-#				global_scale = blob[0].scale
-#		
-#		global_scale = 1.0 / global_scale
-#
-#		# Rescale box
-#		self.box_x *= global_scale
-#		self.box_y *= global_scale
-#		self.box_z *= global_scale
-#		
-#		# Load nodes and shift to appropriate positions
-#		# Firstly, load all nodes from node files to get a global centroid
-#		world_centroid = [0.0,0.0,0.0]
-#		total_num_nodes = 0.0
-#		for blob in self.blob_list:
-#
-#			# First conformations only
-#			blob[0].set_global_scale(global_scale)
-#			blob[0].load_nodes_file_as_frame()
-#			x,y,z = blob[0].get_centroid(0)
-#
-#			world_centroid[0] += x * blob[0].num_nodes
-#			world_centroid[1] += y * blob[0].num_nodes
-#			world_centroid[2] += z * blob[0].num_nodes
-#			total_num_nodes += blob[0].num_nodes
-#		world_centroid[0] *= 1.0 / total_num_nodes
-#		world_centroid[1] *= 1.0 / total_num_nodes
-#		world_centroid[2] *= 1.0 / total_num_nodes
-#
-#		# Translation to box center (if necessary)
-#		shift = [0.0,0.0,0.0]
-#		if self.move_into_box == 1:
-#			shift[0] = self.box_x / 2.0 - world_centroid[0]
-#			shift[1] = self.box_y / 2.0 - world_centroid[1]
-#			shift[2] = self.box_z / 2.0 - world_centroid[2]
-#
-#		# Shift to the global centroid if static, else load nodes from traj
-#		if trajectory_out_fname == None:
-#			for blob in self.blob_list:
-#				for c in blob:
-#					if blob.index(c) == 0:
-#						c.frames[0].translate(shift)
-#					c.set_global_scale(global_scale)
-##		
-#		else:
-#			for blob in self.blob_list:
-#				if blob[0].state == "STATIC":
-#					for c in blob:
-#						if blob.index(c) == 0:
-##							c.frames[0].translate(shift)
-#				else:
-#					for c in blob:
-#						c.set_global_scale(global_scale)
-#
-#			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
-#			self.load_trajectory_thread.start()
-#
-#		for b in self.blob_list:
-#			print b[0].get_centroid(0)
 
 	def load_trajectory(self, trajectory_out_fname,):
 
@@ -678,6 +622,21 @@ class FFEA_viewer_display_window():
 
 		traj.close()
 
+	def get_system_dimensions(self):
+
+		dims = [[float("inf"), -1* float("inf")] for i in range(3)]
+
+		for b in self.blob_list:
+			bdims = b[0].get_dimensions()
+
+			for i in range(3):
+				if bdims[i][0] < dims[i][0]:
+					dims[i][0] = bdims[i][0]
+				if bdims[i][1] > dims[i][1]:
+					dims[i][1] = bdims[i][1]
+		
+		return dims
+
 	def death(self):
 		glutLeaveMainLoop()
 
@@ -807,7 +766,6 @@ class FFEA_viewer_display_window():
 		if len(self.blob_list) > 0:
 			for i in range(self.num_conformations[self.selected_blob]):
 				centroid_x, centroid_y, centroid_z = self.blob_list[self.selected_blob][i].get_centroid(self.frame)
-
 				if centroid_x != None:
 					break
 
@@ -820,8 +778,7 @@ class FFEA_viewer_display_window():
 			glLoadIdentity();
 			#glTranslated(-self.offset_x, -self.offset_y, -self.offset_z);
 
-			position = [-centroid_x - self.offset_x, -centroid_y - self.offset_y, -centroid_z - self.offset_z - self.z * 10, 1.0];
-			#position = [centroid_x, centroid_y, centroid_z - self.z * 10, 1.0];
+			position = [-centroid_x - self.offset_x, -centroid_y - self.offset_y, -centroid_z - self.offset_z - self.z, 1.0];
 			glLightfv(GL_LIGHT0, GL_POSITION, position);
 
 			m = self.orientation.construct_matrix();
@@ -829,7 +786,7 @@ class FFEA_viewer_display_window():
 			m[13] = -self.offset_y
 			m[14] = -self.z;
 			glLoadMatrixd(m);
-			glTranslated(-centroid_x, -centroid_y, -centroid_z);
+			glTranslated(-centroid_x - self.offset_x, -centroid_y - self.offset_y, -centroid_z - self.offset_z);
 
 			if self.show_box == 1:
 				self.draw_box()
@@ -878,7 +835,7 @@ class FFEA_viewer_display_window():
                         m[13] = -self.offset_y
 			m[14] = -self.z;
 			glLoadMatrixd(m);
-			glTranslated(-centroid_x, -centroid_y, -centroid_z);
+			glTranslated(-centroid_x - self.offset_x, -centroid_y - self.offset_y, -centroid_z - self.offset_z);
 			
 			self.blob_list[self.selected_blob][self.selected_conformation].draw_pick_frame(self.frame)
 
@@ -989,9 +946,10 @@ class FFEA_viewer_display_window():
 		
 		if self.mouse_button == 3:
 			self.z -= self.z*.05;
+			
 		elif self.mouse_button == 4:
 			self.z += self.z*.05;
-
+			
 	def mouse_active(self, x, y):
 		if self.mouse_button == 0:
 			if self.last_x == -1:
@@ -1002,6 +960,7 @@ class FFEA_viewer_display_window():
 				self.orientation.rotate(2 * float(y - self.last_y)/self.height * 3.0, 1, 0, 0);
 				self.last_x = x;
 				self.last_y = y;
+
 		elif self.mouse_button == 2:
 			if self.last_x == -1:
 				self.last_x = x;
@@ -1041,4 +1000,5 @@ class FFEA_viewer_display_window():
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 		glOrtho(-self.z, self.z, -self.z, self.z, -100, 10000);
+		#glOrtho(-self.dimensions[0] * 1000, self.dimensions[0] * 1000, -self.dimensions[1] * 1000, self.dimensions[1] * 1000, -self.dimensions[2] * 1000, self.dimensions[2] * 1000);
 		glMatrixMode(GL_MODELVIEW)
