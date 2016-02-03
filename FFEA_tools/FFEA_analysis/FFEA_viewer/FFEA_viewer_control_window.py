@@ -97,6 +97,9 @@ class FFEA_viewer_control_window:
 		self.show_flat = IntVar(value=0)
 		check_button_show_flat = Checkbutton(display_flags_frame, text="Flat", variable=self.show_flat, command=self.something_has_changed)
 		check_button_show_flat.pack(anchor=W)
+		self.show_material = IntVar(value=0)
+		check_button_show_material = Checkbutton(display_flags_frame, text="Show Material", variable=self.show_material, command=self.something_has_changed)
+		check_button_show_material.pack(anchor=W)
 		self.show_vdw_only = IntVar(value=0)
 		check_button_show_vdw_only = Checkbutton(display_flags_frame, text="VdW only", variable=self.show_vdw_only, command=self.something_has_changed)
 		check_button_show_vdw_only.pack(anchor=W)
@@ -313,6 +316,7 @@ class FFEA_viewer_control_window:
 						'display_flags':{	'show_mesh': self.show_mesh.get(),
 									'show_solid': self.show_solid.get(),
 									'show_flat': self.show_flat.get(),
+									'show_material': self.show_material.get(),
 									'show_vdw_only': self.show_vdw_only.get(),
 									'show_node_numbers': self.show_node_numbers.get(),
 									'vdw_edit_mode': self.edit_vdw.get(),

@@ -3,6 +3,7 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math
 import numpy as np
+import FFEA_material
 
 class Blob:
 	def __init__(self, energy_thresh=1.0e6):
@@ -33,8 +34,9 @@ class Blob:
 		self.energy_thresh = energy_thresh
 		self.scale = 1.0
 		self.global_scale = 1.0
+		self.normalcolor = [32 / 255.0, 178 / 255.0, 170 / 255.0]
 
-	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, binding_fname, blob_centroid_pos, blob_rotation):
+	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, blob_mat, binding_fname, blob_centroid_pos, blob_rotation):
 		self.id_num = idnum
 		self.blob_index = blob_index
 		self.conformation_index = conformation_index
@@ -58,6 +60,7 @@ class Blob:
 			self.no_topology = False
 
 		self.load_surface(surf_fname)
+		self.mat = FFEA_material.FFEA_material(blob_mat)
 
 		if vdw_fname == "":
 			print "No vdw file provided. Creating a zero array."
@@ -680,7 +683,59 @@ class Blob:
 			glEnd()
 
 			return
-		
+
+		if display_flags['show_material'] == 1 and self.id_num == display_flags['selected_index']:
+
+			if self.state == "STATIC":
+				return
+
+			# Scan materials quickly to determine range of values (maybe not just shear modulus in future!)
+			relevent_param = []
+			fcolor = []
+
+			max_val = 0
+			min_val = 0
+			for f in self.surface:
+				relevent_param.append(self.mat.element[f[0]].shear_modulus)
+			
+			max_val = max(relevent_param)
+			min_val = min(relevent_param)
+
+			for j in range(self.num_surface_faces):
+				try:
+					frac = (relevent_param[j] - min_val) / (max_val - min_val)
+				except(ZeroDivisionError):
+					frac = 1.0
+
+				# Green colour map
+				#fcolor.append([(50 / 255.0) * (2 - frac), 1.0, 50 * (3 - frac) / 255.0])
+				fcolor.append([(50 / 255.0) * (2 - frac),0,0])
+
+			# Now draw some triangles
+			glBegin(GL_TRIANGLES)
+	
+			for f in self.surface:
+
+				n1 = self.frames[i].node_list[f[1]][0:3]
+				n2 = self.frames[i].node_list[f[2]][0:3]
+				n3 = self.frames[i].node_list[f[3]][0:3]
+
+				norm1 = self.frames[i].normal_list[f[1]]
+				norm2 = self.frames[i].normal_list[f[2]]
+				norm3 = self.frames[i].normal_list[f[3]]
+
+				findex = self.surface.index(f)
+
+				glColor3d(fcolor[findex][0], fcolor[findex][1], fcolor[findex][2])
+				glNormal3d(norm1[0], norm1[1], norm1[2])
+				glVertex3d(n1[0], n1[1], n1[2])
+				glNormal3d(norm2[0], norm2[1], norm2[2])
+				glVertex3d(n2[0], n2[1], n2[2])
+				glNormal3d(norm3[0], norm3[1], norm3[2])
+				glVertex3d(n3[0], n3[1], n3[2])
+			glEnd()
+			return
+
 		if display_flags['binding_site_edit_mode'] == 1 and self.id_num == display_flags['selected_index']:
 			glBegin(GL_TRIANGLES)
 
@@ -783,7 +838,9 @@ class Blob:
 
 		bc = display_flags['blob_colour']
 		if self.blob_index == display_flags['selected_blob']:
-			bc = [0.,0.5176,0.792]
+			bc = [0,0,204/255.0]
+		else:
+			bc = self.normalcolor
 
 		if display_flags['show_solid'] == 1:
 			glBegin(GL_TRIANGLES)
