@@ -18,17 +18,20 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
         return;
     }
 
-    //  Firstly, check that no nodes are shared:
-    if (f1->n[3] == f2->n[3]) {
-          return;
-    }
-    for (int i=0; i<4; i++) {
-        int in_i = f1->n[i]->index;
-        for (int j=0; j<4; j++) {
-           if (f2->n[j]->index == in_i){
-               return;
-           }
-        }
+    //  Firstly, check that no nodes are shared,
+    //     only in the case that faces belong to the same blob:
+    if (f1->daddy_blob == f2->daddy_blob) {
+      if (f1->n[3] == f2->n[3]) {
+            return;
+      }
+      for (int i=0; i<4; i++) {
+          int in_i = f1->n[i]->index;
+          for (int j=0; j<4; j++) {
+             if (f2->n[j]->index == in_i){
+                 return;
+             }
+          }
+      }
     }
 
     //  Then, check whether the tetrahedra intersect.
@@ -70,9 +73,8 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     // scalar vol = f1->getTetraIntersectionVolume(f2); 
     geoscalar vol, area; 
     f1->getTetraIntersectionVolumeAndArea(f2,vol,area);
-    scalar f = 1e-2;
-    area *= f;
-    vol *=f; 
+    area *= steric_factor;
+    vol *= steric_factor; 
 
     // Energy is proportional to the volume of interaction: 
     f1->add_bb_vdw_energy_to_record(vol, f2->daddy_blob->blob_index);
