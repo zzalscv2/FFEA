@@ -79,6 +79,7 @@ public:
     scalar stokes_visc;
 
     scalar vdw_r_eq, vdw_eps;
+    scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
 
     char trajectory_out_fname[MAX_FNAME_SIZE];
     char kinetics_out_fname[MAX_FNAME_SIZE];

@@ -14,7 +14,7 @@ public:
 
     ~VdW_solver();
 
-    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix);
+    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor);
 
     int solve();
 
@@ -40,8 +40,7 @@ protected:
 
     virtual void do_interaction(Face *f1, Face *f2);
 
-    /* do_volumeExclusion calculates the force (and not the energy, yet) of two tetrahedra */
-    // void do_volumeExclusion(Face *f1, Face *f2);
+    scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
 
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
 

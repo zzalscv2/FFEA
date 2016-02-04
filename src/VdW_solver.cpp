@@ -16,13 +16,15 @@ VdW_solver::~VdW_solver() {
     box_size.z = 0;
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
     this->box_size.z = box_size->z;
 
     this->lj_matrix = lj_matrix;
+
+    this->steric_factor = vdw_steric_factor;
     return FFEA_OK;
 }
 

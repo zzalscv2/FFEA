@@ -49,6 +49,7 @@ SimulationParams::SimulationParams() {
 
     vdw_r_eq = -1;
     vdw_eps = -1;
+    vdw_steric_factor = 1;
 
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
@@ -114,6 +115,7 @@ SimulationParams::~SimulationParams() {
 
     vdw_r_eq = -1;
     vdw_eps = -1;
+    vdw_steric_factor = 0;
 
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
@@ -325,6 +327,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	stokes_visc = atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << stokes_visc << endl;
                 stokes_visc /= mesoDimensions::pressure * mesoDimensions::time;
+
+	} else if (lvalue == "vdw_steric_factor") {
+        	vdw_steric_factor = atof(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << vdw_steric_factor << endl;
 
 	} else if (lvalue == "wall_x_1") {
 		if (rvalue == "PBC") {
@@ -566,6 +572,10 @@ int SimulationParams::validate() {
     if (calc_stokes == 1 && stokes_visc <= 0) {
         FFEA_ERROR_MESSG("calc_stokes flag is set, so stokes_visc must be set to a value greater than 0.\n");
     }
+
+    if (vdw_steric_factor < 0) {
+       printf("\tFRIENDLY WARNING: Beware, vdw_steric_factor is negative.\n");
+    } 
 
     if (calc_kinetics == 1) {
 	if(kinetics_update <= 0) {
