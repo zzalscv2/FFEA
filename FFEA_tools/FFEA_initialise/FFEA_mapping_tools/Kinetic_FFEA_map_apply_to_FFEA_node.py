@@ -17,7 +17,7 @@ input_nodes = FFEA_node.FFEA_node(innode)
 kinetic_map = FFEA_kinetic_map.FFEA_kinetic_map(inmap)
 
 # Apply matrix!
-output_nodes = kinetic_map.apply_to_nodes(input_nodes)
+output_nodes = kinetic_map.apply_sparse(input_nodes)
 
 # Print to file
 
@@ -38,7 +38,7 @@ for i in range(num_surface_nodes):
 	fout.write("%6.3f %6.3f %6.3f\n" % (output_nodes[i][0], output_nodes[i][1], output_nodes[i][2]))
 
 # Interior nodes
-fout.write("Interior nodes:\n")
+fout.write("interior nodes:\n")
 for i in range(num_surface_nodes, num_nodes, 1):
 	fout.write("%6.3f %6.3f %6.3f\n" % (output_nodes[i][0], output_nodes[i][1], output_nodes[i][2]))
 
