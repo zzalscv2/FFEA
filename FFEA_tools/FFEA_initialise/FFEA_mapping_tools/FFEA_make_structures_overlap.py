@@ -46,7 +46,8 @@ for i in range(2):
 	script2.blob[-1].scale = script.blob[blob_index[i]].scale
 	
 	# Overlap the centroids
-	script2.blob[-1].centroid = np.array([0.0,0.0,0.0])
+	#script2.blob[-1].centroid = np.array([0.0,0.0,0.0])
+	script2.blob[-1].centroid = script.blob[blob_index[i]].centroid
 	script2.blob[-1].rotation = script.blob[blob_index[i]].rotation
 
 # And add some springs
@@ -67,10 +68,13 @@ while True:
 	viewer_process = Popen(["python",os.path.expandvars("$FFEAVIEWER") + "/FFEA_viewer.py", "-s", outffea], stdout=fout)
 	run += 1
 	print("Minimisation Run %d\n\n" % (run))
-	line = raw_input("\tPlease enter:\n\t\tPairs of 2 nodes between which you would like to be added as springs\n\t\tPairs of 2 nodes making up a springs you want to delete\n\t\tReturn to finish: ")
-	if line.strip() == "":
+	line = raw_input("\tPlease enter:\n\t\tPairs of 2 nodes between which you would like to be added as springs\n\t\tPairs of 2 nodes making up a springs you want to delete\n\t\tReturn to continue\n\t\t'q' to finish: ")
+	if line.strip() == "q" or line.strip() == "Q":
 		print("Minimisation completed!")
 		break
+	elif line.strip() == "":
+		os.system("ffea " + outffea)
+		continue
 	else:
 		sline = line.split()
 		if len(sline) % 2 != 0:
@@ -94,9 +98,20 @@ while True:
 				spring_array.append(pair)
 
 		# Add springs to script
+		line = raw_input("\n\t\tSpring constant?:")
+		if line.strip() != "":
+			try:
+				k = float(line)
+			except:
+				print("Enter floating point numbers!")
+				run -= 1
+				continue
+		else:
+			k = 1e-2
+
 		springs = FFEA_spring.FFEA_springs("")
 		for node_pair in spring_array:
-			springs.add_spring(1e-2,0,[0,1],[0,0], node_pair)
+			springs.add_spring(k,0,[0,1],[0,0], node_pair)
 
 		springs.write_to_file(spring_fname)
 

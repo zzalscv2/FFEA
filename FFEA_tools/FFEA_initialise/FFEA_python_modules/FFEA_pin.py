@@ -1,6 +1,6 @@
 import numpy as np
 import sys, os
-import FFEA_node
+import FFEA_node, FFEA_topology
 
 class FFEA_pin:
 
@@ -94,6 +94,25 @@ class FFEA_pin:
 		self.reset()
 		origin = np.array(origin)
 		for i in range(len(node.pos)):
+			if np.linalg.norm(node.pos[i] - origin) < radius:
+				self.num_pinned_nodes += 1
+				self.node_index.append(i)
+
+	def pin_linear_radially(self, node, top, origin, radius):
+
+		self.reset()
+		origin = np.array(origin)
+
+		# Get list of linear nodes
+		linear_index = []
+		for e in top.element:
+			for i in range(4):
+				linear_index.append(e.n[i])
+
+		linear_index = set(linear_index)
+
+		# Now scan over linear indices only
+		for i in linear_index:
 			if np.linalg.norm(node.pos[i] - origin) < radius:
 				self.num_pinned_nodes += 1
 				self.node_index.append(i)
