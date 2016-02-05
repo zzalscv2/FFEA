@@ -339,19 +339,35 @@ class FFEA_trajectory:
 
 		# Frames
 		fout.write("*\n")
+
+		conf_index = [0 for i in range(self.num_blobs)]
+
 		for i in range(self.num_frames):
 			sys.stdout.write("\r\t%d%% of frames written to file" % ((100 * i) / self.num_frames))
 			for blob in self.blob:
-				fout.write("Blob %d, Conformation %d, step 0\n" % (self.blob.index(blob), 0))
-				fout.write(blob[0].motion_state + "\n")
-				if blob[0].motion_state == "DYNAMIC":
-					for pos in blob[0].frame[i].pos:
+
+				blob_index = self.blob.index(blob)
+				fout.write("Blob %d, Conformation %d, step %d\n" % (blob_index, conf_index[blob_index], i))
+				fout.write(blob[conf_index[blob_index]].motion_state + "\n")
+				if blob[conf_index[blob_index]].motion_state == "DYNAMIC":
+					for pos in blob[conf_index[blob_index]].frame[i].pos:
 						fout.write("%8.6e %8.6e %8.6e %8.6e %8.6e %8.6e %8.6e %8.6e %8.6e %8.6e\n" % (pos[0], pos[1], pos[2], 0, 0, 0, 0, 0, 0, 0))
 		
-			# Conformation changes		
+			# Conformation changes
+				
 			fout.write("*\nConformation Changes:\n")
 			for j in range(self.num_blobs):
-				fout.write("Blob %d: Conformation %d -> Conformation %d\n" % (j, 0, 0))
+				fout.write("Blob %d: Conformation %d -> " % (j,conf_index[j]))
+				if(i == self.num_frames - 1):
+					fout.write("Conformation %d\n" % (conf_index[j]))
+				else:
+					for c in self.blob[j]:
+						if c.frame[i + 1] != None:
+							conf_index[j] = self.blob[j].index(c)
+							break
+
+					fout.write("Conformation %d\n" % (conf_index[j]))
+
 			fout.write("*\n")
 		print("\ndone!")
 		fout.close()
