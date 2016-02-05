@@ -1,7 +1,10 @@
 
 
-Use MarkDown
-------------
+Use MarkDown {#document}
+-------------------------
+
+Use MarkDown to write the documentation, 
+ and Doxygen to document the code.
 
 Find some documentation on how to use MarkDown:
   * [at stack.nl](https://www.stack.nl/~dimitri/doxygen/manual/markdown.html "click!")
