@@ -416,6 +416,10 @@ int Blob::update() {
         return FFEA_OK;
     }
 
+    if(num_pinned_nodes == num_nodes) {
+        return FFEA_OK;
+    }
+
     /* some "work" variables */
     matrix3 J; // Holds the Jacobian calculated for the *current* element being processed
     matrix3 stress; // Holds the current stress tensor (elastic stress, with thermal fluctuations)
