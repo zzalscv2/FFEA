@@ -37,11 +37,10 @@ where "Number-Of-Active-Faces" is the number of faces that your system has
  and it can be easily configured using the [FFEA viewer](\ref FFEAviewer).
 
 The next thing you need is to put a box in your system. This means giving values for
- ` es_N_x `, ` es_N_y ` and ` es_N_z `, as well as for ` kappa `. See the
- [keyword reference](ref paramBlock) to get information on the values that these
+ ` es_h `, ` es_N_x `, ` es_N_y ` and ` es_N_z `, as well as for ` kappa `. See the
+ [keyword reference](\ref paramBlock) to get information on the values that these
  fields should have. 
 
-where es_N_xyz fields are how many voxels your simulation box has in each direction. The size of each voxel is es_h * 1/kappa, where kappa is the inverse debye length. So basically, each voxel is of size how many debye lengths should things communicate over. I usually use three. Your simulation box should contain your entire molecule set of course which is where you decide es_N_xyz, as in how many voxels do you need in each direction. The box defaults to periodic boundary conditions.
 
     
 
@@ -51,13 +50,77 @@ where es_N_xyz fields are how many voxels your simulation box has in each direct
 Lennard-Jones potential {#ljPotential}
 ======================================
 
-The well established 6-12 Lennard-Jones potential is used if you 
+In the case of setting:
 
+    < vdw_type = lennard-jones > 
+
+the well known 6-12 Lennard-Jones potential:
+\f[
+
+  U_{i,j}(r) = \epsilon{i,j} [ (\frac{\rho_{i,j}}{r})^{12} - 2(\frac{\rho_{i,j}}{r})^6)
+
+\f]
+
+is used to measure surface-surface interactions between all the possible set of 
+ face pairs, where \f$\rho_{i,j}\f$ is the equilibrium separation distance, and 
+ \f$\epsilon_{i,j}\f$ is the depth of the energy well at \f$r = r_{i,j}\f$ 
+ per surface unit for two faces interacting of faces `i` and `j`. 
+ A `lj` file containing the different \f$\rho_{ij}\f$ and \f$\epsilon_{i,j}\f$ 
+ interacting parameters for all the possible face pairs is needed as input. 
+ This file, has to be given in the .ffea as:
+   
+     < vdw_forcefield_params = your-file.lj >
+
+and has the format:
+
+
+     ffea vdw forcefield params file
+     num_vdw_face_types 7
+     (1e+13, 5e-10) (1e+13, 5e-10) (1e+15, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
+     (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
+     (1e+15, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
+     (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
+     (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
+     (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
+     (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
+
+where the matrix provides the values (\f$\epsilon_{i,j}\f$, \f$\rho_{i,j}\f$) in 
+  \f$J/m^2\f$ and \f$m\f$, respectively. 
+
+ 
+
+```python 
+ "Is there any cutoff? Probably just the size of the cells..."
+ 
+ "Has the surface-surface interaction been described in any paper, so far?"
+
+ "Otherwise we should describe it here..."
+ ```
+
+Because of being a surface-surface interaction, the larger the faces interacting 
+ the stronger the interaction. 
 
 
 
 Steric potential {#sPotential}
 ==============================
+ In the case of setting:
+
+      < vdw_type = steric >
+
+ a steric repulsion that is proportional to the overlapping of the tetrahedra 
+  of the interacting faces will be calculated. More specifically, the repulsive 
+  energy will be proportional to the volume of the overlapping tetrahedra, and 
+  the repulsive force proportional to the area enclosing the ovelapping volume. 
+ The magnitude of this interaction can be modulated through a single parameter, 
+  
+      < vdw_steric_factor = F >
+
+ where ` F ` is a value to be provided. In the case of being negative, the 
+  user will receive a warning. 
+  
+
+  
 
 
 

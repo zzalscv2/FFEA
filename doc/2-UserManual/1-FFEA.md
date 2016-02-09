@@ -2,20 +2,35 @@ Basic usage  {#ffea_user}
 ==========================
 
 
-Running a trajectory {#ffea_run}
-====================
+Introduction {#ffea_intro}
+==========================
 
+In order to run an FFEA trajectory you need a `.vol` mesh for every different 
+ `blob` that you want to simulate in your system, and then set up an input 
+ file .ffea, where the parameters of the simulations will be described. 
 
-It all starts with:
+The `.vol` mesh can be generated using 
+     [NETGEN](http://sourceforge.net/projects/netgen-mesher/). 
+ This mesh will be used as input for an [FFEA_tool](\ref makeffeablob)
+ to generate a set of topology files together with an initial .ffea 
+ file to be configured by the user. 
+
+Once configured, a trajectory will be run through the command line typing:
 
     ffea <myInputFile.ffea> 
 
 where ` <myInputFile.ffea> ` has consistently defined all the attributes. 
 
+Finally the trajectory can be analysed using a set of [FFEA_tools](\ref analysisTools).
+
 
 
 Input file syntax {#ffea_ifsyntax}
 -----------------
+In this section we describe the structure of the `.ffea` file. The complete 
+ reference to all the keywords describing the system can be found 
+ [here](\ref keywordReference).
+
 The input file has two main blocks: 
   * param: describing global parameters of the system
   * system: describing the system itself.
