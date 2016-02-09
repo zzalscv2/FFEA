@@ -9,4 +9,5 @@ Content:
 - @subpage makeffeablob
 - @subpage FFEAviewer
 - @subpage timeStepCalculator
+- @subpage analysisTools
 

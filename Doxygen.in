@@ -941,7 +941,7 @@ TREEVIEW_WIDTH         = 250
 # to manually remove any form_*.png images from the HTML output directory
 # to force them to be regenerated.
 
-FORMULA_FONTSIZE       = 10
+FORMULA_FONTSIZE       = 13
 
 # When the SEARCHENGINE tag is enable doxygen will generate a search box for the HTML output. The underlying search engine uses javascript
 # and DHTML and should work on any modern browser. Note that when using HTML help (GENERATE_HTMLHELP) or Qt help (GENERATE_QHP)
