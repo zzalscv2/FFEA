@@ -62,7 +62,7 @@ class FFEA_springs:
 		fout = open(fname, "w")
 		fout.write("ffea springs file\nnum_springs %d\nsprings:\n" % (self.num_springs))
 		for spring in self.spring_array:
-			fout.write("%f %f %d %d %d %d %d %d\n" % (spring.k, spring.l, spring.blob_indices[0], spring.blob_indices[1], spring.conformation_indices[0], spring.conformation_indices[1], spring.node_indices[0], spring.node_indices[1]))
+			fout.write("%f %e %d %d %d %d %d %d\n" % (spring.k, spring.l, spring.blob_indices[0], spring.blob_indices[1], spring.conformation_indices[0], spring.conformation_indices[1], spring.node_indices[0], spring.node_indices[1]))
 
 		fout.close()
 
