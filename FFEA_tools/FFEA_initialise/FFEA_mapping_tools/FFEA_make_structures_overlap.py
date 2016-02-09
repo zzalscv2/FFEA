@@ -25,7 +25,9 @@ script2.params.num_conformations = [1,1]
 script2.params.num_states = [1,1]
 script2.params.calc_kinetics = 0
 script2.params.calc_noise = 0
-script2.params.calc_vdw = 0
+#script2.params.calc_vdw = 1
+#script2.params.vdw_type = "lennard-jones"
+#script2.params.vdw_steric_factor = 1e-2
 script2.params.trajectory_out_fname = os.path.dirname(os.path.abspath(inffea)) + "/lol_traj.out"
 script2.params.measurement_out_basefname = os.path.dirname(os.path.abspath(inffea)) + "/lol_meas.out"
 
@@ -109,9 +111,20 @@ while True:
 		else:
 			k = 1e-2
 
+		line = raw_input("\n\t\tEquilibrium length?:")
+		if line.strip() != "":
+			try:
+				l = float(line)
+			except:
+				print("Enter floating point numbers!")
+				run -= 1
+				continue
+		else:
+			l = 0
+
 		springs = FFEA_spring.FFEA_springs("")
 		for node_pair in spring_array:
-			springs.add_spring(k,0,[0,1],[0,0], node_pair)
+			springs.add_spring(k,l,[0,1],[0,0], node_pair)
 
 		springs.write_to_file(spring_fname)
 

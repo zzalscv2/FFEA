@@ -17,7 +17,7 @@ Relevant fields at the input file {#kffea_inputfile}
 =================================
 In order to implement kinetics, the following extra data is required by the simulation.
 
- Firstly, within the ` <param> ` block, you need the following extra data:
+ Firstly, within the ` <param> ` block, you need the following extra parameters:
 
      <calc_kinetics = 1>
      <kinetics_update = num_steps>

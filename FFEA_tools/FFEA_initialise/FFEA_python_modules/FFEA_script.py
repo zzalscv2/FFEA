@@ -135,6 +135,8 @@ class FFEA_script:
 					params.calc_vdw = int(rvalue)
 				elif lvalue == "vdw_type":
 					params.vdw_type = rvalue
+				elif lvalue == "vdw_steric_factor":
+					params.vdw_steric_factor = float(rvalue)
 				elif lvalue == "calc_noise":
 					params.calc_noise = int(rvalue)
 				elif lvalue == "calc_es":
@@ -426,6 +428,8 @@ class FFEA_script_params():
 		self.es_N_x = 0
 		self.es_N_y = 0
 		self.es_N_z = 0
+		self.vdw_type = "steric"
+		self.vdw_steric_factor = 0.0
 		self.move_into_box = 1
 		self.sticky_wall_xz = 0
 		self.wall_x_1 = ""
@@ -476,6 +480,11 @@ class FFEA_script_params():
 		astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
 		astr += "\t<stokes_visc = %5.2e>\n" % (self.stokes_visc)
 		astr += "\t<calc_vdw = %d>\n" % (self.calc_vdw)
+		if self.calc_vdw == 1:
+			astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
+			if self.vdw_type == "steric":
+				astr += "\t<vdw_steric_factor = %f>\n" % (self.vdw_steric_factor)
+
 		astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
 		astr += "\t<calc_es = %d>\n" % (self.calc_es)
 		astr += "\t<es_update = %d>\n" % (self.es_update)
