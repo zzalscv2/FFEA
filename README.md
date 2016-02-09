@@ -8,30 +8,37 @@ are for the most common use cases, and cover the command line tools.
 Prerequisites
 =============
 
-To install FFEA you need `cmake` and some third-party libraries:
+To install FFEA you need:
 
-   * CMake (>=2.8.11), the build system for FFEA.
+   * C and a C++ compilers. <BR> 
+     There is some C++ code written using 
+       the C++11 standard, so CMake will ensure that you have a 
+       recent enough compiler. Still, GCC 4.4 and Intel 13 have shown to work well. 
+
+   * CMake (>=2.8.11). <BR> 
      Required for building FFEA.
      https://cmake.org/
 
-   * Boost (>=1.54.0). 
+some third-party libraries:
+
+   * Boost (>=1.54.0). <BR>
      Required compiled Boost library: program_options. 
      http://www.boost.org/
 
-   * Eigen (>=3.2.2).
+   * Eigen (>=3.2.1). <BR> 
      FFEA uses Eigen within the Kinetics module.
      http://eigen.tuxfamily.org
+ 
+   * Doxygen (>= 1.8) [OPTIONAL] <BR>
+     It will be used to build the documentation. http://www.doxygen.org
+
 
 
 Configuration
 =============
 
-To configure FFEA type:
-
-    cmake 
-
-within the FFEA source tree. It is generally advisable to build FFEA anywhere else. 
-Therefore, we would recommend to:
+It is generally advisable to configure and compile FFEA outside of the source tree. 
+Therefore, to configure FFEA, we would recommend to:
 
     mkdir $FFEA_BUILD
     cd $FFEA_BUILD
@@ -68,10 +75,13 @@ After configuring you will be able to build FFEA typing:
 
     make 
 
-Optionally, you can build the documentation typing:
+Optionally, if Doxygen was found at configure time, 
+ you can build the documentation typing:
 
     make doc 
 
+there are some mathematical formulae that will not render correctly
+  if latex and ghostview are not found.
 Finally, you can install FFEA:
 
     make install
