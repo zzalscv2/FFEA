@@ -1338,6 +1338,9 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 		// Move the old one to random space so as not to interfere with calculations
 		blob_array[blob_index][current_conformation].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
 
+		// Reactivate springs
+		activate_springs();
+
 	} else if (!kinetic_state[blob_index][current_state].is_bound() && kinetic_state[blob_index][target_state].is_bound()) {
 
 		// Binding event! Add nodes to pinned node list, or add springs, and reset the solver
@@ -1819,9 +1822,6 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 	// Finally, get springs
 	systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
-        for(it = spring_vector.begin(); it != spring_vector.end(); ++it) {
-		cout << *it << endl;
-	}
 
 	if (spring_vector.size() > 1) {
 		FFEA_error_text();
@@ -2180,7 +2180,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	
 	// Get header stuff and check for errors
 	fin.getline(buf, MAX_BUF_SIZE);
-	cout << buf << endl;
+
 	if(strcmp(buf, "ffea kinetic states file") != 0) {
 		FFEA_ERROR_MESSG("\nExpected 'ffea kinetic states file' as first line. This may not be an FFEA kinetic states file\n")
 	}
@@ -2569,6 +2569,8 @@ int World::load_springs(const char *fname) {
 
 void World::activate_springs() {
     for (int i = 0; i < num_springs; ++i) {
+
+	// If both ends of spring are active molecules, activate! This could probably be done more quickly with pointers if necessary in future
         if (spring_array[i].conformation_index[0] == active_blob_array[spring_array[i].blob_index[0]]->conformation_index && spring_array[i].conformation_index[1] == active_blob_array[spring_array[i].blob_index[1]]->conformation_index) {
             spring_array[i].am_i_active = true;
         } else {
