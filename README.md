@@ -37,7 +37,7 @@ Therefore, we would recommend to:
     cd $FFEA_BUILD
     cmake $FFEA_SRC
 
-where ` $FFEA_BUILD ` denotes the directory with the FFEA sources while 
+where ` $FFEA_SRC ` denotes the directory with the FFEA sources while 
   ` $FFEA_BUILD` is an arbitrary folder where the generated files will be placed.
 Several options can be added to `cmake`, being the most important:
 
