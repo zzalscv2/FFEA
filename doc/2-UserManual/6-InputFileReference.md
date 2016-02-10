@@ -171,9 +171,9 @@ It has both it's own parameters and a set of subblocks:
 
    * ` solver ` <enum string> (CG_nomass) <BR>
      Specifies the mechanical solver used for all conformations within this block:
-	CG 	   - A solver which builds and inverts the mass matrix of the system, leading to second order Euler integration to update positions (small timestep required)
-	CG_nomass  - A solver which builds and inverts the viscosity matrix for a massless system, leading to first order Euler integration to update positions (bigger timestep 		    	     allowed)
-	masslumped - A solver which builds and inverts a purely diagonal mass matrix (hence masslumped) of the system, leading to second order Euler integration to update 			     positions (small timestep required)
+	 - **CG**: A solver which builds and inverts the mass matrix of the system, leading to second order Euler integration to update positions (small timestep required)
+	 - **CG_nomass**: A solver which builds and inverts the viscosity matrix for a massless system, leading to first order Euler integration to update positions (bigger timestep 		    	     allowed)
+	 - **masslumped**: A solver which builds and inverts a purely diagonal mass matrix (hence masslumped) of the system, leading to second order Euler integration to update 			     positions (small timestep required)
 
    * ` scale ` <float> (1e-10) <BR>
      How much the node positions should be scaled before a simulation begins i.e. if the ` nodes ` file positions are in angstroms, the our ` scale `

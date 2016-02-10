@@ -10,7 +10,7 @@ In this section we describe the structure of the `.ffea` file. The complete
 
 
 Input file syntax {#ffea_ifsyntax}
------------------
+==================================
 
 The input file has two main blocks: 
   * param: describing global parameters of the system
