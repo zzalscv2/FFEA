@@ -20,15 +20,19 @@ In order to implement kinetics, the following extra data is required by the simu
  Firstly, we need to tell FFEA that we want to run with kinetics. Within the ` <param> ` block, we need the following extra parameters:
 
  To initialise kinetics:
+
      <calc_kinetics = 1>
 
  How often we want to update our kinetic states:
+
      <kinetics_update = num_steps>
 
  The name of the output file containing kinetic data:
+
      <kinetics_out_fname = kinetics_output.out>
 
  And that file defining how binding sites interact (if they exist):
+
      <binding_site_params = binding_site.params>
 
  As well as these, the ` <num_conformations> ` and ` <num_states> ` blocks will now have non-unity values in them.
