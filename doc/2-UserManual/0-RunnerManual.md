@@ -1,9 +1,9 @@
-User Manual {#userManual}
+FFEA runner {#userManual}
 =========================
 
 Content:
 
-- @subpage ffea_user
+- @subpage ffea_iFile
 - @subpage shortRange
 - @subpage kineticApproach
 - @subpage fmApproach
