@@ -6,10 +6,10 @@ and move through the entire FFEA process, until we arrive at a trajectory that c
 
 Content:
 
-- @subpage pdbtoemmap
-- @subpage emmaptosurf
-- @subpage surftovol
-- @subpage voltoffea
-- @subpage ffeasimulation
-- @subpage FFEAanalysis
+- @subpage pdbtoemmaptut
+- @subpage emmaptosurftut
+- @subpage surftovoltut
+- @subpage voltoffeatut
+- @subpage ffeasimulationtut
+- @subpage FFEAanalysistut
 
