@@ -151,6 +151,7 @@ In between it can take the following parameters:
    * ` wall_y_2 ` <enum string> (PBC) <BR>
    * ` wall_z_1 ` <enum string> (PBC) <BR>
    * ` wall_z_2 ` <enum string> (PBC) <BR>
+
      The boundary condition type of each wall
         
 
@@ -158,29 +159,111 @@ In between it can take the following parameters:
 System Block {#systemBlock}
 =======================
 
+  The system block starts with the line ` <system> ` and ends with the line ` </system> `. 
+It only contains other blocks, and no 'system' parameters.
 
 Blob Block {#blobBlock}
 -----------------------
 
+  The blob block starts with the line ` <blob> ` and ends with the line ` </blob> `. 
+It has both it's own parameters and a set of subblocks:
+
+
+   * ` solver ` <enum string> (CG_nomass) <BR>
+     Specifies the mechanical solver used for all conformations within this block:
+	CG 	   - A solver which builds and inverts the mass matrix of the system, leading to second order Euler integration to update positions (small timestep required)
+	CG_nomass  - A solver which builds and inverts the viscosity matrix for a massless system, leading to first order Euler integration to update positions (bigger timestep 		    	     allowed)
+	masslumped - A solver which builds and inverts a purely diagonal mass matrix (hence masslumped) of the system, leading to second order Euler integration to update 			     positions (small timestep required)
+
+   * ` scale ` <float> (1e-10) <BR>
+     How much the node positions should be scaled before a simulation begins i.e. if the ` nodes ` file positions are in angstroms, the our ` scale `
+     must be 1e-10 to convert everthing into meters, the SI units required by FFEA
+
+   * ` centroid ` <list of 3 floats> <BR>
+      The initial centroid of your blob. This should have the same units as your node file
+
+   * ` rotation ` <list of 3 floats> / <list of 9 floats> <BR>
+      The initial rotation applied to your blob. If you specify 3 values, a rotation is applied first about the x axis, then y, then z.
+      If you specify 9 values, this is taken directly as a rotation matrix and applied to your blob.
+
+   * ` velocity ` <list of 3 floats> <BR>
+      The initial velocity of your blob. This has no effect for a system using the CG_nomass ` solver `.
 
 ### Conformation Block {#conformationBlock} ###
 
+  The conformation block starts with the line ` <conformation> ` and ends with the line ` </conformation> `. 
+It contains mostly structural information:
+
+   * ` motion_state ` <enum string> (PBC) <BR>
+     How the molecule will move through time:
+	DYNAMIC - Fully stochastic motion
+	STATIC  - No motion at all (for huge molecules and surfaces)
+	FROZEN  - Same as STATIC but all positional data will be printed to trajectories anyway
+
+   * ` nodes ` <string> <BR>
+     The filename specifying the node positions
+
+   * ` topology ` <string> <BR>
+     The filename specifying the node connectivities (how they form elements)
+
+   * ` surface ` <string> <BR>
+     The filename specifying the surface node connectivities (how they form faces)
+
+   * ` material ` <string> <BR>
+     The filename specifying the material properties of each element
+
+   * ` vdw ` <string> <BR>
+     The filename specifying the type of vdw interaction for each surface face
+
+   * ` stokes ` <string> <BR>
+     The filename specifying the 'radius' of each node, to calculate local hydrodynamics
+
+   * ` pin ` <string> <BR>
+     The filename specifying which, if any, nodes are pinned in place (to simulate permanent binding, for example)
+
+   * ` binding_sites ` <string> <BR>
+     The filename specifying the sets of faces which constitute kinetic binding sites, and the type of site
+
+   * ` beads ` <string> <BR>
+     The filename specifying...
 
 #### Kinetics Block {#kineticsBlock} ####
 
+  The kinetics block starts with the line ` <kinetics> ` and ends with the line ` </kinetics> `.
+It contains information detailing how the different structural conformations kinetically switch between one another: 
+ 
+   * ` states ` <string> <BR>
+     The filename specifying the set of states available to the molecule
+
+   * ` rates ` <string> <BR>
+     The filename specifying the set of rates at which the molecules will kinetically switch between the defined states
 
 ### Maps Block {#mapsBlock} ### 
 
+  The maps block starts with the line ` <maps> ` and ends with the line ` </maps> `.
+It contains a list of files detailing how the different structural conformations mathematically relate to one another:
+
+   * ` map (i,j) ` <string> <BR>
+
+     A filename specifying the linear map (non-square matrix) from conformation i to conformation j. The map is highly sparse, and so is 
+     stored and applied using the Yale Format for sparse matrices (https://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_.28CSR.2C_CRS_or_Yale_format.29)
+
+As a side note, if you have N conforamtions within your blob, then this section should contain N(N-1) maps (each structure mapping to each other structure, not including itself)
 
 Interactions Block {#interactionsBlock}
 ---------------------------------------
 
+  The interactions block starts with the line ` <interactions> ` and ends with the line ` </interactions> `.
+It only contains other blocks, each of which define a different way blobs can interact between one another.
 
 ### PreComp Block {#preCompBlock} ###
 
 
 ### Springs Block {#springsBlock} ###
 
+  The springs block starts with the line ` <springs> ` and ends with the line ` </springs> `.
+   * ` springs_fname ` <string> <BR>
+      The filename containing details of simple linear spring objects between individual nodes in your system.
 
 
 
