@@ -17,22 +17,31 @@ Relevant fields at the input file {#kffea_inputfile}
 =================================
 In order to implement kinetics, the following extra data is required by the simulation.
 
- Firstly, within the ` <param> ` block, you need the following extra parameters:
+ Firstly, we need to tell FFEA that we want to run with kinetics. Within the ` <param> ` block, we need the following extra parameters:
 
+ To initialise kinetics:
      <calc_kinetics = 1>
+
+ How often we want to update our kinetic states:
      <kinetics_update = num_steps>
+
+ The name of the output file containing kinetic data:
      <kinetics_out_fname = kinetics_output.out>
+
+ And that file defining how binding sites interact (if they exist):
      <binding_site_params = binding_site.params>
 
  As well as these, the ` <num_conformations> ` and ` <num_states> ` blocks will now have non-unity values in them.
  
- Secondly, within each ` <blob> ` block, we will want to define multiple ` <conformation> ` blocks corresponding to the
- number defined in the ` <param> ` block for each blob. Optionally, we can now define binding sites within each
- ` <conformation> `:
+ We now need to define our kinetic states. Within each ` <blob> ` block, we may want to define multiple ` <conformation> ` blocks corresponding to the
+ number defined in the ` <param> ` block for each blob. These conformations each contain independent structural data which we kinetically transform between.
+
+ Additionally, we can define binding sites within each ` <conformation> `:
 
      <binding_sites = sites.bsites>
 
- Finally the ` <conformation> ` blocks, we must include the ` <kinetics> ` block. This is as follows:
+ Finally the ` <blob> ` blocks must include the ` <kinetics> ` block as well as the ` <conformation> ` block, to define how often each conformation maps onto another. 
+ This is as follows:
 
      <kinetics>
          <states = states_fname.states>
@@ -58,4 +67,6 @@ In order to generate the maps between structures, a script is provided within th
 
      FFEAtools makekineticmaps
 
-This script requires a completed .ffea input file, and will generate the maps between the structures pointed to by the input file. 
+This script requires a completed and stable .ffea input file, and will generate the maps between any two structures pointed to by the input file. 
+The algorithm requires continuous user input the whole way through due to the not-standard method of defining maps (i.e. maximising volume overlap may not be valid).
+
