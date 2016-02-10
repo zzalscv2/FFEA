@@ -1,3 +1,0 @@
-
-Time step calculator {#timeStepCalculator}
-==========================================

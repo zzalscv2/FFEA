@@ -6,8 +6,9 @@ This part of the manual describes the several tools for configuring
 
 Content:
 
-- @subpage makeffeablob
+- @subpage pdbtovol
+- @subpage voltoffea
+- @subpage ffeatokineticffea
 - @subpage FFEAviewer
-- @subpage timeStepCalculator
-- @subpage analysisTools
+- @subpage FFEAanalysis
 
