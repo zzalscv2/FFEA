@@ -445,6 +445,28 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	return FFEA_OK;
 }
 
+// rename oFile to something else. 
+int SimulationParams::checkFileName(string oFile){
+
+
+    if (b_fs::exists(oFile))    // does oFile actually exist?
+    {
+        int cnt = 1;
+        string bckp = "__" + oFile + "__bckp." + boost::lexical_cast<string>(cnt);
+        while (b_fs::exists(bckp)) {
+          cnt += 1;
+          string s_cnt = boost::lexical_cast<string>(cnt);
+          bckp = "__" + oFile + "__bckp." + s_cnt;
+        }
+        FFEA_CAUTION_MESSG("Moving %s to %s\n", oFile.c_str(), bckp.c_str()); 
+        // cout << "FFEA: moving " << oFile << " to " << bckp << "\n";
+        b_fs::rename(oFile, bckp.c_str());
+    } 
+      
+
+    return FFEA_OK; 
+}
+
 int SimulationParams::validate() {
 
     if (restart != 0 && restart != 1) {
@@ -566,8 +588,18 @@ int SimulationParams::validate() {
             }
             strcat(measurement_out_fname[i], ext.c_str());
 
+
         }
     }
+
+    // check if the output files exists, and if so, rename it. 
+    if (restart == 0) {
+      for (int i = 0; i < num_blobs + 1; ++i) {
+        checkFileName(boost::lexical_cast<string>(measurement_out_fname[i])); 
+      }
+      checkFileName(boost::lexical_cast<string>(trajectory_out_fname));
+      checkFileName(boost::lexical_cast<string>(kinetics_out_fname)); 
+    } 
 
     if (calc_stokes == 1 && stokes_visc <= 0) {
         FFEA_ERROR_MESSG("calc_stokes flag is set, so stokes_visc must be set to a value greater than 0.\n");

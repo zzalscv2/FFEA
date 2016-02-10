@@ -8,6 +8,8 @@
 #include <vector>
 #include <iostream>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "FFEA_return_codes.h"
 #include "FFEA_input_reader.h"
@@ -25,6 +27,8 @@
  */
 
 using namespace std;
+namespace b_fs = boost::filesystem;
+
 
 class SimulationParams {
 public:
@@ -121,6 +125,12 @@ private:
     int measurement_out_fname_set;
     int vdw_params_fname_set;
     int binding_params_fname_set;
+/**
+  * @brief Check if the file oFile exists, and if so 
+           rename it to "__"+oFile+"__bckp.N", 
+  *        where N is an integer so that the resulting file is new.
+  */       
+    int checkFileName(string oFile); 
 };
 
 #endif
