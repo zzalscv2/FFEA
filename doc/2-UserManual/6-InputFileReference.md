@@ -49,7 +49,10 @@ In between it can take the following parameters:
         the first blob, two conformations for the second blob and 1 conformation for 
         the third blob. 
 
-   * ` num_states ` <?> 
+   * ` num_states ` <(list of ints)> <BR>
+	List of integers defining the number of defined for each blob E. g., (2,2,1) would indicate two conformations for
+        the first blob, two conformations for the second blob and 1 conformation for 
+        the third blob. A state defines which conformation is active and which binding sites are bound
 
   
 
@@ -64,6 +67,8 @@ In between it can take the following parameters:
    * ` measurement_out_fname ` <string> <BR>
         The name of the file where energy measurements will be recorded.
 
+   * ` kinetics_out_fname ` <string> <BR>
+        The name of the file where kinetic trajectory will be recorded.
 
 #### Enable different calculations #### 
 
@@ -72,6 +77,7 @@ In between it can take the following parameters:
 
    * ` calc_vdw ` <int>  <BR>
         Enter 1 or 0 to either enable or disable the [Short range forces](ref shortRange).
+
    * ` calc_es ` <int> <BR>
         Enter either 1 or 0 to enable or disable the electrostatic interactions. 
 
@@ -96,7 +102,7 @@ In between it can take the following parameters:
 
 #### Hydrodynamics parameters ####
 
-   * ` do_stokes ` <int>  <BR>
+   * ` calc_stokes ` <int>  <BR>
         1 or 0 
 
    * ` stokes_visc ` <float> (1e-3) <BR>
@@ -120,7 +126,7 @@ In between it can take the following parameters:
          value for water.
 
 
-#### Box configuration #### 
+#### Simulation box configuration #### 
 
 
    * ` es_N_x ` <int> <BR>
@@ -133,19 +139,19 @@ In between it can take the following parameters:
         Number of cells or voxels that the simulation box has in the z direction. 
 
    * ` es_h ` <int> (3) <BR> 
-         The size of a voxel, calculatex as ` es_h / kappa`.
+         The size of a voxel, calculated as ` es_h / kappa` i.e. number of debye lengths.
 
    * ` sticky_wall_xz ` <int> (0) <BR>
          Either 0 or 1, depending on whether the ` xz ` wall, at \f$y=0\f$ is 
          a sticky wall or not. 
 
-   * ` wall_x_1 ` <?> (PBC) <BR>
-   * ` wall_x_2 ` <?> (PBC) <BR>
-   * ` wall_y_1 ` <?> (PBC) <BR>
-   * ` wall_y_2 ` <?> (PBC) <BR>
-   * ` wall_z_1 ` <?> (PBC) <BR>
-   * ` wall_z_2 ` <?> (PBC) <BR>
-         
+   * ` wall_x_1 ` <enum string> (PBC) <BR>
+   * ` wall_x_2 ` <enum string> (PBC) <BR>
+   * ` wall_y_1 ` <enum string> (PBC) <BR>
+   * ` wall_y_2 ` <enum string> (PBC) <BR>
+   * ` wall_z_1 ` <enum string> (PBC) <BR>
+   * ` wall_z_2 ` <enum string> (PBC) <BR>
+     The boundary condition type of each wall
         
 
 
