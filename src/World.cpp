@@ -24,6 +24,7 @@ World::World() {
     trajectory_out = NULL;
     measurement_out = NULL;
     kinetics_out = NULL;
+    params_out = NULL;
     vdw_solver = NULL;
 }
 
@@ -70,8 +71,9 @@ World::~World() {
     delete[] measurement_out;
     measurement_out = NULL;  
 
-    kinetics_out = NULL; 
-    // delete [] vdw_solver;
+    kinetics_out = NULL;
+    params_out = NULL;
+
     vdw_solver = NULL;
 }
 
@@ -255,6 +257,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			    fprintf(measurement_out[i], "# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface\n", i, i, i);
 			    fflush(measurement_out[i]);
 			}
+
 			fprintf(measurement_out[params.num_blobs], "# step ");
 			for (i = 0; i < params.num_blobs; ++i) {
 			    for (j = i + 1; j < params.num_blobs; ++j) {
@@ -419,9 +422,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			params.es_N_x = 2 * (int)ceil(dimension_vector.x * (params.kappa / params.es_h));
 			params.es_N_y = 2 * (int)ceil(dimension_vector.y * (params.kappa / params.es_h));
 			params.es_N_z = 2 * (int)ceil(dimension_vector.z * (params.kappa / params.es_h));
-			cout << " " << params.es_N_x << " " << params.es_N_y << " " << params.es_N_z << endl;
 		}
-		
+
 		// Move to box centre
 		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
@@ -521,6 +523,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		print_trajectory_and_measurement_files(0, 0);
 		print_kinetic_files(0);
 	    }
+
+	    // Print them back out, so user has a record
+            params.write_to_file();
+	    exit(0);
 	     
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
@@ -1192,9 +1198,6 @@ int World::run() {
                     return FFEA_ERROR;
                 }
 
-                /*if (params.calc_vdw == 1) {
-                    vdw_solver->solve();
-                }*/
                 if (params.sticky_wall_xz == 1) {
                     vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
                 }

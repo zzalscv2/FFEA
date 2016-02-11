@@ -22,13 +22,16 @@
 
 #define MAX_FNAME_SIZE 200
 
+#define UNSET 0
+#define SET 1
+#define DEFAULT 2
+
 /**
  * Simulation parameters
  */
 
 using namespace std;
 namespace b_fs = boost::filesystem;
-
 
 class SimulationParams {
 public:
@@ -82,13 +85,13 @@ public:
 
     scalar stokes_visc;
 
-    scalar vdw_r_eq, vdw_eps;
     scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
 
     char trajectory_out_fname[MAX_FNAME_SIZE];
     char kinetics_out_fname[MAX_FNAME_SIZE];
     char **measurement_out_fname;
     char temp_fname[MAX_FNAME_SIZE];
+    char params_out_fname[MAX_FNAME_SIZE];
 
     char vdw_params_fname[MAX_FNAME_SIZE];
     char binding_params_fname[MAX_FNAME_SIZE];
@@ -119,6 +122,9 @@ public:
 
     // These set parameters are not private because the World needs them!!
     int kinetics_out_fname_set;
+
+    // Writes all params to params_out_fname for user's info
+    void write_to_file();
 
 private:
     int trajectory_out_fname_set;

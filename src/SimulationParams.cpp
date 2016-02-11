@@ -1,39 +1,40 @@
 #include "SimulationParams.h"
 
 SimulationParams::SimulationParams() {
-    dt = 0;
-    num_steps = -1;
-    check = 0;
-    num_blobs = 0;
-    num_conformations = NULL;
-    num_states = NULL;
-    state_array_size = 0;
-    conformation_array_size = 0;
-    rng_seed = 0;
-    kT = 0;
-    max_iterations_cg = 0;
-    epsilon2 = 0;
-    es_update = 0;
-    kinetics_update = 0;
-    es_N_x = -1;
-    es_N_y = -1;
-    es_N_z = -1;
-    move_into_box = 1;
 
+    // Constructor used to give default values where necessary
+
+    // Defaulted (into SI units)
+    restart = 0;
+    num_steps = 1e11;
+    check = 10000;
+    kT = 4.11e-21 / mesoDimensions::Energy;
+    max_iterations_cg = 1000;
+    epsilon2 = 0.01;
+    rng_seed = time(NULL);
+    calc_vdw = 1;
+    sticky_wall_xz = 0;
+    vdw_type = "steric";
+    vdw_steric_factor = 1e-2;
+    move_into_box = 1;
+    es_update = 1;
+    kappa = 1e9 * mesoDimensions::length;
+    es_h = 3;
+
+    calc_noise = 1;
+    calc_es = 0;
+    dielec_ext = 1;
+    epsilon_0 = 1;
+    calc_stokes = 1;
+    stokes_visc = 1e-3 / (mesoDimensions::pressure * mesoDimensions::time);
+    calc_kinetics = 0;
+    kinetics_update = 0;
+    calc_preComp = 0;
+
+    num_dimensions = 3;
     restrict_motion[0] = 0;
     restrict_motion[1] = 0;
     restrict_motion[2] = 0;
-    num_dimensions = 0;
-    kappa = 0;
-    dielec_ext = 0;
-    epsilon_0 = 0;
-    restart = 0;
-    calc_vdw = -1;
-    vdw_type = "lennard-jones";
-    calc_es = 0;
-    calc_noise = 1;
-    calc_kinetics = 0;
-    calc_preComp = 0;
 
     wall_x_1 = WALL_TYPE_PBC;
     wall_x_2 = WALL_TYPE_PBC;
@@ -42,14 +43,18 @@ SimulationParams::SimulationParams() {
     wall_z_1 = WALL_TYPE_PBC;
     wall_z_2 = WALL_TYPE_PBC;
 
-    sticky_wall_xz = 0;
+    sprintf(params_out_fname, "params.out");
 
-    calc_stokes = 0;
-    stokes_visc = -1;
-
-    vdw_r_eq = -1;
-    vdw_eps = -1;
-    vdw_steric_factor = 1;
+    // Initialised to zero or equivalent for later initialisation
+    dt = 0;
+    num_blobs = 0;
+    num_conformations = NULL;
+    num_states = NULL;
+    state_array_size = 0;
+    conformation_array_size = 0;
+    es_N_x = -1;
+    es_N_y = -1;
+    es_N_z = -1;
 
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
@@ -90,12 +95,13 @@ SimulationParams::~SimulationParams() {
     restrict_motion[1] = 0;
     restrict_motion[2] = 0;
     num_dimensions = 0;
+    es_h = 0;
     kappa = 0;
     dielec_ext = 0;
     epsilon_0 = 0;
     restart = 0;
     calc_vdw = -1;
-    vdw_type = "lennard-jones";
+    vdw_type = "";
     calc_es = 0;
     calc_noise = 0;
     calc_preComp = 0;
@@ -113,8 +119,6 @@ SimulationParams::~SimulationParams() {
     calc_stokes = 0;
     stokes_visc = -1;
 
-    vdw_r_eq = -1;
-    vdw_eps = -1;
     vdw_steric_factor = 0;
 
     trajectory_out_fname_set = 0;
@@ -129,6 +133,7 @@ SimulationParams::~SimulationParams() {
     delete[] measurement_out_fname;
     sprintf(binding_params_fname, "\n");
     sprintf(vdw_params_fname, "\n");
+    sprintf(params_out_fname, "\n");
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
@@ -406,7 +411,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		}
 		sprintf(temp_fname, "%s", rvalue.c_str());
 	        measurement_out_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
+		cout << "\tSetting " << lvalue << " = " << temp_fname << endl;
 
     	} else if (lvalue == "kinetics_out_fname") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
@@ -452,11 +457,11 @@ int SimulationParams::checkFileName(string oFile){
     if (b_fs::exists(oFile))    // does oFile actually exist?
     {
         int cnt = 1;
-        string bckp = "__" + oFile + "__bckp." + boost::lexical_cast<string>(cnt);
+        string bckp = oFile + "__bckp." + boost::lexical_cast<string>(cnt);
         while (b_fs::exists(bckp)) {
           cnt += 1;
           string s_cnt = boost::lexical_cast<string>(cnt);
-          bckp = "__" + oFile + "__bckp." + s_cnt;
+          bckp = oFile + "__bckp." + s_cnt;
         }
         FFEA_CAUTION_MESSG("Moving %s to %s\n", oFile.c_str(), bckp.c_str()); 
         // cout << "FFEA: moving " << oFile << " to " << bckp << "\n";
@@ -598,7 +603,8 @@ int SimulationParams::validate() {
         checkFileName(boost::lexical_cast<string>(measurement_out_fname[i])); 
       }
       checkFileName(boost::lexical_cast<string>(trajectory_out_fname));
-      checkFileName(boost::lexical_cast<string>(kinetics_out_fname)); 
+      checkFileName(boost::lexical_cast<string>(kinetics_out_fname));
+      checkFileName(boost::lexical_cast<string>(params_out_fname));
     } 
 
     if (calc_stokes == 1 && stokes_visc <= 0) {
@@ -688,241 +694,68 @@ int SimulationParams::get_max_num_states() {
     return max_num_states;
 }
 
-/*
- * Expects a string of the form "lvalue = rvalue" where lvalue must be a recognised parameter name.
- */
-/*
-int SimulationParams::parse_param_assignment(char *str) {
-    const int buf_size = 101;
-    char lvalue[buf_size];
-    char rvalue[buf_size];
-    int rv;
+void SimulationParams::write_to_file() {
 
-    rv = sscanf(str, "%100[^=]=%s", lvalue, rvalue);
+	FILE *fout = fopen(params_out_fname, "w");
 
-    if (rv != 2) {
-        FFEA_ERROR_MESSG("\tError parsing parameter assignment, '%s'\n", str);
-    }
+	// Header stuff first
+	fprintf(fout, "FFEA_paramater_file\n\n");
+	
+	// Then, every parameter (if anyone hates this goddamn class in the future, please make a Param struct / dictionary thing so we can just loop over all parameters)
+	fprintf(fout, "Parameters:\n");
+    	fprintf(fout, "restart = %d\n", restart);
+    	fprintf(fout, "dt = %e\n", dt*mesoDimensions::time);
+    	fprintf(fout, "num_steps = %lld\n", num_steps);
+    	fprintf(fout, "check = %d\n", check);
+	fprintf(fout, "rng_seed = %d\n", rng_seed);
+	fprintf(fout, "kT = %e\n", kT*mesoDimensions::Energy);
 
-    rv = sscanf(lvalue, "%s", lvalue);
+    	fprintf(fout, "calc_vdw = %d\n", calc_vdw);
+    	fprintf(fout, "vdw_type = %s\n", vdw_type.c_str());
+    	fprintf(fout, "calc_es = %d\n", calc_es);
+    	fprintf(fout, "calc_noise = %d\n", calc_noise);
+    	fprintf(fout, "calc_kinetics = %d\n", calc_kinetics);
+    	fprintf(fout, "calc_preComp = %d\n", calc_preComp);
+    	fprintf(fout, "calc_stokes = %d\n", calc_stokes);
+    	fprintf(fout, "stokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
+    	fprintf(fout, "calc_kinetics = %d\n", calc_kinetics);
 
-    // Carry out parameter assignments
-    if (strcmp(lvalue, "dt") == 0) {
-        dt = atof(rvalue);
-        printf("\tSetting %s = %e\n", lvalue, dt);
-    } else if (strcmp(lvalue, "epsilon") == 0) {
-        epsilon2 = atof(rvalue);
-        epsilon2 *= epsilon2;
-        printf("\tSetting %s = %g\n", lvalue, atof(rvalue));
-    } else if (strcmp(lvalue, "num_steps") == 0) {
-        // convert to float first so that user may write numbers of the form 1e4 for 10000 etc
-        num_steps = (long long) (atof(rvalue));
-        printf("\tSetting %s = %lld\n", lvalue, num_steps);
-    } else if (strcmp(lvalue, "max_iterations_cg") == 0) {
-        max_iterations_cg = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, max_iterations_cg);
-    } else if (strcmp(lvalue, "check") == 0) {
-        check = (int) atof(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, check);
-    } else if (strcmp(lvalue, "num_blobs") == 0) {
-        num_blobs = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, num_blobs);
-    } else if (strcmp(lvalue, "num_conformations") == 0) {
-        if (num_blobs == 0) {
-            FFEA_ERROR_MESSG("Error. num_blobs must be specified before num_conformations in the input scripts\n")
-        }
-        num_conformations = new int[num_blobs];
-        char * pch;
-        for (int i = 0; i < num_blobs; ++i) {
-            if (i == 0) {
-                pch = strtok(rvalue, "(,");
-            } else {
-                pch = strtok(NULL, " ,)");
-            }
-            if (pch == NULL) {
-                FFEA_ERROR_MESSG("num_conformations must have %d (num_blobs) arguments in the form (%%d,%%d,...,%%d). You've only specified %d arguments.\n", num_blobs, i);
-            }
-            num_conformations[i] = atoi(pch);
-            printf("\tSetting Blob %d, %s = %d\n", i, lvalue, num_conformations[i]);
-        }
+    	fprintf(fout, "es_update = %d\n", es_update);
+    	fprintf(fout, "es_N_x = %d\n", es_N_x);
+   	fprintf(fout, "es_N_y = %d\n", es_N_y);
+    	fprintf(fout, "es_N_z = %d\n", es_N_z);
+    	fprintf(fout, "es_h = %d\n", es_h);
+	fprintf(fout, "move_into_box = %d\n", move_into_box);
 
-        // Check that we are closing the bracket
-        pch = strtok(NULL, " ,)");
-        if (pch != NULL) {
-            FFEA_ERROR_MESSG("num_conformations must have %d (num_blobs) arguments in the form (%%d,%%d,...,%%d). You've specified at least %d arguments.\n", num_blobs, num_blobs + 1);
-        }
+    	fprintf(fout, "kappa = %e\n", kappa/mesoDimensions::length);
+    	fprintf(fout, "epsilon_0 = %e\n", epsilon_0);
+    	fprintf(fout, "dielec_ext = %e\n", dielec_ext);
 
-    } else if (strcmp(lvalue, "num_states") == 0) {
-        if (num_blobs == 0) {
-            FFEA_ERROR_MESSG("Error. num_blobs must be specified before num_states in the input scripts\n")
-        }
-        num_states = new int[num_blobs];
-        char * pch;
-        for (int i = 0; i < num_blobs; ++i) {
-            if (i == 0) {
-                pch = strtok(rvalue, "(,");
-            } else {
-                pch = strtok(NULL, " ,)");
-            }
-            if (pch == NULL) {
-                FFEA_ERROR_MESSG("num_states must have %d (num_blobs) arguments in the form (%%d,%%d,...,%%d). You've only specified %d arguments.\n", num_blobs, i);
-            }
-            num_states[i] = atoi(pch);
-            printf("\tSetting Blob %d, %s = %d\n", i, lvalue, num_states[i]);
-        }
+	fprintf(fout, "max_iterations_cg = %d\n", max_iterations_cg);
+    	fprintf(fout, "epsilon2 = %e\n", epsilon2);
+	fprintf(fout, "num_blobs = %d\n", num_blobs);
+	fprintf(fout, "num_conformations =");
+    	for (int i = 0; i < num_blobs; ++i) {
+        	fprintf(fout, " %d", num_conformations[i]);
+    	}
+	fprintf(fout, "\n");
 
-        // Check that we are closing the bracket
-        pch = strtok(NULL, " ,)");
-        if (pch != NULL) {
-            FFEA_ERROR_MESSG("num_states must have %d (num_blobs) arguments in the form (%%d,%%d,...,%%d). You've specified at least %d arguments.\n", num_blobs, num_blobs + 1);
-        }
+	if (calc_kinetics == 1) {
+		fprintf(fout, "num_states =");
+		for (int i = 0; i < num_blobs; ++i) {
+			fprintf(fout, " %d", num_states[i]);
+		}
+		fprintf(fout, "\n");
+	}
 
-    } else if (strcmp(lvalue, "es_update") == 0) {
-        es_update = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, es_update);
-    } else if (strcmp(lvalue, "es_N_x") == 0) {
-        es_N_x = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, es_N_x);
-    } else if (strcmp(lvalue, "es_N_y") == 0) {
-        es_N_y = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, es_N_y);
-    } else if (strcmp(lvalue, "es_N_z") == 0) {
-        es_N_z = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, es_N_z);
-    } else if (strcmp(lvalue, "sticky_wall_xz") == 0) {
-        sticky_wall_xz = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, sticky_wall_xz);
-    } else if (strcmp(lvalue, "es_h") == 0) {
-        es_h = atof(rvalue);
-        printf("\tSetting %s = %e x inverse kappa\n", lvalue, es_h);
-    } else if (strcmp(lvalue, "rng_seed") == 0) {
-        if (strcmp(rvalue, "time") == 0)
-            rng_seed = time(NULL);
-        else
-            rng_seed = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, rng_seed);
-    } else if (strcmp(lvalue, "kT") == 0) {
-        kT = atof(rvalue);
-        printf("\tSetting %s = %e\n", lvalue, kT);
-    } else if (strcmp(lvalue, "kappa") == 0) {
-        kappa = atof(rvalue);
-        printf("\tSetting %s = %e\n", lvalue, kappa);
-    } else if (strcmp(lvalue, "dielec_ext") == 0) {
-        dielec_ext = atof(rvalue);
-        printf("\tSetting %s = %e\n", lvalue, dielec_ext);
-    } else if (strcmp(lvalue, "epsilon_0") == 0) {
-        epsilon_0 = atof(rvalue);
-        printf("\tSetting %s = %e\n", lvalue, epsilon_0);
-    } else if (strcmp(lvalue, "restart") == 0) {
-        restart = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, restart);
-    } else if (strcmp(lvalue, "calc_vdw") == 0) {
-        calc_vdw = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, calc_vdw);
-    } else if (strcmp(lvalue, "calc_es") == 0) {
-        calc_es = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, calc_es);
-    } else if (strcmp(lvalue, "calc_noise") == 0) {
-        calc_noise = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, calc_noise);
-    } else if (strcmp(lvalue, "calc_preComp") == 0) {
-        calc_preComp = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, calc_preComp);
-    } else if (strcmp(lvalue, "calc_stokes") == 0) {
-        calc_stokes = atoi(rvalue);
-        printf("\tSetting %s = %d\n", lvalue, calc_stokes);
-    } else if (strcmp(lvalue, "stokes_visc") == 0) {
-        stokes_visc = atof(rvalue);
-        printf("\tSetting %s = %e\n", lvalue, stokes_visc);
-    } else if (strcmp(lvalue, "wall_x_1") == 0) {
-        if (strcmp(rvalue, "PBC") == 0) {
-            wall_x_1 = WALL_TYPE_PBC;
-        } else if (strcmp(rvalue, "HARD") == 0) {
-            wall_x_1 = WALL_TYPE_HARD;
-        } else if (strcmp(rvalue, "STOP") == 0) {
-            wall_x_1 = WALL_TYPE_STOP;
-        }
-        printf("\tSetting %s = %d\n", lvalue, wall_x_1);
-    } else if (strcmp(lvalue, "wall_x_2") == 0) {
-        if (strcmp(rvalue, "PBC") == 0) {
-            wall_x_2 = WALL_TYPE_PBC;
-        } else if (strcmp(rvalue, "HARD") == 0) {
-            wall_x_2 = WALL_TYPE_HARD;
-        } else if (strcmp(rvalue, "STOP") == 0) {
-            wall_x_2 = WALL_TYPE_STOP;
-        }
-        printf("\tSetting %s = %d\n", lvalue, wall_x_2);
-    } else if (strcmp(lvalue, "wall_y_1") == 0) {
-        if (strcmp(rvalue, "PBC") == 0) {
-            wall_y_1 = WALL_TYPE_PBC;
-        } else if (strcmp(rvalue, "HARD") == 0) {
-            wall_y_1 = WALL_TYPE_HARD;
-        } else if (strcmp(rvalue, "STOP") == 0) {
-            wall_y_1 = WALL_TYPE_STOP;
-        }
-        printf("\tSetting %s = %d\n", lvalue, wall_y_1);
-    } else if (strcmp(lvalue, "wall_y_2") == 0) {
-        if (strcmp(rvalue, "PBC") == 0) {
-            wall_y_2 = WALL_TYPE_PBC;
-        } else if (strcmp(rvalue, "HARD") == 0) {
-            wall_y_2 = WALL_TYPE_HARD;
-        } else if (strcmp(rvalue, "STOP") == 0) {
-            wall_y_2 = WALL_TYPE_STOP;
-        }
-        printf("\tSetting %s = %d\n", lvalue, wall_y_2);
-    } else if (strcmp(lvalue, "wall_z_1") == 0) {
-        if (strcmp(rvalue, "PBC") == 0) {
-            wall_z_1 = WALL_TYPE_PBC;
-        } else if (strcmp(rvalue, "HARD") == 0) {
-            wall_z_1 = WALL_TYPE_HARD;
-        } else if (strcmp(rvalue, "STOP") == 0) {
-            wall_z_1 = WALL_TYPE_STOP;
-        }
-        printf("\tSetting %s = %d\n", lvalue, wall_z_1);
-    } else if (strcmp(lvalue, "wall_z_2") == 0) {
-        if (strcmp(rvalue, "PBC") == 0) {
-            wall_z_2 = WALL_TYPE_PBC;
-        } else if (strcmp(rvalue, "HARD") == 0) {
-            wall_z_2 = WALL_TYPE_HARD;
-        } else if (strcmp(rvalue, "STOP") == 0) {
-            wall_z_2 = WALL_TYPE_STOP;
-        }
-        printf("\tSetting %s = %d\n", lvalue, wall_z_2);
-    } else if (strcmp(lvalue, "vdw_r_eq") == 0) {
-        vdw_r_eq = atof(rvalue);
-        printf("\tSetting %s = %e\n", lvalue, vdw_r_eq);
-    } else if (strcmp(lvalue, "vdw_eps") == 0) {
-        vdw_eps = atof(rvalue);
-        printf("\tSetting %s = %e\n", lvalue, vdw_eps);
-    } else if (strcmp(lvalue, "trajectory_out_fname") == 0) {
-        if (strlen(rvalue) >= MAX_FNAME_SIZE) {
-            FFEA_ERROR_MESSG("trajectory_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-        }
-        sprintf(trajectory_out_fname, "%s", rvalue);
-        trajectory_out_fname_set = 1;
-        printf("\tSetting %s = %s\n", lvalue, trajectory_out_fname);
-    } else if (strcmp(lvalue, "measurement_out_fname") == 0) {
-        if (strlen(rvalue) >= MAX_FNAME_SIZE) {
-            FFEA_ERROR_MESSG("measurement_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-        }
-        sprintf(temp_fname, "%s", rvalue);
-        measurement_out_fname_set = 1;
-        printf("\tSetting %s = %s\n", lvalue, temp_fname);
-    } else if (strcmp(lvalue, "vdw_forcefield_params") == 0) {
-        if (strlen(vdw_params_fname) >= MAX_FNAME_SIZE) {
-            FFEA_ERROR_MESSG("vdw_forcefield_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-        }
-        sprintf(vdw_params_fname, "%s", rvalue);
-        vdw_params_fname_set = 1;
-        printf("\tSetting %s = %s\n", lvalue, vdw_params_fname);
-    } else {
-        FFEA_error_text();
-        printf("\tError: '%s' is not a recognised lvalue\n", lvalue);
-        printf("\tRecognised lvalues are:\n");
-        printf("\tdt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\tepsilon_0\n\trestart\n\tcalc_vdw\n\tcalc_noise\n\n");
-        return FFEA_ERROR;
-    }
+    	fprintf(fout, "trajectory_out_fname = %s\n", trajectory_out_fname);
+    	for (int i = 0; i < num_blobs + 1; ++i) {
+    	    fprintf(fout, "measurement_out_fname %d = %s\n", i, measurement_out_fname[i]);
+    	}
+        if(calc_kinetics == 1) {
+	    	fprintf(fout, "kinetics_out_fname = %s\n", kinetics_out_fname);
+	}
 
-    return FFEA_OK;
+
+	fclose(fout);
 }
-*/ 

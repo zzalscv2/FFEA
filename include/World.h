@@ -158,6 +158,9 @@ private:
     /** @brief * Output measurement file */
     FILE **measurement_out;
 
+    /** @brief * Output Parameter file (what parameters were used? */
+    FILE *params_out;
+
     /*
      *
      */
