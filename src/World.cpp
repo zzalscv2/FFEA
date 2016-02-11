@@ -526,7 +526,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 	    // Print them back out, so user has a record
             params.write_to_file();
-	    exit(0);
 	     
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
