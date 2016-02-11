@@ -148,6 +148,7 @@ class FFEA_viewer_display_window():
 		if ffea_path == "":
 			ffea_path = "."
 
+		# First, we want to see if there is a parameters file associated with this
 		ffea_in = open(self.ffea_fname, "r")
 		
 		# Read required stuff from params block
