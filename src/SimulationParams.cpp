@@ -680,6 +680,9 @@ int SimulationParams::validate() {
     if(calc_kinetics == 1 && binding_params_fname_set == 1) {
 	printf("\tbinding_params_fname = %s\n", binding_params_fname);
     }
+    if(calc_vdw == 1 && vdw_type == "steric") {
+        printf("\tvdw_steric_factor = %e\n", vdw_steric_factor);
+    }
     return FFEA_OK;
 }
 
