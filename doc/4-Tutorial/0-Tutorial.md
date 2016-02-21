@@ -10,6 +10,7 @@ Content:
 - @subpage emmaptosurftut
 - @subpage surftovoltut
 - @subpage voltoffeatut
+- @subpage FFEAviewertut
 - @subpage ffeasimulationtut
 - @subpage FFEAanalysistut
 

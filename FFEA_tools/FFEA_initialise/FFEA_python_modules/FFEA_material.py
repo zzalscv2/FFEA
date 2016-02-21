@@ -13,7 +13,7 @@ class FFEA_material:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found."
+			print "Error. Material file " + fname  + " not found."
 			return
 
 		# Header

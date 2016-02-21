@@ -11,7 +11,7 @@ class FFEA_pin:
 
 		# Start reading
 		if not os.path.exists(fname):
-			print "File " + fname  + " not found. Creating empty object....done!"
+			print "Pin file " + fname  + " not found. Creating empty object....done!"
 			self.reset()
 			return
 

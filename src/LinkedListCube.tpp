@@ -24,6 +24,7 @@ LinkedListCube<T>::~LinkedListCube() {
     N_z = 0;
     max_num_nodes_in_pool = 0;
     num_nodes_in_pool = 0;
+    num_nodes_in_stack = 0;
     add_index = 0;
     root = NULL;
     pool = NULL;
@@ -37,6 +38,7 @@ int LinkedListCube<T>::alloc(int N_x, int N_y, int N_z, int max_num_nodes_in_poo
     this->N_z = N_z;
     this->max_num_nodes_in_pool = max_num_nodes_in_pool;
     num_nodes_in_pool = 0;
+    num_nodes_in_stack = 0;
     root = new LinkedListNode<T> * [N_x * N_y * N_z];
     pool = new LinkedListNode<T>[max_num_nodes_in_pool];
 
@@ -94,7 +96,6 @@ void LinkedListCube<T>::clear() {
 template <class T>
 int LinkedListCube<T>::add_node_to_stack(int i, int x, int y, int z) {
     // Apply PBC to the face centroid
-
     pbc(&x, &y, &z);
 
     if (x < 0 || x >= N_x || y < 0 || y >= N_y || z < 0 || z >= N_z) {
@@ -109,7 +110,7 @@ int LinkedListCube<T>::add_node_to_stack(int i, int x, int y, int z) {
     pool[i].z = z;
     pool[i].next = root[abs_index];
     root[abs_index] = &pool[i];
-
+    num_nodes_in_stack++;
     return FFEA_OK;
 }
 

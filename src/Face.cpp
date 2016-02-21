@@ -12,6 +12,7 @@ Face::Face() {
     num_blobs = 0;
     vdw_xz_interaction_flag = false;
     vdw_bb_interaction_flag = NULL;
+    kinetically_active = false;
     vdw_bb_force = NULL;
     vdw_bb_energy = NULL;
     vdw_xz_force = NULL;
@@ -32,7 +33,7 @@ Face::~Face() {
     vdw_xz_interaction_flag = false;
     delete[] vdw_bb_interaction_flag;
     vdw_bb_interaction_flag = NULL;
-
+    kinetically_active = false;
     delete[] vdw_bb_force;
     vdw_bb_force = NULL;
     delete[] vdw_bb_energy;
@@ -145,6 +146,10 @@ void Face::build_opposite_node() {
     }
 }
 
+void Face::set_kinetic_state(bool state) {
+	this->kinetically_active = state;
+}
+
 void Face::calc_area_normal_centroid() {
     // (1/2) * |a x b|
     vector3 a = {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z},
@@ -181,6 +186,14 @@ void Face::print_centroid() {
 	vector3 *c;
 	c = get_centroid();
 	fprintf(stderr, "Centroid: %f %f %f\n", c->x, c->y, c->z);
+}
+
+void Face::print_nodes() {
+
+	for(int i = 0; i < 4; ++i) {
+		fprintf(stderr, "Node %d: %f %f %f\n", i, n[i]->pos.x, n[i]->pos.y, n[i]->pos.z);
+	}
+	fprintf(stderr, "\n");
 }
 
 scalar Face::get_area() {
@@ -315,6 +328,10 @@ bool Face::is_vdw_active() {
     } else {
         return true;
     }
+}
+
+bool Face::is_kinetic_active() {
+	return kinetically_active;
 }
 
 bool Face::checkTetraIntersection(Face *f2) {

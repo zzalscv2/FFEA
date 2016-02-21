@@ -13,7 +13,7 @@ class FFEA_stokes:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found."
+			print "Error. Stokes file " + fname  + " not found."
 			return
 
 		# Header

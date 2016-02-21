@@ -53,6 +53,7 @@ public:
 
     bool vdw_xz_interaction_flag;
     bool *vdw_bb_interaction_flag;
+    bool kinetically_active;
 
     /** vdw measurement info **/
     int num_blobs;
@@ -94,9 +95,11 @@ public:
     void build_opposite_node();
 
     void calc_area_normal_centroid();
+    void set_kinetic_state(bool state);
 
     vector3 * get_centroid();
-    void print_centroid(); 
+    void print_centroid();
+    void print_nodes();
     scalar get_area();
 
     /** Calculate the point p on this triangle given the barycentric coordinates b1, b2, b3 **/
@@ -132,6 +135,7 @@ public:
     void set_vdw_bb_interaction_flag(bool state, int other_blob_index);
 
     bool is_vdw_active();
+    bool is_kinetic_active();
 
 private:
     int stuff;

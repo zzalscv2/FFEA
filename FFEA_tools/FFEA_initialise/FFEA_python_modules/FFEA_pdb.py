@@ -14,7 +14,7 @@ class FFEA_pdb:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "File " + fname  + " not found. Returning empty pdb object."
+			print "PDB file " + fname  + " not found. Returning empty pdb object."
 			return
 
 		# The file may contain frames as models, models of separate structures, or just a single structure. 

@@ -70,6 +70,9 @@ protected:
     /* The number of nodes in use */
     int num_nodes_in_pool;
 
+    /* The number of nodes in the lookup stack */
+    int num_nodes_in_stack;
+
     /* A cubic grid of pointers */
     LinkedListNode<T> **root;
 

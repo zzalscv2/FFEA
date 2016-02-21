@@ -434,8 +434,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		shift.z = box_dim.z / 2.0 - world_centroid.z;
 		if(params.move_into_box == 1) {
 			for (i = 0; i < params.num_blobs; i++) {
-				active_blob_array[i]->get_centroid(&world_centroid);
+				//active_blob_array[i]->get_centroid(&world_centroid);
 				active_blob_array[i]->move(shift.x, shift.y, shift.z);
+				active_blob_array[i]->calc_all_centroids();
 			}
 		}
 	    }
@@ -1328,8 +1329,9 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 		// Get current nodes
 		vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
 
-		// Change active conformation
+		// Change active conformation and activate all faces
 		active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
+		active_blob_array[blob_index]->kinetically_set_faces(true);
 
 		// Get target nodes
 		vector3 ** target_nodes = active_blob_array[blob_index]->get_actual_node_positions();
@@ -1337,8 +1339,9 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 		// Apply map
 		kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
 
-		// Move the old one to random space so as not to interfere with calculations
+		// Move the old one to random space so as not to interfere with calculations, and deactivate all faces 
 		blob_array[blob_index][current_conformation].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
+		blob_array[blob_index][current_conformation].kinetically_set_faces(false);
 
 		// Reactivate springs
 		activate_springs();
@@ -1702,9 +1705,14 @@ int World::read_and_build_system(vector<string> script_vector) {
 			// If not an active conforamtion, move to random area in infinity so vdw and stuff are not active (face linked list is not set up for deleting elements)
 			if (j > 0) {
 				blob_array[i][j].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
-				blob_array[i][j].get_centroid(cent);
-				cout << "Blob " << i << ", Conformation " << j << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
+				//blob_array[i][0].get_centroid(cent);
+				//cout << "Blob " << i << ", Conformation " << "0" << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
+				//blob_array[i][j].get_centroid(cent);
+				//cout << "Blob " << i << ", Conformation " << j << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
 			} else {
+
+				// Activate all faces
+				blob_array[i][j].kinetically_set_faces(true);
 
 				// if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
 		        	if (centroid != NULL) {

@@ -107,7 +107,7 @@ class FFEA_trajectory:
 			self.traj.close()
 			return
 
-	def load_frame(self):
+	def load_frame(self, surf = None):
 
 		# Set some parameters
 		active_conformation = 0
@@ -235,6 +235,13 @@ class FFEA_trajectory:
 				self.reset()
 				self.traj.close()
 				return
+
+			# Average normals at nodes, (if necessary)
+			if (surf != None):
+				for b in self.blob:
+					for c in b:
+						if c.frame[-1] != None:
+							c.frame[-1].calc_normals(surf)
 
 			self.num_frames_read += 1
 			self.num_frames += 1
@@ -443,6 +450,18 @@ class FFEA_traj_blob:
 		self.num_subblobs = 0
 		self.motion_state = "DYNAMIC"
 
+	def get_num_frames(self):
+		return len(self.frame)
+
+	def add_empty_frame(self):
+		self.num_nodes = 0;
+		self.frame.append == None
+		
+	def set_frame_from_nodes(self, node):
+		self.num_nodes = node.num_nodes
+		self.frame.append(FFEA_traj_blob_frame(self.num_nodes))
+		self.frame[0].set_from_nodes(node)
+
 	def define_subblob(self, indices):
 	
 		self.subblob.append(indices)
@@ -589,7 +608,38 @@ class FFEA_traj_blob_frame:
 
 	def __init__(self, num_nodes):
 		self.pos = np.array([[0.0 for i in range(3)] for j in range(num_nodes)])
+		self.normal = None
 
+	def calc_normals(self, surf):
+
+		# Normals are averages at each node, rather than at each face
+
+		# Initialise normal array
+		self.normal = np.array([[0.0,0.0,0.0] for i in range(surf.num_surface_nodes)])
+
+		# Add normal from each face to nodes on the face
+		for f in surf.face:
+			a = self.pos[f.n[2]] - self.pos[f.n[1]]
+			b = self.pos[f.n[1]] - self.pos[f.n[0]]
+			n = np.cross(a,b)
+			n *= 1.0 / np.linalg.norm(n)
+			for ni in f.n:
+				self.normal[ni] += n
+
+		# Now, renormalise to get average normals
+		for n in self.normal:
+			if n[0] == 0.0:
+				continue
+
+			n *= 1.0 / np.linalg.norm(n)
+
+	def set_from_nodes(self, node):
+		self.pos = node.pos
+		self.normal = node.normal
+
+	def calc_centroid(self):
+		return np.mean(self.pos, axis=0)
+		
 	def get_subblob_frame(self, nodes_list):
 		subblob_frame = np.zeros([len(nodes_list), 3])
 		for i in range(len(nodes_list)):

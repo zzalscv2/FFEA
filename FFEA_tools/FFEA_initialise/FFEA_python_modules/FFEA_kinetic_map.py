@@ -14,7 +14,7 @@ class FFEA_kinetic_map:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found."
+			print "Error. Map File " + fname  + " not found."
 			return
 
 		# Header
