@@ -10,26 +10,26 @@ Prerequisites
 
 To install FFEA you need:
 
-   * C and a C++ compilers. <BR> 
+   * C and a C++ compilers.   
      There is some C++ code written using 
        the C++11 standard, so CMake will ensure that you have a 
        recent enough compiler. Still, GCC 4.4 and Intel 13 have shown to work well. 
 
-   * CMake (>=2.8.11). <BR> 
+   * CMake (>=2.8.11).   
      Required for building FFEA.
      https://cmake.org/
 
 some third-party libraries:
 
-   * Boost (>=1.54.0). <BR>
+   * Boost (>=1.54.0).   
      Required compiled Boost library: program_options. 
      http://www.boost.org/
 
-   * Eigen (>=3.2.1). <BR> 
+   * Eigen (>=3.2.1).   
      FFEA uses Eigen within the Kinetics module.
      http://eigen.tuxfamily.org
  
-   * Doxygen (>= 1.8) [OPTIONAL] <BR>
+   * Doxygen (>= 1.8) [OPTIONAL]   
      It will be used to build the documentation. http://www.doxygen.org
 
 
@@ -61,9 +61,11 @@ CMake will look for the required Boost and Eigen libraries. In the case they are
   * or configuring with ` -DEIGEN_HOME="Path-to-Eigen" ` and  ` -DBOOST_ROOT="Path-to-Boost `
 
 Specific FFEA flags include:
+
   * `USE_FAST`    (default OFF) will try to find the best compiler flags in terms of performance.
   * `USE_OPENMP`  (default ON) will enable OpenMP parallel calculations.
   * `USE_OMP_MODE` (default 1) where:
+
     - 0 is for ` USE_OPENMP=OFF `.
     - 1 uses all the threads within blobs.
     - 2 uses one thread per blob.
