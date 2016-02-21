@@ -457,11 +457,17 @@ int SimulationParams::checkFileName(string oFile){
     if (b_fs::exists(oFile))    // does oFile actually exist?
     {
         int cnt = 1;
-        string bckp = oFile + "__bckp." + boost::lexical_cast<string>(cnt);
+        b_fs::path fs_oFile = oFile;
+        cout << "oFile: " << oFile << endl;
+        string base = "__" + fs_oFile.filename().string() + "__bckp.";
+        if (fs_oFile.parent_path().string().size() != 0)
+          base = fs_oFile.parent_path().string() + "/" + base;
+
+        string bckp = base + boost::lexical_cast<string>(cnt);
         while (b_fs::exists(bckp)) {
           cnt += 1;
           string s_cnt = boost::lexical_cast<string>(cnt);
-          bckp = oFile + "__bckp." + s_cnt;
+          bckp = base + s_cnt;
         }
         FFEA_CAUTION_MESSG("Moving %s to %s\n", oFile.c_str(), bckp.c_str()); 
         // cout << "FFEA: moving " << oFile << " to " << bckp << "\n";
