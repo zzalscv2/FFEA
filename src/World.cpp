@@ -254,11 +254,15 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 			// First line in measurements file should be a header explaining what quantities are in each column
 			for (i = 0; i < params.num_blobs; ++i) {
+			    fprintf(measurement_out[i], "FFEA_measurement_file (Blob %d)\n\n", i);
 			    fprintf(measurement_out[i], "# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface\n", i, i, i);
 			    fflush(measurement_out[i]);
 			}
 
-			fprintf(measurement_out[params.num_blobs], "# step ");
+			// Print parameters back out, so user has a record
+			fprintf(measurement_out[params.num_blobs], "FFEA_measurement_file (World)\n\n");
+	                params.write_to_file(measurement_out[params.num_blobs]);
+			fprintf(measurement_out[params.num_blobs], "\nInteractions:\n\n# step ");
 			for (i = 0; i < params.num_blobs; ++i) {
 			    for (j = i + 1; j < params.num_blobs; ++j) {
 				fprintf(measurement_out[params.num_blobs], "| vdw_area_%d_%d | vdw_force_%d_%d | vdw_energy_%d_%d ", i, j, i, j, i, j);
@@ -524,9 +528,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		print_trajectory_and_measurement_files(0, 0);
 		print_kinetic_files(0);
 	    }
-
-	    // Print them back out, so user has a record
-            params.write_to_file();
 	     
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);

@@ -91,7 +91,6 @@ public:
     char kinetics_out_fname[MAX_FNAME_SIZE];
     char **measurement_out_fname;
     char temp_fname[MAX_FNAME_SIZE];
-    char params_out_fname[MAX_FNAME_SIZE];
 
     char vdw_params_fname[MAX_FNAME_SIZE];
     char binding_params_fname[MAX_FNAME_SIZE];
@@ -124,7 +123,7 @@ public:
     int kinetics_out_fname_set;
 
     // Writes all params to params_out_fname for user's info
-    void write_to_file();
+    void write_to_file(FILE *fout);
 
 private:
     int trajectory_out_fname_set;

@@ -43,8 +43,6 @@ SimulationParams::SimulationParams() {
     wall_z_1 = WALL_TYPE_PBC;
     wall_z_2 = WALL_TYPE_PBC;
 
-    sprintf(params_out_fname, "params.out");
-
     // Initialised to zero or equivalent for later initialisation
     dt = 0;
     num_blobs = 0;
@@ -133,7 +131,6 @@ SimulationParams::~SimulationParams() {
     delete[] measurement_out_fname;
     sprintf(binding_params_fname, "\n");
     sprintf(vdw_params_fname, "\n");
-    sprintf(params_out_fname, "\n");
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
@@ -610,7 +607,6 @@ int SimulationParams::validate() {
       }
       checkFileName(boost::lexical_cast<string>(trajectory_out_fname));
       checkFileName(boost::lexical_cast<string>(kinetics_out_fname));
-      checkFileName(boost::lexical_cast<string>(params_out_fname));
     } 
 
     if (calc_stokes == 1 && stokes_visc <= 0) {
@@ -703,13 +699,10 @@ int SimulationParams::get_max_num_states() {
     return max_num_states;
 }
 
-void SimulationParams::write_to_file() {
+void SimulationParams::write_to_file(FILE *fout) {
 
-	FILE *fout = fopen(params_out_fname, "w");
+	// This should be getting added to the top of the measurement_world file!!
 
-	// Header stuff first
-	fprintf(fout, "FFEA_paramater_file\n\n");
-	
 	// Then, every parameter (if anyone hates this goddamn class in the future, please make a Param struct / dictionary thing so we can just loop over all parameters)
 	fprintf(fout, "Parameters:\n");
     	fprintf(fout, "restart = %d\n", restart);
@@ -757,14 +750,11 @@ void SimulationParams::write_to_file() {
 		fprintf(fout, "\n");
 	}
 
-    	fprintf(fout, "trajectory_out_fname = %s\n", trajectory_out_fname);
+    	/*fprintf(fout, "trajectory_out_fname = %s\n", trajectory_out_fname);
     	for (int i = 0; i < num_blobs + 1; ++i) {
     	    fprintf(fout, "measurement_out_fname %d = %s\n", i, measurement_out_fname[i]);
     	}
         if(calc_kinetics == 1) {
 	    	fprintf(fout, "kinetics_out_fname = %s\n", kinetics_out_fname);
-	}
-
-
-	fclose(fout);
+	}*/
 }
