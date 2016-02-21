@@ -729,6 +729,14 @@ void Blob::move(scalar dx, scalar dy, scalar dz) {
         node[i].pos.y += dy;
         node[i].pos.z += dz;
     }
+    for(int i = 0; i < get_num_faces(); ++i) {
+	if(get_motion_state() != FFEA_BLOB_IS_DYNAMIC && surface[i].n[3] != NULL) {
+		surface[i].n[3]->pos.x += dx;
+		surface[i].n[3]->pos.y += dy;
+		surface[i].n[3]->pos.z += dz;
+		fprintf(stderr, "Surface %d = %f %f %f\n", i, dx, dy, dz);
+	}
+    }
 }
 
 void Blob::get_CoM(vector3 *com) {
@@ -793,6 +801,12 @@ void Blob::set_rmsd_pos_0() {
         node[i].pos_0.y = node[i].pos.y;
         node[i].pos_0.z = node[i].pos.z;
     }
+}
+
+void Blob::kinetically_set_faces(bool state) {
+	for(int i = 0; i < num_surface_faces; ++i) {
+		surface[i].set_kinetic_state(state);
+	}
 }
 
 void Blob::linearise_elements() {
@@ -1171,6 +1185,18 @@ void Blob::calc_centroids_and_normals_of_all_faces() {
     int i;
     for (i = 0; i < num_surface_faces; i++)
         surface[i].calc_area_normal_centroid();
+}
+
+void Blob::calc_all_centroids() {
+
+	int i;
+	for (i = 0; i < num_surface_faces; i++) {
+        	surface[i].calc_area_normal_centroid();
+	}
+	for(i = 0; i < num_elements; ++i) {
+		elem[i].calc_centroid();
+	}
+	
 }
 
 /*

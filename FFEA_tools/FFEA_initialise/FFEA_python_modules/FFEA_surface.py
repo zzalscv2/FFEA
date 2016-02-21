@@ -13,7 +13,7 @@ class FFEA_surface:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found."
+			print "Error. Surface file " + fname  + " not found."
 			return
 
 		# Header
@@ -32,13 +32,14 @@ class FFEA_surface:
 			fin.close()
 			return			
 
-		# Begin to read faces
+		# Begin to read faces (and get num_surface_nodes)
 		if fin.readline().strip() != "faces:":
 			print "Error. Expected to read 'faces:' to begin the surface section."
 			self.reset()
 			fin.close()
 			return
 
+		nlist = []
 		for i in range(self.num_faces):
 			try:
 				line = fin.readline()
@@ -49,6 +50,9 @@ class FFEA_surface:
 
 				# First index is the containing element. May need later
 				self.face.append(FFEA_face(int(sline[1]), int(sline[2]), int(sline[3])))
+				nlist.append(int(sline[1]))
+				nlist.append(int(sline[2]))
+				nlist.append(int(sline[3]))
 
 			except(EOFError):
 				print "Error. EOF may have been reached prematurely:\nnum_faces = " + str(self.num_faces) + "\nnum_faces read = " + str(i)
@@ -61,6 +65,8 @@ class FFEA_surface:
 				self.reset()
 				fin.close()
 				return
+
+		self.num_surface_nodes = max(nlist) + 1
 
 	def calculate_structure_dimensions(self, node):
 
@@ -89,6 +95,7 @@ class FFEA_surface:
 
 	def reset(self):
 		self.num_faces = 0
+		self.num_surface_nodes = 0
 		self.face = []
 
 class FFEA_face:

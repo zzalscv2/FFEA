@@ -46,7 +46,7 @@ class FFEA_script:
 
 		# Get springs
 		try:
-			self.spring = self.read_springs_from_file(fname)
+			self.read_springs_from_file(fname)
 		except:
 			print "Error. Failed to load <spring>...</spring> "
 			self.reset()
@@ -55,7 +55,7 @@ class FFEA_script:
 	def reset(self):
 		self.params = None
 		self.blob = []
-		self.spring = []
+		self.spring = ""
 
 	def read_params_from_file(self, fname):
 
@@ -344,23 +344,28 @@ class FFEA_script:
 		fin = open(fname, "r")
 		lines = fin.readlines()
 		fin.close()
-
+		
 		spring_lines = extract_block_from_lines("springs", 0, lines)
+		
+		if len(spring_lines) != 1:
+			print "Error. Expected only one filename."
+			return
 
-		spring = []
-		for line in spring_lines:
-			try:
-				line = line.strip().replace("<", "").replace(">", "")
-				lvalue = line.split("=")[0].rstrip()
-				rvalue = line.split("=")[1].lstrip()
+		line = spring_lines[0]
 
-			except(IndexError, ValueError):
-				print "Error. Couldn't parse spring tag '" + line + "'"
-				return []
+		try:
+			line = line.strip().replace("<", "").replace(">", "")
+			lvalue = line.split("=")[0].rstrip()
+			rvalue = line.split("=")[1].lstrip()
 
-			if lvalue == "springs_fname":
-				spring.append(rvalue)
-		return spring
+		except(IndexError, ValueError):
+			print "Error. Couldn't parse spring tag '" + line + "'"
+			return
+
+		if lvalue == "springs_fname":
+			self.spring = rvalue
+			
+		return
 
 	def write_to_file(self, fname):
 
@@ -370,10 +375,9 @@ class FFEA_script:
 		for blob in self.blob:
 			blob.write_to_file(fout, fname, self.params.calc_kinetics)
 		fout.write("</system>\n")
-		if len(self.spring) != 0:
+		if self.spring != "":
 			fout.write("<interactions>\n\t<springs>\n")
-			for fname in self.spring:
-				fout.write("\t\t<spring_fname = %s>\n" % (os.path.relpath(fname, os.path.dirname(os.path.abspath(fname)))))
+			fout.write("\t\t<spring_fname = %s>\n" % (os.path.relpath(fname, os.path.dirname(os.path.abspath(fname)))))
 			fout.write("\t</springs>\n</interactions>")
 		fout.close()
 

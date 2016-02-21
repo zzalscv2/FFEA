@@ -13,7 +13,7 @@ class FFEA_node:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found."
+			print "Error. Node file " + fname  + " not found."
 			return
 
 		# Header
@@ -108,6 +108,30 @@ class FFEA_node:
 	def calc_centroid(self):
 		return np.mean(self.pos, axis=0)
 
+	def calc_normals(self, surf):
+
+		# Normals are averages at each node, rather than at each face
+
+		# Initialise normal array
+		self.normal = np.array([[0.0,0.0,0.0] for i in range(surf.num_surface_nodes)])
+
+		# Add normal from each face to nodes on the face
+		for f in surf.face:
+			a = self.pos[f.n[2]] - self.pos[f.n[1]]
+			b = self.pos[f.n[1]] - self.pos[f.n[0]]
+			n = np.cross(a,b)
+			n *= 1.0 / np.linalg.norm(n)
+
+			for ni in f.n:
+				self.normal[ni] += n
+
+		# Now, renormalise to get average normals
+		for n in self.normal:
+			if n[0] == 0.0:
+				continue
+
+			n *= 1.0 / np.linalg.norm(n)
+
 	def translate(self, shift):
 
 		for p in self.pos:
@@ -115,6 +139,7 @@ class FFEA_node:
 
 	def reset(self):
 		self.pos = []
+		self.normal = []
 		self.num_nodes = 0
 		self.num_interior_nodes = 0
 		self.num_surface_nodes = 0

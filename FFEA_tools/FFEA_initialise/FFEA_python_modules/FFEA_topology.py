@@ -13,7 +13,7 @@ class FFEA_topology:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found."
+			print "Error. Topology file " + fname  + " not found."
 			return
 
 		# Header

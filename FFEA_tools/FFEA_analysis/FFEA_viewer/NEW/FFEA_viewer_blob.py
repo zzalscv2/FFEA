@@ -3,7 +3,143 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math
 import numpy as np
-import FFEA_material
+import FFEA_trajectory, FFEA_blob
+
+class FFEA_viewer_blob(FFEA_blob.FFEA_blob):
+
+	def set_frame_from_nodes(self):
+		self.traj = FFEA_trajectory.FFEA_traj_blob(self.node.num_nodes)
+		self.traj.set_frame_from_nodes(self.node)
+
+	def add_empty_frame(self):
+		self.traj = FFEA_trajectory.FFEA_traj_blob(self.node.num_nodes)
+		self.traj.add_empty_frame()
+
+	def get_dimensions(self):
+
+		dims = [[float("inf"), -1* float("inf")] for i in range(3)]
+
+		for n in self.traj.frame[0].pos:
+			for i in range(3):
+				if n[i] < dims[i][0]:
+					dims[i][0] = n[i]
+				if n[i] > dims[i][1]:
+					dims[i][1] = n[i]
+		return dims
+
+	def draw_frame(self, i, display_flags):
+
+		if self.motion_state == "STATIC":
+			i = 0
+
+		if self.traj.get_num_frames() == 0:
+			return
+
+		if self.traj.frame[i] == None:
+			return
+
+		if self.hide_blob == True:
+			return
+
+		if i < 0:
+			i == 0
+		elif i >= self.traj.get_num_frames():
+			i = self.traj.get_num_frames() - 1
+
+		#if display_flags['hide_frozen'] == 1:
+		#	if self.get_frame_state(i) == "FROZEN":
+		#		return
+		
+		#cdef int f
+
+		bc = display_flags['blob_colour']
+		if self.blob_index == display_flags['selected_blob']:
+			bc = [0,0,204/255.0]
+		else:
+			bc = self.normalcolor
+
+		if display_flags['show_solid'] == 1:
+			glBegin(GL_TRIANGLES)
+			glColor3d(bc[0], bc[1], bc[2])
+			for f in self.surf.face:
+				n1 = self.traj.frame[i].pos[f.n[0]]
+				n2 = self.traj.frame[i].pos[f.n[1]]
+				n3 = self.traj.frame[i].pos[f.n[2]]
+
+				norm1 = self.traj.frame[i].normal[f.n[0]]
+				norm2 = self.traj.frame[i].normal[f.n[1]]
+				norm3 = self.traj.frame[i].normal[f.n[2]]
+
+				glNormal3d(norm1[0], norm1[1], norm1[2])
+				glVertex3d(n1[0], n1[1], n1[2])
+				glNormal3d(norm2[0], norm2[1], norm2[2])
+				glVertex3d(n2[0], n2[1], n2[2])
+				glNormal3d(norm3[0], norm3[1], norm3[2])
+				glVertex3d(n3[0], n3[1], n3[2])
+
+			glEnd()
+
+	def draw_pick_frame(self, i):
+		if self.traj.get_num_frames() == 0:
+			return
+
+		if i < 0:
+			i == 0
+		elif i >= self.traj.get_num_frames():
+			i = self.traj.get_num_frames() - 1
+
+		glBegin(GL_TRIANGLES)
+		pick_r = 1
+		pick_g = 0
+		pick_b = 0
+		for f in range(self.surf.num_faces):
+			n1 = self.traj.frame[i].pos[self.surf[f].n[0]]
+			n2 = self.traj.frame[i].pos[self.surf[f].n[1]]
+			n3 = self.traj.frame[i].pos[self.surf[f].n[2]]
+
+
+			glColor3f(pick_r/255.0, pick_g/255.0, pick_b/255.0)
+			glVertex3d(n1[0], n1[1], n1[2])
+			glVertex3d(n2[0], n2[1], n2[2])
+			glVertex3d(n3[0], n3[1], n3[2])
+
+			pick_r += 1
+			if pick_r == 255:
+				pick_r = 0
+				pick_g += 1
+				if pick_g == 255:
+					pick_g = 0
+					pick_b += 1
+		glEnd()
+
+	def show(self):
+		self.hide_blob = False
+
+	def hide(self):
+		self.hide_blob = True
+
+	def reset(self):
+
+		# Structural objects
+		self.motion_state = "DYNAMIC"
+		self.node = None
+		self.surf = None
+		self.top = None
+		self.mat = None
+		self.vdw = None
+		self.stokes = None
+		self.pin = None
+		self.bsites = None
+		self.traj = None
+
+		# Control selection variables
+		self.hide_blob = False
+
+		# Display selection objects
+		self.blob_index = 0
+		self.conformation_index = 0
+		self.normalcolor = [32 / 255.0, 178 / 255.0, 170 / 255.0]
+		self.offset = [0.0, 0.0, 0.0]
 
 class Blob:
 	def __init__(self, energy_thresh=1.0e6):
@@ -14,7 +150,7 @@ class Blob:
 		self.topology = []
 		self.no_topology = False
 		self.num_nodes = 0
-		self.num_surface_faces = 0
+		self.num_faces = 0
 		self.num_binding_sites = 0
 		self.active_binding_site = -1
 		self.num_frames = 0
@@ -68,19 +204,19 @@ class Blob:
 
 		if vdw_fname == "":
 			print "No vdw file provided. Creating a zero array."
-			self.vdw = [-1 for i in xrange(self.num_surface_faces)]
+			self.vdw = [-1 for i in xrange(self.surf.num_faces)]
 		else:
 			try:
 				self.load_vdw(vdw_fname)
 			except(IOError):
 				print "Vdw file '" + vdw_fname + "' not found. Creating a zero array."
-				self.vdw = [-1 for i in xrange(self.num_surface_faces)]
+				self.vdw = [-1 for i in xrange(self.surf.num_faces)]
 			except:
 				print "Unknow error in 'self.load_vdw()'. Creating a zero array."
-				self.vdw = [-1 for i in xrange(self.num_surface_faces)]
+				self.vdw = [-1 for i in xrange(self.surf.num_faces)]
 
-		self.hidden_face = [-1 for i in xrange(self.num_surface_faces)]
-		for i in xrange(self.num_surface_faces):
+		self.hidden_face = [-1 for i in xrange(self.surf.num_faces)]
+		for i in xrange(self.surf.num_faces):
 			if self.vdw[i] == -2:
 				self.hidden_face[i] = 1
 
@@ -146,8 +282,8 @@ class Blob:
 			return
 
 		line = surf.readline().split()
-		self.num_surface_faces = int(line[1])
-		print "num_surface_faces = ", self.num_surface_faces
+		self.surf.num_faces = int(line[1])
+		print "num_surface_faces = ", self.surf.num_faces
 
 		line = surf.readline().rstrip()
 		if line != "faces:":
@@ -155,7 +291,7 @@ class Blob:
 			return
 
 		self.surface = []
-		for n in xrange(self.num_surface_faces):
+		for n in xrange(self.surf.num_faces):
 			line = surf.readline().split()
 			self.surface.append([int(line[0]), int(line[1]), int(line[2]), int(line[3])])
 
@@ -199,8 +335,8 @@ class Blob:
 		num_vdw_faces = int(line[1])
 		print "num_faces according to vdw file = ", num_vdw_faces
 
-		if num_vdw_faces != self.num_surface_faces:
-			print "Error. Number of faces in vdw file (" + str(num_vdw_faces) + ") does not match number of faces in surface file (" + str(self.num_surface_faces) + ")"
+		if num_vdw_faces != self.surf.num_faces:
+			print "Error. Number of faces in vdw file (" + str(num_vdw_faces) + ") does not match number of faces in surface file (" + str(self.surf.num_faces) + ")"
 			return
 
 		line = vdw_file.readline().rstrip()
@@ -209,7 +345,7 @@ class Blob:
 			return
 
 		self.vdw = []
-		for n in xrange(self.num_surface_faces):
+		for n in xrange(self.surf.num_faces):
 			line = vdw_file.readline()
 			self.vdw.append(int(line))
 
@@ -230,7 +366,7 @@ class Blob:
 
 		fin.readline()		
 		self.binding_site = []
-		self.binding_site_type = [[-1, -1] for i in range(self.num_surface_faces)]
+		self.binding_site_type = [[-1, -1] for i in range(self.surf.num_faces)]
 		
 		for i in range(self.num_binding_sites):
 			asite = []
@@ -262,9 +398,9 @@ class Blob:
 		print "Writing vdw file " + vdw_fname
 		vdw_file = open(vdw_fname, "w")
 		vdw_file.write("ffea vdw file\n")
-		vdw_file.write("num_faces " + str(self.num_surface_faces) + "\n")
+		vdw_file.write("num_faces " + str(self.surf.num_faces) + "\n")
 		vdw_file.write("vdw params:\n")
-		for n in xrange(self.num_surface_faces):
+		for n in xrange(self.surf.num_faces):
 			vdw_file.write(str(self.vdw[n]) + "\n")
 		vdw_file.close()
 		print "Finished writing vdw file " + vdw_fname
@@ -305,7 +441,7 @@ class Blob:
 		# Calculate average normal at each node (for gl lighting effects)
 		normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
 		#cdef int f
-		for f in xrange(self.num_surface_faces):
+		for f in xrange(self.surf.num_faces):
 			# get node indices of this face
 			i1 = self.surface[f][1]
 			i2 = self.surface[f][2]
@@ -530,7 +666,7 @@ class Blob:
 		# Calculate average normal at each node (for gl lighting effects)
 		print "Calculating node normals for lighting..."
 		normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
-		for f in xrange(self.num_surface_faces):
+		for f in xrange(self.surf.num_faces):
 			# get node indices of this face
 			i1 = self.surface[f][1]
 			i2 = self.surface[f][2]
@@ -578,7 +714,7 @@ class Blob:
 #			else:
 #				self.linear_nodes_only = []
 #				for i in range(self.num_nodes):
-#					for f in self.surface:
+#					for f in self.surface.face:
 #						if i in f[0:3]:
 #							self.linear_nodes_only.append(i)
 #							break
@@ -648,13 +784,13 @@ class Blob:
 
 		if display_flags['vdw_edit_mode'] == 1 and self.id_num == display_flags['selected_index']:
 			glBegin(GL_TRIANGLES)
-			for f in range(self.num_surface_faces):
+			for f in range(self.surf.num_faces):
 
-				n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
-				n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
-				n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+				n1 = self.traj.frame[i].pos[self.surface[f][1]][0:3]
+				n2 = self.traj.frame[i].pos[self.surface[f][2]][0:3]
+				n3 = self.traj.frame[i].pos[self.surface[f][3]][0:3]
 
-				norm1 = self.frames[i].normal_list[self.surface[f][1]]
+				norm1 = self.frames[i].normal_list[self.surface[f][2]]
 				norm2 = self.frames[i].normal_list[self.surface[f][2]]
 				norm3 = self.frames[i].normal_list[self.surface[f][3]]
 
@@ -699,13 +835,13 @@ class Blob:
 
 			max_val = 0
 			min_val = 0
-			for f in self.surface:
+			for f in self.surface.face:
 				relevent_param.append(self.mat.element[f[0]].shear_modulus)
 			
 			max_val = max(relevent_param)
 			min_val = min(relevent_param)
 
-			for j in range(self.num_surface_faces):
+			for j in range(self.surf.num_faces):
 				try:
 					frac = (relevent_param[j] - min_val) / (max_val - min_val)
 				except(ZeroDivisionError):
@@ -718,15 +854,15 @@ class Blob:
 			# Now draw some triangles
 			glBegin(GL_TRIANGLES)
 	
-			for f in self.surface:
+			for f in self.surface.face:
 
-				n1 = self.frames[i].node_list[f[1]][0:3]
-				n2 = self.frames[i].node_list[f[2]][0:3]
-				n3 = self.frames[i].node_list[f[3]][0:3]
+				n1 = self.traj.frame[i].pos[f[1]][0:3]
+				n2 = self.traj.frame[i].pos[f[2]][0:3]
+				n3 = self.traj.frame[i].pos[f[3]][0:3]
 
-				norm1 = self.frames[i].normal_list[f[1]]
-				norm2 = self.frames[i].normal_list[f[2]]
-				norm3 = self.frames[i].normal_list[f[3]]
+				norm1 = self.traj.frame[i].normal[f.n[0]]
+				norm2 = self.traj.frame[i].normal[f.n[1]]
+				norm3 = self.traj.frame[i].normal[f.n[2]]
 
 				findex = self.surface.index(f)
 
@@ -755,9 +891,9 @@ class Blob:
 					f = self.binding_site[j][k]
 					faces_dealt_with.append(f)
 
-					n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
-					n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
-					n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+					n1 = self.traj.frame[i].pos[self.surface[f][1]][0:3]
+					n2 = self.traj.frame[i].pos[self.surface[f][2]][0:3]
+					n3 = self.traj.frame[i].pos[self.surface[f][3]][0:3]
 
 					norm1 = self.frames[i].normal_list[self.surface[f][1]]
 					norm2 = self.frames[i].normal_list[self.surface[f][2]]
@@ -789,15 +925,15 @@ class Blob:
 					glVertex3d(n3[0], n3[1], n3[2])
 			
 			# Now remainder of faces		
-			for f in range(self.num_surface_faces):
+			for f in range(self.surf.num_faces):
 
 				if f in faces_dealt_with:
 					continue
 				else:
 	
-					n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
-					n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
-					n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+					n1 = self.traj.frame[i].pos[self.surface[f][1]][0:3]
+					n2 = self.traj.frame[i].pos[self.surface[f][2]][0:3]
+					n3 = self.traj.frame[i].pos[self.surface[f][3]][0:3]
 
 					norm1 = self.frames[i].normal_list[self.surface[f][1]]
 					norm2 = self.frames[i].normal_list[self.surface[f][2]]
@@ -816,15 +952,15 @@ class Blob:
 
 		if display_flags['show_vdw_only'] == 1:
 			glBegin(GL_TRIANGLES)
-			for f in range(self.num_surface_faces):
+			for f in range(self.surf.num_faces):
 				if self.vdw[f] == -1:
 					continue
 				else:
 					glColor3d(1.0,1.0,0.5)
 
-				n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
-				n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
-				n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+				n1 = self.traj.frame[i].pos[self.surface[f][1]][0:3]
+				n2 = self.traj.frame[i].pos[self.surface[f][2]][0:3]
+				n3 = self.traj.frame[i].pos[self.surface[f][3]][0:3]
 
 				norm1 = self.frames[i].normal_list[self.surface[f][1]]
 				norm2 = self.frames[i].normal_list[self.surface[f][2]]
@@ -849,13 +985,13 @@ class Blob:
 		if display_flags['show_solid'] == 1:
 			glBegin(GL_TRIANGLES)
 			glColor3d(bc[0], bc[1], bc[2])
-			for f in range(self.num_surface_faces):
+			for f in range(self.surf.num_faces):
 				if self.hidden_face[f] == 1:
 					continue
 
-				n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
-				n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
-				n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+				n1 = self.traj.frame[i].pos[self.surface[f][1]][0:3]
+				n2 = self.traj.frame[i].pos[self.surface[f][2]][0:3]
+				n3 = self.traj.frame[i].pos[self.surface[f][3]][0:3]
 				#if self.blob_index == 0:
 				#	print "Frame ", i, " Blob ", self.blob_index, " Conformation ", self.conformation_index
 				#	print n1, n2, n3
@@ -875,10 +1011,10 @@ class Blob:
 			glEnd()
 
 		if display_flags['show_mesh_surf'] == 1:
-			for f in xrange(self.num_surface_faces):
-				n1a = self.frames[i].node_list[self.surface[f][1]]
-				n2a = self.frames[i].node_list[self.surface[f][2]]
-				n3a = self.frames[i].node_list[self.surface[f][3]]
+			for f in xrange(self.surf.num_faces):
+				n1a = self.traj.frame[i].pos[self.surface[f][1]]
+				n2a = self.traj.frame[i].pos[self.surface[f][2]]
+				n3a = self.traj.frame[i].pos[self.surface[f][3]]
 
 				n1 = n1a[0:3]
 				n2 = n2a[0:3]
@@ -910,10 +1046,10 @@ class Blob:
 						i4 = self.topology[el][3]
 	
 						# Get the nodes
-						n1a = self.frames[i].node_list[i1]
-						n2a = self.frames[i].node_list[i2]
-						n3a = self.frames[i].node_list[i3]
-						n4a = self.frames[i].node_list[i4]
+						n1a = self.traj.frame[i].pos[i1]
+						n2a = self.traj.frame[i].pos[i2]
+						n3a = self.traj.frame[i].pos[i3]
+						n4a = self.traj.frame[i].pos[i4]
 						n1 = n1a[0:3]
 						n2 = n2a[0:3]
 						n3 = n3a[0:3]
@@ -958,10 +1094,10 @@ class Blob:
 						i4 = self.topology[el][3]
 	
 						# Get the nodes
-						n1a = self.frames[i].node_list[i1]
-						n2a = self.frames[i].node_list[i2]
-						n3a = self.frames[i].node_list[i3]
-						n4a = self.frames[i].node_list[i4]
+						n1a = self.traj.frame[i].pos[i1]
+						n2a = self.traj.frame[i].pos[i2]
+						n3a = self.traj.frame[i].pos[i3]
+						n4a = self.traj.frame[i].pos[i4]
 						n1 = n1a[0:3]
 						n2 = n2a[0:3]
 						n3 = n3a[0:3]
@@ -1064,10 +1200,10 @@ class Blob:
 							glEnable(GL_LIGHTING)
 
 			else:	
-				for f in xrange(self.num_surface_faces):
-					n1a = self.frames[i].node_list[self.surface[f][1]]
-					n2a = self.frames[i].node_list[self.surface[f][2]]
-					n3a = self.frames[i].node_list[self.surface[f][3]]
+				for f in xrange(self.surf.num_faces):
+					n1a = self.traj.frame[i].pos[self.surface[f][1]]
+					n2a = self.traj.frame[i].pos[self.surface[f][2]]
+					n3a = self.traj.frame[i].pos[self.surface[f][3]]
 
 					n1 = n1a[0:3]
 					n2 = n2a[0:3]
@@ -1094,10 +1230,10 @@ class Blob:
 
 			glBegin(GL_TRIANGLES)
 			glColor3d(bc[0], bc[1], bc[2])
-			for f in xrange(self.num_surface_faces):
-				n1a = self.frames[i].node_list[self.surface[f][1]]
-				n2a = self.frames[i].node_list[self.surface[f][2]]
-				n3a = self.frames[i].node_list[self.surface[f][3]]
+			for f in xrange(self.surf.num_faces):
+				n1a = self.traj.frame[i].pos[self.surface[f][1]]
+				n2a = self.traj.frame[i].pos[self.surface[f][2]]
+				n3a = self.traj.frame[i].pos[self.surface[f][3]]
 
 				n1 = n1a[0:3]
 				n2 = n2a[0:3]
@@ -1124,13 +1260,13 @@ class Blob:
 			glFogf(GL_FOG_DENSITY, 0.02)
 			if display_flags['show_linear_nodes_only'] == 0:
 				for n in xrange(self.num_nodes):
-					nn = (self.frames[i].node_list[n])[0:3]
+					nn = (self.traj.frame[i].pos[n])[0:3]
 					glColor3f(1.0, 1.0, 1.0)
 					glRasterPos3f(nn[0], nn[1], nn[2])
 					glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(n));
 			else:
 				for n in xrange(len(self.linear_nodes_only)):
-					nn = (self.frames[i].node_list[self.linear_nodes_only[n]])[0:3]
+					nn = (self.traj.frame[i].pos[self.linear_nodes_only[n]])[0:3]
 					glColor3f(1.0, 1.0, 1.0)
 					glRasterPos3f(nn[0], nn[1], nn[2])
 					glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.linear_nodes_only[n]));
@@ -1139,7 +1275,7 @@ class Blob:
 
 		if display_flags['show_pinned_nodes'] == 1:
 			for n in self.pinned_nodes:
-				nn = (self.frames[i].node_list[n])[0:3]
+				nn = (self.traj.frame[i].pos[n])[0:3]
 				glPointSize(10.0);
 				glBegin(GL_POINTS)
 				glColor3f(1.0, 0.0, 0.0)
@@ -1149,8 +1285,8 @@ class Blob:
 		if display_flags['show_shortest_edge'] == 1:
 			if self.min_length == None:
 				self.find_shortest_edge(i)
-			n1 = (self.frames[i].node_list[self.shortest_edge_n1])[0:3]
-			n2 = (self.frames[i].node_list[self.shortest_edge_n2])[0:3]
+			n1 = (self.traj.frame[i].pos[self.shortest_edge_n1])[0:3]
+			n2 = (self.traj.frame[i].pos[self.shortest_edge_n2])[0:3]
 			glBegin(GL_LINES)
 			glColor3f(1.0, 0.0, 0.0)
 			glVertex3f(n1[0], n1[1], n1[2])
@@ -1173,10 +1309,10 @@ class Blob:
 					i4 = self.topology[el][3]
 
 					# Get the nodes
-					n1a = self.frames[i].node_list[i1]
-					n2a = self.frames[i].node_list[i2]
-					n3a = self.frames[i].node_list[i3]
-					n4a = self.frames[i].node_list[i4]
+					n1a = self.traj.frame[i].pos[i1]
+					n2a = self.traj.frame[i].pos[i2]
+					n3a = self.traj.frame[i].pos[i3]
+					n4a = self.traj.frame[i].pos[i4]
 					n1 = n1a[0:3]
 					n2 = n2a[0:3]
 					n3 = n3a[0:3]
@@ -1239,10 +1375,10 @@ class Blob:
 		pick_r = 1
 		pick_g = 0
 		pick_b = 0
-		for f in range(self.num_surface_faces):
-			n1a = self.frames[i].node_list[self.surface[f][1]]
-			n2a = self.frames[i].node_list[self.surface[f][2]]
-			n3a = self.frames[i].node_list[self.surface[f][3]]
+		for f in range(self.surf.num_faces):
+			n1a = self.traj.frame[i].pos[self.surface[f][1]]
+			n2a = self.traj.frame[i].pos[self.surface[f][2]]
+			n3a = self.traj.frame[i].pos[self.surface[f][3]]
 
 			n1 = n1a[0:3]
 			n2 = n2a[0:3]
@@ -1263,7 +1399,7 @@ class Blob:
 		glEnd()
 
 	def set_vdw_face(self, face_index, vdw_type):
-		if face_index < 0 or face_index > self.num_surface_faces:
+		if face_index < 0 or face_index > self.surf.num_faces:
 			print "No face picked."
 			return
 
@@ -1273,7 +1409,7 @@ class Blob:
 			self.vdw[face_index] = vdw_type
 
 	def incr_vdw_face(self, face_index):
-		if face_index < 0 or face_index > self.num_surface_faces:
+		if face_index < 0 or face_index > self.surf.num_faces:
 			print "No face picked."
 			return
 
@@ -1283,7 +1419,7 @@ class Blob:
 		print "Set face", face_index, "to", self.vdw[face_index]
 
 	def add_face_to_binding_site(self, face_index):
-		if face_index < 0 or face_index > self.num_surface_faces:
+		if face_index < 0 or face_index > self.surf.num_faces:
 			print "No face picked."
 			return
 		
@@ -1377,7 +1513,7 @@ class Blob:
 		print "Shortest edge has length", self.min_length
 
 	def hide_unhide_face(self, face_index):
-		if face_index < 0 or face_index > self.num_surface_faces:
+		if face_index < 0 or face_index > self.surf.num_faces:
 			print "No face picked."
 			return
 

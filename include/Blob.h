@@ -148,7 +148,7 @@ public:
     void get_centroid(vector3 *com);
 
     void set_rmsd_pos_0();
-
+    void kinetically_set_faces(bool state);
     /**
      * Writes a new node file for the case of an initially translated STATIC blob, so viewer doesn't read straight from node file
      */
@@ -186,6 +186,11 @@ public:
      * Get the centroid of all faces on the blob surface
      */
     void calc_centroids_and_normals_of_all_faces();
+
+    /**
+     * Get the centroid of all faces and elements in the blob
+     */
+    void calc_all_centroids();
 
     /*
      *

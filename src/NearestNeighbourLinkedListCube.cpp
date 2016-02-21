@@ -12,6 +12,13 @@ int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
     for (i = 0; i < num_nodes_in_pool; i++) {
 
         // calculate which cell the face belongs in
+	if (!pool[i].obj->kinetically_active) {
+		continue;
+	}
+
+	// Do we have the correct centroid?? We do now!
+       // pool[i].obj->calc_area_normal_centroid();
+
         int x = (int) floor(pool[i].obj->centroid.x / h);
         int y = (int) floor(pool[i].obj->centroid.y / h);
         int z = (int) floor(pool[i].obj->centroid.z / h);
@@ -43,6 +50,5 @@ int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
             FFEA_ERROR_MESSG("Error when trying to add node %d to nearest neighbour stack at (%d %d %d)\n", i, x, y, z);
         }
     }
-
     return FFEA_OK;
 }

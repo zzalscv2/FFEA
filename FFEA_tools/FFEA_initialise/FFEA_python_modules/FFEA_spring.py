@@ -6,13 +6,13 @@ class FFEA_springs:
 		
 		# Initialise stuff
 		self.reset()
-
+		
 		# Start reading
 		try:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. File " + fname  + " not found. Returning empty FFEA_springs object..."
+			print "Error. Spring file " + fname  + " not found. Returning empty FFEA_springs object..."
 			return
 
 		# Header

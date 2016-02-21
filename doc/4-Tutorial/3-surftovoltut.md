@@ -14,14 +14,14 @@ Where we simply use '5' because our original structure was in angstroms. Coarsen
 
 ![Coasened surface profiles of EMDB ID:EMD-5043. From the top, moving clockwise: original, 1A, 3A, 5A, 8A](emd5043_surfcg_ORIG1358.png "GroEL Coarsened Surface Profiles")
 
-A superficial look hints that the 5 angstrom structure is the best one for the job (almost like I knew the whole time huh...) as it retains all relevent structural detail and hasn't started to become distorted due to the linearisation of it's curvature. However, in general we want to <b> coarsen to the level of the smallest component we are interested in </b>. In the case of GroEL, this may be the central struts, which are becoming slightly distorted in the 8 angstrom structure.
+A superficial look hints that the 5 angstrom structure may be the best one for the job as it retains all relevent structural detail and hasn't started to become distorted due to the linearisation of it's curvature. However, in general we want to <b> coarsen to the level of the smallest component we are interested in </b>. In the case of GroEL, this may be the central struts, which are still ok in the 8 angstrom structure. So, for computational efficiency, let's go for the 8 angstrom structure!
 
 Once we have our structure, it is a simple matter of asking NETGEN to fill the surface with tetrahedra. This is done as follows:
 
   * Open NETGEN
   * Import the surface. Click File->Import Mesh... and select a .surf file
   * Fill the structure with tetrahedra. Select 'Generate Mesh' and wait until it finishes
-  * Save the volume file. Click File->Save Mesh... and save the file as .vol 
+  * Save the volume file. Click File->Save Mesh... and save the file as .vol (we'll call ours emd_5043_8ang.vol)
 
 ![Importing a .surf file using NETGEN](netgenimportprintscreen.png "NETGEN - Importing a Surface")
 <BR>

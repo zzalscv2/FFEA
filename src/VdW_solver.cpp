@@ -64,6 +64,7 @@ int VdW_solver::solve() {
     Face *f_i, *f_j;
 
     total_num_surface_faces = surface_face_lookup->get_pool_size();
+    //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/ 
 #ifdef USE_OPENMP
@@ -73,6 +74,9 @@ int VdW_solver::solve() {
 
         // get the ith face
         l_i = surface_face_lookup->get_from_pool(i);
+        if(!l_i->obj->is_kinetic_active()) {
+		continue;
+	}
         f_i = l_i->obj;
 
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
@@ -86,8 +90,6 @@ int VdW_solver::solve() {
                 if (l_i->index != l_j->index) {
                     f_j = l_j->obj;
                     if (f_i->daddy_blob != f_j->daddy_blob) {
-                        //printf("(%d %d)\n", l_i->index, l_j->index);
-                        //if((l_i->index == 1 && l_j->index == 5) || (l_i->index == 5 && l_j->index == 1))
                         f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
                         f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
                         do_interaction(f_i, f_j);

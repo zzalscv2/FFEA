@@ -13,7 +13,7 @@ class FFEA_binding_sites:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "File " + fname  + " not found.\nCreating empty object...done!"
+			print "Binding site file " + fname  + " not found.\nCreating empty object...done!"
 			self.reset()
 			return
 

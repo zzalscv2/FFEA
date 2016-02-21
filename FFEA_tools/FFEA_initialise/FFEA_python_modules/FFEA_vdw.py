@@ -13,7 +13,7 @@ class FFEA_vdw:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "File " + fname  + " not found.\nReturning empty object."
+			print "VdW file " + fname  + " not found.\nReturning empty object."
 			return
 
 		# Header
