@@ -6,6 +6,7 @@ SimulationParams::SimulationParams() {
 
     // Defaulted (into SI units)
     restart = 0;
+    dt = 1e-14;
     num_steps = 1e11;
     check = 10000;
     kT = 4.11e-21 / mesoDimensions::Energy;
@@ -44,7 +45,6 @@ SimulationParams::SimulationParams() {
     wall_z_2 = WALL_TYPE_PBC;
 
     // Initialised to zero or equivalent for later initialisation
-    dt = 0;
     num_blobs = 0;
     num_conformations = NULL;
     num_states = NULL;
@@ -619,12 +619,14 @@ int SimulationParams::validate() {
 
     if (calc_kinetics == 1) {
 	if(kinetics_update <= 0) {
-		FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
-	} else if (kinetics_update <= check) {
+		//FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
+		cout << "\tDefaulting 'kinetics_update' to " << check << endl;
+		kinetics_update = check;
+	} //else if (kinetics_update <= check) {
 
 		// This could be fixed by changing how the output files are printed. Fix later, busy now!
-		FFEA_CAUTION_MESSG("\t'kinetics_update' < 'check'. A kinetic switch therefore maybe missed i.e. not printed to the output files.\n")
-	}
+		//FFEA_CAUTION_MESSG("\t'kinetics_update' < 'check'. A kinetic switch therefore maybe missed i.e. not printed to the output files.\n")
+	//}
 
 	// num_conformations[i] can be > num_states[i], so long as none of the states reference an out of bounds conformation
 
@@ -736,16 +738,26 @@ void SimulationParams::write_to_file(FILE *fout) {
 	fprintf(fout, "max_iterations_cg = %d\n", max_iterations_cg);
     	fprintf(fout, "epsilon2 = %e\n", epsilon2);
 	fprintf(fout, "num_blobs = %d\n", num_blobs);
-	fprintf(fout, "num_conformations =");
+	fprintf(fout, "num_conformations = (");
     	for (int i = 0; i < num_blobs; ++i) {
-        	fprintf(fout, " %d", num_conformations[i]);
+        	fprintf(fout, "%d", num_conformations[i]);
+		if(i == num_blobs - 1) {
+			fprintf(fout, ")");
+		} else {
+			fprintf(fout, ",");
+		}
     	}
 	fprintf(fout, "\n");
 
 	if (calc_kinetics == 1) {
-		fprintf(fout, "num_states =");
+		fprintf(fout, "num_states = (");
 		for (int i = 0; i < num_blobs; ++i) {
-			fprintf(fout, " %d", num_states[i]);
+			fprintf(fout, "%d", num_states[i]);
+			if(i == num_blobs - 1) {
+				fprintf(fout, ")");
+			} else {
+				fprintf(fout, ",");
+			}
 		}
 		fprintf(fout, "\n");
 	}

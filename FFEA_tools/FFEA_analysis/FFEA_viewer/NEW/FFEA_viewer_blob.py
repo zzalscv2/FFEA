@@ -8,18 +8,24 @@ import FFEA_trajectory, FFEA_blob
 class FFEA_viewer_blob(FFEA_blob.FFEA_blob):
 
 	def set_frame_from_nodes(self):
-		self.traj = FFEA_trajectory.FFEA_traj_blob(self.node.num_nodes)
+		self.add_empty_traj()
 		self.traj.set_frame_from_nodes(self.node)
 
 	def add_empty_frame(self):
-		self.traj = FFEA_trajectory.FFEA_traj_blob(self.node.num_nodes)
+		self.add_empty_traj()
 		self.traj.add_empty_frame()
 
-	def get_dimensions(self):
+	def add_empty_traj(self):
+		self.traj = FFEA_trajectory.FFEA_traj_blob(self.node.num_nodes)
+
+	def add_frame(self, frame):
+		self.traj
+
+	def get_dimensions(self, traj):
 
 		dims = [[float("inf"), -1* float("inf")] for i in range(3)]
 
-		for n in self.traj.frame[0].pos:
+		for n in traj.frame[0].pos:
 			for i in range(3):
 				if n[i] < dims[i][0]:
 					dims[i][0] = n[i]
@@ -27,15 +33,15 @@ class FFEA_viewer_blob(FFEA_blob.FFEA_blob):
 					dims[i][1] = n[i]
 		return dims
 
-	def draw_frame(self, i, display_flags):
+	def draw_frame(self, traj, i, display_flags):
 
 		if self.motion_state == "STATIC":
 			i = 0
 
-		if self.traj.get_num_frames() == 0:
+		if traj.get_num_frames() == 0:
 			return
 
-		if self.traj.frame[i] == None:
+		if traj.frame[i] == None:
 			return
 
 		if self.hide_blob == True:
@@ -43,8 +49,8 @@ class FFEA_viewer_blob(FFEA_blob.FFEA_blob):
 
 		if i < 0:
 			i == 0
-		elif i >= self.traj.get_num_frames():
-			i = self.traj.get_num_frames() - 1
+		elif i >= traj.get_num_frames():
+			i = traj.get_num_frames() - 1
 
 		#if display_flags['hide_frozen'] == 1:
 		#	if self.get_frame_state(i) == "FROZEN":
@@ -62,13 +68,13 @@ class FFEA_viewer_blob(FFEA_blob.FFEA_blob):
 			glBegin(GL_TRIANGLES)
 			glColor3d(bc[0], bc[1], bc[2])
 			for f in self.surf.face:
-				n1 = self.traj.frame[i].pos[f.n[0]]
-				n2 = self.traj.frame[i].pos[f.n[1]]
-				n3 = self.traj.frame[i].pos[f.n[2]]
+				n1 = traj.frame[i].pos[f.n[0]]
+				n2 = traj.frame[i].pos[f.n[1]]
+				n3 = traj.frame[i].pos[f.n[2]]
 
-				norm1 = self.traj.frame[i].normal[f.n[0]]
-				norm2 = self.traj.frame[i].normal[f.n[1]]
-				norm3 = self.traj.frame[i].normal[f.n[2]]
+				norm1 = traj.frame[i].normal[f.n[0]]
+				norm2 = traj.frame[i].normal[f.n[1]]
+				norm3 = traj.frame[i].normal[f.n[2]]
 
 				glNormal3d(norm1[0], norm1[1], norm1[2])
 				glVertex3d(n1[0], n1[1], n1[2])
@@ -80,22 +86,22 @@ class FFEA_viewer_blob(FFEA_blob.FFEA_blob):
 			glEnd()
 
 	def draw_pick_frame(self, i):
-		if self.traj.get_num_frames() == 0:
+		if traj.get_num_frames() == 0:
 			return
 
 		if i < 0:
 			i == 0
-		elif i >= self.traj.get_num_frames():
-			i = self.traj.get_num_frames() - 1
+		elif i >= traj.get_num_frames():
+			i = traj.get_num_frames() - 1
 
 		glBegin(GL_TRIANGLES)
 		pick_r = 1
 		pick_g = 0
 		pick_b = 0
 		for f in range(self.surf.num_faces):
-			n1 = self.traj.frame[i].pos[self.surf[f].n[0]]
-			n2 = self.traj.frame[i].pos[self.surf[f].n[1]]
-			n3 = self.traj.frame[i].pos[self.surf[f].n[2]]
+			n1 = traj.frame[i].pos[self.surf[f].n[0]]
+			n2 = traj.frame[i].pos[self.surf[f].n[1]]
+			n3 = traj.frame[i].pos[self.surf[f].n[2]]
 
 
 			glColor3f(pick_r/255.0, pick_g/255.0, pick_b/255.0)
@@ -130,7 +136,6 @@ class FFEA_viewer_blob(FFEA_blob.FFEA_blob):
 		self.stokes = None
 		self.pin = None
 		self.bsites = None
-		self.traj = None
 
 		# Control selection variables
 		self.hide_blob = False

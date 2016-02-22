@@ -734,7 +734,7 @@ void Blob::move(scalar dx, scalar dy, scalar dz) {
 		surface[i].n[3]->pos.x += dx;
 		surface[i].n[3]->pos.y += dy;
 		surface[i].n[3]->pos.z += dz;
-		fprintf(stderr, "Surface %d = %f %f %f\n", i, dx, dy, dz);
+		//fprintf(stderr, "Surface %d = %f %f %f\n", i, dx, dy, dz);
 	}
     }
 }

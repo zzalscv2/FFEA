@@ -16,6 +16,7 @@ import shutil
 import numpy as np
 
 import FFEA_script, FFEA_viewer_blob, FFEA_spring
+import FFEA_trajectory
 
 class FFEA_viewer_display_window:
 
@@ -205,11 +206,11 @@ class FFEA_viewer_display_window:
 		#
 
 		# Translate, rotate and rescale the initial node files, to put them on par with the trajectories. Also get the smallest scale in the system
-		global_scale = float("inf")
+		self.global_scale = float("inf")
 		for b in self.blob:
 			bi = self.blob.index(b)
-			if script.blob[bi].scale < global_scale:
-				global_scale = script.blob[bi].scale
+			if script.blob[bi].scale < self.global_scale:
+				self.global_scale = script.blob[bi].scale
 
 			for c in b:
 				c.set_centroid(script.blob[bi].centroid)
@@ -217,12 +218,12 @@ class FFEA_viewer_display_window:
 
 		for b in self.blob:
 			for c in b:
-				c.node.pos *= script.blob[bi].scale / global_scale
+				c.node.pos *= script.blob[bi].scale / self.global_scale
 
 		# Rescale box
-		self.box_x *= global_scale
-		self.box_y *= global_scale
-		self.box_z *= global_scale
+		self.box_x *= self.global_scale
+		self.box_y *= self.global_scale
+		self.box_z *= self.global_scale
 
 
 		# Now, move initial structure into simulation into box, if necessary
@@ -247,31 +248,50 @@ class FFEA_viewer_display_window:
 
 		# If nodes are STATIC, use this as a frame. If trajectory doesn't exist, use this as a frame
 		#if self.pms.trajectory_out_fname == None or not os.path.exists(self.pms.trajectory_out_fname):
-		if not self.pms.trajectory_out_fname == None:
-			for b in self.blob:
-				for c in b:
-					if b.index(c) == 0:
-						c.set_frame_from_nodes()
-					else:
-						c.add_empty_frame()
 
+		# We need a traj object! Either build it from the nodes of build it from a trajectory. Load frames in an external thread if trajectory exists
+		self.traj = FFEA_trajectory.FFEA_trajectory(self.pms.trajectory_out_fname, load_all = 0)
+
+		# If the fname was 'None', traj would now be empty. Else, it would have loaded the header info and be ready to read frames. Let's deal with both situations
+
+		# Build from nodes if no traj
+		if self.pms.trajectory_out_fname == None:
+			self.traj.set_header(self.pms.num_blobs, self.pms.num_conformations, [[c.node.num_nodes for c in b] for b in self.blob])
+			self.traj.set_single_frame([b[0].node for b in self.blob], surf = [b[0].surf for b in self.blob])
+
+		# Else, load some trajectory (static blobs taken care of in this function too)
 		else:
-			for b in self.blob:
-				for c in b:
-					if b.index(c) == 0 and c.motion_state == "STATIC":
-						c.set_frame_from_nodes()
+			#self.load_trajectory_thread = threading.Thread(target=self.load_trajectory)
+			#self.load_trajectory_thread.start()
+			self.load_trajectory()
+
+		#if self.pms.trajectory_out_fname == None:
+		#	for b in self.blob:
+		#		for c in b:
+		#			if b.index(c) == 0:
+		#				c.set_frame_from_nodes()
+		#			else:
+		#				c.add_empty_frame()
+
+		#else:
+		#	for b in self.blob:
+		#		for c in b:
+		#			if b.index(c) == 0 and c.motion_state == "STATIC":
+		#				c.set_frame_from_nodes()
+		#			else:
+		#				c.add_empty_traj()
 
 		# Now load trajectory
-		#if trajectory_out_fname != None:
-		#	self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname,))
+		#if self.pms.trajectory_out_fname != None:
+		#	self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(self.pms.trajectory_out_fname,))
 		#	self.load_trajectory_thread.start()
 
 		# Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists
-		#while(self.num_frames < 1):
-		#	if self.pms.trajectory_out_fname == None:
-		#		break
-		#	else:
-		#		pass
+		while(self.traj.num_frames < 1):
+			if self.pms.trajectory_out_fname == None:
+				break
+			else:
+				pass
 
 		# Reset initial camera (dependent upon structure size)
 		dims = self.get_system_dimensions()
@@ -285,8 +305,43 @@ class FFEA_viewer_display_window:
 			self.z = self.dimensions[1] / (2 * np.tan(np.pi / 6.0))
 
 
-	def load_trajectory(self, trajectory_out_fname,):
+	def load_trajectory(self):
 
+		# Firstly, get the header
+		self.traj = FFEA_trajectory.FFEA_trajectory(self.pms.trajectory_out_fname, load_all = 0)
+
+		# It's ready to load frames! But, we need a single static frame for those blobs that need it. Let's do that first
+		for i in range(self.pms.num_blobs):
+			if self.blob[i][0].motion_state == "STATIC":
+				self.traj.blob[i][0].set_frame_from_nodes(self.blob[i][0].node)
+
+		# Build surface array
+		sarray = [[self.blob[i][j].surf for j in range(self.pms.num_conformations[i])] for i in range(self.pms.num_blobs)]
+
+		while self.traj.load_frame(surf = sarray) != 1:
+			self.traj.scale_last_frame(self.global_scale)
+			pass
+
+		'''
+		# If a traj exists, only static blobs will have been loaded. Therefore, load all blobs and make inactive confs 'None'
+		# Load by getting a trajectory object, then copying across frames to the blobs here
+		
+		# Get header only!
+		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 1)
+		
+		# Build surface array
+		sarray = [[self.blob[i][j].surf for j in range(self.pms.num_conformations[i])] for i in range(self.pms.num_blobs)]
+
+		#nf = 0
+		#while traj.load_frame(surf = sarray) != 1:
+		#	nf += 1
+		#	print nf
+		#	for i in range(self.pms.num_blobs):
+		#		for j in range(self.pms.num_conformations[i]):
+		#			if self.blob[i][j].motion_state == "DYNAMIC":
+		#				self.blob[i][j].traj.add_frame(traj.blob[i][j].frame[-1])
+		
+						
 		# Firstly, delete the frames loaded from node files originally
 		for blob in self.blob:
 			if blob[0].get_state() == "DYNAMIC":
@@ -468,13 +523,15 @@ class FFEA_viewer_display_window:
 				break
 
 		traj.close()
+		'''
 
 	def get_system_dimensions(self):
 
 		dims = [[float("inf"), -1* float("inf")] for i in range(3)]
 
 		for b in self.blob:
-			bdims = b[0].get_dimensions()
+			bi = self.blob.index(b)
+			bdims = b[0].get_dimensions(self.traj.blob[bi][0])
 
 			for i in range(3):
 				if bdims[i][0] < dims[i][0]:
@@ -607,14 +664,20 @@ class FFEA_viewer_display_window:
  
 	def draw_all(self):
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-
 		self.draw_axes()
 
 		if len(self.blob) > 0:
+			frame_exists = False
 			for i in range(self.pms.num_conformations[self.selected_blob]):
-				cent = self.blob[self.selected_blob][i].traj.frame[self.frame].calc_centroid()
-				if cent[0] != None:
+				try:
+					cent = self.traj.blob[self.selected_blob][i].frame[self.frame].calc_centroid()
+					frame_exists = True
 					break
+				except(AttributeError):
+					continue
+
+			if not frame_exists:
+				return
 
 			if self.projection == "orthographic":
 				self.set_orthographic_projection();
@@ -650,7 +713,7 @@ class FFEA_viewer_display_window:
 				# Now draw if not hidden
 				if hidden == False:
 					for j in range(self.pms.num_conformations[i]):
-						self.blob[i][j].draw_frame(self.frame, self.display_flags)
+						self.blob[i][j].draw_frame(self.traj.blob[i][j], self.frame, self.display_flags)
 
 						
 		else:
@@ -665,7 +728,7 @@ class FFEA_viewer_display_window:
 		glRenderMode(GL_RENDER)
 		if len(self.blob) > 0:
 			for i in range(self.pms.num_conformations[self.selected_blob]):
-				cent = self.blob[self.selected_blob][i].traj.frame[self.frame].calc_centroid()
+				cent = self.traj.blob[self.selected_blob][i].frame[self.frame].calc_centroid()
 				if cent[0] != None:
 					break
 			
