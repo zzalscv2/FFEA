@@ -30,7 +30,7 @@ class FFEA_script:
 		fin.close()
 
 		try:
-			self.params = self.read_params_from_file(fname)
+			self.params = self.read_params_from_script(fname)
 		except:
 			print "Error. Couldn't load <params>...</params>"
 			self.reset()
@@ -57,7 +57,7 @@ class FFEA_script:
 		self.blob = []
 		self.spring = ""
 
-	def read_params_from_file(self, fname):
+	def read_params_from_script(self, fname):
 
 		# Get scriptdir
 		scriptdir = os.path.dirname(fname)
@@ -86,107 +86,60 @@ class FFEA_script:
 				line = param.strip().replace("<", "").replace(">", "")
 				lvalue = line.split("=")[0].rstrip()
 				rvalue = line.split("=")[1].lstrip()
+				
 			except:
 				print "Error. Could not parse param '" + param + "'"
-				return None
+				return
 
-			try:
-				if lvalue == "restart":
-					params.restart = int(rvalue)
-				elif lvalue == "dt":
-					params.dt = float(rvalue)
-				elif lvalue == "rng_seed":
-					continue
-				elif lvalue == "kT":
-					params.kT = float(rvalue)
-				elif lvalue == "check":
-					params.check = int(rvalue)
-				elif lvalue == "num_steps":
-					params.num_steps = int(float(rvalue))
-				elif lvalue == "trajectory_out_fname":
-					params.trajectory_out_fname = get_path_from_script(rvalue, scriptdir)
-				elif lvalue == "measurement_out_fname":
-					params.measurement_out_basefname = get_path_from_script(rvalue, scriptdir)
-				elif lvalue == "vdw_forcefield_params":
-					params.vdw_forcefield_params = get_path_from_script(rvalue, scriptdir)
-				elif lvalue == "kinetics_out_fname":
-					params.kinetics_out_fname = get_path_from_script(rvalue, scriptdir)
-				elif lvalue == "binding_site_params":
-					params.binding_site_params = get_path_from_script(rvalue, scriptdir)
-				elif lvalue == "epsilon":
-					params.epsilon = float(rvalue)
-				elif lvalue == "max_iterations_cg":
-					params.max_iterations_cg = int(rvalue)
-				elif lvalue == "kappa":
-					params.kappa = float(rvalue)
-				elif lvalue == "epsilon_0":
-					params.epsilon_0 = float(rvalue)
-				elif lvalue == "dielec_ext":
-					params.dielec_ext = float(rvalue)
-				elif lvalue == "calc_stokes":
-					params.calc_stokes = int(rvalue)
-				elif lvalue == "calc_kinetics":
-					params.calc_kinetics = int(rvalue)
-				elif lvalue == "kinetics_update":
-					params.kinetics_update = int(rvalue)
-				elif lvalue == "stokes_visc":
-					params.stokes_visc = float(rvalue)
-				elif lvalue == "calc_vdw":
-					params.calc_vdw = int(rvalue)
-				elif lvalue == "vdw_type":
-					params.vdw_type = rvalue
-				elif lvalue == "vdw_steric_factor":
-					params.vdw_steric_factor = float(rvalue)
-				elif lvalue == "calc_noise":
-					params.calc_noise = int(rvalue)
-				elif lvalue == "calc_es":
-					params.calc_es = int(rvalue)
-				elif lvalue == "es_update":
-					params.es_update = int(rvalue)
-				elif lvalue == "es_N_x":
-					params.es_N_x = int(rvalue)
-				elif lvalue == "es_N_y":
-					params.es_N_y = int(rvalue)
-				elif lvalue == "es_N_z":
-					params.es_N_z = int(rvalue)
-				elif lvalue == "move_into_box":
-					params.move_into_box = int(rvalue)
-				elif lvalue == "sticky_wall_xz":
-					params.sticky_wall_xz = int(rvalue)
-				elif lvalue == "wall_x_1":
-					params.wall_x_1 = rvalue
-				elif lvalue == "wall_x_2":
-					params.wall_x_2 = rvalue
-				elif lvalue == "wall_y_1":
-					params.wall_y_1 = rvalue
-				elif lvalue == "wall_y_2":
-					params.wall_y_2 = rvalue
-				elif lvalue == "wall_z_1":
-					params.wall_z_1 = rvalue
-				elif lvalue == "wall_z_2":
-					params.wall_z_2 = rvalue
-				elif lvalue == "es_h":
-					params.es_h = int(rvalue)
-				elif lvalue == "num_blobs":
-					params.num_blobs = int(rvalue)
-				elif lvalue == "num_conformations":
-					params.num_conformations = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
-				elif lvalue == "num_states":
-					params.num_states = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
-				else:
-					print "Unrecognised parameter '" + param + "'. Ignoring..."
-					continue
-
-			except(IndexError, ValueError):
-				print "Error. Couldn't parse parameter '" + param + "'"
-				return None
-
+			params.assign_param(lvalue, rvalue, scriptdir = scriptdir)
+		
 		# Sort measurement names
 		base, ext = os.path.splitext(params.measurement_out_basefname)
 		for i in range(params.num_blobs):
 			params.measurement_out_fname.append(base + "_blob" + str(i) + ext)
 		params.measurement_out_fname.append(base + "_world" + ext)
+
+		# Now, if params have not been correctly initialised, use the measurement world file to get them
+		#if not params.completed():
+		if True:
+			try:
+				fin = open(params.measurement_out_fname[-1], "r")
+
+			except(IOError):
+				print "Error. File " + fname  + " not found."
+				return
+			
+			
+			line = fin.readline().strip()
+			while line != "Parameters:":
+				if line == "":
+					line = fin.readline().strip()
+					continue
+				elif line.split()[0].strip() == "#":
+					print "Old measurement file. Parameters not available here."
+					return
+				
+				else:
+					line = fin.readline().strip()
+
+			line = fin.readline().strip()
+			while line != "":
+
+				try:
+					line = param.strip().replace("<", "").replace(">", "")
+					lvalue = line.split("=")[0].rstrip()
+					rvalue = line.split("=")[1].lstrip()
+				except:
+					print "Error. Could not parse param '" + param + "'"
+					return
+
+				params.assign_param(lvalue, rvalue, scriptdir = scriptdir)
+				line = fin.readline().strip()
+
+			fin.close()
+			
 		return params
+
 
 	def read_blob_from_file(self, fname, index, num_conformations):
 
@@ -447,6 +400,97 @@ class FFEA_script_params():
 		self.num_conformations = []
 		self.num_states = []
 
+	def assign_param(self, lvalue, rvalue, scriptdir = "."):
+
+		if lvalue == "restart":
+			self.restart = int(rvalue)
+		elif lvalue == "dt":
+			self.dt = float(rvalue)
+		elif lvalue == "rng_seed":
+			pass
+		elif lvalue == "kT":
+			self.kT = float(rvalue)
+		elif lvalue == "check":
+			self.check = int(rvalue)
+		elif lvalue == "num_steps":
+			self.num_steps = int(float(rvalue))
+		elif lvalue == "trajectory_out_fname":
+			self.trajectory_out_fname = get_path_from_script(rvalue, scriptdir)
+		elif lvalue == "measurement_out_fname":
+			self.measurement_out_basefname = get_path_from_script(rvalue, scriptdir)
+		elif lvalue == "vdw_forcefield_params":
+			self.vdw_forcefield_params = get_path_from_script(rvalue, scriptdir)
+		elif lvalue == "kinetics_out_fname":
+			self.kinetics_out_fname = get_path_from_script(rvalue, scriptdir)
+		elif lvalue == "binding_site_params":
+			self.binding_site_params = get_path_from_script(rvalue, scriptdir)
+		elif lvalue == "epsilon":
+			self.epsilon = float(rvalue)
+		elif lvalue == "max_iterations_cg":
+			self.max_iterations_cg = int(rvalue)
+		elif lvalue == "kappa":
+			self.kappa = float(rvalue)
+		elif lvalue == "epsilon_0":
+			self.epsilon_0 = float(rvalue)
+		elif lvalue == "dielec_ext":
+			self.dielec_ext = float(rvalue)
+		elif lvalue == "calc_stokes":
+			self.calc_stokes = int(rvalue)
+		elif lvalue == "calc_kinetics":
+			self.calc_kinetics = int(rvalue)
+		elif lvalue == "kinetics_update":
+			self.kinetics_update = int(rvalue)
+		elif lvalue == "stokes_visc":
+			self.stokes_visc = float(rvalue)
+		elif lvalue == "calc_vdw":
+			self.calc_vdw = int(rvalue)
+		elif lvalue == "vdw_type":
+			self.vdw_type = rvalue
+		elif lvalue == "vdw_steric_factor":
+			self.vdw_steric_factor = float(rvalue)
+		elif lvalue == "calc_noise":
+			self.calc_noise = int(rvalue)
+		elif lvalue == "calc_es":
+			self.calc_es = int(rvalue)
+		elif lvalue == "es_update":
+			self.es_update = int(rvalue)
+		elif lvalue == "es_N_x":
+			self.es_N_x = int(rvalue)
+		elif lvalue == "es_N_y":
+			self.es_N_y = int(rvalue)
+		elif lvalue == "es_N_z":
+			self.es_N_z = int(rvalue)
+		elif lvalue == "move_into_box":
+			self.move_into_box = int(rvalue)
+		elif lvalue == "sticky_wall_xz":
+			self.sticky_wall_xz = int(rvalue)
+		elif lvalue == "wall_x_1":
+			self.wall_x_1 = rvalue
+		elif lvalue == "wall_x_2":
+			self.wall_x_2 = rvalue
+		elif lvalue == "wall_y_1":
+			self.wall_y_1 = rvalue
+		elif lvalue == "wall_y_2":
+			self.wall_y_2 = rvalue
+		elif lvalue == "wall_z_1":
+			self.wall_z_1 = rvalue
+		elif lvalue == "wall_z_2":
+			self.wall_z_2 = rvalue
+		elif lvalue == "es_h":
+			self.es_h = int(rvalue)
+		elif lvalue == "num_blobs":
+			self.num_blobs = int(rvalue)
+		elif lvalue == "num_conformations":
+			self.num_conformations = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
+		elif lvalue == "num_states":
+			self.num_states = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
+		else:
+			print "Unrecognised parameter '" + param + "'. Ignoring..."
+
+	# This function tests whether or not there are enough params to form an ffea system
+	#def completed(self):
+		
+		
 	def write_to_file(self, fout, fname):
 		
 		num_conformations_string = ""

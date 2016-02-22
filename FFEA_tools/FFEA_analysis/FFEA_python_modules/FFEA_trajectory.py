@@ -13,6 +13,9 @@ class FFEA_trajectory:
 		self.reset()
 		np.seterr(all='raise')
 		self.fname = fname
+		if self.fname == None:
+			return
+
 		self.num_frames_to_read = num_frames_to_read
 		self.frame_rate = frame_rate
 		
@@ -25,6 +28,7 @@ class FFEA_trajectory:
 
 		if load_all == 1:
 			while self.num_frames < num_frames_to_read:
+				print self.num_frames
 				if self.load_frame() == 1:
 					break
 
@@ -107,6 +111,31 @@ class FFEA_trajectory:
 			self.traj.close()
 			return
 
+	def set_header(self, num_blobs, num_conformations, num_nodes):
+		self.num_blobs = num_blobs
+		self.num_conformations = num_conformations
+		self.num_nodes = num_nodes
+		self.blob = [[FFEA_traj_blob(self.num_nodes[i][j]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
+
+	def set_single_frame(self, node, surf = None):
+
+		for i in range(self.num_blobs):
+			self.blob[i][0].num_nodes = node[i].num_nodes
+			self.blob[i][0].frame.append(FFEA_traj_blob_frame(node[i].num_nodes))
+			self.blob[i][0].frame[-1].pos = node[i].pos
+
+			if surf != None:
+				self.blob[i][0].frame[-1].calc_normals(surf[i])
+
+			for j in range(1,self.num_conformations[i]):
+				self.blob[i][j].frame.append(None)
+
+	def scale_last_frame(self, scale):
+		for b in self.blob:
+			for c in b:
+				if c.frame[-1] != None:
+					c.frame[-1].pos *= scale
+
 	def load_frame(self, surf = None):
 
 		# Set some parameters
@@ -117,11 +146,11 @@ class FFEA_trajectory:
 
 		# Begin frame
 		if(self.num_frames_read + self.num_frames_skipped >= self.num_frames_to_read):
-			print("Trajectory object only allowed to read %d frames. For more, first increase 'num_frames_to_read'." % (self.num_frames_to_read))
-			return 1
+			#print("Trajectory object only allowed to read %d frames. For more, first increase 'num_frames_to_read'." % (self.num_frames_to_read))
+			#return 1
+			pass
 
 		else:
-
 			# Check if we are to read this frame or skip it
 			if (self.num_frames_skipped + self.num_frames_read) % self.frame_rate != 0:
 				num_asterisks = 0
@@ -238,10 +267,19 @@ class FFEA_trajectory:
 
 			# Average normals at nodes, (if necessary)
 			if (surf != None):
+
+				# Check surf objects are compatible
+				for i in range(self.num_blobs):
+					if len(surf[i]) != self.num_conformations[i]:
+						print "Cannot calculate normals, wrong surface arrays provided..."
+						return 1
+									
 				for b in self.blob:
+					bi = self.blob.index(b)
 					for c in b:
-						if c.frame[-1] != None:
-							c.frame[-1].calc_normals(surf)
+						ci = b.index(c)
+						if c.motion_state == "DYNAMIC" and c.frame[-1] != None:
+							c.frame[-1].calc_normals(surf[bi][ci])
 
 			self.num_frames_read += 1
 			self.num_frames += 1
@@ -456,6 +494,9 @@ class FFEA_traj_blob:
 	def add_empty_frame(self):
 		self.num_nodes = 0;
 		self.frame.append == None
+	
+	def add_frame(self, f):
+		self.frame.append(f)
 		
 	def set_frame_from_nodes(self, node):
 		self.num_nodes = node.num_nodes
