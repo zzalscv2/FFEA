@@ -488,6 +488,11 @@ class FFEA_traj_blob:
 		self.num_subblobs = 0
 		self.motion_state = "DYNAMIC"
 
+	def reset():
+		self.frame = []
+		self.subblob = []
+		self.num_subblobs = 0
+		
 	def get_num_frames(self):
 		return len(self.frame)
 

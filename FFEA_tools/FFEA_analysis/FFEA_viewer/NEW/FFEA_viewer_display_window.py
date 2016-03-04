@@ -254,37 +254,18 @@ class FFEA_viewer_display_window:
 
 		# If the fname was 'None', traj would now be empty. Else, it would have loaded the header info and be ready to read frames. Let's deal with both situations
 
-		# Build from nodes if no traj
+		# If no traj, set the data manually
 		if self.pms.trajectory_out_fname == None:
 			self.traj.set_header(self.pms.num_blobs, self.pms.num_conformations, [[c.node.num_nodes for c in b] for b in self.blob])
-			self.traj.set_single_frame([b[0].node for b in self.blob], surf = [b[0].surf for b in self.blob])
-
+		
+		# Load a single frame for all blobs
+		self.traj.set_single_frame([b[0].node for b in self.blob], surf = [b[0].surf for b in self.blob])
+		
 		# Else, load some trajectory (static blobs taken care of in this function too)
-		else:
-			#self.load_trajectory_thread = threading.Thread(target=self.load_trajectory)
-			#self.load_trajectory_thread.start()
-			self.load_trajectory()
-
+		#self.load_trajectory_thread = threading.Thread(target=self.load_trajectory)
+		#self.load_trajectory_thread.start()
 		#if self.pms.trajectory_out_fname == None:
-		#	for b in self.blob:
-		#		for c in b:
-		#			if b.index(c) == 0:
-		#				c.set_frame_from_nodes()
-		#			else:
-		#				c.add_empty_frame()
-
-		#else:
-		#	for b in self.blob:
-		#		for c in b:
-		#			if b.index(c) == 0 and c.motion_state == "STATIC":
-		#				c.set_frame_from_nodes()
-		#			else:
-		#				c.add_empty_traj()
-
-		# Now load trajectory
-		#if self.pms.trajectory_out_fname != None:
-		#	self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(self.pms.trajectory_out_fname,))
-		#	self.load_trajectory_thread.start()
+		#	self.load_trajectory()
 
 		# Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists
 		while(self.traj.num_frames < 1):
@@ -307,20 +288,17 @@ class FFEA_viewer_display_window:
 
 	def load_trajectory(self):
 
-		# Firstly, get the header
-		self.traj = FFEA_trajectory.FFEA_trajectory(self.pms.trajectory_out_fname, load_all = 0)
-
-		# It's ready to load frames! But, we need a single static frame for those blobs that need it. Let's do that first
+		# Traj is already open and has a single frame loaded! Clear all non static blobs
 		for i in range(self.pms.num_blobs):
-			if self.blob[i][0].motion_state == "STATIC":
-				self.traj.blob[i][0].set_frame_from_nodes(self.blob[i][0].node)
+			if self.blob[i][0].motion_state != "STATIC":
+				self.traj.blob[i][0].reset()
 
 		# Build surface array
 		sarray = [[self.blob[i][j].surf for j in range(self.pms.num_conformations[i])] for i in range(self.pms.num_blobs)]
 
+		# Load frames until there are none left!
 		while self.traj.load_frame(surf = sarray) != 1:
 			self.traj.scale_last_frame(self.global_scale)
-			pass
 
 		'''
 		# If a traj exists, only static blobs will have been loaded. Therefore, load all blobs and make inactive confs 'None'
