@@ -51,8 +51,10 @@ for i in range(1, len(sys.argv), 2):
 		break
 
 
-root = Tk()
-root.geometry("650x600+801+30")
-root.title("FFEA Viewer - Control")
-control_window = FFEA_viewer_control_window.FFEA_viewer_control_window(root, file_to_load, energy_thresh=energy_thresh)
-root.mainloop()
+if __name__ == "__main__":
+	root = Tk()
+	root.geometry("650x600+801+30")
+	root.title("FFEA Viewer - Control")
+	control_window = FFEA_viewer_control_window.FFEA_viewer_control_window(root, energy_thresh=energy_thresh)
+	control_window.load_ffea(file_to_load)
+	root.mainloop()

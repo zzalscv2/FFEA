@@ -15,7 +15,7 @@ import FFEA_viewer_display_window
 
 class FFEA_viewer_control_window:
 
-	def __init__(self, root, file_to_load, energy_thresh=1.0e6):
+	def __init__(self, root, energy_thresh=1.0e6):
 		
 		self.cwd = os.getcwd()
 		self.energy_threshold = energy_thresh
@@ -200,8 +200,8 @@ class FFEA_viewer_control_window:
 		self.master.after(100, self.get_updates_from_display())
 
 		# If a file name was given, open it
-		if file_to_load != None:
-			self.load_ffea(file_to_load)
+		#if file_to_load != None:
+		#	self.load_ffea(file_to_load)
 		
 	def hide_blob(self):
 		if self.show_hide.get() == 1:
@@ -304,6 +304,9 @@ class FFEA_viewer_control_window:
 			self.reset_all()
 
 		# Check if given file exists and set new wd if it does
+		if ffea_fname == None:
+			return
+			
 		if os.path.isfile(ffea_fname) == False:
 			print "No such file:", ffea_fname
 			return
@@ -312,7 +315,8 @@ class FFEA_viewer_control_window:
 
 		# Launch the display window, with a pipe set up so the two processes can "speak" to each other
 		self.speak_to_display, speak_to_control = Pipe()
-		self.display_window_process = Process(target=self.launch_display_window, args=(speak_to_control, ffea_fname))
+		#self.display_window_process = Process(target=self.launch_display_window, args=(speak_to_control, ffea_fname))
+		self.display_window_process = Process(target=launch_display_window, args=(speak_to_control, ffea_fname, self.energy_threshold))
 		self.display_window_process.start()
 		self.display_window_exists = True
 
@@ -480,3 +484,6 @@ class FFEA_viewer_control_window:
 		self.edit_vdw.set(0)
 		self.edit_binding_sites.set(0)
 		self.speak_to_display.close()
+		
+def launch_display_window(speak_to_control, ffea_fname, energy_threshold):
+	FFEA_viewer_display_window.FFEA_viewer_display_window(speak_to_control, ffea_fname, energy_thresh=energy_threshold)
