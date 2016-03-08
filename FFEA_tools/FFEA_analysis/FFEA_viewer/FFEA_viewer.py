@@ -55,9 +55,9 @@ for i in range(1, len(sys.argv), 2):
 		print "Unrecognised flag '" + sys.argv[i] + "'\n"
 		break
 
-
-root = Tk()
-root.geometry("650x600+801+30")
-root.title("FFEA Viewer - Control")
-control_window = FFEA_viewer_control_window.FFEA_viewer_control_window(root, file_to_load, num_frames_to_read, energy_thresh=energy_thresh)
-root.mainloop()
+if __name__ == "__main__":
+	root = Tk()
+	root.geometry("650x600+801+30")
+	root.title("FFEA Viewer - Control")
+	control_window = FFEA_viewer_control_window.FFEA_viewer_control_window(root, file_to_load, num_frames_to_read, energy_thresh=energy_thresh)
+	root.mainloop()
