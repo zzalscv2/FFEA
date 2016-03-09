@@ -100,13 +100,12 @@ class FFEA_script:
 		params.measurement_out_fname.append(base + "_world" + ext)
 
 		# Now, if params have not been correctly initialised, use the measurement world file to get them
-		#if not params.completed():
-		if True:
+		if not params.completed():
 			try:
 				fin = open(params.measurement_out_fname[-1], "r")
 
 			except(IOError):
-				print "Error. File " + fname  + " not found."
+				print "Error. File " + params.measurement_out_fname[-1]  + " not found."
 				return
 			
 			
@@ -300,6 +299,9 @@ class FFEA_script:
 		
 		spring_lines = extract_block_from_lines("springs", 0, lines)
 		
+		if len(spring_lines) == 0:
+			return
+
 		if len(spring_lines) != 1:
 			print "Error. Expected only one filename."
 			return
@@ -330,7 +332,7 @@ class FFEA_script:
 		fout.write("</system>\n")
 		if self.spring != "":
 			fout.write("<interactions>\n\t<springs>\n")
-			fout.write("\t\t<spring_fname = %s>\n" % (os.path.relpath(fname, os.path.dirname(os.path.abspath(fname)))))
+			fout.write("\t\t<spring_fname = %s>\n" % (os.path.relpath(self.spring, os.path.dirname(os.path.abspath(fname)))))
 			fout.write("\t</springs>\n</interactions>")
 		fout.close()
 
@@ -488,8 +490,8 @@ class FFEA_script_params():
 			print "Unrecognised parameter '" + param + "'. Ignoring..."
 
 	# This function tests whether or not there are enough params to form an ffea system
-	#def completed(self):
-		
+	def completed(self):
+		return True
 		
 	def write_to_file(self, fout, fname):
 		

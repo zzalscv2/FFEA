@@ -11,7 +11,7 @@ scale = float(sys.argv[3])
 
 # Build objects
 pdb = FFEA_pdb.FFEA_pdb(pdbfname)
-traj = FFEA_trajectory.FFEA_trajectory("")
+traj = FFEA_trajectory.FFEA_trajectory("", load_all = 0)
 
 # Write to FFEA_traj
 traj.build_from_pdb(pdb, scale = scale)
