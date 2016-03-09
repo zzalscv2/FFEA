@@ -39,8 +39,8 @@ class FFEA_trajectory:
 			self.traj = open(self.fname, "r")
 		
 		except(IOError):
-			print("Error. File " + self.fname  + " not found.")
-			raise IOError
+			print("File " + self.fname  + " not found. Returning empty file")
+			return
 
 		# Header
 		if self.traj.readline().rstrip() != "FFEA_trajectory_file":
@@ -362,6 +362,17 @@ class FFEA_trajectory:
 				aframe = FFEA_traj_blob_frame(self.blob[j][0].num_nodes)
 				aframe.pos = pdb.blob[j].frame[i].pos * scale
 				self.blob[j][0].frame.append(aframe)
+		
+	def set_single_blob(self, blob_index):
+
+		# Clear everything except for a single blob
+		for i in reversed(range(self.num_blobs)):
+			if i != blob_index:
+				self.blob.pop(i)
+				self.num_conformations.pop(i)
+				self.num_nodes.pop(i)
+			
+		self.num_blobs = 1
 
 	def write_to_file(self, fname):
 
