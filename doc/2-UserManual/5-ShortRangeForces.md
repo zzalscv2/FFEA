@@ -57,15 +57,15 @@ In the case of setting:
 the well known 6-12 Lennard-Jones potential:
 \f[
 
-  U_{i,j}(r) = \epsilon{i,j} [ (\frac{\rho_{i,j}}{r})^{12} - 2(\frac{\rho_{i,j}}{r})^6)
+  U_{i,j}(r) = \epsilon{i,j} [ (\frac{\sigma_{i,j}}{r})^{12} - 2(\frac{\sigma_{i,j}}{r})^6)
 
 \f]
 
 is used to measure surface-surface interactions between all the possible set of 
- face pairs, where \f$\rho_{i,j}\f$ is the equilibrium separation distance, and 
+ face pairs, where \f$\sigma_{i,j}\f$ is the equilibrium separation distance, and 
  \f$\epsilon_{i,j}\f$ is the depth of the energy well at \f$r = r_{i,j}\f$ 
  per surface unit for two faces interacting of faces `i` and `j`. 
- A `lj` file containing the different \f$\rho_{ij}\f$ and \f$\epsilon_{i,j}\f$ 
+ A `lj` file containing the different \f$\sigma_{ij}\f$ and \f$\epsilon_{i,j}\f$ 
  interacting parameters for all the possible face pairs is needed as input. 
  This file, has to be given in the .ffea as:
    
@@ -84,7 +84,7 @@ and has the format:
      (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
      (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
 
-where the matrix provides the values (\f$\epsilon_{i,j}\f$, \f$\rho_{i,j}\f$) in 
+where the matrix provides the values (\f$\epsilon_{i,j}\f$, \f$\sigma_{i,j}\f$) in 
   \f$J/m^2\f$ and \f$m\f$, respectively. 
 
  
