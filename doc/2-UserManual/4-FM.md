@@ -40,6 +40,9 @@ Finally, the rest of the input flags are passed within block ` <precomp> ` in ` 
  * ` inputData ` - can take values 1 and 2 where:
       - 1 will read .force and .pot files 
       - 2 will read .pot files and compute the forces. 
+
+     The expected format for these files is explained [here](\ref potfile)
+
  * ` folder ` - relative or absolute path to the folder storing the .pot 
                  (and optionally .force) interaction files. 
  * ` approach ` - must be ` solid `. This field will be removed.
