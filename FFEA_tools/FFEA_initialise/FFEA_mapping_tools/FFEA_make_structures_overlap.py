@@ -54,7 +54,7 @@ for i in range(2):
 
 # And add some springs
 spring_fname = os.path.dirname(os.path.abspath(inffea)) + "/lol.spring"
-script2.spring.append(spring_fname)
+script2.spring = spring_fname
 print script2.spring
 
 script2.write_to_file(outffea)	
@@ -75,6 +75,13 @@ while True:
 		print("Minimisation completed!")
 		break
 	elif line.strip() == "":
+		script2.params.num_steps = script2.params.check * 10 * run
+		if run == 1:
+			script2.params.restart = 0
+		else:
+			script2.params.restart = 1
+
+		script2.write_to_file(outffea)
 		os.system("ffea " + outffea)
 		continue
 	else:
