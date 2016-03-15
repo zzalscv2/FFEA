@@ -137,6 +137,11 @@ class FFEA_node:
 		for p in self.pos:
 			p += shift
 
+	def move(self, target):
+
+		c = self.calc_centroid()
+		self.translate(target - c)
+
 	def reset(self):
 		self.pos = []
 		self.normal = []

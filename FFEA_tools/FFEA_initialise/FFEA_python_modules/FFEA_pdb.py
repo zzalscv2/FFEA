@@ -291,6 +291,50 @@ class FFEA_pdb:
 
 				b.atom[i].res_index = res_index
 
+	def set_single_frame(self, index):
+
+		for b in self.blob:
+			try:
+				f = b.frame[index]
+			except(IndexError):
+				print("Frame " + str(index) + " does  not exist.\n")
+				return
+			
+			b.frame = []
+			b.frame.append(f)
+			b.num_frames = 1
+
+		self.num_frames = 1
+
+	def scale(self, factor):
+
+		for b in self.blob:
+			for f in b.frame:
+				f.pos *= factor
+
+	def translate(self, shift):
+
+		for b in self.blob:
+			for f in b.frame:
+				f.pos += np.array(shift)
+
+	def move(self, target, frame = 0):
+
+		c = self.calc_centroid(frame)
+		self.translate(target - c)
+	
+	def calc_centroid(self, frame):
+
+		c = np.array([0,0,0])
+		total_num_atoms = 0
+
+		for b in self.blob:
+			c += b.frame[frame].calc_centroid() * b.num_atoms
+			total_num_atoms += b.num_atoms
+
+		c /= total_num_atoms
+		return c
+
 	def reset(self):
 		
 		self.num_blobs = 0
@@ -357,6 +401,9 @@ class FFEA_pdb_frame:
 
 		self.pos = []
 
+	def calc_centroid(self):
+
+		return np.mean(self.pos, axis=0)
 
 	def set_atomic_pos(self, atom_index, x, y, z):
 		

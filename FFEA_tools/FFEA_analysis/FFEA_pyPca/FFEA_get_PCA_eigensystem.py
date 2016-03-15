@@ -2,14 +2,14 @@ import sys, os
 import numpy as np
 import FFEA_topology
 
-if len(sys.argv) != 4:
-	sys.exit("Usage: python FFEA_get_eigensystem.py [INPUT .pcz file] [INPUT Original FFEA .top file] [num_modes]")
+if len(sys.argv) != 3:
+	sys.exit("Usage: python FFEA_get_eigensystem.py [INPUT .pcz file] [num_modes]")
 
 # Get args
 infile = sys.argv[1]
 base, ext = os.path.splitext(os.path.abspath(infile))
 top = FFEA_topology.FFEA_topology(sys.argv[2])
-lin = list(top.get_linear_nodes())
+#lin = list(top.get_linear_nodes())
 num_modes = int(sys.argv[3])
 eigvalfname = base + ".evals"
 tempeigvecfname = "temp.evecs"
