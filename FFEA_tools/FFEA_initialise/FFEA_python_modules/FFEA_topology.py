@@ -115,6 +115,8 @@ class FFEA_element:
 	def __init__(self, n0, n1, n2, n3):
 	
 		self.n = [n0, n1, n2, n3]
+		self.normal = []
+		self.face_centroid = []
 
 	def calc_centroid(self, ffea_node):
 		
@@ -123,3 +125,75 @@ class FFEA_element:
 			centroid += ffea_node.pos[index]
 
 		return centroid * (1.0/4.0)
+
+	def calc_normals(self, node):
+
+		self.normal = [self.calc_face_normal(i, node) for i in range(4)]
+
+	def calc_face_centroids(self, node):
+
+		self.face_centroid = [self.calc_face_centroid(i, node) for i in range(4)]
+
+	def calc_face_normal(self, index, node):
+
+		if index == 0:
+
+			# n[0], n[1], n[2]
+			v0 = node.pos[self.n[1]] - node.pos[self.n[0]]
+			v1 = node.pos[self.n[2]] - node.pos[self.n[0]]
+
+		elif index == 1:
+			
+			# n[0], n[1], n[3]
+			v0 = node.pos[self.n[3]] - node.pos[self.n[0]]
+			v1 = node.pos[self.n[1]] - node.pos[self.n[0]]
+
+		elif index == 2:
+			
+			# n[0], n[2], n[3]
+			v0 = node.pos[self.n[2]] - node.pos[self.n[0]]
+			v1 = node.pos[self.n[3]] - node.pos[self.n[0]]
+
+		elif index == 3:
+			
+			# n[1], n[2], n[3]
+			v0 = node.pos[self.n[1]] - node.pos[self.n[2]]
+			v1 = node.pos[self.n[3]] - node.pos[self.n[2]]
+
+		v = np.cross(v0, v1)
+		return v / np.linalg.norm(v)
+
+	def calc_face_centroid(self, index, node):
+
+		if index == 0:
+
+			# n[0], n[1], n[2]
+			return (node.pos[self.n[0]] + node.pos[self.n[1]] + node.pos[self.n[2]]) / 3.0
+
+		elif index == 1:
+
+			# n[0], n[1], n[3]
+			return (node.pos[self.n[0]] + node.pos[self.n[1]] + node.pos[self.n[3]]) / 3.0
+
+		elif index == 2:
+
+			# n[0], n[2], n[3]
+			return (node.pos[self.n[0]] + node.pos[self.n[2]] + node.pos[self.n[3]]) / 3.0
+
+		elif index == 3:
+
+			# n[1], n[2], n[3]
+			return (node.pos[self.n[1]] + node.pos[self.n[2]] + node.pos[self.n[3]]) / 3.0
+
+	def contains(self, pos, node):
+		
+		# And separations of point from centroid
+		sep = [i - pos for i in self.face_centroid]
+		sep_norm = [s / np.linalg.norm(s) for s in sep]
+
+		# Now, the check
+		for i in range(4):
+			if np.dot(sep_norm[i], self.normal[i]) < 0:
+				return False
+
+		return True
