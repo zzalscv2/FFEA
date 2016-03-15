@@ -1,125 +1,83 @@
-import sys
-import numpy as np
+from os import path
 
 class FFEA_topology:
 
-	def __init__(self, fname):
-		
-		# Initialise stuff
+	def __init__(self, fname = ""):
+	
 		self.reset()
 
-		# Start reading
+		try:
+			self.load(fname)
+		except:
+			return
+
+	def load(self, fname):
+
+		print("Loading FFEA topology file...")
+
+		# Test file exists
+		if not path.exists(fname):
+			print("\tFile '" + fname + "' not found.")
+	
+		# File format?
+		base, ext = path.splitext(fname)
+		if ext == ".top":
+			try:
+				load_top(fname)
+			except:
+				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
+
+		elif ext == ".vol":
+			try:
+				load_vol(fname)
+			except:
+				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
+
+		else:
+			print("\tUnrecognised file extension '" + ext + "'.")
+
+	def load_top(self, fname):
+
+		# Open file
 		try:
 			fin = open(fname, "r")
-		
 		except(IOError):
-			print "Error. Topology file " + fname  + " not found."
-			return
-
-		# Header
-		if fin.readline().rstrip() != "ffea topology file":
-			print "Error. Expected to read 'ffea topology file'. This may not be an ffea topology file"
-			return
-
-		# num_elements
-		try:
-			self.num_elements = int(fin.readline().split()[1])
-			self.num_surface_elements = int(fin.readline().split()[1])
-			self.num_interior_elements = int(fin.readline().split()[1])
-
-		except(ValueError):
-			print "Error. Expected to read:"
-			print "num_elements = %d\nnum_surface_elements = %d\nnum_interior_elements = %d"
+			print("\tFile '" + fname + "' not found.")
 			self.reset()
-			fin.close()
-			return			
+			raise
 
-		# Begin to read elements
-		if fin.readline().strip() != "surface elements:":
-			print "Error. Expected to read 'surface elements:' to begin the surface elements section."
-			self.reset()
-			fin.close()
-			return
+		# Test format
+		line = fin.readline().strip()
+		if line != "ffea topology file" and line != "walrus topology file":
+			print("\tExpected 'ffea topology file' but found " + line)
+			raise TypeError
 
-		for i in range(self.num_surface_elements):
+		self.num_elements = int(fin.readline().split()[1])
+		self.num_surface_elements = int(fin.readline().split()[1])
+		self.num_interior_elements = int(fin.readline().split()[1])
+
+		fin.readline()
+
+		# Read elements now		
+		while(True):
+			line = fin.readline()
 			try:
-				line = fin.readline()
-				if line == [] or line == None or line == "":
-					raise EOFError
-
 				sline = line.split()
+			except:
+				break
 
-				# Final 6 indices are the secondary element nodes. May need later
-				self.element.append(FFEA_element(int(sline[0]), int(sline[1]), int(sline[2]), int(sline[3])))
+			# Get an element
+			el = FFEA_element()
+			el.set_indices(sline)
+		fin.close()
 
-			except(EOFError):
-				print "Error. EOF may have been reached prematurely:\nnum_elements = " + str(self.num_elements) + "\nnum_elements read = " + str(i)
-				self.reset()
-				fin.close()
-				return
+	def get_num_elements(self):
 
-			except(IndexError, ValueError):
-				print "Error. Expected a top position of the form '%f %f %f %f' for element " + str(i) + ", but found " + line
-				self.reset()
-				fin.close()
-				return
+		return len(self.elements)
 
-		if fin.readline().strip() != "interior elements:":
-			print "Error. Expected to read 'interior elements:' to begin the interior elements section."
-			self.reset()
-			fin.close()
-			return
+	def reset():
 
-		for i in range(self.num_surface_elements, self.num_elements):
-			try:
-				line = fin.readline()
-				if line == [] or line == None or line == "":
-					raise EOFError
-
-				sline = line.split()
-
-				# Final 6 indices are the secondary element nodes. May need later
-				self.element.append(FFEA_element(int(sline[0]), int(sline[1]), int(sline[2]), int(sline[3])))
-
-			except(EOFError):
-				print "Error. EOF may have been reached prematurely:\nnum_elements = " + str(self.num_elements) + "\nnum_elements read = " + str(i)
-				self.reset()
-				fin.close()
-				return
-
-			except(IndexError, ValueError):
-				print "Error. Expected a top position of the form '%f %f %f %f' for element " + str(i) + ", but found " + line
-				self.reset()
-				fin.close()
-				return
-
-	def reset(self):
+		self.elements = []
 		self.num_elements = 0
-		self.element = []
-
-	def get_linear_nodes(self):
-		
-		linear_nodes = []
-		for elem in self.element:
-			for i in elem.n:
-				linear_nodes.append(i)
-
-		return set(linear_nodes)
-
-	def get_num_linear_nodes(self):
-		
-		return len(self.get_linear_nodes())
-
-class FFEA_element:
-
-	def __init__(self, n0, n1, n2, n3):
-	
-		self.n = [n0, n1, n2, n3]
-
-	def calc_centroid(self, ffea_node):
-		
-		centroid = np.array([0.0,0.0,0.0])
-		for index in self.n:
-			centroid += ffea_node.pos[index]
-
-		return centroid * (1.0/4.0)
+		self.num_surface_elements = 0
+		self.num_interior_elements = 0
