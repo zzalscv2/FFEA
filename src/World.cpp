@@ -428,7 +428,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			params.es_N_z = 2 * (int)ceil(dimension_vector.z * (params.kappa / params.es_h));
 		}
 
-		// Move to box centre
+		// Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
 		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
 	        box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
@@ -436,7 +436,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		shift.x = box_dim.x / 2.0 - world_centroid.x;
 		shift.y = box_dim.y / 2.0 - world_centroid.y;
 		shift.z = box_dim.z / 2.0 - world_centroid.z;
-		if(params.move_into_box == 1) {
+		if(params.move_into_box == 1 && params.restart == 0) {
 			for (i = 0; i < params.num_blobs; i++) {
 				//active_blob_array[i]->get_centroid(&world_centroid);
 				active_blob_array[i]->move(shift.x, shift.y, shift.z);
