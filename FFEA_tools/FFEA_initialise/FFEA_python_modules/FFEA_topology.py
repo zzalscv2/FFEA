@@ -1,4 +1,5 @@
 from os import path
+from time import sleep
 
 class FFEA_topology:
 
@@ -23,13 +24,13 @@ class FFEA_topology:
 		base, ext = path.splitext(fname)
 		if ext == ".top":
 			try:
-				load_top(fname)
+				self.load_top(fname)
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
-
+			#self.load_top(fname)
 		elif ext == ".vol":
 			try:
-				load_vol(fname)
+				self.load_vol(fname)
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
@@ -52,32 +53,104 @@ class FFEA_topology:
 			print("\tExpected 'ffea topology file' but found " + line)
 			raise TypeError
 
-		self.num_elements = int(fin.readline().split()[1])
-		self.num_surface_elements = int(fin.readline().split()[1])
-		self.num_interior_elements = int(fin.readline().split()[1])
+		num_elements = int(fin.readline().split()[1])
+		num_surface_elements = int(fin.readline().split()[1])
+		num_interior_elements = int(fin.readline().split()[1])
 
 		fin.readline()
 
-		# Read elements now		
+		# Read elements now
+		eltype = 0	
 		while(True):
-			line = fin.readline()
-			try:
-				sline = line.split()
-			except:
-				break
+			sline = fin.readline().split()
 
 			# Get an element
-			el = FFEA_element()
+			try:
+				if sline[0].strip() == "interior":
+					eltype = 1
+					continue
+	
+				elif len(sline) == 4:
+					el = FFEA_element_tet_lin()
+				elif len(sline) == 10:
+					el = FFEA_element_tet_sec()
+
+			except(IndexError):
+				break
+
 			el.set_indices(sline)
+			self.add_element(el, eltype = eltype)
+
 		fin.close()
+
+	def add_element(self, el, eltype = 0):
+
+		self.element.append(el)
+		self.num_elements += 1
+
+		if eltype == 0:
+			self.num_surface_elements += 1
+		else:
+			self.num_interior_elements += 1
 
 	def get_num_elements(self):
 
-		return len(self.elements)
+		return len(self.element)
 
-	def reset():
+	def print_details(self):
 
-		self.elements = []
+		print "num_elements = %d" % (self.num_elements)
+		print "num_surface_elements = %d" % (self.num_surface_elements)
+		print "num_interior_elements = %d" % (self.num_interior_elements)
+		sleep(1)
+
+		for e in self.element:
+			index = self.element.index(e)
+			outline = "Element " + str(index) + " "
+			if(index < self.num_surface_elements):
+				outline += "(Surface): "
+			else:
+				outline += "(Interior): "
+			for n in e.n:
+				outline += str(n) + " "
+
+			print outline
+
+	def reset(self):
+
+		self.element = []
 		self.num_elements = 0
 		self.num_surface_elements = 0
 		self.num_interior_elements = 0
+
+class FFEA_element:
+
+	def __init__(self):
+
+		self.reset()
+
+	def set_indices(self, alist):
+		
+		# Test for correct number of nodes
+		if len(alist) != len(self.n):
+			print "Incorrect number of nodes for assignment to this element type."
+			return
+
+		for i in range(len(alist)):
+			self.n[i] = int(alist[i])
+
+	def reset(self):
+		
+		self.n = []
+
+class FFEA_element_tet_lin(FFEA_element):
+
+	def reset(self):
+
+		self.n = [0,1,2,3]
+
+class FFEA_element_tet_sec(FFEA_element):
+
+	def reset(self):
+
+		self.n = [0,1,2,3,4,5,6,7,8,9]
