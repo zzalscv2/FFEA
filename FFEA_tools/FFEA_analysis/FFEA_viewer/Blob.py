@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import math
+import math, os
 import numpy as np
 import FFEA_material
 
@@ -36,12 +36,16 @@ class Blob:
 		self.global_scale = 1.0
 		self.normalcolor = [32 / 255.0, 178 / 255.0, 170 / 255.0]
 
-	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, blob_mat, binding_fname, blob_centroid_pos, blob_rotation):
+	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, blob_mat, binding_fname, blob_centroid_pos, blob_rotation, ffea_fpath = "."):
 		self.id_num = idnum
 		self.blob_index = blob_index
 		self.conformation_index = conformation_index
-		self.nodes_fname = nodes_fname
+                if os.path.isabs(nodes_fname) == False:
+                     self.nodes_fname = os.path.join(ffea_fpath, nodes_fname)
+                else:
+		     self.nodes_fname = nodes_fname
 		self.scale = scale
+                self.ffea_fpath = ffea_fpath
 		
 		if blob_centroid_pos != None:
 			self.init_centroid = blob_centroid_pos
@@ -56,9 +60,14 @@ class Blob:
 			print "No topology file provided."
 			self.no_topology = True
 		else:
+                        if os.path.isabs(top_fname) == False:
+                             top_fname = os.path.join(ffea_fpath, top_fname)
+
 			self.load_topology(top_fname)
 			self.no_topology = False
 
+                if os.path.isabs(surf_fname) == False:
+                     surf_fname = os.path.join(ffea_fpath, surf_fname)
 		self.load_surface(surf_fname)
 
 		if self.state == "DYNAMIC":
@@ -70,6 +79,8 @@ class Blob:
 			print "No vdw file provided. Creating a zero array."
 			self.vdw = [-1 for i in xrange(self.num_surface_faces)]
 		else:
+                        if os.path.isabs(vdw_fname) == False:
+                             vdw_fname = os.path.join(ffea_fpath, vdw_fname)
 			try:
 				self.load_vdw(vdw_fname)
 			except(IOError):
@@ -88,16 +99,22 @@ class Blob:
 			print "No pinned nodes file provided."
 			self.num_pinned_nodes = 0
 		else:
+                        if os.path.isabs(blob_pinned) == False:
+                             blob_pinned = os.path.join(ffea_fpath, blob_pinned)
+
 			self.load_pinned_nodes(blob_pinned)
 
 		if binding_fname == "":
 			print "No binding sites will be loaded."
 		
 		else:
+                        if os.path.isabs(binding_fname) == False:
+                             binding_fname = os.path.join(ffea_fpath, binding_fname)
 			self.load_binding_sites(binding_fname)
 
 	def load_topology(self, top_fname):
 		print "Reading in topology file " + top_fname
+       
 		top = open(top_fname, "r")
 		line = top.readline().rstrip()
 		if line != "ffea topology file" and line != "walrus topology file":

@@ -349,7 +349,7 @@ class FFEA_viewer_display_window():
 
 					print "\nLoading blob " + str(blob_index) + ", conformation " + str(i)
 					new_blob = Blob.Blob(energy_thresh=self.energy_threshold)
-					new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_mat[i], blob_binding[i], blob_centroid_pos, blob_rotation)
+					new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_mat[i], blob_binding[i], blob_centroid_pos, blob_rotation, ffea_path)
 
 					self.blob_list[blob_index][i] = new_blob
 					new_blob_name = ffea_id_string + "#" + str(blob_index) + ", " + str(conformation_index)
