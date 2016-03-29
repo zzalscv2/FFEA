@@ -1,97 +1,83 @@
-import numpy as np
-import sys
+from os import path
+from time import sleep
 
 class FFEA_vdw:
 
 	def __init__(self, fname):
-		
-		# Initialise stuff
+	
 		self.reset()
 
-		# Start reading
+		try:
+			self.load(fname)
+		except:
+			return
+
+	def load(self, fname):
+
+		print("Loading FFEA vdw file...")
+
+		# Test file exists
+		if not path.exists(fname):
+			print("\tFile '" + fname + "' not found.")
+	
+		# File format?
+		base, ext = path.splitext(fname)
+		if ext == ".vdw":
+			try:
+				self.load_vdw(fname)
+			except:
+				print("\tUnable to load FFEA_vdw from " + fname + ". Returning empty object...")
+
+		else:
+			print("\tUnrecognised file extension '" + ext + "'.")
+
+	def load_vdw(self, fname):
+
+		# Open file
 		try:
 			fin = open(fname, "r")
-		
 		except(IOError):
-			print "VdW file " + fname  + " not found.\nReturning empty object."
-			return
-
-		# Header
-		if fin.readline().rstrip() != "ffea vdw file":
-			print "Error. Expected to read 'ffea vdw file'. This may not be an ffea vdw file"
-			return
-
-		# num_faces
-		try:
-			self.num_faces = int(fin.readline().split()[1])
-			self.vdw_index = np.array([-1 for i in range(self.num_faces)])
-
-		except(ValueError):
-			print "Error. Expected to read:"
-			print "num_faces %d"
+			print("\tFile '" + fname + "' not found.")
 			self.reset()
-			fin.close()
-			return
+			raise
 
-		# Vdw indices
-		if fin.readline().strip() != "vdw params:":
-			print "Error. Expected to read 'vdw params:' to begin the vdw indices section."
-			self.reset()
-			fin.close()
-			return
+		# Test format
+		line = fin.readline().strip()
+		if line != "ffea vdw file" and line != "walrus vdw file":
+			print("\tExpected 'ffea vdw file' but found " + line)
+			raise TypeError
 
-		for i in range(self.num_faces):
-			try:
-				line = fin.readline()
-				if line == [] or line == None or line == "":
-					raise EOFError
+		num_faces = int(fin.readline().split()[1])
 
-				self.vdw_index[i] = int(line)
+		fin.readline()
 
-			except(EOFError):
-				print "Error. EOF may have been reached prematurely:\nnum_faces = " + str(self.num_faces) + "\nnum_faces read = " + str(i)
-				self.reset()
-				fin.close()
-				return
+		# Read vdw radii now
+		while(True):
+			line = fin.readline().strip()
+			if line == "":
+				break
+			else:
+				self.add_face(line)
 
-			except(IndexError, ValueError):
-				print "Error. Expected a vdw index of the form '%d' for face " + str(i) + ", but found " + line
-				self.reset()
-				fin.close()
-				return
-		
 		fin.close()
 
-	def write_to_file(self, fname):
+	def add_face(self, anint):
 
-		fout = open(fname, "w")
-
-		# Write header info
-		fout.write("ffea vdw file\nnum_faces %d\nvdw params:\n" % (self.num_faces))
-
-		# Write indices
-		for ind in self.vdw_index:
-			fout.write(str(ind) + "\n")
-
-		fout.close()
-
-	def calc_active_areas(self, surf, node):
-
-		areas = [0.0 for i in range(7)]
-		for i in range(self.num_faces):
-			areas[self.vdw_index[i] + 1] += surf.face[i].calc_area(node) 
+		self.index.append(int(anint))
+		self.num_faces += 1
 		
-		return areas
+	def print_details(self):
 
-	def set_num_faces(self, num_faces):
-	
-		self.num_faces = num_faces
-		self.make_inactive()
+		print "num_faces = %d" % (self.num_faces)
+		sleep(1)
 
-	def make_inactive(self):
-
-		self.vdw_index = [-1 for i in range(self.num_faces)]
+		outline = ""
+		for i in self.index:
+			outline += "%d " % (i)
+			
+		print outline
 	
 	def reset(self):
-		self.vdw_index = []
+
+		self.index = []
 		self.num_faces = 0

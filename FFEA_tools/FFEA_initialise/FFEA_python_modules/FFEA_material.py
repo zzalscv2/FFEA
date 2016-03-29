@@ -1,84 +1,94 @@
-import numpy as np
-import sys
+from os import path
+from time import sleep
 
 class FFEA_material:
 
-	def __init__(self, fname):
-		
-		# Initialise stuff
+	def __init__(self, fname = ""):
+	
 		self.reset()
 
-		# Start reading
+		try:
+			self.load(fname)
+		except:
+			return
+
+	def load(self, fname):
+
+		print("Loading FFEA material file...")
+
+		# Test file exists
+		if not path.exists(fname):
+			print("\tFile '" + fname + "' not found.")
+	
+		# File format?
+		base, ext = path.splitext(fname)
+		if ext == ".mat":
+			try:
+				self.load_mat(fname)
+			except:
+				print("\tUnable to load FFEA_material from " + fname + ". Returning empty object...")
+
+		else:
+			print("\tUnrecognised file extension '" + ext + "'.")
+
+	def load_mat(self, fname):
+
+		# Open file
 		try:
 			fin = open(fname, "r")
-		
 		except(IOError):
-			print "Error. Material file " + fname  + " not found."
-			return
-
-		# Header
-		if fin.readline().rstrip() != "ffea material params file":
-			print "Error. Expected to read 'ffea material params file'. This may not be an ffea material params file"
-			return
-
-		# num_elements
-		try:
-			self.num_elements = int(fin.readline().split()[1])
-			self.element = []
-
-		except(ValueError):
-			print "Error. Expected to read:"
-			print "num_elements = %d"
+			print("\tFile '" + fname + "' not found.")
 			self.reset()
-			fin.close()
-			return
+			raise
 
-		# material parameters
-		for i in range(self.num_elements):
-			try:
-				line = fin.readline()
-				if line == [] or line == None or line == "":
-					raise EOFError
+		# Test format
+		line = fin.readline().strip()
+		if line != "ffea material params file" and line != "walrus material params file":
+			print("\tExpected 'ffea material params file' but found " + line)
+			raise TypeError
 
-				sline = line.split()
-				self.element.append(FFEA_material_element(float(sline[0]), float(sline[1]), float(sline[2]), float(sline[3]), float(sline[4]), float(sline[5])))
+		num_elements = int(fin.readline().split()[1])
 
-			except(EOFError):
-				print "Error. EOF may have been reached prematurely:\nnum_elements = " + str(self.num_elements) + "\nnum_elements read = " + str(i)
-				self.reset()
-				fin.close()
-				return
+		# Read elements now	
+		while(True):
+			sline = fin.readline().split()
+			if len(sline) != 6:
+				break
+			# Get an element (we want a matrix of values for slicing)
+			el = []
 
-			except(IndexError, ValueError):
-				print "Error. Expected a material radius of the form '%f' for node " + str(i) + ", but found " + line
-				self.reset()
-				fin.close()
-				return
-		
+			for s in sline:
+				el.append(float(s))
+			self.add_element(el)
+
 		fin.close()
 
+	def add_element(self, el):
+
+		self.element.append(el)
+		self.num_elements += 1
+
+	def get_num_elements(self):
+
+		return len(self.element)
+
+	def print_details(self):
+
+		print "num_elements = %d" % (self.num_elements)
+
+		print "\t\tDensity,Shear Viscosity,Bulk Viscosity,Shear Modulus,Bulk Modulus,Dielectric Constant\n"
+		sleep(1)
+
+		index = -1
+		for e in self.element:
+			index += 1
+			outline = "Element " + str(index) + "\t"
+			for param in e:
+				outline += str(param) + ", "
+
+			print outline
+
 	def reset(self):
+
 		self.element = []
 		self.num_elements = 0
-
-	def write_to_file(self, fname):
-
-		with open(fname, "w") as fout:
-			fout.write("ffea material params file\nnum_elements %d\n" % (self.num_elements))
-			for el in self.element:
-				fout.write(str(el.density) + " " + str(el.shear_viscosity) + " " + str(el.bulk_viscosity) + " " + str(el.shear_modulus) + " " + str(el.bulk_modulus) + " " + str(el.dielectric) + "\n")
-
-class FFEA_material_element:
-
-	def __init__(self, d, sv, bv, sm, bm, de):
-
-		self.set_params(d, sv, bv, sm, bm, de)
-
-	def set_params(self, d, sv, bv, sm, bm, de):
-
-		self.density = d
-		self.shear_viscosity = sv
-		self.bulk_viscosity = bv
-		self.shear_modulus = sm
-		self.bulk_modulus = bm
-		self.dielectric = de

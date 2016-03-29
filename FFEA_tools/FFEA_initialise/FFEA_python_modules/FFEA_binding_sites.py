@@ -1,133 +1,118 @@
-import numpy as np
-import sys
+from os import path
+from time import sleep
 
 class FFEA_binding_sites:
 
 	def __init__(self, fname):
-		
-		# Initialise stuff
+	
 		self.reset()
 
-		# Start reading
+		try:
+			self.load(fname)
+		except:
+			return
+
+	def load(self, fname):
+
+		print("Loading FFEA binding sites file...")
+
+		# Test file exists
+		if not path.exists(fname):
+			print("\tFile '" + fname + "' not found.")
+	
+		# File format?
+		base, ext = path.splitext(fname)
+		if ext == ".bsites":
+			try:
+				self.load_bsites(fname)
+			except:
+				print("\tUnable to load FFEA_binding_sites from " + fname + ". Returning empty object...")
+
+		else:
+			print("\tUnrecognised file extension '" + ext + "'.")
+
+	def load_bsites(self, fname):
+
+		# Open file
 		try:
 			fin = open(fname, "r")
-		
 		except(IOError):
-			print "Binding site file " + fname  + " not found.\nCreating empty object...done!"
+			print("\tFile '" + fname + "' not found.")
 			self.reset()
-			return
+			raise
 
-		# Header
-		if fin.readline().rstrip() != "ffea binding sites file":
-			print "Error. Expected to read 'ffea binding sites file'. This may not be an ffea binding sites file"
-			return
+		# Test format
+		line = fin.readline().strip()
+		if line != "ffea binding sites file" and line != "walrus binding sites file":
+			print("\tExpected 'ffea binding sites file' but found " + line)
+			raise TypeError
 
-		# num_binding_sites
-		try:
-			self.num_binding_sites = int(fin.readline().split()[1])
-			self.bsites = [FFEA_binding_site() for i in range(self.num_binding_sites)]
+		num_binding_sites = int(fin.readline().split()[1])
 
-		except(ValueError):
-			print "Error. Expected to read:"
-			print "num_binding_sites %d"
-			self.reset()
-			fin.close()
-			return
+		fin.readline()
 
-		# All sites
-		if fin.readline().strip() != "binding sites:":
-			print "Error. Expected to read 'binding sites:' to begin the binding sites section."
-			self.reset()
-			fin.close()
-			return
+		# Read bsites now
+		while(True):
 
-		for i in range(self.num_binding_sites):
-			indices = []
+			# Get a site
+			site = FFEA_binding_site()
+
+			# First get type line, then get face list line
+			sline = fin.readline().split()
+
 			try:
+				site.set_type(sline[1])
+				faces = fin.readline().split()[1:]
+				site.set_indices(faces)
 
-				# Shouldn't be at the end yet!
-				line = fin.readline()
-				if line == [] or line == None or line == "":
-					raise EOFError
+			except(IndexError):
+				break
 
-				# First line (type and stuff)
-				sline = line.split()
-				site_type = int(sline[1])
-				num_faces = int(sline[3])
-				
-				# Second line is face list
-				line = fin.readline()
 
-				# Shouldn't be at the end yet!
-				if line == [] or line == None or line == "":
-					raise EOFError
 
-				sline = line.split()[1:]
-				if(len(sline) != num_faces):
-					raise IndexError
+			self.add_bsite(site)
 
-				self.bsites[i].set_type(site_type)
-				self.bsites[i].set_structure([int(index) for index in sline])
-
-			except(EOFError):
-				print "Error. EOF may have been reached prematurely:\nnum_faces = " + str(self.num_faces) + "\nnum_faces read = " + str(i)
-				self.reset()
-				fin.close()
-				return
-
-			except(IndexError, ValueError):
-				print "Error. Expected " + str(num_faces) + " faces for binding site " + str(i) + ", but found " + str(len(sline) - 2)
-				self.reset()
-				fin.close()
-				return
-		
 		fin.close()
 
-	def write_to_file(self, fname):
+	def add_bsite(self, s):
 
-		fout = open(fname, "w")
-
-		# Write the header info
-		fout.write("ffea binding sites file\nnum_binding_sites %d\nbinding sites:\n" % (self.num_binding_sites))
+		self.bsite.append(s)
+		self.num_binding_sites += 1
 		
-		# Write the sites
-		for s in self.bsites:
-			fout.write("type %d num_faces %d\nfaces:" % (s.site_type, s.num_faces))
+	def print_details(self):
+
+		print "num_binding_sites = %d" % (self.num_binding_sites)
+		sleep(1)
+
+		i = -1
+		for s in self.bsite:
+			i += 1
+			outline = "Binding Site %d (Type %d):" % (i, s.type)
+			for f in s.index:
+				outline += " %d" % (f)
 			
-			for f in s.face_index:
-				fout.write(" %d" % (f))
-			fout.write("\n")
-		fout.close()
-
-	def add_site(self, bsite):
-
-		if bsite.num_faces == 0:
-			print("Your binding site has no faces i.e. is empty. Will not add to structure.\n")
-		else:
-			self.bsites.append(bsite)
-			self.num_binding_sites += 1
-
+			print outline
+	
 	def reset(self):
-		self.bsites = []
+
+		self.bsite = []
 		self.num_binding_sites = 0
 
 class FFEA_binding_site:
 
 	def __init__(self):
 
-		self.reset()
-
-	def reset(self):
-
-		self.site_type = -1
+		self.type = 0
 		self.num_faces = 0
-		self.face_index = []
+		self.index = []
 
-	def set_type(self, site_type):
+	def set_type(self, anint):
+		self.type = int(anint)
 
-		self.site_type = site_type
+	def set_indices(self, alist):
 
-	def set_structure(self, faces):
+		for i in alist:
+			self.index.append(int(i))
 		
-		self.num_faces = len(faces)
-		self.face_index = faces
+		self.num_faces = len(self.index)
+		

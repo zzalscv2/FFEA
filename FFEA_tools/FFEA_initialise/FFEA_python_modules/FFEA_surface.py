@@ -1,126 +1,155 @@
-import sys
-import numpy as np
+from os import path
+from time import sleep
 
 class FFEA_surface:
 
-	def __init__(self, fname):
-		
-		# Initialise stuff
+	def __init__(self, fname = ""):
+	
 		self.reset()
 
-		# Start reading
+		try:
+			self.load(fname)
+		except:
+			return
+
+	def load(self, fname):
+
+		print("Loading FFEA surface file...")
+
+		# Test file exists
+		if not path.exists(fname):
+			print("\tFile '" + fname + "' not found.")
+	
+		# File format?
+		base, ext = path.splitext(fname)
+		if ext == ".surf":
+			try:
+				self.load_surf(fname)
+			except:
+				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
+
+		elif ext == ".vol":
+			try:
+				self.load_vol(fname)
+			except:
+				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
+
+		else:
+			print("\tUnrecognised file extension '" + ext + "'.")
+
+	def load_surf(self, fname):
+
+		# Open file
 		try:
 			fin = open(fname, "r")
-		
 		except(IOError):
-			print "Error. Surface file " + fname  + " not found."
-			return
-
-		# Header
-		if fin.readline().rstrip() != "ffea surface file":
-			print "Error. Expected to read 'ffea surface file'. This may not be an ffea surf file"
-			return
-
-		# num_faces
-		try:
-			self.num_faces = int(fin.readline().split()[1])
-
-		except(ValueError):
-			print "Error. Expected to read:"
-			print "num_surface_faces = %d"
+			print("\tFile '" + fname + "' not found.")
 			self.reset()
-			fin.close()
-			return			
+			raise
 
-		# Begin to read faces (and get num_surface_nodes)
-		if fin.readline().strip() != "faces:":
-			print "Error. Expected to read 'faces:' to begin the surface section."
-			self.reset()
-			fin.close()
-			return
+		# Test format
+		line = fin.readline().strip()
+		if line != "ffea surface file" and line != "walrus surface file":
+			print("\tExpected 'ffea surf file' but found " + line)
+			raise TypeError
 
-		nlist = []
-		for i in range(self.num_faces):
-			try:
-				line = fin.readline()
-				if line == [] or line == None or line == "":
-					raise EOFError
+		num_faces = int(fin.readline().split()[1])
 
-				sline = line.split()
+		fin.readline()
 
-				# First index is the containing element. May need later
-				self.face.append(FFEA_face(int(sline[1]), int(sline[2]), int(sline[3])))
-				nlist.append(int(sline[1]))
-				nlist.append(int(sline[2]))
-				nlist.append(int(sline[3]))
+		# Read faces now	
+		while(True):
+			sline = fin.readline().split()
 
-			except(EOFError):
-				print "Error. EOF may have been reached prematurely:\nnum_faces = " + str(self.num_faces) + "\nnum_faces read = " + str(i)
-				self.reset()
-				fin.close()
-				return
+			if len(sline) == 0:
+				break
 
-			except(IndexError, ValueError):
-				print "Error. Expected a surf position of the form '%f %f %f %f' for face " + str(i) + ", but found " + line
-				self.reset()
-				fin.close()
-				return
+			# Get a face	
+			if len(sline) == 3 or len(sline) == 4:
+				f = FFEA_face_tri_lin()
 
-		self.num_surface_nodes = max(nlist) + 1
+				if len(sline) == 3:
+					# Just a face
+					f.set_indices(sline)
+				else:
+					# Face with parent element
+					f.set_indices(sline[1:], elindex = sline[0])
 
-	def calculate_structure_dimensions(self, node):
+			elif len(sline) == 6 or len(sline) == 7:
+				f = FFEA_face_tri_sec()
 
-		xlim = [float("inf"), -1 * float("inf")]
-		ylim = [float("inf"), -1 * float("inf")]
-		zlim = [float("inf"), -1 * float("inf")]
+				if len(sline) == 6:
+					# Just a face
+					f.set_indices(sline)
+				else:
+					# Face with parent element
+					f.set_indices(sline[1:], elindex = sline[0])
 
+			self.add_face(f)
+
+		fin.close()
+
+	def add_face(self, f):
+
+		self.face.append(f)
+		self.num_faces += 1
+		
+	def print_details(self):
+
+		print "num_faces = %d" % (self.num_faces)
+		sleep(1)
+
+		index = -1
 		for f in self.face:
+			index += 1
+			outline = "Face " + str(index) + ": "
+
 			for n in f.n:
-				if node.pos[n][0] < xlim[0]:
-					xlim[0] = node.pos[n][0]
-				elif node.pos[n][0] > xlim[1]:
-					xlim[1] = node.pos[n][0]
+				outline += str(n) + " "
+			
+			if f.elindex != -1:
+				outline += ", Parent Element = %d" % (f.elindex)
 
-				if node.pos[n][1] < ylim[0]:
-					ylim[0] = node.pos[n][1]
-				elif node.pos[n][1] > ylim[1]:
-					ylim[1] = node.pos[n][1]
-
-				if node.pos[n][2] < zlim[0]:
-					zlim[0] = node.pos[n][2]
-				elif node.pos[n][2] > zlim[1]:
-					zlim[1] = node.pos[n][2]
-
-		return np.array([xlim[1]-xlim[0], ylim[1]-ylim[0], zlim[1]-zlim[0]]), np.array([xlim, ylim, zlim])
-
+			print outline
+	
 	def reset(self):
-		self.num_faces = 0
-		self.num_surface_nodes = 0
+
 		self.face = []
+		self.num_faces = 0
 
 class FFEA_face:
 
-	def __init__(self, n0, n1, n2):
-	
-		self.n = [n0, n1, n2]
+	def __init__(self):
 
-	def calc_centroid(self, node):
+		self.reset()
 
-		centroid = np.array([0.0,0.0,0.0])
-		for n in self.n:
-			centroid += node.pos[n]
+	def set_indices(self, alist, elindex = -1):
+
+		# Test for correct number of nodes
+		if len(alist) != len(self.n):
+			print "Incorrect number of nodes for assignment to this face type."
+			return
+
+		for i in range(len(self.n)):
+			self.n[i] = int(alist[i])
+
+		self.elindex = int(elindex)
+
+	def reset(self):
 		
-		return centroid * 1.0/3.0
+		self.n = []
+		self.elindex = -1
 
-	def calc_area(self, node):
-		
-		v1 = node.pos[self.n[1]] - node.pos[self.n[0]]
-		v2 = node.pos[self.n[2]] - node.pos[self.n[0]]
-		return 0.5 * np.linalg.norm(np.cross(v1,v2))
+class FFEA_face_tri_lin(FFEA_face):
 
-	def get_normal(self, node):
+	def reset(self):
 
-		v1 = node.pos[self.n[2]] - node.pos[self.n[1]]
-		v2 = node.pos[self.n[1]] - node.pos[self.n[0]]
-		norm = np.cross(v1,v2)
-		return norm * 1.0 / np.linalg.norm(norm)
+		self.n = [0,1,2]
+		self.elindex = -1
+
+class FFEA_face_tri_sec(FFEA_face):
+
+	def reset(self):
+
+		self.n = [0,1,2,3,4,5]
+		self.elindex = -1
