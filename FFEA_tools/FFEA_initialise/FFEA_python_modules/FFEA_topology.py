@@ -27,7 +27,7 @@ class FFEA_topology:
 				self.load_top(fname)
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
-			#self.load_top(fname)
+
 		elif ext == ".vol":
 			try:
 				self.load_vol(fname)
