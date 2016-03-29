@@ -1,0 +1,5 @@
+ffea binding sites file
+num_binding_sites 1
+binding sites:
+type 0 num_faces 10
+faces: 80 142 340 640 721 840 955 1039 1166 1509

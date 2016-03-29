@@ -1,199 +1,156 @@
-import sys
-import numpy as np
+from os import path
+from time import sleep
 
 class FFEA_topology:
 
-	def __init__(self, fname):
-		
-		# Initialise stuff
+	def __init__(self, fname = ""):
+	
 		self.reset()
 
-		# Start reading
+		try:
+			self.load(fname)
+		except:
+			return
+
+	def load(self, fname):
+
+		print("Loading FFEA topology file...")
+
+		# Test file exists
+		if not path.exists(fname):
+			print("\tFile '" + fname + "' not found.")
+	
+		# File format?
+		base, ext = path.splitext(fname)
+		if ext == ".top":
+			try:
+				self.load_top(fname)
+			except:
+				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
+
+		elif ext == ".vol":
+			try:
+				self.load_vol(fname)
+			except:
+				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
+
+		else:
+			print("\tUnrecognised file extension '" + ext + "'.")
+
+	def load_top(self, fname):
+
+		# Open file
 		try:
 			fin = open(fname, "r")
-		
 		except(IOError):
-			print "Error. Topology file " + fname  + " not found."
-			return
-
-		# Header
-		if fin.readline().rstrip() != "ffea topology file":
-			print "Error. Expected to read 'ffea topology file'. This may not be an ffea topology file"
-			return
-
-		# num_elements
-		try:
-			self.num_elements = int(fin.readline().split()[1])
-			self.num_surface_elements = int(fin.readline().split()[1])
-			self.num_interior_elements = int(fin.readline().split()[1])
-
-		except(ValueError):
-			print "Error. Expected to read:"
-			print "num_elements = %d\nnum_surface_elements = %d\nnum_interior_elements = %d"
+			print("\tFile '" + fname + "' not found.")
 			self.reset()
-			fin.close()
-			return			
+			raise
 
-		# Begin to read elements
-		if fin.readline().strip() != "surface elements:":
-			print "Error. Expected to read 'surface elements:' to begin the surface elements section."
-			self.reset()
-			fin.close()
-			return
+		# Test format
+		line = fin.readline().strip()
+		if line != "ffea topology file" and line != "walrus topology file":
+			print("\tExpected 'ffea topology file' but found " + line)
+			raise TypeError
 
-		for i in range(self.num_surface_elements):
+		num_elements = int(fin.readline().split()[1])
+		num_surface_elements = int(fin.readline().split()[1])
+		num_interior_elements = int(fin.readline().split()[1])
+
+		fin.readline()
+
+		# Read elements now
+		eltype = 0	
+		while(True):
+			sline = fin.readline().split()
+
+			# Get an element
 			try:
-				line = fin.readline()
-				if line == [] or line == None or line == "":
-					raise EOFError
+				if sline[0].strip() == "interior":
+					eltype = 1
+					continue
+	
+				elif len(sline) == 4:
+					el = FFEA_element_tet_lin()
+				elif len(sline) == 10:
+					el = FFEA_element_tet_sec()
 
-				sline = line.split()
+			except(IndexError):
+				break
 
-				# Final 6 indices are the secondary element nodes. May need later
-				self.element.append(FFEA_element(int(sline[0]), int(sline[1]), int(sline[2]), int(sline[3])))
+			el.set_indices(sline)
+			self.add_element(el, eltype = eltype)
 
-			except(EOFError):
-				print "Error. EOF may have been reached prematurely:\nnum_elements = " + str(self.num_elements) + "\nnum_elements read = " + str(i)
-				self.reset()
-				fin.close()
-				return
+		fin.close()
 
-			except(IndexError, ValueError):
-				print "Error. Expected a top position of the form '%f %f %f %f' for element " + str(i) + ", but found " + line
-				self.reset()
-				fin.close()
-				return
+	def add_element(self, el, eltype = 0):
 
-		if fin.readline().strip() != "interior elements:":
-			print "Error. Expected to read 'interior elements:' to begin the interior elements section."
-			self.reset()
-			fin.close()
-			return
+		self.element.append(el)
+		self.num_elements += 1
 
-		for i in range(self.num_surface_elements, self.num_elements):
-			try:
-				line = fin.readline()
-				if line == [] or line == None or line == "":
-					raise EOFError
+		if eltype == 0:
+			self.num_surface_elements += 1
+		else:
+			self.num_interior_elements += 1
 
-				sline = line.split()
+	def get_num_elements(self):
 
-				# Final 6 indices are the secondary element nodes. May need later
-				self.element.append(FFEA_element(int(sline[0]), int(sline[1]), int(sline[2]), int(sline[3])))
+		return len(self.element)
 
-			except(EOFError):
-				print "Error. EOF may have been reached prematurely:\nnum_elements = " + str(self.num_elements) + "\nnum_elements read = " + str(i)
-				self.reset()
-				fin.close()
-				return
+	def print_details(self):
 
-			except(IndexError, ValueError):
-				print "Error. Expected a top position of the form '%f %f %f %f' for element " + str(i) + ", but found " + line
-				self.reset()
-				fin.close()
-				return
+		print "num_elements = %d" % (self.num_elements)
+		print "num_surface_elements = %d" % (self.num_surface_elements)
+		print "num_interior_elements = %d" % (self.num_interior_elements)
+		sleep(1)
+
+		for e in self.element:
+			index = self.element.index(e)
+			outline = "Element " + str(index) + " "
+			if(index < self.num_surface_elements):
+				outline += "(Surface): "
+			else:
+				outline += "(Interior): "
+			for n in e.n:
+				outline += str(n) + " "
+
+			print outline
 
 	def reset(self):
-		self.num_elements = 0
+
 		self.element = []
-
-	def get_linear_nodes(self):
-		
-		linear_nodes = []
-		for elem in self.element:
-			for i in elem.n:
-				linear_nodes.append(i)
-
-		return set(linear_nodes)
-
-	def get_num_linear_nodes(self):
-		
-		return len(self.get_linear_nodes())
+		self.num_elements = 0
+		self.num_surface_elements = 0
+		self.num_interior_elements = 0
 
 class FFEA_element:
 
-	def __init__(self, n0, n1, n2, n3):
-	
-		self.n = [n0, n1, n2, n3]
-		self.normal = []
-		self.face_centroid = []
+	def __init__(self):
 
-	def calc_centroid(self, ffea_node):
+		self.reset()
+
+	def set_indices(self, alist):
 		
-		centroid = np.array([0.0,0.0,0.0])
-		for index in self.n:
-			centroid += ffea_node.pos[index]
+		# Test for correct number of nodes
+		if len(alist) != len(self.n):
+			print "Incorrect number of nodes for assignment to this element type."
+			return
 
-		return centroid * (1.0/4.0)
+		for i in range(len(alist)):
+			self.n[i] = int(alist[i])
 
-	def calc_normals(self, node):
-
-		self.normal = [self.calc_face_normal(i, node) for i in range(4)]
-
-	def calc_face_centroids(self, node):
-
-		self.face_centroid = [self.calc_face_centroid(i, node) for i in range(4)]
-
-	def calc_face_normal(self, index, node):
-
-		if index == 0:
-
-			# n[0], n[1], n[2]
-			v0 = node.pos[self.n[1]] - node.pos[self.n[0]]
-			v1 = node.pos[self.n[2]] - node.pos[self.n[0]]
-
-		elif index == 1:
-			
-			# n[0], n[1], n[3]
-			v0 = node.pos[self.n[3]] - node.pos[self.n[0]]
-			v1 = node.pos[self.n[1]] - node.pos[self.n[0]]
-
-		elif index == 2:
-			
-			# n[0], n[2], n[3]
-			v0 = node.pos[self.n[2]] - node.pos[self.n[0]]
-			v1 = node.pos[self.n[3]] - node.pos[self.n[0]]
-
-		elif index == 3:
-			
-			# n[1], n[2], n[3]
-			v0 = node.pos[self.n[1]] - node.pos[self.n[2]]
-			v1 = node.pos[self.n[3]] - node.pos[self.n[2]]
-
-		v = np.cross(v0, v1)
-		return v / np.linalg.norm(v)
-
-	def calc_face_centroid(self, index, node):
-
-		if index == 0:
-
-			# n[0], n[1], n[2]
-			return (node.pos[self.n[0]] + node.pos[self.n[1]] + node.pos[self.n[2]]) / 3.0
-
-		elif index == 1:
-
-			# n[0], n[1], n[3]
-			return (node.pos[self.n[0]] + node.pos[self.n[1]] + node.pos[self.n[3]]) / 3.0
-
-		elif index == 2:
-
-			# n[0], n[2], n[3]
-			return (node.pos[self.n[0]] + node.pos[self.n[2]] + node.pos[self.n[3]]) / 3.0
-
-		elif index == 3:
-
-			# n[1], n[2], n[3]
-			return (node.pos[self.n[1]] + node.pos[self.n[2]] + node.pos[self.n[3]]) / 3.0
-
-	def contains(self, pos, node):
+	def reset(self):
 		
-		# And separations of point from centroid
-		sep = [i - pos for i in self.face_centroid]
-		sep_norm = [s / np.linalg.norm(s) for s in sep]
+		self.n = []
 
-		# Now, the check
-		for i in range(4):
-			if np.dot(sep_norm[i], self.normal[i]) < 0:
-				return False
+class FFEA_element_tet_lin(FFEA_element):
 
-		return True
+	def reset(self):
+
+		self.n = [0,1,2,3]
+
+class FFEA_element_tet_sec(FFEA_element):
+
+	def reset(self):
+
+		self.n = [0,1,2,3,4,5,6,7,8,9]
