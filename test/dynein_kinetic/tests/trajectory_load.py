@@ -13,7 +13,7 @@ traj = FFEA_trajectory.FFEA_trajectory(fname, load_all = 0)
 # Now time the loading of all frames
 start = time.clock()
 i = 0
-while traj.load_frame() != 0:
+while traj.load_frame() == 0:
 	i += 1
 	if i % 10 == 0:
 		print i, " frames read"	

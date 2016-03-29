@@ -118,11 +118,10 @@ class FFEA_trajectory:
 		self.blob = [[FFEA_traj_blob(self.num_nodes[i][j]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 
 	# This function must be run as fast as possible! Error checking will be at a minimum. This function is standalone so it can be threaded
-	def load_frame(self, surf=None):		
-
+	def load_frame(self, surf=None):
+	
 		# For each blob
 		for b in self.blob:
-
 			try:
 				# Get indices
 				bindex = self.blob.index(b)
@@ -136,29 +135,27 @@ class FFEA_trajectory:
 				# Don't need to reset though!
 				print("Unable to read conformation index for blob " + str(bindex) + " at frame " + str(self.num_frames))
 				return 1
-
-			# Append None to all frames that aren't active
-			for c in range(self.num_conformations[bindex]):
-				if c != cindex:
-					b[c].frame.append(None)
 				
-			# Get a frame first (STATIC should just continue)
+			# Get a frame first (STATIC should just continue, single frame can be added prior or after)
 			if self.traj.readline().strip() == "DYNAMIC":
 				frame = FFEA_frame.FFEA_frame()
 			else:
 				continue
 
 			# Read stuff
-			for n in range(self.num_nodes[bindex][cindex]):
-				line = self.traj.readline().split()
-				frame.pos.append(np.array([float(line[i]) for i in range(3)]))
+			frame.load_from_traj(self.traj)
 
 			# Load normals if necessary
-			if surf != None:
-				frame.calc_normals(surf[bindex][cindex])
+			#if surf != None:
+			#	frame.calc_normals(surf[bindex][cindex])
 
 			# Append frame
 			b[cindex].frame.append(frame)
+
+			# Append None to all frames that aren't active
+			for c in range(self.num_conformations[bindex]):
+				if c != cindex:
+					b[c].frame.append(None)
 
 		# Gloss over kinetics stuff
 		self.traj.readline()
