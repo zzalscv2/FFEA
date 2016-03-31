@@ -2068,7 +2068,7 @@ int World::calculate_kinetic_rates() {
 
 							// We've got 2 compatible sites! Are they in range?
 							if(BindingSite::sites_in_range(*base_site, *target_site)) {
-								
+
 								// Success! Set rates and bsites into the states
 								kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 								kinetic_state[i][j].set_sites(base_site, target_site);

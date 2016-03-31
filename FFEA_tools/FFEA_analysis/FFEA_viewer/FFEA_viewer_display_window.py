@@ -427,7 +427,7 @@ class FFEA_viewer_display_window():
 			
 		# Shift all blobs if STATIC, or if there is no trajectory; clear frame if not
 		for b in self.blob_list:
-			if blob[0].state == "STATIC" or trajectory_out_fname == None:
+			if b[0].state == "STATIC" or trajectory_out_fname == None:
 				if self.calc_vdw == 1 and self.move_into_box == 1:
 					b[0].frames[0].translate(shift)
 			else:
