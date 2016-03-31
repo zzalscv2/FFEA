@@ -9,3 +9,5 @@ install(DIRECTORY Diffusion_analysis FFEA_gromacs FFEA_meas_tools
 
 install (FILES FFEA_build_analysis_environment.py FFEA_plot_all_measurements.py 
         DESTINATION "${PYTHONSTUFF}/FFEA_analysis")
+
+install(DIRECTORY pymol_plugin/ DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
