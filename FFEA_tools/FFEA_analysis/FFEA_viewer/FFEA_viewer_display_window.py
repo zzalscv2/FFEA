@@ -16,6 +16,8 @@ import shutil
 
 import numpy as np
 
+import FFEA_springs
+
 class FFEA_viewer_display_window():
 
 	def __init__(self, speak_to_control, ffea_fname, num_frames_to_read, energy_thresh=1.0e6):
@@ -104,6 +106,7 @@ class FFEA_viewer_display_window():
 					'show_solid': 1,
 					'show_flat': 0,
 					'show_material': 0,
+					'show_springs': 0,
 					'show_vdw_only': 0,
 					'show_node_numbers': 0,
 					'show_pinned_nodes': 1,
@@ -131,7 +134,7 @@ class FFEA_viewer_display_window():
 		self.box_x = -1
 		self.box_y = -1
 		self.box_z = -1
-
+		self.springs = None
 		self.show_box = 0;
 
 		self.modifying_frame = False
@@ -248,18 +251,43 @@ class FFEA_viewer_display_window():
 
 		while True:
 			line = ffea_in.readline().strip()[1:-1]
+			print line
 			if line == "":
 				continue
 			elif line == "/system":
 				break
-			elif line == "spring":
-				# Ignore
+
+			elif line == "interactions":
 				while True:
 					line = ffea_in.readline().strip()[1:-1]
-					if line == "/spring":
+
+					if line == "/interactions":
 						break
-					else:
+					elif line == "springs" or line == "spring":
+		
+						while True:
+							line = ffea_in.readline().strip()[1:-1]
+							if line == "/springs" or line == "/spring":
+
+								break
+							else:
+								# Ignore
+								#continue
+
+								# Don't ignore
+								lvalue, rvalue = line.split("=")
+								lvalue = lvalue.strip()
+								rvalue = rvalue.strip()
+								if lvalue == "springs_fname" or lvalue == "spring_fname":
+									if os.path.isabs(rvalue) == False:
+                            							rvalue = os.path.join(ffea_path, rvalue)
+
+									self.springs = FFEA_springs.FFEA_springs(rvalue)
+									self.springs.print_details()
+
+					else:	# Add beads block here maybe?
 						continue
+
 			elif line == "blob":
 				blob_nodes = []
 				blob_top = []
@@ -374,9 +402,6 @@ class FFEA_viewer_display_window():
 				blob_rotation = None
 				scale = 1.0
 
-			elif line == "interactions":
-				while ffea_in.readline().strip() != "</interactions>":
-					continue
 			else:
 				sys.exit("Expected a blob block in " + self.ffea_fname + " after the <system> tag\n")
 
@@ -827,7 +852,13 @@ class FFEA_viewer_display_window():
 					for j in range(self.num_conformations[i]):
 						self.blob_list[i][j].draw_frame(self.frame, self.display_flags)
 
-						
+			# Now draw springs, if they exist
+			if self.springs != None and self.display_flags["show_springs"] == 1:
+				for s in self.springs.spring:
+					if self.blob_list[s.blob_index[0]][s.conformation_index[0]].frames[self.frame] == None or self.blob_list[s.blob_index[1]][s.conformation_index[1]].frames[self.frame] == None:
+						continue
+					else:
+						self.draw_spring(s)		
 		else:
 			centroid_x = 0
 			centroid_y = 0
@@ -873,6 +904,44 @@ class FFEA_viewer_display_window():
 		glShadeModel(GL_SMOOTH)
 
 		return selected_face
+
+	def draw_spring(self, s):
+
+		# Draw, because this spring exists
+		springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[self.frame].node_list[s.node_index[i]][0:3] for i in range(2)])
+
+		# Axes for helix
+		zax = springjoints[1] - springjoints[0]
+		xax = np.cross(zax, np.array([1.0,0]))
+		yax = np.cross(zax, xax)
+
+		xax = xax / np.linalg.norm(xax)
+		yax = yax / np.linalg.norm(yax)
+
+		l = np.linalg.norm(zax)
+
+		zax = zax / l
+
+		# Radius of helix (let original radius be 5A, poisson ration = 0.01)
+		r = 5 - 0.01 * (l - s.l) 
+
+		# We want 5 spins, say, so pitch:
+		c = l / (10 * np.pi)
+
+		# Draw 40 nodes. Equation is r = r0 + (Rcos(t), Rsin(t), ct)
+		step = (10 * np.pi) / 40
+		glLineWidth(5)
+		glColor3d(192/255.0,192/255.0,192/255.0)
+		glBegin(GL_LINES)
+		for i in range(40):
+			tstart = step * i
+			tend = step * (i + 1)
+			verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
+			glVertex3d(verts[0], verts[1], verts[2])
+			verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
+			glVertex3d(verts[0], verts[1], verts[2])
+
+		glEnd()
 
 	def draw_axes(self):
 		self.set_perspective_projection()

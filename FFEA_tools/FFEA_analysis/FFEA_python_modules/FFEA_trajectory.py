@@ -37,6 +37,7 @@ class FFEA_trajectory:
 		# Then rest of trajectory.
 		if(load_all == 1):
 			while(True):
+			#while(self.num_frames < 100):
 				if(self.load_frame(surf=surf) != 0):
 					print("done! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 					break
@@ -125,7 +126,10 @@ class FFEA_trajectory:
 			try:
 				# Get indices
 				bindex = self.blob.index(b)
-				cindex = int(self.traj.readline().split()[3][0])
+
+				sline = self.traj.readline().split()
+				cindex = int(sline[3][0])
+				step = int(sline[5])
 
 			except(IndexError):
 				return 1
@@ -144,6 +148,7 @@ class FFEA_trajectory:
 
 			# Read stuff
 			frame.load_from_traj(self.traj)
+			frame.set_step(step)
 
 			# Load normals if necessary
 			#if surf != None:
@@ -166,7 +171,7 @@ class FFEA_trajectory:
 		return 0
 
 	# Manually set a single frame
-	def set_single_frame(self, node, surf = None):
+	def set_single_frame(self, node, surf = None, step = 0):
 
 		for i in range(self.num_blobs):
 			for j in range(self.num_conformations[i]):
@@ -177,6 +182,7 @@ class FFEA_trajectory:
 				# Add frame only for conf 0
 				if j == 0:
 					frame = FFEA_frame.FFEA_frame()
+					frame.set_step(step)
 					frame.pos = node[i].pos
 
 					if surf != None:
@@ -209,8 +215,47 @@ class FFEA_traj_blob:
 	# Manually set a frame
 	def set_frame(self, frame):
 		self.frame.append(frame)
+	
+	def set_subblob(self, pin):
+
+		if max(pin.index) >= self.num_nodes:
+			print("Error. Pinned node index %d is larger than num_nodes, %d." % (max(pin.index), self.num_nodes))
+			return None 
+			
+		self.subblob.append(pin.index)
+		self.num_subblobs += 1
+	
+	def get_centroid_trajectory(self, subblob_index = -1):
 		
+		if subblob_index == -1:
+			indices = [i for i in range(self.num_nodes)]
+		else:
+			try:
+				indices = self.subblob[subblob_index]
+			except(IndexError):
+				print("Error. Subblob index %d out of range (num_subblobs = %d)." % (subblob_index, self.num_subblobs))
+				return None, None
+
+		# Build the trajectory
+		subblob_size = len(indices)		
+		ctraj = []
+		step = []
+		
+		print len(self.frame)
+		for f in self.frame:
+			centroid = np.array([0.0,0.0,0.0])
+			for i in indices:
+				centroid += f.pos[i]
+
+			centroid /= subblob_size
+			ctraj.append(centroid)
+			step.append(f.step)
+			
+		return np.array(step), np.array(ctraj)
+
 	def reset(self):
 
 		self.num_nodes = 0
+		self.num_subblobs = 0
 		self.frame = []
+		self.subblob = []
