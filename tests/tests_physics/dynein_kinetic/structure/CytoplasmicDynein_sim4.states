@@ -1,0 +1,9 @@
+ffea kinetic states file
+num_states 3
+states:
+conformation_index 0
+binding
+conformation_index 1
+binding
+conformation_index 1
+binding 0 1
