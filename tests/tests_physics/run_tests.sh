@@ -1,7 +1,7 @@
 #!/bin/bash
 # We're going to run some tests on all of the stuff in this folder, to make sure that ffea has installed correctly and is running and stuff!
 scriptdir="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-ffeadir=$scriptdir/../build/src
+ffeadir=$scriptdir/../../src
 export OMP_NUM_THREADS=4
 
 echo " "
@@ -16,7 +16,7 @@ echo "          num_elements = 465"
 echo "          num_nodes    = 1025"
 echo " "
 sleep 3
-$ffeadir/ffea/cuboid_flat/scripts/cuboid_flat.ffea
+$scriptdir/cuboid_flat/scripts/cuboid_flat.ffea
 
 echo " "
 echo "ffea: Simulation of Multiple Flat Cuboids Interacting..."
@@ -24,7 +24,7 @@ echo "          num_elements = 465"
 echo "          num_nodes    = 1025"
 echo " "
 sleep 3
-$ffeadir/ffea/cuboid_flat/scripts/cuboid_flat_multiple.ffea
+$scriptdir/cuboid_flat/scripts/cuboid_flat_multiple.ffea
 
 #echo " "
 #echo "ffea: running with mass..."

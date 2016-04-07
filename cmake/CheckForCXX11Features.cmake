@@ -16,7 +16,7 @@ endif ()
 message(STATUS "Checking C++11 support for stoi")
 try_compile(RESULT_VAR 
            "${CMAKE_CURRENT_BINARY_DIR}/cxx11_stoi"
-           "${PROJECT_SOURCE_DIR}/cmake/tests/stoi.cpp"
+           "${PROJECT_SOURCE_DIR}/cmake/tests_compilation/stoi.cpp"
            COMPILE_DEFINITIONS "${CXX11_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}"
            OUTPUT_VARIABLE OUTPUT)
 
@@ -32,7 +32,7 @@ endif ()
 message(STATUS "Checking C++11 support for fstream-string")
 try_compile(RESULT_VAR 
            "${CMAKE_CURRENT_BINARY_DIR}/cxx11_fstream-string"
-           "${PROJECT_SOURCE_DIR}/cmake/tests/fstream-string.cpp"
+           "${PROJECT_SOURCE_DIR}/cmake/tests_compilation/fstream-string.cpp"
            COMPILE_DEFINITIONS "${CXX11_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}"
            OUTPUT_VARIABLE OUTPUT)
 
@@ -48,7 +48,7 @@ endif ()
 # message(STATUS "Checking C++11 support for extended initialiser lists")
 # try_compile(RESULT_VAR 
 #            "${CMAKE_CURRENT_BINARY_DIR}/cxx11_fstream-string"
-#            "${PROJECT_SOURCE_DIR}/cmake/tests/initialiseStruct.cpp"
+#            "${PROJECT_SOURCE_DIR}/cmake/tests_compilation/initialiseStruct.cpp"
 #            COMPILE_DEFINITIONS "${CXX11_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}"
 #            OUTPUT_VARIABLE OUTPUT)
 # 
