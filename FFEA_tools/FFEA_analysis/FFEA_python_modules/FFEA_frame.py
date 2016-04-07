@@ -30,7 +30,10 @@ class FFEA_frame(FFEA_node.FFEA_node):
 			print n
 			n /= np.linalg.norm(n)
 
-	def reset(self):
+	def set_step(self, step):
+		self.step = step
 
+	def reset(self):
+		self.step = 0
 		self.pos = []
 		self.normal = []
