@@ -213,8 +213,8 @@ bool BindingSite::sites_in_range(BindingSite a, BindingSite b) {
 	a_cent = a.get_centroid();
 	b_cent = b.get_centroid();
 	separation = sqrt(pow(a_cent.x - b_cent.x, 2) + pow(a_cent.y - b_cent.y, 2) + pow(a_cent.z - b_cent.z, 2));
-	cout << "Separation = " << separation << ", Limiting distance = " << a.get_characteristic_length() + b.get_characteristic_length() << endl;
-	cout << "Char length a = " << a.get_characteristic_length() << ", Char length b = " << b.get_characteristic_length() << endl;
+	//cout << "Separation = " << separation << ", Limiting distance = " << a.get_characteristic_length() + b.get_characteristic_length() << endl;
+	//cout << "Char length a = " << a.get_characteristic_length() << ", Char length b = " << b.get_characteristic_length() << endl;
 	if(separation < a.get_characteristic_length() + b.get_characteristic_length()) {
 		return true;
 	} else {
