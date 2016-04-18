@@ -1,6 +1,6 @@
 from os import path
 import numpy as np
-import FFEA_frame
+import FFEA_frame, FFEA_pdb
 
 class FFEA_trajectory:
 
@@ -23,7 +23,7 @@ class FFEA_trajectory:
 		# Test file exists
 		if not path.exists(fname):
 			print("\tFile '" + fname + "' not found. Returning empty object...")
-			return
+			return 1
 	
 		# Clear everything for beginning
 		self.reset()
@@ -41,6 +41,10 @@ class FFEA_trajectory:
 				if(self.load_frame(surf=surf) != 0):
 					print("done! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 					break
+
+	def load_from_pdb(self, pdb):
+
+			
 
 	def load_header(self, fname):
 
