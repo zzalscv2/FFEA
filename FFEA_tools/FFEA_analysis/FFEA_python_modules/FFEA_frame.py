@@ -16,7 +16,17 @@ class FFEA_frame(FFEA_node.FFEA_node):
 			except(ValueError):
 				fo.seek(prev)
 				break
-		
+
+		# Numpy it up for speed
+		self.pos = np.array(self.pos)
+		self.num_nodes = len(self.pos)
+		self.num_surface_nodes = self.num_nodes
+
+	def write_to_traj(self, fo):
+
+		for p in self.pos:
+			fo.write("%10.7e %10.7e %10.7e %10.7e %10.7e %10.7e %10.7e %10.7e %10.7e %10.7e\n" % (p[0], p[1], p[2], 0, 0, 0, 0, 0, 0, 0))
+
 	# Function to calculate normals at each node, average of connecting faces
 	def calc_normals(self, surf):
 
@@ -34,6 +44,9 @@ class FFEA_frame(FFEA_node.FFEA_node):
 		self.step = step
 
 	def reset(self):
+		self.num_nodes = 0
+		self.num_surface_nodes = 0
+		self.num_interior_nodes = 0
 		self.step = 0
 		self.pos = []
 		self.normal = []
