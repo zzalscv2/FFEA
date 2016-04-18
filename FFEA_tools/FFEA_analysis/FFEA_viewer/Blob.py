@@ -717,8 +717,8 @@ class Blob:
 			max_val = 0
 			min_val = 0
 			for f in self.surface:
-				relevent_param.append(self.mat.element[f[0]].shear_modulus)
-			
+				#relevent_param.append(self.mat.element[f[0]].shear_modulus)
+				relevent_param.append(self.mat.element[f[0]][3])
 			max_val = max(relevent_param)
 			min_val = min(relevent_param)
 
@@ -730,7 +730,10 @@ class Blob:
 
 				# Green colour map
 				#fcolor.append([(50 / 255.0) * (2 - frac), 1.0, 50 * (3 - frac) / 255.0])
-				fcolor.append([(50 / 255.0) * (2 - frac),0,0])
+				#fcolor.append([(50 / 255.0) * (2 - frac),0,0])
+
+				# Red to blue color map
+				fcolor.append([1-frac,0,frac])
 
 			# Now draw some triangles
 			glBegin(GL_TRIANGLES)

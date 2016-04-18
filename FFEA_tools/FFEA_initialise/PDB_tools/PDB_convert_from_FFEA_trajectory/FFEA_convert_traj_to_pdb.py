@@ -11,7 +11,7 @@ num_frames_to_read = int(sys.argv[3])
 scale = 1.0 / float(sys.argv[4])	# Invert as pdb is in angstroms
 
 # Build objects
-traj = FFEA_trajectory.FFEA_trajectory(infname, num_frames_to_read = num_frames_to_read)
+traj = FFEA_trajectory.FFEA_trajectory(infname)
 pdb = FFEA_pdb.FFEA_pdb(outfname)
 pdb.build_from_traj(traj, scale = scale)
 pdb.write_to_file(outfname)

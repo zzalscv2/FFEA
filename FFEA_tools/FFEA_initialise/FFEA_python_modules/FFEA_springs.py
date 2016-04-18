@@ -92,6 +92,14 @@ class FFEA_springs:
 
 			print outline
 
+	def write_to_file(self, fname):
+		
+		fout = open(fname, "w")
+		fout.write("ffea springs file\nnum_springs %d\nsprings:\n" % (self.num_springs))
+		for s in self.spring:
+			fout.write("%e %e %d %d %d %d %d %d\n" % (s.k, s.l, s.blob_index[0], s.blob_index[1], s.conformation_index[0], s.conformation_index[1], s.node_index[0], s.node_index[1]))
+		fout.close()
+
 	def reset(self):
 
 		self.spring = []
