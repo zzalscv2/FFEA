@@ -49,7 +49,7 @@ else:
 	out_basename = out_fname
 
 final_traj_fname = traj_fname
-traj = FFEA_trajectory.FFEA_trajectory(final_traj_fname, num_frames)
+traj = FFEA_trajectory.FFEA_trajectory(final_traj_fname)
 
 # Remove all trajectory except for blob in question, if required
 if blob_num != -1:
@@ -57,7 +57,7 @@ if blob_num != -1:
 
 # Extract first frame from trajectory
 first_frame_fname = out_basename + "_frame0.out"
-traj.write_frame_to_file(first_frame_fname, 0)
+traj.write_to_file(first_frame_fname, frames=[0,1])
 
 # Convert first frame to a pseudo .pdb file
 first_frame_fname_pdb = first_frame_fname.split(".")[0] + ".pdb"

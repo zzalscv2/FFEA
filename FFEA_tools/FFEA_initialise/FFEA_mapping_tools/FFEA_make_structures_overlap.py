@@ -152,8 +152,13 @@ while True:
 
 # Finished minimisation! Make node files from this trajectory
 traj = FFEA_trajectory.FFEA_trajectory(script2.params.trajectory_out_fname)
-traj.blob[0][0].write_frame_as_nodes("blob0_overlap.node", traj.num_frames - 1, 1.0 / script2.blob[0].scale)
-traj.blob[1][0].write_frame_as_nodes("blob1_overlap.node", traj.num_frames - 1, 1.0 / script2.blob[1].scale)
+#traj.blob[0][0].write_frame_as_nodes("blob0_overlap.node", traj.num_frames - 1, 1.0 / script2.blob[0].scale)
+#traj.blob[1][0].write_frame_as_nodes("blob1_overlap.node", traj.num_frames - 1, 1.0 / script2.blob[1].scale)
+
+traj.blob[0][0].frame[-1].scale(1.0 / script2.blob[0].scale)
+traj.blob[1][0].frame[-1].scale(1.0 / script2.blob[1].scale)
+traj.blob[0][0].frame[-1].write_to_file("blob0_overlap.node")
+traj.blob[1][0].frame[-1].write_to_file("blob1_overlap.node")
 
 # Remove all weirdo files
 os.system("rm lol*")

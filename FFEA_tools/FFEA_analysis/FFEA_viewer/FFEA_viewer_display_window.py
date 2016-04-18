@@ -250,6 +250,7 @@ class FFEA_viewer_display_window():
 		conformation_index = 0
 
 		while True:
+			print "hi"
 			line = ffea_in.readline().strip()[1:-1]
 			print line
 			if line == "":
@@ -262,13 +263,14 @@ class FFEA_viewer_display_window():
 					line = ffea_in.readline().strip()[1:-1]
 
 					if line == "/interactions":
+						print line
 						break
 					elif line == "springs" or line == "spring":
 		
 						while True:
 							line = ffea_in.readline().strip()[1:-1]
+							print line
 							if line == "/springs" or line == "/spring":
-
 								break
 							else:
 								# Ignore
