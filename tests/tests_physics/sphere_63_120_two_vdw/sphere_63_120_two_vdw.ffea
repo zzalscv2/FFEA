@@ -16,7 +16,8 @@
 	<do_stokes = 1>
 	<stokes_visc = 1e-03>
 	<calc_vdw = 1>
-	<!-- <vdw_type = steric> --> 
+	<vdw_type = steric>
+	<vdw_steric_factor = 1e3>
 	<calc_noise = 1>
 	<calc_kinetics = 0>
 	<calc_es = 0>
