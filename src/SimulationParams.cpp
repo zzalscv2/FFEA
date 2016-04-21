@@ -514,8 +514,8 @@ int SimulationParams::validate() {
         }
     }
  
-    if (vdw_type != "lennard-jones" && vdw_type != "steric") {
-        FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'lennard-jones' (default) or 'steric'.\n");
+    if (vdw_type != "lennard-jones" && vdw_type != "steric" && vdw_type != "ljsteric") {
+        FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'steric' (default), 'lennard-jones' or 'ljsteric' (both methods combined).\n");
     }
 
     if (calc_preComp != 0 && calc_preComp != 1) {
@@ -684,7 +684,7 @@ int SimulationParams::validate() {
     if(calc_kinetics == 1 && binding_params_fname_set == 1) {
 	printf("\tbinding_params_fname = %s\n", binding_params_fname);
     }
-    if(calc_vdw == 1 && vdw_type == "steric") {
+    if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "ljsteric")) {
         printf("\tvdw_steric_factor = %e\n", vdw_steric_factor);
     }
     return FFEA_OK;
