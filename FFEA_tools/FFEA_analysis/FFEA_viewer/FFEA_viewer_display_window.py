@@ -856,11 +856,7 @@ class FFEA_viewer_display_window():
 
 			# Now draw springs, if they exist
 			if self.springs != None and self.display_flags["show_springs"] == 1:
-				for s in self.springs.spring:
-					if self.blob_list[s.blob_index[0]][s.conformation_index[0]].frames[self.frame] == None or self.blob_list[s.blob_index[1]][s.conformation_index[1]].frames[self.frame] == None:
-						continue
-					else:
-						self.draw_spring(s)		
+				self.draw_springs();		
 		else:
 			centroid_x = 0
 			centroid_y = 0
@@ -907,43 +903,51 @@ class FFEA_viewer_display_window():
 
 		return selected_face
 
-	def draw_spring(self, s):
+	def draw_springs(self):
 
-		# Draw, because this spring exists
-		springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[self.frame].node_list[s.node_index[i]][0:3] for i in range(2)])
+		for s in self.springs.spring:
 
-		# Axes for helix
-		zax = springjoints[1] - springjoints[0]
-		xax = np.cross(zax, np.array([1.0,0]))
-		yax = np.cross(zax, xax)
+			# Get correct frames
+			correct_frame = [self.frame for i in range(self.num_blobs)]
+			for i in range(self.num_blobs):
+				if self.blob_list[i][0].state == "STATIC":
+					correct_frame[i] = 0
 
-		xax = xax / np.linalg.norm(xax)
-		yax = yax / np.linalg.norm(yax)
+			# Draw, because this spring exists
+			springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].node_list[s.node_index[i]][0:3] for i in range(2)])
 
-		l = np.linalg.norm(zax)
+			# Axes for helix
+			zax = springjoints[1] - springjoints[0]
+			xax = np.cross(zax, np.array([1.0,0]))
+			yax = np.cross(zax, xax)
 
-		zax = zax / l
+			xax = xax / np.linalg.norm(xax)
+			yax = yax / np.linalg.norm(yax)
 
-		# Radius of helix (let original radius be 5A, poisson ration = 0.01)
-		r = 5 - 0.01 * (l - s.l) 
+			l = np.linalg.norm(zax)
 
-		# We want 5 spins, say, so pitch:
-		c = l / (10 * np.pi)
+			zax = zax / l
 
-		# Draw 40 nodes. Equation is r = r0 + (Rcos(t), Rsin(t), ct)
-		step = (10 * np.pi) / 40
-		glLineWidth(5)
-		glColor3d(192/255.0,192/255.0,192/255.0)
-		glBegin(GL_LINES)
-		for i in range(40):
-			tstart = step * i
-			tend = step * (i + 1)
-			verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
-			glVertex3d(verts[0], verts[1], verts[2])
-			verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
-			glVertex3d(verts[0], verts[1], verts[2])
+			# Radius of helix (let original radius be 5A, poisson ration = 0.01)
+			r = 5 - 0.01 * (l - s.l) 
 
-		glEnd()
+			# We want 5 spins, say, so pitch:
+			c = l / (10 * np.pi)
+
+			# Draw 40 nodes. Equation is r = r0 + (Rcos(t), Rsin(t), ct)
+			step = (10 * np.pi) / 40
+			glLineWidth(5)
+			glColor3d(192/255.0,192/255.0,192/255.0)
+			glBegin(GL_LINES)
+			for i in range(40):
+				tstart = step * i
+				tend = step * (i + 1)
+				verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
+				glVertex3d(verts[0], verts[1], verts[2])
+				verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
+				glVertex3d(verts[0], verts[1], verts[2])
+
+			glEnd()
 
 	def draw_axes(self):
 		self.set_perspective_projection()
