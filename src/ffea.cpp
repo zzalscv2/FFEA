@@ -16,6 +16,8 @@
 #include "Blob.h"
 #include "World.h"
 
+#include "mpi.h"
+
 #define MAX_FNAME_LENGTH 255
 
 using namespace std;
@@ -23,6 +25,7 @@ namespace b_po = boost::program_options;
 
 int main(int argc, char *argv[])
 {
+  MPI::Init();
 	cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
 	cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
 	cout << "Compiled:\t" << __DATE__ " at " << __TIME__ << endl;
@@ -300,5 +303,6 @@ int main(int argc, char *argv[])
 	delete world;
 	cout << "...done. World has been sucessfully destroyed." << endl;
 
+  MPI::Finalize();
 	return myreturn;
 }
