@@ -1,4 +1,5 @@
 #include "VdW_solver.h"
+#include "mpi.h"
 
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
@@ -29,6 +30,7 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 }
 
 int VdW_solver::solve() {
+    double st, time1, time2, time3;
     const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
         {-1, -1, -1},
         {-1, -1, 0},
@@ -70,6 +72,7 @@ int VdW_solver::solve() {
 #ifdef USE_OPENMP
 #pragma omp parallel for private(l_i, l_j, f_i, f_j) 
 #endif
+    //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
 
         // get the ith face
@@ -78,7 +81,10 @@ int VdW_solver::solve() {
 		continue;
 	}
         f_i = l_i->obj;
-
+        //time2 = MPI::Wtime() - st;       
+        //cout<< "time to get the ith face:" << time2 << "seconds" << endl;
+        //cout<< "inner loop" << endl;
+        
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
         for (int c = 0; c < 27; c++) {
@@ -99,9 +105,15 @@ int VdW_solver::solve() {
                 l_j = l_j->next;
             }
         }
+        //timing 1000 face execution
+        /*if (i = 1000){
+          time3 = MPI::Wtime() - st;
+          cout<<"calculating face's interaction for 1000 face"<<time3<<"seconds"<<endl;
+        }*/        
 
     }
-
+    //time1 = MPI::Wtime()-st;
+    //cout<<"total time for the outer loop: "<<time1<<"seconds"<<endl;
     return FFEA_OK;
 }
 
