@@ -88,7 +88,7 @@ In between it can take the following parameters:
 #### Short range parameters #### 
 
    * ` vdw_type ` <string> (lennard-jones) <BR>
-        Either "lennard-jones" or "steric" depending on the type of calculations
+        Either "lennard-jones", "steric" or "ljsteric" depending on the type of calculations
         to be performed.
 
    * ` vdw_forcefield_params ` <string>  <BR>
