@@ -57,67 +57,47 @@
 			(a[2]-b[2])*c[2]	\
 						)
 
-// Functions from the checkVars object
 
-checkVars::checkVars() {
-	V1 = NULL;
-	V2 = NULL;
-	for(int i = 0; i < 3; ++i) {
-		n[i] = 0.0;
-		for(int j = 0; j < 6; ++j) {
-			e_v1[j][i] = 0.0;
-			e_v2[j][i] = 0.0;
-		}
-		for(int j = 0; j < 4; ++j) {
-			masks[j] = 0;
-			P_V1[j][i] = 0.0;
-			P_V2[j][i] = 0.0;
-		}
-	}
 
-	for(int i = 0; i < 4; ++i) {
-		for(int j = 0; j < 4; ++j) {
-			Coord_1[i][j] = 0.0;
-			Coord_2[i][j] = 0.0;
-		}
-	}
-}
 
-checkVars::~checkVars() {
-	V1 = NULL;
-	V2 = NULL;
-	for(int i = 0; i < 3; ++i) {
-		n[i] = 0.0;
-		for(int j = 0; j < 6; ++j) {
-			e_v1[j][i] = 0.0;
-			e_v2[j][i] = 0.0;
-		}
-		for(int j = 0; j < 4; ++j) {
-			masks[j] = 0;
-			P_V1[j][i] = 0.0;
-			P_V2[j][i] = 0.0;
-		}
-	}
+typedef scalar point[3];
+static point *V1,*V2;			        // vertices coordinates
 
-	for(int i = 0; i < 4; ++i) {
-		for(int j = 0; j < 4; ++j) {
-			Coord_1[i][j] = 0.0;
-			Coord_2[i][j] = 0.0;
-		}
-	}
-}
+
+static scalar e_v1[6][3],e_v2[6][3];            // vectors edge-oriented
+
+
+static int masks[4];			        // for each face of the first tetrahedron
+
+					        // stores the halfspace each vertex of the
+
+					        // second tetrahedron belongs to
+
+
+static scalar P_V1[4][3], P_V2[4][3];           // differences between the vertices of the second (first) 
+
+					        //  tetrahedron
+
+					        // and the vertex 0  of the first(second) tetrahedron
+
+static scalar  Coord_1[4][4],Coord_2[4][4];     // vertices coordinates in the affine space
+
+
+static scalar n[3];			        // variable to store the normals
+
+
 
 // FaceA ----------------------------------------------------
 
-inline bool FaceA_1(  scalar * Coord,  int & maskEdges, checkVars *vars)
+inline static bool FaceA_1(  scalar * Coord,  int & maskEdges)
 {
   
   maskEdges = 000;
   
-  if (( Coord[0] = DOT(vars->P_V1[0] , vars->n)) > 0.0) maskEdges = 001;				
-  if (( Coord[1] = DOT(vars->P_V1[1] , vars->n)) > 0.0) maskEdges |= 002;	
-  if (( Coord[2] = DOT(vars->P_V1[2] , vars->n)) > 0.0) maskEdges |= 004;	
-  if (( Coord[3] = DOT(vars->P_V1[3] , vars->n)) > 0.0) maskEdges |= 010;	
+  if (( Coord[0] = DOT(P_V1[0] , n)) > 0.0) maskEdges = 001;				
+  if (( Coord[1] = DOT(P_V1[1] , n)) > 0.0) maskEdges |= 002;	
+  if (( Coord[2] = DOT(P_V1[2] , n)) > 0.0) maskEdges |= 004;	
+  if (( Coord[3] = DOT(P_V1[3] , n)) > 0.0) maskEdges |= 010;	
   
   
   return (maskEdges == 017);	// if true it means that all of the vertices are out the halfspace
@@ -125,19 +105,19 @@ inline bool FaceA_1(  scalar * Coord,  int & maskEdges, checkVars *vars)
   // defined by this face
   
 }
-// it is the same as FaceA_1, only the values vars->V2[0]-v_ref are used only for the fourth face
+// it is the same as FaceA_1, only the values V2[0]-v_ref are used only for the fourth face
 
 // hence they do not need to be stored
 
-inline bool FaceA_2(scalar * Coord,int & maskEdges, checkVars *vars)
+inline static bool FaceA_2(scalar * Coord,int & maskEdges)
 {
   maskEdges = 000;
-  scalar * v_ref = vars->V1[1];
+  scalar * v_ref = V1[1];
   
-  if (( Coord[0] = SUB_DOT(vars->V2[0],v_ref, vars->n)) > 0.0) maskEdges = 001;	
-  if (( Coord[1] = SUB_DOT(vars->V2[1],v_ref, vars->n)) > 0.0) maskEdges |= 002; 
-  if (( Coord[2] = SUB_DOT(vars->V2[2],v_ref, vars->n)) > 0.0) maskEdges |= 004; 
-  if (( Coord[3] = SUB_DOT(vars->V2[3],v_ref, vars->n)) > 0.0) maskEdges |= 010; 
+  if (( Coord[0] = SUB_DOT(V2[0],v_ref, n )) > 0.0) maskEdges = 001;	
+  if (( Coord[1] = SUB_DOT(V2[1],v_ref, n )) > 0.0) maskEdges |= 002; 
+  if (( Coord[2] = SUB_DOT(V2[2],v_ref, n )) > 0.0) maskEdges |= 004; 
+  if (( Coord[3] = SUB_DOT(V2[3],v_ref, n )) > 0.0) maskEdges |= 010; 
   
   return (maskEdges == 017);	
 }
@@ -146,35 +126,35 @@ inline bool FaceA_2(scalar * Coord,int & maskEdges, checkVars *vars)
 
 // FaceB --------------------------------------------------------------
 
-inline bool FaceB_1(checkVars *vars)
+inline static bool FaceB_1()
 {
   
-  return  ((DOT(vars->P_V2[0] , vars->n) > 0.0) &&				
-	   (DOT(vars->P_V2[1] , vars->n) > 0.0) &&	
-	   (DOT(vars->P_V2[2] , vars->n) > 0.0) &&	
-	   (DOT(vars->P_V2[3] , vars->n) > 0.0));
+  return  ((DOT(P_V2[0] , n) > 0.0) &&				
+	   (DOT(P_V2[1] , n) > 0.0) &&	
+	   (DOT(P_V2[2] , n) > 0.0) &&	
+	   (DOT(P_V2[3] , n) > 0.0));
 }
 
-inline bool FaceB_2(checkVars *vars)
+inline static bool FaceB_2()
 {
-  scalar * v_ref = vars->V2[1];
-  return	(( SUB_DOT(vars->V1[0],v_ref , vars->n) > 0.0)  &&
-		 ( SUB_DOT(vars->V1[1],v_ref , vars->n) > 0.0)  &&
-		 ( SUB_DOT(vars->V1[2],v_ref , vars->n) > 0.0)  &&
-		 ( SUB_DOT(vars->V1[3],v_ref , vars->n) > 0.0) );
+  scalar * v_ref = V2[1];
+  return	(( SUB_DOT(V1[0],v_ref , n ) > 0.0)  &&
+		 ( SUB_DOT(V1[1],v_ref , n ) > 0.0)  &&
+		 ( SUB_DOT(V1[2],v_ref , n ) > 0.0)  &&
+		 ( SUB_DOT(V1[3],v_ref , n ) > 0.0) );
 }
 
 
 // EdgeA -------------------------------------------------------
 
-inline bool EdgeA(const int & f0 , const int & f1, checkVars *vars)
+inline static bool EdgeA(const int & f0 , const int & f1)
 {
   
-  scalar * coord_f0 = &vars->Coord_1[f0][0];
-  scalar * coord_f1 = &vars->Coord_1[f1][0];
+  scalar * coord_f0 = &Coord_1[f0][0];
+  scalar * coord_f1 = &Coord_1[f1][0];
   
-  int  maskf0 = vars->masks[f0];
-  int  maskf1 = vars->masks[f1];
+  int  maskf0 = masks[f0];
+  int  maskf1 = masks[f1];
   
   if( (maskf0 | maskf1) != 017) // if there is a vertex of b 
     
@@ -252,86 +232,84 @@ bool tet_a_tet(scalar (&V_1)[4][3],  /* [in] pointers on 3D coord of tetrahedron
                scalar (&V_2)[4][3] ) /* [in] pointers on 3D coord of tetrahedron B */
 {
   
-  // First, we must define the variable object for this call (to ensure thread safety)
-  checkVars *vars = new checkVars();
-  vars->V1 = V_1;
-  vars->V2 = V_2;
+  V1 = V_1;
+  V2 = V_2;
   
-  SUB(vars->P_V1[0] ,vars->V2[0],vars->V1[0]);	
-  SUB(vars->P_V1[1] ,vars->V2[1],vars->V1[0]);	
-  SUB(vars->P_V1[2] ,vars->V2[2],vars->V1[0]);	
-  SUB(vars->P_V1[3] ,vars->V2[3],vars->V1[0]);	
+  SUB(P_V1[0] ,V2[0],V1[0]);	
+  SUB(P_V1[1] ,V2[1],V1[0]);	
+  SUB(P_V1[2] ,V2[2],V1[0]);	
+  SUB(P_V1[3] ,V2[3],V1[0]);	
   
   
-  SUB(vars->e_v1[0] , vars->V1[1] , vars->V1[0]);	
-  SUB(vars->e_v1[1] , vars->V1[2] , vars->V1[0]);
+  SUB(e_v1[0] , V1[1] , V1[0]);	
+  SUB(e_v1[1] , V1[2] , V1[0]);
   
 
-  VECT(vars->n , vars->e_v1[0] ,vars->e_v1[1]);		// find the normal to  face 0
+  VECT(n , e_v1[0] ,e_v1[1]);		// find the normal to  face 0
   
   
-  if(FaceA_1(&vars->Coord_1[0][0],vars->masks[0], vars))	return false; // if FaceA_1 returns true, it means that a separation plane has been found, and thus returns false, so both tetrahedra don't intersect.
+  if(FaceA_1(&Coord_1[0][0],masks[0]))	return false; // if FaceA_1 returns true, it means that a separation plane has been found, and thus returns false, so both tetrahedra don't intersect.
   
   
-  SUB(vars->e_v1[2],vars->V1[3],vars->V1[0]);
-  VECT(vars->n ,vars->e_v1[2] ,  vars->e_v1[0]);
+  SUB(e_v1[2],V1[3],V1[0]);
+  VECT(n ,e_v1[2] ,  e_v1[0]);
   
-  if(FaceA_1(&vars->Coord_1[1][0], vars->masks[1], vars)) 	return false;		
+  if(FaceA_1(&Coord_1[1][0], masks[1])) 	return false;		
   
-  if(EdgeA(0,1, vars)) return false;	
+  if(EdgeA(0,1)) return false;	
   
   
-  VECT(vars->n,  vars->e_v1[1] , vars->e_v1[2]); 
+  VECT(n,  e_v1[1] , e_v1[2]); 
   
-  if(FaceA_1(&vars->Coord_1[2][0], vars->masks[2], vars)) 	return false;	
+  if(FaceA_1(&Coord_1[2][0], masks[2])) 	return false;	
   
-  if(EdgeA(0,2, vars)) return false;	
-  if(EdgeA(1,2, vars)) return false;  	
+  if(EdgeA(0,2)) return false;	
+  if(EdgeA(1,2)) return false;  	
   
-  SUB(vars->e_v1[4], vars->V1[3],vars->V1[1]);
-  SUB(vars->e_v1[3], vars->V1[2],vars->V1[1]);
+  SUB(e_v1[4], V1[3],V1[1]);
+  SUB(e_v1[3], V1[2],V1[1]);
   
-  VECT(vars->n ,vars->e_v1[4] , vars->e_v1[3]);
+  VECT(n ,e_v1[4] , e_v1[3]);
   
-  if(FaceA_2(&vars->Coord_1[3][0],vars->masks[3], vars))  return false;	
+  if(FaceA_2(&Coord_1[3][0],masks[3]))  return false;	
   
-  if(EdgeA(0,3, vars)) return false;	
-  if(EdgeA(1,3, vars)) return false; 	
-  if(EdgeA(2,3, vars)) return false; 	
+  if(EdgeA(0,3)) return false;	
+  if(EdgeA(1,3)) return false; 	
+  if(EdgeA(2,3)) return false; 	
   
-  if( (vars->masks[0] | vars->masks[1] | vars->masks[2] | vars->masks[3] )!=017) return true; 
+  if( (masks[0] | masks[1] | masks[2] | masks[3] )!=017) return true; 
   
   
   // from now on, if there is a separating plane it is parallel to a face of b
   
-  SUB(vars->P_V2[0] , vars->V1[0],vars->V2[0]);
-  SUB(vars->P_V2[1] , vars->V1[1],vars->V2[0]);	
-  SUB(vars->P_V2[2] , vars->V1[2],vars->V2[0]);	
-  SUB(vars->P_V2[3] , vars->V1[3],vars->V2[0]);	
+  SUB(P_V2[0] , V1[0],V2[0]);
+  SUB(P_V2[1] , V1[1],V2[0]);	
+  SUB(P_V2[2] , V1[2],V2[0]);	
+  SUB(P_V2[3] , V1[3],V2[0]);	
   
   
-  SUB(vars->e_v2[0] , vars->V2[1], vars->V2[0]);
-  SUB(vars->e_v2[1] , vars->V2[2], vars->V2[0]);
+  SUB(e_v2[0] , V2[1], V2[0]);
+  SUB(e_v2[1] , V2[2], V2[0]);
   
-  VECT(vars->n, vars->e_v2[0] , vars->e_v2[1] );
-  if(FaceB_1(vars)) return false;	
+  VECT(n, e_v2[0] , e_v2[1] );
+  if(FaceB_1()) return false;	
   
-  SUB(vars->e_v2[2], vars->V2[3], vars->V2[0]);
+  SUB(e_v2[2], V2[3], V2[0]);
   
-  VECT(vars->n,  vars->e_v2[2] ,  vars->e_v2[0]);
+  VECT(n,  e_v2[2] ,  e_v2[0]);
   
-  if(FaceB_1(vars)) return false;	
+  if(FaceB_1()) return false;	
   
-  VECT(vars->n,  vars->e_v2[1] ,vars->e_v2[2]);
+  VECT(n,  e_v2[1] ,e_v2[2]);
   
-  if(FaceB_1(vars)) return false;
+  if(FaceB_1()) return false;
   
-  SUB(vars->e_v2[4] , vars->V2[3] , vars->V2[1]);
-  SUB(vars->e_v2[3] , vars->V2[2] , vars->V2[1]);
+  SUB(e_v2[4] , V2[3] , V2[1]);
+  SUB(e_v2[3] , V2[2] , V2[1]);
   
-  VECT(vars->n , vars->e_v2[4] , vars->e_v2[3]);
+  VECT(n , e_v2[4] , e_v2[3]);
   
-  if(FaceB_2(vars)) return false;
+  if(FaceB_2()) return false;
   
   return true;	
 }

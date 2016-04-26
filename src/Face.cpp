@@ -340,13 +340,50 @@ bool Face::checkTetraIntersection(Face *f2) {
   // V2 = f2->n
   scalar tetA[4][3], tetB[4][3]; 
   for (int i=0; i<4; i++) {
-     tetA[i][0] = n[i]->pos.x;
-     tetA[i][1] = n[i]->pos.y;
-     tetA[i][2] = n[i]->pos.z;
+     tetA[i][0] = this->n[i]->pos.x;
+     tetA[i][1] = this->n[i]->pos.y;
+     tetA[i][2] = this->n[i]->pos.z;
      tetB[i][0] = f2->n[i]->pos.x;
      tetB[i][1] = f2->n[i]->pos.y;
      tetB[i][2] = f2->n[i]->pos.z;
   }
+  if (tet_a_tet(tetA, tetB)) {
+   /* #pragma omp critical
+    {
+	fprintf(stderr, "%d %d InsideIntersect", this->index, f2->index);
+	for(int i = 0; i < 4; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6.3f", tetA[i][j]);
+		}
+		fprintf(stderr, "  ");
+	}
+	for(int i = 0; i < 4; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6.3f", tetB[i][j]);
+		}
+		fprintf(stderr, "  ");	
+	}
+	fprintf(stderr, "\n");
+    }*/
+  } else {
+  /*  #pragma omp critical
+    {
+	fprintf(stderr, "%d %d InsideNointersect", this->index, f2->index);
+	for(int i = 0; i < 4; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6.3f", tetA[i][j]);
+		}
+		fprintf(stderr, "  ");
+	}
+	for(int i = 0; i < 4; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6.3f", tetB[i][j]);
+		}
+		fprintf(stderr, "  ");	
+	}
+	fprintf(stderr, "\n");
+   }*/
+}
   return (tet_a_tet(tetA, tetB)); 
  
 } 
