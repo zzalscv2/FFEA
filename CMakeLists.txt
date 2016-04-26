@@ -20,6 +20,14 @@ mark_as_advanced(USE_DOUBLE)
 set (LIBS_TO_LINK)
 #################################
 #### LIBRARIES AND CFLAGS #######
+
+# benchmark ### MPI #########
+find_package(MPI REQUIRED)
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+include_directories(${MPI_INCLUDE_PATH})
+set(LIBS_TO_LINK ${LIBS_TO_LINK} ${MPI_LIBRARIES}) 
+
 # 0 #### PRECISION ###
 if (USE_DOUBLE)
   add_definitions(-DUSE_DOUBLE)
