@@ -92,7 +92,7 @@ class FFEA_viewer_display_window():
 
 		# frames
 		self.frame = 0
-		self.num_frames = 0
+		self.num_frames = -1
 
 		# list of loaded blobs
 		self.blob_list = []
@@ -469,7 +469,7 @@ class FFEA_viewer_display_window():
 			self.load_trajectory_thread.start()
 
 		# Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists
-		while(self.num_frames < 1):
+		while(self.num_frames < 0):
 			if trajectory_out_fname == None:
 				break
 			else:

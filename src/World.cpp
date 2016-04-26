@@ -1799,7 +1799,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		        	if (velocity != NULL)
 		            		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
 
-				// Set up extra nodes if necessary
+				// Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
 				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
 					blob_array[i][j].add_steric_nodes();
 				}

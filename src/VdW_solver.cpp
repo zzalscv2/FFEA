@@ -62,13 +62,13 @@ int VdW_solver::solve() {
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
     Face *f_i, *f_j;
-
+    int c;
     total_num_surface_faces = surface_face_lookup->get_pool_size();
     //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/ 
 #ifdef USE_OPENMP
-#pragma omp parallel for private(l_i, l_j, f_i, f_j) 
+#pragma omp parallel for private(c, l_i, l_j, f_i, f_j)
 #endif
     for (int i = 0; i < total_num_surface_faces; i++) {
 
@@ -78,10 +78,10 @@ int VdW_solver::solve() {
 		continue;
 	}
         f_i = l_i->obj;
-
+	
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
-        for (int c = 0; c < 27; c++) {
+        for (c = 0; c < 27; c++) {
             l_j = surface_face_lookup->get_top_of_stack( 
                     l_i->x + adjacent_cell_lookup_table[c].ix,
                     l_i->y + adjacent_cell_lookup_table[c].iy,
@@ -92,6 +92,7 @@ int VdW_solver::solve() {
                     if (f_i->daddy_blob != f_j->daddy_blob) {
                         f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
                         f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
+			//fprintf(stderr, "%d %d\n", f_i->index, f_j->index);
                         do_interaction(f_i, f_j);
                         // do_volumeExclusion(f_i, f_j);
                     }
@@ -101,6 +102,7 @@ int VdW_solver::solve() {
         }
 
     }
+  //  exit(0);
 
     return FFEA_OK;
 }
