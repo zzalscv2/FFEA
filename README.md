@@ -82,8 +82,20 @@ Optionally, if Doxygen was found at configure time,
 
     make doc 
 
-there are some mathematical formulae that will not render correctly
-  if latex and ghostview are not found.
+there are some mathematical formulae that will not render correctly if latex and ghostview are not found. You can read the documentation with a browser, if firefox was the browser available to you the coomand would be:
+
+firefox $FFEA_HOME/share/doc/html/index.html &
+
+
 Finally, you can install FFEA:
 
     make install
+
+You can run the software with the command:
+
+ffea <input-file.ffea>
+
+
+The only caveat in this last step is that <input-file.ffea> points to a number of input files. Details of all these files are in the documentation. You must be in the right folder so that the relative paths in <input-file.ffea> make sense.
+
+

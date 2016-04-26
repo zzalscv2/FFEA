@@ -57,7 +57,7 @@ In the case of setting:
 the well known 6-12 Lennard-Jones potential:
 \f[
 
-  U_{i,j}(r) = \epsilon{i,j} [ (\frac{\sigma_{i,j}}{r})^{12} - 2(\frac{\sigma_{i,j}}{r})^6)
+  U_{i,j}(r) = \epsilon_{i,j} \left[ \left( \frac{\sigma_{i,j}}{r} \right)^{12} - 2 \left( \frac{\sigma_{i,j}}{r} \right)^6 \right]
 
 \f]
 
@@ -118,6 +118,29 @@ Steric potential {#sPotential}
 
  where ` F ` is a value to be provided. In the case of being negative, the 
   user will receive a warning. 
+
+Combination potential {#cPotential}
+==============================
+ In the case of setting:
+
+      < vdw_type = ljsteric >
+
+ a piecewise combination of the steric potential and the lennard-jones potentials is used.
+  Because hard-core surface - surface lennard-jones repulsion is much less stable than the softer volume - volume
+  steric repulsion, we use the following protocol:
+
+\f[  U_{i,j}(r) = \left\{
+\begin{array}{ll}
+      steric & r\leq 0 \\
+      \epsilon_{i,j} \left[ 2\left(\frac{r}{\sigma_{i,j}}\right)^{3} - 3\left(\frac{r}{\sigma_{i,j}} \right)^2 \right]  & 0 < r\leq \sigma_{i,j} \\
+      \epsilon_{i,j} \left[ \left(\frac{\sigma_{i,j}}{r}\right)^{12} - 2\left(\frac{\sigma_{i,j}}{r} \right)^6 \right]& r > \sigma_{i,j} \\
+\end{array} 
+\right. \f]
+
+ Very short range interactions are dealt with using the volume-volume steric interactions, and `long range' using standard 
+  lennard-jones interactions. The intermediate region uses an interpolated funtion, for which the function itself and it's first derivative
+  are both continuous at the boundaries, and for \f$r = \sigma_{i,j}\f$, we still find a minumum in the energy, giving us zero force
+  at that point.
   
 
   
