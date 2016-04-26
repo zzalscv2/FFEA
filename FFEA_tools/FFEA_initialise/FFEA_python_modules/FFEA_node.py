@@ -121,6 +121,28 @@ class FFEA_node:
 			
 			print outline
 	
+	def write_to_file(self, fname):
+
+		print "Writing to " + fname + "..."
+		fout = open(fname, "w")
+		fout.write("ffea node file\nnum_nodes %d\nnum_surface_nodes %d\nnum_interior_nodes %d\n" % (self.num_nodes, self.num_surface_nodes, self.num_interior_nodes))
+		
+		# Surface nodes
+		fout.write("surface nodes:\n")
+		for i in range(self.num_surface_nodes):
+			fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
+
+		# Interior nodes
+		fout.write("interior nodes:\n")
+		for i in range(self.num_surface_nodes, self.num_nodes, 1):
+			fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
+		fout.close()
+		print "done!"
+
+	def scale(self, factor):
+		
+		self.pos *= factor
+
 	def reset(self):
 
 		self.pos = []

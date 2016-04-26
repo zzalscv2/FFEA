@@ -1,4 +1,5 @@
 #include "World.h"
+#include "mpi.h"
 
 World::World() {
 
@@ -213,7 +214,36 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
               } 
         }
 
+   // Initialise the Van der Waals solver
+	    if(params.calc_vdw == 1 || params.calc_es == 1) {
+		vector3 world_centroid, shift;
+	        get_system_centroid(&world_centroid);
+		if(params.es_N_x < 1 || params.es_N_y < 1 || params.es_N_z < 1) {
+			vector3 dimension_vector;
+			get_system_dimensions(&dimension_vector);
+			
+			// Calculate decent box size
+			params.es_N_x = 2 * (int)ceil(dimension_vector.x * (params.kappa / params.es_h));
+			params.es_N_y = 2 * (int)ceil(dimension_vector.y * (params.kappa / params.es_h));
+			params.es_N_z = 2 * (int)ceil(dimension_vector.z * (params.kappa / params.es_h));
+		}
 
+		// Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
+		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
+	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
+	        box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
+		
+		shift.x = box_dim.x / 2.0 - world_centroid.x;
+		shift.y = box_dim.y / 2.0 - world_centroid.y;
+		shift.z = box_dim.z / 2.0 - world_centroid.z;
+		if(params.move_into_box == 1) {// && params.restart == 0) {
+			for (i = 0; i < params.num_blobs; i++) {
+				//active_blob_array[i]->get_centroid(&world_centroid);
+				active_blob_array[i]->move(shift.x, shift.y, shift.z);
+				active_blob_array[i]->calc_all_centroids();
+			}
+		}
+	}
 	// Create measurement files
 	measurement_out = new FILE *[params.num_blobs + 1];
 
@@ -291,6 +321,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		} else {
 
 			// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
+			bool singleframe = false;
+			char c;
+
 			printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
 			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
@@ -312,10 +345,21 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			int num_asterisks_to_find = 3 + (frames_to_delete) * 2 + 1; // 3 to get to top of last frame, then two for every subsequent frame. Final 1 to find ending conformations of last step
 			while (num_asterisks != num_asterisks_to_find) {
 			    if (fseek(trajectory_out, -2, SEEK_CUR) != 0) {
-				perror(NULL);
-				FFEA_ERROR_MESSG("It is likely we have reached the begininng of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
+				//perror(NULL);
+				//FFEA_ERROR_MESSG("It is likely we have reached the begininng of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
+				printf("Found beginning of file. Searching forwards for next asterisk...");
+				singleframe = true;
+
+				// This loop will allow the script to find the 'final' asterisk
+				while(true) {
+					if ((c = fgetc(trajectory_out)) == '*') {
+						fseek(trajectory_out, -1, SEEK_CUR);
+						break;
+					}	
+				}
+				
 			    }
-			    char c = fgetc(trajectory_out);
+			    c = fgetc(trajectory_out);
 			    if (c == '*') {
 				num_asterisks++;
 				printf("Found %d\n", num_asterisks);
@@ -327,22 +371,28 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			    }
 			}
 
-			char c, sline[255];
+			char sline[255];
 			if ((c = fgetc(trajectory_out)) != '\n') {
 			    ungetc(c, trajectory_out);
 			} else {
 				last_asterisk_pos = ftello(trajectory_out);
 			}
 
-			// Get the conformations for the last snapshot
+			// Get the conformations for the last snapshot (or set them as 0 if we have only 1 frame)
 			int current_conf;
-			fscanf(trajectory_out, "Conformation Changes:\n");
-			for(i = 0; i < params.num_blobs; ++i) {
-				fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %d\n", &current_conf);
-				active_blob_array[i] = &blob_array[i][current_conf];
+			if(!singleframe) {
+				fscanf(trajectory_out, "Conformation Changes:\n");
+				for(i = 0; i < params.num_blobs; ++i) {
+					fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %d\n", &current_conf);
+					active_blob_array[i] = &blob_array[i][current_conf];
+				}
+				fscanf(trajectory_out, "*\n");
+				last_asterisk_pos = ftello(trajectory_out);
+			} else {
+				for(i = 0; i < params.num_blobs; ++i) {
+					active_blob_array[i] = &blob_array[i][0];
+				}
 			}
-			fscanf(trajectory_out, "*\n");
-			last_asterisk_pos = ftello(trajectory_out);
 
 			// Load next frame
 			printf("Loading Blob position and velocity data from last completely written snapshot \n");
@@ -414,7 +464,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		}
 
 	}
-	    // Initialise the Van der Waals solver
+	 /*   // Initialise the Van der Waals solver
 	    if(params.calc_vdw == 1 || params.calc_es == 1) {
 		vector3 world_centroid, shift;
 	        get_system_centroid(&world_centroid);
@@ -443,7 +493,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 				active_blob_array[i]->calc_all_centroids();
 			}
 		}
-	    }
+	    }*/
 	vector3 world_centroid;
 
 	    box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
@@ -454,6 +504,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
               vdw_solver = new VdW_solver();
             else if (params.vdw_type == "steric")
               vdw_solver = new Steric_solver();
+	    else if (params.vdw_type == "ljsteric")
+	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL) 
               FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
 	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor);
@@ -1098,6 +1150,8 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
+    double st, st1, st2, time1, time2, time3, time4;
+    st =MPI::Wtime();
     for (long long step = step_initial; step < params.num_steps; step++) {
 
         // Zero the force across all blobs
@@ -1211,8 +1265,16 @@ int World::run() {
             } else
                 es_count++;
         }
+        // timing solve() function in first 10 steps 
+        if (step  < 11) {
+          st1 = MPI::Wtime();
+        }
         if (params.calc_vdw == 1) vdw_solver->solve();
-
+        if (step  < 11) {
+          time3 = MPI::Wtime() -st1;
+          cout<< "calculate vdw at step:"<<step<< "for "<< time3 << "seconds"<< endl;
+        }
+        
         // Update all Blobs in the World
 
         // Set node forces to zero
@@ -1234,7 +1296,10 @@ int World::run() {
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
 #endif
-
+        // timing update() function in first 10 steps
+        if(step<11){
+          st2 = MPI::Wtime();
+        }
         for (int i = 0; i < params.num_blobs; i++) {
         	if (active_blob_array[i]->update() == FFEA_ERROR) {
         		FFEA_error_text();
@@ -1243,6 +1308,10 @@ int World::run() {
                 	//return FFEA_ERROR;
                 	fatal_errors++;
             	}
+        }
+        if( step<11 ){
+          time4 = MPI::Wtime()-st2;
+          cout<< "update at step:"<<step<< "for "<< time4 << "seconds"<< endl;
         }
 
         if (fatal_errors > 0) {
@@ -1292,8 +1361,15 @@ int World::run() {
 	// Output kinetic data to files
         if (step % params.check == 0) {
             print_kinetic_files(step + 1);
+            // timing 50 steps
+            time2 = MPI::Wtime() -st;
+            cout<< "output kinetic data time in World::run():" << time2 << "seconds"<< endl;
         }
     }
+    // Total mpi timing, compare with openmp timing
+    time1 = MPI::Wtime() -st;
+    cout<< "Total MPI time in World::run():" << time1 << "seconds"<< endl;
+    
     printf("Time taken: %2f seconds\n", (omp_get_wtime() - wtime));
 
     return FFEA_OK;
@@ -1748,8 +1824,8 @@ int World::read_and_build_system(vector<string> script_vector) {
 		        	if (velocity != NULL)
 		            		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
 
-				// Set up extra nodes if necessary
-				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && params.vdw_type == "steric") {
+				// Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
+				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
 					blob_array[i][j].add_steric_nodes();
 				}
 
