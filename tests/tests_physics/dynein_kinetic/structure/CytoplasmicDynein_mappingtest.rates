@@ -1,7 +1,0 @@
-ffea kinetic rates file
-num_states 4
-rates:
-0 9e10 0 0
-0 0 1e10 0
-0 0 0 5e10
-0 0 1e9 0
