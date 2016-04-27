@@ -58,13 +58,13 @@
 	<blob>
 		<conformation>
 			<motion_state = STATIC>
-			<topology = cuboid_flat/structure/cuboid_flat.top>
-			<material = cuboid_flat/structure/cuboid_flat.mat>
-			<stokes = cuboid_flat/structure/cuboid_flat.stokes>
-			<pin = cuboid_flat/structure/cuboid_flat.pin>
-			<nodes = cuboid_flat/structure/cuboid_flat.node>
-			<surface = cuboid_flat/structure/cuboid_flat.surf>
-			<vdw = cuboid_flat/structure/cuboid_flat.vdw>
+			<topology = cuboid_flat_structure/cuboid_flat.top>
+			<material = cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = cuboid_flat_structure/cuboid_flat.node>
+			<surface = cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = cuboid_flat_structure/cuboid_flat.vdw>
 		</conformation>
 		<scale = 5e-9>
 		<centroid = (11.5,9.0,9.0)>

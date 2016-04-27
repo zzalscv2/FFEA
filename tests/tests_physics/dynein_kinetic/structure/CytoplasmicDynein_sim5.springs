@@ -1,6 +1,0 @@
-ffea springs file
-num_springs 3
-springs:
-1e-2 5e-9 0 1 0 0 0 0
-1e-2 5e-9 0 1 0 0 3 3
-1e-2 5e-9 0 1 0 0 5 5
