@@ -40,9 +40,9 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 
     //  Then, check whether the tetrahedra intersect.
     if (f1->checkTetraIntersection(f2)) {
-
 	    // If yes, do the vol-vol steric interactions
-
+//cout << "Interacting!!" << endl;
+//exit(0);
 	    //   and get the direction of the force for f1:
 	    /* TRIAL 2 */
 	    arr3 force1, force2, n1_b; 
