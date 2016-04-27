@@ -1,6 +1,6 @@
-from OpenGL.GL import *
-from OpenGL.GLUT import *
-from OpenGL.GLU import *
+# from OpenGL.GL import *
+# from OpenGL.GLUT import *
+# from OpenGL.GLU import *
 import math, os
 import numpy as np
 import FFEA_material
@@ -325,32 +325,34 @@ class Blob:
 		centroid_y /= self.num_nodes
 		centroid_z /= self.num_nodes
 		
-		# Calculate average normal at each node (for gl lighting effects)
-		normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
-		#cdef int f
-		for f in xrange(self.num_surface_faces):
-			# get node indices of this face
-			i1 = self.surface[f][1]
-			i2 = self.surface[f][2]
-			i3 = self.surface[f][3]
+                ## ## Normals are calculated later ## 
+		# # Calculate average normal at each node (for gl lighting effects)
+		# normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
+		# #cdef int f
+		# for f in xrange(self.num_surface_faces):
+		#	# get node indices of this face
+		#	i1 = self.surface[f][1]
+		#	i2 = self.surface[f][2]
+		#	i3 = self.surface[f][3]
 		
-			# get the normal of the face
-			norm = self.calc_normal(nodes[i1], nodes[i2], nodes[i3])
+		#	# get the normal of the face
+		#	norm = self.calc_normal(nodes[i1], nodes[i2], nodes[i3])
 		
-			normal_list[i1][0] += norm[0]
-			normal_list[i1][1] += norm[1]
-			normal_list[i1][2] += norm[2]
+		#	normal_list[i1][0] += norm[0]
+		#	normal_list[i1][1] += norm[1]
+		#	normal_list[i1][2] += norm[2]
 		
-			normal_list[i2][0] += norm[0]
-			normal_list[i2][1] += norm[1]
-			normal_list[i2][2] += norm[2]
+		#	normal_list[i2][0] += norm[0]
+		#	normal_list[i2][1] += norm[1]
+		#	normal_list[i2][2] += norm[2]
 		
-			normal_list[i3][0] += norm[0]
-			normal_list[i3][1] += norm[1]
-			normal_list[i3][2] += norm[2]
+		#	normal_list[i3][0] += norm[0]
+		#	normal_list[i3][1] += norm[1]
+		#	normal_list[i3][2] += norm[2]
 		
 		
-		self.frames.append(Frame(blob_state, nodes, normal_list, centroid_x, centroid_y, centroid_z))
+		# self.frames.append(Frame(blob_state, nodes, normal_list, centroid_x, centroid_y, centroid_z))
+		self.frames.append(Frame(blob_state, nodes, NULL, centroid_x, centroid_y, centroid_z))
 		self.num_frames += 1
 
 		if self.calculated_linear_nodes == False:
@@ -486,10 +488,13 @@ class Blob:
 		centroid_z/= self.num_nodes
 
 		nodes_file.close()
+
 		print "Finished reading in nodes file " + self.nodes_fname
 
 		if self.init_centroid != None:
+                        print "=============================="
 			print "Moving to starting position..."
+                        print "=============================="
 			translate = [self.init_centroid[0]*self.scale*self.global_scale - centroid_x, self.init_centroid[1]*self.scale*self.global_scale - centroid_y, self.init_centroid[2]*self.scale*self.global_scale - centroid_z]
 					
 			for i in range(len(nodes)):
@@ -504,6 +509,7 @@ class Blob:
 		# Apply a rotation if necessary
 		if self.init_rot != None:
 			
+                        print "--- Are you rotating?"
 			# Move centroid to origin
 			for i in range(len(nodes)):
 				nodes[i][0] -= centroid_x
@@ -550,32 +556,34 @@ class Blob:
 			print "...done!\n"
 				
 
-		# Calculate average normal at each node (for gl lighting effects)
-		print "Calculating node normals for lighting..."
-		normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
-		for f in xrange(self.num_surface_faces):
-			# get node indices of this face
-			i1 = self.surface[f][1]
-			i2 = self.surface[f][2]
-			i3 = self.surface[f][3]
+                ## ## Normals are calculated later ## 
+		# # Calculate average normal at each node (for gl lighting effects)
+		# print "Calculating node normals for lighting..."
+		# normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
+		# for f in xrange(self.num_surface_faces):
+		# 	# get node indices of this face
+		# 	i1 = self.surface[f][1]
+		# 	i2 = self.surface[f][2]
+		# 	i3 = self.surface[f][3]
 		
-			# get the normal of the face
-			norm = self.calc_normal(nodes[i1], nodes[i2], nodes[i3])
+		# 	# get the normal of the face
+		# 	norm = self.calc_normal(nodes[i1], nodes[i2], nodes[i3])
 		
-			normal_list[i1][0] += norm[0]
-			normal_list[i1][1] += norm[1]
-			normal_list[i1][2] += norm[2]
+		# 	normal_list[i1][0] += norm[0]
+		# 	normal_list[i1][1] += norm[1]
+		# 	normal_list[i1][2] += norm[2]
 		
-			normal_list[i2][0] += norm[0]
-			normal_list[i2][1] += norm[1]
-			normal_list[i2][2] += norm[2]
+		# 	normal_list[i2][0] += norm[0]
+		# 	normal_list[i2][1] += norm[1]
+		# 	normal_list[i2][2] += norm[2]
 		
-			normal_list[i3][0] += norm[0]
-			normal_list[i3][1] += norm[1]
-			normal_list[i3][2] += norm[2]
-		print "Done."
+		# 	normal_list[i3][0] += norm[0]
+		# 	normal_list[i3][1] += norm[1]
+		# 	normal_list[i3][2] += norm[2]
+		# print "Done."
 		
-		self.frames.append(Frame(self.get_state(), nodes, normal_list, centroid_x, centroid_y, centroid_z))
+		# self.frames.append(Frame(self.get_state(), nodes, normal_list, centroid_x, centroid_y, centroid_z))
+		self.frames.append(Frame(self.get_state(), nodes, NULL, centroid_x, centroid_y, centroid_z))
 		self.num_frames += 1
 
 		if self.no_topology == False:
@@ -909,9 +917,9 @@ class Blob:
 				#if f == 0:
 				#	print n1
 				#	print display_flags['selected_blob'], display_flags['selected_conformation']
-				norm1 = self.frames[i].normal_list[self.surface[f][1]]
-				norm2 = self.frames[i].normal_list[self.surface[f][2]]
-				norm3 = self.frames[i].normal_list[self.surface[f][3]]
+				# norm1 = self.frames[i].normal_list[self.surface[f][1]]
+				# norm2 = self.frames[i].normal_list[self.surface[f][2]]
+				# norm3 = self.frames[i].normal_list[self.surface[f][3]]
                                 norm = self.calc_normal_2(n1, n2, n3)
 
                                 obj.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
@@ -933,9 +941,9 @@ class Blob:
 				n2 = n2a[0:3]
 				n3 = n3a[0:3]
 
-				norm1 = self.frames[i].normal_list[self.surface[f][1]]
-				norm2 = self.frames[i].normal_list[self.surface[f][2]]
-				norm3 = self.frames[i].normal_list[self.surface[f][3]]
+				# norm1 = self.frames[i].normal_list[self.surface[f][1]]
+				# norm2 = self.frames[i].normal_list[self.surface[f][2]]
+				# norm3 = self.frames[i].normal_list[self.surface[f][3]]
 
                                 obj.extend( [BEGIN, LINE_STRIP] )
                                 # obj.extend( [ LINEWIDTH, 2.0 ] )
@@ -971,10 +979,10 @@ class Blob:
 						n4 = n4a[0:3]
 		
 						# Get the surface normals at each node
-						norm1 = self.frames[i].normal_list[i1]
-						norm2 = self.frames[i].normal_list[i2]
-						norm3 = self.frames[i].normal_list[i3]
-						norm4 = self.frames[i].normal_list[i4]
+						# norm1 = self.frames[i].normal_list[i1]
+						# norm2 = self.frames[i].normal_list[i2]
+						# norm3 = self.frames[i].normal_list[i3]
+						# norm4 = self.frames[i].normal_list[i4]
 	
                                                 obj.extend( [ BEGIN, LINE_STRIP ] )
                                                 # obj.extend( [ COLOR, 0.15, 0.15, 1.0 ] )
@@ -1537,6 +1545,8 @@ class Frame:
 		self.centroid_z = centroid_z
 
 	def translate(self, trans):
+                print "-----------------------"
+                print "--- translate request: ", trans
 		for n in self.node_list:
 			for i in range(3):
 				n[i] += trans[i]

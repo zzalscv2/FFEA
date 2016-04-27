@@ -36,16 +36,44 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
 
     //  Then, check whether the tetrahedra intersect.
     if (!f1->checkTetraIntersection(f2)) {
-      return; 
+	return;
+ /*   #pragma omp critical
+    {
+	fprintf(stderr, "%d %d Nointersect", f1->index, f2->index);
+	for(int i = 0; i < 4; ++i) {
+		fprintf(stderr, " %6.3f %6.3f %6.3f", f1->n[i]->pos.x, f1->n[i]->pos.y, f1->n[i]->pos.z);
+		fprintf(stderr, "  ");
+	}
+	for(int i = 0; i < 4; ++i) {
+		fprintf(stderr, " %6.3f %6.3f %6.3f", f2->n[i]->pos.x, f2->n[i]->pos.y, f2->n[i]->pos.z);
+		fprintf(stderr, "  ");	
+	}
+	fprintf(stderr, "\n");
+    }*/
+    } else {
+  /*  #pragma omp critical
+    {
+	fprintf(stderr, "%d %d Intersect", f1->index, f2->index);
+	for(int i = 0; i < 4; ++i) {
+		fprintf(stderr, " %6.3f %6.3f %6.3f", f1->n[i]->pos.x, f1->n[i]->pos.y, f1->n[i]->pos.z);
+		fprintf(stderr, "  ");
+	}
+	for(int i = 0; i < 4; ++i) {
+		fprintf(stderr, " %6.3f %6.3f %6.3f", f2->n[i]->pos.x, f2->n[i]->pos.y, f2->n[i]->pos.z);
+		fprintf(stderr, "  ");	
+	}
+	fprintf(stderr, "\n");
+    }*/
     }
-    //fprintf(stderr, "Interacting Faces:\n");
-    //fprintf(stderr, "%d %d %d\n", f1->n[0]->index, f1->n[1]->index, f1->n[2]->index);
-    //fprintf(stderr, "%d %d %d\n", f2->n[0]->index, f2->n[1]->index, f2->n[2]->index);
-    //f1->print_centroid();
-    //f1->print_nodes();
-    //f2->print_centroid();
-    //f2->print_nodes();
-   
+
+   /* fprintf(stderr, "Interacting Faces:\n");
+    fprintf(stderr, "%d %d %d %d\n", f1->index, f1->n[0]->index, f1->n[1]->index, f1->n[2]->index);
+    fprintf(stderr, "%d %d %d %d\n", f2->index, f2->n[0]->index, f2->n[1]->index, f2->n[2]->index);
+    f1->print_centroid();
+    f1->print_nodes();
+    f2->print_centroid();
+    f2->print_nodes();*/
+  //  exit(0);
     //   and get the direction of the force for f1:
     /* TRIAL 2 */
     arr3 force1, force2, n1_b; 
@@ -75,7 +103,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     // scalar vol = f1->getTetraIntersectionVolume(f2); 
     geoscalar vol, area; 
     f1->getTetraIntersectionVolumeAndArea(f2,vol,area);
-    //fprintf(stderr, "Vol = %f\n", vol);
+    //fprintf(stderr, "Vol = %f\nArea = %f\n", vol, area);
     //exit(0);
     area *= steric_factor;
     vol *= steric_factor; 
