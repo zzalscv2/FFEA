@@ -2377,7 +2377,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
   
       x = stod( line.substr(28,10) ) * scale; 
       y = stod( line.substr(38,8) ) * scale;
-      z = stod( line.substr(48,8) ) * scale;
+      z = stod( line.substr(46,8) ) * scale;
       positions.push_back(x);
       positions.push_back(y);
       positions.push_back(z);
