@@ -10,10 +10,10 @@
  */
 #ifdef USE_DOUBLE
 typedef double scalar;
-typedef long double geoscalar;
+typedef double geoscalar;
 #else
 typedef float scalar;
-typedef long double geoscalar;
+typedef double geoscalar;
 #endif 
 //typedef long double scalar;
 

@@ -18,6 +18,8 @@ import numpy as np
 
 import FFEA_springs
 
+import StringIO
+
 class FFEA_viewer_display_window():
 
 	def __init__(self, speak_to_control, ffea_fname, num_frames_to_read, energy_thresh=1.0e6):
@@ -92,7 +94,7 @@ class FFEA_viewer_display_window():
 
 		# frames
 		self.frame = 0
-		self.num_frames = 0
+		self.num_frames = -1
 
 		# list of loaded blobs
 		self.blob_list = []
@@ -144,6 +146,73 @@ class FFEA_viewer_display_window():
 
 		self.projection = "perspective"
 
+
+       # # # # # # # # # # # # # # # # # # # # # #
+	
+	#
+        def commentsOut(self, iFile):
+          sta = open(iFile, 'r')
+          STA = sta.readlines()
+          sta.close()
+     
+          ffea_in = StringIO.StringIO()
+     
+          # and some variables to take the comments out: 
+          comment = 0
+          m_ini = "<!--"
+          m_end = "-->"
+          # Now start parsing the input file
+          for txt in STA:
+     
+              # Strip tag wrapping 
+              # line = ffea_in.readline().strip()
+              line = txt.strip()
+     
+              # The following stuff takes care of the comments enclosed in "<!--" and "-->":
+              # buf2_string = ""
+              found = 0
+              count = 0
+              count_0 = 0
+              ini = 0
+              end = len(line)
+              theEnd = end
+     
+              # remove the comments:
+              while ((found != -1) and (found != len(line))):
+                if (comment == 0):
+                  found = line.find(m_ini)
+                  if (found != -1):
+                    count += 1
+                    comment = 1
+                    ini = found
+                if (comment == 1):
+                  found = line.find(m_end)
+                  if (found != -1):
+                    count += 2
+                    comment = 0
+                    end = found + 3
+                # the line end up without closing the comment:
+                if (comment == 1):
+                  line = line[:ini]
+                  break
+                # we're out of the comment:
+                elif (comment == 0):
+                  if (count == count_0 + 3):
+                    buf2_string = line[:ini]
+                    buf2_string += line[end:]
+                    line = buf2_string
+                    count_0 = count
+                  elif (count == count_0 + 2):
+                    line = line[end:]
+                    count_0 = count
+              # comments removed!
+              if len(line) > 0:
+                ffea_in.write(line.strip() + "\n")
+     
+          ffea_in.seek(0,0)
+          return ffea_in
+
+
 	def load_ffea(self):
 		
 		print "Loading ffea file: " + self.ffea_fname
@@ -154,7 +223,8 @@ class FFEA_viewer_display_window():
 		ffea_path = os.getcwd()
 
 		# First, we want to see if there is a parameters file associated with this
-		ffea_in = open(self.ffea_fname, "r")
+		# ffea_in = open(self.ffea_fname, "r")
+                ffea_in = self.commentsOut(self.ffea_fname)
 		
 		# Read required stuff from params block
 		trajectory_out_fname = None
@@ -469,7 +539,7 @@ class FFEA_viewer_display_window():
 			self.load_trajectory_thread.start()
 
 		# Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists
-		while(self.num_frames < 1):
+		while(self.num_frames < 0):
 			if trajectory_out_fname == None:
 				break
 			else:

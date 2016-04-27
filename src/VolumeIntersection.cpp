@@ -854,34 +854,34 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
 // INSTANTIATE everything to arr3 and grr3! 
 
 template bool exists<scalar,arr3>(arr3 &p, int ips, arr3 (&W)[56]);
-template bool exists<geoscalar,grr3>(grr3 &p, int ips, grr3 (&W)[56]);
+//template bool exists<geoscalar,grr3>(grr3 &p, int ips, grr3 (&W)[56]);
 
 template scalar maxVolume<scalar,arr3>(int ips, arr3 (&W)[56]);
-template geoscalar maxVolume<geoscalar,grr3>(int ips, grr3 (&W)[56]);
+//template geoscalar maxVolume<geoscalar,grr3>(int ips, grr3 (&W)[56]);
 
 template void maxVolumeAndArea<scalar,arr3>(int ips, arr3 (&W)[56], scalar &volume, scalar &area);
-template void maxVolumeAndArea<geoscalar,grr3>(int ips, grr3 (&W)[56], geoscalar &volume, geoscalar &area);
+//template void maxVolumeAndArea<geoscalar,grr3>(int ips, grr3 (&W)[56], geoscalar &volume, geoscalar &area);
 
 template void getBAndN_Order<scalar,arr3>(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &t, arr3 &b, arr3 &n);
-template void getBAndN_Order<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &t, grr3 &b, grr3 &n);
+//template void getBAndN_Order<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &t, grr3 &b, grr3 &n);
 
 template void getBAndN<scalar,arr3>(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &t, arr3 &b, arr3 &n);
-template void getBAndN<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &t, grr3 &b, grr3 &n);
+//template void getBAndN<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &t, grr3 &b, grr3 &n);
 
 template scalar volumeForNode<scalar,arr3>(arr3 (&tetA)[4], int node);
-template geoscalar volumeForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node);
+//template geoscalar volumeForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node);
 
 template void volumeAndAreaForNode<scalar,arr3>(arr3 (&tetA)[4], int node, scalar &volume, scalar &area);
-template void volumeAndAreaForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node, geoscalar &volume, geoscalar &area);
+//template void volumeAndAreaForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node, geoscalar &volume, geoscalar &area);
 
 template scalar volumeForIntPoint<scalar,arr3>(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)[4], int f1, int f2, int f3);
-template geoscalar volumeForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3);
+//template geoscalar volumeForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3);
 
 template void volumeAndAreaForIntPoint<scalar,arr3>(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)[4], int f1, int f2, int f3, scalar &volume, scalar &area);
-template void volumeAndAreaForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3, geoscalar &volume, geoscalar &area);
+//template void volumeAndAreaForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3, geoscalar &volume, geoscalar &area);
 
 template scalar volumeIntersection<scalar,arr3>(arr3 (&tetA)[4], arr3 (&tetB)[4]);
-template scalar volumeIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4]);
+//template scalar volumeIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4]);
 
 template void volumeAndAreaIntersection<scalar,arr3>(arr3 (&tetA)[4], arr3 (&tetB)[4], scalar &vol, scalar &area);
-template void volumeAndAreaIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4], geoscalar &vol, geoscalar &area);
+//template void volumeAndAreaIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4], geoscalar &vol, geoscalar &area);
