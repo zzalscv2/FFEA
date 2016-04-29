@@ -40,7 +40,7 @@ class FFEA_viewer_control_window:
      self.parent = app.root
 
      self.root = Tk()
-     self.root.geometry("140x100")
+     self.root.geometry("160x100")
      self.root.title("FFEA")
 
      top_frame = Frame(self.root)
@@ -57,6 +57,7 @@ class FFEA_viewer_control_window:
      self.show_mesh = IntVar()
      self.show_mesh_surf = IntVar()
      self.show_solid = IntVar()
+     self.show_node_numbers = IntVar()
      self.init_vars()
  
      # # Display flags frame
@@ -72,10 +73,14 @@ class FFEA_viewer_control_window:
      check_button_show_mesh_surf = Checkbutton(display_flags_frame, text="Mesh surf", variable=self.show_mesh_surf, command=lambda:self.update_display_flags("show_mesh_surf"))
      check_button_show_mesh_surf.pack(anchor=W)
 
-     # show solid:
+     # show solid: 
      check_button_show_solid = Checkbutton(display_flags_frame, text="Solid", variable=self.show_solid, command=lambda:self.update_display_flags("show_solid"))
      check_button_show_solid.pack(anchor=W)
-     check_button_show_solid.select()
+     check_button_show_solid.select() # that has to match with the default value 0! 
+
+     # show node numbers: 
+     check_button_show_node_numbers = Checkbutton(display_flags_frame, text="Node numbers", variable=self.show_node_numbers, command=lambda:self.update_display_flags("show_node_numbers"))
+     check_button_show_node_numbers.pack(anchor=W)
 
      # flags
      self.animate = False
@@ -103,6 +108,7 @@ class FFEA_viewer_control_window:
        self.display_flags[key] = 1
      else:
        self.display_flags[key] = 0
+     # print key, self.display_flags[key] 
 
 
   # # # # # # # # # # # # # # # # # # # # # #
@@ -212,7 +218,6 @@ class FFEA_viewer_control_window:
      # self.start_stop_button.config(state=NORMAL)
      # self.pause_loading_button.config(state=NORMAL)
      # self.speed_slider.config(width=10)
-
 		
      print "Loading ffea file: " + self.ffea_fname
      ffea_path, ffea_id_string = os.path.split(self.ffea_fname)
