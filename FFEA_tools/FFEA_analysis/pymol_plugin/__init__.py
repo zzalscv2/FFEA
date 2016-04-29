@@ -40,7 +40,7 @@ class FFEA_viewer_control_window:
      self.parent = app.root
 
      self.root = Tk()
-     self.root.geometry("160x100")
+     self.root.geometry("135x130")
      self.root.title("FFEA")
 
      top_frame = Frame(self.root)
@@ -58,6 +58,7 @@ class FFEA_viewer_control_window:
      self.show_mesh_surf = IntVar()
      self.show_solid = IntVar()
      self.show_node_numbers = IntVar()
+     self.do_load_trajectory = IntVar()
      self.init_vars()
  
      # # Display flags frame
@@ -76,11 +77,16 @@ class FFEA_viewer_control_window:
      # show solid: 
      check_button_show_solid = Checkbutton(display_flags_frame, text="Solid", variable=self.show_solid, command=lambda:self.update_display_flags("show_solid"))
      check_button_show_solid.pack(anchor=W)
-     check_button_show_solid.select() # that has to match with the default value 0! 
+     check_button_show_solid.select() # that has to match with the default value 1! 
 
      # show node numbers: 
      check_button_show_node_numbers = Checkbutton(display_flags_frame, text="Node numbers", variable=self.show_node_numbers, command=lambda:self.update_display_flags("show_node_numbers"))
      check_button_show_node_numbers.pack(anchor=W)
+
+     # load the trajectory:
+     check_button_do_load_trajectory = Checkbutton(display_flags_frame, text="Load trajectory", variable=self.load_trajectory, command=lambda:self.update_display_flags("load_trajectory"))
+     check_button_do_load_trajectory.pack(anchor=W)
+     check_button_do_load_trajectory.select() # that has to match with the default value 1! 
 
      # flags
      self.animate = False
@@ -108,7 +114,7 @@ class FFEA_viewer_control_window:
        self.display_flags[key] = 1
      else:
        self.display_flags[key] = 0
-     # print key, self.display_flags[key] 
+     print key, self.display_flags[key] 
 
 
   # # # # # # # # # # # # # # # # # # # # # #
@@ -210,15 +216,6 @@ class FFEA_viewer_control_window:
      else: 
         self.ffea_fname = ffea_fname
 
-     # loading buttons:
-     # self.start_stop_button.config(text=">")
-     # self.pause_loading_button.config(text="Pause loading")
-
-     # self.frame_slider.config(width=15)
-     # self.start_stop_button.config(state=NORMAL)
-     # self.pause_loading_button.config(state=NORMAL)
-     # self.speed_slider.config(width=10)
-		
      print "Loading ffea file: " + self.ffea_fname
      ffea_path, ffea_id_string = os.path.split(self.ffea_fname)
      if ffea_path == "":
@@ -270,8 +267,9 @@ class FFEA_viewer_control_window:
                  trajectory_out_fname = None
 
              ### PLUGIN OUT # not loading the trajectory!
-             # print "not loading trajectory yet" 
-             # trajectory_out_fname = None
+             if self.display_flags['load_trajectory'] == 0:
+               print "requested not to load the trajectory"
+               trajectory_out_fname = None
 
          elif lvalue == "calc_vdw":
              self.calc_vdw = int(rvalue)
@@ -523,19 +521,19 @@ class FFEA_viewer_control_window:
 
      ## PLUGIN OUT # the following two lines are out for the moment. 
      # Now load trajectory
-     if trajectory_out_fname != None:
+     if (trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
          self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname, ))
          self.load_trajectory_thread.start()
 
      ## Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists
      while(self.num_frames < 1):
-        if trajectory_out_fname == None:
+       if trajectory_out_fname == None:
             # increase the frames to 1, so that the structure is displayed.
             self.num_frames = 1
             self.draw_stuff()
             break
-        else:
-            pass
+       else:
+           pass
 
      # Reset initial camera (dependent upon structure size)
      dims = self.get_system_dimensions()
@@ -782,7 +780,7 @@ class FFEA_viewer_control_window:
             'show_flat': 0,
             'show_material': 0,
             'show_vdw_only': 0,
-            'show_node_numbers': 0,
+            'show_node_numbers': 0, ## PYMOL OK 
             'show_pinned_nodes': 0,
             'hide_frozen': 0,
             'show_shortest_edge': 0,
@@ -794,6 +792,7 @@ class FFEA_viewer_control_window:
             'selected_conformation':0,
             'show_linear_nodes_only': 0,
             'show_mesh_surf': 0, ## PYMOL OK
+            'load_trajectory': 1, ## PYMOL OK
             'show_inverted': 0,
             'blob_colour': (1.0, 1.0, 1.0)}
 
