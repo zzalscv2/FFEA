@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import numpy as np
 import numpy.random
 import matplotlib.pyplot as plt
@@ -9,6 +9,7 @@ if len(sys.argv) != 2:
 
 # Get args
 modefiles = sys.argv[1]
+base, ext = os.path.splitext(modefiles)
 
 # Open file and read
 fin = open(modefiles, "r")
@@ -45,4 +46,5 @@ plt.ylabel("Eigensystem 2")
 #legend
 cbar = plt.colorbar(heatmap)
 cbar.set_label('Eigenstate - Eigenstate Dot Products')
+plt.savefig(base + ".png")
 plt.show()
