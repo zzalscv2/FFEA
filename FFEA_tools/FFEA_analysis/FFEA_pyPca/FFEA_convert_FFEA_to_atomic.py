@@ -66,10 +66,10 @@ os.system("python " + scriptdir + "../../FFEA_initialise/PDB_tools/PDB_convert_f
 
 # Convert entire trajectory to a pdb trajectory
 if format == "mdcrd":
-	final_traj_fname_pdb = final_traj_fname.split(".")[0] + ".mdcrd"
+	final_traj_fname_pdb = out_basename + ".mdcrd"
 	os.system(scriptdir + "../../FFEA_analysis/FFEA_pyPca/FFEA_convert_traj_to_mdcrd " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
 elif format == "pdb":
-	final_traj_fname_pdb = final_traj_fname.split(".")[0] + ".pdb"
+	final_traj_fname_pdb = out_basename + ".pdb"
 	pdb = FFEA_pdb.FFEA_pdb(final_traj_fname_pdb)
 	pdb.build_from_traj(traj, scale = 1.0 / scale)
 	pdb.write_to_file(final_traj_fname_pdb)
