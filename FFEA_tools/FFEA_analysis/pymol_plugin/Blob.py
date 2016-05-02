@@ -7,6 +7,8 @@ import FFEA_material
 
 from pymol import cmd
 from pymol.cgo import *
+from pymol.vfont import plain
+
 
 # from pymol.callback import Callback
 
@@ -1196,22 +1198,22 @@ class Blob:
 			glShadeModel(GL_SMOOTH)
 
 		if display_flags['show_node_numbers'] == 1:
-			glFogfv(GL_FOG_COLOR, [1.0, 0.0, 0.0])
-			glFogf(GL_FOG_DENSITY, 0.02)
+			# glFogfv(GL_FOG_COLOR, [1.0, 0.0, 0.0])
+			# glFogf(GL_FOG_DENSITY, 0.02)
+                        TXT = []
 			if display_flags['show_linear_nodes_only'] == 0:
 				for n in xrange(self.num_nodes):
 					nn = (self.frames[i].node_list[n])[0:3]
-					glColor3f(1.0, 1.0, 1.0)
-					glRasterPos3f(nn[0], nn[1], nn[2])
-					glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(n));
-			else:
-				for n in xrange(len(self.linear_nodes_only)):
-					nn = (self.frames[i].node_list[self.linear_nodes_only[n]])[0:3]
-					glColor3f(1.0, 1.0, 1.0)
-					glRasterPos3f(nn[0], nn[1], nn[2])
-					glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.linear_nodes_only[n]));
-			glFogfv(GL_FOG_COLOR, [.1, .1, .3])
-			glFogf(GL_FOG_DENSITY, 0.002)
+                                        cyl_text(TXT,plain,nn,str(n),0.10) # ,axes=axes)
+			# else:
+			# 	for n in xrange(len(self.linear_nodes_only)):
+			# 		nn = (self.frames[i].node_list[self.linear_nodes_only[n]])[0:3]
+			# 		glColor3f(1.0, 1.0, 1.0)
+			# 		glRasterPos3f(nn[0], nn[1], nn[2])
+			# 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.linear_nodes_only[n]));
+                        cmd.set("cgo_line_radius",0.03)
+                        cmd.load_cgo(TXT,'Node numbers', i)
+
 
 		if display_flags['show_pinned_nodes'] == 1:
 			for n in self.pinned_nodes:
