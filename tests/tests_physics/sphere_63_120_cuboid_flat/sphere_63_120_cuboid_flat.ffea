@@ -1,5 +1,5 @@
 <param>
-	<restart = 1>
+	<restart = 0>
 	<dt = 1e-14>
 	<kT = 4.11e-21>
 	<check = 10>
