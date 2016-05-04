@@ -61,7 +61,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
     * elements and relative bead position arrays.
     * And finally, delete beads stuff from the blobs.
     */  
-   
+  
    if (pc_params->types.size() == 0) return 0;
 
    stringstream ssfile; 
@@ -183,10 +183,24 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      // for each bead within this blob (remember that we only deal with conf 0):
      for (int j=0; j < n; j++) {
        v = blob_array[i][0].get_bead_position(j);
+       vector<int> b_assignment = blob_array[i][0].get_bead_assignment(j); 
        d2_0 = 1e9;
        // get the closest node to this bead: 
        for (int k=0; k < blob_array[i][0].get_num_elements(); k++) { 
          e = blob_array[i][0].get_element(k);
+         bool work = true; 
+         // check that this element has one of the chosen nodes: 
+         if (!b_assignment.empty()) {
+           work = false; 
+           for (int l=0; l < NUM_NODES_QUADRATIC_TET; l++) {
+             if (find(b_assignment.begin(), b_assignment.end(), e->n[l]->index) != b_assignment.end()) {
+               work = true;
+               // cout << " and element: " << e->n[0]->index << ":" << e->n[1]->index << ":" << e->n[2]->index << ":" << e->n[3]->index << " will be considered (" << e->n[4]->index << ":" <<e->n[5]->index << ":" <<e->n[6]->index << ":" <<e->n[7]->index << ":" <<e->n[8]->index << ":" <<e->n[9]->index << ")" << endl;
+               break;
+             }
+           }
+         } 
+         if (work == false) continue;
          e->calc_centroid();
          d2 = (e->centroid.x - v.x)*(e->centroid.x - v.x) + 
               (e->centroid.y - v.y)*(e->centroid.y - v.y) + 
@@ -197,6 +211,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
            b_elems[m+j] = e; 
          }
        } 
+       
        // and get the relative coordinates within the element
        //   as a fraction of the basis vectors length.
        b_elems[m+j]->calculate_jacobian(J); 
@@ -208,6 +223,15 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        b_rel_pos[m+3*j] = u.x;
        b_rel_pos[m+3*j+1] = u.y;
        b_rel_pos[m+3*j+2] = u.z;
+
+       /*scalar l = mesoDimensions::length;
+       printf("bead type: %d, position %g:%g:%g in element %d:%d:%d:%d position %g:%g:%g - distance: %g, 2nd OE: %d:%d:%d:%d:%d:%d\n", 
+          b_types[m+j], v.x*l, v.y*l, v.z*l,
+          b_elems[m+j]->n[0]->index, b_elems[m+j]->n[1]->index, b_elems[m+j]->n[2]->index,
+          b_elems[m+j]->n[3]->index, 
+          b_elems[m+j]->centroid.x*l, b_elems[m+j]->centroid.y*l, b_elems[m+j]->centroid.z*l, sqrt(d2_0)*l,
+         b_elems[m+j]->n[4]->index, b_elems[m+j]->n[5]->index, b_elems[m+j]->n[6]->index,
+        b_elems[m+j]->n[7]->index, b_elems[m+j]->n[8]->index, b_elems[m+j]->n[9]->index);*/
        
        /*
        //  prove it: v =? s
