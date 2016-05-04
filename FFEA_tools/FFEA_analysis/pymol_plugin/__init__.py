@@ -114,7 +114,7 @@ class FFEA_viewer_control_window:
        self.display_flags[key] = 1
      else:
        self.display_flags[key] = 0
-     print key, self.display_flags[key] 
+     # print key, self.display_flags[key] 
 
 
   # # # # # # # # # # # # # # # # # # # # # #
@@ -513,8 +513,8 @@ class FFEA_viewer_control_window:
      for b in self.blob_list:
          if blob[0].state == "STATIC" or trajectory_out_fname == None:
              if self.calc_vdw == 1 and self.move_into_box == 1:
-                 b[0].frames[0].translate(shift)
-                 print "--- translated by: ", shift
+                 # b[0].frames[0].translate(shift)
+                 print "--- not translated by: ", shift
          else:
              b[0].frames = []
              b[0].num_frames = 0
