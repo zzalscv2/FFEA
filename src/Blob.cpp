@@ -1258,6 +1258,15 @@ int *Blob::get_bead_type_ptr() {
 
 }
 
+/** 
+ * @brief returns the list of nodes where bead i should be assigned to. 
+ *
+ * @ingroup FMM
+ **/
+vector<int> Blob::get_bead_assignment(int i) {
+    return bead_assignment[i]; 
+}
+
 scalar Blob::get_vdw_area() {
     scalar total_vdw_area = 0.0;
     for (int i = 0; i < get_num_faces(); ++i) {
@@ -2363,13 +2372,27 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     vector<scalar> positions;
     string type;
     scalar x, y, z;
-    // 1 - read the data, positions and bead-types to memory before storing:
+
+    // a set of constant strings, and a number of temporary vectors 
+    //    to parse the lines in search of " < nodes = ... > ".
+    const string nodesKeyword = "nodes";
+    const char *openField = "<";
+    const char *closeField = ">";
+    const char *splitNodes = ",";
+    const char *defineRange = "-";
+    const string defineField = "=";
+    vector<string> v1, v2, v3, v4;
+
+    // 1 - read the data, positions and bead-types to memory before storing, 
+    //       as well as the set of nodes where every bead will be associated to.
+    int cnt = 0;
     while (getline(fin, line)) {
-      // ignore those lines that do not start with "ATOM"
+      // 1.1 - ignore those lines that do not start with "ATOM"
       if (line.find("ATOM",0,4) != 0)
         continue;
       
       // cout << line << endl;
+      // 1.2 - get bead type and position from its positioning within the line:
       type = line.substr(11,5);
       boost::trim (type);
       stypes.push_back(type);
@@ -2381,6 +2404,51 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
       positions.push_back(x);
       positions.push_back(y);
       positions.push_back(z);
+
+
+      // 1.3 - look for node restrictions within "< nodes = ...  >"
+      // 1.3.1 - split the line in a vector using "<":
+      boost::split(v1, line, boost::is_any_of(openField));
+      bead_assignment.push_back(vector<int>()); // add a row.
+      // 1.3.2 - for each of them:
+      for (int j=0; j<v1.size(); j++) {
+          // 1.3.3 - remove the closing bracket ">"
+          v1[j] = boost::erase_last_copy(v1[j], closeField);
+          boost::trim(v1[j]);
+          // 1.3.4 - split using "=":
+          boost::split(v2, v1[j], boost::is_any_of(defineField));
+          boost::trim(v2[0]);
+          // 1.3.5 - see if we have "nodes" there:
+          if (boost::iequals(nodesKeyword, v2[0])) {
+            // cout << " appending nodes " << v2[1] << endl;
+            // 1.3.6 - the nodes are comma sepparated:
+            boost::split(v3, v2[1], boost::is_any_of(splitNodes));
+            // 1.3.7 - and there could be ranges:
+            for (int k=0; k<v3.size(); k++){
+              boost::split(v4, v3[k], boost::is_any_of(defineRange));
+              if (v4.size() == 1) { // append a single integer:
+                bead_assignment[cnt].push_back(stoi(v4[0]));
+              } else if (v4.size() == 2) {
+               if (stoi(v4[0]) > stoi(v4[1])) {
+                  swap(v4[0], v4[1]);
+                }
+                for (int ik = stoi(v4[0]); ik < stoi(v4[1]) + 1; ik++){
+                  bead_assignment[cnt].push_back(ik);
+                }
+              // 1.3.8 - and typos:            
+              } else {
+                FFEA_error_text();
+                cout << " failed to parse this set of nodes: " << v2[1] << endl;
+                return FFEA_ERROR;
+              }
+              v4.clear(); // clear temporary vector v4 for the next round.
+            }
+            v3.clear(); // clear temporary vector v3 for the next round.
+          }
+          v2.clear(); // clear temporary vector v2 for the next round.
+      }
+      cnt += 1;
+      v1.clear(); // clear temporary vector v1 for the next round.
     } 
 
     // 2 - store the data efficiently:
