@@ -125,11 +125,11 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    F = new scalar[n_values * nint];    
       
    // and load potentials and forces:
-   read_tabulated_values(*pc_params, "pot", U, pc_params->E_to_J / mesoDimensions::Energy);
+   if (read_tabulated_values(*pc_params, "pot", U, pc_params->E_to_J / mesoDimensions::Energy)) return FFEA_ERROR;
    if (pc_params->inputData == 1) {
      // scalar F_to_Jm = pc_params->E_to_J / pc_params->dist_to_m;
      scalar F_scale = ( pc_params->E_to_J / pc_params->dist_to_m ) / mesoDimensions::force;
-     read_tabulated_values(*pc_params, "force", F, F_scale);
+     if (read_tabulated_values(*pc_params, "force", F, F_scale)) return FFEA_ERROR;
    } else if (pc_params->inputData == 2) {
      calc_force_from_pot();
    } else {
@@ -380,6 +380,11 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
        // open file i-j
        ssfile << pc_params.folder << "/" << pc_params.types[i] << "-" << pc_params.types[j] << "." << kind;
        fin.open(ssfile.str(), std::ifstream::in);
+       if (!fin.is_open()) {
+         FFEA_error_text();
+         cout << "---ABORTING: failed to open " << ssfile.str() << endl;
+         return FFEA_ERROR;
+       }
        // get the first line that does not start with "#"
        getline(fin, line);
        while (line.find("#", 0, 1) == 0) {
