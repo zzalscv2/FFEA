@@ -536,15 +536,15 @@ class FFEA_viewer_control_window:
            pass
 
      # Reset initial camera (dependent upon structure size)
-     dims = self.get_system_dimensions()
-     self.dimensions = [dims[i][1] - dims[i][0] for i in range(3)]
-
-     if (self.dimensions[2] > self.dimensions[1]) and (self.dimensions[2] > self.dimensions[0]):
-         self.z = 2 * self.dimensions[2]
-     elif self.dimensions[0] > self.dimensions[1]:
-         self.z = self.dimensions[0] / (2 * np.tan(np.pi / 6.0))
-     else:
-        self.z = self.dimensions[1] / (2 * np.tan(np.pi / 6.0))
+     # dims = self.get_system_dimensions()
+     # self.dimensions = [dims[i][1] - dims[i][0] for i in range(3)]
+# 
+#      if (self.dimensions[2] > self.dimensions[1]) and (self.dimensions[2] > self.dimensions[0]):
+#          self.z = 2 * self.dimensions[2]
+#      elif self.dimensions[0] > self.dimensions[1]:
+#          self.z = self.dimensions[0] / (2 * np.tan(np.pi / 6.0))
+#      else:
+#         self.z = self.dimensions[1] / (2 * np.tan(np.pi / 6.0))
 
 
   def load_trajectory(self, trajectory_out_fname, ):
@@ -624,11 +624,6 @@ class FFEA_viewer_control_window:
           if self.num_frames >= self.num_frames_to_read:
               break
 
-          while self.pause_loading == True:
-              self.pausing = True
-              time.sleep(2)
-          self.pausing = False
-
           # skip asterisk
           line = traj.readline().rstrip()
           if line != "*":
@@ -671,6 +666,7 @@ class FFEA_viewer_control_window:
                   completed = 1
                   break
       		
+
           if completed == 0:
 
               # Get conformation data!
@@ -728,14 +724,26 @@ class FFEA_viewer_control_window:
                       self.num_frames += 1
                   else:
                       break
+
+              # plot the last frame and delete it to save memory:
+              self.blob_list[i][j].draw_frame(-1, self.display_flags)
+              self.blob_list[i][j].frames.pop() # we will only keep the frames
+                                             #  if somebody proves that they are useful
+
           else:
               break
 
       traj.close()
 
-      print "read ", self.num_frames, " frames"
+      # print "read ", self.num_frames, " frames"
+      print "finished loading frames"
 
-      self.draw_stuff()
+      # self.draw_stuff() # we are now drawing every frame after reading it. 
+      if self.num_frames > 1:
+        cmd.mset("1-"+str(self.num_frames))
+        if self.num_frames > 2:
+          cmd.mplay()
+
 
   def get_system_dimensions(self):
 
@@ -829,15 +837,9 @@ class FFEA_viewer_control_window:
 
   def draw_stuff(self):
 
-    # print "display flags: ", self.display_flags
     for f in range(self.num_frames):
       for i in range(self.num_blobs):
           for j in range(self.num_conformations[i]):
               self.blob_list[i][j].draw_frame(f, self.display_flags) ## PLUGIN OUT
-              # self.blob_list[i][j].draw_frame(self.frame, self.display_flags) ## PLUGIN OUT
-    if self.num_frames > 1:
-      cmd.mset("1-"+str(self.num_frames))
-      if self.num_frames > 2:
-        cmd.mplay()
 
 
