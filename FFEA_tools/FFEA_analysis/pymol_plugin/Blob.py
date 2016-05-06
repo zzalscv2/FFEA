@@ -434,6 +434,7 @@ class Blob:
 					self.first_frame_J_inv.append(self.get_J_inv(n1, n2, n3, n4))
 				print "...Done."
 				self.calculated_first_frame_J_inv = True
+ 
 
 	def delete_all_frames(self):
 		self.num_frames = 0
@@ -678,7 +679,6 @@ class Blob:
 		return f.centroid_x, f.centroid_y, f.centroid_z
 
 	def draw_frame(self, i, display_flags):
-	# def __call__(self, i, display_flags):
 
 		if self.state == "STATIC":
 			i = 0
@@ -702,6 +702,10 @@ class Blob:
 				return
 		
                 obj = []
+                if i == -1:
+                  frameLabel = self.num_frames
+                else: 
+                  frameLabel = i
 
 		if display_flags['vdw_edit_mode'] == 1 and self.id_num == display_flags['selected_index']:
 			glBegin(GL_TRIANGLES)
@@ -930,7 +934,7 @@ class Blob:
                                 obj.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
                         obj.append(END)
-                        print "loading frame ", i, " for blob ", self.id_num
+                        print "loading frame ", frameLabel, " for blob ", self.id_num
                         # cmd.load_cgo(obj, "blob_" + str(self.id_num), i+1)
 
 		if display_flags['show_mesh_surf'] == 1:
@@ -1212,7 +1216,7 @@ class Blob:
 			# 		glRasterPos3f(nn[0], nn[1], nn[2])
 			# 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.linear_nodes_only[n]));
                         cmd.set("cgo_line_radius",0.03)
-                        cmd.load_cgo(TXT,'Node numbers', i)
+                        cmd.load_cgo(TXT,'Node numbers', frameLabel)
 
 
 		if display_flags['show_pinned_nodes'] == 1:
@@ -1304,7 +1308,7 @@ class Blob:
 				print "---"
 
                 if len(obj) > 0:
-                  cmd.load_cgo(obj, "blob_" + str(self.id_num), i)
+                  cmd.load_cgo(obj, "blob_" + str(self.id_num), frameLabel)
 
 
 	def draw_pick_frame(self, i):
