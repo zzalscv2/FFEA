@@ -8,6 +8,7 @@
 #include <iostream>
 #include <math.h>
 #include <boost/algorithm/string.hpp>
+#include <algorithm>
 #include "FFEA_return_codes.h"
 #include "dimensions.h"
 

@@ -209,12 +209,18 @@ public:
      */
     tetra_element_linear *get_element(int i);
 
-    /** get_bead_position */ 
+    /** get_bead_position [precomp] */ 
     vector3 get_bead_position(int i); 
 
-    /** get the pointer to "bead_type" */
+    /** get the pointer to "bead_type"  [precomp] */
     int *get_bead_type_ptr(); 
 
+    /** 
+     * @brief returns the list of nodes where bead i should be assigned to. 
+     *
+     * @ingroup FMM
+     **/
+    vector<int> get_bead_assignment(int i);
   
 
     scalar get_vdw_area();
@@ -371,7 +377,8 @@ private:
     /** Number of 'pinned' nodes (nodes which are not able to move, removing degrees of freedom from system) */
     int num_pinned_nodes;
 
-    /** Amount of interacting beads within this Blob */
+    /** Amount of interacting beads within this Blob 
+      *   will be zero after info is loaded into PreComp_solver */
     int num_beads;
 
     /** Whether this Blob is DYNAMIC (movable; dynamics simulated) or STATIC (fixed; no simulation of dynamics; Blob is a perfectly solid object fixed in space)*/
@@ -401,10 +408,17 @@ private:
     /** Additional pinned node list for binding processes */
     set<int> bsite_pinned_nodes_list;
 
-    /** Array with bead positions xyzxyzxyz.... [precomp] */
+    /** Array with bead positions xyzxyzxyz.... [precomp]
+      *   will be NULL after info is loaded into PreComp_solver */
     scalar *bead_position;
+
+    /** 2D vector with the set of nodes where every bead should be assigned to. 
+      *   It will be removed after PreComp_solver is initialised [precomp] */
+    vector <vector<int>> bead_assignment; 
   
-    /** Array with bead types */
+    /** Array with bead types [precomp]
+      *   will be NULL after info is loaded into PreComp_solver */
+
     int *bead_type;
 
     /** A pointer to a class containing simulation parameters, such as the time step, dt */
