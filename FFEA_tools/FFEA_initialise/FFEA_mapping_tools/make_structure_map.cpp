@@ -616,7 +616,7 @@ int main(int argc, char **argv) {
 	extract_and_create_topologies(from_top_fname, from_top, from_node);
 	cout << "done!" << endl;
 
-	// Now target structure, wich depends on the input type
+	// Now target structure, which depends on the input type
 	cout << "Building target structure..." << endl << flush;
 	string line;
 	ifstream fin;
