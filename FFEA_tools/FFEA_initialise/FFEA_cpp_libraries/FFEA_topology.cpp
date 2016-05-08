@@ -1,4 +1,4 @@
-#include "FFEA_topology.h"
+#include "FFEA_topology.hpp"
 
 
 // Topology stuff
@@ -57,7 +57,7 @@ FFEA_element::~FFEA_element() {
 	pos = NULL;
 }
 
-int FFEA_linear_element::set_indices(int *n) {
+/*int FFEA_linear_element::set_indices(int *n) {
 
 	if (index == NULL) {
 		index = new int[4];
@@ -70,4 +70,4 @@ int FFEA_linear_element::set_indices(int *n) {
 
 		}
 	}
-}
+}*/
