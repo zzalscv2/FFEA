@@ -726,8 +726,10 @@ class FFEA_viewer_control_window:
                       break
 
               # plot the last frame and delete it to save memory:
-              self.blob_list[i][j].draw_frame(-1, self.display_flags)
-              self.blob_list[i][j].frames.pop() # we will only keep the frames
+              for i in range(self.num_blobs):
+                j = active_conf[i]
+                self.blob_list[i][j].draw_frame(-1, self.display_flags)
+                self.blob_list[i][j].frames.pop() # we will only keep the frames
                                              #  if somebody proves that they are useful
 
           else:
