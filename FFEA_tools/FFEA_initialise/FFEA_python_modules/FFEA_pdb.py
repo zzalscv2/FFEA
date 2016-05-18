@@ -33,7 +33,7 @@ class FFEA_pdb:
 			if line[0:5] == "MODEL":
 				num_models += 1
 				num_atoms.append(0)
-
+				
 			elif line[0:4] == "ATOM":
 
 				# If not in models
@@ -80,8 +80,7 @@ class FFEA_pdb:
 			b.frame.append(FFEA_pdb_frame())
 
 		for line in lines:
-
-
+		
 			# Finished
 			if line.strip() == "END" or self.num_frames == frame_index:
 				break
@@ -91,8 +90,9 @@ class FFEA_pdb:
 				continue
 			
 			elif line[0:6] == "ENDMDL":
+				num_atoms = 0
 				model_index += 1
-
+				print model_index, blob_index
 				# May need fixing for multiple blobs with multiple frames
 				if self.num_frames == 1:
 					blob_index = model_index
@@ -111,7 +111,10 @@ class FFEA_pdb:
 			elif line[0:4] == "ATOM":
 
 				# Initialise the atom
-				self.blob[blob_index].atom.append(FFEA_pdb_atom())
+				try:
+					self.blob[blob_index].atom.append(FFEA_pdb_atom())
+				except(IndexError):
+					break
 				atom_index = int(line[6:11].strip())
 
 				# Get structure data
@@ -174,7 +177,7 @@ class FFEA_pdb:
 
 			for f in b.frame:
 				f.pos = np.array(f.pos)
-
+				
 		print("done!")
 		
 	def write_to_file(self, fname):
@@ -357,7 +360,15 @@ class FFEA_pdb_frame:
 
 		self.pos = []
 
-
+	def get_centroid(self):
+		return (1.0 / len(self.pos)) * np.sum(self.pos, axis = 0)
+		
+	def translate(self, trans):
+		self.pos += np.array(trans)
+		
+	def set_pos(self, pos):
+		self.translate(np.array(pos) - self.get_centroid())
+	
 	def set_atomic_pos(self, atom_index, x, y, z):
 		
 		while atom_index >= len(self.pos):

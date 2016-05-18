@@ -853,15 +853,9 @@ int main(int argc, char **argv) {
 	fin.close();
 	if(line == "ffea node file" || line == "ffea node file\n") {
 	
-		// Node positions
-		num_nodes_from = get_num_nodes_from_file(from_node_fname);
-		from_node = new vector3[num_nodes_from + 1];
-		extract_and_create_nodes(from_node_fname, from_node);
-		
-		// Topology structure
-		num_elements_from = get_num_elements_from_file(from_top_fname);
-		from_top = new tet_element[num_elements_from];
-		extract_and_create_topologies(from_top_fname, from_top, from_node);
+		// No node target here!
+		cout << "Error. Expected a pdb file" << endl;
+		exit(0);
 		
 	} else {
 	
