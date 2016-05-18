@@ -84,8 +84,19 @@ class FFEA_kinetic_map:
 		# Get base type and apply appropriately
 		if isinstance(base, FFEA_pdb.FFEA_pdb):
 			basetype = "pdb"
-			print("Apply to pdb functionality currently unavailable.")
-			return
+			if self.num_columns != len(base.blob[0].frame[0].pos):
+				print("Error. Map expects " + str(self.num_columns) + " nodes, but found " + str(len(base.blob[0].frame[0].pos)))
+				return
+			else:
+				total_new_nodes = []
+				for f in base.blob[0].frame:
+					new_nodes = np.array([[0.0,0.0,0.0] for i in range(self.num_rows)])
+					for i in range(self.num_rows):
+						for j in range(self.key[i], self.key[i + 1]):
+							new_nodes[i] += self.entry[j] * f.pos[self.col[j]]
+					total_new_nodes.append(new_nodes)
+						
+			return total_new_nodes
 
 		elif isinstance(base, FFEA_node.FFEA_node):
 			basetype = "FFEA_node"
