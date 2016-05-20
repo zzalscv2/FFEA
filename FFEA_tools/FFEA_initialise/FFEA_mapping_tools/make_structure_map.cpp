@@ -1,315 +1,59 @@
-#include <cmath>
 #include <iostream>
-#include <fstream>
-#include <istream>
 #include <cstdlib>
-#include <string>
-#include <string.h>
+#include <cstring>
+#include <fstream>
 #include <vector>
 #include "Vectors.hpp"
+#include "Elements.hpp"
 #include "Matrices.hpp"
-#define MAX_FNAME_SIZE 255
 
 using namespace std;
 
-struct distindex
-{
-	int index;
-	double distance;
-};
+enum runType {fromPDB, fromNode};
 
-// Class for storing node connectivities (FFEA elements)
-class tet_element
-{
-	public:
-		
-		// Constructors/Destructors
-		tet_element() {
-			num_nodes = 4;
-			n = new int[num_nodes];
-			node = new vector3*[num_nodes];
-			for(int i = 0; i < num_nodes; ++i) {
-				n[i] = 0;
-				node[i] = NULL;
-			}
-		}
-		
-		tet_element(int num_nodes) {
-			this->num_nodes = num_nodes;
-			n = new int[num_nodes];
-			node = new vector3*[num_nodes];
-			for(int i = 0; i < num_nodes; ++i) {
-				n[i] = 0;
-				node[i] = NULL;
-			}
-		}
-		
-		tet_element(int n0, int n1, int n2, int n3, vector3 *nodes) {
-			num_nodes = 4;
-			n = new int[num_nodes];
-			node = new vector3*[num_nodes];
-			n[0] = n0;
-			n[1] = n1;
-			n[2] = n2;
-			n[3] = n3;
-			node[0] = &nodes[n[0]];
-			node[1] = &nodes[n[1]];
-			node[2] = &nodes[n[2]];
-			node[3] = &nodes[n[3]];
-		}
-		
-		tet_element(int n0, int n1, int n2, int n3, int n4, int n5, int n6, int n7, int n8, int n9, vector3 *nodes) {
-			num_nodes = 10;
-			n = new int[num_nodes];
-			node = new vector3*[num_nodes];
-			n[0] = n0;
-			n[1] = n1;
-			n[2] = n2;
-			n[3] = n3;
-			n[4] = n4;
-			n[5] = n5;
-			n[6] = n6;
-			n[7] = n7;
-			n[8] = n8;
-			n[9] = n9;
-			node[0] = &nodes[n[0]];
-			node[1] = &nodes[n[1]];
-			node[2] = &nodes[n[2]];
-			node[3] = &nodes[n[3]];
-			node[4] = &nodes[n[4]];
-			node[5] = &nodes[n[5]];
-			node[6] = &nodes[n[6]];
-			node[7] = &nodes[n[7]];
-			node[8] = &nodes[n[8]];
-			node[9] = &nodes[n[9]];
-		}
-		
-		~tet_element() {
-			for(int i = 0; i < num_nodes; ++i) {
-				n[i] = 0;
-				node[i] = NULL;
-			}
-		}
-		
-		// Member functions
-		void set_nodes_linear(int n0, int n1, int n2, int n3, vector3 *nodes) {
-			n[0] = n0;
-			n[1] = n1;
-			n[2] = n2;
-			n[3] = n3;
-			node[0] = &nodes[n[0]];
-			node[1] = &nodes[n[1]];
-			node[2] = &nodes[n[2]];
-			node[3] = &nodes[n[3]];
-		}
-		
-		vector3 get_face_normal(int index) {
-			int n[3];			
-			vector3 edge[2], to_centroid, normal;
+string getFileExt(const string& s) {
 
-			// Get face
-			if(index == 0) {
-				n[0] = 0;
-				n[1] = 1;
-				n[2] = 2;
-				
-			} else if(index == 1) {
-				n[0] = 0;
-				n[1] = 1;
-				n[2] = 3;
-				
-			} else if(index == 2) {
-				n[0] = 0;
-				n[1] = 2;
-				n[2] = 3;
-				
-			} else if(index == 3) {
-				n[0] = 1;
-				n[1] = 2;
-				n[2] = 3;
-				
-			} else {
-				cout << "Error. Invalid index, " << index << endl;
-				exit(0);
-			}
+   size_t i = s.rfind('.', s.length());
+   if (i != string::npos) {
+      return(s.substr(i+1, s.length() - i));
+   }
 
-			// Get edge vectors
-			edge[0] = *node[n[1]] - *node[n[0]];
-			edge[1] = *node[n[2]] - *node[n[0]];
-
-			// Get a normal
-			normal = edge[0].cross(edge[1]);
-			normal.normalise();
-
-			// Make normal point out using projection onto centroid - n[0]
-			to_centroid = get_centroid();
-			to_centroid -= *node[n[0]];
-			
-			if(normal.dot(to_centroid) > 0.0) {
-				normal *= -1;
-			}
-			return normal;
-		}
-		
-		vector3 get_face_centroid(int index) {
-			vector3 midpoint;
-			if(index == 0) {
-				midpoint = *node[0] + *node[1] + *node[2];
-				midpoint *= 1.0 / 3.0;
-			} else if(index == 1) {
-				midpoint = *node[1] + *node[2] + *node[3];
-				midpoint *= 1.0 / 3.0;
-			} else if(index == 2) {
-				midpoint = *node[0] + *node[2] + *node[3];
-				midpoint *= 1.0 / 3.0;
-			} else if(index == 3) {
-				midpoint = *node[0] + *node[1] + *node[3];
-				midpoint *= 1.0 / 3.0;
-			} else {
-				cout << "Error. Invalid index, " << index << endl;
-				exit(0);
-			}
-			
-			return midpoint;
-		}
-		
-		vector3 get_centroid() {
-			vector3 centroid = *node[0] + *node[1] + *node[2] + *node[3];
-			centroid *= 0.25;
-			return centroid;
-		}
-
-		int get_nearest_node_index(vector3 anode) {
-			
-			int nearest_node;
-			double shortest_distance;
-			vector3 distance;
-			
-			shortest_distance = INFINITY;
-			for(int i = 0; i < 4; ++i) {
-				distance = *node[i] - anode;
-				if (distance.r < shortest_distance) {
-					shortest_distance = distance.r;
-					nearest_node = i;
-				}
-			}
-			return nearest_node;
-		}
-
-		void print_detail() {
-			cout << "Nodes: " << endl;
-			for(int i = 0; i < 4;++i) {
-				cout << "    " << n[i] << " (" << (*node[i]).x << ", " << (*node[i]).y << ", " << (*node[i]).z << ")" << endl;
-			}
-			cout << endl;
-		}
-		
-		// Data members
-		int num_nodes;
-		int *n;
-		vector3 **node;
-		
-};
-
-int get_num_atoms_from_file(string pdb_fname) {
-
-	// Open file
-	FILE *fin;
-	char buf[100];
-	int num_atoms = 0;
-	fin = fopen(pdb_fname.c_str(), "r");
-	while(true) {
-		if(feof(fin)) {
-			break;	
-		} else {
-			fgets(buf,5,fin);
-			if(strcmp(buf, "ATOM") == 0) {
-				num_atoms++;
-			}
-			fgets(buf,96,fin);
-		}
-	}
-	fclose(fin);
-	cout << "\tFrom " + pdb_fname + " we expect " << num_atoms << " atoms." << endl;
-	return num_atoms;
+   return("");
 }
 
-int get_num_nodes_from_file(string node_fname) {
-	
-	// Open file
-	ifstream node_file;
-	node_file.open(node_fname.c_str());
-	
-	string line;
-	
-	// Check correct file type
-	getline(node_file, line);
-	if (line.compare("ffea node file") != 0) {
-		cout << "Error. Expected 'ffea node file', got '" << line << "'. Possibly not an ffea node file." << endl;
-		exit(0);
-	}
-	
-	// Get num_nodes
-	int num_nodes;
-	node_file >> line >> num_nodes;
-	cout << "\tFrom " + node_fname + " we expect " << num_nodes << " nodes." << endl;
-	return num_nodes;
-}
+int extract_nodes_from_node(string fname, vector3 *&node) {
 
-int get_num_elements_from_file(string top_fname) {
-	
-	// Open file
-	ifstream top_file;
-	top_file.open(top_fname.c_str());
-	
-	string line;
-	
-	// Check correct file type
-	getline(top_file, line);
-	if (line.compare("ffea topology file") != 0) {
-		cout << "Error. Expected 'ffea topology file', got '" << line << "'. Possibly not an ffea topology file." << endl;
-		exit(0);
-	}
-	
-	// Get num_elements
-	int num_elements;
-	top_file >> line >> num_elements;
-	
-	top_file.close();
-	cout << "\tFrom " + top_fname + " we expect " << num_elements << " elements." << endl;
-	return num_elements;
-}
-
-void extract_and_create_nodes(string node_fname, vector3 *node) {
-
-	// Open file
-	ifstream node_file;
-	node_file.open(node_fname.c_str());
-	
-	string line;
+	// Will extract nodes and move to centroid whilst it does it!
+	int i, num_nodes = 0, num_interior_nodes = 0, num_surface_nodes = 0;
+	double x, y, z;
 	vector3 centroid;
+	string line;
+	
+	// Open file
+	ifstream nfile;
+	nfile.open(fname.c_str());
 
 	// Check correct file type
-	getline(node_file, line);
+	getline(nfile, line);
 	if (line.compare("ffea node file") != 0) {
 		cout << "Error. Expected 'ffea node file', got '" << line << "'. Possibly not an ffea node file." << endl;
-		exit(0);
+		return -1;
 	}
 	
 	// Get num_nodes and build node_list
-	int num_nodes, num_surface_nodes, num_interior_nodes;
-	node_file >> line >> num_nodes;
+	nfile >> line >> num_nodes;
 	cout << "\tFound " << num_nodes << " nodes." << endl;
-	node_file >> line >> num_surface_nodes;
-	node_file >> line >> num_interior_nodes;
+	nfile >> line >> num_surface_nodes;
+	nfile >> line >> num_interior_nodes;
 
+	// Get some memory!
+	node = new vector3[num_nodes];
+	
 	// Read in surface nodes
-	int i;
-	double x, y, z;
-	getline(node_file, line);
-	getline(node_file, line);
+	getline(nfile, line);
+	getline(nfile, line);
 	for(i = 0; i < num_surface_nodes; ++i) {
-		node_file >> x >> y >> z;
+		nfile >> x >> y >> z;
 		node[i].set_pos(x, y, z);
 		centroid.x += x;
 		centroid.y += y;
@@ -317,10 +61,10 @@ void extract_and_create_nodes(string node_fname, vector3 *node) {
 	}
 	
 	// Read in interior nodes
-	getline(node_file, line);
-	getline(node_file, line);
+	getline(nfile, line);
+	getline(nfile, line);
 	for(i = 0; i < num_interior_nodes; ++i) {
-		node_file >> x >> y >> z;
+		nfile >> x >> y >> z;
 		node[i + num_surface_nodes].set_pos(x, y, z);
 		centroid.x += x;
 		centroid.y += y;
@@ -339,19 +83,42 @@ void extract_and_create_nodes(string node_fname, vector3 *node) {
 		node[i].z -= centroid.z;
 	}
 	cout << "done!" << endl;
-	node_file.close();
-	return;
+	nfile.close();
+	return num_nodes;
 }
 
-void extract_and_create_pdb(string pdb_fname, vector3 *node, double scale) {
+int extract_nodes_from_pdb(string fname, vector3 *&node) {
 
-	// Open file
-	FILE *fin;
-	char buf[100];
+	// Will extract nodes and move to centroid whilst it does it!
+	int i, num_nodes = 0;
 	double x, y, z;
-	fin = fopen(pdb_fname.c_str(), "r");
-	int i = -1;
 	vector3 centroid;
+	char buf[100];
+	FILE *fin;
+	
+	// Get number of nodes first so memory can be block allocated
+	
+	// Open file
+	fin = fopen(fname.c_str(), "r");
+	while(true) {
+		if(feof(fin)) {
+			break;	
+		} else {
+			fgets(buf,5,fin);
+			if(strcmp(buf, "ATOM") == 0) {
+				num_nodes++;
+			}
+			fgets(buf,96,fin);
+		}
+	}
+
+	// Allocate some memory
+	node = new vector3[num_nodes];
+	
+	// Go to start of file
+	fseek(fin, 0, SEEK_SET);
+
+	i = -1;
 	while(true) {
 		if(feof(fin)) {
 			break;	
@@ -363,13 +130,13 @@ void extract_and_create_pdb(string pdb_fname, vector3 *node, double scale) {
 				i++;
 				fgets(buf,27,fin);
 				fgets(buf,9,fin);
-				x = atof(buf) * scale;
+				x = atof(buf);
 				centroid.x += x;
 				fgets(buf,9,fin);
-				y = atof(buf) * scale;
+				y = atof(buf);
 				centroid.y += y;
 				fgets(buf,9,fin);
-				z = atof(buf) * scale;
+				z = atof(buf);
 				centroid.z += z;
 				fgets(buf,100,fin);
 				node[i].set_pos(x, y, z);
@@ -378,227 +145,235 @@ void extract_and_create_pdb(string pdb_fname, vector3 *node, double scale) {
 			}
 		}
 	}
-	int num_atoms = i + 1;
-	cout << "\tFound " << num_atoms << " atoms." << endl;
-	centroid.x /= num_atoms;
-	centroid.y /= num_atoms;
-	centroid.z /= num_atoms;
+	
+	cout << "\tFound " << num_nodes << " atoms." << endl;
+	centroid.x /= num_nodes;
+	centroid.y /= num_nodes;
+	centroid.z /= num_nodes;
 
 	cout << "\tMoving to origin to overlap centroids...";
-	for(i = 0; i < num_atoms; ++i) {
+	for(i = 0; i < num_nodes; ++i) {
 		node[i].x -= centroid.x;
 		node[i].y -= centroid.y;
 		node[i].z -= centroid.z;
 	}
 	cout << "done!" << endl;
 	fclose(fin);
-	return;
+	return num_nodes;
 }
 
-void extract_and_create_topologies(string top_fname, tet_element *elem, vector3 *node) {
 
-	// Open file
-	ifstream top_file;
-	top_file.open(top_fname.c_str());
+int extract_topology_from_top(string fname, vector3 *node, tetra_element *&elem) {
+
+	int i, num_elements, num_surface_elements, num_interior_elements;
+	int n[10];
 	
 	string line;
 	
+	// Open file
+	ifstream tfile;
+	tfile.open(fname.c_str());
+	
 	// Check correct file type
-	getline(top_file, line);
+	getline(tfile, line);
 	if (line.compare("ffea topology file") != 0) {
 		cout << "Error. Expected 'ffea topology file', got '" << line << "'. Possibly not an ffea topology file." << endl;
 		exit(0);
 	}
 	
 	// Get num_elements and build node_list
-	int num_elements, num_surface_elements, num_interior_elements;
-	top_file >> line >> num_elements;
+	tfile >> line >> num_elements;
 	cout << "\tFound " << num_elements << " elements." << endl;
-	top_file >> line >> num_surface_elements;
-	top_file >> line >> num_interior_elements;
-
+	tfile >> line >> num_surface_elements;
+	tfile >> line >> num_interior_elements;
+	
+	// Allocate some memory
+	elem = new tetra_element[num_elements];
+	
 	// Read in surface elements
-	int i;
-	int n[10];
-	getline(top_file, line);
-	getline(top_file, line);
+	getline(tfile, line);
+	getline(tfile, line);
 	for(i = 0; i < num_surface_elements; ++i) {
-		top_file >> n[0] >> n[1] >> n[2] >> n[3] >> n[4] >> n[5] >> n[6] >> n[7] >> n[8] >> n[9];
-		elem[i].set_nodes_linear(n[0], n[1], n[2], n[3], node);
+		tfile >> n[0] >> n[1] >> n[2] >> n[3] >> n[4] >> n[5] >> n[6] >> n[7] >> n[8] >> n[9];
+		elem[i].set_structure(n[0], n[1], n[2], n[3], node);
 	}
-	
+
 	// Read in interior elements
-	getline(top_file, line);
-	getline(top_file, line);
+	getline(tfile, line);
+	getline(tfile, line);
 	for(i = 0; i < num_interior_elements; ++i) {
-		top_file >> n[0] >> n[1] >> n[2] >> n[3] >> n[4] >> n[5] >> n[6] >> n[7] >> n[8] >> n[9];
-		elem[i + num_surface_elements].set_nodes_linear(n[0], n[1], n[2], n[3], node);
+		tfile >> n[0] >> n[1] >> n[2] >> n[3] >> n[4] >> n[5] >> n[6] >> n[7] >> n[8] >> n[9];
+		elem[i + num_surface_elements].set_structure(n[0], n[1], n[2], n[3], node);
 	}
-	
+
 	// Close and return pointer
-	top_file.close();
-	return;
+	tfile.close();
+	return num_elements;
 }
 
-void build_pdb_topology(vector3 *from_node, vector3 *to_node, tet_element *from_top, int num_nodes_to, int num_nodes_from, int elements_per_node) {
-
-	cout << "Building a pseudo-topology for the pdb structure..." << endl;
+tetra_element * get_containing_element(vector3 tnode, tetra_element * belem, int num_elements) {
 	
-	// Now, to build these elements, we need 4 times that number of atoms
-	int num_atoms_required = 4 * elements_per_node;
+	// Check all elements until one is found which contains the node
+	bool success;
+	int i, j;
+	vector3 nf, fc, fn, c;
+	for(i = 0; i < num_elements; ++i) {
 	
-	// For every node requiring a map
-	int i, j, k;
-	distindex distance[num_atoms_required + 1], tempd;
-	vector3 tempv, edge[3], normal;
-	for(i = 0; i < num_nodes_to; ++i) {
-	
-		// Get a list of the closest 'num_atoms_required' atoms
-		// This is lazy programming because I am busy! For faster code, please thing of a better way of doing this...
-		cout << "\r" << ((100 * i) / num_nodes_to) << "\% structure built..." << flush;
+		// To know if inside, we must check all face centroids positively project onto the node-face vector
+		// There may be a simpler way, but I'm a little lazy. Here, have a hug <======(^-^)======>
 		
-		// Initialise array
-		for(j = 0; j < num_atoms_required; ++j) {
-			distance[j].index = -1;
-			distance[j].distance = INFINITY;
-		}
-		
-		// Get a new distance
-		for(j = 0; j < num_nodes_from; ++j) {
-			tempv = to_node[i] - from_node[j];
-			distance[num_atoms_required].distance = tempv.r;
-			//cout << to_node[i].r << " " << from_node[j].r << " " << tempv.r << endl;
-			distance[num_atoms_required].index = j;
-			
-			// Insertion sort
-			for(k = num_atoms_required; k > 0; k--) {
-				if(distance[k].distance < distance[k - 1].distance) {
-					tempd = distance[k];
-					distance[k] = distance[k - 1];
-					distance[k - 1] = tempd; 
-				}
-			}
-		}
-		//for(j = 0; j < num_atoms_required;++j) {
-			//cout << distance[j].index << " " << distance[j].distance << endl;
-		///	cout << "   " << to_node[i].x - from_node[distance[j].index].x << " " << to_node[i].y - from_node[distance[j].index].y << " " << to_node[i].z - from_node[distance[j].index].z << endl;
-		//}
-		//exit(0);
-		
-		// We need only the first 'num_atoms_required' indices to build elements out of!
-		for(j = 0; j < elements_per_node; ++j) {
-		
-			// Now, build an element from this...
-			// Get a face
-			for(k = 0; k < 3; ++k) {
-				edge[k] = from_node[distance[4 * j + k + 1].index] - from_node[distance[4 * j].index];
-			}
-		
-			normal = edge[0].cross(edge[1]);
-		
-			// If this normal points positively projects into edge[3], then the normal points inwards. Reverse n[1] and n[2]
-			//cout << distance[4 * j + k].index << " " << distance[4 * j + k + 1].index << " " << distance[4 * j + k + 2].index << " " << distance[4 * j + k + 3].index << endl;
-			cout << endl;
-			cout << to_node[i].x << " " << to_node[i].y << " " << to_node[i].z << endl;
-			if(edge[2].dot(normal) > 0) {
-				from_top[elements_per_node * i + j].set_nodes_linear(distance[0].index, distance[2].index, distance[1].index, distance[3].index, from_node);
-				cout << from_node[distance[0].index].x << " " << from_node[distance[0].index].y << " " << from_node[distance[0].index].z << endl;
-				cout << from_node[distance[2].index].x << " " << from_node[distance[2].index].y << " " << from_node[distance[2].index].z << endl; 
-				cout << from_node[distance[1].index].x << " " << from_node[distance[1].index].y << " " << from_node[distance[1].index].z << endl; 
-				cout << from_node[distance[3].index].x << " " << from_node[distance[3].index].y << " " << from_node[distance[3].index].z << endl; 
-			} else {
-				from_top[elements_per_node * i + j].set_nodes_linear(distance[0].index, distance[1].index, distance[2].index, distance[3].index, from_node);
-				cout << from_node[distance[0].index].x << " " << from_node[distance[0].index].y << " " << from_node[distance[0].index].z << endl;
-				cout << from_node[distance[1].index].x << " " << from_node[distance[1].index].y << " " << from_node[distance[1].index].z << endl; 
-				cout << from_node[distance[2].index].x << " " << from_node[distance[2].index].y << " " << from_node[distance[2].index].z << endl; 
-				cout << from_node[distance[3].index].x << " " << from_node[distance[3].index].y << " " << from_node[distance[3].index].z << endl;
-			}
-			exit(0);
-		}
-	}
-	return;
-}
-
-/*void build_pdb_topology(vector3 *from_node, vector3 *to_node, tet_element *from_top, int num_nodes_to, int num_nodes_from) {
-	
-	cout << "Building a pseudo-topology for the pdb structure..." << endl;
-	// For every node in to_node, find the closest 4 points in from_node and make that an element
-	int i, j, k, n[4], tempn;
-	vector3 d[4], tempd, distance, normal, edge[3];
-	for (i = 0; i < num_nodes_to; ++i) {
-		
-		cout << "\r" << ((100 * i) / num_nodes_to) << "\% structure built...";
-		
-		// Initialise the element to the first 4 nodes
+		// Calculate face centroids, face normals, and node-face vectors. 
+		// Dot together. If negative, break. If all positive, return the element
+		success = true;
 		for(j = 0; j < 4; ++j) {
-			n[j] = j;
-			d[j].r = INFINITY;
-		}
-
-		for(j = 3; j >=0; --j) {
-			n[3] = j;
-			d[3] = to_node[i] - from_node[j];
-
-			for(k = 3; k >=1; --k) {
-				if(d[k].r < d[k - 1].r) {
-					tempd = d[k];
-					d[k] = d[k - 1];
-					d[k - 1] = tempd;
-					tempn = n[k];
-					n[k] = n[k - 1];
-					n[k - 1] = tempn;
-				} else {
-					break;
-				}
+			fn = belem[i].get_face_normal(j, false);
+			fc = belem[i].get_face_centroid(j);
+			nf = fc - tnode;
+			if(fn.dot(nf) < 0) {
+				success = false;
+				break;
 			}
 		}
 		
-		for(j = 4; j < num_nodes_from; ++j) {
-		
-			// Get the distance to the target node from pdb node
-			distance = to_node[i] - from_node[j];
-			
-			// Stick it in the element list
-			if(distance.r < d[3].r) {
-				d[3] = distance;
-				n[3] = j;
-			}
-			
-			for(k = 3; k >= 1; --k) {
-				if(d[k].r < d[k - 1].r) {
-					tempd = d[k];
-					d[k] = d[k - 1];
-					d[k - 1] = tempd;
-					tempn = n[k];
-					n[k] = n[k - 1];
-					n[k - 1] = tempn;
-				} else {
-					break;
-				}
-			}
+		if(success) {
+			return &belem[i];
 		}
-		
-		// Now, build an element from this...
-		// Get a face
-		for(j = 0; j < 3; ++j) {
-			edge[j] = from_node[n[j + 1]] - from_node[n[0]];
-		}
-		
-		normal = edge[0].cross(edge[1]);
-		
-		// If this normal points positively projects into edge[3], then the normal points inwards. Reverse n[1] and n[2]
-		if(edge[2].dot(normal) > 0) {
-			tempn = n[1];
-			n[1] = n[2];
-			n[2] = tempn;
-		}
-		
-		from_top[i].set_nodes_linear(n[0], n[1], n[2], n[3], from_node);
 	}
-	cout << "\r" << ((100 * i) / num_nodes_to) << "\% structure built...";
-}*/
+	return NULL;
+}
+
+tetra_element * get_nearest_element(vector3 tnode, tetra_element * belem, int num_elements) {
+
+	// Ok, so we're just going for the closest element now. Use element centroid - tnode magnitude
+	int i;
+	double distance = INFINITY;
+	vector3 test;
+	tetra_element *celem;
+	for(i = 0; i < num_elements; ++i) {
+		test = belem[i].centroid - tnode;
+		if(test.r < distance) {
+			distance = test.r;
+			celem = &belem[i];
+		}
+	}
+	return celem;
+	 
+}
+
+void map_node_using_element(vector3 node, tetra_element *elem, double *map) {
+	
+	// We need to solve some linear equations
+	int i;
+	vector3 local_coord, local_coeff;
+	matrix33 edgemat;
+	
+	local_coord = node - *(elem->node[0]);
+	for(i = 1; i < 4; ++i) {
+		edgemat.val[0][i - 1] = elem->node[i]->x - elem->node[0]->x;
+		edgemat.val[1][i - 1] = elem->node[i]->y - elem->node[0]->y;
+		edgemat.val[2][i - 1] = elem->node[i]->z - elem->node[0]->z;
+	}
+	
+	local_coeff = edgemat.get_inverse().apply(local_coord);
+	map[0] = 1;
+	map[1] = local_coeff.x;
+	map[2] = local_coeff.y;
+	map[3] = local_coeff.z;
+	for(i = 0; i < 3; ++i) {
+		map[0] -= map[i + 1];
+	}
+}
+
+void map_node_using_closest_nodes(vector3 node, vector<int> node_list, vector3 *bnode, double *map) {
+	
+	// Map should be the same size as node_list (done outside this function)
+	
+	// Again, need to solve some linear equations
+	int i, j, factor;
+	vector3 centroid, local_coord, local_coeff;
+	matrix33 edgemat;
+	
+	// We need to know how many nodes are in each set
+	factor = (node_list.size() + 1) / 3;			//elem->node[i] -> bnode[node_list.at(i)]
+	local_coord = node - bnode[node_list.at(0)];
+	//cout << local_coord.r << endl;
+	//cout << local_coord.x << " " << local_coord.y << " " << local_coord.z << endl;
+	for(i = 0; i < 3; ++i) {
+		for(j = 0; j < factor; ++j) {
+			edgemat.val[0][i] += bnode[node_list.at((factor * i) + j + 1)].x - bnode[node_list.at(0)].x;
+			edgemat.val[1][i] += bnode[node_list.at((factor * i) + j + 1)].y - bnode[node_list.at(0)].y;
+			edgemat.val[2][i] += bnode[node_list.at((factor * i) + j + 1)].z - bnode[node_list.at(0)].z;
+		//	cout << edgemat.val[0][i] << " " << edgemat.val[1][i] << " " << edgemat.val[2][i] << " " << endl;
+		}
+	//	cout << endl << edgemat.val[0][i] << " " << edgemat.val[1][i] << " " << edgemat.val[2][i] << " " << endl << endl;;
+	}
+	
+	local_coeff = edgemat.get_inverse().apply(local_coord);
+	//cout << local_coeff.x << " " << local_coeff.y << " " << local_coeff.z << " " << endl;
+//	exit(0);
+	// Create local map
+	map[0] = 1;
+	for(i = 0; i < 3; ++i) {
+		for(j = 0; j < factor; ++j) {
 		
-void print_map_to_file(string map_fname, double **map, int num_nodes_from, int num_nodes_to, int sparsity) {
+			if (i == 0) {
+				map[0] -= local_coeff.x;
+				map[factor * i + j + 1] = local_coeff.x;
+			} else if (i == 1) {
+				map[0] -= local_coeff.y;
+				map[factor * i + j + 1] = local_coeff.y;
+			} else {
+				map[0] -= local_coeff.z;
+				map[factor * i + j + 1] = local_coeff.z;
+			}
+		}
+	}
+}
+
+void add_local_map_to_global(double *node_map, double **global_map, int target_index, vector<int> node_list) {
+	
+	int i;
+	for(i = 0; i < node_list.size(); ++i) {
+		global_map[target_index][node_list.at(i)] = node_map[i];
+	}
+}
+
+vector<int> get_nodes_with_range(vector3 tnode, vector3 *bnode, int num_bnodes, double range) {
+	
+	int i, j, itemp;
+	double dtemp;
+	vector3 separation;
+	vector<int> within_range;
+	vector<double> distance;
+	for(i = 0; i < num_bnodes; ++i) {
+		separation = tnode - bnode[i];
+
+		if(separation.r < range) {
+			within_range.push_back(i);
+			distance.push_back(separation.r);
+			
+			// Sort as we go
+			for(j = distance.size() - 1; j > 0; --j) {
+				if(distance.at(j) < distance.at(j - 1)) {
+					dtemp = distance.at(j);
+					distance.at(j) = distance.at(j - 1);
+					distance.at(j - 1) = dtemp;
+					
+					itemp = within_range.at(j);
+					within_range.at(j) = within_range.at(j - 1);
+					within_range.at(j - 1) = itemp;
+				}
+			}
+		}
+	}
+	//for(i = 0; i < within_range.size(); ++i) {
+		//cout << within_range.at(0) << " " << distance.at(0) << endl;
+	//}
+	//exit(0);
+	return within_range;
+}
+
+void write_map_to_file(string map_fname, double **map, int num_bnodes, int num_tnodes) {
 
 	int i, j;
 
@@ -606,32 +381,29 @@ void print_map_to_file(string map_fname, double **map, int num_nodes_from, int n
 	ofstream map_file;
 	map_file.open(map_fname.c_str());
 
-	// Write initial stuff
+	// Write initial stuff (always dense. external script will sparse it up)
 	map_file << "FFEA Kinetic Conformation Mapping File ";
-	if(sparsity == 1) {
-		map_file << "(Sparse)" << endl;
-	} else {
-		map_file << "(Dense)" << endl;
-	}
+	map_file << "(Dense)" << endl;
 
 	// Get num entries
 	int num_entries = 0;
-	for(i = 0; i < num_nodes_to; ++i) {
-		for(j = 0; j < num_nodes_from; ++j) {
+	for(i = 0; i < num_tnodes; ++i) {
+		for(j = 0; j < num_bnodes; ++j) {
 
-			// If irrelevant, don't include
+			// If irrelevant, don't include (maybe a better condition is how many non-zeroes on each line)
 			if (fabs(map[i][j]) >= 1e-5) {
 				num_entries++;
 			}
 		}
 	}
-	map_file << "num_nodes_from " << num_nodes_from << endl;
-	map_file << "num_nodes_to " << num_nodes_to << endl;
+	map_file << "num_nodes_from " << num_bnodes << endl;
+	map_file << "num_nodes_to " << num_tnodes << endl;
 	map_file << "num_entries " << num_entries << endl;
 	map_file << "map:" << endl;
 	
-	for(i = 0; i < num_nodes_to; ++i) {
-		for(j = 0; j < num_nodes_from; ++j) {
+	for(i = 0; i < num_tnodes; ++i) {
+		cout << "\r" << ((100 * i) / num_tnodes) << "\% of map written...";
+		for(j = 0; j < num_bnodes; ++j) {
 
 			// If irrelevant, don't include
 			if (fabs(map[i][j]) < 1e-5) {
@@ -642,303 +414,185 @@ void print_map_to_file(string map_fname, double **map, int num_nodes_from, int n
 		}
 		map_file << endl;
 	}
-	return;
-}
-
-tet_element * find_containing_element(vector3 node, tet_element *top, int num_elements, vector<tet_element*> used) {
-	
-	bool failed;
-	int i, j, num_faces_behind, check;
-	vector<tet_element*>::iterator it;
-	//double angle;
-	vector3 face_normal, face_centroid, face_to_node;
-	check = 0;
-
-	for(i = 0; i < num_elements; ++i) {
-
-		// Check if in element by calculating face normals and node-face_center vectors
-		//cout << "Element 0: " << top[i].n[0] << " " << top[i].n[1] << " " << top[i].n[2] << " " << top[i].n[3] << endl;
-		num_faces_behind = 0;
-		for(j = 0; j < 4; ++j) {
-
-			face_normal = top[i].get_face_normal(j);
-			//cout << "\tFace normal " << j << ": " << face_normal.x << " " << face_normal.y << " " << face_normal.z << endl;
-			face_centroid = top[i].get_face_centroid(j);
-			face_to_node = node - face_centroid;
-			//cout << "\tFace to node " << j << ": " << face_to_node.x << " " << face_to_node.y << " " << face_to_node.z << endl;
-			face_to_node.normalise();
-
-			// If in front of plane, not in element. If behind all, it is in element
-			if(face_normal.dot(face_to_node) > 0) {
-				
-				// Not in this element
-				break;
-			} else {
-				num_faces_behind++;
-			}
-		}
-
-		// If behind all faces, node is in element
-		if(num_faces_behind == 4) {
-		
-			// Must check whether or not we have already used it
-			failed = false;
-			for(it = used.begin(); it != used.end(); ++it) {
-				if(*it == &top[i]) {
-					failed = true;
-					break;
-				}
-			}
-			if(!failed) {
-				return &top[i];
-			}
-		}
-	}
-
-	// If we didn't trigger return condition, node is outside element
-	return NULL;
-}
-
-tet_element * get_nearest_element(vector3 node, tet_element *top, int num_elements, vector<tet_element*> used) {
-	
-	bool failed;
-	int i, j;
-	double shortest_distance;
-	vector3 distance;
-	tet_element *nearest_element;
-	vector<tet_element*>::iterator it;
-	shortest_distance = INFINITY;
-	for(i = 0; i < num_elements; ++i) {
-		distance = top[i].get_centroid() - node;
-		if(distance.r < shortest_distance) {
-		
-			// Check we haven't used it
-			failed = false;
-			for(it = used.begin(); it != used.end(); ++it) {
-				if(*it == &top[i]) {
-					failed = true;
-					break;
-				}
-			}
-			if(!failed) {
-				shortest_distance = distance.r;
-				nearest_element = &top[i];
-			}
-		}
-	}
-
-	return nearest_element;
-}
-
-void get_single_node_map(vector3 node, tet_element *elem, double *map) {
-
-	vector3 a, b, c, n, coeff;
-	matrix33 M, M_inv;
-
-	// Get the required vectors and make them a matrix
-	a = *elem->node[1] - *elem->node[0];
-	b = *elem->node[2] - *elem->node[0];
-	c = *elem->node[3] - *elem->node[0];
-	n = node - *elem->node[0];
-	M.set(a, b, c);
-	M_inv = M.get_inverse();
-	coeff = M_inv.apply(n);
-	map[0] = 1 - coeff.x - coeff.y - coeff.z;
-	map[1] = coeff.x;
-	map[2] = coeff.y;
-	map[3] = coeff.z;
-
-	return;
-}
-
-tet_element * make_containing_element(tet_element *old_containing_element, int nearest_node_index, int new_node_index, vector3 *from_node) {
-
-	int i, new_node[4];
-	tet_element *new_containing_element;
-	new_containing_element = new tet_element;
-
-	// Get and set new nodes
-	for(i = 0; i < 4; ++i) {
-		if(i == nearest_node_index) {
-			new_node[i] = new_node_index;
-		} else {
-			new_node[i] = old_containing_element->n[i];
-		}
-	}
-	new_containing_element->set_nodes_linear(new_node[0], new_node[1], new_node[2], new_node[3], from_node);
-	return new_containing_element;
-}
-
-void add_map_to_big_map(double *little_map, double **big_map, int to, tet_element *containing_elem) {
-
-	int i;
-	for(i = 0; i < 4; ++i) {
-		big_map[to][containing_elem->n[i]] = little_map[i];
-	}
-	return;
+	cout << "\r" << 100 << "\% of map written...";
+	cout << "done!" << endl;
 }
 
 int main(int argc, char **argv) {
 
-	// Check for the right input
-	if((argc - 1 )% 2 != 0 || argc < 4) {
-		cout << "Usage " << argv[0] << " -i [INPUT Base FFEA .node/.pdb] -t [INPUT Base FFEA .top] -o [INPUT Target FFEA .node / Atomic .pdb] -m [OUTPUT .map fname] -s [pdb scaling_factor (.pdb mapping only)]" << endl;
+	// Get args
+	int i, j, k;
+	string flags[] = {"-i", "-t", "-o", "-m", "-s"};
+	string infname = "", topfname = "", targetfname = "", mapfname = "";
+	double scale = 1.0;
+	double **map;
+	
+	// Make sure args come in pairs
+	if((argc - 1) % 2 != 0) {
+		cout << "Usage: make_structure_map -i <Base .node/.pdb> -t <Base topology .top> -o <Target .node/.pdb> -m <Map fname (.map)> -s <scale>" << endl;
 		exit(0);
 	}
 	
-	// Get arguments
-	string from_node_fname, to_fname, from_top_fname, output_map_fname;
-	double scale = 1.0;
-	
-	int set_in_pos = 0, set_in_top = 0, set_out_pos = 0, set_out_map = 0;
-	
-	// Get arguments in pairs
-	string f1, f2, f3, f4, f5;
-	f1 = "-i";
-	f2 = "-t";
-	f3 = "-o";
-	f4 = "-m";
-	f5 = "-s"; 
-	for(int i = 1; i < argc; i += 2) {
-		if (f1.compare(argv[i]) == 0) {
-			from_node_fname = argv[i + 1];
-			set_in_pos = 1;
-		} else if (f2.compare(argv[i]) == 0) {
-			from_top_fname = argv[i + 1];
-			set_in_top = 1;
-		}  else if (f3.compare(argv[i]) == 0) {
-			to_fname = argv[i + 1];
-			set_out_pos = 1;
-		}  else if (f4.compare(argv[i]) == 0) {
-			output_map_fname = argv[i + 1];
-			set_out_map = 1;
-		}  else if (f5.compare(argv[i]) == 0) {
+	for(i = 1; i < argc; i += 2) {
+		if (flags[0].compare(argv[i]) == 0) {
+			infname = argv[i + 1];
+		} else if (flags[1].compare(argv[i]) == 0){
+			topfname = argv[i + 1];
+		} else if (flags[2].compare(argv[i]) == 0){
+			targetfname = argv[i + 1];
+		} else if (flags[3].compare(argv[i]) == 0){
+			mapfname = argv[i + 1];
+		} else if (flags[4].compare(argv[i]) == 0){
 			scale = atof(argv[i + 1]);
 		} else {
-			cout << "Unrecognised flag" << endl;
+		
+			// Ignore
+			continue;
+		}
+	}
+	
+	// Test base input files to decide how program should proceed (if .pdb / .node etc)
+	string ext[] = {"node", "pdb"};
+	runType prog;
+	if(ext[0].compare(getFileExt(infname)) == 0) {
+		prog = fromNode;
+	} else if (ext[1].compare(getFileExt(infname)) == 0) {
+		prog = fromPDB;
+	} else {
+		cout << "Error. Unrecognised extension on the input file. Cannot map from structure of type '" << getFileExt(infname) << "'" << endl;
+	}
+	
+	// Now, test for topology if node input
+	if(prog == fromNode) {
+		if(topfname.compare("") == 0) {
+			cout << "Error. If mapping from a FFEA node file (.node), we need a topology file (.top)." << endl;
 			exit(0);
 		}
 	}
-
-	// Create node lists and topologies and map
-	int num_elements_from, num_nodes_from, num_nodes_to;
-	int elements_per_node;
-	double **map;
-	vector3 *from_node, *to_node;
-	tet_element *from_top;
 	
-	// Build target structure first, which depends on the input type
-	cout << "Building target structure..." << endl << flush;
-	string line;
-	ifstream fin;
-	fin.open(to_fname.c_str());
-	getline(fin, line);
-	fin.close();
-
-	if(line == "ffea node file" || line == "ffea node file\n") {
-		num_nodes_to = get_num_nodes_from_file(to_fname);
-		to_node = new vector3[num_nodes_to];
-		extract_and_create_nodes(to_fname, to_node);
+	// We're done testing the initialisation. Let's make some maps
+	
+	// Firstly, build target structures
+	int num_tnodes = 0;
+	vector3 *tnode = NULL;
+	
+	cout << "Building target structure..." << endl;
+	if(ext[0].compare(getFileExt(targetfname)) == 0) {
+		num_tnodes = extract_nodes_from_node(targetfname, tnode);
+	} else if (ext[1].compare(getFileExt(targetfname)) == 0) {
+		num_tnodes = extract_nodes_from_pdb(targetfname, tnode);
 	} else {
-		num_nodes_to = get_num_atoms_from_file(to_fname);
-		to_node = new vector3[num_nodes_to];
-		extract_and_create_pdb(to_fname, to_node, scale);
+		cout << "Error. Unrecognised extension on the input file. Cannot map from structure of type '" << getFileExt(infname) << "'" << endl;
 	}
 	cout << "done!" << endl;
 	
-	// Now sort out base structure, which depends on input type
-	cout << "Building base structure..." << endl << flush;
-	fin.open(from_node_fname.c_str());
-	getline(fin, line);
-	fin.close();
-	if(line == "ffea node file" || line == "ffea node file\n") {
+	//
+	// Now, build input structures
+	//
+	int num_bnodes = 0, num_belements = 0;
+	vector3 *bnode = NULL;
+	tetra_element *belem = NULL;
 	
-		// Node positions
-		num_nodes_from = get_num_nodes_from_file(from_node_fname);
-		from_node = new vector3[num_nodes_from + 1];
-		extract_and_create_nodes(from_node_fname, from_node);
-		
-		// Topology structure
-		num_elements_from = get_num_elements_from_file(from_top_fname);
-		from_top = new tet_element[num_elements_from];
-		extract_and_create_topologies(from_top_fname, from_top, from_node);
-		
+	cout << "Building base structure..." << endl;
+	if(prog == fromNode) {
+		num_bnodes = extract_nodes_from_node(infname, bnode);
+		num_belements = extract_topology_from_top(topfname, bnode, belem);
 	} else {
-	
-		// Atomic positions
-		num_nodes_from = get_num_atoms_from_file(from_node_fname);
-		from_node = new vector3[num_nodes_from + 1];
-		extract_and_create_pdb(from_node_fname, from_node, scale);
-		
-		// Build a topology structure using nearest nodes
-			
-		// There will be more atoms than nodes, by far. So, one element per node not enough!
-		// Each element contains one unique atom (solid state was useful after all!) so atoms_per_node = num_elements_required
-		elements_per_node = (num_nodes_from) / num_nodes_to;
-		num_elements_from = num_nodes_to * elements_per_node;
-		
-		from_top = new tet_element[num_elements_from];
-		build_pdb_topology(from_node, to_node, from_top, num_nodes_to, num_nodes_from, elements_per_node);			// Fix me		
+		num_bnodes = extract_nodes_from_pdb(infname, bnode);
 	}
+	cout << "done!" << endl;
 	
-	
-
 	// Build the map object
-	map = new double*[num_nodes_to];
+	map = new double*[num_tnodes];
 	cout << "Building map object..." << endl << flush;
-	for(int i = 0; i < num_nodes_to; ++i) {
-		cout << "\r" << ((100 * i) / num_nodes_to) << "\% of map initialised...";
-		map[i] = new double[num_nodes_from];
-		for(int j = 0; j < num_nodes_from; ++j) {
+	for(i = 0; i < num_tnodes; ++i) {
+		cout << "\r" << ((100 * i) / num_tnodes) << "\% of map initialised...";
+		map[i] = new double[num_bnodes];
+		for(j = 0; j < num_bnodes; ++j) {
 			map[i][j] = 0.0;
 		}
 	}
+	cout << "\r" << 100 << "\% of map initialised...";
 	cout << "done!" << endl;
 	
-	// Find nearest LINEAR node, and therefore nearest element / containing element
-	int i, j, nearest_node_index;
-	tet_element *containing_element, *temp_element;
-	double single_map[4];
-	vector3 nearest_node, translation, partial_node;
-	vector<tet_element*> used;
-	for(i = 0; i < num_nodes_to; ++i) {
-
-		// Reset list of used elements
-		used.clear();
+	//
+	// Mapping algorithm
+	//
+	
+	cout << "Calculating map..." << endl;
+	vector<int> node_list;
+	if(prog == fromNode) {
+	
+		// Use existing topology to build the map
 		
-		// Output check
-		cout << "\r" << ((100.0 * i) / num_nodes_to) << "\% of map built..." << flush;
-
-		// Now, we must use 'elements_per_node' elements
+		// For every target node
+		tetra_element *celem;
+		double node_map[4]; 
+		for(i = 0; i < num_tnodes; ++i) {
 		
-		// Each element contributes equally to the position of the new node
-		partial_node = to_node[i] * (1.0 / elements_per_node);
-		for(j = 0; j < elements_per_node; ++j) {
-		
-			// Find containing element
-			containing_element = find_containing_element(to_node[i], from_top, num_elements_from, used);
-			if(containing_element == NULL) {
+			cout << "\r" << ((100 * i) / num_tnodes) << "\% of map calculated...";
 			
-				// Get nearest node from nearest element
-				containing_element = get_nearest_element(to_node[i], from_top, num_elements_from, used);
-			} 
+			// Find which element it is in, if any
+			celem = get_containing_element(tnode[i], belem, num_belements);
+			if(celem == NULL) {
 
-			//containing_element->print_detail();
-			used.push_back(containing_element);
+				// Find closest element if outside of structure
+				celem = get_nearest_element(tnode[i], belem, num_belements);
+			}
+				
+			// We have an element! Work out how node is positioned wrt this element
+			map_node_using_element(tnode[i], celem, node_map);
+			node_list.clear();
+			for(j = 0; j < 4; ++j) {
+				node_list.push_back(celem->n[j]);
+			}
+			add_local_map_to_global(node_map, map, i, node_list);
+		}
+
+	} else {
+	
+		// Use closest N nodes, put them in order, create 3 sets out of them to reduce degrees of freedom, and go
+		// Cutoff distance = 10A here
+		int tries;
+		
+		double range = 10;
+		double *node_map;
+		
+		for(i = 0; i < num_tnodes; ++i) {
 			
-			// Get position of to_node[i] as a function of the nodes of this element
-			//get_single_node_map(to_node[i], containing_element, single_map);
-			get_single_node_map(partial_node, containing_element, single_map);
+			node_list.clear();
+			cout << "\r" << ((100 * i) / num_tnodes) << "\% of map calculated...";
 			
-			// Add this data to final map
-			add_map_to_big_map(single_map, map, i, containing_element);
+			tries = 0;
+			while (node_list.size() < 30) {
+				node_list = get_nodes_with_range(tnode[i], bnode, num_bnodes, range * (++tries));
+			}
+			
+			// Bring down to nearest factor of 3 (using centroid as our reference point)
+			while((node_list.size() - 1) % 3 != 0) {
+				node_list.pop_back();
+			}
+
+			// Now, make a map fro these nodes
+			node_map = new double[node_list.size()];
+			map_node_using_closest_nodes(tnode[i], node_list, bnode, node_map);
+		//	for(j = 0; j < node_list.size(); ++j) {
+		//		cout << node_map[j] << endl;
+		//	}
+			add_local_map_to_global(node_map, map, i, node_list);
+			
+			delete[] node_map;
+			node_map = NULL;
 		}
 	}
-	cout << "done" << endl;
+	
+	// Now, write to file
+	cout << "\r" << 100 << "\% of map calculated...";
+	cout << "done!" << endl;
 
 	// Print out the whole map
-	cout << "Writing map to " << output_map_fname << "...";
-	print_map_to_file(output_map_fname, map, num_nodes_from, num_nodes_to, 0);
+	cout << "Writing map to " << mapfname << "..." << endl;
+	write_map_to_file(mapfname, map, num_bnodes, num_tnodes);
 	cout << "done! " << endl;
 	return 0;
 }
