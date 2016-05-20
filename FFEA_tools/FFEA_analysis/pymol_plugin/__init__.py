@@ -511,10 +511,14 @@ class FFEA_viewer_control_window:
      		
      # Shift all blobs if STATIC, or if there is no trajectory; clear frame if not
      for b in self.blob_list:
-         if blob[0].state == "STATIC" or trajectory_out_fname == None:
+         if trajectory_out_fname == None:
              if self.calc_vdw == 1 and self.move_into_box == 1:
                  # b[0].frames[0].translate(shift)
                  print "--- not translated by: ", shift
+         elif blob[0].state == "STATIC":
+             if self.calc_vdw == 1 and self.move_into_box == 1:
+                 b[0].frames[0].translate(shift)
+                 print "--- translated by: ", shift
          else:
              b[0].frames = []
              b[0].num_frames = 0
@@ -652,6 +656,7 @@ class FFEA_viewer_control_window:
               if self.blob_list[i][j].get_state() == "STATIC":
                   traj.readline() # skip "Blob x, Conformation y, step z" line
                   traj.readline() # skip "STATIC" line
+                  self.blob_list[i][j].load_frame(None)
                   continue
 
               # for DYNAMIC or FROZEN blobs, try to read the node info for this frame
@@ -727,6 +732,8 @@ class FFEA_viewer_control_window:
 
               # plot the last frame and delete it to save memory:
               for i in range(self.num_blobs):
+                # if self.blob_list[i][j].get_state() == "STATIC":
+                #   continue
                 j = active_conf[i]
                 self.blob_list[i][j].draw_frame(-1, self.display_flags)
                 self.blob_list[i][j].frames.pop() # we will only keep the frames
