@@ -192,7 +192,7 @@ class FFEA_pdb:
 			for b in self.blob:
 				fout.write("MODEL\n")
 				index = 0
-				for a in b.atom:
+				for a in b.atom[0:26769]:
 					fout.write("ATOM  ")
 					fout.write(str(a.atom_index).rjust(5))
 					fout.write("  " + a.atom_type.ljust(4))
