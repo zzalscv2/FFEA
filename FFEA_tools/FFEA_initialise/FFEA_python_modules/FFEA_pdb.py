@@ -92,7 +92,7 @@ class FFEA_pdb:
 			elif line[0:6] == "ENDMDL":
 				num_atoms = 0
 				model_index += 1
-				print model_index, blob_index
+
 				# May need fixing for multiple blobs with multiple frames
 				if self.num_frames == 1:
 					blob_index = model_index
