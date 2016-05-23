@@ -10,6 +10,6 @@ install(FILES "FFEA_tools.py"
         DESTINATION ${PYTHONSTUFF})
 
 # 3 - and go through the subdirectories:
-add_subdirectory("FFEA_initialise")
-
 add_subdirectory("FFEA_analysis")
+
+add_subdirectory("FFEA_initialise")
