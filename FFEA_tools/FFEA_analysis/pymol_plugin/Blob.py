@@ -935,7 +935,7 @@ class Blob:
 
                         obj.append(END)
                         print "loading frame ", frameLabel, " for blob ", self.id_num
-                        # cmd.load_cgo(obj, "blob_" + str(self.id_num), i+1)
+                        cmd.load_cgo(obj, "blob_" + str(self.id_num), i+1)
 
 		if display_flags['show_mesh_surf'] == 1:
 			for f in xrange(self.num_surface_faces):
