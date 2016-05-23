@@ -87,7 +87,7 @@ int extract_nodes_from_node(string fname, vector3 *&node) {
 	return num_nodes;
 }
 
-int extract_nodes_from_pdb(string fname, vector3 *&node) {
+int extract_nodes_and_topology_from_pdb(string fname, vector3 *&node, string *&top) {
 
 	// Will extract nodes and move to centroid whilst it does it!
 	int i, num_nodes = 0;
@@ -114,7 +114,7 @@ int extract_nodes_from_pdb(string fname, vector3 *&node) {
 
 	// Allocate some memory
 	node = new vector3[num_nodes];
-	
+	top = new string[num_nodes];
 	// Go to start of file
 	fseek(fin, 0, SEEK_SET);
 
@@ -128,9 +128,22 @@ int extract_nodes_from_pdb(string fname, vector3 *&node) {
 				break;
 			} else if(strcmp(buf, "ATOM") == 0) {
 				i++;
-				fgets(buf,27,fin);
+				
+				// First, empty space
+				fgets(buf, 10, fin);
+				
+				// Now, atom type
+				fgets(buf, 4, fin);
+				
+				top[i] = string(buf);
+				
+				// Empty space
+				fgets(buf,15,fin);
+				
+				// Atom pos
 				fgets(buf,9,fin);
 				x = atof(buf);
+
 				centroid.x += x;
 				fgets(buf,9,fin);
 				y = atof(buf);
@@ -138,6 +151,7 @@ int extract_nodes_from_pdb(string fname, vector3 *&node) {
 				fgets(buf,9,fin);
 				z = atof(buf);
 				centroid.z += z;
+
 				fgets(buf,100,fin);
 				node[i].set_pos(x, y, z);
 			} else {
@@ -313,7 +327,7 @@ void map_node_using_closest_nodes(vector3 node, vector<int> node_list, vector3 *
 //	exit(0);
 	// Create local map
 	map[0] = 1;
-	for(i = 0; i < 3; ++i) {
+	/*for(i = 0; i < 3; ++i) {
 		for(j = 0; j < factor; ++j) {
 		
 			if (i == 0) {
@@ -327,6 +341,9 @@ void map_node_using_closest_nodes(vector3 node, vector<int> node_list, vector3 *
 				map[factor * i + j + 1] = local_coeff.z;
 			}
 		}
+	}*/
+	for(i = 0; i < node_list.size(); ++i) {
+		map[i] = 1.0 / node_list.size();
 	}
 }
 
@@ -338,7 +355,7 @@ void add_local_map_to_global(double *node_map, double **global_map, int target_i
 	}
 }
 
-vector<int> get_nodes_with_range(vector3 tnode, vector3 *bnode, int num_bnodes, double range) {
+vector<int> get_nodes_within_range(vector3 tnode, vector3 *bnode, string *btop, int num_bnodes, double range) {
 	
 	int i, j, itemp;
 	double dtemp;
@@ -346,6 +363,12 @@ vector<int> get_nodes_with_range(vector3 tnode, vector3 *bnode, int num_bnodes, 
 	vector<int> within_range;
 	vector<double> distance;
 	for(i = 0; i < num_bnodes; ++i) {
+		
+		// First of all, if not CA, continue
+		if(btop[i] != "CA ") {
+			continue;
+		}
+		
 		separation = tnode - bnode[i];
 
 		if(separation.r < range) {
@@ -422,13 +445,13 @@ int main(int argc, char **argv) {
 
 	// Get args
 	int i, j, k;
-	string flags[] = {"-i", "-t", "-o", "-m", "-s"};
+	string flags[] = {"-i", "-t", "-o", "-m", "-s", "-r"};
 	string infname = "", topfname = "", targetfname = "", mapfname = "";
-	double scale = 1.0;
+	double scale = 1.0, range = 10;
 	double **map;
 	
 	// Make sure args come in pairs
-	if((argc - 1) % 2 != 0) {
+	if((argc - 1) % 2 != 0 || argc == 1) {
 		cout << "Usage: make_structure_map -i <Base .node/.pdb> -t <Base topology .top> -o <Target .node/.pdb> -m <Map fname (.map)> -s <scale>" << endl;
 		exit(0);
 	}
@@ -444,13 +467,16 @@ int main(int argc, char **argv) {
 			mapfname = argv[i + 1];
 		} else if (flags[4].compare(argv[i]) == 0){
 			scale = atof(argv[i + 1]);
+		} else if (flags[5].compare(argv[i]) == 0){
+			range = atof(argv[i + 1]);
 		} else {
 		
 			// Ignore
 			continue;
 		}
 	}
-	
+	//cout << infname << " " << topfname << " " << targetfname << " " << mapfname << endl;
+	//exit(0);
 	// Test base input files to decide how program should proceed (if .pdb / .node etc)
 	string ext[] = {"node", "pdb"};
 	runType prog;
@@ -475,12 +501,12 @@ int main(int argc, char **argv) {
 	// Firstly, build target structures
 	int num_tnodes = 0;
 	vector3 *tnode = NULL;
-	
+	string *ttop = NULL;
 	cout << "Building target structure..." << endl;
 	if(ext[0].compare(getFileExt(targetfname)) == 0) {
 		num_tnodes = extract_nodes_from_node(targetfname, tnode);
 	} else if (ext[1].compare(getFileExt(targetfname)) == 0) {
-		num_tnodes = extract_nodes_from_pdb(targetfname, tnode);
+		num_tnodes = extract_nodes_and_topology_from_pdb(targetfname, tnode, ttop);
 	} else {
 		cout << "Error. Unrecognised extension on the input file. Cannot map from structure of type '" << getFileExt(infname) << "'" << endl;
 	}
@@ -491,6 +517,7 @@ int main(int argc, char **argv) {
 	//
 	int num_bnodes = 0, num_belements = 0;
 	vector3 *bnode = NULL;
+	string *btop = NULL;
 	tetra_element *belem = NULL;
 	
 	cout << "Building base structure..." << endl;
@@ -498,10 +525,11 @@ int main(int argc, char **argv) {
 		num_bnodes = extract_nodes_from_node(infname, bnode);
 		num_belements = extract_topology_from_top(topfname, bnode, belem);
 	} else {
-		num_bnodes = extract_nodes_from_pdb(infname, bnode);
+		num_bnodes = extract_nodes_and_topology_from_pdb(infname, bnode, btop);
+		
 	}
 	cout << "done!" << endl;
-	
+
 	// Build the map object
 	map = new double*[num_tnodes];
 	cout << "Building map object..." << endl << flush;
@@ -552,10 +580,9 @@ int main(int argc, char **argv) {
 	} else {
 	
 		// Use closest N nodes, put them in order, create 3 sets out of them to reduce degrees of freedom, and go
-		// Cutoff distance = 10A here
+		// Cutoff distance = range
 		int tries;
-		
-		double range = 10;
+
 		double *node_map;
 		
 		for(i = 0; i < num_tnodes; ++i) {
@@ -564,8 +591,8 @@ int main(int argc, char **argv) {
 			cout << "\r" << ((100 * i) / num_tnodes) << "\% of map calculated...";
 			
 			tries = 0;
-			while (node_list.size() < 30) {
-				node_list = get_nodes_with_range(tnode[i], bnode, num_bnodes, range * (++tries));
+			while (node_list.size() < 3) {
+				node_list = get_nodes_within_range(tnode[i], bnode, btop, num_bnodes, range * (++tries));
 			}
 			
 			// Bring down to nearest factor of 3 (using centroid as our reference point)

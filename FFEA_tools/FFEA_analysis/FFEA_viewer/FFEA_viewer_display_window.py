@@ -1153,7 +1153,10 @@ class FFEA_viewer_display_window():
 		if key == '\x1b':
 			print "Display received ESC key event."
 			self.close_handler()		
-
+		elif key == '+':
+			self.z += self.z*.05;
+		elif key == '-':
+			self.z -= self.z*.05;
 	def close_handler(self):
 		self.speak_to_control.send({'num_frames': self.num_frames, 'current_frame': self.frame, 'death': True})
 		self.death()
