@@ -299,8 +299,9 @@ class FFEA_viewer_control_window:
 
 		# Launch the display window, with a pipe set up so the two processes can "speak" to each other
 		self.speak_to_display, speak_to_control = Pipe()
-		self.display_window_process = Process(target=launch_display_window, args=(speak_to_control, ffea_fname, self.num_frames_to_read, self.energy_threshold))
-		self.display_window_process.start()
+		#self.display_window_process = Process(target=launch_display_window, args=(speak_to_control, ffea_fname, self.num_frames_to_read, self.energy_threshold))
+		#self.display_window_process.start()
+		launch_display_window(speak_to_control, ffea_fname, self.num_frames_to_read, self.energy_threshold)
 		self.display_window_exists = True
 
 		self.start_stop_button.config(text=">")
