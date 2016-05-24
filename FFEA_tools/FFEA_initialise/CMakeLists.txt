@@ -14,3 +14,5 @@ install(DIRECTORY FFEA_convert_from_volume
 
 install (FILES FFEA_build_simulation_environment.py FFEA_rerun.py
          DESTINATION "${PYTHONSTUFF}/FFEA_initialise")
+
+install (FILES FFEA_python_modules/FFEA_springs.py DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
