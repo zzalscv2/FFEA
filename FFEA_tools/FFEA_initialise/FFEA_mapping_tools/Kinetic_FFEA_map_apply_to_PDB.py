@@ -12,7 +12,7 @@ inmap = sys.argv[3]
 scale = float(sys.argv[4])
 
 # Get nodes
-input_atoms = FFEA_pdb.FFEA_pdb(innpdb, num_frames_to_read = 20)
+input_atoms = FFEA_pdb.FFEA_pdb(innpdb)
 
 # Get map
 kinetic_map = FFEA_kinetic_map.FFEA_kinetic_map(inmap)
