@@ -308,43 +308,57 @@ void map_node_using_closest_nodes(vector3 node, vector<int> node_list, vector3 *
 	matrix33 edgemat;
 	
 	// We need to know how many nodes are in each set
-	factor = (node_list.size() + 1) / 3;			//elem->node[i] -> bnode[node_list.at(i)]
+	factor = (node_list.size() - 1) / 3;			//elem->node[i] -> bnode[node_list.at(i)]
 	local_coord = node - bnode[node_list.at(0)];
-	//cout << local_coord.r << endl;
-	//cout << local_coord.x << " " << local_coord.y << " " << local_coord.z << endl;
-	for(i = 0; i < 3; ++i) {
+
+	// Build matrix using method of choice
+	/*for(i = 0; i < 3; ++i) {
 		for(j = 0; j < factor; ++j) {
 			edgemat.val[0][i] += bnode[node_list.at((factor * i) + j + 1)].x - bnode[node_list.at(0)].x;
 			edgemat.val[1][i] += bnode[node_list.at((factor * i) + j + 1)].y - bnode[node_list.at(0)].y;
 			edgemat.val[2][i] += bnode[node_list.at((factor * i) + j + 1)].z - bnode[node_list.at(0)].z;
-		//	cout << edgemat.val[0][i] << " " << edgemat.val[1][i] << " " << edgemat.val[2][i] << " " << endl;
-		}
-	//	cout << endl << edgemat.val[0][i] << " " << edgemat.val[1][i] << " " << edgemat.val[2][i] << " " << endl << endl;;
-	}
-	
-	local_coeff = edgemat.get_inverse().apply(local_coord);
-	//cout << local_coeff.x << " " << local_coeff.y << " " << local_coeff.z << " " << endl;
-//	exit(0);
-	// Create local map
-	map[0] = 1;
-	/*for(i = 0; i < 3; ++i) {
-		for(j = 0; j < factor; ++j) {
-		
-			if (i == 0) {
-				map[0] -= local_coeff.x;
-				map[factor * i + j + 1] = local_coeff.x;
-			} else if (i == 1) {
-				map[0] -= local_coeff.y;
-				map[factor * i + j + 1] = local_coeff.y;
-			} else {
-				map[0] -= local_coeff.z;
-				map[factor * i + j + 1] = local_coeff.z;
-			}
 		}
 	}*/
-	for(i = 0; i < node_list.size(); ++i) {
-		map[i] = 1.0 / node_list.size();
+	
+	for(i = 0; i < 3; ++i) {
+		for(j = 0; j < factor; ++j) {
+			edgemat.val[0][i]= 0.0;
+			edgemat.val[1][i]= 0.0;
+			edgemat.val[2][i]= 0.0;
+		}
+		
+		for(j = 0; j < factor; ++j) {
+			edgemat.val[0][i] += bnode[node_list.at(factor * i + j + 1)].x - bnode[node_list.at(0)].x;
+			edgemat.val[1][i] += bnode[node_list.at(factor * i + j + 1)].y - bnode[node_list.at(0)].y;
+			edgemat.val[2][i] += bnode[node_list.at(factor * i + j + 1)].z - bnode[node_list.at(0)].z;
+		}
 	}
+	
+	// Get coefficients
+	local_coeff = edgemat.get_inverse().apply(local_coord);
+	if(fabs(local_coeff.x) > 5 || fabs(local_coeff.y) > 5 || fabs(local_coeff.z) > 5) {
+		cout << local_coeff.x << " " << local_coeff.y << " " << local_coeff.z << "        " << local_coord.get_mag() << "      " << node_list.size() << endl;
+	}
+	
+	// Create local map
+	map[0] = 1;
+	for(i = 0; i < 3; ++i) {
+		for(j = 0; j < factor; ++j) {
+			if(i == 0) {
+				map[factor * i + j + 1] = local_coeff.x;
+				map[0] -= local_coeff.x;
+			} else if (i == 1) {
+				map[factor * i + j + 1] = local_coeff.y;
+				map[0] -= local_coeff.y;
+			} else {
+				map[factor * i + j + 1] = local_coeff.z;
+				map[0] -= local_coeff.z;
+			}
+		}
+	}
+	/*for(i = 0; i < node_list.size(); ++i) {
+		map[i] = 1.0 / node_list.size();
+	}*/
 }
 
 void add_local_map_to_global(double *node_map, double **global_map, int target_index, vector<int> node_list) {
@@ -558,7 +572,7 @@ int main(int argc, char **argv) {
 		double node_map[4]; 
 		for(i = 0; i < num_tnodes; ++i) {
 		
-			cout << "\r" << ((100 * i) / num_tnodes) << "\% of map calculated...";
+			cout << "\r" << ((100 * i) / num_tnodes) << "\% of map calculated..." << flush;
 			
 			// Find which element it is in, if any
 			celem = get_containing_element(tnode[i], belem, num_belements);
@@ -595,11 +609,11 @@ int main(int argc, char **argv) {
 				node_list = get_nodes_within_range(tnode[i], bnode, btop, num_bnodes, range * (++tries));
 			}
 			
-			// Bring down to nearest factor of 3 (using centroid as our reference point)
+			// Bring down to nearest factor of 3 (using closest node as our reference point)
 			while((node_list.size() - 1) % 3 != 0) {
 				node_list.pop_back();
 			}
-
+			
 			// Now, make a map fro these nodes
 			node_map = new double[node_list.size()];
 			map_node_using_closest_nodes(tnode[i], node_list, bnode, node_map);
