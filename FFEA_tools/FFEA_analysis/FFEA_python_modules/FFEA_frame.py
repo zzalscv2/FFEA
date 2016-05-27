@@ -6,22 +6,45 @@ class FFEA_frame(FFEA_node.FFEA_node):
 	# Load with file object already open
 	def load_from_traj(self, fo):
 		
+		start = fo.tell()
+		
 		while(True):
 			prev = fo.tell()
 			line = fo.readline().split()
 			try:
 				self.pos.append([float(line[i]) for i in range(3)])
+				
 			except(IndexError):
-				break
-			except(ValueError):
-				fo.seek(prev)
-				break
+			
+				# EOF
+				fo.seek(start)
+				return 1
 
+			except(ValueError):
+				if line[0] == "*":
+				
+					# Ready for next frame
+					fo.seek(prev)
+					break
+				else:
+					# Halfway through a written frame
+					fo.seek(start)
+					return 1
+					
 		# Numpy it up for speed
 		self.pos = np.array(self.pos)
 		self.num_nodes = len(self.pos)
 		self.num_surface_nodes = self.num_nodes
-
+		
+		return 0
+		
+	def build_from_node(node):
+	
+		self.num_nodes = node.num_nodes
+		self.num_surface_nodes = node.num_surface_nodes
+		self.num_interior_nodes = node.num_interior_nodes
+		self.pos = node.pos
+		
 	def write_to_traj(self, fo):
 
 		for p in self.pos:
@@ -43,6 +66,7 @@ class FFEA_frame(FFEA_node.FFEA_node):
 	def set_step(self, step):
 		self.step = step
 
+		
 	def reset(self):
 		self.num_nodes = 0
 		self.num_surface_nodes = 0

@@ -20,6 +20,10 @@ import StringIO
 
 # from multiprocessing import Process, Pipe
 
+# FFEA stuff
+import FFEA_script
+import FFEA_trajectory
+
 # do Ben's springs:
 import FFEA_springs
 
@@ -48,7 +52,7 @@ class FFEA_viewer_control_window:
      self.parent = app.root
 
      self.root = Tk()
-     self.root.geometry("135x130")
+     self.root.geometry("155x170")
      self.root.title("FFEA")
 
      top_frame = Frame(self.root)
@@ -159,373 +163,75 @@ class FFEA_viewer_control_window:
      # load the file
      self.load_ffea(ffea_fname)
 
-  # # # # # # # # # # # # # # # # # # # # # #
-  # we will take the comments out of iFile,
-  #   write a virtual file "ffea_in" 
-  #   and return its handler.
-  # # # # # # # # # # # # # # # # # # # # # #
-  def commentsOut(self, iFile):
-     sta = open(iFile, 'r')
-     STA = sta.readlines()
-     sta.close()
-
-     ffea_in = StringIO.StringIO()
-
-     # and some variables to take the comments out: 
-     comment = 0
-     m_ini = "<!--"
-     m_end = "-->"
-     # Now start parsing the input file
-     for txt in STA:
-     
-         # Strip tag wrapping 
-         # line = ffea_in.readline().strip()
-         line = txt.strip()
-     
-         # The following stuff takes care of the comments enclosed in "<!--" and "-->":
-         # buf2_string = ""
-         found = 0
-         count = 0
-         count_0 = 0
-         ini = 0
-         end = len(line)
-         theEnd = end
-     
-         # remove the comments:
-         while ((found != -1) and (found != len(line))):
-           if (comment == 0):
-             found = line.find(m_ini)
-             if (found != -1):
-               count += 1
-               comment = 1
-               ini = found
-           if (comment == 1):
-             found = line.find(m_end)
-             if (found != -1):
-               count += 2
-               comment = 0
-               end = found + 3
-           # the line end up without closing the comment:
-           if (comment == 1):
-             line = line[:ini]
-             break
-           # we're out of the comment:
-           elif (comment == 0):
-             if (count == count_0 + 3):
-               buf2_string = line[:ini]
-               buf2_string += line[end:]
-               line = buf2_string
-               count_0 = count
-             elif (count == count_0 + 2):
-               line = line[end:]
-               count_0 = count
-         # comments removed!
-         if len(line) > 0:
-           ffea_in.write(line.strip() + "\n")
-
-     ffea_in.seek(0,0)   
-     return ffea_in
-
 
 
   # # # # # # # # # # # # # # # # # # # # # #
   # # # # # # Load the FFEA file # # # # # # 
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
-     # Check if given file exists
-     if os.path.isfile(ffea_fname) == False:
-             print "No such file:", ffea_fname
-             return
-     else: 
-        self.ffea_fname = ffea_fname
+  	
+	# Check if given file exists
+	if os.path.isfile(ffea_fname) == False:
+		print "No such file:", ffea_fname
+		return
+	else: 
+		self.ffea_fname = ffea_fname
+        
+	print "Loading ffea file: " + self.ffea_fname
+    
+    # Load script (comments are now removed inside this module, by the way :) )
+	self.script = FFEA_script.FFEA_script(self.ffea_fname)
+	p = self.script.params
+	bl = self.script.blob
+	
+	# See whether or not to remove traj file (make this better later i.e. rolling loading by storing file pointers)
+    if self.display_flags['load_trajectory'] == 0:
+        print "requested not to load the trajectory"
+        p.trajectory_out_fname = None
+        
+    # Rebuild the script object depending on whether or not there is a trajectory (keep only first conformation)
+    if p.trajectory_out_fname == None:
+        for i in range(p.num_blobs):
+            p.num_conformations[i] = 1
+        	bl[i] = [bl[i][0]]     
+    
+    # Build box object
+    self.box_x = (1.0 / p.kappa) * p.es_h * p.es_N_x
+    self.box_y = (1.0 / p.kappa) * p.es_h * p.es_N_y
+    self.box_z = (1.0 / p.kappa) * p.es_h * p.es_N_z
+    
+    #
+    # Build the blob objects one at a time
+    #
+    self.blob_list = [[None for j in range(p.num_conforamtions[i])] for i in range(p.num_blobs)]
+    
+    idnum = 0
+   	for b in bl:
+   	    bindex = bl.index(b)
+   	    for c in b:
+   	        cindex = b.index(c)
 
-     print "Loading ffea file: " + self.ffea_fname
-     ffea_path, ffea_id_string = os.path.split(self.ffea_fname)
-     if ffea_path == "":
-         ffea_path = "."
-
-     # First, we want to see if there is a parameters file associated with this
-     # ffea_in = open(self.ffea_fname, "r")
-     ffea_in = self.commentsOut(self.ffea_fname)
-     	
-     # Read required stuff from params block
-     trajectory_out_fname = None
-     kappa = None
-     es_N_x = None
-     es_N_y = None
-     es_N_z = None
-     es_h = None
-     self.calc_vdw = 0
-     self.move_into_box = 1
-     self.num_blobs = 0
-     self.total_num_blobs = 0
-     self.num_conformations = []
-     while True:
-
-         # Strip tag wrapping 
-         line = ffea_in.readline().strip()[1:-1]
-
-         # Check if reached end
-         if line == "/param":
-             break
-
-         # Shouldn't be the case, but just in case
-         if "=" not in line:
-             continue
-
-         # Split line
-         lvalue, rvalue = line.split("=")
-         lvalue = lvalue.strip()
-         rvalue = rvalue.strip()
-
-         if lvalue == "trajectory_out_fname":
-             trajectory_out_fname = os.path.expanduser(rvalue)
-             if os.path.isfile(trajectory_out_fname) == False:
-                 print "Warning: ", trajectory_out_fname, "doesn't exist."
-                 trajectory_out_fname = ffea_path + "/" + os.path.split(trajectory_out_fname)[1]
-                 print "Trying ", trajectory_out_fname, " instead..."
-             if os.path.isfile(trajectory_out_fname) == False:
-                 print "Error: No such file."
-                 print "Will load nodes file for each Blob instead, if they can actually be found..."
-                 trajectory_out_fname = None
-
-             ### PLUGIN OUT # not loading the trajectory!
-             if self.display_flags['load_trajectory'] == 0:
-               print "requested not to load the trajectory"
-               trajectory_out_fname = None
-
-         elif lvalue == "calc_vdw":
-             self.calc_vdw = int(rvalue)
-         elif lvalue == "kappa":
-             kappa = float(rvalue)
-         elif lvalue == "es_N_x":
-             es_N_x = int(rvalue)
-         elif lvalue == "es_N_y":
-             es_N_y = int(rvalue)
-         elif lvalue == "es_N_z":
-             es_N_z = int(rvalue)
-         elif lvalue == "es_h":
-             es_h = int(rvalue)
-         elif lvalue == "num_blobs":
-             self.num_blobs = int(rvalue)
-             print "read num_blobs:", self.num_blobs
-         elif lvalue == "move_into_box":
-             self.move_into_box = int(rvalue)
-     			
-         elif lvalue == "num_conformations":
-
-             rvalue_split = rvalue[1:-1].split(",")
-
-             # If no traj, only load first conf
-             if trajectory_out_fname == None:
-                 for value in rvalue_split:
-                     self.num_conformations.append(1)
-             else:
-                 for value in rvalue_split:
-                     self.num_conformations.append(int(value))
-
-             self.total_num_blobs += self.num_conformations[-1]
-
-             # Error Check
-             print "num_conformations: ", self.num_conformations
-             print "num_blobs: ", self.num_blobs
-             if len(self.num_conformations) != self.num_blobs:
-                 sys.exit("Error. Not enough specified 'num_conformations' to create blob array.")
-
-             # Get blob list array
-             self.blob_list = [[None for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
-
-     self.box_x = (1.0 / kappa) * es_h * es_N_x
-     self.box_y = (1.0 / kappa) * es_h * es_N_y
-     self.box_z = (1.0 / kappa) * es_h * es_N_z
-     
-
-     # Let control window know about num_blobs and num_conformations ## PLUGIN OUT
-     # self.speak_to_control.send({'num_blobs': self.num_blobs, 'num_conformations': self.num_conformations, 'num_frames': self.num_frames, 'current_frame': -1, 'death': False, 'pausing':self.pausing})
-
-     # Now into system block
-     while ffea_in.readline().strip() != "<system>":
-         continue
-
-     # Must get all stuff for each blob before loading the conformations
-     blob_number = 0
-     blob_index = 0
-     conformation_index = 0
-
-     while True:
-         line = ffea_in.readline().strip()[1:-1]
-         if line == "":
-             continue
-         elif line == "/system":
-             break
-#          elif line == "spring":
-#              # Ignore
-#              while True:
-#                  line = ffea_in.readline().strip()[1:-1]
-#                  if line == "/spring":
-#                      break
-#                  else:
-#                      continue
-         elif line == "interactions":
-            while True:
-               line = ffea_in.readline().strip()[1:-1]
-
-               if line == "/interactions":
-                  print line
-                  break
-               elif line == "springs" or line == "spring":
-
-                  while True:
-                     line = ffea_in.readline().strip()[1:-1]
-                     print line
-                     if line == "/springs" or line == "/spring":
-                        break
-                     else:
-                        # Ignore
-                        #continue
-
-                        # Don't ignore
-                        lvalue, rvalue = line.split("=")
-                        lvalue = lvalue.strip()
-                        rvalue = rvalue.strip()
-                        if lvalue == "springs_fname" or lvalue == "spring_fname":
-                           if os.path.isabs(rvalue) == False:
-                                                rvalue = os.path.join(ffea_path, rvalue)
-
-                           self.springs = FFEA_springs.FFEA_springs(rvalue)
-                           self.springs.print_details()
-
-               else: # Add beads block here maybe?
-                  continue
-
-         elif line == "blob":
-             blob_nodes = []
-             blob_top = []
-             blob_motion_state = []
-             blob_surface = []
-             blob_vdw = []
-             blob_pin = []
-             blob_binding = []
-             blob_mat = []
-             blob_stokes = []
-             blob_centroid_pos = None
-             blob_rotation = None
-             scale = 1.0
-
-             while True:
-                 line = ffea_in.readline().strip()[1:-1]
-                 if line == "/blob":
-                     break
-                 elif line == "conformation":
-                     binding_set = 0
-                     while True:
-                         line = ffea_in.readline().strip()[1:-1]
-                         if line == "/conformation":
-                             break
-     						
-                         lvalue, rvalue = line.split("=")
-                         lvalue = lvalue.strip()
-                         rvalue = rvalue.strip()
-                         if lvalue == "motion_state":
-                             blob_motion_state.append(rvalue)
-                             if rvalue == "STATIC":
-                                 blob_top.append("")
-                                 blob_mat.append("")
-                                 blob_stokes.append("")
-                                 blob_pin.append("")
-
-                         elif lvalue == "nodes":
-                             blob_nodes.append(rvalue)
-                         elif lvalue == "topology":
-                             blob_top.append(rvalue)
-                         elif lvalue == "surface":
-                             blob_surface.append(rvalue)
-                         elif lvalue == "material":
-                             blob_mat.append(rvalue)
-                         elif lvalue == "stokes":
-                             blob_stokes.append(rvalue)
-                         elif lvalue == "vdw":
-                             blob_vdw.append(rvalue)
-                         elif lvalue == "pin":
-                             blob_pin.append(rvalue)
-                         elif lvalue == "binding_sites":
-                             binding_set = 1
-                             blob_binding.append(rvalue)
-                         elif lvalue == "beads":
-                             continue
-                         else:
-                             sys.exit("In " + self.ffea_fname + ", " + rvalue + " is an unexpected rvalue\n")
-     				
-                     # Binding not vital
-                     if binding_set == 0:
-                         blob_binding.append("")
-
-                 elif "=" not in line:
-                     continue
-                 else:
-                     lvalue, rvalue = line.split("=")
-                     lvalue = lvalue.strip()
-                     rvalue = rvalue.strip()
-
-                     if lvalue == "centroid" or lvalue == "centroid_pos":
-                         rsplit = rvalue[1:-1].split(",")
-                         blob_centroid_pos = [float(val) for val in rsplit]
-     						
-                     if lvalue == "scale":
-                         scale = float(rvalue)
-
-                     if lvalue == "rotation":
-                         rsplit = rvalue[1:-1].split(",")
-                         blob_rotation = [float(val) for val in rsplit]
-
-             # Load all of the conformations
-             for i in range(self.num_conformations[blob_index]):
-
-                 # If no trajectory, only load first ('active') conformations
-                 if trajectory_out_fname == None and i != 0:
-                     break
-
-                 print "\nLoading blob " + str(blob_index) + ", conformation " + str(i)
-                 # new_blob = Blob.Blob(energy_thresh=self.energy_threshold)
-                 new_blob = Blob.Blob()
-                 new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_mat[i], blob_binding[i], blob_centroid_pos, blob_rotation, ffea_path)
-
-                 self.blob_list[blob_index][i] = new_blob
-                 new_blob_name = ffea_id_string + "#" + str(blob_index) + ", " + str(conformation_index)
-                 info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(i) + "\nNodes:\t" + blob_nodes[i] + "\nTopology:\t" + str(blob_top[i]) + "\nSurface:\t" + blob_surface[i] + "\nVdW:\t" + str(blob_vdw[i]) + "\npin:\t" + str(blob_pin[i]) + "\nMotion State:\t" + blob_motion_state[i] + "\n"
+            print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
+            new_blob = Blob.Blob()
+            #new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_mat[i], blob_binding[i], blob_centroid_pos, blob_rotation, ffea_path)
+            new_blob.load(idnum, bindex, cindex, self.script)     
+                 self.blob_list[bindex][cindex] = new_blob
+                 new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
+                 info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + b.motion_state + "\n"
                  add_blob_info = {'name': new_blob_name, 'info': info_string}
                  # self.speak_to_control.send({'add_blob': add_blob_info}) ## PLUGIN OUT 
-                 blob_number += 1
-                 conformation_index += 1
-     			
-             blob_index += 1
-             conformation_index = 0
-             blob_nodes = []
-             blob_top = []
-             blob_motion_state = []
-             blob_surface = []
-             blob_vdw = []
-             blob_pin = []
-             blob_binding = []
-             blob_mat = []
-             blob_stokes = []
-             blob_centroid_pos = None
-             blob_rotation = None
-             scale = 1.0
+                 idnum += 1
+                 
+    
+    # Rescale and translate initial system if necessary
+    # Send binding sites to control
+    binding_sites = [[0 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
+    for i in range(self.num_blobs):
+        for j in range(self.num_conformations[i]):
+        	if self.blob_list[i][j].num_binding_sites != None:
+                binding_sites[i][j] = self.blob_list[i][j].bsites.num_binding_sites
 
-         elif line == "interactions":
-             while ffea_in.readline().strip() != "</interactions>":
-                 continue
-         else:
-             sys.exit("Expected a blob block in " + self.ffea_fname + " after the <system> tag\n")
-
-     # Send binding sites to control
-     binding_sites = [[0 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
-     for i in range(self.num_blobs):
-         for j in range(self.num_conformations[i]):
-             binding_sites[i][j] = self.blob_list[i][j].num_binding_sites
-
-     # Make everything have unitish sizes
+     # Rescale and translate initial system if necessary
      global_scale = float("inf")
      for blob in self.blob_list:
          if blob[0].scale < global_scale:
@@ -551,12 +257,12 @@ class FFEA_viewer_control_window:
      # Load STATIC blobs and get a global centroid
      for b in self.blob_list:
 
-         b[0].load_nodes_file_as_frame()
+         b[0].set_nodes_as_frame()
          x, y, z = b[0].get_centroid(0)
-         world_centroid[0] += x * b[0].num_nodes
-         world_centroid[1] += y * b[0].num_nodes
-         world_centroid[2] += z * b[0].num_nodes
-         total_num_nodes += b[0].num_nodes
+         world_centroid[0] += x * b[0].node.num_nodes
+         world_centroid[1] += y * b[0].node.num_nodes
+         world_centroid[2] += z * b[0].node.num_nodes
+         total_num_nodes += b[0].node.num_nodes
 
      world_centroid *= 1.0 / total_num_nodes	
      	
@@ -577,8 +283,7 @@ class FFEA_viewer_control_window:
          else:
              b[0].frames = []
              b[0].num_frames = 0
-
-     ## PLUGIN OUT # the following two lines are out for the moment. 
+             
      # Now load trajectory
      if (trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
          self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname, ))
@@ -605,7 +310,56 @@ class FFEA_viewer_control_window:
 #      else:
 #         self.z = self.dimensions[1] / (2 * np.tan(np.pi / 6.0))
 
-
+  def load_trajectory(self, trajectory_out_fname):
+	return
+	
+'''
+  def load_trajectory(self, trajectory_out_fname):
+  
+    # We will be loading in the trajectory header first, then 1 frame at a time while self.display_flags['load_trajectory'] == 1
+    # Because we are now using pymol, we don't need to store stuff on the blob. Delete from traj as soon as successfully drawn
+    
+    # Header first
+    traj = FFEA_trajectory.FFEA_trajectory(fname = trajectory_out_fname, load_all=0)
+  	
+  	# Now frames
+  	while(True):
+  	
+  		if self.display_flags['load_trajectory'] == 1:
+	  		success = traj.load_frame()
+	  		
+	  		if success == 0:
+	  		
+	  			# Success! Copy the frames into the blobs
+	  			for i in range(self.script.params.num_blobs):
+	  				for j in range(self.script.params.num_conformations[i]):
+	  					self.blob_list[i][j].frames.append(traj.blob[i][j].frame[-1])
+	  					self.blob_list[i][j].num_frames += 1
+	  					
+	  			# self.draw_stuff() # we are now drawing every frame after reading it. 
+      			if self.num_frames > 1:
+        			cmd.mset("1-"+str(self.num_frames))
+        		if self.num_frames > 2:
+          			cmd.mplay()
+	  		else:
+	  		
+	  			lowest_num_frames = float("inf")
+	  			
+	  			# Make sure all blobs have same number of frames
+	  			for i in range(self.script.params.num_blobs):
+	  				for j in range(self.script.params.num_conformations[i]):
+	  					if len(traj.blob[i][j].frame) < lowest_num_frames:
+	  						lowest_num_frames = len(traj.blob[i][j].frame)
+	  			
+	  			for i in range(self.script.params.num_blobs):
+	  				for j in range(self.script.params.num_conformations[i]):
+	  					traj.blob[i][j].frame = traj.blob[i][j].frame[:lowest_num_frames]
+	  			
+	  			traj.num_frames = lowest_num_frames
+	  			
+	  			# Wait a bit
+'''	  				
+'''
   def load_trajectory(self, trajectory_out_fname, ):
 
       # Firstly, delete the frames loaded from node files originally
@@ -815,7 +569,7 @@ class FFEA_viewer_control_window:
         cmd.mset("1-"+str(self.num_frames))
         if self.num_frames > 2:
           cmd.mplay()
-
+'''
 
   def get_system_dimensions(self):
 

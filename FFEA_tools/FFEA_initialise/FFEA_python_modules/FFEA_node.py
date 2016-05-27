@@ -154,23 +154,32 @@ class FFEA_node:
 		self.translate(np.array(pos) - self.get_centroid())
 		
 	def rotate(self, rot):
-
+		
 		# Translate to origin
 		origin_trans = np.array([0.0,0.0,0.0]) - self.get_centroid()
 		self.translate(origin_trans)
 		
-		# Rotate in x, then y, then z
-		c = np.cos
-		s = np.sin
-		x = np.radians(rot[0])
-		y = np.radians(rot[1])
-		z = np.radians(rot[2])
-		Rx = np.array([[1, 0, 0],[0,c(x),-s(x)],[0,s(x),c(x)]])
-		Ry = np.array([[c(y), 0, s(y)],[0,1,0],[-s(y),0,c(y)]])
-		Rz = np.array([[c(z),-s(z),0],[s(z),c(z),0], [0,0,1]])
+		if len(rot) == 3:
 		
-		# x, y, z. Change if you want
-		R = np.dot(Rz, np.dot(Ry, Rx))
+			# Rotate in x, then y, then z
+			c = np.cos
+			s = np.sin
+			x = np.radians(rot[0])
+			y = np.radians(rot[1])
+			z = np.radians(rot[2])
+			Rx = np.array([[1, 0, 0],[0,c(x),-s(x)],[0,s(x),c(x)]])
+			Ry = np.array([[c(y), 0, s(y)],[0,1,0],[-s(y),0,c(y)]])
+			Rz = np.array([[c(z),-s(z),0],[s(z),c(z),0], [0,0,1]])
+		
+			# x, y, z. Change if you want
+			R = np.dot(Rz, np.dot(Ry, Rx))
+			
+		elif len(rot) == 9:
+			R = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
+			for i in range(3):
+				for j in range(3):
+					R[i][j] = rot[3 * i + j]
+					
 		for i in range(self.num_nodes):
 			self.pos[i] = np.dot(R, self.pos[i])
 			
