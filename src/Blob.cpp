@@ -3099,7 +3099,7 @@ void Blob::build_mass_matrix() {
     SparsityPattern sparsity_pattern_mass_matrix;
     sparsity_pattern_mass_matrix.init(num_nodes);
 
-    MassMatrixQuadratic M_alpha[num_elements];
+    MassMatrixQuadratic *M_alpha = new MassMatrixQuadratic[num_elements];
 
     scalar *mem_loc;
     int ni_index, nj_index;
