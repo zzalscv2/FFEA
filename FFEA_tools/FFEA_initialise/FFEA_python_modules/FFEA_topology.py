@@ -1,5 +1,6 @@
 from os import path
 from time import sleep
+import numpy as np
 
 class FFEA_topology:
 
@@ -139,6 +140,14 @@ class FFEA_element:
 		for i in range(len(alist)):
 			self.n[i] = int(alist[i])
 
+	def calc_centroid(self, node):
+	
+		centroid = np.array([0.0,0.0,0.0])
+		for i in self.n:
+			centroid += node.pos[i]
+			
+		return centroid * (1.0 / len(self.n))
+		
 	def reset(self):
 		
 		self.n = []
