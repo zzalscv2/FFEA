@@ -89,11 +89,15 @@ class FFEA_kinetic_map:
 				return
 			else:
 				total_new_nodes = []
+				count = 0
 				for f in base.blob[0].frame:
+					count += 1
 					new_nodes = np.array([[0.0,0.0,0.0] for i in range(self.num_rows)])
 					for i in range(self.num_rows):
 						for j in range(self.key[i], self.key[i + 1]):
 							new_nodes[i] += self.entry[j] * f.pos[self.col[j]]
+							
+					print str(count) + " frames calculated"
 					total_new_nodes.append(new_nodes)
 						
 			return total_new_nodes
