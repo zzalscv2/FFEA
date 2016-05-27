@@ -421,7 +421,9 @@ class Blob:
 					n4 = n4a[0:3]
 	
 					# get the J_inv of the elements
+
 					self.first_frame_J_inv.append(self.get_J_inv(n1, n2, n3, n4))
+	
 				print "...Done."
 				self.calculated_first_frame_J_inv = True
 
@@ -1447,7 +1449,17 @@ class Blob:
 		det = J[0][0] * J_inv[0][0] + J[1][0] * J_inv[0][1] + J[2][0] * J_inv[0][2];
 		
 		# divide by determinant
-		det = 1.0/det;
+		try:
+			det = 1.0/det;
+		except(ZeroDivisionError):
+			for i in range(3):
+				for j in range(3):
+					if i == j:
+						J_inv[i][j] == 1
+					else:
+						J_inv[i][j] == 0
+			return J_inv
+			
 		J_inv[0][0]*=det; J_inv[0][1]*=det; J_inv[0][2]*=det;
 		J_inv[1][0]*=det; J_inv[1][1]*=det; J_inv[1][2]*=det;
 		J_inv[2][0]*=det; J_inv[2][1]*=det; J_inv[2][2]*=det;
