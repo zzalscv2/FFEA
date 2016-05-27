@@ -4,11 +4,11 @@ import FFEA_trajectory
 
 class FFEA_pdb:
 
-	def __init__(self, fname, num_frames_to_read = 1000000):
-
-		# Initialise everything
+	def __init__(self, fname, num_frames_to_read = 100000):
+	
+		# Initialise
 		self.reset()
-
+		
 		# Open file for reading
 		try:
 			fin = open(fname, "r")
@@ -16,105 +16,67 @@ class FFEA_pdb:
 		except(IOError):
 			print "PDB file " + fname  + " not found. Returning empty pdb object."
 			return
-
-		# The file may contain frames as models, models of separate structures, or just a single structure. 
-		# Work this out first with an initial sweep
-		print("Making an initial sweep of the structure...")
-		num_models = 0
-		num_atoms = []
-		lines = fin.readlines()
-		for line in lines:
-
-			# Not interested in this
-			if len(line.strip()) < 5:
-				continue
-				
-			# Have we got models?
-			if line[0:5] == "MODEL":
-				num_models += 1
-				num_atoms.append(0)
-				
-			elif line[0:4] == "ATOM":
-
-				# If not in models
-				if num_models == 0 and len(num_atoms) == 0:
-					num_atoms.append(0)
-
-				num_atoms[-1] += 1
-
-		print("done!")
-		print("num_models = " + str(num_models))
-
-		# This should be fixed for multiple blobs with multiple frames in future
-		if len(set(num_atoms)) == 1:
-
-			print("num_atoms = " + str(num_atoms[0]) + " for all models. Models are frames.")
-			if num_models == 0:
-				self.num_frames = 1
-			else:
-				self.num_frames = num_models
-			self.num_blobs = 1
-		else:
-			print("num_atoms is different for all models. Models are different structures.")
-			self.num_blobs = num_models
-			self.num_frames = 1
-
-		if num_frames_to_read < self.num_frames:
-			self.num_frames = num_frames_to_read
-
-		# Setup the frames and structures
-		if num_models == 0:
-			self.num_blobs = 1
-		self.blob = [FFEA_pdb_blob() for i in range(self.num_blobs)]
-
-		# Load in the structure and trajectory
-		print("Reading structure and trajectory...")
-		num_atoms = 0
-		model_index = 0
-		atom_index = 0
-		blob_index = 0
-		frame_index = 0
-	
-		# Get a single frame for everything
-		for b in self.blob:
-			b.frame.append(FFEA_pdb_frame())
-
-		for line in lines:
-		
-			# Finished
-			if line.strip() == "END" or self.num_frames == frame_index:
-				break
-
-			# Not interested in this
-			elif len(line.strip()) < 1:
-				continue
 			
-			elif line[0:6] == "ENDMDL":
-				num_atoms = 0
-				model_index += 1
-
-				# May need fixing for multiple blobs with multiple frames
-				if self.num_frames == 1:
-					blob_index = model_index
-				else:
-					frame_index = model_index
-
-					# Might need another frame
-					if frame_index != self.num_frames:
-						self.blob[blob_index].frame.append(FFEA_pdb_frame())
-
+		# Start to read. Every model is a frame, every chain is a blob
+		
+		# So, use first frame to get the topology first of all
+		findex = 0
+		num_frames = 0
+		bindex = 0
+		num_blobs = 0
+		num_atoms = []
+		
+		frameend = ""
+		blobend = ""
+		while True:
+			pos = fin.tell()
+			line = fin.readline()
+			if "MODEL" in line:
+			
+				# Frames are arranged as models. This person wasn't lazy, yaaay
+				frameend = "ENDMDL"
+				break
+				
+			elif "ATOM" in line:
+				
+				# 1 frame, hopefully
+				frameend = ""
+				fin.seek(pos)
+				break
+				
+		while True:
+			line = fin.readline().strip()
+			
+			if line == "" or line == "END":
+				break
+				
+			elif len(line) < 3:
+				continue
+							
+			elif line == frameend:
+			
+				# Only reading first frame for now
+				break
+					
 			elif line[0:3] == "TER":
-				self.blob[blob_index].num_atoms = num_atoms
-				atom_index = 0
-				num_atoms = 0
+				blobend = "TER"
+				bindex += 1
+				
+			if line[0:4] == "ATOM":
 
-			elif line[0:4] == "ATOM":
-
+				if bindex == num_blobs:
+					num_blobs += 1
+					self.blob.append(FFEA_pdb_blob())
+					num_atoms.append(0)
+					
 				# Initialise the atom
 				try:
-					self.blob[blob_index].atom.append(FFEA_pdb_atom())
+					self.blob[bindex].atom.append(FFEA_pdb_atom())
 				except(IndexError):
 					break
+					
+				num_atoms[-1] += 1
+				self.blob[bindex].num_atoms += 1
 				atom_index = int(line[6:11].strip())
 
 				# Get structure data
@@ -123,8 +85,9 @@ class FFEA_pdb:
 
 				# If this is an ion or solvent, get rid of it
 				if res_type == "SOL" or res_type == "NA" or res_type == "CL"or res_type == "K":
-					self.blob[blob_index].atom.pop()
-					self.blob[blob_index].num_atoms -= 1
+					self.blob[bindex].atom.pop()
+					num_atoms[-1] -= 1
+					self.blob[bindex].num_atoms -= 1
 					continue
 
 				chain = line[21]
@@ -155,55 +118,111 @@ class FFEA_pdb:
 				except:
 					charge = " "
 
-				# Get position data
-				x = float(line[30:38].strip())
-				y = float(line[38:46].strip())
-				z = float(line[46:54].strip())
+				# Ignoring position data
 
 				# Set structure data
-				self.blob[blob_index].atom[num_atoms].set_structure(atom_index = atom_index, atom_type = atom_type, res_type = res_type, chain = chain, res_index = res_index, occupancy = occupancy, temp_factor = temp_factor, segment = segment, elem = elem, charge = charge)
-
-				# Set position data
-				self.blob[blob_index].frame[frame_index].set_atomic_pos(num_atoms, x, y, z)
-
-				# Increment index
-				num_atoms += 1
-
-		for b in self.blob:
-
-			# If no 'TER's
-			if b.num_atoms == 0:
-				b.num_atoms = len(b.atom)
-
-			for f in b.frame:
-				f.pos = np.array(f.pos)
-				
-		print("done!")
+				self.blob[bindex].atom[num_atoms[-1] - 1].set_structure(atom_index = atom_index, atom_type = atom_type, res_type = res_type, chain = chain, res_index = res_index, occupancy = occupancy, temp_factor = temp_factor, segment = segment, elem = elem, charge = charge)
+	
+		self.num_blobs = num_blobs
+		self.num_atoms = num_atoms
 		
-	def write_to_file(self, fname):
+		# Now, load the positions only
+		fin.seek(0,0)
+		finished = False
+		while self.num_frames < num_frames_to_read:
+		
+			while True:
+				pos = fin.tell()
+				line = fin.readline()
+				
+				if line.strip() == "":
+					finished = True
+					break
+					
+				elif "MODEL" in line:
+			
+					# Frames are arranged as models. This person wasn't lazy, yaaay
+					break
+				
+				elif "ATOM" in line:
+				
+					# 1 frame, hopefully
+					fin.seek(pos)
+					break
+			
+			if finished:
+				break
+					
+			for i in range(self.num_blobs):
 
+				self.blob[i].add_empty_frame()
+				for j in range(self.num_atoms[i]):
+
+					line = fin.readline()
+					if "ATOM" not in line:
+						continue
+						
+					res_type = line[17:20].strip()
+					
+					if res_type == "SOL" or res_type == "NA" or res_type == "CL"or res_type == "K":
+						continue
+					else:
+					
+						# Get position data
+						x = float(line[30:38].strip())
+						y = float(line[38:46].strip())
+						z = float(line[46:54].strip())
+	
+						self.blob[i].frame[-1].set_atomic_pos(j, x, y, z)
+				
+						
+				if blobend == "TER":
+					while fin.readline().split()[0].strip() != blobend:
+						continue
+				
+			if frameend == "ENDMDL":
+				while fin.readline().strip() != frameend:
+					continue
+					
+			self.num_frames += 1
+			sys.stdout.write("\rRead %d frames" % (self.num_frames))
+			sys.stdout.flush()
+			
+		# Last thing, convert all to numpy
+		for i in range(self.num_blobs):
+			for j in range(self.num_frames):
+				self.blob[i].frame[j].pos = np.array(self.blob[i].frame[j].pos)
+		
+	def write_to_file(self, fname, frames = []):
+	
+		# Build list of frames to write
+		if frames == []:
+			frames = range(self.num_frames)
+			
 		# Open file for writing
 		fout = open(fname, "w")
-
-		# Very simple output, no headers or any stuff like that. Frames are models
-		for i in range(self.num_frames):
-			sys.stdout.write("\r%d%% written" % (int(i * 100.0 / self.num_frames)))
+		modindex = -1
+		for i in frames:
+			modindex += 1
+			sys.stdout.write("\r%d%% written" % (int(modindex * 100.0 / len(frames))))
 			sys.stdout.flush()
-			for b in self.blob:
-				fout.write("MODEL\n")
+			fout.write("MODEL      %d\n" % (modindex + 1))
+			for j in range(self.num_blobs):
+				
 				index = 0
-				for a in b.atom[0:26769]:
+				chain = chr(ord("A") + j) 
+				for a in self.blob[j].atom:
 					fout.write("ATOM  ")
 					fout.write(str(a.atom_index).rjust(5))
 					fout.write("  " + a.atom_type.ljust(4))
 					fout.write(a.res_type.rjust(3))
-					fout.write(" " + a.chain)
+					fout.write(" " + chain)
 					fout.write(str(a.res_index).rjust(4))
 					fout.write(" ")
 					fout.write("   ")
-					fout.write("%8.3f" % b.frame[i].pos[index][0])
-					fout.write("%8.3f" % b.frame[i].pos[index][1])
-					fout.write("%8.3f" % b.frame[i].pos[index][2])
+					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][0])
+					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][1])
+					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][2])
 					fout.write("%6.2f" % a.occupancy)
 					fout.write("%6.2f" % a.temp_factor)
 					fout.write("      ")
@@ -212,13 +231,14 @@ class FFEA_pdb:
 					fout.write(a.charge.rjust(2))
 					fout.write("  \n")
 					index += 1
-				fout.write("TER                  " + str(b.atom[-1].chain) + "\n")
-				fout.write("ENDMDL\n")
-
+				#fout.write("TER                  " + str(self.blob[j].atom[-1].chain) + "\n")
+				fout.write("TER                  " + str(chain) + "\n")
+			fout.write("ENDMDL\n")
+				
 		fout.write("END")
 		sys.stdout.write("\r100%% written\n")
 		fout.close()
-	
+
 	def clear_position_data(self):
 
 		self.num_frames = 0
@@ -269,6 +289,56 @@ class FFEA_pdb:
 				aframe.pos = traj.blob[j][0].frame[i].pos * scale
 				self.blob[j].frame.append(aframe)
 	
+	def translate(self, shift):
+		
+		for i in range(len(self.blob)):
+			for j in range(len(self.blob[i].frame)):
+				self.blob[i].frame[j].translate(shift)
+				
+	def set_pos(self, pos):
+	
+		# Set first frame to this pos. Then, translate all other vectors by the same amount
+		c = np.array([0.0,0.0,0.0])
+		num_nodes = 0
+		for i in range(len(self.blob)):
+			c +=  len(self.blob[i].frame[0].pos) * self.blob[i].frame[0].get_centroid()
+			num_nodes += len(self.blob[i].frame[0].pos)
+			
+		c *= 1.0 / num_nodes
+		
+		shift = np.array(pos) - c
+		for i in range(len(self.blob)):
+			for j in range(len(self.blob[i].frame)):
+				self.blob[i].frame[j].translate(shift)
+				
+	def rotate(self, rot):
+
+		# Rotate in x, then y, then z
+		c = np.cos
+		s = np.sin
+		x = np.radians(rot[0])
+		y = np.radians(rot[1])
+		z = np.radians(rot[2])
+		Rx = np.array([[1, 0, 0],[0,c(x),-s(x)],[0,s(x),c(x)]])
+		Ry = np.array([[c(y), 0, s(y)],[0,1,0],[-s(y),0,c(y)]])
+		Rz = np.array([[c(z),-s(z),0],[s(z),c(z),0], [0,0,1]])
+	
+		# x, y, z. Change if you want
+		R = np.dot(Rz, np.dot(Ry, Rx))
+			
+		for i in range(len(self.blob)):
+			for j in range(len(self.blob[i].frame)):
+			
+				# Translate to origin
+				origin_trans = np.array([0.0,0.0,0.0]) - self.blob[i].frame[j].get_centroid()
+				self.blob[i].frame[j].translate(origin_trans)
+		
+				for k in range(len(self.blob[i].frame[j].pos)):
+					self.blob[i].frame[j].pos[k] = np.dot(R, self.blob[i].frame[j].pos[k])
+			
+				# Translate back
+				self.blob[i].frame[j].translate(-1 * origin_trans)
+				
 	def reorder_atoms(self, start = 1):
 
 		# For each blob in the pdb
@@ -294,6 +364,10 @@ class FFEA_pdb:
 
 				b.atom[i].res_index = res_index
 
+	def add_empty_blob(self):
+		self.blob.append(FFEA_pdb_blob())
+		self.num_blobs += 1
+		
 	def reset(self):
 		
 		self.num_blobs = 0
@@ -307,6 +381,10 @@ class FFEA_pdb_blob:
 		# Reset object
 		self.reset()	
 
+	def add_empty_frame(self):
+		self.frame.append(FFEA_pdb_frame())
+		self.num_frames += 1
+		
 	def set_pos(self, frame_index, pos):
 		if self.num_atoms == len(pos):
 			self.frame[frame_index].pos = pos
