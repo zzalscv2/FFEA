@@ -3,7 +3,9 @@
 # from OpenGL.GLU import *
 import math, os
 import numpy as np
-import FFEA_material
+import FFEA_node, FFEA_surface, FFEA_topology, FFEA_material
+import FFEA_stokes, FFEA_vdw, FFEA_pin, FFEA_binding_sites
+import FFEA_frame
 
 from pymol import cmd
 from pymol.cgo import *
@@ -14,36 +16,96 @@ from pymol.vfont import plain
 
 
 class Blob:
-	def __init__(self, energy_thresh=1.0e6):
-		self.num_elements = 0
-		self.offset = [0.0, 0.0, 0.0]
-		self.init_centroid = None
-		self.init_rot = None
-		self.topology = []
-		self.no_topology = False
-		self.num_nodes = 0
-		self.num_surface_faces = 0
-		self.num_binding_sites = 0
-		self.active_binding_site = -1
-		self.num_frames = 0
-		self.frames = []
-		self.num_frames = 0
-		self.state = "DYNAMIC"
+	
+	def __init__(self, energy_thresh=1.06e6):
+	
+		self.energy_thresh = energy_thresh
+		
+		# Viewer flags and ids
 		self.id_num = -1
+		self.bindex = -1
+		self.cindex = -1
 		self.hide_blob = False
-		self.num_pinned_nodes = 0
-		self.pinned_nodes = []
-		self.min_length = None
-		self.linear_nodes_only = []
+		self.hidden_faces = None
 		self.calculated_linear_nodes = False
 		self.calculated_first_frame_volumes = False
 		self.calculated_first_frame_J_inv = False
 		self.do_Fij = False
-		self.energy_thresh = energy_thresh
+		self.normalcolor = [32 / 255.0, 178 / 255.0, 170 / 255.0]
+		
+		# Structure
+		self.motion_state = "DYNAMIC"
+		self.top = None
+		self.linear_nodes_list = []
+		
+		self.node = None
+		self.surf = None
+		self.mat = None
+		self.vdw = None
+		self.stokes = None
+		self.pin = None
+		self.bsites = None
+		self.init_centroid = None
+		self.init_rotation = None
+		self.offset = np.array([0.0,0.0,0.0])
+		self.min_length = None
 		self.scale = 1.0
 		self.global_scale = 1.0
-		self.normalcolor = [32 / 255.0, 178 / 255.0, 170 / 255.0]
 
+		self.frames = []
+		self.num_frames = 0
+		
+	def load(self, idnum, bindex, cindex, script):
+	
+		self.idnum = idnum
+		self.bindex = bindex
+		self.cindex = cindex
+		
+		b = script.blob[bindex]
+		c = b.conformation[cindex]
+		
+		self.motion_state = b.motion_state
+		
+		# All will be present
+		self.node = FFEA_node.FFEA_node(c.nodes)
+		self.surf = FFEA_surface.FFEA_surface(c.surface)
+		self.vdw = FFEA_vdw.FFEA_vdw(c.vdw)
+		
+		# only necessary for dynamic blobs
+		if self.motion_state == "DYNAMIC":
+			self.top = FFEA_topology.FFEA_topology(c.topology)
+			self.mat = FFEA_material.FFEA_material(c.material)
+			self.stokes = FFEA_stokes.FFEA_stokes(c.stokes)
+			self.pin = FFEA_pin.FFEA_pin(c.pin)
+		
+		# Only necessary if kinetics are active
+		if script.params.calc_kinetics == 1 and c.bsites != "":
+			self.bsites = FFEA_binding_sites.FFEA_binding_sites(c.bsites)
+		
+		# Any initialisation done in ffea?
+		try:
+			self.init_centroid = np.array(b.centroid)	
+		except:
+			self.init_centroid = None
+			
+		try:
+			self.init_rotation = np.array(b.rotation)
+		except:
+			self.init_rotation = None
+			
+		try:
+			self.scale = b.scale
+		except:
+			self.scale = 1.0
+		
+		# Initialise stuff that we didn't get
+		self.hidden_faces = [-1 for i in range(self.surf.num_faces)]
+		if self.vdw != None and self.vdw.num_faces == 0:
+			self.vdw.set_num_faces(self.surf.num_faces)
+			
+		# Calculate stuff that needs calculating
+	
+	'''	
 	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, blob_mat, binding_fname, blob_centroid_pos, blob_rotation, ffea_fpath = "."):
 		self.id_num = idnum
 		self.blob_index = blob_index
@@ -119,7 +181,7 @@ class Blob:
                         if os.path.isabs(binding_fname) == False:
                              binding_fname = os.path.join(ffea_fpath, binding_fname)
 			self.load_binding_sites(binding_fname)
-
+	'''
 	def load_topology(self, top_fname):
 		print "Reading in topology file " + top_fname
        
@@ -359,13 +421,13 @@ class Blob:
 
 		if self.calculated_linear_nodes == False:
 			if self.no_topology == False:
-				self.linear_nodes_only = []
+				self.linear_nodes_list = []
 				for i in range(self.num_nodes):
 					for el in self.topology:
 						if i in el[0:4]:
-							self.linear_nodes_only.append(i)
+							self.linear_nodes_list.append(i)
 							break
-				print "Found", len(self.linear_nodes_only), "linear nodes."
+				print "Found", len(self.linear_nodes_list), "linear nodes."
 				self.calculated_linear_nodes = True	
 
 		if self.calculated_first_frame_volumes == False:
@@ -440,185 +502,65 @@ class Blob:
 		self.num_frames = 0
 		self.frames = []
 
-	def load_nodes_file_as_frame(self):
-		print "Reading in nodes file " + self.nodes_fname
-		nodes_file = open(self.nodes_fname, "r")
-		line = nodes_file.readline().rstrip()
-		if line != "ffea node file" and line != "walrus node file":
-			print "Error: Nodes file " + self.nodes_fname + " missing 'ffea node file' first line"
-			return
-
-		line = nodes_file.readline().split()
-		self.num_nodes = int(line[1])
-		print "num_nodes = ", self.num_nodes
-
-		line = nodes_file.readline().split()
-		num_surface_nodes = int(line[1])
-		print "num_surface_nodes = ", num_surface_nodes
-
-		line = nodes_file.readline().split()
-		num_interior_nodes = int(line[1])
-		print "num_interior_nodes = ", num_interior_nodes
-
-		line = nodes_file.readline().rstrip()
-		if line != "surface nodes:":
-			print "Error: nodes file " + self.nodes_fname + " missing 'surface nodes:' line"
-			print line
-			return
-
-		print "Scaling by " + str(self.scale * self.global_scale)
-
-		nodes = []
-		centroid_x = 0.0
-		centroid_y = 0.0
-		centroid_z = 0.0
-		for n in xrange(self.num_nodes):
-			line = nodes_file.readline().split()
-			if "interior" in line[0]:
-				print "Skipping 'interior nodes:' line"
-				line = nodes_file.readline().split()
-			
-			el_nodes = [float(line[i])*self.scale*self.global_scale for i in xrange(3)]
-			el_nodes.extend([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-			nodes.append(el_nodes)
-		
-			centroid_x += el_nodes[0]
-			centroid_y += el_nodes[1]
-			centroid_z += el_nodes[2]
-
-		centroid_x/= self.num_nodes
-		centroid_y/= self.num_nodes
-		centroid_z/= self.num_nodes
-
-		nodes_file.close()
-
-		print "Finished reading in nodes file " + self.nodes_fname
-
-		if self.init_centroid != None:
-                        print "=============================="
-			print "Moving to starting position..."
-                        print "=============================="
-			translate = [self.init_centroid[0]*self.scale*self.global_scale - centroid_x, self.init_centroid[1]*self.scale*self.global_scale - centroid_y, self.init_centroid[2]*self.scale*self.global_scale - centroid_z]
-					
-			for i in range(len(nodes)):
-				for j in range(3):
-					nodes[i][j] += translate[j]
-
-			centroid_x = self.init_centroid[0]*self.scale*self.global_scale
-			centroid_y = self.init_centroid[1]*self.scale*self.global_scale
-			centroid_z = self.init_centroid[2]*self.scale*self.global_scale
-			print "...done!\n"
-		
-		# Apply a rotation if necessary
-		if self.init_rot != None:
-			
-                        print "--- Are you rotating?"
-			# Move centroid to origin
-			for i in range(len(nodes)):
-				nodes[i][0] -= centroid_x
-				nodes[i][1] -= centroid_y
-				nodes[i][2] -= centroid_z
-				
-			# Rotate and move back to not the origin!
-			if len(self.init_rot) == 3:
-				for i in range(3):
-					self.init_rot[i] = np.radians(self.init_rot[i])
+	def set_nodes_as_frame(self):
 	
-				R = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
-				R[0][0] = np.cos(self.init_rot[1]) * np.cos(self.init_rot[2])
-				R[0][1] = np.sin(self.init_rot[0]) * np.sin(self.init_rot[1]) * np.cos(self.init_rot[2]) - np.cos(self.init_rot[0]) * np.sin(self.init_rot[2])
-				R[0][2] = np.cos(self.init_rot[0]) * np.sin(self.init_rot[1]) * np.cos(self.init_rot[2]) + np.sin(self.init_rot[0]) * np.sin(self.init_rot[2])
-				R[1][0] = np.cos(self.init_rot[1]) * np.sin(self.init_rot[2])
-				R[1][1] = np.sin(self.init_rot[0]) * np.sin(self.init_rot[1]) * np.sin(self.init_rot[2]) + np.cos(self.init_rot[0]) * np.cos(self.init_rot[2])
-				R[1][2] = np.cos(self.init_rot[0]) * np.sin(self.init_rot[1]) * np.sin(self.init_rot[2]) - np.sin(self.init_rot[0]) * np.cos(self.init_rot[2])
-				R[2][0] = -1 * np.sin(self.init_rot[1])
-				R[2][1] = np.sin(self.init_rot[0]) * np.cos(self.init_rot[1])
-				R[2][2] = np.cos(self.init_rot[0]) * np.cos(self.init_rot[1])
-
-				for i in range(len(nodes)):
-					x = nodes[i][0]
-					y = nodes[i][1]
-					z = nodes[i][2]
-
-					nodes[i][0] = x * R[0][0] + y * R[0][1] + z * R[0][2] + self.offset[0]
-					nodes[i][1] = x * R[1][0] + y * R[1][1] + z * R[1][2] + self.offset[1]
-					nodes[i][2] = x * R[2][0] + y * R[2][1] + z * R[2][2] + self.offset[2]
-
-			elif len(self.init_rot) == 9:
-
-				# Explicit matrix
-				for i in range(len(nodes)):
-					x = nodes[i][0]
-					y = nodes[i][1]
-					z = nodes[i][2]
-
-					nodes[i][0] = x * self.init_rot[0] + y * self.init_rot[1] + z * self.init_rot[2] + self.offset[0]
-					nodes[i][1] = x * self.init_rot[3] + y * self.init_rot[4] + z * self.init_rot[5] + self.offset[1]
-					nodes[i][2] = x * self.init_rot[6] + y * self.init_rot[7] + z * self.init_rot[8] + self.offset[2]
-
-			print "...done!\n"
-				
-
-                ## ## Normals are calculated later ## 
-		# # Calculate average normal at each node (for gl lighting effects)
-		# print "Calculating node normals for lighting..."
-		# normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
-		# for f in xrange(self.num_surface_faces):
-		# 	# get node indices of this face
-		# 	i1 = self.surface[f][1]
-		# 	i2 = self.surface[f][2]
-		# 	i3 = self.surface[f][3]
+		print "Setting nodes as initial frame..."
 		
-		# 	# get the normal of the face
-		# 	norm = self.calc_normal(nodes[i1], nodes[i2], nodes[i3])
+		# Get a frame
+		aframe = FFEA_frame.FFEA_Frame()
+		aframe.build_from_node(self.node)
 		
-		# 	normal_list[i1][0] += norm[0]
-		# 	normal_list[i1][1] += norm[1]
-		# 	normal_list[i1][2] += norm[2]
+		# Move and rotate it
+		if self.init_centroid != None:
+		    print "=============================="
+			print "Moving to starting position..."
+            print "=============================="
+            
+            aframe.set_pos(self.init_centroid)
+            
+        if self.init_rotation != None:
+            print "=============================="
+            print "Rotating to starting orientation..."
+            print "=============================="
+            aframe.rotate(self.init_rotation)
+           
+        # Now scale 
+        aframe.scale(self.scale * self.global_scale)
+        
+        # Append it to the list
+        self.frames.append(aframe)
+        self.num_frames += 1
 		
-		# 	normal_list[i2][0] += norm[0]
-		# 	normal_list[i2][1] += norm[1]
-		# 	normal_list[i2][2] += norm[2]
+		# Calculate some additional stuff for structural analysis
+        if self.calculated_linear_nodes == False:
+        
+        	print "Calculating the linear nodes..."
+        	
+            if self.top != None:
 		
-		# 	normal_list[i3][0] += norm[0]
-		# 	normal_list[i3][1] += norm[1]
-		# 	normal_list[i3][2] += norm[2]
-		# print "Done."
+			    self.linear_nodes_list = []
+			    for i in range(self.node.num_nodes):
+				    for el in self.top.element:
+					    if i in el.n[0:4]:
+						    self.linear_nodes_list.append(i)
+						    break
+						
+			    print "Found", len(self.linear_nodes_list), "linear nodes."
+			    self.calculated_linear_nodes == True
+			
 		
-		# self.frames.append(Frame(self.get_state(), nodes, normal_list, centroid_x, centroid_y, centroid_z))
-		self.frames.append(Frame(self.get_state(), nodes, NULL, centroid_x, centroid_y, centroid_z))
-		self.num_frames += 1
-
-		if self.no_topology == False:
-			print "Calculating surface"
-			self.linear_nodes_only = []
-			for i in range(self.num_nodes):
-				for el in self.topology:
-					if i in el[0:4]:
-						self.linear_nodes_only.append(i)
-						break
-			print "Found", len(self.linear_nodes_only), "linear nodes."
-
-		if self.calculated_linear_nodes == False:
-			if self.no_topology == False:
-				self.linear_nodes_only = []
-				for i in range(self.num_nodes):
-					for el in self.topology:
-						if i in el[0:4]:
-							self.linear_nodes_only.append(i)
-							break
-				print "Found", len(self.linear_nodes_only), "linear nodes."
-				self.calculated_linear_nodes = True
-#			else:
-#				self.linear_nodes_only = []
-#				for i in range(self.num_nodes):
-#					for f in self.surface:
-#						if i in f[0:3]:
-#							self.linear_nodes_only.append(i)
-#							break
-#				print "Found", len(self.linear_nodes_only), "linear nodes."
-#				self.calculated_linear_nodes = True
-
+			else:
+		        self.linear_nodes_list = []
+		        for i in range(self.node.num_nodes):
+		            for f in self.surf.face:
+		                if i in f.n[0:3]:
+		                    self.linear_nodes_list.append(i)
+		                    break
+		        print "Found", len(self.linear_nodes_list), "linear nodes."
+                self.calculated_linear_nodes = True
+                
+		print "done!"
+		
 	def set_scale(self, scale):
 		self.scale = scale
 
@@ -676,7 +618,7 @@ class Blob:
 			i = self.num_frames - 1
 
 		f = self.frames[i]
-		return f.centroid_x, f.centroid_y, f.centroid_z
+		return f.get_centroid()
 
 	def draw_frame(self, i, display_flags):
 
@@ -1205,16 +1147,16 @@ class Blob:
 			# glFogfv(GL_FOG_COLOR, [1.0, 0.0, 0.0])
 			# glFogf(GL_FOG_DENSITY, 0.02)
                         TXT = []
-			if display_flags['show_linear_nodes_only'] == 0:
+			if display_flags['show_linear_nodes_list'] == 0:
 				for n in xrange(self.num_nodes):
 					nn = (self.frames[i].node_list[n])[0:3]
                                         cyl_text(TXT,plain,nn,str(n),0.10) # ,axes=axes)
 			# else:
-			# 	for n in xrange(len(self.linear_nodes_only)):
-			# 		nn = (self.frames[i].node_list[self.linear_nodes_only[n]])[0:3]
+			# 	for n in xrange(len(self.linear_nodes_list)):
+			# 		nn = (self.frames[i].node_list[self.linear_nodes_list[n]])[0:3]
 			# 		glColor3f(1.0, 1.0, 1.0)
 			# 		glRasterPos3f(nn[0], nn[1], nn[2])
-			# 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.linear_nodes_only[n]));
+			# 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.linear_nodes_list[n]));
                         cmd.set("cgo_line_radius",0.03)
                         cmd.load_cgo(TXT,'Node numbers', frameLabel)
 
