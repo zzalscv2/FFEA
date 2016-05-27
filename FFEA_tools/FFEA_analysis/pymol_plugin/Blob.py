@@ -64,7 +64,7 @@ class Blob:
 		b = script.blob[bindex]
 		c = b.conformation[cindex]
 		
-		self.motion_state = b.motion_state
+		self.motion_state = c.motion_state
 		
 		# All will be present
 		self.node = FFEA_node.FFEA_node(c.nodes)
@@ -507,36 +507,36 @@ class Blob:
 		print "Setting nodes as initial frame..."
 		
 		# Get a frame
-		aframe = FFEA_frame.FFEA_Frame()
+		aframe = FFEA_frame.FFEA_frame()
 		aframe.build_from_node(self.node)
 		
 		# Move and rotate it
 		if self.init_centroid != None:
-		    print "=============================="
+			print "=============================="
 			print "Moving to starting position..."
-            print "=============================="
+			print "=============================="
             
-            aframe.set_pos(self.init_centroid)
+			aframe.set_pos(self.init_centroid)
             
-        if self.init_rotation != None:
-            print "=============================="
-            print "Rotating to starting orientation..."
-            print "=============================="
-            aframe.rotate(self.init_rotation)
+		if self.init_rotation != None:
+			print "=============================="
+			print "Rotating to starting orientation..."
+			print "=============================="
+			aframe.rotate(self.init_rotation)
            
-        # Now scale 
-        aframe.scale(self.scale * self.global_scale)
+		# Now scale 
+		aframe.scale(self.scale * self.global_scale)
         
-        # Append it to the list
-        self.frames.append(aframe)
-        self.num_frames += 1
+		# Append it to the list
+		self.frames.append(aframe)
+		self.num_frames += 1
 		
 		# Calculate some additional stuff for structural analysis
-        if self.calculated_linear_nodes == False:
+		if self.calculated_linear_nodes == False:
         
-        	print "Calculating the linear nodes..."
+			print "Calculating the linear nodes..."
         	
-            if self.top != None:
+			if self.top != None:
 		
 			    self.linear_nodes_list = []
 			    for i in range(self.node.num_nodes):
@@ -550,14 +550,14 @@ class Blob:
 			
 		
 			else:
-		        self.linear_nodes_list = []
-		        for i in range(self.node.num_nodes):
-		            for f in self.surf.face:
-		                if i in f.n[0:3]:
-		                    self.linear_nodes_list.append(i)
-		                    break
-		        print "Found", len(self.linear_nodes_list), "linear nodes."
-                self.calculated_linear_nodes = True
+				self.linear_nodes_list = []
+				for i in range(self.node.num_nodes):
+					for f in self.surf.face:
+						if i in f.n[0:3]:
+							self.linear_nodes_list.append(i)
+							break
+				print "Found", len(self.linear_nodes_list), "linear nodes."
+				self.calculated_linear_nodes = True
                 
 		print "done!"
 		
