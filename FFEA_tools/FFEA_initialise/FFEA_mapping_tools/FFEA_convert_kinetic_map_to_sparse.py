@@ -42,7 +42,7 @@ for i in range(num_rows):
 inmap.close()
 
 if (num_entries_start != len(A)):
-	sys.exit("Error. Specified num_entries not equal to num_read")
+	sys.exit("Error. Specified num_entries %d not equal to num_read %d" % (num_entries_start, len(A)))
 sys.stdout.write("\r100% read\n")
 sys.stdout.flush()
 

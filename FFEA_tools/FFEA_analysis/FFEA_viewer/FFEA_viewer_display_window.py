@@ -19,6 +19,7 @@ import numpy as np
 import FFEA_springs
 
 import StringIO
+from os import name
 
 class FFEA_viewer_display_window():
 
@@ -30,8 +31,8 @@ class FFEA_viewer_display_window():
 		self.ffea_fname = ffea_fname
 		self.width = 800
 		self.height = 800
-		self.init_disp()
 		self.init_vars()
+		self.init_disp()
 		self.load_ffea()
 		glutMainLoop()
 
@@ -81,7 +82,10 @@ class FFEA_viewer_display_window():
 		glutMotionFunc(self.mouse_active);
 		glutKeyboardFunc(self.keyboard_handler)
 		glutTimerFunc(50, self.update, 0)
-		glutCloseFunc(self.close_handler)
+		if os.name == "posix":
+			glutWMCloseFunc(self.close_handler)
+		else:
+			glutCloseFunc(self.close_handler)
 
 	def init_vars(self):
 		# camera
@@ -1052,15 +1056,15 @@ class FFEA_viewer_display_window():
 	
 		glColor3f(1.0, .7, .7);
 		glRasterPos3f(1.0, 0.0, 0.0);
-		glutBitmapString(GLUT_BITMAP_HELVETICA_18, "X");
+		#glutBitmapString(GLUT_BITMAP_HELVETICA_18, "X");
 		
 		glColor3f(.7, 1.0, .7);
 		glRasterPos3f(0.0, 1.0, 0.0);
-		glutBitmapString(GLUT_BITMAP_HELVETICA_18, "Y");
+		#glutBitmapString(GLUT_BITMAP_HELVETICA_18, "Y");
 		
 		glColor3f(.7, .7, 1.0);
 		glRasterPos3f(0.0, 0.0, 1.0);
-		glutBitmapString(GLUT_BITMAP_HELVETICA_18, "Z");
+		#glutBitmapString(GLUT_BITMAP_HELVETICA_18, "Z");
 
 	def draw_box(self):
 		glDisable(GL_LIGHTING)
@@ -1149,7 +1153,10 @@ class FFEA_viewer_display_window():
 		if key == '\x1b':
 			print "Display received ESC key event."
 			self.close_handler()		
-
+		elif key == '+':
+			self.z += self.z*.05;
+		elif key == '-':
+			self.z -= self.z*.05;
 	def close_handler(self):
 		self.speak_to_control.send({'num_frames': self.num_frames, 'current_frame': self.frame, 'death': True})
 		self.death()

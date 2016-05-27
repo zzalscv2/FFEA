@@ -20,6 +20,14 @@ import StringIO
 
 # from multiprocessing import Process, Pipe
 
+# do Ben's springs:
+import FFEA_springs
+
+# PyMOL stuff:
+from pymol import cmd
+from pymol.cgo import *
+from pymol.vfont import plain
+
 
 
 def __init__(self):
@@ -58,6 +66,9 @@ class FFEA_viewer_control_window:
      self.show_mesh_surf = IntVar()
      self.show_solid = IntVar()
      self.show_node_numbers = IntVar()
+     self.show_element_numbers = IntVar()
+     self.show_face_numbers = IntVar()
+     self.show_springs = IntVar()
      self.do_load_trajectory = IntVar()
      self.init_vars()
  
@@ -79,10 +90,22 @@ class FFEA_viewer_control_window:
      check_button_show_solid.pack(anchor=W)
      check_button_show_solid.select() # that has to match with the default value 1! 
 
+     # show springs: 
+     check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
+     check_button_show_springs.pack(anchor=W)
+     
      # show node numbers: 
      check_button_show_node_numbers = Checkbutton(display_flags_frame, text="Node numbers", variable=self.show_node_numbers, command=lambda:self.update_display_flags("show_node_numbers"))
      check_button_show_node_numbers.pack(anchor=W)
 
+     # show element numbers: 
+     check_button_show_element_numbers = Checkbutton(display_flags_frame, text="Element numbers", variable=self.show_element_numbers, command=lambda:self.update_display_flags("show_element_numbers"))
+     check_button_show_element_numbers.pack(anchor=W)
+     
+     # show face numbers: 
+     check_button_show_face_numbers = Checkbutton(display_flags_frame, text="Face numbers", variable=self.show_face_numbers, command=lambda:self.update_display_flags("show_face_numbers"))
+     check_button_show_face_numbers.pack(anchor=W)
+     
      # load the trajectory:
      check_button_do_load_trajectory = Checkbutton(display_flags_frame, text="Load trajectory", variable=self.load_trajectory, command=lambda:self.update_display_flags("load_trajectory"))
      check_button_do_load_trajectory.pack(anchor=W)
@@ -335,14 +358,46 @@ class FFEA_viewer_control_window:
              continue
          elif line == "/system":
              break
-         elif line == "spring":
-             # Ignore
-             while True:
-                 line = ffea_in.readline().strip()[1:-1]
-                 if line == "/spring":
-                     break
-                 else:
-                     continue
+#          elif line == "spring":
+#              # Ignore
+#              while True:
+#                  line = ffea_in.readline().strip()[1:-1]
+#                  if line == "/spring":
+#                      break
+#                  else:
+#                      continue
+         elif line == "interactions":
+            while True:
+               line = ffea_in.readline().strip()[1:-1]
+
+               if line == "/interactions":
+                  print line
+                  break
+               elif line == "springs" or line == "spring":
+
+                  while True:
+                     line = ffea_in.readline().strip()[1:-1]
+                     print line
+                     if line == "/springs" or line == "/spring":
+                        break
+                     else:
+                        # Ignore
+                        #continue
+
+                        # Don't ignore
+                        lvalue, rvalue = line.split("=")
+                        lvalue = lvalue.strip()
+                        rvalue = rvalue.strip()
+                        if lvalue == "springs_fname" or lvalue == "spring_fname":
+                           if os.path.isabs(rvalue) == False:
+                                                rvalue = os.path.join(ffea_path, rvalue)
+
+                           self.springs = FFEA_springs.FFEA_springs(rvalue)
+                           self.springs.print_details()
+
+               else: # Add beads block here maybe?
+                  continue
+
          elif line == "blob":
              blob_nodes = []
              blob_top = []
@@ -511,10 +566,14 @@ class FFEA_viewer_control_window:
      		
      # Shift all blobs if STATIC, or if there is no trajectory; clear frame if not
      for b in self.blob_list:
-         if blob[0].state == "STATIC" or trajectory_out_fname == None:
+         if trajectory_out_fname == None:
              if self.calc_vdw == 1 and self.move_into_box == 1:
                  # b[0].frames[0].translate(shift)
                  print "--- not translated by: ", shift
+         elif blob[0].state == "STATIC":
+             if self.calc_vdw == 1 and self.move_into_box == 1:
+                 b[0].frames[0].translate(shift)
+                 print "--- translated by: ", shift
          else:
              b[0].frames = []
              b[0].num_frames = 0
@@ -652,6 +711,7 @@ class FFEA_viewer_control_window:
               if self.blob_list[i][j].get_state() == "STATIC":
                   traj.readline() # skip "Blob x, Conformation y, step z" line
                   traj.readline() # skip "STATIC" line
+                  self.blob_list[i][j].load_frame(None)
                   continue
 
               # for DYNAMIC or FROZEN blobs, try to read the node info for this frame
@@ -725,9 +785,21 @@ class FFEA_viewer_control_window:
                   else:
                       break
 
-              # plot the last frame and delete it to save memory:
-              self.blob_list[i][j].draw_frame(-1, self.display_flags)
-              self.blob_list[i][j].frames.pop() # we will only keep the frames
+              # plot the last frame 
+              for i in range(self.num_blobs):
+                # if self.blob_list[i][j].get_state() == "STATIC":
+                #   continue
+                j = active_conf[i]
+                self.blob_list[i][j].draw_frame(-1, self.display_flags)
+
+              if self.springs != None: # and self.display_flags
+                self.draw_springs()
+
+              # delete the frames to save memory, but keep frame 0;
+              for i in range(self.num_blobs):
+                j = active_conf[i]
+                if len(self.blob_list[i][j].frames) > 2: 
+                  self.blob_list[i][j].frames.pop() # we will only keep the frames
                                              #  if somebody proves that they are useful
 
           else:
@@ -823,7 +895,7 @@ class FFEA_viewer_control_window:
         self.box_x = -1
         self.box_y = -1
         self.box_z = -1
-
+        self.springs = None
         self.show_box = 0;
 
         self.modifying_frame = False
@@ -841,5 +913,58 @@ class FFEA_viewer_control_window:
       for i in range(self.num_blobs):
           for j in range(self.num_conformations[i]):
               self.blob_list[i][j].draw_frame(f, self.display_flags) ## PLUGIN OUT
+
+
+      if self.springs != None: # and self.display_flags
+         self.draw_springs()
+
+
+  def draw_springs(self):
+
+      for s in self.springs.spring:
+
+         # Get correct frames
+         correct_frame = [-1 for i in range(self.num_blobs)]
+         for i in range(self.num_blobs):
+            if self.blob_list[i][0].state == "STATIC":
+               correct_frame[i] = 0
+         print "correct_frame: ", correct_frame
+
+         # Draw, because this spring exists
+         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].node_list[s.node_index[i]][0:3] for i in range(2)])
+
+         # Axes for helix
+         zax = springjoints[1] - springjoints[0]
+         xax = np.cross(zax, np.array([1.0,0]))
+         yax = np.cross(zax, xax)
+
+         xax = xax / np.linalg.norm(xax)
+         yax = yax / np.linalg.norm(yax)
+
+         l = np.linalg.norm(zax)
+
+         zax = zax / l
+
+         # Radius of helix (let original radius be 5A, poisson ration = 0.01)
+         r = 5 - 0.01 * (l - s.l)
+
+         # We want 5 spins, say, so pitch:
+         c = l / (10 * np.pi)
+
+         # Draw 40 nodes. Equation is r = r0 + (Rcos(t), Rsin(t), ct)
+         step = (10 * np.pi) / 40
+         obj = [ BEGIN, LINES, LINEWIDTH, 4.0 ]
+         # obj.extend( [ COLOR, 192/255.0, 192/255.0, 192/255.0 ] )
+         for i in range(40):
+            tstart = step * i
+            tend = step * (i + 1)
+            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
+            obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
+            obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+
+         obj.append(END)
+         cmd.load_cgo(obj, "string_" + str(self.springs.spring.index(s)), max(correct_frame))
+         
 
 
