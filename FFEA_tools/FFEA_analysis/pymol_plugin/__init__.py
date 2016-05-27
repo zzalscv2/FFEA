@@ -66,6 +66,9 @@ class FFEA_viewer_control_window:
      self.show_mesh_surf = IntVar()
      self.show_solid = IntVar()
      self.show_node_numbers = IntVar()
+     self.show_element_numbers = IntVar()
+     self.show_face_numbers = IntVar()
+     self.show_springs = IntVar()
      self.do_load_trajectory = IntVar()
      self.init_vars()
  
@@ -87,10 +90,22 @@ class FFEA_viewer_control_window:
      check_button_show_solid.pack(anchor=W)
      check_button_show_solid.select() # that has to match with the default value 1! 
 
+     # show springs: 
+     check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
+     check_button_show_springs.pack(anchor=W)
+     
      # show node numbers: 
      check_button_show_node_numbers = Checkbutton(display_flags_frame, text="Node numbers", variable=self.show_node_numbers, command=lambda:self.update_display_flags("show_node_numbers"))
      check_button_show_node_numbers.pack(anchor=W)
 
+     # show element numbers: 
+     check_button_show_element_numbers = Checkbutton(display_flags_frame, text="Element numbers", variable=self.show_element_numbers, command=lambda:self.update_display_flags("show_element_numbers"))
+     check_button_show_element_numbers.pack(anchor=W)
+     
+     # show face numbers: 
+     check_button_show_face_numbers = Checkbutton(display_flags_frame, text="Face numbers", variable=self.show_face_numbers, command=lambda:self.update_display_flags("show_face_numbers"))
+     check_button_show_face_numbers.pack(anchor=W)
+     
      # load the trajectory:
      check_button_do_load_trajectory = Checkbutton(display_flags_frame, text="Load trajectory", variable=self.load_trajectory, command=lambda:self.update_display_flags("load_trajectory"))
      check_button_do_load_trajectory.pack(anchor=W)

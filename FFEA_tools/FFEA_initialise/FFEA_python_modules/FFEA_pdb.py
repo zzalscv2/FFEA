@@ -238,45 +238,7 @@ class FFEA_pdb:
 		fout.write("END")
 		sys.stdout.write("\r100%% written\n")
 		fout.close()
-		
-		'''
-		# Open file for writing
-		fout = open(fname, "w")
-		
-		for j in range(self.num_blobs):
-			fout.write("MODEL      %d\n" % (j + 1))
-			for i in range(self.num_frames):
-				sys.stdout.write("\r%d%% written" % (int(i * 100.0 / self.num_frames)))
-				sys.stdout.flush()
-		
-				index = 0
-				for a in self.blob[j].atom:
-					fout.write("ATOM  ")
-					fout.write(str(a.atom_index).rjust(5))
-					fout.write("  " + a.atom_type.ljust(4))
-					fout.write(a.res_type.rjust(3))
-					fout.write(" " + a.chain)
-					fout.write(str(a.res_index).rjust(4))
-					fout.write(" ")
-					fout.write("   ")
-					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][0])
-					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][1])
-					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][2])
-					fout.write("%6.2f" % a.occupancy)
-					fout.write("%6.2f" % a.temp_factor)
-					fout.write("      ")
-					fout.write(a.segment.ljust(4))
-					fout.write(a.elem.rjust(2))
-					fout.write(a.charge.rjust(2))
-					fout.write("  \n")
-					index += 1
-				fout.write("TER                  " + str(self.blob[j].atom[-1].chain) + "\n")
-				
-			fout.write("ENDMDL\n")
-		fout.write("END")
-		sys.stdout.write("\r100%% written\n")
-		fout.close()
-		'''
+
 	def clear_position_data(self):
 
 		self.num_frames = 0

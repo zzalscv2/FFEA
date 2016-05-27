@@ -341,7 +341,7 @@ void map_node_using_closest_nodes(vector3 node, vector<int> node_list, vector3 *
 	}
 	
 	// Create local map
-	map[0] = 1;
+	/*map[0] = 1;
 	for(i = 0; i < 3; ++i) {
 		for(j = 0; j < factor; ++j) {
 			if(i == 0) {
@@ -355,10 +355,10 @@ void map_node_using_closest_nodes(vector3 node, vector<int> node_list, vector3 *
 				map[0] -= local_coeff.z;
 			}
 		}
-	}
-	/*for(i = 0; i < node_list.size(); ++i) {
-		map[i] = 1.0 / node_list.size();
 	}*/
+	for(i = 0; i < node_list.size(); ++i) {
+		map[i] = 1.0 / node_list.size();
+	}
 }
 
 void add_local_map_to_global(double *node_map, double **global_map, int target_index, vector<int> node_list) {
