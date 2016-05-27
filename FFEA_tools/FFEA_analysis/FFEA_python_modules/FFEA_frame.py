@@ -38,7 +38,7 @@ class FFEA_frame(FFEA_node.FFEA_node):
 		
 		return 0
 		
-	def build_from_node(node):
+	def build_from_node(self, node):
 	
 		self.num_nodes = node.num_nodes
 		self.num_surface_nodes = node.num_surface_nodes
