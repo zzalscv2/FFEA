@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, StringIO
 import FFEA_trajectory, FFEA_measurement, FFEA_topology, FFEA_pin
 
 def get_path_from_script(path, scriptdir):
@@ -15,13 +15,15 @@ class FFEA_script:
 
 		# Start reading to test
 		try:
-			fin = open(fname, "r")
-		
+			fin = open(fname, "r")	
 		except(IOError):
 			print "Error. File " + fname  + " not found. Returning empty object..."
 			self.reset()
 			return
 
+		# Get rid of all of the comments, if there are any
+		fin = self.remove_all_comments(fin)
+		
 		if "<param>\n" not in fin.readlines():
 			print "Error. File " + fname  + " not an FFEA script file."
 			fin.close()
@@ -52,6 +54,73 @@ class FFEA_script:
 			self.reset()
 			return
 
+	# # # # # # # # # # # # # # # # # # # # # #
+	# we will take the comments out of iFile,
+	#   write a virtual file "ffea_in" 
+	#   and return its handler.
+	# # # # # # # # # # # # # # # # # # # # # #
+	def remove_all_comments(self, fin):
+		STA = fin.readlines()
+		fin.close()
+
+		ffea_in = StringIO.StringIO()
+
+		# and some variables to take the comments out: 
+		comment = 0
+		m_ini = "<!--"
+		m_end = "-->"
+		# Now start parsing the input file
+		for txt in STA:
+     
+			# Strip tag wrapping 
+			# line = ffea_in.readline().strip()
+			line = txt.strip()
+     
+			# The following stuff takes care of the comments enclosed in "<!--" and "-->":
+			# buf2_string = ""
+			found = 0
+			count = 0
+			count_0 = 0
+			ini = 0
+			end = len(line)
+			theEnd = end
+     
+			# remove the comments:
+			while ((found != -1) and (found != len(line))):
+				if (comment == 0):
+					found = line.find(m_ini)
+					if (found != -1):
+						count += 1
+						comment = 1
+						ini = found
+				if (comment == 1):
+					found = line.find(m_end)
+					if (found != -1):
+						count += 2
+						comment = 0
+						end = found + 3
+				# the line end up without closing the comment:
+				if (comment == 1):
+					line = line[:ini]
+					break
+				# we're out of the comment:
+				elif (comment == 0):
+					if (count == count_0 + 3):
+						buf2_string = line[:ini]
+						buf2_string += line[end:]
+						line = buf2_string
+						count_0 = count
+					elif (count == count_0 + 2):
+						line = line[end:]
+						count_0 = count
+						
+			# comments removed!
+			if len(line) > 0:
+				ffea_in.write(line.strip() + "\n")
+
+		ffea_in.seek(0,0)   
+		return ffea_in
+     
 	def reset(self):
 		self.params = None
 		self.blob = []
@@ -342,6 +411,15 @@ class FFEA_script:
 		fout.write("</system>")
 		fout.close()
 
+	def print_details(self):
+	
+			print "num_blobs = ", self.params.num_blobs
+			print "num_conformations = ", self.params.num_conformations
+			
+			for i in range(self.params.num_blobs):
+				for j in range(self.params.num_conformations[i]):
+					print "Node fname = ", self.blob[i].conformation[j].nodes
+					
 	def load_topology(self, blob_index, conformation_index):
 
 		return FFEA_topology.FFEA_topology(self.blob[blob_index].conformation[conformation_index].topology)
