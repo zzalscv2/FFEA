@@ -63,11 +63,27 @@ class FFEA_material:
 
 		fin.close()
 
+	def write_to_file(self, fname):
+	
+		fout = open(fname, "w")
+		fout.write("ffea material params file\nnum_elements %d\n" % (self.num_elements))
+		for el in self.element:
+			fout.write("%6.3f %6.3f %6.3f %10.1f %10.1f %6.3f" % (el[0], el[1], el[2], el[3], el[4], el[5]))
+			fout.write("\n")
+		fout.close()
+		
 	def add_element(self, el):
 
 		self.element.append(el)
 		self.num_elements += 1
 
+	def set_params(self, index, d, sv, bv, sm, bm, di):
+	
+		try:
+			self.element[index] = [float(d), float(sv), float(bv), float(sm), float(bm), float(di)]
+		except(IndexError):
+			print "Element " + str(index) + " does not yet exist."
+			 
 	def get_num_elements(self):
 
 		return len(self.element)

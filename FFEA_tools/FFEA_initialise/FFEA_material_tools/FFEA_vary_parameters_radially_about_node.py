@@ -30,7 +30,7 @@ num_changed = 0
 for el in top.element:
 	elindex = top.element.index(el)
 	if np.linalg.norm(el.calc_centroid(node) - central_node) < radius:
-		mat.element[elindex].set_params(d, sv, bv, sm, bm, di)
+		mat.set_params(elindex, d, sv, bv, sm, bm, di)
 		num_changed += 1
 
 print "Changed " + str(num_changed) + " elements, leaving " + str(top.num_elements - num_changed) + " elements as they were."
