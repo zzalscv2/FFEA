@@ -91,13 +91,14 @@ endif(UNIX)
 # 5 ### BOOST #####
 set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_NO_BOOST_CMAKE ON)
-find_package( Boost COMPONENTS program_options filesystem )
+# Check version:
+find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem )
 if (Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
   set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${Boost_LIBRARY_DIRS}")
   set(LIBS_TO_LINK ${LIBS_TO_LINK} ${Boost_LIBRARIES})
 else (Boost_FOUND)
-  message(FATAL_ERROR "Boost not found. Please provide valid paths for either:
+  message(FATAL_ERROR "You could provide valid paths through either:
    -- BOOST_ROOT or
    -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
 endif (Boost_FOUND)
