@@ -1216,7 +1216,7 @@ class Blob:
 			# 		glRasterPos3f(nn[0], nn[1], nn[2])
 			# 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.linear_nodes_only[n]));
                         cmd.set("cgo_line_radius",0.03)
-                        cmd.load_cgo(TXT,'Node numbers', frameLabel)
+                        cmd.load_cgo(TXT,'blob_' + str(self.id_num) + ' Node numbers', frameLabel)
 
 
 		if display_flags['show_pinned_nodes'] == 1:

@@ -48,7 +48,7 @@ class FFEA_viewer_control_window:
      self.parent = app.root
 
      self.root = Tk()
-     self.root.geometry("135x130")
+     self.root.geometry("155x180")
      self.root.title("FFEA")
 
      top_frame = Frame(self.root)
