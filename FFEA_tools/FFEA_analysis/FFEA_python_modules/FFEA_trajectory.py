@@ -157,12 +157,13 @@ class FFEA_trajectory:
 				print("Unable to read conformation index for blob " + str(bindex) + " at frame " + str(self.num_frames))
 				return 1
 				
-			# Get a frame first (STATIC should just continue, single frame can be added prior or after)
+			# Get a frame first (STATIC should just continue)
 			if self.traj.readline().strip() == "DYNAMIC":
 				b[cindex].motion_state = "DYNAMIC"
 				frame = FFEA_frame.FFEA_frame()
 			else:
 				b[cindex].motion_state = "STATIC"
+				frame = b[cindex].frame[0]
 				continue
 
 			# Read stuff
@@ -214,6 +215,14 @@ class FFEA_trajectory:
 			except:
 				return -1
 
+	def clear_frame(self):
+		
+		for i in range(self.num_blobs):
+			for j in range(self.num_conformations[i]):
+				self.blob[i][j].frame.pop()
+				
+		self.num_frames -= 1
+				
 	def build_from_pdb(self, pdb, scale = 1):
 
 		# Single blob single conf
