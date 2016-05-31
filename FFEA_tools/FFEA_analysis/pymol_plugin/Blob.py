@@ -502,6 +502,10 @@ class Blob:
 		self.num_frames = 0
 		self.frames = []
 
+	def set_dead_frame(self):
+		self.frames.append(None)
+		self.num_frames += 1
+		
 	def set_nodes_as_frame(self):
 	
 		print "Setting nodes as initial frame..."
@@ -511,7 +515,6 @@ class Blob:
 		aframe.build_from_node(self.node)
 		
 		# Move and rotate it
-		print self.init_centroid, self.init_rotation
 		if self.init_centroid != None:
 			print "=============================="
 			print "Moving to starting position..."
@@ -636,7 +639,7 @@ class Blob:
 			return
 
 		if i < 0:
-			i == 0
+			i = self.num_frames + i
 		elif i >= self.num_frames:
 			i = self.num_frames - 1
 
