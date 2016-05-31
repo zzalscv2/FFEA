@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, time
 import numpy as np
 
 from pymol import cmd
@@ -259,16 +259,25 @@ class FFEA_viewer_control_window:
 	shift = np.array([0.0, 0.0, 0.0])
 	total_num_nodes = 0
 
-	# Load STATIC blobs and get a global centroid
+	# Load all initial blobs and get a global centroid. Set secondary blobs to have placeholder 'None' frames
 	for b in self.blob_list:
 
-		b[0].set_nodes_as_frame()
-		x, y, z = b[0].get_centroid(0)
-		world_centroid[0] += x * b[0].node.num_nodes
-		world_centroid[1] += y * b[0].node.num_nodes
-		world_centroid[2] += z * b[0].node.num_nodes
-		total_num_nodes += b[0].node.num_nodes
+		for c in b:
+			if b.index(c) == 0:
+		
+				c.set_nodes_as_frame()
+				x, y, z = c.get_centroid(0)
+				world_centroid[0] += x * c.node.num_nodes
+				world_centroid[1] += y * c.node.num_nodes
+				world_centroid[2] += z * c.node.num_nodes
+				total_num_nodes += c.node.num_nodes
+			else:
+				c.set_dead_frame()
+	
+	# Don't set num_frames!
+	#self.num_frames = 1		
 
+	# Calculate global centroid
 	world_centroid *= 1.0 / total_num_nodes	
      	
 	shift[0] = self.box_x / 2.0 - world_centroid[0]
@@ -276,6 +285,7 @@ class FFEA_viewer_control_window:
 	shift[2] = self.box_z / 2.0 - world_centroid[2]
      		
 	# Shift all blobs if STATIC, or if there is no trajectory; clear frame if not
+	'''
 	for b in self.blob_list:
 		if p.trajectory_out_fname == None:
 			if p.calc_vdw == 1 and p.move_into_box == 1:
@@ -288,13 +298,22 @@ class FFEA_viewer_control_window:
 		else:
 			b[0].frames = []
 			b[0].num_frames = 0
-             
+    '''
+    
+	# Shift all blobs if necessary
+	for b in self.blob_list:
+		if p.calc_vdw == 1 and p.move_into_box == 1:
+			b[0].frames[0].translate(shift)
+    		
+    # Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
+	# Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
+    		       
 	# Now load trajectory
 	if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
 		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
 		self.load_trajectory_thread.start()
 
-	## Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists		
+	# Make sure we have at least 1 frame sorted before continuing, so main thread doesn't overtake
 	while(self.num_frames < 1):
 		if p.trajectory_out_fname == None:
 			# increase the frames to 1, so that the structure is displayed.
@@ -316,9 +335,77 @@ class FFEA_viewer_control_window:
 #         self.z = self.dimensions[1] / (2 * np.tan(np.pi / 6.0))
 
   def load_trajectory(self, trajectory_out_fname):
-	return
+  
+  	# This function will load the trajectory by:
+  		# Loading header.
+  		# Skip first frame (we already have it). 
+  		# Load frames 1 at a time and leave thread open to be manually activated by user and constantly check for newly written frames
+  		
+  		# Load header stuff automatically
+  		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+  		
+  		# Check for failure!
+  		if traj.num_blobs == 0:
+  		
+  			# This will activate the draw_stuff for a single frame
+  			print "Error. Problem with trajectory file. Cannot load."
+  			self.script.params.trajectory_out_fname = None
+			return
 	
-
+		# Skip first frame as we already have it
+		traj.skip_frame()
+		
+		# Set num_frames for external stuff
+		self.num_frames = 1
+		
+		# Now, let's load a trajectory (while we can)
+		while True:
+		
+			# If user wants frames, give them frames
+			if self.display_flags['load_trajectory'] == 1:
+			
+				# Get a frame
+				if traj.load_frame() == 0:
+				
+					# Success! We got a new frame. Add it to blob
+					self.add_frame_to_blobs(traj)
+					self.num_frames += 1
+					self.draw_frame()
+					
+					# And clear the blob
+					traj.clear_frame()
+					self.remove_frame_from_blobs()
+				else:
+					
+					# All failures move to the beginning of what will be the next available frame. Wait a bit and continue
+					print self.num_frames
+					break
+					time.sleep(10)
+		
+			else:
+			
+				# Check again every 3 seconds
+				time.sleep(3)
+			
+			if self.num_frames > 1:
+				cmd.mset("1-"+str(self.num_frames))
+				if self.num_frames > 2:
+					cmd.mplay()
+          
+  def add_frame_to_blobs(self, traj):
+  	
+  	for i in range(self.script.params.num_blobs):
+  		for j in range(self.script.params.num_conformations[i]):
+  			self.blob_list[i][j].frames.append(traj.blob[i][j].frame[-1])
+  			self.blob_list[i][j].num_frames += 1
+  			
+  def remove_frame_from_blobs(self):
+  	
+  	for i in range(self.script.params.num_blobs):
+  		for j in range(self.script.params.num_conformations[i]):
+  			self.blob_list[i][j].frames.pop()
+  			#self.blob_list[i][j].num_frames -= 1
+  		
   def get_system_dimensions(self):
 
 	dims = [[float("inf"), -1 * float("inf")] for i in range(3)]
@@ -408,7 +495,11 @@ class FFEA_viewer_control_window:
 	self.projection = "perspective"
 
 
-
+  def draw_frame(self):
+	for i in range(self.num_blobs):
+		for j in range(self.num_conformations[i]):
+			self.blob_list[i][j].draw_frame(-1, self.display_flags)
+  	
   def draw_stuff(self):
 
     for f in range(self.num_frames):
