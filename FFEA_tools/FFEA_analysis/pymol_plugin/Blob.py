@@ -511,6 +511,7 @@ class Blob:
 		aframe.build_from_node(self.node)
 		
 		# Move and rotate it
+		print self.init_centroid, self.init_rotation
 		if self.init_centroid != None:
 			print "=============================="
 			print "Moving to starting position..."
@@ -602,7 +603,7 @@ class Blob:
 
 	def get_centroid(self, i):
 
-		if self.state == "STATIC":
+		if self.motion_state == "STATIC":
 			i = 0
 
 		if self.num_frames == 0:
@@ -622,7 +623,7 @@ class Blob:
 
 	def draw_frame(self, i, display_flags):
 
-		if self.state == "STATIC":
+		if self.motion_state == "STATIC":
 			i = 0
 
 		if self.num_frames == 0:
