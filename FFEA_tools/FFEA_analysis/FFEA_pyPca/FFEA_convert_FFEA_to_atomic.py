@@ -49,7 +49,7 @@ else:
 	out_basename = out_fname
 
 final_traj_fname = traj_fname
-traj = FFEA_trajectory.FFEA_trajectory(final_traj_fname)
+traj = FFEA_trajectory.FFEA_trajectory(final_traj_fname, num_frames_to_read = num_frames)
 
 # Remove all trajectory except for blob in question, if required
 if blob_num != -1:
