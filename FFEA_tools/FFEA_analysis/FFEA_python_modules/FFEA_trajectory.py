@@ -5,7 +5,7 @@ import sys
 
 class FFEA_trajectory:
 
-	def __init__(self, fname="", surf=None, load_all=1, frame_rate = 1):
+	def __init__(self, fname="", surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000):
 
 		self.reset()
 
@@ -13,11 +13,11 @@ class FFEA_trajectory:
 		if fname == "":
 			return
 
-		if self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate) == 1:
+		if self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read) == 1:
 			print("\tLoading of '" + fname + "' failed. Returning empty object...")
 			return	
 		
-	def load(self, fname, surf=None, load_all=1, frame_rate = 1):
+	def load(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000):
 
 		print("Loading FFEA trajectory file...")
 
@@ -48,6 +48,9 @@ class FFEA_trajectory:
 					print("done! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 					break
 
+				elif(self.num_frames == num_frames_to_read):
+					print("done! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
+					break	
 				if all_frames % 100 == 0:
 					print "Frames parsed = ", str(all_frames)
 
@@ -110,10 +113,12 @@ class FFEA_trajectory:
 				self.reset()
 				return 1
 
-		# final whitespace until '*'
+		# final whitespace until '*' and save the file pos
 		while(self.traj.readline().strip() != "*"):
 			pass
 
+		self.fpos = self.traj.tell()
+		
 		# Finally, build the objects
 		self.blob = [[FFEA_traj_blob(self.num_nodes[i][j]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 
@@ -131,6 +136,7 @@ class FFEA_trajectory:
 	def load_frame(self, surf=None):
 	
 		# For each blob
+		eof = False
 		for b in self.blob:
 			try:
 				# Get indices
@@ -141,11 +147,13 @@ class FFEA_trajectory:
 				step = int(sline[5])
 
 			except(IndexError):
+				self.traj.seek(self.fpos)
 				return 1
 
 			except(ValueError):
 
 				# Don't need to reset though!
+				self.traj.seek(self.fpos)
 				print("Unable to read conformation index for blob " + str(bindex) + " at frame " + str(self.num_frames))
 				return 1
 				
@@ -158,7 +166,13 @@ class FFEA_trajectory:
 				continue
 
 			# Read stuff
-			frame.load_from_traj(self.traj)
+			success = frame.load_from_traj(self.traj)
+			
+			# We are at eof, or halfway through a frame being written
+			if success == 1:
+				eof = True
+				break
+				
 			frame.set_step(step)
 
 			# Load normals if necessary
@@ -173,14 +187,20 @@ class FFEA_trajectory:
 				if c != cindex:
 					b[c].frame.append(None)
 
-		# Gloss over kinetics stuff
-		self.traj.readline()
-		while(self.traj.readline().strip() != "*"):
-			pass
+		if not eof:
+		
+			# Gloss over kinetics stuff
+			self.traj.readline()
+			while(self.traj.readline().strip() != "*"):
+				pass
 
-		self.num_frames += 1
-		return 0
-
+			self.num_frames += 1
+			self.fpos = self.traj.tell()
+			return 0
+		else:
+			self.traj.seek(self.fpos)
+			return 1
+			
 	def skip_frame(self):
 
 		num_asterisks = 0
@@ -368,3 +388,21 @@ class FFEA_traj_blob:
 		self.num_subblobs = 0
 		self.frame = []
 		self.subblob = []
+
+
+# External functions
+def get_num_frames(fname):
+
+	fin = open(fname, "r")
+	if fin.readline().strip() != "FFEA_trajectory_file":
+		print("\tExpected to read 'FFEA_trajectory_file' but read '" + line + "'. This may not be an FFEA trajectory file.")
+		self.reset()
+		return 1
+		
+	num_asterisks = 0	
+	for line in fin:
+		if "*" in line:
+			num_asterisks += 1
+	
+	return (num_asterisks - 1) / 2
+		
