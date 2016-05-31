@@ -195,11 +195,16 @@ class FFEA_viewer_control_window:
 			p.num_conformations[i] = 1
 			bl[i] = [bl[i][0]]     
     
-    # Build box object
-	self.box_x = (1.0 / p.kappa) * p.es_h * p.es_N_x
-	self.box_y = (1.0 / p.kappa) * p.es_h * p.es_N_y
-	self.box_z = (1.0 / p.kappa) * p.es_h * p.es_N_z
-    
+	# Build box object
+	try:
+		self.box_x = (1.0 / p.kappa) * p.es_h * p.es_N_x
+		self.box_y = (1.0 / p.kappa) * p.es_h * p.es_N_y
+		self.box_z = (1.0 / p.kappa) * p.es_h * p.es_N_z
+	except:
+		self.box_x = 0.0
+		self.box_y = 0.0
+		self.box_z = 0.0
+    	
     #
     # Build the blob objects one at a time
     #
@@ -272,12 +277,12 @@ class FFEA_viewer_control_window:
      		
 	# Shift all blobs if STATIC, or if there is no trajectory; clear frame if not
 	for b in self.blob_list:
-		if trajectory_out_fname == None:
-			if self.calc_vdw == 1 and self.move_into_box == 1:
+		if p.trajectory_out_fname == None:
+			if p.calc_vdw == 1 and p.move_into_box == 1:
 				# b[0].frames[0].translate(shift)
 				print "--- not translated by: ", shift
-		elif blob[0].state == "STATIC":
-			if self.calc_vdw == 1 and self.move_into_box == 1:
+		elif blob[0].motion_state == "STATIC":
+			if p.calc_vdw == 1 and p.move_into_box == 1:
 				b[0].frames[0].translate(shift)
 				print "--- translated by: ", shift
 		else:
@@ -285,13 +290,13 @@ class FFEA_viewer_control_window:
 			b[0].num_frames = 0
              
 	# Now load trajectory
-	if (trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
-		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(trajectory_out_fname, ))
+	if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
+		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
 		self.load_trajectory_thread.start()
 
-	## Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists
+	## Hold on calculating dimensions until at least one frame has been calculated from a trajectory, if it exists		
 	while(self.num_frames < 1):
-		if trajectory_out_fname == None:
+		if p.trajectory_out_fname == None:
 			# increase the frames to 1, so that the structure is displayed.
 			self.num_frames = 1
 			self.draw_stuff()
