@@ -93,6 +93,7 @@ class FFEA_viewer_control_window:
      # show springs: 
      check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
      check_button_show_springs.pack(anchor=W)
+     check_button_show_springs.select() # that has to match with the default value 1! 
      
      # show node numbers: 
      check_button_show_node_numbers = Checkbutton(display_flags_frame, text="Node numbers", variable=self.show_node_numbers, command=lambda:self.update_display_flags("show_node_numbers"))
@@ -138,6 +139,11 @@ class FFEA_viewer_control_window:
      else:
        self.display_flags[key] = 0
      # print key, self.display_flags[key] 
+     # WARNINGs:
+     NOT_IMPLEMENTED = ["show_element_numbers", "show_face_numbers"]
+     if NOT_IMPLEMENTED.count(key):
+       print key, " functionality is still under development."
+       
 
 
   # # # # # # # # # # # # # # # # # # # # # #
@@ -232,6 +238,9 @@ class FFEA_viewer_control_window:
   # # # # # # Load the FFEA file # # # # # # 
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
+     print "diplay flags:", self.display_flags
+     print "show springs: ", self.display_flags['show_springs']    
+
      # Check if given file exists
      if os.path.isfile(ffea_fname) == False:
              print "No such file:", ffea_fname
@@ -792,7 +801,7 @@ class FFEA_viewer_control_window:
                 j = active_conf[i]
                 self.blob_list[i][j].draw_frame(-1, self.display_flags)
 
-              if self.springs != None: # and self.display_flags
+              if self.springs != None and (self.display_flags['show_springs']): # and self.display_flags
                 self.draw_springs()
 
               # delete the frames to save memory, but keep frame 0;
@@ -873,6 +882,9 @@ class FFEA_viewer_control_window:
             'show_linear_nodes_only': 0,
             'show_mesh_surf': 0, ## PYMOL OK
             'load_trajectory': 1, ## PYMOL OK
+            'show_springs':1, ## PYMOL work in progress
+            'show_face_numbers':0, ## PYMOL stub
+            'show_element_numbers':0, # PYMOL stub
             'show_inverted': 0,
             'blob_colour': (1.0, 1.0, 1.0)}
 
@@ -915,7 +927,7 @@ class FFEA_viewer_control_window:
               self.blob_list[i][j].draw_frame(f, self.display_flags) ## PLUGIN OUT
 
 
-      if self.springs != None: # and self.display_flags
+      if (self.springs != None) and (self.display_flags['show_springs']): # and self.display_flags
          self.draw_springs()
 
 
@@ -928,7 +940,7 @@ class FFEA_viewer_control_window:
          for i in range(self.num_blobs):
             if self.blob_list[i][0].state == "STATIC":
                correct_frame[i] = 0
-         print "correct_frame: ", correct_frame
+         # print "correct_frame: ", correct_frame
 
          # Draw, because this spring exists
          springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].node_list[s.node_index[i]][0:3] for i in range(2)])
