@@ -173,20 +173,22 @@ where the first column give positions and the second column has energies and for
  for more details). 
 
 
-Springs file: .spring
----------------------
+Springs file: .springs
+----------------------
 
-This file contains a set of springs joining pairs of faces. After an introductory header, 
+This file contains a set of springs joining pairs of nodes. After an introductory header, 
  every line specifies the details of a single spring through:
- blob i, conformation k, face m, blob j, conformation l, face n, potential well depth in ` N/m ` and equilibrium distance in meters.
+ equilibrium distance (in meters), potential well depth (in ` N/m `), 
+ blob i, blob j, conformation k, conformation l, node m, node n. 
 Specifically, a springs file with 3 springs could look like:
 
 
-    ffea spring file
+    ffea springs file
     num_springs 3
-    1 0 347 2 0 347 1.5 1e-8
-    1 0 372 2 0 350 1.5 1e-8
-    1 0 350 2 0 372 1.5 1e-8
+    springs:
+    1e-2 5e-9 0 1 0 0 40 40
+    1e-2 5e-9 0 1 0 0 57 57
+    1e-2 3e-9 0 1 0 0 66 83
 
 
 
