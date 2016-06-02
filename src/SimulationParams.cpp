@@ -728,7 +728,7 @@ void SimulationParams::write_to_file(FILE *fout) {
     	fprintf(fout, "es_N_x = %d\n", es_N_x);
    	fprintf(fout, "es_N_y = %d\n", es_N_y);
     	fprintf(fout, "es_N_z = %d\n", es_N_z);
-    	fprintf(fout, "es_h = %d\n", es_h);
+    	fprintf(fout, "es_h = %f\n", es_h);
 	fprintf(fout, "move_into_box = %d\n", move_into_box);
 
     	fprintf(fout, "kappa = %e\n", kappa/mesoDimensions::length);

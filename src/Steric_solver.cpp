@@ -76,7 +76,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
   //  exit(0);
     //   and get the direction of the force for f1:
     /* TRIAL 2 */
-    arr3 force1, force2, n1_b; 
+    arr3 force1, force2; //, n1_b; 
     vec3Vec3SubsToArr3(f1->n[3]->pos, f2->n[3]->pos, force1);
     arr3Normalise<scalar,arr3>(force1); // that is the direction of the force for f1 (backwards). 
 
