@@ -13,7 +13,7 @@ add_executable(ffea ffea.cpp
     PoissonMatrixQuadratic.cpp SparseMatrixFixedPattern.cpp 
     SparseMatrixTypes.cpp SparseMatrixUnknownPattern.cpp SparsityPattern.cpp 
     Spring.cpp World.cpp VdW_solver.cpp Steric_solver.cpp LJSteric_solver KineticState.cpp 
-    PreComp_solver.cpp CheckTetrahedraOverlap.cpp VolumeIntersection.cpp)
+    PreComp_solver.cpp CheckTetrahedraOverlap.cpp VolumeIntersection.cpp FFEA_user_info.cpp)
 
 target_link_libraries(ffea ${LIBS_TO_LINK})
 
