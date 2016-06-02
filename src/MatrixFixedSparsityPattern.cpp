@@ -14,5 +14,6 @@ int MatrixFixedSparsityPattern::init(tetra_element_linear *elem, int num_element
         }
     }
 
+    return 0;
 }
 

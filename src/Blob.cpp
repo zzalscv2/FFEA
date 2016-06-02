@@ -1284,13 +1284,13 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 
 	int elem_index, a, b, i, j, global_a, global_a_lin, global_b, global_b_lin;
 	int row, column;
-	scalar dx, dxtemp, val;
-	matrix3 J, stress;
+	scalar dx, val; // dxtemp;
+	// matrix3 J, stress;
 	vector12 elastic_force[2];
 	vector<Eigen::Triplet<scalar> > components;
 
 	// Firstly, get a mapping from all node indices to just linear node indices
-	int num_linear_nodes = get_num_linear_nodes();
+	// int num_linear_nodes = get_num_linear_nodes();
 	int map[num_nodes];
 	j = 0;
 	for(i = 0; i < num_nodes; ++i) {
@@ -2357,7 +2357,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     ifstream fin;
     string line;
     vector<string> vec_line;
-    int typeBead;
+    // int typeBead;
     
     fin.open(beads_filename, std::ifstream::in);
     if (fin.fail()) {
@@ -2411,7 +2411,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
       boost::split(v1, line, boost::is_any_of(openField));
       bead_assignment.push_back(vector<int>()); // add a row.
       // 1.3.2 - for each of them:
-      for (int j=0; j<v1.size(); j++) {
+      for (unsigned int j=0; j<v1.size(); j++) {
           // 1.3.3 - remove the closing bracket ">"
           v1[j] = boost::erase_last_copy(v1[j], closeField);
           boost::trim(v1[j]);
@@ -2424,7 +2424,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
             // 1.3.6 - the nodes are comma sepparated:
             boost::split(v3, v2[1], boost::is_any_of(splitNodes));
             // 1.3.7 - and there could be ranges:
-            for (int k=0; k<v3.size(); k++){
+            for (unsigned int k=0; k<v3.size(); k++){
               boost::split(v4, v3[k], boost::is_any_of(defineRange));
               if (v4.size() == 1) { // append a single integer:
                 bead_assignment[cnt].push_back(stoi(v4[0]));
@@ -2454,7 +2454,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     // 2 - store the data efficiently:
     // 2.1 - positions:
     bead_position = new scalar[positions.size()];
-    for (int i=0; i<positions.size(); i++) {
+    for (unsigned int i=0; i<positions.size(); i++) {
       bead_position[i] = positions[i];
     }
     
@@ -2462,7 +2462,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     vector<string>::iterator it;
     bead_type = new int[stypes.size()];
     int index;
-    for (int i=0; i<stypes.size(); i++) {
+    for (unsigned int i=0; i<stypes.size(); i++) {
       it = std::find(pc_params->types.begin(), pc_params->types.end(), stypes[i]);
       index = std::distance(pc_params->types.begin(), it);
       bead_type[i] = index;
@@ -2642,7 +2642,8 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 	}
 
 	// Get all binding sites
-	int num_faces = 0, bind_type = -1, face_index;
+	unsigned int num_faces = 0;
+   int bind_type = -1, face_index;
 	for(int i = 0; i < num_binding_sites; ++i) {
 
 		// Get structural details first
@@ -2672,10 +2673,10 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 		boost::trim(buf_string);
 		boost::split(string_vec, buf_string, boost::is_space());
 		if(string_vec.size() != num_faces + 1) {
-			FFEA_ERROR_MESSG("In %s, num_faces specified, %d, != num_faces in following line, %d.\n", binding_filename, num_faces, string_vec.size() - 1)
+			FFEA_ERROR_MESSG("In %s, num_faces specified, %d, != num_faces in following line, %zd.\n", binding_filename, num_faces, string_vec.size() - 1)
 		}
 
-		for(int j = 0; j < num_faces; ++j) {
+		for(unsigned int j = 0; j < num_faces; ++j) {
 			face_index = atoi(string_vec.at(j + 1).c_str());
 			if(face_index >= num_surface_faces) {
 				FFEA_ERROR_MESSG("Face index %d specifies face outside range of surface faces defined in surface file (%d)\n", face_index, num_surface_faces)
