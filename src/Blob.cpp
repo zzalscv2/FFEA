@@ -147,7 +147,11 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     }
 
     if (params->calc_preComp == 1) {
-	if (load_beads(beads_filename, pc_params, scale) == FFEA_ERROR) {
+      if (strcmp(beads_filename, "") == 0) {
+         char buffer [50];
+         sprintf(buffer, "No beads file was assigned to Blob %d\n", blob_index);
+         FFEA_CAUTION_MESSG(buffer);
+      } else if (load_beads(beads_filename, pc_params, scale) == FFEA_ERROR) {
         	FFEA_ERROR_MESSG("Error when loading beads file.\n")
     	}
     }
