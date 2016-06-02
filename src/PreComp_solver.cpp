@@ -163,12 +163,10 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    // and allocate the bead types: 
    b_types = new int[n_beads]; 
    
-   
 
    /*------------ FOURTHLY --------*/
    // get the elements of the list of "elements" that we will use: 
    vector3 u, v, w; 
-   // vector3 s, e1, e2, e3;
    tetra_element_linear *e;
    matrix3 J, J_inv; // will hold the Jacobian for the current element. 
    scalar det;  // determinant for J.
@@ -185,6 +183,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        v = blob_array[i][0].get_bead_position(j);
        vector<int> b_assignment = blob_array[i][0].get_bead_assignment(j); 
        d2_0 = 1e9;
+       int mj = m+j;
        // get the closest node to this bead: 
        for (int k=0; k < blob_array[i][0].get_num_elements(); k++) { 
          e = blob_array[i][0].get_element(k);
@@ -208,22 +207,22 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        
          if (d2 < d2_0) {
            d2_0 = d2;
-           b_elems[m+j] = e; 
+           b_elems[mj] = e; 
          }
        } 
        
        // and get the relative coordinates within the element
        //   as a fraction of the basis vectors length.
-       b_elems[m+j]->calculate_jacobian(J); 
+       b_elems[mj]->calculate_jacobian(J); 
        mat3_invert(J, J_inv, &det);
-       vec3_vec3_subs(&v, &b_elems[j+m]->n[0]->pos, &w);
+       vec3_vec3_subs(&v, &b_elems[mj]->n[0]->pos, &w);
        vec3_mat3_mult(&w, J_inv, &u); 
        // now u has the relative coordinates, not under unit vectors
        //    but under full length vectors. And we store them:
-       b_rel_pos[m+3*j] = u.x;
-       b_rel_pos[m+3*j+1] = u.y;
-       b_rel_pos[m+3*j+2] = u.z;
-       // cout << "bead " << i << " in: " << v.x << ", " << v.y << ", " << v.z << endl;
+       b_rel_pos[3*mj] = u.x;
+       b_rel_pos[3*mj+1] = u.y;
+       b_rel_pos[3*mj+2] = u.z;
+       // cout << "0ead " << mj << " in: " << v.x << ", " << v.y << ", " << v.z << endl;
 
        /*
        // ESSENTIAL printout to relate beads to nodes!! 
@@ -236,27 +235,27 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
           b_elems[m+j]->n[4]->index, b_elems[m+j]->n[5]->index, b_elems[m+j]->n[6]->index,
           b_elems[m+j]->n[7]->index, b_elems[m+j]->n[8]->index, b_elems[m+j]->n[9]->index);
        */
-       
        /*
        //  prove it: v =? s
-       vec3_vec3_subs(&b_elems[j]->n[1]->pos, &b_elems[j]->n[0]->pos, &e1);
-       vec3_vec3_subs(&b_elems[j]->n[2]->pos, &b_elems[j]->n[0]->pos, &e2);
-       vec3_vec3_subs(&b_elems[j]->n[3]->pos, &b_elems[j]->n[0]->pos, &e3);
-       s.x = b_elems[j]->n[0]->pos.x + u.x*e1.x + u.y*e2.x + u.z*e3.x;
-       s.y = b_elems[j]->n[0]->pos.y + u.x*e1.y + u.y*e2.y + u.z*e3.y;
-       s.z = b_elems[j]->n[0]->pos.z + u.x*e1.z + u.y*e2.z + u.z*e3.z;
+       vector3 s, e1, e2, e3;
+       vec3_vec3_subs(&b_elems[mj]->n[1]->pos, &b_elems[m+j]->n[0]->pos, &e1);
+       vec3_vec3_subs(&b_elems[mj]->n[2]->pos, &b_elems[m+j]->n[0]->pos, &e2);
+       vec3_vec3_subs(&b_elems[mj]->n[3]->pos, &b_elems[m+j]->n[0]->pos, &e3);
+       s.x = b_elems[mj]->n[0]->pos.x + u.x*e1.x + u.y*e2.x + u.z*e3.x;
+       s.y = b_elems[mj]->n[0]->pos.y + u.x*e1.y + u.y*e2.y + u.z*e3.y;
+       s.z = b_elems[mj]->n[0]->pos.z + u.x*e1.z + u.y*e2.z + u.z*e3.z;
        print_vector3(&v);
        print_vector3(&s);
-       s.x = b_elems[j]->n[0]->pos.x + u.x*J[0][0] + u.y*J[1][0] + u.z*J[2][0];
-       s.y = b_elems[j]->n[0]->pos.y + u.x*J[0][1] + u.y*J[1][1] + u.z*J[2][1];
-       s.z = b_elems[j]->n[0]->pos.z + u.x*J[0][2] + u.y*J[1][2] + u.z*J[2][2];
+       s.x = b_elems[mj]->n[0]->pos.x + u.x*J[0][0] + u.y*J[1][0] + u.z*J[2][0];
+       s.y = b_elems[mj]->n[0]->pos.y + u.x*J[0][1] + u.y*J[1][1] + u.z*J[2][1];
+       s.z = b_elems[mj]->n[0]->pos.z + u.x*J[0][2] + u.y*J[1][2] + u.z*J[2][2];
        print_vector3(&s);
        */
 
        /* the following is useless but useful while testing:
-       b_pos[m+3*j] = v.x;
-       b_pos[m+3*j+1] = v.y;
-       b_pos[m+3*j+2] = v.z;
+       b_pos[3*mj] = v.x;
+       b_pos[3*mj+1] = v.y;
+       b_pos[3*mj+2] = v.z;
        */
        
        
@@ -338,6 +337,7 @@ int PreComp_solver::compute_bead_positions() {
        b_pos[3*i+1] = b_elems[i]->n[0]->pos.y + b_rel_pos[3*i]*J[0][1] + b_rel_pos[3*i+1]*J[1][1] + b_rel_pos[3*i+2]*J[2][1];
        b_pos[3*i+2] = b_elems[i]->n[0]->pos.z + b_rel_pos[3*i]*J[0][2] + b_rel_pos[3*i+1]*J[1][2] + b_rel_pos[3*i+2]*J[2][2];
        // cout << "bead " << i << " in: " << b_pos[3*i] << ", " << b_pos[3*i+1] << ", " << b_pos[3*i+2] << endl;
+ 
     }
     return FFEA_OK;
 }
