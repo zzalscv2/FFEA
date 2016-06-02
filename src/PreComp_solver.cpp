@@ -154,6 +154,12 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      }
      n_beads += blob_array[i][0].get_num_beads();
    } 
+   // Check that we have some beads!:
+   if (n_beads == 0) {
+      FFEA_error_text(); 
+      msg(" ABORTING: The total number of beads is 0, but PreComp_calc was set to 1.");
+      return FFEA_ERROR;
+   }
    b_elems = new TELPtr[n_beads];
    // allocate the array that store the relative positions 
    //    of the beads to the elements where they belong to. 

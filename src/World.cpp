@@ -1575,7 +1575,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 				} else if (lrvalue[0] == "pin") {
 					pin.push_back(lrvalue[1]);
 					set_pin = 1;
-                                } else if (lrvalue[0] == "beads") {
+				} else if (lrvalue[0] == "beads") {
 					beads.push_back(lrvalue[1]);
 					set_preComp = 1;
 				} else {
