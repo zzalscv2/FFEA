@@ -164,7 +164,7 @@ int FFEA_input_reader::parse_tag(string input, string *output) {
 
 	// Split around "=", trim and return
 	boost::split(lrvalvec, tag, boost::is_any_of("="));
-	for(int i = 0; i < lrvalvec.size(); ++i) {
+	for(unsigned int i = 0; i < lrvalvec.size(); ++i) {
 		output[i] = lrvalvec.at(i);
 		boost::trim(output[i]);
 	}

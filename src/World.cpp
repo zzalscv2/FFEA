@@ -94,7 +94,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	
 	// Set some constants and variables
 	int i, j, k;
-	const int MAX_BUF_SIZE = 255;
+	// const int MAX_BUF_SIZE = 255;
 	string buf_string;
 	FFEA_input_reader *ffeareader;
 	ffeareader = new FFEA_input_reader();
@@ -371,7 +371,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			    }
 			}
 
-			char sline[255];
+			// char sline[255];
 			if ((c = fgetc(trajectory_out)) != '\n') {
 			    ungetc(c, trajectory_out);
 			} else {
@@ -494,7 +494,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			}
 		}
 	    }*/
-	vector3 world_centroid;
+	// vector3 world_centroid;
 
 	    box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
@@ -1469,7 +1469,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 	// Reading variables
 	FFEA_input_reader *systemreader = new FFEA_input_reader();
 	int i, j;
-	string tag, lrvalue[2], maplvalue[2];
+	string tag, lrvalue[2]; //, maplvalue[2];
 	vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, param_vector, spring_vector, binding_vector;
 	vector<string>::iterator it;
 	
@@ -1769,7 +1769,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 		// Build blob
 		// Build conformations (structural data)
-		vector3 *cent = new vector3;
+		// vector3 *cent = new vector3;
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
 			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), binding.at(j).c_str(), beads.at(j).c_str(), 
@@ -2238,7 +2238,7 @@ int World::choose_new_kinetic_state(int blob_index, int *target) {
 
 int World::load_kinetic_states(string states_fname, int blob_index) {
 
-	int i, j, num_states, conf_index, site_index, from, to;
+	int i, j, num_states, conf_index, from, to; //, site_index;
 	int MAX_BUF_SIZE = 255;
 	char buf[MAX_BUF_SIZE];
 	string buf_string;
@@ -2415,7 +2415,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		fgets(buf, 255, fin);
 		boost::split(sline, buf, boost::is_any_of(" "));
 		if(sline.size() > num_states) {
-			FFEA_ERROR_MESSG("\nState %d contains %d rate values, instead of 'num_states', %d.\n", i, sline.size(), num_states)
+			FFEA_ERROR_MESSG("\nState %d contains %zd rate values, instead of 'num_states', %d.\n", i, sline.size(), num_states)
 		}
 
 		j = -1;

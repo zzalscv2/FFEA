@@ -223,15 +223,19 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        b_rel_pos[m+3*j] = u.x;
        b_rel_pos[m+3*j+1] = u.y;
        b_rel_pos[m+3*j+2] = u.z;
+       // cout << "bead " << i << " in: " << v.x << ", " << v.y << ", " << v.z << endl;
 
-       /*scalar l = mesoDimensions::length;
+       /*
+       // ESSENTIAL printout to relate beads to nodes!! 
+       scalar l = mesoDimensions::length;
        printf("bead type: %d, position %g:%g:%g in element %d:%d:%d:%d position %g:%g:%g - distance: %g, 2nd OE: %d:%d:%d:%d:%d:%d\n", 
           b_types[m+j], v.x*l, v.y*l, v.z*l,
           b_elems[m+j]->n[0]->index, b_elems[m+j]->n[1]->index, b_elems[m+j]->n[2]->index,
           b_elems[m+j]->n[3]->index, 
           b_elems[m+j]->centroid.x*l, b_elems[m+j]->centroid.y*l, b_elems[m+j]->centroid.z*l, sqrt(d2_0)*l,
-         b_elems[m+j]->n[4]->index, b_elems[m+j]->n[5]->index, b_elems[m+j]->n[6]->index,
-        b_elems[m+j]->n[7]->index, b_elems[m+j]->n[8]->index, b_elems[m+j]->n[9]->index);*/
+          b_elems[m+j]->n[4]->index, b_elems[m+j]->n[5]->index, b_elems[m+j]->n[6]->index,
+          b_elems[m+j]->n[7]->index, b_elems[m+j]->n[8]->index, b_elems[m+j]->n[9]->index);
+       */
        
        /*
        //  prove it: v =? s
@@ -270,12 +274,12 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
 
 int PreComp_solver::solve() {
 
-    scalar d, f_ij, f_ijk_i, f_ijk_j; 
+    scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
     vector3 dx, dtemp;
     int type_i; 
     scalar phi_i[4], phi_j[4];
     tetra_element_linear *e_i, *e_j;
-    matrix3 Ji, Jj; // these are the jacobians for the elements i and j
+    // matrix3 Ji, Jj; // these are the jacobians for the elements i and j
 
     // 1 - Compute the position of the beads:
     compute_bead_positions();
@@ -333,6 +337,7 @@ int PreComp_solver::compute_bead_positions() {
        b_pos[3*i]   = b_elems[i]->n[0]->pos.x + b_rel_pos[3*i]*J[0][0] + b_rel_pos[3*i+1]*J[1][0] + b_rel_pos[3*i+2]*J[2][0];
        b_pos[3*i+1] = b_elems[i]->n[0]->pos.y + b_rel_pos[3*i]*J[0][1] + b_rel_pos[3*i+1]*J[1][1] + b_rel_pos[3*i+2]*J[2][1];
        b_pos[3*i+2] = b_elems[i]->n[0]->pos.z + b_rel_pos[3*i]*J[0][2] + b_rel_pos[3*i+1]*J[1][2] + b_rel_pos[3*i+2]*J[2][2];
+       // cout << "bead " << i << " in: " << b_pos[3*i] << ", " << b_pos[3*i+1] << ", " << b_pos[3*i+2] << endl;
     }
     return FFEA_OK;
 }
@@ -343,7 +348,7 @@ int PreComp_solver::compute_bead_positions() {
   */
 int PreComp_solver::calc_force_from_pot() {
 
-   scalar ym, y0, yM;
+   // scalar ym, y0, yM;
    scalar twoDx = 2*Dx;
 
    int index = -1;
@@ -375,8 +380,8 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
    int m_values;
    int index = 0;
    // read the potentials/forces in while checking:
-   for (int i=0; i<pc_params.types.size(); i++) {
-     for (int j=i; j<pc_params.types.size(); j++) { 
+   for (unsigned int i=0; i<pc_params.types.size(); i++) {
+     for (unsigned int j=i; j<pc_params.types.size(); j++) { 
        // open file i-j
        ssfile << pc_params.folder << "/" << pc_params.types[i] << "-" << pc_params.types[j] << "." << kind;
        fin.open(ssfile.str(), std::ifstream::in);
@@ -490,7 +495,8 @@ scalar PreComp_solver::get_F(scalar x, int typei, int typej) {
   */
 scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
 
-   scalar y0, y1, x0, x1;
+   //scalar y0, y1;
+   scalar x0, x1;
    int index = 0;
    int index_l = x/Dx;
    if (index_l < 0) 
