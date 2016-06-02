@@ -11,6 +11,7 @@
 #include <algorithm>
 #include "FFEA_return_codes.h"
 #include "dimensions.h"
+#include "FFEA_user_info.h"
 
 
 #include "mat_vec_types.h"

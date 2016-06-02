@@ -230,17 +230,21 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        b_rel_pos[3*mj+2] = u.z;
        // cout << "0ead " << mj << " in: " << v.x << ", " << v.y << ", " << v.z << endl;
 
-       /*
        // ESSENTIAL printout to relate beads to nodes!! 
        scalar l = mesoDimensions::length;
-       printf("bead type: %d, position %g:%g:%g in element %d:%d:%d:%d position %g:%g:%g - distance: %g, 2nd OE: %d:%d:%d:%d:%d:%d\n", 
-          b_types[m+j], v.x*l, v.y*l, v.z*l,
-          b_elems[m+j]->n[0]->index, b_elems[m+j]->n[1]->index, b_elems[m+j]->n[2]->index,
-          b_elems[m+j]->n[3]->index, 
-          b_elems[m+j]->centroid.x*l, b_elems[m+j]->centroid.y*l, b_elems[m+j]->centroid.z*l, sqrt(d2_0)*l,
-          b_elems[m+j]->n[4]->index, b_elems[m+j]->n[5]->index, b_elems[m+j]->n[6]->index,
-          b_elems[m+j]->n[7]->index, b_elems[m+j]->n[8]->index, b_elems[m+j]->n[9]->index);
-       */
+       stringstream beadsToNodes;
+       beadsToNodes << "bead type: " << b_types[m+j] <<  ", position " <<
+                        v.x*l << ":" <<  v.y*l << ":" << v.z*l << " in element " <<
+                        b_elems[m+j]->n[0]->index << ":" << b_elems[m+j]->n[1]->index
+                    <<  b_elems[m+j]->n[2]->index << ":" << b_elems[m+j]->n[3]->index
+                    <<  " position " << b_elems[m+j]->centroid.x*l << ":" <<
+                        b_elems[m+j]->centroid.y*l << ":" << b_elems[m+j]->centroid.z*l
+                    <<  " - distance: " << sqrt(d2_0)*l << ", 2ndOE: " <<
+                        b_elems[m+j]->n[4]->index << ":" << b_elems[m+j]->n[5]->index 
+                    << ":" << b_elems[m+j]->n[6]->index << ":" <<
+                        b_elems[m+j]->n[7]->index << ":" << b_elems[m+j]->n[8]->index
+                    << ":" << b_elems[m+j]->n[9]->index;
+       print_high(beadsToNodes.str());
        /*
        //  prove it: v =? s
        vector3 s, e1, e2, e3;
