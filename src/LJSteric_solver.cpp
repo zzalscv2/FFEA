@@ -45,7 +45,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 //exit(0);
 	    //   and get the direction of the force for f1:
 	    /* TRIAL 2 */
-	    arr3 force1, force2, n1_b; 
+	    arr3 force1, force2; //, n1_b; 
 	    vec3Vec3SubsToArr3(f1->n[3]->pos, f2->n[3]->pos, force1);
 	    arr3Normalise<scalar,arr3>(force1); // that is the direction of the force for f1 (backwards). 
 
@@ -134,7 +134,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 
 	    scalar vdw_r_eqi = 1.0 / vdw_r_eq;
 	    scalar vdw_r_eqi2 = vdw_r_eqi * vdw_r_eqi;
-	    scalar vdw_r_eqi3 = vdw_r_eqi * vdw_r_eqi2;
+	    // scalar vdw_r_eqi3 = vdw_r_eqi * vdw_r_eqi2;
 
 	    for(int k = 0; k < num_tri_gauss_quad_points; k++) {
 		for(int l = k; l < num_tri_gauss_quad_points; l++) {

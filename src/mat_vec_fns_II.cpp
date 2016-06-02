@@ -74,7 +74,7 @@ template <class brr3> void arr3arr3VectorProduct(brr3 (&u), brr3 (&v), brr3 (&w)
 // scalar arr3arr3DotProduct(arr3 &vecA, arr3 &vecB) {
 template <class t_scalar, class brr3> t_scalar arr3arr3DotProduct(brr3 &vecA, brr3 &vecB) {
 
-  t_scalar result = 0;
+  t_scalar result = 0.0;
   for (int i=0; i<3; i++) {
      // cout << "vecA[" << i << "]: " << vecA[i] << " vecB[" << i << "]: " << vecB[i] << endl; 
      result += vecA[i] * vecB[i];
@@ -140,7 +140,7 @@ template <class brr3> void arr3Store(brr3 &u, brr3 &v){
 /** return the distance from vecA to vecB */
 template <class t_scalar, class brr3> t_scalar arr3arr3Distance(brr3 &vecA, brr3 &vecB){
  
-    t_scalar d=0;
+    t_scalar d=0.0;
     for (int i=0; i<3; i++){ 
       d  += (vecA[i] - vecB[i])*(vecA[i] - vecB[i]); 
     } 
@@ -151,7 +151,7 @@ template <class t_scalar, class brr3> t_scalar arr3arr3Distance(brr3 &vecA, brr3
 /** Return the length of a vector v */
 template <class t_scalar> t_scalar mag(t_scalar (&v)[3]) {
 
-   t_scalar s;
+   t_scalar s=0.0;
    for (int i=0; i<3; i++) {
       s += v[i] * v[i];
    }

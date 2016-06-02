@@ -11,7 +11,7 @@ void mat12_apply(matrix12 A, vector12 v) {
 }
 
 void vec3_mat3_mult(vector3 *v, matrix3 &A, vector3 *notv) {
-    int i, j;
+    //int i, j;
 
     notv->x = A[0][0]*v->x + A[1][0]*v->y + A[2][0]*v->z;
     notv->y = A[0][1]*v->x + A[1][1]*v->y + A[2][1]*v->z;

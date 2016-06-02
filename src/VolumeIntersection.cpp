@@ -74,7 +74,7 @@ template <class t_scalar,class brr3> void maxVolumeAndArea(int ips, brr3 (&W)[56
  */
 template <class t_scalar,class brr3> void getBAndN_Order(brr3 (&tetA)[4], int n0, int n1, int n2, brr3 &t, brr3 &b, brr3 &n){
 
-  brr3  t_j; 
+  // brr3  t_j; 
   if ((n0 == 0) || (n1 == 0) || (n2 ==0)) {
     if ((n0 == 1) || (n1 == 1) || (n2 ==1)) {
       if ((n0 == 2) || (n1 == 2) || (n2 ==2)) {
@@ -145,7 +145,7 @@ template <class t_scalar, class brr3> t_scalar volumeForNode(brr3 (&tetA)[4], in
 
   // do the loop: 
   // for each edge:
-  brr3 t_i, t_j, t_ij, n_j, b_j; 
+  brr3 t_i, n_j, b_j; // t_j, t_ij
   for (int i=0; i<4; i++) { 
     if (i == node) continue; 
     tangent<t_scalar,brr3>(tetA[i], tetA[node], t_i); 
@@ -197,7 +197,7 @@ template <class t_scalar, class brr3> void volumeAndAreaForNode(brr3 (&tetA)[4],
 
   // do the loop: 
   // for each edge:
-  brr3 t_i, t_j, t_ij, n_j, b_j; 
+  brr3 t_i, n_j, b_j; // t_j, t_ij
   for (int i=0; i<4; i++) { 
     if (i == node) continue; 
     tangent<t_scalar,brr3>(tetA[i], tetA[node], t_i); 
@@ -281,8 +281,8 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
 
   /////////////////////
   ////// CHECK ////////
-  brr3 aux; 
   /*
+  brr3 aux; 
   brr3 C[3]; 
   faceCentroid(tetB[f1], tetB[f2], tetB[f3], C[0]);
   faceCentroid(tetA[e1], tetA[e2], tetA[F[0]], C[1]);
