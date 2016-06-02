@@ -37,7 +37,7 @@ Blocks open with: ` <block> ` and closed with ` </block> `. Therefore a valid in
 
         <interactions> 
            ...
-         </interactions>
+        </interactions>
 
     </system>     
 
