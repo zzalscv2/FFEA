@@ -6,6 +6,7 @@
 
 #include <boost/program_options.hpp>
 #include "FFEA_return_codes.h"
+#include "FFEA_user_info.h"
 #include "mat_vec_types.h"
 #include "mesh_node.h"
 //#include "tetra_element_linear.h"
@@ -48,13 +49,15 @@ int main(int argc, char *argv[])
 	string script_fname;
 	int mode = 0;
 	int frames_to_delete = 0;
-
+	int verbose;
+	
 	// Options for visible and non-visible cmd line params
 	desc.add_options()
 		("help,h", "print usage message")
 		("input-file,i", b_po::value<string>(&script_fname), "Input Script Filename")
 		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator)\n")
 		("delete-frames,l", b_po::value<int>(&frames_to_delete)->default_value(0), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
+		("verbose,v", b_po::value<int>(&verbose)->default_value(0), "Prints extra details on what FFEA is doing to stdout")
 	;
 		
 	// 1 input file max! Option invisible (positional arg)
@@ -71,6 +74,10 @@ int main(int argc, char *argv[])
 	}
 
 	// Boost makes sure options are valid. We check arguments are valid
+	
+	// Verbosity
+	set_verbosity_level(verbose);
+	
 	// --mode
 	if(var_map.count("mode")) {
 		if(mode != 0 && mode != 1 && mode != 2 && mode != 3 && mode != 4) {
@@ -113,7 +120,11 @@ int main(int argc, char *argv[])
 
 	// Allocate the world
 	world = new World();
-
+	//print_normal("lolnormal");
+	//print_mid("lolmid");
+	//print_high("lolhigh");
+	//print_mania("lolmania");
+	
 	// Initialise the world, loading all blobs, parameters, electrostatics, kinetics etc.
 	cout << "Initialising the world:\n" << endl;
 	if(world->init(script_fname, frames_to_delete, mode) == FFEA_ERROR) {
