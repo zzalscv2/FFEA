@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 		("input-file,i", b_po::value<string>(&script_fname), "Input Script Filename")
 		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator)\n")
 		("delete-frames,l", b_po::value<int>(&frames_to_delete)->default_value(0), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
-		("verbose,v", b_po::value<int>(&verbose)->default_value(0), "Prints extra details on what FFEA is doing to stdout")
+		("verbose,v", b_po::value<int>(&verbose)->default_value(0), "Prints extra details to stdout on what FFEA is doing\n\t0 - Low\n\t1 - Medium\n\t2 - High\n\t3 - Manic")
 	;
 		
 	// 1 input file max! Option invisible (positional arg)
