@@ -92,7 +92,7 @@ endif(UNIX)
 set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_NO_BOOST_CMAKE ON)
 # Check version:
-find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem )
+find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system )
 if (Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
   set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${Boost_LIBRARY_DIRS}")
