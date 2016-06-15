@@ -439,7 +439,7 @@ void write_map_to_file(string map_fname, double **map, int num_bnodes, int num_t
 	map_file << "map:" << endl;
 	
 	for(i = 0; i < num_tnodes; ++i) {
-		cout << "\r" << ((100 * i) / num_tnodes) << "\% of map written...";
+		cout << "\r" << ((100 * i) / num_tnodes) << "% of map written...";
 		for(j = 0; j < num_bnodes; ++j) {
 
 			// If irrelevant, don't include
@@ -451,7 +451,7 @@ void write_map_to_file(string map_fname, double **map, int num_bnodes, int num_t
 		}
 		map_file << endl;
 	}
-	cout << "\r" << 100 << "\% of map written...";
+	cout << "\r" << 100 << "% of map written...";
 	cout << "done!" << endl;
 }
 
@@ -548,13 +548,13 @@ int main(int argc, char **argv) {
 	map = new double*[num_tnodes];
 	cout << "Building map object..." << endl << flush;
 	for(i = 0; i < num_tnodes; ++i) {
-		cout << "\r" << ((100 * i) / num_tnodes) << "\% of map initialised...";
+		cout << "\r" << ((100 * i) / num_tnodes) << "% of map initialised...";
 		map[i] = new double[num_bnodes];
 		for(j = 0; j < num_bnodes; ++j) {
 			map[i][j] = 0.0;
 		}
 	}
-	cout << "\r" << 100 << "\% of map initialised...";
+	cout << "\r" << 100 << "% of map initialised...";
 	cout << "done!" << endl;
 	
 	//
@@ -572,7 +572,7 @@ int main(int argc, char **argv) {
 		double node_map[4]; 
 		for(i = 0; i < num_tnodes; ++i) {
 		
-			cout << "\r" << ((100 * i) / num_tnodes) << "\% of map calculated..." << flush;
+			cout << "\r" << ((100 * i) / num_tnodes) << "% of map calculated..." << flush;
 			
 			// Find which element it is in, if any
 			celem = get_containing_element(tnode[i], belem, num_belements);
@@ -602,7 +602,7 @@ int main(int argc, char **argv) {
 		for(i = 0; i < num_tnodes; ++i) {
 			
 			node_list.clear();
-			cout << "\r" << ((100 * i) / num_tnodes) << "\% of map calculated...";
+			cout << "\r" << ((100 * i) / num_tnodes) << "% of map calculated...";
 			
 			tries = 0;
 			while (node_list.size() < 3) {
@@ -628,7 +628,7 @@ int main(int argc, char **argv) {
 	}
 	
 	// Now, write to file
-	cout << "\r" << 100 << "\% of map calculated...";
+	cout << "\r" << 100 << "% of map calculated...";
 	cout << "done!" << endl;
 
 	// Print out the whole map
