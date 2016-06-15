@@ -26,7 +26,8 @@ int PreComp_solver::msg(int whatever){
   cout << "--- PreComp " << msgc << ": " << whatever << endl;
   msgc += 1;
   return 0; 
-} 
+}
+ 
 
 int PreComp_solver::msg(string whatever){
   cout << "--- PreComp " << msgc << ": " << whatever << endl;
@@ -295,8 +296,8 @@ int PreComp_solver::solve() {
     compute_bead_positions();
 
     // 2 - Compute all the i-j forces:
-    scalar e_tot = 0.0; 
-    scalar f_tot = 0.0;
+    /*scalar e_tot = 0.0; 
+    scalar f_tot = 0.0;*/
     for (int i=0; i<n_beads; i++){ 
       type_i = b_types[i]; 
       phi_i[1] = b_rel_pos[3*i];
@@ -315,15 +316,14 @@ int PreComp_solver::solve() {
         
  
         f_ij = get_F(d, type_i, b_types[j]); 
-        e_tot += get_U(d, type_i, b_types[j]);
-        f_tot += f_ij;
-        // if (type_i == 0) e_xb1 += get_U(d, type_i, b_types[j]);
-        cout << "i: " << i << " j: " << j << " type_i: " << type_i << " type_j: " << b_types[j]
+        /*e_tot += get_U(d, type_i, b_types[j]);
+        f_tot += f_ij;*/
+        /*cout << "i: " << i << " j: " << j << " type_i: " << type_i << " type_j: " << b_types[j]
                       << " i.pos: " << mesoDimensions::length*b_pos[3*i]*1e9 << ":" << mesoDimensions::length*b_pos[3*i+1]*1e9 << ":" << mesoDimensions::length*b_pos[3*i+2]*1e9
                       << " j.pos: " << mesoDimensions::length*b_pos[3*j]*1e9 << ":" << mesoDimensions::length*b_pos[3*j+1]*1e9 << ":" << mesoDimensions::length*b_pos[3*j+2]*1e9
                       << " d: " << d*mesoDimensions::length*1e9 
                       << " U: " << mesoDimensions::Energy*get_U(d, type_i, b_types[j])/0.1660539040e-20 
-                      << " F: " << mesoDimensions::force*f_ij/0.1660539040e-11 << endl;
+                      << " F: " << mesoDimensions::force*f_ij/0.1660539040e-11 << endl;*/
         e_j = b_elems[j];
         vec3_scale(&dx, f_ij);
         dtemp = dx; 
@@ -345,14 +345,6 @@ int PreComp_solver::solve() {
         } 
       }
     }
-    ostringstream ss;
-    ss << e_tot*mesoDimensions::Energy*6.02214086e23 << "  :  " << f_tot*mesoDimensions::force*6.02214086e14;  
-    cout << "e_tot: " << e_tot << endl; 
-    // msg(to_string(e_tot));
-    msg(ss.str());
-    /*ss.str() = "";
-    ss << e_xb1*mesoDimensions::Energy/1000. << endl;
-    msg(ss.str());*/
   
     return FFEA_OK;
 }
@@ -366,7 +358,7 @@ int PreComp_solver::compute_bead_positions() {
        b_pos[3*i]   = b_elems[i]->n[0]->pos.x + b_rel_pos[3*i]*J[0][0] + b_rel_pos[3*i+1]*J[1][0] + b_rel_pos[3*i+2]*J[2][0];
        b_pos[3*i+1] = b_elems[i]->n[0]->pos.y + b_rel_pos[3*i]*J[0][1] + b_rel_pos[3*i+1]*J[1][1] + b_rel_pos[3*i+2]*J[2][1];
        b_pos[3*i+2] = b_elems[i]->n[0]->pos.z + b_rel_pos[3*i]*J[0][2] + b_rel_pos[3*i+1]*J[1][2] + b_rel_pos[3*i+2]*J[2][2];
-       cout << "bead " << i << " in: " << b_pos[3*i]*mesoDimensions::length << ", " << b_pos[3*i+1]*mesoDimensions::length << ", " << b_pos[3*i+2]*mesoDimensions::length << endl;
+       // cout << "bead " << i << " in: " << b_pos[3*i]*mesoDimensions::length << ", " << b_pos[3*i+1]*mesoDimensions::length << ", " << b_pos[3*i+2]*mesoDimensions::length << endl;
  
     }
     return FFEA_OK;
