@@ -153,7 +153,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			kinetic_return_map[i] = new SparseMatrixFixedPattern**[params.num_conformations[i]];
 			
 			if(params.num_conformations[i] == 1) {
-				kinetic_map[i] == NULL;
+				kinetic_map[i] = NULL;
 				kinetic_return_map[i] = NULL;
 			} else {
 				for(j = 0; j < params.num_conformations[i]; ++j) {
