@@ -17,6 +17,7 @@ PreComp_solver::PreComp_solver() {
 PreComp_solver::~PreComp_solver() {
   delete U;
   delete F;
+  delete isPairActive;
   delete b_types;
   delete b_elems; 
 }
@@ -116,6 +117,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      }
    }
    end_loop:
+   // and if no file was found, protest!
    if (findSomeFile == false) {
      FFEA_ERROR_MESSG("Failed to open any file potential file in folder: %s\n", pc_params->folder.c_str());
      return FFEA_ERROR;
@@ -164,6 +166,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    // allocate:
    U = new scalar[n_values * nint];    
    F = new scalar[n_values * nint];    
+   isPairActive = new bool[ntypes * ntypes]; 
       
    // and load potentials and forces:
    if (read_tabulated_values(*pc_params, "pot", U, pc_params->E_to_J / mesoDimensions::Energy)) return FFEA_ERROR;
@@ -336,8 +339,8 @@ int PreComp_solver::solve() {
     compute_bead_positions();
 
     // 2 - Compute all the i-j forces:
-    /*scalar e_tot = 0.0; 
-    scalar f_tot = 0.0;*/
+    scalar e_tot = 0.0; 
+    /*scalar f_tot = 0.0;*/
     for (int i=0; i<n_beads; i++){ 
       type_i = b_types[i]; 
       phi_i[1] = b_rel_pos[3*i];
@@ -346,6 +349,7 @@ int PreComp_solver::solve() {
       phi_i[0] = 1 - phi_i[1] - phi_i[2] - phi_i[3];
       e_i = b_elems[i];  
       for (int j=i+1; j<n_beads; j++) {
+        if (!isPairActive[type_i*ntypes+b_types[j]]) continue; 
         dx.x = (b_pos[3*j] - b_pos[3*i]);
         dx.y = (b_pos[3*j+1] - b_pos[3*i+1]);
         dx.z = (b_pos[3*j+2] - b_pos[3*i+2]);
@@ -356,8 +360,8 @@ int PreComp_solver::solve() {
         
  
         f_ij = get_F(d, type_i, b_types[j]); 
-        /*e_tot += get_U(d, type_i, b_types[j]);
-        f_tot += f_ij;*/
+        e_tot += get_U(d, type_i, b_types[j]);
+        /*f_tot += f_ij;*/
         /*cout << "i: " << i << " j: " << j << " type_i: " << type_i << " type_j: " << b_types[j]
                       << " i.pos: " << mesoDimensions::length*b_pos[3*i]*1e9 << ":" << mesoDimensions::length*b_pos[3*i+1]*1e9 << ":" << mesoDimensions::length*b_pos[3*i+2]*1e9
                       << " j.pos: " << mesoDimensions::length*b_pos[3*j]*1e9 << ":" << mesoDimensions::length*b_pos[3*j+1]*1e9 << ":" << mesoDimensions::length*b_pos[3*j+2]*1e9
@@ -385,7 +389,7 @@ int PreComp_solver::solve() {
         } 
       }
     }
-    // cout << " total energy: " << e_tot*mesoDimensions::Energy/0.1660539040e-20 << endl;
+    cout << " total energy: " << e_tot*mesoDimensions::Energy/0.1660539040e-20 << endl;
   
     return FFEA_OK;
 }
@@ -448,6 +452,7 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
        // open file i-j
        ssfile << pc_params.folder << "/" << pc_params.types[i] << "-" << pc_params.types[j] << "." << kind;
        fin.open(ssfile.str(), std::ifstream::in);
+       // if the file were not found, fill the table with zeroes, and mark the pair as inactive:
        if (!fin.is_open()) {
          FFEA_CAUTION_MESSG(" failed to open %s, so filling with zeroes interaction %s:%s\n", ssfile.str().c_str(), pc_params.types[i].c_str(), pc_params.types[j].c_str());
          for (int k=index; k<index+n_values; k++) { 
@@ -455,8 +460,9 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
          }
          index += n_values; 
          ssfile.str("");
+         isPairActive[i*ntypes+j] = false;
+         isPairActive[j*ntypes+i] = false; 
          continue; 
-         // return FFEA_ERROR;
        }
        // get the first line that does not start with "#"
        getline(fin, line);
@@ -523,6 +529,8 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
        } 
        fin.close();
        ssfile.str("");
+       isPairActive[i*ntypes+j] = true;
+       isPairActive[j*ntypes+i] = true; 
      }
    } 
      
