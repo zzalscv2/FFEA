@@ -87,6 +87,8 @@ private:
   scalar *b_rel_pos;
   /** absolute position of the beads */
   scalar *b_pos; 
+  /** bool "matrix" (array) storing for every pair if it is active or not */
+  bool *isPairActive; 
 
 };
 
