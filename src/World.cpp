@@ -1498,6 +1498,10 @@ int World::read_and_build_system(vector<string> script_vector) {
 		 if (lrvalue[0] == "types") {
                    lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
                    boost::trim(lrvalue[1]);
+                   if (lrvalue[1].compare("") == 0) {
+                     FFEA_ERROR_MESSG("Invalid value for 'types' in <precomp> section\n");
+                     return FFEA_ERROR;
+                   }
                    systemreader->split_string(lrvalue[1], pc_params.types, ",");
                  } else if (lrvalue[0] == "inputData") {
                    pc_params.inputData = stoi(lrvalue[1]);

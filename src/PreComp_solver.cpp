@@ -63,7 +63,25 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
     * And finally, delete beads stuff from the blobs.
     */  
   
-   if (pc_params->types.size() == 0) return 0;
+   // do two simple checks: 
+   //  1: number of types is greater than 0
+   if (pc_params->types.size() == 0) {
+     FFEA_ERROR_MESSG("\n Number of bead types is Zero:\n\t correct it, or change to calc_PreComp = 0\n"); 
+     return FFEA_ERROR;
+   } 
+   //  2: the folder exists:
+   b_fs::path p = pc_params->folder;
+   if (b_fs::exists(p)) {
+     if (!b_fs::is_directory(p)) {
+       FFEA_ERROR_MESSG("\n Folder %s is not a folder\n", pc_params->folder.c_str());
+       return FFEA_ERROR;
+     }
+   } else {
+     FFEA_ERROR_MESSG("\n Folder %s does not exist\n", pc_params->folder.c_str());
+     return FFEA_ERROR;
+   } 
+    
+
 
    stringstream ssfile; 
    ifstream fin;
@@ -81,10 +99,32 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    // and the number of bead types: 
    ntypes = pc_params->types.size();
 
+   /* find a first file that exists */
+   unsigned int eti, etj;
+   bool findSomeFile = false; 
+   for (eti=0; eti<pc_params->types.size(); eti++) {
+     for (etj=eti; etj<pc_params->types.size(); etj++) { 
+       // open file i-j
+       ssfile << pc_params->folder << "/" << pc_params->types[eti] << "-" << pc_params->types[etj] << ".pot";
+       fin.open(ssfile.str(), std::ifstream::in);
+       if (fin.is_open()) {
+         fin.close();
+         findSomeFile = true;
+         goto end_loop;
+       }
+       ssfile.str("");
+     }
+   }
+   end_loop:
+   if (findSomeFile == false) {
+     FFEA_ERROR_MESSG("Failed to open any file potential file in folder: %s\n", pc_params->folder.c_str());
+     return FFEA_ERROR;
+   } 
    /* read the first file, and get the number of lines
     * (n_values), Dx, and x_range */
    // the first file:
-   ssfile << pc_params->folder << "/" << pc_params->types[0] << "-" << pc_params->types[0] << ".pot";
+   ssfile.str("");
+   ssfile << pc_params->folder << "/" << pc_params->types[eti] << "-" << pc_params->types[etj] << ".pot";
    fin.open(ssfile.str());
    if (fin.fail()) {
         FFEA_FILE_ERROR_MESSG(ssfile.str().c_str());
@@ -345,6 +385,7 @@ int PreComp_solver::solve() {
         } 
       }
     }
+    // cout << " total energy: " << e_tot*mesoDimensions::Energy/0.1660539040e-20 << endl;
   
     return FFEA_OK;
 }
@@ -408,9 +449,14 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
        ssfile << pc_params.folder << "/" << pc_params.types[i] << "-" << pc_params.types[j] << "." << kind;
        fin.open(ssfile.str(), std::ifstream::in);
        if (!fin.is_open()) {
-         FFEA_error_text();
-         cout << "---ABORTING: failed to open " << ssfile.str() << endl;
-         return FFEA_ERROR;
+         FFEA_CAUTION_MESSG(" failed to open %s, so filling with zeroes interaction %s:%s\n", ssfile.str().c_str(), pc_params.types[i].c_str(), pc_params.types[j].c_str());
+         for (int k=index; k<index+n_values; k++) { 
+           Z[k] = 0.0;
+         }
+         index += n_values; 
+         ssfile.str("");
+         continue; 
+         // return FFEA_ERROR;
        }
        // get the first line that does not start with "#"
        getline(fin, line);
