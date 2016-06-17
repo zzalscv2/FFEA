@@ -2907,31 +2907,6 @@ int Blob::aggregate_forces_and_solve() {
 	force[*it].z = 0;
     }
 
-    // Set to zero any forces in directions that are restricted
-    for(int i = 0; i < 3; ++i) {
-	if(params->restrict_motion[i] == 1) {
-	    switch(i) {
-		case(0):
-		    for(n = 0; n < num_nodes; ++n) {
-			force[n].x = 0;
-		    }
-		    break;
-
-		case(1):
-		    for(n = 0; n < num_nodes; ++n) {
-			force[n].y = 0;
-		    }
-		    break;
-
-		case(2):
-		    for(n = 0; n < num_nodes; ++n) {
-			force[n].z = 0;
-		    }
-		    break;
-	    }
-	}
-    }
-
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix, 
     // or Kv = f where K is the viscosity matrix for the system
     // x/v is the (unknown) force solution and f is the force vector for the system.
