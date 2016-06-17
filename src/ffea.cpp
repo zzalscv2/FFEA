@@ -50,7 +50,10 @@ int main(int argc, char *argv[])
 	int mode = 0;
 	int frames_to_delete = 0;
 	int verbose;
-	
+  double st,et,st1,et1;
+  
+  st1=MPI::Wtime();
+  
 	// Options for visible and non-visible cmd line params
 	desc.add_options()
 		("help,h", "print usage message")
@@ -321,7 +324,12 @@ int main(int argc, char *argv[])
 
 	/* Delete the world (oh no!) */
 	cout << "Deleting world..." << endl;
+  st = MPI::Wtime();
 	delete world;
+  et = MPI::Wtime()-st;
+  et1 = MPI::Wtime()-st1;
+  cout<< "benchmarking--------Finalising time of ffea:"<<et<<"seconds"<<endl;
+  cout<< "benchmarking--------total executing time:"<<et1<<"seconds"<<endl;
 	cout << "...done. World has been sucessfully destroyed." << endl;
 
   MPI::Finalize();
