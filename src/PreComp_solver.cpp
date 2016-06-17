@@ -339,8 +339,8 @@ int PreComp_solver::solve() {
     compute_bead_positions();
 
     // 2 - Compute all the i-j forces:
-    /*scalar e_tot = 0.0; 
-    scalar f_tot = 0.0;*/
+    scalar e_tot = 0.0; 
+    /*scalar f_tot = 0.0;*/
     for (int i=0; i<n_beads; i++){ 
       type_i = b_types[i]; 
       phi_i[1] = b_rel_pos[3*i];
@@ -360,8 +360,8 @@ int PreComp_solver::solve() {
         
  
         f_ij = get_F(d, type_i, b_types[j]); 
-        /*e_tot += get_U(d, type_i, b_types[j]);
-        f_tot += f_ij;*/
+        e_tot += get_U(d, type_i, b_types[j]);
+        /*f_tot += f_ij;*/
         /*cout << "i: " << i << " j: " << j << " type_i: " << type_i << " type_j: " << b_types[j]
                       << " i.pos: " << mesoDimensions::length*b_pos[3*i]*1e9 << ":" << mesoDimensions::length*b_pos[3*i+1]*1e9 << ":" << mesoDimensions::length*b_pos[3*i+2]*1e9
                       << " j.pos: " << mesoDimensions::length*b_pos[3*j]*1e9 << ":" << mesoDimensions::length*b_pos[3*j+1]*1e9 << ":" << mesoDimensions::length*b_pos[3*j+2]*1e9
@@ -389,7 +389,7 @@ int PreComp_solver::solve() {
         } 
       }
     }
-    // cout << " total energy: " << e_tot*mesoDimensions::Energy/0.1660539040e-20 << endl;
+    cout << " total energy: " << e_tot*mesoDimensions::Energy/0.1660539040e-20 << endl;
   
     return FFEA_OK;
 }
@@ -575,8 +575,10 @@ scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
    scalar x0, x1;
    int index = 0;
    int index_l = x/Dx;
+#ifdef DEBUG
    if (index_l < 0) 
      cout << "WTF?!" << endl; 
+#endif
 
    // check that the index is not too high (all the tables are equally long): 
    if (index_l > n_values -2) {
@@ -592,6 +594,7 @@ scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
    } 
 
 
+   /* approach 1
    // get the index for the closest (bottom) value:
    for (int i=0; i<ntypes; i++){
      for (int j=i; j<ntypes; j++) {
@@ -601,6 +604,14 @@ scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
      }
    }
    end_loop:
+   */
+   /* approach 2 */
+   index = typei * ntypes;
+   if (typei > 1) {
+     index -= (typei*typei - typei)/2;
+   }
+   index += (typej - typei);
+
    index = index*n_values;
    index += index_l;
 
