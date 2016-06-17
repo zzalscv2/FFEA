@@ -2,28 +2,32 @@
 
 using namespace std;
 
+string userInfo::log_out_fname;
+int userInfo::verblevel;
+FILE * userInfo::log_out;
+
 void set_verbosity_level(int l) {
-	verblevel = (l < 4) ? l : 3;
+	userInfo::verblevel = (l < 4) ? l : 3;
 }
 
-void print_normal(string s) {
-	cout << s << endl;
+void set_log_fname(string s) {
+	userInfo::log_out_fname = s;
 }
 
 void print_mid(string s) {
-	if(verblevel > 0) {
+	if(userInfo::verblevel > 0) {
 		cout << s << endl;
 	}
 }
 
 void print_high(string s) {
-	if(verblevel > 1) {
+	if(userInfo::verblevel > 1) {
 		cout << s << endl;
 	}
 }
 
 void print_mania(string s) {
-	if(verblevel > 2) {
+	if(userInfo::verblevel > 2) {
 		cout << s << endl;
 	}
 }

@@ -5,8 +5,7 @@ SimulationParams::SimulationParams() {
     // Constructor used to give default values where necessary
 
     // Defaulted (into SI units)
-    restart = 0;
-    dt = 1e-14;
+    dt = 1e-14 / mesoDimensions::time;
     num_steps = 1e11;
     check = 10000;
     kT = 4.11e-21 / mesoDimensions::Energy;
@@ -32,10 +31,6 @@ SimulationParams::SimulationParams() {
     kinetics_update = 0;
     calc_preComp = 0;
 
-    num_dimensions = 3;
-    restrict_motion[0] = 0;
-    restrict_motion[1] = 0;
-    restrict_motion[2] = 0;
 
     wall_x_1 = WALL_TYPE_PBC;
     wall_x_2 = WALL_TYPE_PBC;
@@ -45,6 +40,7 @@ SimulationParams::SimulationParams() {
     wall_z_2 = WALL_TYPE_PBC;
 
     // Initialised to zero or equivalent for later initialisation
+    restart = -1;
     num_blobs = 0;
     num_conformations = NULL;
     num_states = NULL;
@@ -89,10 +85,6 @@ SimulationParams::~SimulationParams() {
     es_N_y = -1;
     es_N_z = -1;
     move_into_box = 0;
-    restrict_motion[0] = 0;
-    restrict_motion[1] = 0;
-    restrict_motion[2] = 0;
-    num_dimensions = 0;
     es_h = 0;
     kappa = 0;
     dielec_ext = 0;
@@ -250,18 +242,6 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "move_into_box") {
         	move_into_box = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << move_into_box << endl;
-
-        } else if (lvalue == "restrict_x") {
-		restrict_motion[0] = atoi(rvalue.c_str());
-		cout << "\tSetting " << lvalue << " = " << restrict_motion[0] << endl;
-
-        } else if (lvalue == "restrict_y") {
-		restrict_motion[1] = atoi(rvalue.c_str());
-		cout << "\tSetting " << lvalue << " = " << restrict_motion[1] << endl;
-
-        } else if (lvalue == "restrict_z") {
-		restrict_motion[2] = atoi(rvalue.c_str());
-		cout << "\tSetting " << lvalue << " = " << restrict_motion[2] << endl;
 
 	} else if (lvalue == "sticky_wall_xz") {
         	sticky_wall_xz = atoi(rvalue.c_str());
@@ -554,16 +534,6 @@ int SimulationParams::validate() {
 		es_N_z = 0;
     }
 
-    // Check for motion restriction conditions
-    for(int i = 0; i < 3; ++i) {
-        if(restrict_motion[i] != 0 && restrict_motion[i] != 1) {
-            FFEA_ERROR_MESSG("restrict_x, restrict_y and restrict_z must all be either 0 (no restriction) or 1 (motion restricted).\n")
-        } else if (restrict_motion[i] == 0) {
-	    num_dimensions += 1;
-	}
-	
-    }
-
     if (calc_noise != 0 && calc_noise != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_noise', must be 0 (no) or 1 (yes).\n");
     }
@@ -722,7 +692,6 @@ void SimulationParams::write_to_file(FILE *fout) {
     	fprintf(fout, "calc_preComp = %d\n", calc_preComp);
     	fprintf(fout, "calc_stokes = %d\n", calc_stokes);
     	fprintf(fout, "stokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
-    	fprintf(fout, "calc_kinetics = %d\n", calc_kinetics);
 
     	fprintf(fout, "es_update = %d\n", es_update);
     	fprintf(fout, "es_N_x = %d\n", es_N_x);
