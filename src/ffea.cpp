@@ -77,7 +77,8 @@ int main(int argc, char *argv[])
 	
 	// Verbosity
 	set_verbosity_level(verbose);
-	
+	//userInfo::verblevel = verbose;
+	cout << userInfo::verblevel << endl;
 	// --mode
 	if(var_map.count("mode")) {
 		if(mode != 0 && mode != 1 && mode != 2 && mode != 3 && mode != 4) {
@@ -115,6 +116,15 @@ int main(int argc, char *argv[])
 		return FFEA_ERROR;
 	}
 
+	// Use it to name the logfile
+	vector<string> splitext;
+	boost::split(splitext, script_fname, boost::is_any_of("."));
+	set_log_fname(splitext.at(0) + ".log");	
+
+	// Open and begin the logfile
+	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
+	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", script_fname.c_str());
+
 	//The system of all proteins, electrostatics and water
 	World *world;
 
@@ -138,6 +148,8 @@ int main(int argc, char *argv[])
 
 		return FFEA_ERROR;
 	}
+
+	exit(0);
 
 	/* World is initialised. How shall we run FFEA? */
 	int myreturn;
