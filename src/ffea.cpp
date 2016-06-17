@@ -149,8 +149,6 @@ int main(int argc, char *argv[])
 		return FFEA_ERROR;
 	}
 
-	exit(0);
-
 	/* World is initialised. How shall we run FFEA? */
 	int myreturn;
 	if(mode == 0) {
