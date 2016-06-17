@@ -90,15 +90,17 @@ World::~World() {
  * initialise VdW solver,
  * initialise BEM PBE solver
  * */
+
 int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	
 	// Set some constants and variables
 	int i, j, k;
+
 	// const int MAX_BUF_SIZE = 255;
 	string buf_string;
 	FFEA_input_reader *ffeareader;
 	ffeareader = new FFEA_input_reader();
-
+	
 	// Open script
 	ifstream fin;
 	fin.open(FFEA_script_filename.c_str());
@@ -214,7 +216,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
               } 
         }
 
-   // Initialise the Van der Waals solver
+   	// Initialise the Van der Waals solver
 	    if(params.calc_vdw == 1 || params.calc_es == 1) {
 		vector3 world_centroid, shift;
 	        get_system_centroid(&world_centroid);
@@ -291,7 +293,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 			// Print parameters back out, so user has a record
 			fprintf(measurement_out[params.num_blobs], "FFEA_measurement_file (World)\n\n");
-	                params.write_to_file(measurement_out[params.num_blobs]);
 			fprintf(measurement_out[params.num_blobs], "\nInteractions:\n\n# step ");
 			for (i = 0; i < params.num_blobs; ++i) {
 			    for (j = i + 1; j < params.num_blobs; ++j) {
@@ -588,6 +589,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 #ifdef FFEA_PARALLEL_PER_BLOB
     printf("Now initialised with 'per-blob parallelisation' (FFEA_PARALLEL_PER_BLOB) on %d threads.\n", num_threads);
 #endif
+
+    // Log file the params
+    params.write_to_file(userInfo::log_out);
 
     return FFEA_OK;
 }

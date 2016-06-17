@@ -19,6 +19,7 @@
 #include "NearestNeighbourLinkedListCube.h"
 #include "BEM_Poisson_Boltzmann.h"
 #include "BiCGSTAB_solver.h"
+#include "FFEA_user_info.h"
 #include "FFEA_return_codes.h"
 #include "FFEA_input_reader.h"
 #include "mat_vec_types.h"
