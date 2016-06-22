@@ -175,6 +175,7 @@ class Blob:
 		print "num_surface_faces = ", self.num_surface_faces
 
 		line = surf.readline().rstrip()
+		print "hi"
 		if line != "faces:":
 			print "Error: surface file " + surf_fname + " missing 'faces:' line"
 			return
