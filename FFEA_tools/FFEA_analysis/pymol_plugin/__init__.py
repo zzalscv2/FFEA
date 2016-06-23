@@ -561,6 +561,7 @@ class FFEA_viewer_control_window:
      for b in self.blob_list:
 
          b[0].load_nodes_file_as_frame()
+	 print b[0].frames[0].node_list[0]
          x, y, z = b[0].get_centroid(0)
          world_centroid[0] += x * b[0].num_nodes
          world_centroid[1] += y * b[0].num_nodes
@@ -579,7 +580,7 @@ class FFEA_viewer_control_window:
              if self.calc_vdw == 1 and self.move_into_box == 1:
                  # b[0].frames[0].translate(shift)
                  print "--- not translated by: ", shift
-         elif blob[0].state == "STATIC":
+         elif b[0].state == "STATIC":
              if self.calc_vdw == 1 and self.move_into_box == 1:
                  b[0].frames[0].translate(shift)
                  print "--- translated by: ", shift
