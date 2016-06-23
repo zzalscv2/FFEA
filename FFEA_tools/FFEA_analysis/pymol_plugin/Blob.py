@@ -63,7 +63,7 @@ class Blob:
 			self.init_rot = blob_rotation
 
 		self.state = blob_state
-
+		print self.state
 		if top_fname == "":
 			print "No topology file provided."
 			self.no_topology = True
@@ -685,12 +685,15 @@ class Blob:
 			i = 0
 
 		if self.num_frames == 0:
+			print "num_frames = 0"
 			return
 
 		if self.frames[i] == None:
+			print "frame list empty"
 			return
 
 		if self.hide_blob == True:
+			"blob hidden"
 			return
 
 		if i < 0:
@@ -917,7 +920,8 @@ class Blob:
 
 				n1 = self.frames[i].node_list[self.surface[f][1]][0:3]
 				n2 = self.frames[i].node_list[self.surface[f][2]][0:3]
-				n3 = self.frames[i].node_list[self.surface[f][3]][0:3]
+				n3 = self.frames[i].node_list[self.surface[f][3]][0:3]	
+
 				#if self.blob_index == 0:
 				#	print "Frame ", i, " Blob ", self.blob_index, " Conformation ", self.conformation_index
 				#	print n1, n2, n3
@@ -935,6 +939,7 @@ class Blob:
                                 obj.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
                         obj.append(END)
+			print n1, n2, n3
                         print "loading frame ", frameLabel, " for blob ", self.id_num
                         cmd.load_cgo(obj, "blob_" + str(self.id_num), i+1)
 
