@@ -20,10 +20,6 @@ import StringIO
 
 # from multiprocessing import Process, Pipe
 
-# FFEA stuff
-import FFEA_script
-import FFEA_trajectory
-
 # do Ben's springs:
 import FFEA_springs
 
@@ -32,7 +28,9 @@ from pymol import cmd
 from pymol.cgo import *
 from pymol.vfont import plain
 
-
+# FFEA stuff
+import FFEA_script
+import FFEA_trajectory
 
 def __init__(self):
   """ 
@@ -52,7 +50,7 @@ class FFEA_viewer_control_window:
      self.parent = app.root
 
      self.root = Tk()
-     self.root.geometry("155x170")
+     self.root.geometry("700x200")
      self.root.title("FFEA")
 
      top_frame = Frame(self.root)
@@ -65,54 +63,100 @@ class FFEA_viewer_control_window:
      menubar.add_cascade(label="File", menu=filemenu)
      self.root.config(menu=menubar)
 
-     # PLUGIN
-     self.show_mesh = IntVar()
-     self.show_mesh_surf = IntVar()
+     # PLUGIN (separated into mutually exclusive sets. Devs take note!)
      self.show_solid = IntVar()
-     self.show_node_numbers = IntVar()
-     self.show_element_numbers = IntVar()
-     self.show_face_numbers = IntVar()
+
+     self.show_mesh = IntVar()
+
+     self.show_numbers = IntVar()
+
+     self.show_pinned = IntVar()
+
+     self.show_shortest_edge = IntVar()
+
+     self.show_box = IntVar()
+
      self.show_springs = IntVar()
+
      self.do_load_trajectory = IntVar()
+
+
      self.init_vars()
  
      # # Display flags frame
      display_flags_frame = Frame(self.root, relief=SUNKEN, bd=1)
-     # display_flags_frame.place(relx=.5, rely=.75, anchor="c")
      display_flags_frame.pack(anchor=CENTER, expand=True)
 
-     # show mesh:
-     check_button_show_mesh = Checkbutton(display_flags_frame, text="Mesh", variable=self.show_mesh, command=lambda:self.update_display_flags("show_mesh"))
-     check_button_show_mesh.pack(anchor=W)
+     #
+     # set val for radiobuttons
+     #
 
-     # show mesh surf:
-     check_button_show_mesh_surf = Checkbutton(display_flags_frame, text="Mesh surf", variable=self.show_mesh_surf, command=lambda:self.update_display_flags("show_mesh_surf"))
-     check_button_show_mesh_surf.pack(anchor=W)
 
-     # show solid: 
-     check_button_show_solid = Checkbutton(display_flags_frame, text="Solid", variable=self.show_solid, command=lambda:self.update_display_flags("show_solid"))
-     check_button_show_solid.pack(anchor=W)
+     # show solid:
+     check_button_show_solid = Radiobutton(display_flags_frame, text="Plain Solid", variable=self.show_solid, value=1, command=lambda:self.update_display_flags("show_solid", val=1))
+     check_button_show_solid.grid(row=0, column=0)
      check_button_show_solid.select() # that has to match with the default value 1! 
+
+     # show material: 
+     check_button_show_material = Radiobutton(display_flags_frame, text="Material", variable=self.show_solid, value=2, command=lambda:self.update_display_flags("show_solid", val=2))
+     check_button_show_material.grid(row=0, column=1)
+
+     # show no solid:
+     check_button_show_no_solid = Radiobutton(display_flags_frame, text="No Solid", variable=self.show_solid, value=0, command=lambda:self.update_display_flags("show_solid", val=0))
+     check_button_show_no_solid.grid(row=0, column=2)
+
+     # show surface mesh:
+     check_button_show_mesh_surf = Radiobutton(display_flags_frame, text="Surface Mesh", variable=self.show_mesh, value=2, command=lambda:self.update_display_flags("show_mesh", val=2))
+     check_button_show_mesh_surf.grid(row=1, column=0)
+
+     # show whole mesh:
+     check_button_show_mesh = Radiobutton(display_flags_frame, text="Whole Mesh", variable=self.show_mesh, value=1, command=lambda:self.update_display_flags("show_mesh", val=1))
+     check_button_show_mesh.grid(row=1, column=1)
+
+     # show no mesh:
+     check_button_show_no_mesh = Radiobutton(display_flags_frame, text="No Mesh", variable=self.show_mesh, value=0, command=lambda:self.update_display_flags("show_mesh", val=0))
+     check_button_show_no_mesh.grid(row=1, column=2)
+     check_button_show_no_mesh.select()
+
+     # show node numbers: 
+     check_button_show_node_numbers = Radiobutton(display_flags_frame, text="Node Indices", variable=self.show_numbers, value=1, command=lambda:self.update_display_flags("show_numbers", val=1))
+     check_button_show_node_numbers.grid(row=2, column=0)
+
+     # show linear node numbers: 
+     check_button_show_node_linnumbers = Radiobutton(display_flags_frame, text="Node Indices (Linear)", variable=self.show_numbers, value=2, command=lambda:self.update_display_flags("show_numbers", val=2))
+     check_button_show_node_linnumbers.grid(row=2, column=1)
+
+     # show element numbers: 
+     check_button_show_element_numbers = Radiobutton(display_flags_frame, text="Element Indices", variable=self.show_numbers, value=3, command=lambda:self.update_display_flags("show_numbers", val=3))
+     check_button_show_element_numbers.grid(row=2, column=2)
+     
+     # show face numbers: 
+     check_button_show_face_numbers = Radiobutton(display_flags_frame, text="Face Indices", variable=self.show_numbers, value=4, command=lambda:self.update_display_flags("show_numbers", val=4))
+     check_button_show_face_numbers.grid(row=2, column=3)
+
+     # show no numbers: 
+     check_button_show_no_numbers = Radiobutton(display_flags_frame, text="No Indices", variable=self.show_numbers, value=0, command=lambda:self.update_display_flags("show_numbers", val=0))
+     check_button_show_no_numbers.grid(row=2, column=4)
+     check_button_show_no_numbers.select() # that has to match with the default value 1!
 
      # show springs: 
      check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
-     check_button_show_springs.pack(anchor=W)
-     
-     # show node numbers: 
-     check_button_show_node_numbers = Checkbutton(display_flags_frame, text="Node numbers", variable=self.show_node_numbers, command=lambda:self.update_display_flags("show_node_numbers"))
-     check_button_show_node_numbers.pack(anchor=W)
+     check_button_show_springs.grid(row=3, column=0)
+     check_button_show_springs.select()
 
-     # show element numbers: 
-     check_button_show_element_numbers = Checkbutton(display_flags_frame, text="Element numbers", variable=self.show_element_numbers, command=lambda:self.update_display_flags("show_element_numbers"))
-     check_button_show_element_numbers.pack(anchor=W)
-     
-     # show face numbers: 
-     check_button_show_face_numbers = Checkbutton(display_flags_frame, text="Face numbers", variable=self.show_face_numbers, command=lambda:self.update_display_flags("show_face_numbers"))
-     check_button_show_face_numbers.pack(anchor=W)
-     
+     # show pinned_nodes: 
+     check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
+     check_button_show_pinned.grid(row=4, column=0)
+     check_button_show_pinned.select() # that has to match with the default value 1!
+ 
+     # box
+     check_button_show_box = Checkbutton(display_flags_frame, text="Simulation Box", variable=self.show_box, command=lambda:self.update_display_flags("show_box"))
+     check_button_show_box.grid(row=5, column=0)
+     check_button_show_box.select() # that has to match with the default value 1!     
+
      # load the trajectory:
      check_button_do_load_trajectory = Checkbutton(display_flags_frame, text="Load trajectory", variable=self.load_trajectory, command=lambda:self.update_display_flags("load_trajectory"))
-     check_button_do_load_trajectory.pack(anchor=W)
+     check_button_do_load_trajectory.grid(row=6, column=0)
      check_button_do_load_trajectory.select() # that has to match with the default value 1! 
 
      # flags
@@ -121,8 +165,6 @@ class FFEA_viewer_control_window:
      self.there_is_something_to_send_to_display_window = False
      self.change_frame_to = -1
      	
-     self.num_blobs = 0
-     self.num_conformations = []
      self.selected_index = 0
      self.selected_blob = 0
      self.selected_conformation = 0
@@ -134,14 +176,19 @@ class FFEA_viewer_control_window:
  #################################################
   # # # # Update display_flags from buttons # # # 
  #################################################
-  def update_display_flags(self, key):
+  def update_display_flags(self, key, val=-1):
 
-     # update display flags for key
-     if self.display_flags[key] == 0:
-       self.display_flags[key] = 1
+     # If unset (i.e. checkbutton)
+     if val == -1:
+	self.display_flags[key] = (self.display_flags[key] + 1) % 2
      else:
-       self.display_flags[key] = 0
-     # print key, self.display_flags[key] 
+	self.display_flags[key] = val
+
+     # WARNINGs:
+     #NOT_IMPLEMENTED = ["show_element_numbers", "show_face_numbers"]
+     #if NOT_IMPLEMENTED.count(key):
+     #  print key, " functionality is still under development."
+
 
 
   # # # # # # # # # # # # # # # # # # # # # #
@@ -170,6 +217,10 @@ class FFEA_viewer_control_window:
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
   	
+	# Try to reset previous system and update
+	self.num_frames = 0
+	self.num_loads += 1
+
 	# Check if given file exists
 	if os.path.isfile(ffea_fname) == False:
 		print "No such file:", ffea_fname
@@ -193,14 +244,20 @@ class FFEA_viewer_control_window:
 	if p.trajectory_out_fname == None:
 		for i in range(p.num_blobs):
 			p.num_conformations[i] = 1
-			bl[i] = [bl[i][0]]     
+			bl[i].conformation = [bl[i].conformation[0]]     
     
 	# Build box object
 	try:
+		self.box = True
 		self.box_x = (1.0 / p.kappa) * p.es_h * p.es_N_x
 		self.box_y = (1.0 / p.kappa) * p.es_h * p.es_N_y
 		self.box_z = (1.0 / p.kappa) * p.es_h * p.es_N_z
+
+		# Does it exist? Realllllly?? If it's this small, it doesn't. OK?!!
+		if self.box_x <= 1e-10 or self.box_y <= 1e-10 or self.box_z <= 1e-10:
+			self.box = False
 	except:
+		self.box = False
 		self.box_x = 0.0
 		self.box_y = 0.0
 		self.box_z = 0.0
@@ -219,40 +276,39 @@ class FFEA_viewer_control_window:
 			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
 			new_blob = Blob.Blob()
 			#new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_mat[i], blob_binding[i], blob_centroid_pos, blob_rotation, ffea_path)
-			new_blob.load(idnum, bindex, cindex, self.script)     
+			new_blob.load(idnum, bindex, cindex, self.script)
+			new_blob.set_num_loads(self.num_loads)
+     
 			self.blob_list[bindex][cindex] = new_blob
 			new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
 			info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + c.motion_state + "\n"
 			add_blob_info = {'name': new_blob_name, 'info': info_string}
-			# self.speak_to_control.send({'add_blob': add_blob_info}) ## PLUGIN OUT 
+			
 			idnum += 1
                  
     
 	# Rescale and translate initial system if necessary
 	# Send binding sites to control
-	binding_sites = [[0 for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
-	for i in range(self.num_blobs):
-		for j in range(self.num_conformations[i]):
-			if self.blob_list[i][j].num_binding_sites != None:
+	binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
+	for i in range(self.script.params.num_blobs):
+		for j in range(self.script.params.num_conformations[i]):
+			if self.blob_list[i][j].bsites != None:
 				binding_sites[i][j] = self.blob_list[i][j].bsites.num_binding_sites
 
 	# Rescale and translate initial system if necessary
-	global_scale = float("inf")
-	for blob in self.blob_list:
-		if blob[0].scale < global_scale:
-			global_scale = blob[0].scale
 
-	global_scale = 1.0 / global_scale
+	self.global_scale = 1e-10	# angstroms cos pymol works in angstroms and FFEA works in SI
+	self.global_scale = 1.0 / self.global_scale
 
 	# Rescale box
-	self.box_x *= global_scale
-	self.box_y *= global_scale
-	self.box_z *= global_scale
+	self.box_x *= self.global_scale
+	self.box_y *= self.global_scale
+	self.box_z *= self.global_scale
 
 	# Rescale blobs
 	for b in self.blob_list:
 		for c in b:
-			c.set_global_scale(global_scale)
+			c.set_global_scale(self.global_scale)
 
 	# Move simulation into box, if necessary
 	world_centroid = np.array([0.0, 0.0, 0.0])
@@ -305,106 +361,144 @@ class FFEA_viewer_control_window:
 		if p.calc_vdw == 1 and p.move_into_box == 1:
 			b[0].frames[0].translate(shift)
     		
-    # Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
+
+    	# Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
 	# Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
     		       
-	# Now load trajectory
-	if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
-		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
-		self.load_trajectory_thread.start()
+	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
+	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
+	self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
+	self.load_trajectory_thread.start()
 
 	# Make sure we have at least 1 frame sorted before continuing, so main thread doesn't overtake
-	while(self.num_frames < 1):
-		if p.trajectory_out_fname == None:
-			# increase the frames to 1, so that the structure is displayed.
-			self.num_frames = 1
-			self.draw_stuff()
-			break
-		else:
-			pass
+	#print self.num_frames, p.trajectory_out_fname
+	#while(self.num_frames < 1):
+	#	if p.trajectory_out_fname == None:
+	#		# increase the frames to 1, so that the structure is displayed.
+	#		self.num_frames = 1
+	#		self.draw_stuff()
+	#		break
+	#	else:
+	#		pass
 
-     # Reset initial camera (dependent upon structure size)
-     # dims = self.get_system_dimensions()
-     # self.dimensions = [dims[i][1] - dims[i][0] for i in range(3)]
-# 
-#      if (self.dimensions[2] > self.dimensions[1]) and (self.dimensions[2] > self.dimensions[0]):
-#          self.z = 2 * self.dimensions[2]
-#      elif self.dimensions[0] > self.dimensions[1]:
-#          self.z = self.dimensions[0] / (2 * np.tan(np.pi / 6.0))
-#      else:
-#         self.z = self.dimensions[1] / (2 * np.tan(np.pi / 6.0))
 
   def load_trajectory(self, trajectory_out_fname):
-  
-  	# This function will load the trajectory by:
-  		# Loading header.
-  		# Skip first frame (we already have it). 
-  		# Load frames 1 at a time and leave thread open to be manually activated by user and constantly check for newly written frames
-  		
-  		# Load header stuff automatically
-  		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
-  		
-  		# Check for failure!
-  		if traj.num_blobs == 0:
-  		
-  			# This will activate the draw_stuff for a single frame
-  			print "Error. Problem with trajectory file. Cannot load."
-  			self.script.params.trajectory_out_fname = None
-			return
 	
-		# Skip first frame as we already have it
-		traj.skip_frame()
+	#
+	# All blobs already have the first frame. They will keep this permanently.
+	# All subsequent frames will be readed, loaded, drawn and deleted until failure
+	#	
+
+	# Load header and skip first frame (we already have it from the node files)
+	traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+	try:
+		failure = traj.skip_frame()
+	except:
+		failure = 1
+
+	# Draw first frame
+	self.num_frames = 1
+	self.draw_frame(self.num_frames - 1)
+
+	# If necessary, stop now (broken traj or user asked for)
+	if traj.num_blobs == 0 or failure == 1 or self.display_flags['load_trajectory'] == 0:		
+		return
+
+	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
+	while True:
 		
-		# Set num_frames for external stuff
-		self.num_frames = 1
-		
-		# Now, let's load a trajectory (while we can)
-		while True:
-		
-			# If user wants frames, give them frames
-			if self.display_flags['load_trajectory'] == 1:
+		# Get frame from traj
+		if traj.load_frame() == 0:
 			
-				# Get a frame
-				if traj.load_frame() == 0:
-				
-					# Success! We got a new frame. Add it to blob
-					self.add_frame_to_blobs(traj)
-					self.num_frames += 1
-					self.draw_frame()
-					
-					# And clear the blob
-					traj.clear_frame()
-					self.remove_frame_from_blobs()
-				else:
-					
-					# All failures move to the beginning of what will be the next available frame. Wait a bit and continue
-					print self.num_frames
-					break
-					time.sleep(10)
-		
-			else:
-			
-				# Check again every 3 seconds
-				time.sleep(3)
-			
-			if self.num_frames > 1:
-				cmd.mset("1-"+str(self.num_frames))
-				if self.num_frames > 2:
-					cmd.mplay()
+			# Scale traj frame
+			traj.scale(self.global_scale, 0)
+
+			# Load into blob objects asnd increment frame count
+			self.add_frame_to_blobs(traj)
+			self.num_frames += 1
+
+			# Draw whole frame (if above worked, these should work no problem...)
+			self.draw_frame(self.num_frames - 1)
+
+			# Delete frames from memory
+			traj.delete_frame()
+			self.remove_frame_from_blobs()
+
+		else:
+			break
+	return
+	
+  #def load_trajectory(self, trajectory_out_fname):
+  #
+  #	# This function will load the trajectory by:
+  #		# Loading header.
+  #		# Skip first frame (we already have it). 
+  #		# Load frames 1 at a time and leave thread open to be manually activated by user and constantly check for newly written frames
+  #		
+  #		# Load header stuff automatically
+  #		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+  #		
+  #		# Check for failure!
+ # 		if traj.num_blobs == 0:
+ # 		
+ # 			# This will activate the draw_stuff for a single frame
+ # 			print "Error. Problem with trajectory file. Cannot load."
+ # 			self.script.params.trajectory_out_fname = None
+#			return
+#	
+#		# Skip first frame as we already have it
+#		traj.skip_frame()
+#		
+#		# Set num_frames for external stuff
+#		self.num_frames = 1
+#		
+#		# Now, let's load a trajectory (while we can)
+#		while True:
+#		
+#			# If user wants frames, give them frames
+#			if self.display_flags['load_trajectory'] == 1:
+#			
+#				# Get a frame
+#				if traj.load_frame() == 0:
+#				
+#					# Success! We got a new frame. Add it to blob
+#					self.add_frame_to_blobs(traj)
+#					self.num_frames += 1
+#					self.draw_frame()
+#					
+#					# And clear the blob
+#					traj.clear_frame()
+#					self.remove_frame_from_blobs()
+#				else:
+#					
+#					# All failures move to the beginning of what will be the next available frame. Wait a bit and continue
+#					print self.num_frames
+#					break
+#					time.sleep(10)
+#		
+#			else:
+#			
+#				# Check again every 3 seconds
+#				time.sleep(3)
+#			
+#			if self.num_frames > 1:
+#				cmd.mset("1-"+str(self.num_frames))
+#				if self.num_frames > 2:
+#					cmd.mplay()
           
-  def add_frame_to_blobs(self, traj):
+  def add_frame_to_blobs(self, traj, index = -1):
   	
   	for i in range(self.script.params.num_blobs):
   		for j in range(self.script.params.num_conformations[i]):
-  			self.blob_list[i][j].frames.append(traj.blob[i][j].frame[-1])
+  			self.blob_list[i][j].frames.append(traj.blob[i][j].frame[index])
   			self.blob_list[i][j].num_frames += 1
   			
-  def remove_frame_from_blobs(self):
+  def remove_frame_from_blobs(self, index = -1):
   	
   	for i in range(self.script.params.num_blobs):
   		for j in range(self.script.params.num_conformations[i]):
-  			self.blob_list[i][j].frames.pop()
-  			#self.blob_list[i][j].num_frames -= 1
+  			del self.blob_list[i][j].frames[index]
+  			self.blob_list[i][j].num_frames -= 1
   		
   def get_system_dimensions(self):
 
@@ -424,6 +518,10 @@ class FFEA_viewer_control_window:
 
 
   def init_vars(self):
+
+	# num times loaded
+	self.num_loads = 0
+
 	# camera
 	# self.orientation = Quaternion()
 	self.z = 1
@@ -444,30 +542,19 @@ class FFEA_viewer_control_window:
 	self.pause_loading = False
 	self.pausing = False
 
-	self.display_flags = {'show_mesh': 0, ## PYMOL OK
+	self.display_flags = {
 		'show_solid': 1, ## PYMOL OK
-		'show_flat': 0,
-		'show_material': 0,
-		'show_vdw_only': 0,
-		'show_node_numbers': 0, ## PYMOL OK 
-		'show_pinned_nodes': 0,
-		'hide_frozen': 0,
+		'show_mesh': 0,
+		'show_numbers': 0, ## PYMOL OK
+		'show_pinned': 1,
 		'show_shortest_edge': 0,
-		'vdw_edit_mode': 0,
-		'binding_site_edit_mode': 0,
-		'binding_site_list': [],
-		'selected_index': 0,
-		'selected_blob': 0,
-		'selected_conformation':0,
-		'show_linear_nodes_only': 0,
-		'show_mesh_surf': 0, ## PYMOL OK
+		'show_springs': 1,
+		'show_box': 1,
 		'load_trajectory': 1, ## PYMOL OK
-		'show_inverted': 0,
-		'blob_colour': (1.0, 1.0, 1.0)}
+		'show_inverted': 0,}
 
 	self.buttons = {'show_mesh' : self.show_mesh,
-		'show_solid' : self.show_solid,
-		'show_mesh_surf' : self.show_mesh_surf}
+		'show_solid' : self.show_solid,}
 
      # start the buttons to the default values
 	for k in self.buttons.keys():
@@ -481,6 +568,8 @@ class FFEA_viewer_control_window:
 	self.offset_y = 0
 	self.offset_z = 0
 
+	# Assume box exists
+	self.box = True
 	self.box_x = -1
 	self.box_y = -1
 	self.box_z = -1
@@ -495,30 +584,66 @@ class FFEA_viewer_control_window:
 	self.projection = "perspective"
 
 
-  def draw_frame(self):
-	for i in range(self.num_blobs):
-		for j in range(self.num_conformations[i]):
-			self.blob_list[i][j].draw_frame(-1, self.display_flags)
+  def draw_frame(self, index):
+
+	# Blobs should only ever have at most 2 frames on them, the initial one and the currently loaded one. So...
+	frame_real_index = index
+
+	if index > 0:
+		frame_stored_index = 1
+	else:
+		frame_stored_index = 0
+		
+	# World first
+	if self.display_flags['show_box'] == 1 and self.box == True:
+		self.draw_box(frame_real_index)
+
+	for i in range(self.script.params.num_blobs):
+		for j in range(self.script.params.num_conformations[i]):
+			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags)
   	
   def draw_stuff(self):
 
+    # World first
+    if self.display_flags['show_box'] == 1:
+	self.draw_box()
+
     for f in range(self.num_frames):
-      for i in range(self.num_blobs):
-          for j in range(self.num_conformations[i]):
+      for i in range(self.script.params.num_blobs):
+          for j in range(self.script.params.num_conformations[i]):
               self.blob_list[i][j].draw_frame(f, self.display_flags) ## PLUGIN OUT
 
 
-      if self.springs != None: # and self.display_flags
+      if self.springs != None and self.display_flags['show_springs'] == 1:
          self.draw_springs()
 
+  def draw_box(self, f):
+	
+	# A cube has 8 vertices and 12 sides. A hypercube has 16 and 32! "Whoa, that's well cool Ben!" Yeah, ikr 
+	obj = [BEGIN, LINES]
+	
+	verts = [[0.0,0.0,0.0], [self.box_x,0.0,0.0], [self.box_x,0.0,self.box_z], [0.0,0.0,self.box_z], [0.0,self.box_y,0.0], [self.box_x,self.box_y,0.0], [self.box_x,self.box_y,self.box_z], [0.0,self.box_y,self.box_z]]
+	
+	for i in range(4):
+		obj.extend([VERTEX, verts[i][0], verts[i][1], verts[i][2]])
+		obj.extend([VERTEX, verts[(i + 1) % 4][0], verts[(i + 1) % 4][1], verts[(i + 1) % 4][2]])
+
+		obj.extend([VERTEX, verts[i][0], verts[i][1], verts[i][2]])
+		obj.extend([VERTEX, verts[i + 4][0], verts[i + 4][1], verts[i + 4][2]])
+
+		obj.extend([VERTEX, verts[i + 4][0], verts[i + 4][1], verts[i + 4][2]])
+		obj.extend([VERTEX, verts[(i + 1) % 4 + 4][0], verts[(i + 1) % 4 + 4][1], verts[(i + 1) % 4 + 4][2]])
+
+	obj.append(END)
+	cmd.load_cgo(obj, "Simulation Box", f)
 
   def draw_springs(self):
 
       for s in self.springs.spring:
 
          # Get correct frames
-         correct_frame = [-1 for i in range(self.num_blobs)]
-         for i in range(self.num_blobs):
+         correct_frame = [-1 for i in range(self.script.params.num_blobs)]
+         for i in range(self.script.params.num_blobs):
             if self.blob_list[i][0].state == "STATIC":
                correct_frame[i] = 0
          print "correct_frame: ", correct_frame
