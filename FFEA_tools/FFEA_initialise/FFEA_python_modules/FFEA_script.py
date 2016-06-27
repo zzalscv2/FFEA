@@ -1,5 +1,4 @@
 import sys, os, StringIO
-import FFEA_trajectory, FFEA_measurement, FFEA_topology, FFEA_pin
 
 def get_path_from_script(path, scriptdir):
 	if os.path.isabs(path):
@@ -158,12 +157,13 @@ class FFEA_script:
 		for param in param_lines:
 			try:
 				line = param.strip().replace("<", "").replace(">", "")
+				print line
 				lvalue = line.split("=")[0].rstrip()
 				rvalue = line.split("=")[1].lstrip()
 				
 			except:
-				print "Error. Could not parse param '" + param + "'"
-				return
+				#print "Error. Could not parse param '" + param + "'"
+				continue
 
 			params.assign_param(lvalue, rvalue, scriptdir = scriptdir)
 		
@@ -420,21 +420,6 @@ class FFEA_script:
 				for j in range(self.params.num_conformations[i]):
 					print "Node fname = ", self.blob[i].conformation[j].nodes
 					
-	def load_topology(self, blob_index, conformation_index):
-
-		return FFEA_topology.FFEA_topology(self.blob[blob_index].conformation[conformation_index].topology)
-
-	def load_pin(self, blob_index, conformation_index):
-	
-		return FFEA_pin.FFEA_pin(self.blob[blob_index].conformation[conformation_index].pin)
-	
-	def load_trajectory(self, frames_to_read = float("inf")):
-		
-		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname, num_frames_to_read = frames_to_read)
-
-	def load_measurement(self, frames_to_read = float("inf")):
-
-		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_basefname, self.params.num_blobs, num_frames_to_read = frames_to_read)
 
 	def add_empty_blob(self):
 
@@ -520,7 +505,7 @@ class FFEA_script_params():
 			self.epsilon_0 = float(rvalue)
 		elif lvalue == "dielec_ext":
 			self.dielec_ext = float(rvalue)
-		elif lvalue == "calc_stokes":
+		elif lvalue == "calc_stokes" or lvalue == "do_stokes":
 			self.calc_stokes = int(rvalue)
 		elif lvalue == "calc_kinetics":
 			self.calc_kinetics = int(rvalue)
@@ -571,7 +556,7 @@ class FFEA_script_params():
 		elif lvalue == "num_states":
 			self.num_states = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
 		else:
-			print "Unrecognised parameter '" + param + "'. Ignoring..."
+			print "Unrecognised parameter '" + lvalue + "'. Ignoring..."
 
 	# This function tests whether or not there are enough params to form an ffea system
 	def completed(self):

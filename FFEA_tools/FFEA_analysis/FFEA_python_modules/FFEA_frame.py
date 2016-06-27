@@ -21,7 +21,7 @@ class FFEA_frame(FFEA_node.FFEA_node):
 				return 1
 
 			except(ValueError):
-				if line[0] == "*":
+				if line[0] == "*" or line[0] == "Blob":
 				
 					# Ready for next frame
 					fo.seek(prev)
