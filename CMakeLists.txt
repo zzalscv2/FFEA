@@ -96,7 +96,7 @@ if (UNIX)
 endif(UNIX)
 
 # 5 ### BOOST #####
-set (Boost_NO_SYSTEM_PATHS ON)
+# set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_NO_BOOST_CMAKE ON)
 # Check version:
 find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system )
