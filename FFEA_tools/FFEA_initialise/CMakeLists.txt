@@ -16,4 +16,4 @@ install (FILES FFEA_build_simulation_environment.py FFEA_rerun.py
          DESTINATION "${PYTHONSTUFF}/FFEA_initialise")
 
 install (FILES FFEA_python_modules/FFEA_binding_sites.py FFEA_python_modules/FFEA_script.py FFEA_python_modules/FFEA_pin.py FFEA_python_modules/FFEA_springs.py FFEA_python_modules/FFEA_material.py FFEA_python_modules/FFEA_topology.py FFEA_python_modules/FFEA_surface.py DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
-install (FILES FFEA_python_modules/FFEA_node.py FFEA_python_modules/FFEA_stokes.py FFEA_python_modules/FFEA_vdw.py DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
+install (FILES FFEA_python_modules/FFEA_node.py FFEA_python_modules/FFEA_stokes.py FFEA_python_modules/FFEA_vdw.py FFEA_python_modules/FFEA_pdb.py DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
