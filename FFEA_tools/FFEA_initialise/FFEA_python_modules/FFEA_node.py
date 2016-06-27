@@ -152,7 +152,7 @@ class FFEA_node:
 	
 	def set_pos(self, pos):
 		self.translate(np.array(pos) - self.get_centroid())
-		
+
 	def rotate(self, rot):
 		
 		rot = np.array(rot)
