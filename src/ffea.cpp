@@ -17,7 +17,9 @@
 #include "Blob.h"
 #include "World.h"
 
+#ifdef USE_MPI
 #include "mpi.h"
+#endif
 
 #define MAX_FNAME_LENGTH 255
 
@@ -26,7 +28,9 @@ namespace b_po = boost::program_options;
 
 int main(int argc, char *argv[])
 {
+#ifdef USE_MPI
   MPI::Init();
+#endif
 	cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
 	cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
 	cout << "Compiled:\t" << __DATE__ " at " << __TIME__ << endl;
@@ -50,9 +54,11 @@ int main(int argc, char *argv[])
 	int mode = 0;
 	int frames_to_delete = 0;
 	int verbose;
+#ifdef USE_MPI
   double st,et,st1,et1;
-  
+
   st1=MPI::Wtime();
+#endif
   
 	// Options for visible and non-visible cmd line params
 	desc.add_options()
@@ -324,14 +330,18 @@ int main(int argc, char *argv[])
 
 	/* Delete the world (oh no!) */
 	cout << "Deleting world..." << endl;
+#ifdef USE_MPI
   st = MPI::Wtime();
 	delete world;
   et = MPI::Wtime()-st;
   et1 = MPI::Wtime()-st1;
   cout<< "benchmarking--------Finalising time of ffea:"<<et<<"seconds"<<endl;
   cout<< "benchmarking--------total executing time:"<<et1<<"seconds"<<endl;
+#endif 
 	cout << "...done. World has been sucessfully destroyed." << endl;
 
+#ifdef USE_MPI
   MPI::Finalize();
+#endif
 	return myreturn;
 }
