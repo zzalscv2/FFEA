@@ -1,5 +1,6 @@
 from os import path
 from time import sleep
+import numpy as np
 
 class FFEA_surface:
 
@@ -134,6 +135,14 @@ class FFEA_face:
 			self.n[i] = int(alist[i])
 
 		self.elindex = int(elindex)
+
+	def calc_centroid(self, node):
+	
+		centroid = np.array([0.0,0.0,0.0])
+		for i in self.n:
+			centroid += node.pos[i]
+			
+		return centroid * (1.0 / len(self.n))
 
 	def reset(self):
 		
