@@ -11,7 +11,9 @@ set(PACKAGE_VERSION "${VERSION}.${MINOR}")
 
 option(USE_OPENMP "Build with OpenMP support" ON)
 set(USE_OMP_MODE 1 CACHE STRING "0: disabled; 1: threads within blob; 2: threads per blob")
-option(USE_FAST "Add automatic compiler flags" OFF)
+option(USE_MPI "Use MPI parallelisation: EXPERIMENTAL!" OFF)
+mark_as_advanced(USE_MPI)
+option(USE_FAST "Add automatic compiler flags" ON)
 mark_as_advanced(USE_FAST)
 option(USE_DOUBLE "Use double precision" ON)
 mark_as_advanced(USE_DOUBLE)
@@ -22,11 +24,16 @@ set (LIBS_TO_LINK)
 #### LIBRARIES AND CFLAGS #######
 
 # benchmark ### MPI #########
-find_package(MPI REQUIRED)
-set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
-include_directories(${MPI_INCLUDE_PATH})
-set(LIBS_TO_LINK ${LIBS_TO_LINK} ${MPI_LIBRARIES}) 
+if (USE_MPI)
+  add_definitions(-DUSE_MPI)
+
+  find_package(MPI REQUIRED)
+  set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+  set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+  include_directories(${MPI_INCLUDE_PATH})
+  set(LIBS_TO_LINK ${LIBS_TO_LINK} ${MPI_LIBRARIES}) 
+endif(USE_MPI)
+
 
 # 0 #### PRECISION ###
 if (USE_DOUBLE)
