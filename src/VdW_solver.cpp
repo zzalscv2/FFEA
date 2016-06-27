@@ -1,5 +1,7 @@
 #include "VdW_solver.h"
+#ifdef USE_MPI
 #include "mpi.h"
+#endif
 
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
@@ -30,7 +32,7 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 }
 
 int VdW_solver::solve() {
-    double st, time1, time2, time3;
+    // double st, time1, time2, time3;
     const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
         {-1, -1, -1},
         {-1, -1, 0},
