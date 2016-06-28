@@ -37,9 +37,8 @@ class FFEA_vdw:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
+			print("\tFile '" + fname + "' not found. Returning empty object...")
 			self.reset()
-			raise
 
 		# Test format
 		line = fin.readline().strip()
@@ -61,6 +60,10 @@ class FFEA_vdw:
 
 		fin.close()
 
+	def set_num_faces(self, num_faces):
+		self.num_faces = num_faces
+		self.index = [-1 for i in range(num_faces)]
+		
 	def add_face(self, anint):
 
 		self.index.append(int(anint))

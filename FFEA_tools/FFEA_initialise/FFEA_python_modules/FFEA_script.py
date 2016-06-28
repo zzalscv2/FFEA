@@ -1,5 +1,4 @@
-import sys, os
-import FFEA_trajectory, FFEA_measurement, FFEA_topology, FFEA_pin
+import sys, os, StringIO
 
 def get_path_from_script(path, scriptdir):
 	if os.path.isabs(path):
@@ -15,13 +14,15 @@ class FFEA_script:
 
 		# Start reading to test
 		try:
-			fin = open(fname, "r")
-		
+			fin = open(fname, "r")	
 		except(IOError):
 			print "Error. File " + fname  + " not found. Returning empty object..."
 			self.reset()
 			return
 
+		# Get rid of all of the comments, if there are any
+		fin = self.remove_all_comments(fin)
+		
 		if "<param>\n" not in fin.readlines():
 			print "Error. File " + fname  + " not an FFEA script file."
 			fin.close()
@@ -52,6 +53,73 @@ class FFEA_script:
 			self.reset()
 			return
 
+	# # # # # # # # # # # # # # # # # # # # # #
+	# we will take the comments out of iFile,
+	#   write a virtual file "ffea_in" 
+	#   and return its handler.
+	# # # # # # # # # # # # # # # # # # # # # #
+	def remove_all_comments(self, fin):
+		STA = fin.readlines()
+		fin.close()
+
+		ffea_in = StringIO.StringIO()
+
+		# and some variables to take the comments out: 
+		comment = 0
+		m_ini = "<!--"
+		m_end = "-->"
+		# Now start parsing the input file
+		for txt in STA:
+     
+			# Strip tag wrapping 
+			# line = ffea_in.readline().strip()
+			line = txt.strip()
+     
+			# The following stuff takes care of the comments enclosed in "<!--" and "-->":
+			# buf2_string = ""
+			found = 0
+			count = 0
+			count_0 = 0
+			ini = 0
+			end = len(line)
+			theEnd = end
+     
+			# remove the comments:
+			while ((found != -1) and (found != len(line))):
+				if (comment == 0):
+					found = line.find(m_ini)
+					if (found != -1):
+						count += 1
+						comment = 1
+						ini = found
+				if (comment == 1):
+					found = line.find(m_end)
+					if (found != -1):
+						count += 2
+						comment = 0
+						end = found + 3
+				# the line end up without closing the comment:
+				if (comment == 1):
+					line = line[:ini]
+					break
+				# we're out of the comment:
+				elif (comment == 0):
+					if (count == count_0 + 3):
+						buf2_string = line[:ini]
+						buf2_string += line[end:]
+						line = buf2_string
+						count_0 = count
+					elif (count == count_0 + 2):
+						line = line[end:]
+						count_0 = count
+						
+			# comments removed!
+			if len(line) > 0:
+				ffea_in.write(line.strip() + "\n")
+
+		ffea_in.seek(0,0)   
+		return ffea_in
+     
 	def reset(self):
 		self.params = None
 		self.blob = []
@@ -89,12 +157,13 @@ class FFEA_script:
 		for param in param_lines:
 			try:
 				line = param.strip().replace("<", "").replace(">", "")
+				print line
 				lvalue = line.split("=")[0].rstrip()
 				rvalue = line.split("=")[1].lstrip()
 				
 			except:
-				print "Error. Could not parse param '" + param + "'"
-				return
+				#print "Error. Could not parse param '" + param + "'"
+				continue
 
 			params.assign_param(lvalue, rvalue, scriptdir = scriptdir)
 		
@@ -342,21 +411,15 @@ class FFEA_script:
 		fout.write("</system>")
 		fout.close()
 
-	def load_topology(self, blob_index, conformation_index):
-
-		return FFEA_topology.FFEA_topology(self.blob[blob_index].conformation[conformation_index].topology)
-
-	def load_pin(self, blob_index, conformation_index):
+	def print_details(self):
 	
-		return FFEA_pin.FFEA_pin(self.blob[blob_index].conformation[conformation_index].pin)
-	
-	def load_trajectory(self, frames_to_read = float("inf")):
-		
-		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname, num_frames_to_read = frames_to_read)
-
-	def load_measurement(self, frames_to_read = float("inf")):
-
-		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_basefname, self.params.num_blobs, num_frames_to_read = frames_to_read)
+			print "num_blobs = ", self.params.num_blobs
+			print "num_conformations = ", self.params.num_conformations
+			
+			for i in range(self.params.num_blobs):
+				for j in range(self.params.num_conformations[i]):
+					print "Node fname = ", self.blob[i].conformation[j].nodes
+					
 
 	def add_empty_blob(self):
 
@@ -442,7 +505,7 @@ class FFEA_script_params():
 			self.epsilon_0 = float(rvalue)
 		elif lvalue == "dielec_ext":
 			self.dielec_ext = float(rvalue)
-		elif lvalue == "calc_stokes":
+		elif lvalue == "calc_stokes" or lvalue == "do_stokes":
 			self.calc_stokes = int(rvalue)
 		elif lvalue == "calc_kinetics":
 			self.calc_kinetics = int(rvalue)
@@ -493,7 +556,7 @@ class FFEA_script_params():
 		elif lvalue == "num_states":
 			self.num_states = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
 		else:
-			print "Unrecognised parameter '" + param + "'. Ignoring..."
+			print "Unrecognised parameter '" + lvalue + "'. Ignoring..."
 
 	# This function tests whether or not there are enough params to form an ffea system
 	def completed(self):

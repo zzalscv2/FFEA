@@ -19,7 +19,9 @@ PreComp_solver::~PreComp_solver() {
   delete F;
   delete isPairActive;
   delete b_types;
-  delete b_elems; 
+  if (n_beads > 0) {
+    delete b_elems; 
+  }
 }
 
 
