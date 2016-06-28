@@ -157,7 +157,6 @@ class FFEA_script:
 		for param in param_lines:
 			try:
 				line = param.strip().replace("<", "").replace(">", "")
-				print line
 				lvalue = line.split("=")[0].rstrip()
 				rvalue = line.split("=")[1].lstrip()
 				
@@ -429,44 +428,46 @@ class FFEA_script:
 class FFEA_script_params():
 	
 	def __init__(self):
+
+		# Must have same default values as main ffea so can load defaulted scripts
 		self.restart = 0
-		self.dt = 0.0
-		self.kT = 0.0
-		self.check = 0
-		self.num_steps = 0
+		self.dt = 1e-14
+		self.kT = 4.11e-21
+		self.check = 10000
+		self.num_steps = 1e11
 		self.trajectory_out_fname = ""
 		self.measurement_out_basefname = ""
 		self.measurement_out_fname = []
 		self.vdw_forcefield_params = ""
 		self.kinetics_out_fname = ""
 		self.binding_site_params = ""
-		self.epsilon = 0.0
-		self.max_iterations_cg = 0
-		self.kappa = 0.0
-		self.epsilon_0 = 0.0
-		self.dielec_ext = 0.0
-		self.calc_stokes = 0
-		self.stokes_visc = 0.0
-		self.calc_vdw = 0
-		self.calc_noise = 0
+		self.epsilon = 0.01
+		self.max_iterations_cg = 1000
+		self.kappa = 1e9
+		self.epsilon_0 = 1.0
+		self.dielec_ext = 1
+		self.calc_stokes = 1
+		self.stokes_visc = 1e-3
+		self.calc_vdw = 1
+		self.calc_noise = 1
 		self.calc_es = 0
 		self.calc_kinetics = 0
 		self.kinetics_update = 0
-		self.es_update = 0
-		self.es_N_x = 0
-		self.es_N_y = 0
-		self.es_N_z = 0
+		self.es_update = 1
+		self.es_N_x = -1
+		self.es_N_y = -1
+		self.es_N_z = -1
 		self.vdw_type = "steric"
-		self.vdw_steric_factor = 0.0
+		self.vdw_steric_factor = 1e-2
 		self.move_into_box = 1
 		self.sticky_wall_xz = 0
-		self.wall_x_1 = ""
-		self.wall_x_2 = ""
-		self.wall_y_1 = ""
-		self.wall_y_2 = ""
-		self.wall_z_1 = ""
-		self.wall_z_2 = ""
-		self.es_h = 0
+		self.wall_x_1 = "PBC"
+		self.wall_x_2 = "PBC"
+		self.wall_y_1 = "PBC"
+		self.wall_y_2 = "PBC"
+		self.wall_z_1 = "PBC"
+		self.wall_z_2 = "PBC"
+		self.es_h = 3
 		self.num_blobs = 0
 		self.num_conformations = []
 		self.num_states = []
