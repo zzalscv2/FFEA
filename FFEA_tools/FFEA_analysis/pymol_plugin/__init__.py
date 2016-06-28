@@ -151,10 +151,18 @@ class FFEA_viewer_control_window:
      check_button_show_pinned.grid(row=4, column=0)
      check_button_show_pinned.select() # that has to match with the default value 1!
  
-     # box
-     check_button_show_box = Checkbutton(display_flags_frame, text="Simulation Box", variable=self.show_box, command=lambda:self.update_display_flags("show_box"))
+     # Outer simulation box
+     check_button_show_box = Radiobutton(display_flags_frame, text="Simulation Box (outline)", variable=self.show_box, value=1, command=lambda:self.update_display_flags("show_box", val=1))
      check_button_show_box.grid(row=5, column=0)
      check_button_show_box.select() # that has to match with the default value 1!     
+
+     # Whole simulation box
+     check_button_show_whole_box = Radiobutton(display_flags_frame, text="Simulation Box (whole)", variable=self.show_box, value=2, command=lambda:self.update_display_flags("show_box", val=2))
+     check_button_show_whole_box.grid(row=5, column=1)
+
+     # No simulation box
+     check_button_show_box = Radiobutton(display_flags_frame, text="No box", variable=self.show_box, value=0, command=lambda:self.update_display_flags("show_box", val=0))
+     check_button_show_box.grid(row=5, column=2)
 
      # load the trajectory:
      check_button_do_load_trajectory = Checkbutton(display_flags_frame, text="Load trajectory", variable=self.load_trajectory, command=lambda:self.update_display_flags("load_trajectory"))
@@ -247,22 +255,6 @@ class FFEA_viewer_control_window:
 		for i in range(p.num_blobs):
 			p.num_conformations[i] = 1
 			bl[i].conformation = [bl[i].conformation[0]]     
-    
-	# Build box object
-	try:
-		self.box = True
-		self.box_x = (1.0 / p.kappa) * p.es_h * p.es_N_x
-		self.box_y = (1.0 / p.kappa) * p.es_h * p.es_N_y
-		self.box_z = (1.0 / p.kappa) * p.es_h * p.es_N_z
-
-		# Does it exist? Realllllly?? If it's this small, it doesn't. OK?!!
-		if self.box_x <= 1e-10 or self.box_y <= 1e-10 or self.box_z <= 1e-10:
-			self.box = False
-	except:
-		self.box = False
-		self.box_x = 0.0
-		self.box_y = 0.0
-		self.box_z = 0.0
     	
     #
     # Build the blob objects one at a time
@@ -289,7 +281,6 @@ class FFEA_viewer_control_window:
 			idnum += 1
                  
     
-	# Rescale and translate initial system if necessary
 	# Send binding sites to control
 	binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
 	for i in range(self.script.params.num_blobs):
@@ -298,14 +289,8 @@ class FFEA_viewer_control_window:
 				binding_sites[i][j] = self.blob_list[i][j].bsites.num_binding_sites
 
 	# Rescale and translate initial system if necessary
-
 	self.global_scale = 1e-10	# angstroms cos pymol works in angstroms and FFEA works in SI
 	self.global_scale = 1.0 / self.global_scale
-
-	# Rescale box
-	self.box_x *= self.global_scale
-	self.box_y *= self.global_scale
-	self.box_z *= self.global_scale
 
 	# Rescale blobs
 	for b in self.blob_list:
@@ -324,6 +309,7 @@ class FFEA_viewer_control_window:
 			if b.index(c) == 0:
 		
 				c.set_nodes_as_frame()
+				print c.frames[0].pos[0]
 				x, y, z = c.get_centroid(0)
 				world_centroid[0] += x * c.node.num_nodes
 				world_centroid[1] += y * c.node.num_nodes
@@ -331,32 +317,52 @@ class FFEA_viewer_control_window:
 				total_num_nodes += c.node.num_nodes
 			else:
 				c.set_dead_frame()
-	
-	# Don't set num_frames!
-	#self.num_frames = 1		
+			
 
 	# Calculate global centroid
 	world_centroid *= 1.0 / total_num_nodes	
-     	
+
+	# Build box object if necessary
+	if p.calc_vdw == 0:
+		self.box = False
+		self.box_x = 0.0
+		self.box_y = 0.0
+		self.box_z = 0.0
+	else:
+		try:
+
+			# Do we need to calculate the box? Double the rounded up size of the system
+			if p.es_N_x < 1 or p.es_N_y < 1 or p.es_N_z < 1:
+				dims = self.get_system_dimensions(0)
+				p.es_N_x = int(dims[0] * (p.kappa / (p.es_h * self.global_scale)))
+				p.es_N_y = int(dims[1] * (p.kappa / (p.es_h * self.global_scale)))
+				p.es_N_z = int(dims[2] * (p.kappa / (p.es_h * self.global_scale)))
+
+			self.box = True
+			self.box_x = 2 * (1.0 / p.kappa) * p.es_h * p.es_N_x
+			self.box_y = 2 * (1.0 / p.kappa) * p.es_h * p.es_N_y
+			self.box_z = 2 * (1.0 / p.kappa) * p.es_h * p.es_N_z
+	
+			# Does it exist? Realllllly?? If it's this small, it doesn't. OK?!!
+			if self.box_x <= 1e-10 or self.box_y <= 1e-10 or self.box_z <= 1e-10:
+				self.box = False
+					
+		except:
+			self.box = False
+			self.box_x = 0.0
+			self.box_y = 0.0
+			self.box_z = 0.0
+
+		
+	# Rescale box
+	self.box_x *= self.global_scale
+	self.box_y *= self.global_scale
+	self.box_z *= self.global_scale
+
 	shift[0] = self.box_x / 2.0 - world_centroid[0]
 	shift[1] = self.box_y / 2.0 - world_centroid[1]
 	shift[2] = self.box_z / 2.0 - world_centroid[2]
-     		
-	# Shift all blobs if STATIC, or if there is no trajectory; clear frame if not
-	'''
-	for b in self.blob_list:
-		if p.trajectory_out_fname == None:
-			if p.calc_vdw == 1 and p.move_into_box == 1:
-				# b[0].frames[0].translate(shift)
-				print "--- not translated by: ", shift
-		elif blob[0].motion_state == "STATIC":
-			if p.calc_vdw == 1 and p.move_into_box == 1:
-				b[0].frames[0].translate(shift)
-				print "--- translated by: ", shift
-		else:
-			b[0].frames = []
-			b[0].num_frames = 0
-    '''
+
     
 	# Shift all blobs if necessary
 	for b in self.blob_list:
@@ -429,6 +435,34 @@ class FFEA_viewer_control_window:
 		else:
 			break
 	return
+
+  def get_system_dimensions(self, findex):
+	maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])	
+	mindims = np.array([float("inf"),float("inf"),float("inf")])
+	dims = np.array([0.0,0.0,0.0])
+
+	try:
+		for b in self.blob_list:
+			for c in b:
+				try:
+					for p in c.frames[findex].pos:
+						for i in range(3):
+							if p[i] > maxdims[i]:
+								maxdims[i] = p[i]
+							if p[i] < mindims[i]:
+								mindims[i] = p[i]
+
+					
+				except:
+					continue
+		
+		for i in range(3):
+			dims[i] = maxdims[i] - mindims[i]
+
+		return dims
+				
+	except:
+		return np.array([0.0,0.0,0.0])
 	
   #def load_trajectory(self, trajectory_out_fname):
   #
@@ -502,23 +536,6 @@ class FFEA_viewer_control_window:
   			del self.blob_list[i][j].frames[index]
   			self.blob_list[i][j].num_frames -= 1
   		
-  def get_system_dimensions(self):
-
-	dims = [[float("inf"), -1 * float("inf")] for i in range(3)]
-
-	for b in self.blob_list:
-		bdims = b[0].get_dimensions()
-
-	for i in range(3):
-		if bdims[i][0] < dims[i][0]:
-			dims[i][0] = bdims[i][0]
-		if bdims[i][1] > dims[i][1]:
-			dims[i][1] = bdims[i][1]
-      	
-	return dims
-
-
-
   def init_vars(self):
 
 	# num times loaded
@@ -576,7 +593,6 @@ class FFEA_viewer_control_window:
 	self.box_y = -1
 	self.box_z = -1
 	self.springs = None
-	self.show_box = 0;
 
 	self.modifying_frame = False
 
@@ -597,7 +613,7 @@ class FFEA_viewer_control_window:
 		frame_stored_index = 0
 		
 	# World first
-	if self.display_flags['show_box'] == 1 and self.box == True:
+	if self.display_flags['show_box'] != 0 and self.box == True:
 		self.draw_box(frame_real_index)
 
 	for i in range(self.script.params.num_blobs):
@@ -625,17 +641,89 @@ class FFEA_viewer_control_window:
 	# A cube has 8 vertices and 12 sides. A hypercube has 16 and 32! "Whoa, that's well cool Ben!" Yeah, ikr 
 	obj = [BEGIN, LINES]
 	
-	verts = [[0.0,0.0,0.0], [self.box_x,0.0,0.0], [self.box_x,0.0,self.box_z], [0.0,0.0,self.box_z], [0.0,self.box_y,0.0], [self.box_x,self.box_y,0.0], [self.box_x,self.box_y,self.box_z], [0.0,self.box_y,self.box_z]]
+	# If only outline, no need to loop over entire plane
+	if self.display_flags['show_box'] == 1:
+		
+		step_x = self.box_x
+		step_y = self.box_y
+		step_z = self.box_z
+
+		# Loop over the three planes
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[i * step_x, j * step_y, 0.0], [i * step_x, j * step_y, self.box_z]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[0.0, i * step_y, j * step_z], [self.box_x, i * step_y, j * step_z]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[j * step_x, 0.0, i * step_z], [j * step_x, self.box_y, i * step_z]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+			
+	elif self.display_flags['show_box'] == 2:
+
+		step_x = self.box_x / self.script.params.es_N_x
+		step_y = self.box_y / self.script.params.es_N_y
+		step_z = self.box_z / self.script.params.es_N_z
+
+		# Loop over the three planes
+		for i in range(self.script.params.es_N_x + 1):
+			for j in range(self.script.params.es_N_y + 1):
+				
+				# Get a pair of vertices
+				verts = [[i * step_x, j * step_y, 0.0], [i * step_x, j * step_y, self.box_z]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+
+		for i in range(self.script.params.es_N_y + 1):
+			for j in range(self.script.params.es_N_z + 1):
+				
+				# Get a pair of vertices
+				verts = [[0.0, i * step_y, j * step_z], [self.box_x, i * step_y, j * step_z]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+
+		for i in range(self.script.params.es_N_z + 1):
+			for j in range(self.script.params.es_N_x + 1):
+				
+				# Get a pair of vertices
+				verts = [[j * step_x, 0.0, i * step_z], [j * step_x, self.box_y, i * step_z]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+
+	#verts = [[0.0,0.0,0.0], [self.box_x,0.0,0.0], [self.box_x,0.0,self.box_z], [0.0,0.0,self.box_z], [0.0,self.box_y,0.0], [self.box_x,self.box_y,0.0], [self.box_x,self.box_y,self.box_z], [0.0,self.box_y,self.box_z]]
 	
-	for i in range(4):
-		obj.extend([VERTEX, verts[i][0], verts[i][1], verts[i][2]])
-		obj.extend([VERTEX, verts[(i + 1) % 4][0], verts[(i + 1) % 4][1], verts[(i + 1) % 4][2]])
+	#for i in range(4):
+	#	obj.extend([VERTEX, verts[i][0], verts[i][1], verts[i][2]])
+	#	obj.extend([VERTEX, verts[(i + 1) % 4][0], verts[(i + 1) % 4][1], verts[(i + 1) % 4][2]])
+#
+#		obj.extend([VERTEX, verts[i][0], verts[i][1], verts[i][2]])
+#		obj.extend([VERTEX, verts[i + 4][0], verts[i + 4][1], verts[i + 4][2]])
+#
+#		obj.extend([VERTEX, verts[i + 4][0], verts[i + 4][1], verts[i + 4][2]])
+#		obj.extend([VERTEX, verts[(i + 1) % 4 + 4][0], verts[(i + 1) % 4 + 4][1], verts[(i + 1) % 4 + 4][2]])
 
-		obj.extend([VERTEX, verts[i][0], verts[i][1], verts[i][2]])
-		obj.extend([VERTEX, verts[i + 4][0], verts[i + 4][1], verts[i + 4][2]])
-
-		obj.extend([VERTEX, verts[i + 4][0], verts[i + 4][1], verts[i + 4][2]])
-		obj.extend([VERTEX, verts[(i + 1) % 4 + 4][0], verts[(i + 1) % 4 + 4][1], verts[(i + 1) % 4 + 4][2]])
+				
+					
 
 	obj.append(END)
 	cmd.load_cgo(obj, "Simulation Box", f)
