@@ -10,7 +10,7 @@ class FFEA_trajectory:
 		self.reset()
 
 		# Return empty object if fname not initialised
-		if fname == "":
+		if fname == "" or fname == None:
 			return
 
 		if self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read) == 1:
@@ -24,6 +24,7 @@ class FFEA_trajectory:
 		# Test file exists
 		if not path.exists(fname):
 			print("\tFile '" + fname + "' not found. Returning empty object...")
+			self.reset()
 			return 1
 	
 		# Clear everything for beginning
@@ -41,7 +42,7 @@ class FFEA_trajectory:
 			while(True):
 				all_frames += 1
 				if all_frames % frame_rate != 0:
-					if self.skip_frame() == -1:
+					if self.skip_frame() == 1:
 						break
 				
 				elif(self.load_frame(surf=surf) != 0):
@@ -157,27 +158,41 @@ class FFEA_trajectory:
 				print("Unable to read conformation index for blob " + str(bindex) + " at frame " + str(self.num_frames))
 				return 1
 				
-			# Get a frame first (STATIC should just continue, single frame can be added prior or after)
-			if self.traj.readline().strip() == "DYNAMIC":
-				b[cindex].motion_state = "DYNAMIC"
-				frame = FFEA_frame.FFEA_frame()
-			else:
-				b[cindex].motion_state = "STATIC"
-				continue
+			# Get a motion_state
+			b[cindex].motion_state = self.traj.readline().strip()
+			#if self.traj.readline().strip() == "DYNAMIC":
+		#		b[cindex].motion_state = "DYNAMIC"
+		#		frame = FFEA_frame.FFEA_frame()
+		#	else:
+		#		b[cindex].motion_state = "STATIC"
+		#		frame = b[cindex].frame[0]
+		#		continue
 
-			# Read stuff
-			success = frame.load_from_traj(self.traj)
-			
-			# We are at eof, or halfway through a frame being written
-			if success == 1:
-				eof = True
-				break
+			# Do different things depending on motion state recieved
+			if b[cindex].motion_state == "STATIC":
 				
-			frame.set_step(step)
+				# Nothing to read; frame cannot be read from trajectory
+				frame = None
 
-			# Load normals if necessary
-			#if surf != None:
-			#	frame.calc_normals(surf[bindex][cindex])
+			else:
+
+				# Get a frame
+				frame = FFEA_frame.FFEA_frame()
+
+				# Try to read stuff
+				success = frame.load_from_traj(self.traj)
+			
+				# We are at eof, or halfway through a frame being written
+				if success == 1:
+					eof = True
+					break
+				
+				frame.set_step(step)
+
+				# Load normals if necessary
+				#if surf != None:
+				#	frame.calc_normals(surf[bindex][cindex])
+
 
 			# Append frame
 			b[cindex].frame.append(frame)
@@ -199,8 +214,16 @@ class FFEA_trajectory:
 			return 0
 		else:
 			self.traj.seek(self.fpos)
-			return 1
-			
+
+	def scale(self, factor, frame_index):
+
+		for b in range(self.num_blobs):
+			for c in range(self.num_conformations[b]):
+				try:
+					self.blob[b][c].frame[frame_index].scale(factor)
+				except:
+					continue	
+
 	def skip_frame(self):
 
 		num_asterisks = 0
@@ -212,13 +235,22 @@ class FFEA_trajectory:
 					if num_asterisks == 2:
 						break
 			except:
-				return -1
+				return 1
 
+		return 0
+
+	def delete_frame(self, index=-1):
+		
+		for i in range(self.num_blobs):
+			for j in range(self.num_conformations[i]):
+				del self.blob[i][j].frame[index]
+				
+		self.num_frames -= 1
+				
 	def build_from_pdb(self, pdb, scale = 1):
 
 		# Single blob single conf
 		self.set_header(1, [1], [[pdb.blob[0].num_atoms]])
-		print scale
 		for i in range(pdb.num_frames):
 			frame = FFEA_frame.FFEA_frame()
 			frame.pos = pdb.blob[0].frame[i].pos * scale
@@ -405,4 +437,4 @@ def get_num_frames(fname):
 			num_asterisks += 1
 	
 	return (num_asterisks - 1) / 2
-		
+
