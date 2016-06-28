@@ -19,8 +19,6 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
  * [Doc] - visualisation and other tools
          - finish the tutorial
 
- * [CMake] - zip the PyMOL plugin.
-
  * [Tests] - add a number of tests, to ensure that changes have not 
            broken anything.
 
