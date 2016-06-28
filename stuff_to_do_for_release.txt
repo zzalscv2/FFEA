@@ -1,3 +1,32 @@
 Write stuff in here that needs to be done for release. Delete when completed. When empty...have crazy party!
 
- - Make pymol_plugin able to deal with default parameters in same way as the core code
+ * [PyMOL] Make the plugin able to deal with default parameters 
+           in same way as the core code
+
+ * [PyMOL] add a text box in the plugin to assign a name to the system 
+           that will be loaded, instead of the "blob" name that is 
+           currently hardcoded.
+
+ * Energy recording - we need to record the energy of the system, and
+           split it into the different components, Steric, LJ, Springs,
+           PreComputed potentials, kinetic ...
+
+ * Center of mass movement removal - check the Flying_ice_cube effect.
+                  rotation too?
+
+ * [PreComp] deal with multiple conformations
+
+ * [Doc] - visualisation and other tools
+         - finish the tutorial
+
+ * [CMake] - zip the PyMOL plugin.
+
+ * [Tests] - add a number of tests, to ensure that changes have not 
+           broken anything.
+
+ * [OMP] - ensure that the RNG seeds are correct.
+
+ * [Tools] - print out ".nodes" coordinate files for a given snapshot.
+
+ * [Compiler] - fix warnings for most of the compilers.
+
