@@ -1,0 +1,3 @@
+Write stuff in here that needs to be done for release. Delete when completed. When empty...have crazy party!
+
+ - Make pymol_plugin able to deal with default parameters in same way as the core code
