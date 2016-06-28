@@ -1,5 +1,7 @@
 #include "World.h"
+#ifdef USE_MPI
 #include "mpi.h"
+#endif
 
 World::World() {
 
@@ -100,9 +102,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	string buf_string;
 	FFEA_input_reader *ffeareader;
 	ffeareader = new FFEA_input_reader();
+#ifdef USE_MPI
   double st,et;
   
   st=MPI::Wtime();
+#endif
   
 	// Open script
 	ifstream fin;
@@ -596,8 +600,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
     // Log file the params
     params.write_to_file(userInfo::log_out);
 
+#ifdef USE_MPI
     et = MPI::Wtime() -st;
     cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
+#endif
     return FFEA_OK;
 }
 
@@ -1159,9 +1165,11 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
-    double st, st1, st2, time1, time2, time3;
     long long timestep = 1;
+#ifdef USE_MPI
+    double st, st1, st2, time1, time2, time3;
     st =MPI::Wtime();
+#endif 
     for (long long step = step_initial; step < params.num_steps; step++) {
 
         // Zero the force across all blobs
@@ -1276,11 +1284,15 @@ int World::run() {
                 es_count++;
         }
         // timing solve() function
+#ifdef USE_MPI
           st1 = MPI::Wtime();
+#endif
 
         if (params.calc_vdw == 1) vdw_solver->solve();
 
+#ifdef USE_MPI
         time2 = MPI::Wtime() -st1 + time2;
+#endif
         
         // Update all Blobs in the World
 
@@ -1301,7 +1313,9 @@ int World::run() {
         int fatal_errors = 0;
         
         // timing update() function
+#ifdef USE_MPI
         st2 = MPI::Wtime();
+#endif
 
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
@@ -1316,7 +1330,9 @@ int World::run() {
             	}
         }
         
+#ifdef USE_MPI
         time3 = MPI::Wtime()-st2 + time3;
+#endif
         timestep = timestep + 10;
 
         if (fatal_errors > 0) {
@@ -1369,11 +1385,13 @@ int World::run() {
         }
     }
     // Total mpi timing, compare with openmp timing
+#ifdef USE_MPI
     time1 = MPI::Wtime() -st;
     cout<<"total steps:"<< params.num_steps <<endl;
     cout<< "benchmarking--------calculate vdw for \t"<< time2 << "seconds"<< endl;
     cout<< "benchmarking--------update blobs for \t"<< time3 << "seconds"<< endl;
     cout<< "benchmarking--------Total MPI time in World::run():" << time1 << "seconds"<< endl;
+#endif
     
     printf("Time taken: %2f seconds\n", (omp_get_wtime() - wtime));
 

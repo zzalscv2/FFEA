@@ -11,3 +11,5 @@ install (FILES FFEA_build_analysis_environment.py FFEA_plot_all_measurements.py
         DESTINATION "${PYTHONSTUFF}/FFEA_analysis")
 
 install(DIRECTORY pymol_plugin/ DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
+
+install (FILES FFEA_python_modules/FFEA_trajectory.py FFEA_python_modules/FFEA_measurement.py FFEA_python_modules/FFEA_frame.py DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
