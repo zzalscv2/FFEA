@@ -157,8 +157,8 @@ class FFEA_script:
 		for param in param_lines:
 			try:
 				line = param.strip().replace("<", "").replace(">", "")
-				lvalue = line.split("=")[0].rstrip()
-				rvalue = line.split("=")[1].lstrip()
+				lvalue = line.split("=")[0].strip()
+				rvalue = line.split("=")[1].strip()
 				
 			except:
 				#print "Error. Could not parse param '" + param + "'"
@@ -199,8 +199,8 @@ class FFEA_script:
 
 				try:
 					line = param.strip().replace("<", "").replace(">", "")
-					lvalue = line.split("=")[0].rstrip()
-					rvalue = line.split("=")[1].lstrip()
+					lvalue = line.split("=")[0].strip()
+					rvalue = line.split("=")[1].strip()
 				except:
 					print "Error. Could not parse param '" + param + "'"
 					return
@@ -247,8 +247,8 @@ class FFEA_script:
 			for line in conformation_lines:
 				try:
 					line = line.strip().replace("<", "").replace(">", "")
-					lvalue = line.split("=")[0].rstrip()
-					rvalue = line.split("=")[1].lstrip()
+					lvalue = line.split("=")[0].strip()
+					rvalue = line.split("=")[1].strip()
 				except:
 					print "Error. Could not parse conformation tag '" + line + "'"
 					return None
@@ -290,8 +290,8 @@ class FFEA_script:
 		for line in kinetic_lines:
 			try:
 				line = line.strip().replace("<", "").replace(">", "")
-				lvalue = line.split("=")[0].rstrip()
-				rvalue = line.split("=")[1].lstrip()
+				lvalue = line.split("=")[0].strip()
+				rvalue = line.split("=")[1].strip()
 			except(IndexError):
 				continue
 			except:
@@ -318,8 +318,8 @@ class FFEA_script:
 			
 			try:
 				line = line.strip().replace("<", "").replace(">", "")
-				lvalue = line.split("=")[0].rstrip()
-				rvalue = line.split("=")[1].lstrip()
+				lvalue = line.split("=")[0].strip()
+				rvalue = line.split("=")[1].strip()
 
 			except:
 				print "Error. Could not parse blob tag '" + line + "'"
@@ -338,8 +338,8 @@ class FFEA_script:
 		for line in blob_lines:
 			try:
 				line = line.strip().replace("<", "").replace(">", "")
-				lvalue = line.split("=")[0].rstrip()
-				rvalue = line.split("=")[1].lstrip()
+				lvalue = line.split("=")[0].strip()
+				rvalue = line.split("=")[1].strip()
 			except(IndexError):
 				continue
 			except:
@@ -383,8 +383,8 @@ class FFEA_script:
 
 		try:
 			line = line.strip().replace("<", "").replace(">", "")
-			lvalue = line.split("=")[0].rstrip()
-			rvalue = line.split("=")[1].lstrip()
+			lvalue = line.split("=")[0].strip()
+			rvalue = line.split("=")[1].strip()
 
 		except(IndexError, ValueError):
 			print "Error. Couldn't parse spring tag '" + line + "'"
@@ -450,6 +450,7 @@ class FFEA_script_params():
 		self.stokes_visc = 1e-3
 		self.calc_vdw = 1
 		self.calc_noise = 1
+		self.calc_preComp = 0
 		self.calc_es = 0
 		self.calc_kinetics = 0
 		self.kinetics_update = 0
@@ -516,6 +517,8 @@ class FFEA_script_params():
 			self.stokes_visc = float(rvalue)
 		elif lvalue == "calc_vdw":
 			self.calc_vdw = int(rvalue)
+		elif lvalue == "calc_preComp":
+			self.calc_preComp = int(rvalue)
 		elif lvalue == "vdw_type":
 			self.vdw_type = rvalue
 		elif lvalue == "vdw_steric_factor":
