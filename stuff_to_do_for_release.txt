@@ -3,10 +3,6 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
  * [PyMOL] Make the plugin able to deal with default parameters 
            in same way as the core code
 
- * [PyMOL] add a text box in the plugin to assign a name to the system 
-           that will be loaded, instead of the "blob" name that is 
-           currently hardcoded.
-
  * Energy recording - we need to record the energy of the system, and
            split it into the different components, Steric, LJ, Springs,
            PreComputed potentials, kinetic ...
