@@ -322,7 +322,7 @@ class FFEA_viewer_control_window:
 			if b.index(c) == 0:
 		
 				c.set_nodes_as_frame()
-				print c.frames[0].pos[0]
+
 				x, y, z = c.get_centroid(0)
 				world_centroid[0] += x * c.node.num_nodes
 				world_centroid[1] += y * c.node.num_nodes
@@ -347,9 +347,9 @@ class FFEA_viewer_control_window:
 			# Do we need to calculate the box? Double the rounded up size of the system
 			if p.es_N_x < 1 or p.es_N_y < 1 or p.es_N_z < 1:
 				dims = self.get_system_dimensions(0)
-				p.es_N_x = int(dims[0] * (p.kappa / (p.es_h * self.global_scale)))
-				p.es_N_y = int(dims[1] * (p.kappa / (p.es_h * self.global_scale)))
-				p.es_N_z = int(dims[2] * (p.kappa / (p.es_h * self.global_scale)))
+				p.es_N_x = int(np.ceil(dims[0] * (p.kappa / (p.es_h * self.global_scale))))
+				p.es_N_y = int(np.ceil(dims[1] * (p.kappa / (p.es_h * self.global_scale))))
+				p.es_N_z = int(np.ceil(dims[2] * (p.kappa / (p.es_h * self.global_scale))))
 
 			self.box = True
 			self.box_x = 2 * (1.0 / p.kappa) * p.es_h * p.es_N_x
@@ -376,7 +376,6 @@ class FFEA_viewer_control_window:
 	shift[1] = self.box_y / 2.0 - world_centroid[1]
 	shift[2] = self.box_z / 2.0 - world_centroid[2]
 
-    
 	# Shift all blobs if necessary
 	for b in self.blob_list:
 		if p.calc_vdw == 1 and p.move_into_box == 1:
@@ -444,7 +443,6 @@ class FFEA_viewer_control_window:
 			# Delete frames from memory
 			traj.delete_frame()
 			self.remove_frame_from_blobs()
-
 		else:
 			break
 	return
@@ -616,6 +614,22 @@ class FFEA_viewer_control_window:
 	self.projection = "perspective"
 
 
+  def get_system_centroid(self, frameIndex = -1):
+
+	cent = np.array([0.0,0.0,0.0])
+	total_num_nodes = 0
+	for b in self.blob_list:
+		for c in b:
+			if b.index(c) == 0:
+
+				x, y, z = c.get_centroid(frameIndex)
+				cent[0] += x * c.node.num_nodes
+				cent[1] += y * c.node.num_nodes
+				cent[2] += z * c.node.num_nodes
+				total_num_nodes += c.node.num_nodes
+	cent *= 1.0 / total_num_nodes
+	return cent
+
   def draw_frame(self, index):
 
 	# Blobs should only ever have at most 2 frames on them, the initial one and the currently loaded one. So...
@@ -630,25 +644,11 @@ class FFEA_viewer_control_window:
 	if self.display_flags['show_box'] != 0 and self.box == True:
 		self.draw_box(frame_real_index)
 
+	print self.get_system_centroid()
+
 	for i in range(self.script.params.num_blobs):
 		for j in range(self.script.params.num_conformations[i]):
 			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags)
-  	
-  def draw_stuff(self):
-
-    # World first
-    if self.display_flags['show_box'] == 1:
-	self.draw_box()
-
-    for f in range(self.num_frames):
-      for i in range(self.script.params.num_blobs):
-          for j in range(self.script.params.num_conformations[i]):
-              self.blob_list[i][j].draw_frame(f, self.display_flags) ## PLUGIN OUT
-
-
-
-      if self.springs != None and self.display_flags['show_springs'] == 1:
-         self.draw_springs()
 
   def draw_box(self, f):
 	
@@ -740,7 +740,7 @@ class FFEA_viewer_control_window:
 					
 
 	obj.append(END)
-	cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box", f)
+	cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box", f + 1)
 
   def draw_springs(self):
 
