@@ -51,7 +51,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("700x200")
+     self.root.geometry("750x200")
 
      self.root.title("FFEA")
 
@@ -82,8 +82,9 @@ class FFEA_viewer_control_window:
 
      self.do_load_trajectory = IntVar()
 
-
      self.init_vars()
+     self.system_name = StringVar(self.root, value=self.display_flags['system_name'])
+
  
      # # Display flags frame
      display_flags_frame = Frame(self.root, relief=SUNKEN, bd=1)
@@ -169,6 +170,13 @@ class FFEA_viewer_control_window:
      check_button_do_load_trajectory.grid(row=6, column=0)
      check_button_do_load_trajectory.select() # that has to match with the default value 1! 
 
+     # propose a system name:
+     label_system_name = Label(display_flags_frame, text="system name:")
+     label_system_name.grid(row=6, column=1, sticky=E)
+     text_button_system_name = Entry(display_flags_frame, text="load as:", textvariable=self.system_name, validate="focus", validatecommand=lambda:self.update_display_flags("system_name", val=-2, text=self.system_name.get()))
+     text_button_system_name.grid(row=6, column=2)
+     
+
      # flags
      self.animate = False
      self.display_window_exists = False
@@ -185,19 +193,20 @@ class FFEA_viewer_control_window:
     
  #################################################
   # # # # Update display_flags from buttons # # # 
+  # # use val = -2 for strings (Entries)
+  # #     val = -1 for binary choices (Checkboxes)
+  # #     val > 0, integer, for Radiobuttons 
  #################################################
-  def update_display_flags(self, key, val=-1):
+  def update_display_flags(self, key, val=-1, text=""):
 
      # If unset (i.e. checkbutton)
-     if val == -1:
+     if val == -2:
+	self.display_flags[key] = text
+	return True
+     elif val == -1:
 	self.display_flags[key] = (self.display_flags[key] + 1) % 2
      else:
 	self.display_flags[key] = val
-
-     # WARNINGs:
-     #NOT_IMPLEMENTED = ["show_element_numbers", "show_face_numbers"]
-     #if NOT_IMPLEMENTED.count(key):
-     #  print key, " functionality is still under development."
 
 
 
@@ -212,12 +221,16 @@ class FFEA_viewer_control_window:
      options['initialdir'] = os.getcwd()
      options['title'] = 'Load ffea file'
 
+     # CHECK 
+     print "system_name: ", self.display_flags['system_name']
+ 
      # Ask user to select a file
      ffea_fname = tkFileDialog.askopenfilename(**options)
      if len(ffea_fname) == 0:
              return
 
      # load the file
+     self.root.destroy()
      self.load_ffea(ffea_fname)
 
 
@@ -570,7 +583,8 @@ class FFEA_viewer_control_window:
 		'show_springs': 1,
 		'show_box': 1,
 		'load_trajectory': 1, ## PYMOL OK
-		'show_inverted': 0,}
+		'show_inverted': 0,
+      'system_name': "kappa"}
 
 	self.buttons = {'show_mesh' : self.show_mesh,
 		'show_solid' : self.show_solid,}
