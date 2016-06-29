@@ -604,8 +604,8 @@ class Blob:
 		if self.frames[i] == None:
 			return None, None, None
 
-		if i < 0:
-			i = 0
+		#if i < 0:
+		#	i = 0
 
 		elif i >= self.num_frames:
 			i = self.num_frames - 1
@@ -642,7 +642,7 @@ class Blob:
 		pinsphere = []
 
 		print "loading frame ", frameLabel, " for blob ", self.idnum
-
+		frameLabel += 1
 		#
 		#  Solid    (always doable)
 		#

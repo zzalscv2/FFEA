@@ -241,7 +241,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
 	        box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
-		
+
 		shift.x = box_dim.x / 2.0 - world_centroid.x;
 		shift.y = box_dim.y / 2.0 - world_centroid.y;
 		shift.z = box_dim.z / 2.0 - world_centroid.z;
@@ -253,6 +253,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			}
 		}
 	}
+
 	// Create measurement files
 	measurement_out = new FILE *[params.num_blobs + 1];
 
@@ -472,37 +473,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		}
 
 	}
-	 /*   // Initialise the Van der Waals solver
-	    if(params.calc_vdw == 1 || params.calc_es == 1) {
-		vector3 world_centroid, shift;
-	        get_system_centroid(&world_centroid);
-		if(params.es_N_x < 1 || params.es_N_y < 1 || params.es_N_z < 1) {
-			vector3 dimension_vector;
-			get_system_dimensions(&dimension_vector);
-			
-			// Calculate decent box size
-			params.es_N_x = 2 * (int)ceil(dimension_vector.x * (params.kappa / params.es_h));
-			params.es_N_y = 2 * (int)ceil(dimension_vector.y * (params.kappa / params.es_h));
-			params.es_N_z = 2 * (int)ceil(dimension_vector.z * (params.kappa / params.es_h));
-		}
-
-		// Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
-		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
-	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
-	        box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
-		
-		shift.x = box_dim.x / 2.0 - world_centroid.x;
-		shift.y = box_dim.y / 2.0 - world_centroid.y;
-		shift.z = box_dim.z / 2.0 - world_centroid.z;
-		if(params.move_into_box == 1 && params.restart == 0) {
-			for (i = 0; i < params.num_blobs; i++) {
-				//active_blob_array[i]->get_centroid(&world_centroid);
-				active_blob_array[i]->move(shift.x, shift.y, shift.z);
-				active_blob_array[i]->calc_all_centroids();
-			}
-		}
-	    }*/
-	// vector3 world_centroid;
 
 	    box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
@@ -2933,6 +2903,11 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     vector3 system_CoM;
     get_system_CoM(&system_CoM);
+
+    vector3 system_centroid;
+    get_system_centroid(&system_centroid);
+    cout << system_centroid.x*mesoDimensions::length*1e10 << " " << system_centroid.y*mesoDimensions::length*1e10 << " " << system_centroid.z*mesoDimensions::length*1e10 << endl;
+    //exit(0);
 
     // Write traj and meas data
     if (measurement_out[params.num_blobs] != NULL) {
