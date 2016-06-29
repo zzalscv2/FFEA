@@ -203,6 +203,26 @@ set(PYTHONSTUFF "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYT
 # EVEN WORSE: make_structure_map2 in FFEA_initialise/FFEA_node_tools
 add_subdirectory("${PROJECT_SOURCE_DIR}/FFEA_tools")
 
+
+# 3 - Compress the PyMOL plugin
+set ( FFEA_TAR_BALL "${PROJECT_BINARY_DIR}/ffea.tar.gz")
+set ( COMPRESSING TRUE ) 
+# compress the folder.
+if (CMAKE_VERSION VERSION_LESS "3.2")
+  if (NOT UNIX) 
+     set ( COMPRESSING FALSE)
+     install(DIRECTORY ${PROJECT_BINARY_DIR}/pymol_plugin/ DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
+     message(WARNING "the sources of the PyMOL plugin were installed in ${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea; you will need to zip the folder yourself before giving it to PyMOL")
+  endif(NOT UNIX)
+endif (CMAKE_VERSION VERSION_LESS "3.2")
+if ( COMPRESSING ) 
+  message(STATUS "Hurraaaa!") 
+  add_custom_target(create_tar ALL COMMAND
+                  ${CMAKE_COMMAND} -E tar "cfz" ${FFEA_TAR_BALL} "${PROJECT_BINARY_DIR}/ffea")
+  install (FILES ${FFEA_TAR_BALL} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol")
+endif ( COMPRESSING )
+
+
 #####################################################
 ###### COPY OVER FILES THAT ARE NOT COMPILED ########
 file(COPY 
