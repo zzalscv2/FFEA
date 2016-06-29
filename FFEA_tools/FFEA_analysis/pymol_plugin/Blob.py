@@ -672,7 +672,8 @@ class Blob:
 				# material drawing
 		
 			sol.append(END)
-			cmd.load_cgo(sol, "Blob_" + str(self.idnum) + "_solid_load_" + str(self.num_loads), frameLabel)
+			# cmd.load_cgo(sol, "Blob_" + str(self.idnum) + "_solid_load_" + str(self.num_loads), frameLabel)
+			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid_load_" + str(self.num_loads), frameLabel)
 
 		#
 		#  Mesh      (doable usually. catch if there's no topology i.e. STATIC blob)
@@ -751,7 +752,7 @@ class Blob:
 		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
 			mes.append(END)
-			cmd.load_cgo(mes, "Blob_" + str(self.idnum) + "_mesh_load_" + str(self.num_loads), frameLabel)
+			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh_load_" + str(self.num_loads), frameLabel)
 
 		#
 		#  Numbers       (again, can't always do elements)
@@ -792,7 +793,7 @@ class Blob:
 				
 				# Only create object if something exists to draw (some of these above routines do nothing
 				if len(numtxt) != 0:
-					cmd.load_cgo(numtxt, "Blob_" + str(self.idnum) + "_numbers_load_" + str(self.num_loads), frameLabel)               
+					cmd.load_cgo(numtxt, display_flags['system_name'] + "_" + str(self.idnum) + "_numbers_load_" + str(self.num_loads), frameLabel)               
 
 
 		#
@@ -808,7 +809,7 @@ class Blob:
 
 			# Only load if there are pinned nodes (dur!)
 			if len(pinsphere) != 0:
-				cmd.load_cgo(pinsphere, "Blob_" + str(self.idnum) + "_pinned_load_" + str(self.num_loads), frameLabel) 
+				cmd.load_cgo(pinsphere, display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_load_" + str(self.num_loads), frameLabel) 
 
 #		if display_flags['vdw_edit_mode'] == 1 and self.idnum == display_flags['selected_index']:
 #			glBegin(GL_TRIANGLES)
