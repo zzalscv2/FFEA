@@ -15,7 +15,7 @@ add_subdirectory("FFEA_analysis")
 add_subdirectory("FFEA_initialise")
 
 # 4 - install the PyMOL plugin:
-file (MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/ffea")
+file (MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/FFEA_tools/ffea")
 set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_analysis/pymol_plugin/__init__.py
                 FFEA_analysis/FFEA_python_modules/FFEA_trajectory.py 
@@ -32,7 +32,23 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_initialise/FFEA_python_modules/FFEA_stokes.py 
                 FFEA_initialise/FFEA_python_modules/FFEA_vdw.py 
                 FFEA_initialise/FFEA_python_modules/FFEA_pdb.py)
-file ( COPY ${PYMOL_FILES} DESTINATION "${PROJECT_BINARY_DIR}/ffea" )
+file ( COPY ${PYMOL_FILES} DESTINATION "${PROJECT_BINARY_DIR}/FFEA_tools/ffea" )
+set ( FFEA_TAR_BALL "${PROJECT_BINARY_DIR}/FFEA_tools/ffea.tar.gz")
+set ( COMPRESSING TRUE )
 
+# compress the folder.
+if (CMAKE_VERSION VERSION_LESS "3.2")
+  if (NOT UNIX)
+     set ( COMPRESSING FALSE)
+     install(DIRECTORY ${PROJECT_BINARY_DIR}/pymol_plugin/ DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
+     message(WARNING "the sources of the PyMOL plugin were installed in ${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea; you will need to zip the folder yourself before giving it to PyMOL")
+  endif(NOT UNIX)
+endif (CMAKE_VERSION VERSION_LESS "3.2")
 
+if ( COMPRESSING )
+  message(STATUS "Hurraaaa!")
+  add_custom_target(create_tar ALL COMMAND
+                  ${CMAKE_COMMAND} -E tar "cfz" ${FFEA_TAR_BALL} "${PROJECT_BINARY_DIR}/FFEA_tools/ffea")
+  install (FILES ${FFEA_TAR_BALL} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol")
+endif ( COMPRESSING )
 
