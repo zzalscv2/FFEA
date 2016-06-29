@@ -740,7 +740,7 @@ class FFEA_viewer_control_window:
 					
 
 	obj.append(END)
-	cmd.load_cgo(obj, "Simulation Box", f)
+	cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box", f)
 
   def draw_springs(self):
 
@@ -787,7 +787,7 @@ class FFEA_viewer_control_window:
             obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
 
          obj.append(END)
-         cmd.load_cgo(obj, "string_" + str(self.springs.spring.index(s)), max(correct_frame))
+         cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), max(correct_frame))
          
 
 
