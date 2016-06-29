@@ -22,14 +22,21 @@ class FFEA_script:
 
 		# Get rid of all of the comments, if there are any
 		fin = self.remove_all_comments(fin)
-		
-		if "<param>\n" not in fin.readlines():
-			print "Error. File " + fname  + " not an FFEA script file."
-			fin.close()
-			return
-
+		lines = fin.readlines()
 		fin.close()
 
+		# Check for params block		
+		if "<param>\n" not in lines:
+			print "Error. File " + fname  + " not an FFEA script file."
+			return
+
+
+		# Write to a temp file, preserving original file with all comments and stuff
+		fname = os.path.splitext(fname)[0] + "__temp__.ffea"
+		fout = open(fname, "w")
+		for line in lines:
+			fout.write(line)
+		fout.close()
 		try:
 			self.params = self.read_params_from_script(fname)
 		except:
@@ -52,6 +59,9 @@ class FFEA_script:
 			print "Error. Failed to load <spring>...</spring> "
 			self.reset()
 			return
+
+		# Remove temp file
+		os.system("rm " + fname)
 
 	# # # # # # # # # # # # # # # # # # # # # #
 	# we will take the comments out of iFile,
@@ -272,6 +282,8 @@ class FFEA_script:
 						conformation.pin = get_path_from_script(rvalue, scriptdir)
 					elif lvalue == "binding_sites":
 						conformation.bsites = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "beads":
+						conformation.beads = get_path_from_script(rvalue, scriptdir)
 					else:
 						print "Unrecognised conformation tag '" + line + "'. Ignoring..."
 						continue
@@ -721,6 +733,7 @@ class FFEA_script_conformation:
 		self.vdw = ""
 		self.pin = ""
 		self.bsites = ""
+		self.beads = ""
 
 	def write_to_file(self, fout, fname, calc_kinetics):
 
@@ -738,6 +751,8 @@ class FFEA_script_conformation:
 		astr += "\t\t\t<vdw = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
 		if(calc_kinetics == 1 and self.bsites != ""):
 			astr += "\t\t\t<binding_sites = %s>\n" % (os.path.relpath(self.bsites, os.path.dirname(os.path.abspath(fname))))
+		if(calc_preComp == 1):
+			astr += "\t\t\t<beads = %s>\n" % (os.path.relpath(self.beads, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t\t</conformation>\n"
 		fout.write(astr)
 
