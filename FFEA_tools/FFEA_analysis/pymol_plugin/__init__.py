@@ -155,7 +155,6 @@ class FFEA_viewer_control_window:
      # Outer simulation box
      check_button_show_box = Radiobutton(display_flags_frame, text="Simulation Box (outline)", variable=self.show_box, value=1, command=lambda:self.update_display_flags("show_box", val=1))
      check_button_show_box.grid(row=5, column=0)
-     check_button_show_box.select() # that has to match with the default value 1!     
 
      # Whole simulation box
      check_button_show_whole_box = Radiobutton(display_flags_frame, text="Simulation Box (whole)", variable=self.show_box, value=2, command=lambda:self.update_display_flags("show_box", val=2))
@@ -164,6 +163,7 @@ class FFEA_viewer_control_window:
      # No simulation box
      check_button_show_box = Radiobutton(display_flags_frame, text="No box", variable=self.show_box, value=0, command=lambda:self.update_display_flags("show_box", val=0))
      check_button_show_box.grid(row=5, column=2)
+     check_button_show_box.select() # that has to match with the default value 1!     
 
      # load the trajectory:
      check_button_do_load_trajectory = Checkbutton(display_flags_frame, text="Load trajectory", variable=self.load_trajectory, command=lambda:self.update_display_flags("load_trajectory"))
@@ -579,7 +579,7 @@ class FFEA_viewer_control_window:
 		'show_pinned': 1,
 		'show_shortest_edge': 0,
 		'show_springs': 1,
-		'show_box': 1,
+		'show_box': 0,
 		'load_trajectory': 1, ## PYMOL OK
 		'show_inverted': 0,
       'system_name': "kappa"}
