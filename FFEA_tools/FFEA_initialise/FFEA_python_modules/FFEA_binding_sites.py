@@ -25,6 +25,7 @@ class FFEA_binding_sites:
 		if ext == ".bsites":
 			try:
 				self.load_bsites(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_binding_sites from " + fname + ". Returning empty object...")
 
@@ -97,6 +98,7 @@ class FFEA_binding_sites:
 
 		self.bsite = []
 		self.num_binding_sites = 0
+		self.valid = False
 
 class FFEA_binding_site:
 
