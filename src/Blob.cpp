@@ -148,9 +148,10 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
     if (params->calc_preComp == 1) {
       if (strcmp(beads_filename, "") == 0) {
-         char buffer [50];
+         /*char buffer [50];
          sprintf(buffer, "No beads file was assigned to Blob %d\n", blob_index);
-         FFEA_CAUTION_MESSG(buffer);
+         FFEA_CAUTION_MESSG(buffer);*/
+			FFEA_CAUTION_MESSG("No beads file was assigned to Blob %d\n", blob_index);
       } else if (load_beads(beads_filename, pc_params, scale) == FFEA_ERROR) {
         	FFEA_ERROR_MESSG("Error when loading beads file.\n")
     	}
@@ -2316,7 +2317,7 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
 
     // Set the stokes radius for each node in the Blob
     scalar stokes_radius = 0.0;
-    int i, check = 0;
+    int crap, i, check = 0;
     for (i = 0; i < num_nodes; i++) {
         if (fscanf(in, "%le\n", &stokes_radius) != 1) {
             fclose(in);
@@ -2329,7 +2330,7 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
             printf("WARNING. Stokes Radius on node %d in this Blob is very small, %e.\nStokes Radius is scaled by same factor as node positions, so specify in same units.\n", i, node[i].stokes_radius);
             printf("Would you like to continue (y or n)?:");
             while (done == 0) {
-                scanf("%s", finish);
+                crap = scanf("%s", finish);
                 if (strcmp(finish, "y") == 0) {
                     done = 1;
                     check = 1;

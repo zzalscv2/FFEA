@@ -13,6 +13,7 @@ int main(int argc, char **argv)
 	}
 
 	FILE *traj = NULL, *outx = NULL;
+	int crap;
 	printf("Opening trajectory file %s for reading\n", argv[1]);
 	if((traj = fopen(argv[1], "r")) == NULL) {
 		printf("Error: Could not open trajectory file %s for reading.\n", argv[1]);
@@ -44,12 +45,13 @@ int main(int argc, char **argv)
 //	int frame = 0;
 
 	// Scan through initial crap
-	fscanf(traj, "%s\n", &line);
+	crap = fscanf(traj, "%s\n", &line);
+	// crap = fscanf(traj, "<%255[^>]>\n",  line);
 	if(strcmp(line, "FFEA_trajectory_file") != 0) {
 		printf("Error. Expected 'FFEA_trajectory_file' but got %s. May not be an FFEA_trajectory_file.\n", line);
 		exit(0);
 	}
-	fscanf(traj, "\nInitialisation:\n");
+	crap = fscanf(traj, "\nInitialisation:\n");
 	if(fscanf(traj, "Number of Blobs %d\n", &num_blobs) != 1) {
 		printf("Error. Expected 'Number of Blobs x'\n");
 		exit(0);
@@ -64,7 +66,7 @@ int main(int argc, char **argv)
 		}
 		
 	}
-	fscanf(traj, "\n\n*\n");
+	crap = fscanf(traj, "\n\n*\n");
 	while(frame < num_frames_to_convert && !feof(traj)) {
 
 		// Progress check
@@ -80,7 +82,7 @@ int main(int argc, char **argv)
 			}
 
 
-			fscanf(traj, "%s\n", motion_state);
+			crap = fscanf(traj, "%s\n", motion_state);
 			if(strcmp(motion_state, "STATIC") == 0) {
 				continue;
 			}
@@ -111,7 +113,7 @@ int main(int argc, char **argv)
 			fprintf(outx, "\n");
 			num_on_line = 0;
 		}
-		fscanf(traj, "*\n");
+		crap = fscanf(traj, "*\n");
 	}
 	fclose(traj);
 	fclose(outx);
