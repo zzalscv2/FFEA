@@ -22,6 +22,7 @@ class FFEA_node:
 		# Test file exists
 		if not path.exists(fname):
 			print("\tFile '" + fname + "' not found.")
+			return
 	
 		# File format?
 		base, ext = path.splitext(fname)
