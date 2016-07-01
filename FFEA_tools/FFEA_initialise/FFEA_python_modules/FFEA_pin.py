@@ -25,12 +25,14 @@ class FFEA_pin:
 		if ext == ".pin":
 			try:
 				self.load_pin(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_pin from " + fname + ". Returning empty object...")
 
 		elif ext == ".bsites":
 			try:
 				self.load_bsites(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_pin from " + fname + ". Returning empty object...")
 
@@ -88,3 +90,4 @@ class FFEA_pin:
 
 		self.index = []
 		self.num_pinned_nodes = 0
+		self.valid = False

@@ -28,18 +28,21 @@ class FFEA_node:
 		if ext == ".node":
 			try:
 				self.load_node(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 
 		elif ext == ".out" or ext == ".traj":
 			try:
 				self.load_traj(fname, findex)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_node from " + fname + ", frame " + str(findex) + ". Returning empty object...")
 
 		elif ext == ".vol":
 			try:
 				self.load_vol(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 
@@ -198,3 +201,4 @@ class FFEA_node:
 		self.num_nodes = 0
 		self.num_surface_nodes = 0
 		self.num_interior_nodes = 0
+		self.valid = False
