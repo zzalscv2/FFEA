@@ -556,7 +556,7 @@ int SimulationParams::validate() {
 
         for (int i = 0; i < num_blobs + 1; ++i) {
             measurement_out_fname[i] = new char[MAX_FNAME_SIZE];
-            sprintf(measurement_out_fname[i], base.c_str());
+            strcpy(measurement_out_fname[i], base.c_str());
 
             if (i < num_blobs) {
                 sprintf(temp, "_blob%d", i);
