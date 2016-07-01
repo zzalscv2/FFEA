@@ -25,6 +25,7 @@ class FFEA_vdw:
 		if ext == ".vdw":
 			try:
 				self.load_vdw(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_vdw from " + fname + ". Returning empty object...")
 
@@ -84,3 +85,4 @@ class FFEA_vdw:
 
 		self.index = []
 		self.num_faces = 0
+		self.valid = False

@@ -26,12 +26,14 @@ class FFEA_topology:
 		if ext == ".top":
 			try:
 				self.load_top(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
 		elif ext == ".vol":
 			try:
 				self.load_vol(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
@@ -123,6 +125,7 @@ class FFEA_topology:
 		self.num_elements = 0
 		self.num_surface_elements = 0
 		self.num_interior_elements = 0
+		self.valid = False
 
 class FFEA_element:
 

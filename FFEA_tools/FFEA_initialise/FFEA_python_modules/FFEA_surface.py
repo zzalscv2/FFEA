@@ -26,12 +26,14 @@ class FFEA_surface:
 		if ext == ".surf":
 			try:
 				self.load_surf(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
 
 		elif ext == ".vol":
 			try:
 				self.load_vol(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
 
@@ -117,6 +119,7 @@ class FFEA_surface:
 
 		self.face = []
 		self.num_faces = 0
+      self.valid = False
 
 class FFEA_face:
 
