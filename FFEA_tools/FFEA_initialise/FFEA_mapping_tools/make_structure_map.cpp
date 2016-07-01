@@ -94,6 +94,7 @@ int extract_nodes_and_topology_from_pdb(string fname, vector3 *&node, string *&t
 	double x, y, z;
 	vector3 centroid;
 	char buf[100];
+   char *forget;
 	FILE *fin;
 	
 	// Get number of nodes first so memory can be block allocated
@@ -104,11 +105,11 @@ int extract_nodes_and_topology_from_pdb(string fname, vector3 *&node, string *&t
 		if(feof(fin)) {
 			break;	
 		} else {
-			fgets(buf,5,fin);
+			forget = fgets(buf,5,fin);
 			if(strcmp(buf, "ATOM") == 0) {
 				num_nodes++;
 			}
-			fgets(buf,96,fin);
+			forget = fgets(buf,96,fin);
 		}
 	}
 
@@ -123,39 +124,39 @@ int extract_nodes_and_topology_from_pdb(string fname, vector3 *&node, string *&t
 		if(feof(fin)) {
 			break;	
 		} else {
-			fgets(buf,5,fin);
+			forget = fgets(buf,5,fin);
 			if(strcmp(buf, "END") == 0) {
 				break;
 			} else if(strcmp(buf, "ATOM") == 0) {
 				i++;
 				
 				// First, empty space
-				fgets(buf, 10, fin);
+				forget = fgets(buf, 10, fin);
 				
 				// Now, atom type
-				fgets(buf, 4, fin);
+				forget = fgets(buf, 4, fin);
 				
 				top[i] = string(buf);
 				
 				// Empty space
-				fgets(buf,15,fin);
+				forget = fgets(buf,15,fin);
 				
 				// Atom pos
-				fgets(buf,9,fin);
+				forget = fgets(buf,9,fin);
 				x = atof(buf);
 
 				centroid.x += x;
-				fgets(buf,9,fin);
+				forget = fgets(buf,9,fin);
 				y = atof(buf);
 				centroid.y += y;
-				fgets(buf,9,fin);
+				forget = fgets(buf,9,fin);
 				z = atof(buf);
 				centroid.z += z;
 
-				fgets(buf,100,fin);
+				forget = fgets(buf,100,fin);
 				node[i].set_pos(x, y, z);
 			} else {
-				fgets(buf,100,fin);
+				forget = fgets(buf,100,fin);
 			}
 		}
 	}

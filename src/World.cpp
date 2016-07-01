@@ -388,14 +388,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			}
 
 			// Get the conformations for the last snapshot (or set them as 0 if we have only 1 frame)
-			int current_conf;
+			int current_conf, crap;
 			if(!singleframe) {
-				fscanf(trajectory_out, "Conformation Changes:\n");
+				crap = fscanf(trajectory_out, "Conformation Changes:\n");
 				for(i = 0; i < params.num_blobs; ++i) {
-					fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %d\n", &current_conf);
+					crap = fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %d\n", &current_conf);
 					active_blob_array[i] = &blob_array[i][current_conf];
 				}
-				fscanf(trajectory_out, "*\n");
+				crap = fscanf(trajectory_out, "*\n");
 				last_asterisk_pos = ftello(trajectory_out);
 			} else {
 				for(i = 0; i < params.num_blobs; ++i) {
@@ -421,11 +421,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			}
 
 			// Final conformation bit
-			fscanf(trajectory_out, "*\nConformation Changes:\n");
+			crap = fscanf(trajectory_out, "*\nConformation Changes:\n");
 			for(i = 0; i < params.num_blobs; ++i) {
-				fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %*d\n");
+				crap = fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %*d\n");
 			}
-			fscanf(trajectory_out, "*\n");
+			crap = fscanf(trajectory_out, "*\n");
 
 			// Set truncation location
 			last_asterisk_pos = ftello(trajectory_out);
@@ -2355,6 +2355,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	
 	int i, j, num_states;
+   char *crap;
 	char buf[255];
 	string buf_string;
 	vector<string> sline;
@@ -2381,7 +2382,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	fin = fopen(rates_fname.c_str(), "r");
 	
 	// Get header stuff and check for errors
-	fgets(buf, 255, fin);
+	crap = fgets(buf, 255, fin);
 	if(strcmp(buf, "ffea kinetic rates file\n") != 0) {
 		FFEA_ERROR_MESSG("\nExpected 'ffea kinetic rates file' as first line. This may not be an FFEA kinetic rates file\n")
 	}
@@ -2392,7 +2393,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	if(num_states != params.num_states[blob_index]) {
 		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", rates_fname.c_str(), num_states, params.num_states[i])
 	}
-	fgets(buf, 255, fin);
+	crap = fgets(buf, 255, fin);
 
 	// Create rates matrix
 	kinetic_rate[blob_index] = new scalar*[num_states];
@@ -2409,7 +2410,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		total_prob = 0.0;
 		
 		// Get a line and split it
-		fgets(buf, 255, fin);
+		crap = fgets(buf, 255, fin);
 		boost::split(sline, buf, boost::is_any_of(" "));
 		if(sline.size() > num_states) {
 			FFEA_ERROR_MESSG("\nState %d contains %zd rate values, instead of 'num_states', %d.\n", i, sline.size(), num_states)
@@ -2561,7 +2562,7 @@ int World::get_num_blobs() {
 
 int World::load_springs(const char *fname) {
 
-    int i;
+    int i, crap;
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
@@ -2593,7 +2594,7 @@ int World::load_springs(const char *fname) {
     spring_array = new Spring[num_springs];
 
     // Read in next line
-    fscanf(in,"springs:\n");
+    crap = fscanf(in,"springs:\n");
     for (i = 0; i < num_springs; ++i) {
        if (fscanf(in, "%lf %lf %d %d %d %d %d %d\n", &spring_array[i].k, &spring_array[i].l, &spring_array[i].blob_index[0], &spring_array[i].blob_index[1], &spring_array[i].conformation_index[0], &spring_array[i].conformation_index[1], &spring_array[i].node_index[0], &spring_array[i].node_index[1]) != 8) {
             FFEA_error_text();

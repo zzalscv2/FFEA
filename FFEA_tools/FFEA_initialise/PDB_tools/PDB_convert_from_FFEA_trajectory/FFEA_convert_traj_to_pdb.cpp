@@ -12,6 +12,8 @@ int main(int argc, char **argv)
 	}
 
 	FILE *traj = NULL, *pdb_out = NULL;
+   int crap; 
+	char *c_crap;
 	printf("Opening trajectory file %s for reading\n", argv[1]);
 	if((traj = fopen(argv[1], "r")) == NULL) {
 		printf("Error: Could not open trajectory file %s for reading.\n", argv[1]);
@@ -39,12 +41,12 @@ int main(int argc, char **argv)
 	char motion_state[7];
 
 	// Scan through initial crap
-	fscanf(traj, "%s\n", line);
+	crap = fscanf(traj, "%s\n", line);
 	if(strcmp(line, "FFEA_trajectory_file") != 0) {
 		printf("Error. Expected 'FFEA_trajectory_file' but got %s. May not be an FFEA_trajectory_file.\n", line);
 		exit(0);
 	}
-	fscanf(traj, "\nInitialisation:\n");
+	crap = fscanf(traj, "\nInitialisation:\n");
 	if(fscanf(traj, "Number of Blobs %d\n", &num_blobs) != 1) {
 		printf("Error. Expected 'Number of Blobs x'\n");
 		exit(0);
@@ -54,13 +56,13 @@ int main(int argc, char **argv)
 	num_conformations = new int[num_blobs];
 	num_nodes = new int*[num_blobs];
 	char buf[100];
-	fgets(buf, 25, traj);
+	c_crap = fgets(buf, 25, traj);
 	for(i = 0; i < num_blobs; ++i) {
-		fgets(buf, 2, traj);
+		c_crap = fgets(buf, 2, traj);
 		num_conformations[i] = atoi(buf);
 		num_nodes[i] = new int[num_conformations[i]];
 	}
-	fgets(buf,100, traj);
+	c_crap = fgets(buf,100, traj);
 	for(i = 0; i < num_blobs; ++i) {
 		if(fscanf(traj, "Blob %*d: Conformation %*d Nodes %d\n", &num_nodes[i][0]) != 1) {
 			printf("Error. Expected 'Blob %%*d: Conformation %%*d Nodes %d\n", i);
@@ -68,7 +70,7 @@ int main(int argc, char **argv)
 		}
 		
 	}
-	fscanf(traj, "\n\n*\n");
+	crap = fscanf(traj, "\n\n*\n");
 	while(frame < num_frames_to_convert && !feof(traj)) {
 
 		// Progress check
@@ -80,7 +82,7 @@ int main(int argc, char **argv)
 		start = 0;
 		fprintf(pdb_out, "MODEL     %4d\n", frame - 1);
 		for(i = 0; i < num_blobs; ++i) {
-			fgets(buf,255,traj);
+			c_crap = fgets(buf,255,traj);
 			cout << buf << endl;
 			exit(0);
 			if(fscanf(traj, "Blob %*d, Conformation %*d, step %lld", &step) != 1) {
@@ -89,8 +91,8 @@ int main(int argc, char **argv)
 			}
 
 			// Rest of line
-			fgets(buf, 255, traj);
-			fscanf(traj, "%s\n", motion_state);
+			c_crap = fgets(buf, 255, traj);
+			crap = fscanf(traj, "%s\n", motion_state);
 			if(strcmp(motion_state, "STATIC") == 0) {
 				continue;
 			}
@@ -115,7 +117,7 @@ int main(int argc, char **argv)
 			}
 			start += num_nodes[i][0];
 		}
-		fscanf(traj, "*\nConformation Changes:\nBlob %*d: Conformation %*d -> Conformation %*d\n*\n");
+		crap = fscanf(traj, "*\nConformation Changes:\nBlob %*d: Conformation %*d -> Conformation %*d\n*\n");
 		fprintf(pdb_out, "TER\n");
 		fprintf(pdb_out, "ENDMDL\n");
 	}
