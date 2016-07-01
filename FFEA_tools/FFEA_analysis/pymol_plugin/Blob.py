@@ -67,19 +67,27 @@ class Blob:
 		
 		# All will be present
 		self.node = FFEA_node.FFEA_node(c.nodes)
+		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')
 		self.surf = FFEA_surface.FFEA_surface(c.surface)
+		if (not self.surf.valid): raise IOError('Something went wrong initialising surface')
 		self.vdw = FFEA_vdw.FFEA_vdw(c.vdw)
+		if (not self.vdw.valid): raise IOError('Something went wrong initialising vdw')
 		
 		# only necessary for dynamic blobs
 		if self.motion_state == "DYNAMIC":
 			self.top = FFEA_topology.FFEA_topology(c.topology)
+			if (not self.top.valid): raise IOError('Something went wrong initialising topology')
 			self.mat = FFEA_material.FFEA_material(c.material)
+			if (not self.mat.valid): raise IOError('Something went wrong initialising material')
 			self.stokes = FFEA_stokes.FFEA_stokes(c.stokes)
+			if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
 			self.pin = FFEA_pin.FFEA_pin(c.pin)
+			if (not self.pin.valid): raise IOError('Something went wrong initialising pinned nodes')
 		
 		# Only necessary if kinetics are active
 		if script.params.calc_kinetics == 1 and c.bsites != "":
 			self.bsites = FFEA_binding_sites.FFEA_binding_sites(c.bsites)
+			if (not self.bsites.valid): raise IOError('Something went wrong initialising binding sites')
 		
 		#
 		# Calculating linear nodes only

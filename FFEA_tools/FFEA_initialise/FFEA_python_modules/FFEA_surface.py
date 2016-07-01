@@ -20,6 +20,7 @@ class FFEA_surface:
 		# Test file exists
 		if not path.exists(fname):
 			print("\tFile '" + fname + "' not found.")
+			return
 	
 		# File format?
 		base, ext = path.splitext(fname)
@@ -119,7 +120,7 @@ class FFEA_surface:
 
 		self.face = []
 		self.num_faces = 0
-      self.valid = False
+		self.valid = False
 
 class FFEA_face:
 
