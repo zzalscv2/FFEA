@@ -761,7 +761,7 @@ class Blob:
 		if display_flags['show_numbers'] != 0:
 
 			# Only first frame
-			if frameLabel == 0:
+			if frameLabel == 1:
 					
 				axes = np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
 				scale = 10.0		# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
