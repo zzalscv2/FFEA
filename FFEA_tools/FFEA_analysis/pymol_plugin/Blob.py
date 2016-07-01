@@ -763,8 +763,9 @@ class Blob:
 			# Only first frame
 			if frameLabel == 1:
 					
-				axes = np.array([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
-				scale = 10.0		# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
+				axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
+				scale = 0.1	 # * self.scale * self.global_scale	# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
+                         # No, the clever function should be a function of the shortest edge.
 	
 				if display_flags['show_numbers'] == 1:
 					for n in range(self.node.num_nodes):
