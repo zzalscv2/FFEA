@@ -51,7 +51,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("750x200")
+     self.root.geometry("530x200")
 
      self.root.title("FFEA")
 
@@ -66,116 +66,92 @@ class FFEA_viewer_control_window:
      self.root.config(menu=menubar)
 
      # PLUGIN (separated into mutually exclusive sets. Devs take note!)
-     self.show_solid = IntVar()
 
-     self.show_mesh = IntVar()
 
-     self.show_numbers = IntVar()
-
-     self.show_pinned = IntVar()
-
-     self.show_shortest_edge = IntVar()
-
-     self.show_box = IntVar()
-
-     self.show_springs = IntVar()
-
-     self.do_load_trajectory = IntVar()
 
      self.init_vars()
      self.system_name = StringVar(self.root, value=self.display_flags['system_name'])
+     self.do_load_trajectory = IntVar(self.root, value=self.display_flags['load_trajectory'])
+     self.show_box = IntVar(self.root, value=self.display_flags['show_box'])
+     self.show_numbers = IntVar(self.root, value=self.display_flags['show_numbers'])
+     self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
+     self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
+     self.show_solid = IntVar(self.root, value=self.display_flags['show_solid'])
+     self.show_mesh = IntVar(self.root, value=self.display_flags['show_mesh'])
+     self.show_shortest_edge = IntVar(self.root, value=self.display_flags['show_shortest_edge'])
+
 
  
      # # Display flags frame
      display_flags_frame = Frame(self.root, relief=SUNKEN, bd=1)
      display_flags_frame.pack(anchor=CENTER, expand=True)
 
-     #
-     # set val for radiobuttons
-     #
 
-
-     # show solid:
-     check_button_show_solid = Radiobutton(display_flags_frame, text="Plain Solid", variable=self.show_solid, value=1, command=lambda:self.update_display_flags("show_solid", val=1))
-     check_button_show_solid.grid(row=0, column=0)
-     check_button_show_solid.select() # that has to match with the default value 1! 
-
-     # show material: 
-     check_button_show_material = Radiobutton(display_flags_frame, text="Material", variable=self.show_solid, value=2, command=lambda:self.update_display_flags("show_solid", val=2))
-     check_button_show_material.grid(row=0, column=1)
-
-     # show no solid:
-     check_button_show_no_solid = Radiobutton(display_flags_frame, text="No Solid", variable=self.show_solid, value=0, command=lambda:self.update_display_flags("show_solid", val=0))
-     check_button_show_no_solid.grid(row=0, column=2)
-
-     # show surface mesh:
-     check_button_show_mesh_surf = Radiobutton(display_flags_frame, text="Surface Mesh", variable=self.show_mesh, value=2, command=lambda:self.update_display_flags("show_mesh", val=2))
-     check_button_show_mesh_surf.grid(row=1, column=0)
-
-     # show whole mesh:
-     check_button_show_mesh = Radiobutton(display_flags_frame, text="Whole Mesh", variable=self.show_mesh, value=1, command=lambda:self.update_display_flags("show_mesh", val=1))
-     check_button_show_mesh.grid(row=1, column=1)
-
-     # show no mesh:
-     check_button_show_no_mesh = Radiobutton(display_flags_frame, text="No Mesh", variable=self.show_mesh, value=0, command=lambda:self.update_display_flags("show_mesh", val=0))
-     check_button_show_no_mesh.grid(row=1, column=2)
-     check_button_show_no_mesh.select()
-
-     # show node numbers: 
-     check_button_show_node_numbers = Radiobutton(display_flags_frame, text="Node Indices", variable=self.show_numbers, value=1, command=lambda:self.update_display_flags("show_numbers", val=1))
-     check_button_show_node_numbers.grid(row=2, column=0)
-
-     # show linear node numbers: 
-     check_button_show_node_linnumbers = Radiobutton(display_flags_frame, text="Node Indices (Linear)", variable=self.show_numbers, value=2, command=lambda:self.update_display_flags("show_numbers", val=2))
-     check_button_show_node_linnumbers.grid(row=2, column=1)
-
-     # show element numbers: 
-     check_button_show_element_numbers = Radiobutton(display_flags_frame, text="Element Indices", variable=self.show_numbers, value=3, command=lambda:self.update_display_flags("show_numbers", val=3))
-     check_button_show_element_numbers.grid(row=2, column=2)
+     # propose a system name:
+     label_system_name = Label(display_flags_frame, text="System name:")
+     label_system_name.grid(row=0, column=0, sticky=E)
+     text_button_system_name = Entry(display_flags_frame, text="load as:", textvariable=self.system_name, validate="focus", validatecommand=lambda:self.update_display_flags("system_name", val=-2, text=self.system_name.get()))
+     text_button_system_name.grid(row=0, column=1, sticky=W)
      
-     # show face numbers: 
-     check_button_show_face_numbers = Radiobutton(display_flags_frame, text="Face Indices", variable=self.show_numbers, value=4, command=lambda:self.update_display_flags("show_numbers", val=4))
-     check_button_show_face_numbers.grid(row=2, column=3)
-
-     # show no numbers: 
-     check_button_show_no_numbers = Radiobutton(display_flags_frame, text="No Indices", variable=self.show_numbers, value=0, command=lambda:self.update_display_flags("show_numbers", val=0))
-     check_button_show_no_numbers.grid(row=2, column=4)
-     check_button_show_no_numbers.select() # that has to match with the default value 1!
 
      # show springs: 
      check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
-     check_button_show_springs.grid(row=3, column=0)
-     check_button_show_springs.select()
+     check_button_show_springs.grid(row=1, column=0)
+
 
      # show pinned_nodes: 
      check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
-     check_button_show_pinned.grid(row=4, column=0)
-     check_button_show_pinned.select() # that has to match with the default value 1!
+     check_button_show_pinned.grid(row=1, column=1)
+ 
+
+     # # show solid:
+     SolidModes = [(0, "Plain Solid", 1),\
+                   (1, "Material", 2),\
+                   (2, "No Solid", 0)] 
+     for col, text, mode in SolidModes:
+        check_button_show_solid = Radiobutton(display_flags_frame, text=text, variable=self.show_solid, value=mode, command=lambda:self.update_display_flags("show_solid", val=self.show_solid.get()))
+        check_button_show_solid.grid(row=2, column=col)
+
+     # # show mesh:
+     MeshModes = [(0, "Surface Mesh", 2),\
+                  (1, "Whole Mesh", 1),\
+                  (2, "No Mesh", 0)]
+     for col, text, mode in MeshModes:
+        check_button_show_mesh = Radiobutton(display_flags_frame, text=text, variable=self.show_mesh, value=mode, command=lambda:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
+        check_button_show_mesh.grid(row=3, column=col)
+
+
+     # # show Numbers:
+     IndexModes = [(4, 0, "Node Indices", 1),\
+                   (4, 1, "Node Indices (Linear)", 2),\
+                   (4, 2, "Element Indices", 3),\
+                   (5, 1, "Face Indices", 4),\
+                   (5, 2, "No Indices", 0)]
+     for row, col, text, mode in IndexModes:
+        check_button_show_node_numbers = Radiobutton(display_flags_frame, text=text, variable=self.show_numbers, value=mode, command=lambda:self.update_display_flags("show_numbers", val=self.show_numbers.get()))
+        check_button_show_node_numbers.grid(row=row, column=col)
+
+
  
      # Outer simulation box
-     check_button_show_box = Radiobutton(display_flags_frame, text="Simulation Box (outline)", variable=self.show_box, value=1, command=lambda:self.update_display_flags("show_box", val=1))
-     check_button_show_box.grid(row=5, column=0)
+     BoxModes = [(0, "Simulation Box (outline)", 1),\
+                 (1, "Simulation Box (whole)", 2),\
+                 (2, "No Box", 0)]
+     for col, text, mode in BoxModes:
+       check_button_show_box = Radiobutton(display_flags_frame, text=text, variable=self.show_box, value=mode, command=lambda:self.update_display_flags("show_box", val=self.show_box.get()))
+       check_button_show_box.grid(row=6, column=col)
 
-     # Whole simulation box
-     check_button_show_whole_box = Radiobutton(display_flags_frame, text="Simulation Box (whole)", variable=self.show_box, value=2, command=lambda:self.update_display_flags("show_box", val=2))
-     check_button_show_whole_box.grid(row=5, column=1)
 
-     # No simulation box
-     check_button_show_box = Radiobutton(display_flags_frame, text="No box", variable=self.show_box, value=0, command=lambda:self.update_display_flags("show_box", val=0))
-     check_button_show_box.grid(row=5, column=2)
-     check_button_show_box.select() # that has to match with the default value 1!     
 
-     # load the trajectory:
-     check_button_do_load_trajectory = Checkbutton(display_flags_frame, text="Load trajectory", variable=self.load_trajectory, command=lambda:self.update_display_flags("load_trajectory"))
-     check_button_do_load_trajectory.grid(row=6, column=0)
-     check_button_do_load_trajectory.select() # that has to match with the default value 1! 
+     ## # Trajectory Radiobutton # #
+     TrjModes = [("Load Trajectory", 1), \
+                 ("Load System (Into box)", 2), \
+                 ("Load System (Plainly)",3)]
+     for text, mode in TrjModes:
+       check_button_do_load_trajectory = Radiobutton(display_flags_frame, text=text, variable=self.do_load_trajectory, value=mode, command=lambda:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get()))
+       check_button_do_load_trajectory.grid(row=7, column=mode-1)
+  
 
-     # propose a system name:
-     label_system_name = Label(display_flags_frame, text="system name:")
-     label_system_name.grid(row=6, column=1, sticky=E)
-     text_button_system_name = Entry(display_flags_frame, text="load as:", textvariable=self.system_name, validate="focus", validatecommand=lambda:self.update_display_flags("system_name", val=-2, text=self.system_name.get()))
-     text_button_system_name.grid(row=6, column=2)
-     
 
      # flags
      self.animate = False
@@ -201,12 +177,14 @@ class FFEA_viewer_control_window:
 
      # If unset (i.e. checkbutton)
      if val == -2:
-	self.display_flags[key] = text
-	return True
+       self.display_flags[key] = text
+       return True
      elif val == -1:
-	self.display_flags[key] = (self.display_flags[key] + 1) % 2
+       self.display_flags[key] = (self.display_flags[key] + 1) % 2
      else:
-	self.display_flags[key] = val
+       self.display_flags[key] = val
+
+     print key, ": ", self.display_flags[key]
 
 
 
@@ -221,9 +199,6 @@ class FFEA_viewer_control_window:
      options['initialdir'] = os.getcwd()
      options['title'] = 'Load ffea file'
 
-     # CHECK 
-     print "system_name: ", self.display_flags['system_name']
- 
      # Ask user to select a file
      ffea_fname = tkFileDialog.askopenfilename(**options)
      if len(ffea_fname) == 0:
@@ -259,9 +234,13 @@ class FFEA_viewer_control_window:
 	bl = self.script.blob
 	
 	# See whether or not to remove traj file (make this better later i.e. rolling loading by storing file pointers)
-	if self.display_flags['load_trajectory'] == 0:
-		print "requested not to load the trajectory"
+	if self.display_flags['load_trajectory'] != 1:
+		print "Requested not to load the trajectory"
 		p.trajectory_out_fname = None
+	if self.display_flags['load_trajectory'] == 3:
+		print "Requested to show the coordinates as they are in the .node(s) file(s)"
+		print "... equivalently, setting < move_into_box = 0 >"
+		p.move_into_box = 0
         
     # Rebuild the script object depending on whether or not there is a trajectory (keep only first conformation)
 	if p.trajectory_out_fname == None:
@@ -421,7 +400,7 @@ class FFEA_viewer_control_window:
 	self.draw_frame(self.num_frames - 1)
 
 	# If necessary, stop now (broken traj or user asked for)
-	if traj.num_blobs == 0 or failure == 1 or self.display_flags['load_trajectory'] == 0:		
+	if traj.num_blobs == 0 or failure == 1 or self.display_flags['load_trajectory'] != 1:		
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
@@ -582,14 +561,7 @@ class FFEA_viewer_control_window:
 		'show_box': 0,
 		'load_trajectory': 1, ## PYMOL OK
 		'show_inverted': 0,
-      'system_name': "kappa"}
-
-	self.buttons = {'show_mesh' : self.show_mesh,
-		'show_solid' : self.show_solid,}
-
-     # start the buttons to the default values
-	for k in self.buttons.keys():
-		self.buttons[k].set(self.display_flags[k])
+      'system_name': "alpha"}
 
 	self.selected_index = 0
 	self.selected_blob = 0
