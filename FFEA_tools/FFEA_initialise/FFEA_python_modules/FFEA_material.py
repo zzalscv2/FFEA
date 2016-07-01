@@ -25,6 +25,7 @@ class FFEA_material:
 		if ext == ".mat":
 			try:
 				self.load_mat(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_material from " + fname + ". Returning empty object...")
 
@@ -108,3 +109,4 @@ class FFEA_material:
 
 		self.element = []
 		self.num_elements = 0
+		self.valid = False 
