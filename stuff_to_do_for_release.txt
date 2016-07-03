@@ -24,6 +24,3 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
  * [OMP] - ensure that the RNG seeds are correct.
 
  * [Tools] - print out ".nodes" coordinate files for a given snapshot.
-
- * [Compiler] - fix warnings for most of the compilers.
-
