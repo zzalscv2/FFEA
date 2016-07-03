@@ -363,7 +363,7 @@ class Surface
 			
 			// Check file type is correct
 			char line[255];
-			if(fscanf(surf_file, "%s\n", &line) != 1) {
+			if(fscanf(surf_file, "%s\n", line) != 1) {
 				printf("Error. 'surfacemesh' line does not exist.\n");
 				return -1;
 			}
@@ -933,6 +933,7 @@ int main(int argc, char **argv) {
 	}
 	
 	char achar[1];
+   int forget; 
 	if(strcmp(argv[5], "N") == 0 || strcmp(argv[5], "n") == 0) {
 		printf("\nYou have selected not to find the smallest edge at each pass.\n");
 		printf("Although slightly quicker, this can result in a 'blockier' final mesh.\n");
@@ -940,7 +941,7 @@ int main(int argc, char **argv) {
 			printf("This method can also result in instabilities when conserving volume\n");
 		}
 		printf("Would you like to continue (y/n)?:");
-		fscanf(stdin, "%s", &achar);
+		forget = fscanf(stdin, "%s", achar);
 		if(strcmp(achar, "n") == 0 || strcmp(achar, "N") == 0) {
 			printf("Bye!");
 			return 0;
