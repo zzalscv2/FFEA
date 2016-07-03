@@ -45,8 +45,7 @@ int main(int argc, char **argv)
 //	int frame = 0;
 
 	// Scan through initial crap
-	crap = fscanf(traj, "%s\n", &line);
-	// crap = fscanf(traj, "<%255[^>]>\n",  line);
+	crap = fscanf(traj, "%s\n", line);
 	if(strcmp(line, "FFEA_trajectory_file") != 0) {
 		printf("Error. Expected 'FFEA_trajectory_file' but got %s. May not be an FFEA_trajectory_file.\n", line);
 		exit(0);
