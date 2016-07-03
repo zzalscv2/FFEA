@@ -368,7 +368,7 @@ class Surface
 				return -1;
 			}
 			if(strcmp(line, "surfacemesh") != 0) {
-				printf("Error. File %s is not a NETGEN surface file\n");
+				printf("Error. File %s is not a NETGEN surface file\n", surf_fname);
 				return -1;
 			}
 			
