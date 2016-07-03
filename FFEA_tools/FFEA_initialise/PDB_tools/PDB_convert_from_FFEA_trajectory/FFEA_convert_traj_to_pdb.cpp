@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 		start = 0;
 		fprintf(pdb_out, "MODEL     %4d\n", frame - 1);
 		for(i = 0; i < num_blobs; ++i) {
-			c_crap = fgets(buf,255,traj);
+			c_crap = fgets(buf,100,traj);
 			cout << buf << endl;
 			exit(0);
 			if(fscanf(traj, "Blob %*d, Conformation %*d, step %lld", &step) != 1) {
