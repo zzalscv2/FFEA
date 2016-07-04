@@ -41,7 +41,7 @@ class vector3
 			return result;
 		}
 
-		vector3 operator+=(vector3 rvalue) {
+		void operator+=(vector3 rvalue) {
 			x += rvalue.x;
 			y += rvalue.y;
 			z += rvalue.z;
@@ -57,7 +57,7 @@ class vector3
 			return result;
 		}
 
-		vector3 operator-=(vector3 rvalue) {
+		void operator-=(vector3 rvalue) {
 			x -= rvalue.x;
 			y -= rvalue.y;
 			z -= rvalue.z;
@@ -73,7 +73,7 @@ class vector3
 			return result;
 		}
 
-		vector3 operator*=(double rvalue) {
+		void operator*=(double rvalue) {
 			x *= rvalue;
 			y *= rvalue;
 			z *= rvalue;
