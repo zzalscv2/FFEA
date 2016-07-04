@@ -1,11 +1,12 @@
 #ifndef FFEA_TOPOLOGY_INCLUDED
 #define FFEA_TOPOLOGY_INCLUDED
- 
-#define LINEAR_TYPE 0
-#define SECONDARY_TYPE 1
+
 
 #include <iostream>
 using namespace std;
+
+// Define an enum for element types
+enum elementType {LINEAR, SECONDARY};
 
 class FFEA_element {
 
@@ -15,12 +16,11 @@ class FFEA_element {
 		FFEA_element();
 		~FFEA_element();
 		
-	private:
+	protected:
 
-		//enum {LINEAR_TYPE, SECONDARY_TYPE} eltype;
-		enum {linear_type = LINEAR_TYPE, secondary_type = SECONDARY_TYPE} eltype;
 		int *index;
 		float **pos;
+		elementType eltype;
 };
 
 
@@ -66,11 +66,11 @@ class FFEA_topology {
 		// Data access functions
 		int get_num_elements();
 
+		FFEA_element *element;
 
 	private:
 
 		int num_elements;
-		FFEA_element *element;
 };
 
 #endif
