@@ -50,7 +50,7 @@ class matrix33
 			return result;
 		}
 
-		matrix33 operator*=(double rvalue) {
+		void operator*=(double rvalue) {
 			for(int i = 0; i < 3; ++i) {
 				for(int j = 0; j < 3; ++j) {
 					val[i][j] *= rvalue;
