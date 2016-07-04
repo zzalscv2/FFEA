@@ -1,4 +1,5 @@
 # from OpenGL.GL import *
+
 # from OpenGL.GLUT import *
 # from OpenGL.GLU import *
 import math, os, sys
@@ -546,6 +547,7 @@ class Blob:
 			print "=============================="
             
 			aframe.set_pos(self.init_centroid)
+			print aframe.get_centroid()
 
 		if self.init_rotation != None:
 			print "=============================="

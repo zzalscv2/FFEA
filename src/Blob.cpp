@@ -689,15 +689,15 @@ vector3 Blob::position(scalar x, scalar y, scalar z) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(shared) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
 #endif
-    for (i = 0; i < num_surface_nodes; i++) {
+    for (i = 0; i < num_nodes; i++) {
         centroid_x += node[i].pos.x;
         centroid_y += node[i].pos.y;
         centroid_z += node[i].pos.z;
     }
 
-    centroid_x *= (1.0 / num_surface_nodes);
-    centroid_y *= (1.0 / num_surface_nodes);
-    centroid_z *= (1.0 / num_surface_nodes);
+    centroid_x *= (1.0 / num_nodes);
+    centroid_y *= (1.0 / num_nodes);
+    centroid_z *= (1.0 / num_nodes);
 
     // Calculate displacement vector required to move centroid to requested position
     v.x = x - centroid_x;
