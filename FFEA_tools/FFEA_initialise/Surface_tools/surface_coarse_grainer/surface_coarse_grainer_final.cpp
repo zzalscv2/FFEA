@@ -135,6 +135,7 @@ class Edge
 			this->n_index[0] = n0;
 			this->n_index[1] = n1;
 			this->length = calc_length(node);
+			return 0;
 		}
 
 		double calc_length(vector3 *node) {
