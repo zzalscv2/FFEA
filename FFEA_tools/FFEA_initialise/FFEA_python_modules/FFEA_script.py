@@ -1,4 +1,5 @@
 import sys, os, StringIO
+from numpy import array as nparray
 
 def get_path_from_script(path, scriptdir):
 	if os.path.isabs(path):
@@ -158,7 +159,10 @@ class FFEA_script:
 		fin.close()
 
 		# Get params block
-		param_lines = extract_block_from_lines('param', 0, param_lines)
+		try:
+			param_lines = extract_block_from_lines('param', 0, param_lines)
+		except:
+			param_lines = extract_block_from_lines('params', 0, param_lines)
 
 		# Get some parameters
 		params = FFEA_script_params()
@@ -174,6 +178,7 @@ class FFEA_script:
 				#print "Error. Could not parse param '" + param + "'"
 				continue
 
+			
 			params.assign_param(lvalue, rvalue, scriptdir = scriptdir)
 		
 		# Sort measurement names
@@ -467,9 +472,7 @@ class FFEA_script_params():
 		self.calc_kinetics = 0
 		self.kinetics_update = 0
 		self.es_update = 1
-		self.es_N_x = -1
-		self.es_N_y = -1
-		self.es_N_z = -1
+		self.es_N = nparray([-1,-1,-1])
 		self.vdw_type = "steric"
 		self.vdw_steric_factor = 1e-2
 		self.move_into_box = 1
@@ -542,11 +545,11 @@ class FFEA_script_params():
 		elif lvalue == "es_update":
 			self.es_update = int(rvalue)
 		elif lvalue == "es_N_x":
-			self.es_N_x = int(rvalue)
+			self.es_N[0] = int(rvalue)
 		elif lvalue == "es_N_y":
-			self.es_N_y = int(rvalue)
+			self.es_N[1] = int(rvalue)
 		elif lvalue == "es_N_z":
-			self.es_N_z = int(rvalue)
+			self.es_N[2] = int(rvalue)
 		elif lvalue == "move_into_box":
 			self.move_into_box = int(rvalue)
 		elif lvalue == "sticky_wall_xz":
@@ -639,9 +642,9 @@ class FFEA_script_params():
 		astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
 		astr += "\t<calc_es = %d>\n" % (self.calc_es)
 		astr += "\t<es_update = %d>\n" % (self.es_update)
-		astr += "\t<es_N_x = %d>\n" % (self.es_N_x)
-		astr += "\t<es_N_y = %d>\n" % (self.es_N_y)
-		astr += "\t<es_N_z = %d>\n" % (self.es_N_z)
+		astr += "\t<es_N_x = %d>\n" % (self.es_N[0])
+		astr += "\t<es_N_y = %d>\n" % (self.es_N[1])
+		astr += "\t<es_N_z = %d>\n" % (self.es_N[2])
 		astr += "\t<move_into_box = %d>\n" % (self.move_into_box)
 		astr += "\t<sticky_wall_xz = %d>\n" % (self.sticky_wall_xz)
 		astr += "\t<wall_x_1 = %s>\n" % (self.wall_x_1)
