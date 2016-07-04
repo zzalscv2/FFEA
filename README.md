@@ -19,7 +19,7 @@ To install FFEA you need:
      Required for building FFEA.
      https://cmake.org/
 
-some third-party libraries:
+and some third-party libraries:
 
    * Boost (>=1.54.0).   
      Required compiled Boost library: program_options, filesystem and system.
@@ -34,6 +34,7 @@ some third-party libraries:
           you need to stick to either GCC 4, or use the latest development commit 
           from Eigen (3ba633e). 
  
+
    * Doxygen (>= 1.8) [OPTIONAL]   
      It will be used to build the documentation. http://www.doxygen.org
 
