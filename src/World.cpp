@@ -1164,7 +1164,8 @@ int World::run() {
             // If blob centre of mass moves outside simulation box, apply PBC to it
             vector3 com;
             active_blob_array[i]->get_centroid(&com);
-            scalar dx = 0, dy = 0, dz = 0;
+   
+	    scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
 
             if (com.x < 0) {
@@ -2496,7 +2497,7 @@ void World::get_system_centroid(vector3 *centroid) {
     centroid->x = 0;
     centroid->y = 0;
     centroid->z = 0;
-    scalar total_num_nodes = 0;
+    int total_num_nodes = 0;
     for (int i = 0; i < params.num_blobs; i++) {
         vector3 cen;
         active_blob_array[i]->get_centroid(&cen);
@@ -2907,8 +2908,6 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     vector3 system_centroid;
     get_system_centroid(&system_centroid);
-    cout << system_centroid.x*mesoDimensions::length*1e10 << " " << system_centroid.y*mesoDimensions::length*1e10 << " " << system_centroid.z*mesoDimensions::length*1e10 << endl;
-    //exit(0);
 
     // Write traj and meas data
     if (measurement_out[params.num_blobs] != NULL) {

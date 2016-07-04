@@ -311,55 +311,67 @@ class FFEA_viewer_control_window:
 				c.set_dead_frame()
 			
 
+
 	# Calculate global centroid
 	world_centroid *= 1.0 / total_num_nodes	
 
 	# Build box object if necessary
 	if p.calc_vdw == 0:
-		self.box = False
-		self.box_x = 0.0
-		self.box_y = 0.0
-		self.box_z = 0.0
+		self.box_exists = False
+		self.box = np.array([0.0,0.0,0.0])
 	else:
 		try:
 
 			# Do we need to calculate the box? Double the rounded up size of the system
-			if p.es_N_x < 1 or p.es_N_y < 1 or p.es_N_z < 1:
-				dims = self.get_system_dimensions(0)
-				p.es_N_x = int(np.ceil(dims[0] * (p.kappa / (p.es_h * self.global_scale))))
-				p.es_N_y = int(np.ceil(dims[1] * (p.kappa / (p.es_h * self.global_scale))))
-				p.es_N_z = int(np.ceil(dims[2] * (p.kappa / (p.es_h * self.global_scale))))
+			for i in range(3):
+				if p.es_N[i] < 1:
+					dims = self.get_system_dimensions(0)
+					for j in range(3):
+						p.es_N[j] = 2 * int(np.ceil(dims[j] * (p.kappa / (p.es_h * self.global_scale))))
+					break
 
-			self.box = True
-			self.box_x = 2 * (1.0 / p.kappa) * p.es_h * p.es_N_x
-			self.box_y = 2 * (1.0 / p.kappa) * p.es_h * p.es_N_y
-			self.box_z = 2 * (1.0 / p.kappa) * p.es_h * p.es_N_z
+			self.box_exists = True
+			self.box = (1.0 / p.kappa) * p.es_h * p.es_N
 	
 			# Does it exist? Realllllly?? If it's this small, it doesn't. OK?!!
-			if self.box_x <= 1e-10 or self.box_y <= 1e-10 or self.box_z <= 1e-10:
-				self.box = False
-					
+			for i in self.box:
+				if i <= 1e-10:
+					self.box_exists = False
+					break
+
 		except:
-			self.box = False
-			self.box_x = 0.0
-			self.box_y = 0.0
-			self.box_z = 0.0
+			self.box_exists = False
+			self.box = np.array([0.0,0.0,0.0])
 
 		
 	# Rescale box
-	self.box_x *= self.global_scale
-	self.box_y *= self.global_scale
-	self.box_z *= self.global_scale
+	self.box *= self.global_scale
 
-	shift[0] = self.box_x / 2.0 - world_centroid[0]
-	shift[1] = self.box_y / 2.0 - world_centroid[1]
-	shift[2] = self.box_z / 2.0 - world_centroid[2]
-
-	# Shift all blobs if necessary
-	for b in self.blob_list:
-		if p.calc_vdw == 1 and p.move_into_box == 1:
+	# Shift all blobs to center of box if necessary
+	shift = 0.5 * self.box - world_centroid
+	if p.calc_vdw == 1 and p.move_into_box == 1:
+		for b in self.blob_list:
 			b[0].frames[0].translate(shift)
     		
+
+	# Now, apply PBC if necessary
+	print p.calc_vdw
+	print p.move_into_box
+	print self.box_exists
+	print self.box
+	if p.calc_vdw == 1:
+		for b in self.blob_list:
+			trans = np.array([0.0,0.0,0.0])
+			cent = b[0].frames[0].get_centroid()
+			print "Centroid = ", cent
+			for i in range(3):
+				if cent[i] > self.box[i]:
+					trans[i] = -1 * self.box[i]
+				elif cent[i] < 0:
+					trans[i] = self.box[i]
+
+			b[0].frames[0].translate(trans)
+			print "Translation = ", trans
 
     	# Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
 	# Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
@@ -572,10 +584,8 @@ class FFEA_viewer_control_window:
 	self.offset_z = 0
 
 	# Assume box exists
-	self.box = True
-	self.box_x = -1
-	self.box_y = -1
-	self.box_z = -1
+	self.box_exists = True
+	self.box = np.array([-1.0,-1.0,-1.0])
 	self.springs = None
 
 	self.modifying_frame = False
@@ -613,10 +623,8 @@ class FFEA_viewer_control_window:
 		frame_stored_index = 0
 		
 	# World first
-	if self.display_flags['show_box'] != 0 and self.box == True:
+	if self.display_flags['show_box'] != 0 and self.box_exists == True:
 		self.draw_box(frame_real_index)
-
-	print self.get_system_centroid()
 
 	for i in range(self.script.params.num_blobs):
 		for j in range(self.script.params.num_conformations[i]):
@@ -630,16 +638,14 @@ class FFEA_viewer_control_window:
 	# If only outline, no need to loop over entire plane
 	if self.display_flags['show_box'] == 1:
 		
-		step_x = self.box_x
-		step_y = self.box_y
-		step_z = self.box_z
+		step = self.box
 
 		# Loop over the three planes
 		for i in range(2):
 			for j in range(2):
 				
 				# Get a pair of vertices
-				verts = [[i * step_x, j * step_y, 0.0], [i * step_x, j * step_y, self.box_z]]
+				verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
@@ -648,7 +654,7 @@ class FFEA_viewer_control_window:
 			for j in range(2):
 				
 				# Get a pair of vertices
-				verts = [[0.0, i * step_y, j * step_z], [self.box_x, i * step_y, j * step_z]]
+				verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
@@ -657,56 +663,43 @@ class FFEA_viewer_control_window:
 			for j in range(2):
 				
 				# Get a pair of vertices
-				verts = [[j * step_x, 0.0, i * step_z], [j * step_x, self.box_y, i * step_z]]
+				verts = [[j * step[0], 0.0, i * step[2]], [j * step[0], self.box[1], i * step[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 			
 	elif self.display_flags['show_box'] == 2:
 
-		step_x = self.box_x / self.script.params.es_N_x
-		step_y = self.box_y / self.script.params.es_N_y
-		step_z = self.box_z / self.script.params.es_N_z
+		for i in range(3):
+			step[i] = self.box[i] / self.script.params.es_N[i]
 
 		# Loop over the three planes
-		for i in range(self.script.params.es_N_x + 1):
-			for j in range(self.script.params.es_N_y + 1):
+		for i in range(self.script.params.es_N[0] + 1):
+			for j in range(self.script.params.es_N[1] + 1):
 				
 				# Get a pair of vertices
-				verts = [[i * step_x, j * step_y, 0.0], [i * step_x, j * step_y, self.box_z]]
+				verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-		for i in range(self.script.params.es_N_y + 1):
-			for j in range(self.script.params.es_N_z + 1):
+		for i in range(self.script.params.es_N[1] + 1):
+			for j in range(self.script.params.es_N[2] + 1):
 				
 				# Get a pair of vertices
-				verts = [[0.0, i * step_y, j * step_z], [self.box_x, i * step_y, j * step_z]]
+				verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-		for i in range(self.script.params.es_N_z + 1):
-			for j in range(self.script.params.es_N_x + 1):
+		for i in range(self.script.params.es_N[2] + 1):
+			for j in range(self.script.params.es_N[0] + 1):
 				
 				# Get a pair of vertices
-				verts = [[j * step_x, 0.0, i * step_z], [j * step_x, self.box_y, i * step_z]]
+				verts = [[j * step[0], 0.0, i * step[2]], [j * step[0], self.box[1], i * step[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
-
-	#verts = [[0.0,0.0,0.0], [self.box_x,0.0,0.0], [self.box_x,0.0,self.box_z], [0.0,0.0,self.box_z], [0.0,self.box_y,0.0], [self.box_x,self.box_y,0.0], [self.box_x,self.box_y,self.box_z], [0.0,self.box_y,self.box_z]]
-	
-	#for i in range(4):
-	#	obj.extend([VERTEX, verts[i][0], verts[i][1], verts[i][2]])
-	#	obj.extend([VERTEX, verts[(i + 1) % 4][0], verts[(i + 1) % 4][1], verts[(i + 1) % 4][2]])
-#
-#		obj.extend([VERTEX, verts[i][0], verts[i][1], verts[i][2]])
-#		obj.extend([VERTEX, verts[i + 4][0], verts[i + 4][1], verts[i + 4][2]])
-#
-#		obj.extend([VERTEX, verts[i + 4][0], verts[i + 4][1], verts[i + 4][2]])
-#		obj.extend([VERTEX, verts[(i + 1) % 4 + 4][0], verts[(i + 1) % 4 + 4][1], verts[(i + 1) % 4 + 4][2]])
 
 				
 					

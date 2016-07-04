@@ -41,14 +41,14 @@ int FFEA_topology::get_num_elements() {
 // Individual element stuff
 FFEA_element::FFEA_element() {
 
-	eltype = LINEAR_TYPE
+	eltype = LINEAR;
 	index = NULL;
 	pos = NULL;
 }
 
 FFEA_element::~FFEA_element() {
 
-	eltype = LINEAR_TYPE
+	eltype = LINEAR;
 	
 	delete[] index;
 	index = NULL;
@@ -57,17 +57,15 @@ FFEA_element::~FFEA_element() {
 	pos = NULL;
 }
 
-/*int FFEA_linear_element::set_indices(int *n) {
+int FFEA_linear_element::set_indices(int *n) {
 
 	if (index == NULL) {
 		index = new int[4];
 	}
 
 	for(int i = 0; i < 4; ++i) {
-		try {
-			index = 
-		} catch {
-
-		}
+		index[i] = n[i];
 	}
-}*/
+
+	eltype = LINEAR;
+}
