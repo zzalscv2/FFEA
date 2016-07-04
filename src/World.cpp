@@ -2278,7 +2278,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	num_states = atoi(sline.at(1).c_str());
 
 	if(num_states != params.num_states[blob_index]) {
-		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", states_fname.c_str(), num_states, params.num_states[i])
+		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", states_fname.c_str(), num_states, params.num_states[blob_index])
 	}
 
 	// Get 'states:'
@@ -2392,7 +2392,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		FFEA_ERROR_MESSG("\nExpected 'num_states %%d' as second line. Unable to read further.\n")
 	}
 	if(num_states != params.num_states[blob_index]) {
-		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", rates_fname.c_str(), num_states, params.num_states[i])
+		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", rates_fname.c_str(), num_states, params.num_states[blob_index])
 	}
 	crap = fgets(buf, 255, fin);
 
