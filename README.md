@@ -19,16 +19,24 @@ To install FFEA you need:
      Required for building FFEA.
      https://cmake.org/
 
-some third-party libraries:
+and some third-party libraries:
 
    * Boost (>=1.54.0).   
-     Required compiled Boost library: program_options. 
+     Required compiled Boost library: program_options, filesystem and system.
      http://www.boost.org/
 
    * Eigen (>=3.2.1).   
      FFEA uses Eigen within the Kinetics module.
      http://eigen.tuxfamily.org
+
+      - Warning - All of the Eigen releases to date (<= 3.3~beta1-2) prove to 
+          be incompatible with GCC >= 5 and the C++11 standard. Thus, to compile FFEA,
+          you need to stick to either GCC 4, or use the latest development commit 
+          from Eigen (3ba633e). 
+
  
+
+
    * Doxygen (>= 1.8) [OPTIONAL]   
      It will be used to build the documentation. http://www.doxygen.org
 
@@ -97,5 +105,3 @@ ffea <input-file.ffea>
 
 
 The only caveat in this last step is that <input-file.ffea> points to a number of input files. Details of all these files are in the documentation. You must be in the right folder so that the relative paths in <input-file.ffea> make sense.
-
-
