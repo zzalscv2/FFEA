@@ -426,10 +426,10 @@ class Surface
 				
 				// Output completion data
 				// Output Info
-				if((num_faces_initial - num_faces) % 100 == 0) {
-					printf("Faces Remaining = %d\n", num_faces);
-					printf("Nodes Remaining = %d\n", num_nodes);
-					printf("Last Length Deleted = %f\n\n", length_deleted);					
+				if((num_faces_initial - num_faces) % 10 == 0) {
+					printf("\rFaces Remaining = %d\tNodes Remaining = %d\tLast Length Deleted = %f", num_faces, num_nodes, length_deleted);
+					//printf("Nodes Remaining = %d\n", num_nodes);
+					//printf("Last Length Deleted = %f\n\n", length_deleted);					
 				}
 
 				runs++;

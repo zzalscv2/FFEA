@@ -132,7 +132,7 @@ int get_num_atoms(char *pdb_fname)
 	FILE *pdb_file_stream = NULL;
 	if((pdb_file_stream = fopen(pdb_fname, "r")) == NULL) {
 		printf("Could not open pdb file '%s'\n", pdb_fname);
-		return 1;
+		return -1;
 	}
 
 	int i = 0;
@@ -365,16 +365,22 @@ int main(int argc, char **argv)
 
 	// Read in first frame from pdb file
 	int num_atoms = get_num_atoms(pdb_fname);
+
+	if (num_atoms == -1) {
+		printf("File not found. Please provide an appropriate pdb file.");
+		return 1;
+
+	} else if (num_atoms == 0) {
+		printf("Error. Found 0 atoms in '%s'. Possibly incorrectly formatted for this tool. Please contact developers.\n", pdb_fname);
+		return 1;
+	}
+
 	printf("Found %d atoms in pdb file.\n", num_atoms);
 
 	printf("Reading first frame of pdb file...\n");
 	FILE *pdb_in, *map_out;
 	if((pdb_in = fopen(pdb_fname, "r")) == NULL) {
 		printf("Could not open pdb file '%s'\n", pdb_fname);
-		return 1;
-	}
-	if((map_out = fopen(out_fname, "w")) == NULL) {
-		printf("Could not open file '%s' for writing\n", out_fname);
 		return 1;
 	}
 
@@ -384,6 +390,11 @@ int main(int argc, char **argv)
 	printf("Read %d atoms from pdb.\n", num_atoms_read);
 	fclose(pdb_in);
 	printf("Done.\n");
+
+	if((map_out = fopen(out_fname, "w")) == NULL) {
+		printf("Could not open file '%s' for writing\n", out_fname);
+		return 1;
+	}
 
 	// Get size of box necessary to contain protein
 	float min_x, min_y, min_z, max_x, max_y, max_z;
