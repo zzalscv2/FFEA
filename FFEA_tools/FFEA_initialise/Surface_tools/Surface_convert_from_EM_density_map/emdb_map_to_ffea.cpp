@@ -22,6 +22,11 @@
 #define OUTPUT_FORMAT_OFF	3
 #define OUTPUT_FORMAT_MAP	4
 
+// Error text in colour
+void Error_text() {
+    printf("\e[31mERROR: \e[m");
+}
+
 // Hold the header info
 typedef struct
 {
@@ -763,7 +768,8 @@ void calc_center_position(char *f, double *x, double *y, double *z) {
 				char sx[9], sy[9], sz[9];
 				int check = sscanf(line, "%*30c%8c%8c%8c", sx, sy, sz);
 				if(check != 3) {
-					printf("Error reading line in frame at atom %d\n", i);
+					Error_text();
+					printf("Couldn't read line in frame at atom %d\n", i);
 					*x = 0.0;
 					*y = 0.0;
 					*z = 0.0;
@@ -1111,7 +1117,8 @@ int main(int argc, char **argv)
 				printf("Input map file name = %s\n", map_fname);
 				set_map_fname = 1;
 			} else {
-				printf("Error: option -map is missing argument (Usage: -map INPUT_MAP_FILENAME)\n");
+				Error_text();
+				printf("option -map is missing argument (Usage: -map INPUT_MAP_FILENAME)\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-out") == 0) {
@@ -1121,7 +1128,8 @@ int main(int argc, char **argv)
 				printf("Output text file name = %s\n", out_fname);
 				set_out_fname = 1;
 			} else {
-				printf("Error: option -out is missing argument (Usage: -out OUTPUT_TEXT_FILENAME)\n");
+				Error_text();
+				printf("option -out is missing argument (Usage: -out OUTPUT_TEXT_FILENAME)\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-level") == 0) {
@@ -1131,7 +1139,8 @@ int main(int argc, char **argv)
 				printf("Filter level = %f\n", level);
 				set_level = 1;
 			} else {
-				printf("Error: option -level is missing argument (Usage: -level FILTER_LEVEL)\n");
+				Error_text();
+				printf("option -level is missing argument (Usage: -level FILTER_LEVEL)\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-coarse") == 0) {
@@ -1141,7 +1150,8 @@ int main(int argc, char **argv)
 				printf("Coarseness = %d\n", coarseness);
 				set_coarseness = 1;
 			} else {
-				printf("Error: option -coarse is missing argument (Usage: -coarse OUTPUT_SURFACE_FILENAME)\n");
+				Error_text();
+				printf("option -coarse is missing argument (Usage: -coarse COARSENING_FACTOR)\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-interpolate") == 0) {
@@ -1154,7 +1164,8 @@ int main(int argc, char **argv)
 				}
 				printf("interpolate = %d\n", interpolate);
 			} else {
-				printf("Error: option -interpolate is missing argument (Usage: -interpolate 'yes' or 'no')\n");
+				Error_text();
+				printf("option -interpolate is missing argument (Usage: -interpolate 'yes' or 'no')\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-format") == 0) {
@@ -1179,13 +1190,15 @@ int main(int argc, char **argv)
 					printf("Output format = CCP4 density map\n");
 					choose_format = OUTPUT_FORMAT_MAP;
 				} else {
-					printf("Error: Unrecognised format '%s'. Recognised formats are:\nsurf\nobj\noff\nmap\n", out_format);
+					Error_text();
+					printf("Unrecognised format '%s'. Recognised formats are:\nsurf\nobj\noff\nmap\n", out_format);
 					return 1;
 				}
 
 				set_format = 1;
 			} else {
-				printf("Error: option -format is missing argument (Usage: -format OUTPUT_FORMAT)\n");
+				Error_text();
+				printf("option -format is missing argument (Usage: -format OUTPUT_FORMAT)\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-cull_floaters") == 0) {
@@ -1195,7 +1208,8 @@ int main(int argc, char **argv)
 				cull_threshold = atoi(argv[arg]);
 				printf("cull_threshold = %d\n", cull_threshold);
 			} else {
-				printf("Error: option -cull_floaters is missing argument (Usage: -cull_floaters [THRESHOLD IN NUMBER OF VOXELS])\n");
+				Error_text();
+				printf("option -cull_floaters is missing argument (Usage: -cull_floaters [THRESHOLD IN NUMBER OF VOXELS])\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-fill_cavities") == 0) {
@@ -1205,7 +1219,8 @@ int main(int argc, char **argv)
 				fill_threshold = atoi(argv[arg]);
 				printf("fill_threshold = %d\n", fill_threshold);
 			} else {
-				printf("Error: option -fill_cavities is missing argument (Usage: -fill_cavities [THRESHOLD IN NUMBER OF VOXELS])\n");
+				Error_text();
+				printf("option -fill_cavities is missing argument (Usage: -fill_cavities [THRESHOLD IN NUMBER OF VOXELS])\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-pdb") == 0) {
@@ -1215,7 +1230,8 @@ int main(int argc, char **argv)
 				sprintf(pdb_fname, "%s", argv[arg]);
 				printf("pdb_fname = %s\n", pdb_fname);
 			} else {
-				printf("Error: option -pdb is missing argument (Usage: -pdb [PDB FILENAME MAP WAS CREATED FROM])\n");
+				Error_text();
+				printf("option -pdb is missing argument (Usage: -pdb [PDB FILENAME MAP WAS CREATED FROM])\n");
 				return 1;
 			}
 		} else if(strcmp(argv[arg], "-euler") == 0) {
@@ -1233,7 +1249,8 @@ int main(int argc, char **argv)
 			printf("-pdb [Followed by a pdb filename, inc. extention, if map was created from a pdb file]\n");
 			printf("-euler [In order to calculate the euler characteristic number of the map (after any coarsening)]\n");
 		} else {
-			printf("Error: Unrecgonised option '%s'\n", argv[arg]);
+			Error_text();
+			printf("Unrecgonised option '%s'\n", argv[arg]);
 			printf("For info use 'emdb_map_to_walrus help'\n");
 			return 1;
 		}
@@ -1243,36 +1260,43 @@ int main(int argc, char **argv)
 
 	// check that user has provided input and output file names
 	if(set_map_fname == 0) {
-		printf("Error: input map file not specified. (Set this using '-map' option)\n");
+		Error_text();
+		printf("input map file not specified. (Set this using '-map' option)\n");
 		return 1;
+	}
+
+	if(set_out_fname == 0) {
+		Error_text();
+		printf("No form of output specified. (Use '-out' to produce a text file or a surface mesh)\n");
+		return 1;
+	}
+
+	if(set_format == 0) {
+		Error_text();
+		printf("Output format not specified. (Set this using '-format' option)\n");
+		return 1;
+	}
+
+	if(choose_format == OUTPUT_FORMAT_SURF || choose_format == OUTPUT_FORMAT_OFF || choose_format == OUTPUT_FORMAT_OBJ) {
+		if(set_level == 0) {
+			Error_text();
+			printf("Cannot create surface mesh with density filter isolevel unset (use '-level' to set it)\n");
+			return 1;
+		}
 	}
 
 	// extract header and voxel data from input file
 	header_info header;
 	map_data map;
 	if(extract_data(map_fname, &header, &map) != 0) {
-		printf("Error when trying to extract data from map file.\n");
+		Error_text();
+		printf("Couldn't extract data from map file.\n");
 		return 1;
 	}
+
+	// Print so user knows what the binary data actually looks like...
 	printf("%s header:\n", map_fname);
 	print_header_to_file(stdout, &header);
-
-	if(set_out_fname == 0) {
-		printf("Error: No form of output specified. (Use '-out' to produce a text file or a surface mesh)\n");
-		return 1;
-	}
-
-	if(set_format == 0) {
-		printf("Error: Output format not specified. (Set this using '-format' option)\n");
-		return 1;
-	}
-
-	if(choose_format == OUTPUT_FORMAT_SURF || choose_format == OUTPUT_FORMAT_OFF || choose_format == OUTPUT_FORMAT_OBJ) {
-		if(set_level == 0) {
-			printf("Error: Cannot mesh with density filter isolevel unset (use '-level' to set it)\n");
-			return 1;
-		}
-	}
 
 	// If selected, coarsen the mesh to the specified degree
 	if(set_coarseness == 1) {
