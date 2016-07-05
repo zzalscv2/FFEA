@@ -273,6 +273,10 @@ class FFEA_viewer_control_window:
 			idnum += 1
                  
     
+	# Load some springs
+	if self.display_flags['show_springs'] == 1:
+		self.springs = FFEA_springs.FFEA_springs(self.script.spring)
+
 	# Send binding sites to control
 	binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
 	for i in range(self.script.params.num_blobs):
@@ -355,10 +359,6 @@ class FFEA_viewer_control_window:
     		
 
 	# Now, apply PBC if necessary
-	print p.calc_vdw
-	print p.move_into_box
-	print self.box_exists
-	print self.box
 	if p.calc_vdw == 1:
 		for b in self.blob_list:
 			trans = np.array([0.0,0.0,0.0])
@@ -626,6 +626,9 @@ class FFEA_viewer_control_window:
 	if self.display_flags['show_box'] != 0 and self.box_exists == True:
 		self.draw_box(frame_real_index)
 
+	if self.display_flags['show_springs'] == 1:
+		self.draw_springs(frame_real_index)
+
 	for i in range(self.script.params.num_blobs):
 		for j in range(self.script.params.num_conformations[i]):
 			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags)
@@ -707,19 +710,19 @@ class FFEA_viewer_control_window:
 	obj.append(END)
 	cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box", f + 1)
 
-  def draw_springs(self):
+  def draw_springs(self, f):
 
       for s in self.springs.spring:
 
          # Get correct frames
          correct_frame = [-1 for i in range(self.script.params.num_blobs)]
          for i in range(self.script.params.num_blobs):
-            if self.blob_list[i][0].state == "STATIC":
+            if self.blob_list[i][0].motion_state == "STATIC":
                correct_frame[i] = 0
          # print "correct_frame: ", correct_frame
 
          # Draw, because this spring exists
-         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].node_list[s.node_index[i]][0:3] for i in range(2)])
+         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
 
          # Axes for helix
          zax = springjoints[1] - springjoints[0]
@@ -752,7 +755,7 @@ class FFEA_viewer_control_window:
             obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
 
          obj.append(END)
-         cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), max(correct_frame))
+         cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), f + 1)
          
 
 
