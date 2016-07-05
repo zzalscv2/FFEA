@@ -407,7 +407,7 @@ class FFEA_script:
 			print "Error. Couldn't parse spring tag '" + line + "'"
 			return
 
-		if lvalue == "springs_fname":
+		if lvalue == "springs_fname" or lvalue == "spring_fname":
 			self.spring = rvalue
 			
 		return
