@@ -27,8 +27,9 @@ top = FFEA_topology.FFEA_topology(intopfname)
 # Run sweep and set parameters
 central_node = node.pos[node_index]
 num_changed = 0
+elindex = -1
 for el in top.element:
-	elindex = top.element.index(el)
+	elindex += 1
 	if np.linalg.norm(el.calc_centroid(node) - central_node) < radius:
 		mat.set_params(elindex, d, sv, bv, sm, bm, di)
 		num_changed += 1
