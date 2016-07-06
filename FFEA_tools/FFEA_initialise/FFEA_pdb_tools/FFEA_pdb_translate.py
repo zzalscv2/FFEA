@@ -13,7 +13,7 @@ pos = [float(i) for i in sys.argv[3:]]
 u = mda.Universe(infname)
 
 # Translate it to x, y, z
-u.atoms.translate(pos - u.atoms.CA.center_of_geometry())
+u.atoms.translate(pos)
 
 # Write it to file
 u.atoms.write(outfname)

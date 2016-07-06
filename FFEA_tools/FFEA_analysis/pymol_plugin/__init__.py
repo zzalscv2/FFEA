@@ -51,7 +51,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("530x200")
+     self.root.geometry("630x200")
 
      self.root.title("FFEA")
 
@@ -77,6 +77,7 @@ class FFEA_viewer_control_window:
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
      self.show_solid = IntVar(self.root, value=self.display_flags['show_solid'])
+     self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
      self.show_mesh = IntVar(self.root, value=self.display_flags['show_mesh'])
      self.show_shortest_edge = IntVar(self.root, value=self.display_flags['show_shortest_edge'])
 
@@ -107,10 +108,14 @@ class FFEA_viewer_control_window:
      # # show solid:
      SolidModes = [(0, "Plain Solid", 1),\
                    (1, "Material", 2),\
-                   (2, "No Solid", 0)] 
+                   (3, "No Solid", 0)] 
      for col, text, mode in SolidModes:
         check_button_show_solid = Radiobutton(display_flags_frame, text=text, variable=self.show_solid, value=mode, command=lambda:self.update_display_flags("show_solid", val=self.show_solid.get()))
         check_button_show_solid.grid(row=2, column=col)
+
+     # Selectable box for material param
+     spinbox_material_param = Spinbox(display_flags_frame, textvariable=self.matparam, values=("Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus"), validate="focus", validatecommand=lambda:self.update_display_flags("matparam", val=-2, text=self.matparam.get()))
+     spinbox_material_param.grid(row=2, column=2)
 
      # # show mesh:
      MeshModes = [(0, "Surface Mesh", 2),\
@@ -215,6 +220,9 @@ class FFEA_viewer_control_window:
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
   	
+	# Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
+	self.display_flags['matparam'] = self.matparam.get()
+
 	# Try to reset previous system and update
 	self.num_frames = 0
 	self.num_loads += 1
@@ -565,6 +573,7 @@ class FFEA_viewer_control_window:
 
 	self.display_flags = {
 		'show_solid': 1, ## PYMOL OK
+		'matparam': "Density",
 		'show_mesh': 0,
 		'show_numbers': 0, ## PYMOL OK
 		'show_pinned': 1,
