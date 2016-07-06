@@ -658,7 +658,6 @@ class Blob:
 		#
 		if display_flags['show_solid'] != 0:
 		        sol.extend( [ BEGIN, TRIANGLES ] )
-			sol.extend([COLOR, 193/255.0, 193/255.0, 193/255.0])
 
 			# If solid, draw all triangles
 			if display_flags['show_solid'] == 1:
@@ -678,11 +677,65 @@ class Blob:
 		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 		                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
-			#elif display_flags['show_solid'] == 2:
+			elif display_flags['show_solid'] == 2:
+
 				# material drawing
+				
+				# Get param
+				if display_flags['matparam'] == "Density":
+					paramval = 0
+				elif display_flags['matparam'] == "Shear Viscosity":
+					paramval = 1
+				elif display_flags['matparam'] == "Bulk Viscosity":
+					paramval = 2
+				elif display_flags['matparam'] == "Shear Modulus":
+					paramval = 3
+				elif display_flags['matparam'] == "Bulk Modulus":
+					paramval = 4
+
+				# Get range of colours
+				colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
+				num_cols = len(colgrad)
+				param = []
+				for e in self.mat.element:
+					param.append(e[paramval])
 		
+				maxval = max(param)
+				minval = min(param)
+				rangeval = maxval - minval
+
+				# Now, draw each face
+				for f in self.surf.face:
+					
+					n1 = self.frames[i].pos[f.n[0]][0:3]
+					n2 = self.frames[i].pos[f.n[1]][0:3]
+					n3 = self.frames[i].pos[f.n[2]][0:3]
+		                        norm = self.calc_normal_2(n1, n2, n3)
+
+					# Calc and add colour first
+					if rangeval == 0.0:
+						paramfrac = 0
+					else:
+						paramfrac = (param[f.elindex] - minval) / rangeval
+		
+					# Which interval?
+					if paramfrac <= 0:
+						colpair = [0, 0]
+					elif paramfrac >= 1:
+						colpair = [num_cols - 1, num_cols - 1]
+					else:
+						colpair = [int(np.floor(paramfrac * num_cols)), int(np.floor(paramfrac * num_cols)) + 1]
+
+					# Where in interval
+					col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * paramfrac + colgrad[colpair[0]]
+					#print col[0], col[1], col[2]
+					sol.extend([COLOR, col[0], col[1], col[2]])
+		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
+		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+		                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+
 			sol.append(END)
-			# cmd.load_cgo(sol, "Blob_" + str(self.idnum) + "_solid_load_" + str(self.num_loads), frameLabel)
 			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid_load_" + str(self.num_loads), frameLabel)
 
 		#
