@@ -32,6 +32,8 @@ from pymol.vfont import plain
 import FFEA_script
 import FFEA_trajectory
 
+from numpy.random import randint as rint
+
 def __init__(self):
   """ 
   Init PyMOL, by adding FFEA stuff to the GUI under Plugins
@@ -94,6 +96,8 @@ class FFEA_viewer_control_window:
      text_button_system_name = Entry(display_flags_frame, text="load as:", textvariable=self.system_name, validate="focus", validatecommand=lambda:self.update_display_flags("system_name", val=-2, text=self.system_name.get()))
      text_button_system_name.grid(row=0, column=1, sticky=W)
      
+     random_name_button = Button(display_flags_frame, text="Random Name", command=lambda:self.new_system_name());
+     random_name_button.grid(row=0, column=2, sticky=E)
 
      # show springs: 
      check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
@@ -192,6 +196,10 @@ class FFEA_viewer_control_window:
      print key, ": ", self.display_flags[key]
 
 
+  def new_system_name(self):
+
+	self.system_name.set(self.system_names[rint(0, len(self.system_names) - 1)])
+	self.display_flags["system_name"] = self.system_name.get()
 
   # # # # # # # # # # # # # # # # # # # # # #
   # # Open dialogue for FFEA input file # # # 
@@ -400,6 +408,9 @@ class FFEA_viewer_control_window:
 	#	else:
 	#		pass
 
+	# Choose new system name for next run
+	self.system_index += 1
+	self.system_name = self.system_names[self.system_index]
 
   def load_trajectory(self, trajectory_out_fname):
 	
@@ -571,6 +582,15 @@ class FFEA_viewer_control_window:
 	self.pause_loading = False
 	self.pausing = False
 
+	self.system_index = 0
+	self.system_names = []
+	
+	# Change to any file of names you like
+	fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_dbzcharacters.txt"
+	with open(fname, "r") as f:
+		for line in f:
+			self.system_names.append(line.strip())
+
 	self.display_flags = {
 		'show_solid': 1, ## PYMOL OK
 		'matparam': "Density",
@@ -582,7 +602,7 @@ class FFEA_viewer_control_window:
 		'show_box': 0,
 		'load_trajectory': 1, ## PYMOL OK
 		'show_inverted': 0,
-      'system_name': "alpha"}
+      'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
 
 	self.selected_index = 0
 	self.selected_blob = 0
