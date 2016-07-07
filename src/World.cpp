@@ -172,7 +172,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			}
 		}
 
-		kinetic_rng.seed(params.rng_seed);		
 	}
 
 	// Load the vdw forcefield params matrix
@@ -196,14 +195,39 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	num_threads = 1;
 #endif
 
-    	// We need one rng for each thread, to avoid concurrency problems,
-    	// so generate an array of instances of mersenne-twister rngs.
-    	rng = new MTRand[num_threads];
-
-    	// Seed each rng differently
-    	for (i = 0; i < num_threads; i++) {
-        	rng[i].seed(params.rng_seed + i);
+   	// We need one rng for each thread, to avoid concurrency problems,
+    	// so generate an array of instances of RngStreams:
+   // We first initialize the six seeds that RngStream needs:
+	unsigned long sixseed[6];
+	unsigned long twoMax[2] = {4294967087, 4294944443}; // these are max values for RngStream
+	srand(params.rng_seed); 
+	for (int i=0; i<6; i++){
+		sixseed[i] = (rand() + rand())%twoMax[i/3];
+	} 
+   // now initialise the package:
+	RngStream::SetPackageSeed(sixseed);
+	if (userInfo::verblevel > 1) {
+		cout << "RngStream initialised using: ";
+		for (int ni=0; ni<6; ni++){ 
+			cout << sixseed[ni] << " "; 
+		}
+		cout << endl; 
 	}
+   
+	rng = new RngStream[num_threads];
+	if (userInfo::verblevel > 2) {
+		for (int ni=0; ni<num_threads; ni++){ 
+			cout << "RNG[" << ni << "] initial state:" <<endl; 
+			rng[ni].WriteState(); 
+	 	} 
+   } 
+	// and we'll initialise an extra Stream for kinetics, if we need it.
+	if(params.calc_kinetics == 1) {
+		kinetic_rng = new RngStream;
+		cout << "RngStream for kinetics created with initial state:" << endl;       
+		kinetic_rng->WriteState(); 
+	} 
+
 
 	// Build system of blobs, conformations, kinetics etc
 	if(read_and_build_system(script_vector) != 0) {
@@ -1394,8 +1418,9 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 	if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
 		// Conformation change!
-		MTRand arng;
-		arng.seed(params.rng_seed);
+		RngStream arng;
+		cout << "New RngStream created with initial state:" << endl;       
+		arng.WriteState(); 
 
 		// Get current nodes
 		vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
@@ -1411,7 +1436,7 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 		kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
 
 		// Move the old one to random space so as not to interfere with calculations, and deactivate all faces 
-		blob_array[blob_index][current_conformation].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
+		blob_array[blob_index][current_conformation].position(arng.RandU01() * 1e10, arng.RandU01() * 1e10, arng.RandU01() * 1e10);
 		blob_array[blob_index][current_conformation].kinetically_set_faces(false);
 
 		// Reactivate springs
@@ -1512,8 +1537,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 
 	// Read in each blob one at a time
-	MTRand arng;
-       	arng.seed(params.rng_seed);
+	RngStream arng;
 	for(i = 0; i < params.num_blobs; ++i) {
 
 		// Get blob data
@@ -1779,7 +1803,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 			// If not an active conforamtion, move to random area in infinity so vdw and stuff are not active (face linked list is not set up for deleting elements)
 			if (j > 0) {
-				blob_array[i][j].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
+				blob_array[i][j].position(arng.RandU01() * 1e10, arng.RandU01() * 1e10, arng.RandU01() * 1e10);
 				//blob_array[i][0].get_centroid(cent);
 				//cout << "Blob " << i << ", Conformation " << "0" << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
 				//blob_array[i][j].get_centroid(cent);
@@ -2223,7 +2247,7 @@ int World::choose_new_kinetic_state(int blob_index, int *target) {
 	bin[params.num_states[blob_index] - 1][1] = 1.0;
 
 	// Get a random number
-	switch_check = kinetic_rng.rand();
+	switch_check = kinetic_rng->RandU01();
 
 	// See which bin this falls into
 	for(i = 0; i < params.num_states[blob_index]; ++i) {

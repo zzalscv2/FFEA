@@ -21,6 +21,4 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
  * [Tests] - add a number of tests, to ensure that changes have not 
            broken anything.
 
- * [OMP] - ensure that the RNG seeds are correct.
-
  * [Tools] - print out ".nodes" coordinate files for a given snapshot.
