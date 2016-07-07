@@ -291,7 +291,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
                     << ":" << b_elems[m+j]->n[6]->index << ":" <<
                         b_elems[m+j]->n[7]->index << ":" << b_elems[m+j]->n[8]->index
                     << ":" << b_elems[m+j]->n[9]->index;
-       //print_high(beadsToNodes.str());
+       print_high(beadsToNodes.str());
        /*
        //  prove it: v =? s
        vector3 s, e1, e2, e3;
