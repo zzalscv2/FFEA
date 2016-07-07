@@ -18,6 +18,9 @@ add_subdirectory("FFEA_initialise")
 file (MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/FFEA_tools/ffea")
 set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_analysis/pymol_plugin/__init__.py
+		FFEA_analysis/pymol_plugin/system_names_pokemon.txt
+		FFEA_analysis/pymol_plugin/system_names_dbzcharacters.txt
+		FFEA_analysis/pymol_plugin/system_names_greekletters.txt
                 FFEA_analysis/FFEA_python_modules/FFEA_trajectory.py 
                 FFEA_analysis/FFEA_python_modules/FFEA_measurement.py 
                 FFEA_analysis/FFEA_python_modules/FFEA_frame.py

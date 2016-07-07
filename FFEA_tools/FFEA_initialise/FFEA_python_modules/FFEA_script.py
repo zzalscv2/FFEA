@@ -1,6 +1,8 @@
 import sys, os, StringIO
 from numpy import array as nparray
 
+import FFEA_material
+
 def get_path_from_script(path, scriptdir):
 	if os.path.isabs(path):
 		return path
@@ -418,7 +420,7 @@ class FFEA_script:
 		self.params.write_to_file(fout, fname)
 		fout.write("<system>\n")
 		for blob in self.blob:
-			blob.write_to_file(fout, fname, self.params.calc_kinetics)
+			blob.write_to_file(fout, fname, self.params.calc_kinetics, self.params.calc_preComp)
 
 		if self.spring != "":
 			fout.write("\t<interactions>\n\t\t<springs>\n")
@@ -441,6 +443,10 @@ class FFEA_script:
 
 		self.blob.append(FFEA_script_blob())
 		self.params.num_blobs += 1
+
+	# Loading other FFEA objects
+	def load_mat(self, bindex, cindex=0):
+		return FFEA_material.FFEA_material(self.blob[bindex].conformation[cindex].material)
 
 class FFEA_script_params():
 	
@@ -675,12 +681,12 @@ class FFEA_script_blob:
 		self.centroid = None
 		self.rotation = None
 
-	def write_to_file(self, fout, fname, calc_kinetics):
+	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp):
 
 		fout.write("\t<blob>\n")
 		need_solver = 0;
 		for conformation in self.conformation:
-			conformation.write_to_file(fout, fname, calc_kinetics)
+			conformation.write_to_file(fout, fname, calc_kinetics, calc_preComp)
 			if conformation.motion_state == "DYNAMIC":
 				need_solver = 1
 		
@@ -738,7 +744,7 @@ class FFEA_script_conformation:
 		self.bsites = ""
 		self.beads = ""
 
-	def write_to_file(self, fout, fname, calc_kinetics):
+	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp):
 
 		astr = ""
 		astr += "\t\t<conformation>\n"
