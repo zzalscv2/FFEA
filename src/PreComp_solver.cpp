@@ -291,7 +291,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
                     << ":" << b_elems[m+j]->n[6]->index << ":" <<
                         b_elems[m+j]->n[7]->index << ":" << b_elems[m+j]->n[8]->index
                     << ":" << b_elems[m+j]->n[9]->index;
-       //print_high(beadsToNodes.str());
+       print_high(beadsToNodes.str());
        /*
        //  prove it: v =? s
        vector3 s, e1, e2, e3;
@@ -341,8 +341,8 @@ int PreComp_solver::solve() {
     compute_bead_positions();
 
     // 2 - Compute all the i-j forces:
-    scalar e_tot = 0.0; 
-    /*scalar f_tot = 0.0;*/
+    /*scalar e_tot = 0.0; 
+    scalar f_tot = 0.0;*/
     for (int i=0; i<n_beads; i++){ 
       type_i = b_types[i]; 
       phi_i[1] = b_rel_pos[3*i];
@@ -362,8 +362,8 @@ int PreComp_solver::solve() {
         
  
         f_ij = get_F(d, type_i, b_types[j]); 
-        e_tot += get_U(d, type_i, b_types[j]);
-        /*f_tot += f_ij;*/
+        /*e_tot += get_U(d, type_i, b_types[j]);
+        f_tot += f_ij;*/
         /*cout << "i: " << i << " j: " << j << " type_i: " << type_i << " type_j: " << b_types[j]
                       << " i.pos: " << mesoDimensions::length*b_pos[3*i]*1e9 << ":" << mesoDimensions::length*b_pos[3*i+1]*1e9 << ":" << mesoDimensions::length*b_pos[3*i+2]*1e9
                       << " j.pos: " << mesoDimensions::length*b_pos[3*j]*1e9 << ":" << mesoDimensions::length*b_pos[3*j+1]*1e9 << ":" << mesoDimensions::length*b_pos[3*j+2]*1e9
@@ -391,7 +391,7 @@ int PreComp_solver::solve() {
         } 
       }
     }
-    cout << " total energy: " << e_tot*mesoDimensions::Energy/0.1660539040e-20 << endl;
+    // cout << " total energy: " << e_tot*mesoDimensions::Energy/0.1660539040e-20 << endl;
   
     return FFEA_OK;
 }
