@@ -211,3 +211,8 @@ file(COPY
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/tests)
 
 
+
+#####################################################
+############ # # # ENABLE TESTS # # # ###############
+enable_testing()
+add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency/rngstream")
