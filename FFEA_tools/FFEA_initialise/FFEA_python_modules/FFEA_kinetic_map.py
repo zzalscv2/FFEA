@@ -102,7 +102,7 @@ class FFEA_kinetic_map:
 						
 			return total_new_nodes
 
-		elif isinstance(base, FFEA_node.FFEA_node):
+		elif isinstance(base, FFEA_node.FFEA_node) or isinstance(base, FFEA_frame.FFEA_frame):
 			basetype = "FFEA_node"
 			if self.num_columns != len(base.pos):
 				print("Error. Map expects " + str(self.num_columns) + " nodes, but found " + str(len(base.pos)))

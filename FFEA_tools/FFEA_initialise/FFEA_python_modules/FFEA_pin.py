@@ -1,5 +1,6 @@
 from os import path
 from time import sleep
+import numpy as np
 
 class FFEA_pin:
 
@@ -87,6 +88,46 @@ class FFEA_pin:
 			
 		print outline
 	
+	def write_to_file(self, fname):
+		
+		with open(fname, "w") as f:
+			f.write("ffea pinned nodes file\nnum_pinned_nodes %d\npinned nodes:\n" % (self.num_pinned_nodes))
+			for i in self.index:
+				f.write("%d\n" % (i))
+
+
+	def pin_radially(self, node, oindex, radius, top=None, linear=0):
+		
+		# Reset first
+		self.reset()
+
+		# Pin all within radius
+		origin = node.pos[oindex]
+		
+		nindex = -1
+
+		# Get relevent index list
+		if linear == 0:
+			indices = range(node.num_nodes)
+		else:
+			if top == None:
+				print "Linear indices cannot be found without a topology. Defaulting to all nodes..."
+				range(node.num_nodes)
+			else:
+				indices = []
+				for el in top.element:
+					for i in el.n[0:4]:
+						indices.append(i)
+
+				indices = list(set(indices))
+				
+		for i in indices:
+			
+			d = np.linalg.norm(node.pos[i] - origin)
+			if d < radius:
+				self.add_pinned_node(i)
+
+			
 	def reset(self):
 
 		self.index = []

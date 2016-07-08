@@ -1,8 +1,5 @@
 Write stuff in here that needs to be done for release. Delete when completed. When empty...have crazy party!
 
- * [PyMOL] DEBUG:
-           - 1st frame in a trajectory horribly moved.
-
  * [PyMOL] Make the plugin able to deal with default parameters 
            in same way as the core code
 
