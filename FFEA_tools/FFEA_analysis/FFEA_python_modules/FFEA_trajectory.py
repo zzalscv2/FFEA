@@ -141,10 +141,11 @@ class FFEA_trajectory:
 	
 		# For each blob
 		eof = False
+		bindex = -1
 		for b in self.blob:
 			try:
 				# Get indices
-				bindex = self.blob.index(b)
+				bindex += 1
 
 				sline = self.traj.readline().split()
 				cindex = int(sline[3][0])
@@ -326,10 +327,12 @@ class FFEA_trajectory:
 
 		# Traj data
 		cur_conf = []
+		bindex = -1
 		for b in self.blob:
-			bindex = self.blob.index(b)
+			bindex += 1
+			cindex = -1
 			for c in b:
-				cindex = b.index(c)
+				cindex += 1
 				if c.motion_state == "STATIC":
 					fout.write("Blob %d, Conformation %d, step %d\nSTATIC\n" % (bindex, cindex, 0))
 					cur_conf.append(0)
@@ -345,11 +348,13 @@ class FFEA_trajectory:
 
 		# Kinetic Data
 		fout.write("*\nConformation Changes:\n")
+		bindex = -1
 		for b in self.blob:
-			bindex = self.blob.index(b)
+			bindex += 1
+			cindex = -1
 			try:
 				for c in b:
-					cindex = b.index(c)
+					cindex += 1
 					if c.frame[index + 1] != None:
 						next_conf = cindex
 						break
