@@ -270,10 +270,12 @@ class FFEA_viewer_control_window:
 	self.blob_list = [[None for j in range(p.num_conformations[i])] for i in range(p.num_blobs)]
     
 	idnum = 0
+	bindex = -1
 	for b in bl:
-		bindex = bl.index(b)
+		bindex += 1
+		cindex = -1
 		for c in b.conformation:
-			cindex = b.conformation.index(c)
+			cindex += 1
 			ffea_id_string = "lol"
 			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
 			new_blob = Blob.Blob()
@@ -315,10 +317,13 @@ class FFEA_viewer_control_window:
 	total_num_nodes = 0
 
 	# Load all initial blobs and get a global centroid. Set secondary blobs to have placeholder 'None' frames
+	bindex = -1	
 	for b in self.blob_list:
-
+		bindex += 1
+		cindex = -1
 		for c in b:
-			if b.index(c) == 0:
+			cindex += 1
+			if cindex == 0:
 		
 				c.set_nodes_as_frame()
 
@@ -629,9 +634,13 @@ class FFEA_viewer_control_window:
 
 	cent = np.array([0.0,0.0,0.0])
 	total_num_nodes = 0
+	bindex = -1
 	for b in self.blob_list:
+		bindex += 1
+		cindex = -1		
 		for c in b:
-			if b.index(c) == 0:
+			cindex += 1
+			if cindex == 0:
 
 				x, y, z = c.get_centroid(frameIndex)
 				cent[0] += x * c.node.num_nodes
