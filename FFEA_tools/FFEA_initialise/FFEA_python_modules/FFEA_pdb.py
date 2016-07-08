@@ -185,7 +185,7 @@ class FFEA_pdb:
 					continue
 					
 			self.num_frames += 1
-			sys.stdout.write("\rRead %d frames" % (self.num_frames))
+			sys.stdout.write("\rRead %d frames\n" % (self.num_frames))
 			sys.stdout.flush()
 			
 		# Last thing, convert all to numpy
@@ -250,6 +250,11 @@ class FFEA_pdb:
 		self.num_frames = num_frames
 		for b in self.blob:
 			b.frame = [FFEA_pdb_frame() for i in range(self.num_frames)]
+
+	def add_empty_frame(self):
+		self.num_frames += 1
+		for b in self.blob:
+			b.add_empty_frame()
 
 	def build_from_traj(self, traj, scale = 1.0):
 
