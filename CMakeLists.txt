@@ -216,3 +216,4 @@ file(COPY
 ############ # # # ENABLE TESTS # # # ###############
 enable_testing()
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency/rngstream")
+add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency/volume")
