@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include "VolumeIntersection.h"
+#include "CheckTetrahedraOverlap.h"
 
 using namespace std; 
 
@@ -44,6 +45,11 @@ int main() {
     cout << endl;
   }
 
+
+  if (! tet_a_tet(tetA, tetB)) {
+    cout << " these tetrahedra are known to intersect" << endl;
+    return 1;
+  } 
 
   scalar vol = volumeIntersection<scalar,arr3>(tetA, tetB);
   stringstream ss;
