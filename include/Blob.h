@@ -75,7 +75,7 @@ public:
      */
     int init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
             const char *stokes_filename, const char *vdw_filename, const char *pin_filename, const char *binding_filename, const char *beads_filename, scalar scale, int linear_solver,
-            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, MTRand rng[], int num_threads);
+            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, RngStream rng[], int num_threads);
     //int init(const int blob_index, const int conformation_index, const string node_filename, const string topology_filename, const string surface_filename, const string material_params_filename,
       //  const string stokes_filename, const string vdw_filename, const string pin_filename, scalar scale, int linear_solver,
         //int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, MTRand rng[], int num_threads);
@@ -440,7 +440,7 @@ private:
     vector3 *force;
 
     /** The array of random number generators (needed for parallel runs) */
-    MTRand *rng;
+    RngStream *rng;
 
     CG_solver *poisson_solver;
     SparseMatrixFixedPattern *poisson_surface_matrix;
