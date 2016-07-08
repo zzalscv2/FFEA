@@ -15,7 +15,8 @@
 #include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
 
-#include "MersenneTwister.h"
+// #include "MersenneTwister.h"
+#include "RngStream.h"
 #include "NearestNeighbourLinkedListCube.h"
 #include "BEM_Poisson_Boltzmann.h"
 #include "BiCGSTAB_solver.h"
@@ -137,10 +138,10 @@ private:
     int num_threads;
 
     /** @brief An array of pointers to random number generators (for use in parallel) */
-    MTRand *rng;
+    RngStream *rng;
 
     /** @brief An array of pointers to random number generators for use in kinetics */
-    MTRand kinetic_rng;
+    RngStream *kinetic_rng;
 
     /** @brief Parameters being used for this simulation */
     SimulationParams params;
