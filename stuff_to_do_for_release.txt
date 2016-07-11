@@ -22,6 +22,3 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
 
  * [Comments] - finish translating comments into Doxygen comments. 
 
- * [Usability] - append "FFEA_FILE_PATH" in front of every input and output file. 
-             This way the files given will be always relative to the .ffea file, 
-             instead of being so to the folder where FFEA is executed. 
