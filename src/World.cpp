@@ -297,6 +297,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			    }
 			}
 
+			// HEADER FOR TRAJECTORY
 			// Print initial info stuff
 			fprintf(trajectory_out, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs %d\nNumber of Conformations", params.num_blobs);
 			for (i = 0; i < params.num_blobs; ++i) {
@@ -316,6 +317,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			// First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
 			fprintf(trajectory_out, "*\n");
 
+         // HEADER FOR MEASUREMENTS
 			// First line in measurements file should be a header explaining what quantities are in each column
 			for (i = 0; i < params.num_blobs; ++i) {
 			    fprintf(measurement_out[i], "FFEA_measurement_file (Blob %d)\n\n", i);
