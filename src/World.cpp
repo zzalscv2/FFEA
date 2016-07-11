@@ -118,6 +118,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 	// Get params section
 	cout << "Extracting Parameters..." << endl;
+	params.FFEA_script_filename = FFEA_script_filename;  // includes absolute path.
 	if(params.extract_params(script_vector) != 0) {
 		FFEA_error_text();
 		printf("Error parsing parameters in SimulationParams::extract_params()\n");
@@ -1529,7 +1530,8 @@ int World::read_and_build_system(vector<string> script_vector) {
                  } else if (lrvalue[0] == "approach") {
                    pc_params.approach = lrvalue[1];
                  } else if (lrvalue[0] == "folder") {
-                   pc_params.folder = lrvalue[1];
+                   b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
+                   pc_params.folder = auxpath.string(); //   lrvalue[1];
                  } else if (lrvalue[0] == "dist_to_m") {
                    pc_params.dist_to_m = stod(lrvalue[1]);
                  } else if (lrvalue[0] == "E_to_J") {
@@ -1574,33 +1576,42 @@ int World::read_and_build_system(vector<string> script_vector) {
 					}
 					set_motion_state = 1;
 				} else if (lrvalue[0] == "nodes") {
-					nodes.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					nodes.push_back(auxpath.string()); 
 					set_nodes = 1;
 				} else if (lrvalue[0] == "topology") {
-					topology.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					topology.push_back(auxpath.string()); 
 					set_top = 1;
 				} else if (lrvalue[0] == "surface") {
-					surface.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					surface.push_back(auxpath.string()); 
 					set_surf = 1;
 				} else if (lrvalue[0] == "material") {
-					material.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					material.push_back(auxpath.string()); 
 					set_mat = 1;
 				} else if (lrvalue[0] == "stokes") {
-					stokes.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					stokes.push_back(auxpath.string()); 
 					set_stokes = 1;
 				} else if (lrvalue[0] == "vdw") {
-					vdw.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					vdw.push_back(auxpath.string()); 
 					set_vdw = 1;
 				} else if (lrvalue[0] == "binding_sites") {
 					if(params.calc_kinetics == 1) {
-						binding.push_back(lrvalue[1]);
+						b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+						binding.push_back(auxpath.string()); 
 						set_binding = 1;
 					}
 				} else if (lrvalue[0] == "pin") {
-					pin.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					pin.push_back(auxpath.string()); 
 					set_pin = 1;
 				} else if (lrvalue[0] == "beads") {
-					beads.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					beads.push_back(auxpath.string()); 
 					set_preComp = 1;
 				} else {
 					FFEA_error_text();
