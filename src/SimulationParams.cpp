@@ -435,10 +435,11 @@ int SimulationParams::checkFileName(string oFile){
     {
         int cnt = 1;
         b_fs::path fs_oFile = oFile;
-        cout << "oFile: " << oFile << endl;
         string base = "__" + fs_oFile.filename().string() + "__bckp.";
-        if (fs_oFile.parent_path().string().size() != 0)
-          base = fs_oFile.parent_path().string() + "/" + base;
+        if (fs_oFile.parent_path().string().size() != 0) {
+          b_fs::path fs_base = fs_oFile.parent_path() / base;
+          base = fs_base.string(); 
+        }
 
         string bckp = base + boost::lexical_cast<string>(cnt);
         while (b_fs::exists(bckp)) {
