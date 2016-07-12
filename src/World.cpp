@@ -1198,39 +1198,39 @@ int World::run() {
             if (com.x < 0) {
                 if (params.wall_x_1 == WALL_TYPE_PBC) {
                     dx += box_dim.x;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             } else if (com.x > box_dim.x) {
                 if (params.wall_x_2 == WALL_TYPE_PBC) {
                     dx -= box_dim.x;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             }
             if (com.y < 0) {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             }
             if (com.z < 0) {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             }
