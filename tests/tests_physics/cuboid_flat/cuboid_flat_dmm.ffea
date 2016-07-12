@@ -5,9 +5,9 @@
 	<check = 10000>
 	<num_steps = 1e8>
 	<rng_seed = time>
-	<trajectory_out_fname = cuboid_flat/cuboid_flat_dmm_trajectory.out>
-	<measurement_out_fname = cuboid_flat/cuboid_flat_dmm_measurement.out>
-	<vdw_forcefield_params = cuboid_flat_structure/cuboid_flat.lj>
+	<trajectory_out_fname = cuboid_flat_dmm_trajectory.out>
+	<measurement_out_fname = cuboid_flat_dmm_measurement.out>
+	<vdw_forcefield_params = ../cuboid_flat_structure/cuboid_flat.lj>
 	<epsilon = 1.00e-02>
 	<max_iterations_cg = 1000>
 	<kappa = 1.00e+09>
@@ -39,13 +39,13 @@
 	<blob>
 		<conformation>
 			<motion_state = DYNAMIC>
-			<topology = cuboid_flat_structure/cuboid_flat.top>
-			<material = cuboid_flat_structure/cuboid_flat.mat>
-			<stokes = cuboid_flat_structure/cuboid_flat.stokes>
-			<pin = cuboid_flat_structure/cuboid_flat.pin>
-			<nodes = cuboid_flat_structure/cuboid_flat.node>
-			<surface = cuboid_flat_structure/cuboid_flat.surf>
-			<vdw = cuboid_flat_structure/cuboid_flat.vdw>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
 		</conformation>
 		<solver = CG_nomass>
 		<scale = 5e-9>
