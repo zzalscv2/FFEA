@@ -5,9 +5,9 @@
 	<check = 10>
 	<num_steps = 5e3>
 	<rng_seed = time>
-	<trajectory_out_fname = sphere_63_120_two_vdw/sphere_63_120_two_vdw_trajectory.out>
-	<measurement_out_fname = sphere_63_120_two_vdw/sphere_63_120_two_vdw_measurement.out>
-	<vdw_forcefield_params = sphere_63_120_structure/sphere_63_120.lj>
+	<trajectory_out_fname = sphere_63_120_two_vdw_trajectory.out>
+	<measurement_out_fname = sphere_63_120_two_vdw_measurement.out>
+	<vdw_forcefield_params = ../sphere_63_120_structure/sphere_63_120.lj>
 	<epsilon = 0.01>
 	<max_iterations_cg = 1000>
 	<kappa = 1e9>
@@ -42,13 +42,13 @@
 	<blob>
 		<conformation>
 			<motion_state = DYNAMIC>
-			<nodes = sphere_63_120_structure/sphere_63_120.node>
-			<topology = sphere_63_120_structure/sphere_63_120.top>
-			<surface = sphere_63_120_structure/sphere_63_120.surf>
-			<material = sphere_63_120_structure/sphere_63_120.mat>
-			<stokes = sphere_63_120_structure/sphere_63_120.stokes>
-			<vdw = sphere_63_120_structure/sphere_63_120.vdw>
-			<pin = sphere_63_120_structure/sphere_63_120.pin>
+			<nodes = ../sphere_63_120_structure/sphere_63_120.node>
+			<topology = ../sphere_63_120_structure/sphere_63_120.top>
+			<surface = ../sphere_63_120_structure/sphere_63_120.surf>
+			<material = ../sphere_63_120_structure/sphere_63_120.mat>
+			<stokes = ../sphere_63_120_structure/sphere_63_120.stokes>
+			<vdw = ../sphere_63_120_structure/sphere_63_120.vdw>
+			<pin = ../sphere_63_120_structure/sphere_63_120.pin>
 		</conformation>
 		<solver = CG>
 		<scale = 5e-9>
@@ -58,13 +58,13 @@
 	<blob>
 		<conformation>
 			<motion_state = DYNAMIC>
-			<nodes = sphere_63_120_structure/sphere_63_120.node>
-			<topology = sphere_63_120_structure/sphere_63_120.top>
-			<surface = sphere_63_120_structure/sphere_63_120.surf>
-			<material = sphere_63_120_structure/sphere_63_120.mat>
-			<stokes = sphere_63_120_structure/sphere_63_120.stokes>
-			<vdw = sphere_63_120_structure/sphere_63_120.vdw>
-			<pin = sphere_63_120_structure/sphere_63_120.pin>
+			<nodes = ../sphere_63_120_structure/sphere_63_120.node>
+			<topology = ../sphere_63_120_structure/sphere_63_120.top>
+			<surface = ../sphere_63_120_structure/sphere_63_120.surf>
+			<material = ../sphere_63_120_structure/sphere_63_120.mat>
+			<stokes = ../sphere_63_120_structure/sphere_63_120.stokes>
+			<vdw = ../sphere_63_120_structure/sphere_63_120.vdw>
+			<pin = ../sphere_63_120_structure/sphere_63_120.pin>
 		</conformation>
 		<solver = CG>
 		<scale = 5e-9>
