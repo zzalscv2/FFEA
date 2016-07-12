@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 	if (var_map.count("input-file")) {  
 		b_fs::path fs_script_fname = script_fname; 
 		b_fs::path canonicalPath = b_fs::canonical(fs_script_fname.parent_path());
-		fs_script_fname = canonicalPath / fs_script_fname;
+		fs_script_fname = canonicalPath / fs_script_fname.filename();
 		script_fname = fs_script_fname.string(); 
 		cout << "Input FFEA script - " << script_fname << "\n";
 	} else {
