@@ -1,4 +1,4 @@
-from os import path
+import os
 from time import sleep
 import numpy as np
 
@@ -20,16 +20,31 @@ class FFEA_node:
 		print("Loading FFEA node file...")
 
 		# Test file exists
-		if not path.exists(fname):
+		if not os.path.exists(fname):
 			print("\tFile '" + fname + "' not found.")
 			return
 	
 		# File format?
-		base, ext = path.splitext(fname)
+		base, ext = os.path.splitext(fname)
 		if ext == ".node":
+
+			# Check if tetgen
 			try:
-				self.load_node(fname)
-				self.valid = True
+				with open(fname, "r") as fin:
+					line = fin.readline().strip()
+					if line == "ffea node file" or line == "walrus node file":
+						
+						try:
+							self.load_FFEA_node(fname)
+							self.valid = True
+						except:
+							print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
+					else:
+						try:
+							self.load_tetgen_node(fname)
+							self.valid = True
+						except:
+							print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 			except:
 				print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 
@@ -50,7 +65,7 @@ class FFEA_node:
 		else:
 			print("\tUnrecognised file extension '" + ext + "'.")
 
-	def load_node(self, fname):
+	def load_FFEA_node(self, fname):
 
 		# Open file
 		try:
@@ -83,6 +98,49 @@ class FFEA_node:
 					nodetype = 1
 					continue
 	
+				n = [float(sline[0]), float(sline[1]), float(sline[2])]
+
+			except(IndexError):
+				break
+
+			self.add_node(n, nodetype = nodetype)
+
+		fin.close()
+
+		# Numpy it up, for speed
+		self.pos = np.array(self.pos)
+
+	def load_tetgen_node(self, fname):
+
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+
+		# Test format
+		sline = fin.readline().split()
+		if len(sline) != 4:
+			print("\tExpected '<num_nodes> <num_dimensions> 0 0' but found " + line)
+			raise TypeError
+
+		num_nodes = int(sline[0])
+		num_surface_nodes = 0
+		num_interior_nodes = num_nodes
+
+		# Read nodes now
+		nodetype = 0	
+		while(True):
+			sline = fin.readline().split()
+
+			if sline[0].strip() == "#":
+				break
+
+			sline = sline[1:]
+			# Get a node
+			try:
 				n = [float(sline[0]), float(sline[1]), float(sline[2])]
 
 			except(IndexError):
@@ -128,18 +186,30 @@ class FFEA_node:
 	def write_to_file(self, fname):
 
 		print "Writing to " + fname + "..."
-		fout = open(fname, "w")
-		fout.write("ffea node file\nnum_nodes %d\nnum_surface_nodes %d\nnum_interior_nodes %d\n" % (self.num_nodes, self.num_surface_nodes, self.num_interior_nodes))
-		
-		# Surface nodes
-		fout.write("surface nodes:\n")
-		for i in range(self.num_surface_nodes):
-			fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
 
-		# Interior nodes
-		fout.write("interior nodes:\n")
-		for i in range(self.num_surface_nodes, self.num_nodes, 1):
-			fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
+		# Write differently depending on format
+		base, ext = os.path.splitext(fname)
+
+		if ext == ".vol":
+			fout = open(fname, "a")
+			fout.write("#          X             Y             Z\npoints\n%d\n" % (self.num_nodes))
+			for p in self.pos:
+				fout.write("%22.16f  %22.16f  %22.16f\n" % (p[0], p[1], p[2]))
+
+			fout.write("\n\n")
+		else:
+			fout = open(fname, "w")
+			fout.write("ffea node file\nnum_nodes %d\nnum_surface_nodes %d\nnum_interior_nodes %d\n" % (self.num_nodes, self.num_surface_nodes, self.num_interior_nodes))
+		
+			# Surface nodes
+			fout.write("surface nodes:\n")
+			for i in range(self.num_surface_nodes):
+				fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
+
+			# Interior nodes
+			fout.write("interior nodes:\n")
+			for i in range(self.num_surface_nodes, self.num_nodes, 1):
+				fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
 		fout.close()
 		print "done!"
 

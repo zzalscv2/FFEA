@@ -20,7 +20,8 @@
 #define OUTPUT_FORMAT_SURF	1
 #define OUTPUT_FORMAT_OBJ	2
 #define OUTPUT_FORMAT_OFF	3
-#define OUTPUT_FORMAT_MAP	4
+#define OUTPUT_FORMAT_STL	4
+#define OUTPUT_FORMAT_MAP	5
 
 // Error text in colour
 void Error_text() {
@@ -59,6 +60,77 @@ typedef struct
 	float voxel_sizeX, voxel_sizeY, voxel_sizeZ;
 	float *data;
 } map_data;
+
+class vector3
+{
+	public:
+		double x, y, z;
+
+		void scale(float s, float t, float u)
+		{
+			x *= s;
+			y *= t;
+			z *= u;
+		}
+
+		vector3 subtract(vector3 a) {
+
+			vector3 s;
+			s.x = x - a.x;
+			s.y = y - a.y;
+			s.z = z - a.z;
+
+			return s;	
+		}
+
+		vector3 cross(vector3 a) {
+		
+			vector3 c;
+			c.x = y * a.z - z * a.y;
+			c.y = z * a.x - x * a.z;
+			c.z = x * a.y - y * a.x;
+
+			return c;
+		}
+
+		void normalise() {
+			double mag = 0.0;
+			
+			mag = sqrt(x * x + y * y + z * z);
+			x /= mag;
+			y /= mag;
+			z /= mag;	
+		}
+
+};
+
+class surf_face
+{
+	public:
+		surf_face(int n1, int n2, int n3)
+		{
+			this->n1 = n1;
+			this->n2 = n2;
+			this->n3 = n3;
+		}
+
+		vector3 get_normal(std::vector<vector3*> nodes) {
+			
+			vector3 n, e1, e2;
+
+			// Get edge vectors
+			e1 = nodes[n2]->subtract(*nodes[n1]);
+			e2 = nodes[n3]->subtract(*nodes[n1]);
+
+			// Cross for normal
+			n = e1.cross(e2);
+
+			n.normalise();
+			return n;
+		}
+		int n1, n2, n3;
+};
+
 
 class grid_edge
 {
@@ -111,33 +183,6 @@ class grid_edge
 
 	private:
 		int voxel_index_1, voxel_index_2;
-};
-
-class surf_face
-{
-	public:
-		surf_face(int n1, int n2, int n3)
-		{
-			this->n1 = n1;
-			this->n2 = n2;
-			this->n3 = n3;
-		}
-
-		int n1, n2, n3;
-};
-
-class vector3
-{
-	public:
-		double x, y, z;
-
-		void scale(float s, float t, float u)
-		{
-			x *= s;
-			y *= t;
-			z *= u;
-		}
-
 };
 
 class edge_node_lookup
@@ -267,6 +312,36 @@ class map_to_surf_generator
 			printf("Wrote %d nodes and %d faces in OFF format to %s\n", num_nodes, num_faces, output_surface_fname);
 		}
 
+		void write_STL_file(char *output_surface_fname, double cent_x, double cent_y, double cent_z)
+		{
+			FILE *surffile = NULL;
+			if((surffile = fopen(output_surface_fname, "w")) == NULL) {
+				printf("Could not open output file %s for writing\n", output_surface_fname);
+				return;
+			}
+
+			fprintf(surffile, "solid FFEA_tools_STL\n\n");
+			vector3 n;
+			for(int i = 0; i < num_faces; i++) {
+
+				// Get normal first
+				n = faces[i]->get_normal(nodes);
+				fprintf(surffile, "facet normal %3.2f %3.2f %3.2f\n", n.x, n.y, n.z);
+				fprintf(surffile, "\touter loop\n");
+				fprintf(surffile, "\t\tvertex %3.6f %3.6f %3.6f\n", nodes[faces[i]->n1]->x + cent_x, nodes[faces[i]->n1]->y + cent_y, nodes[faces[i]->n1]->z + cent_z);
+				fprintf(surffile, "\t\tvertex %3.6f %3.6f %3.6f\n", nodes[faces[i]->n2]->x + cent_x, nodes[faces[i]->n2]->y + cent_y, nodes[faces[i]->n2]->z + cent_z);
+				fprintf(surffile, "\t\tvertex %3.6f %3.6f %3.6f\n", nodes[faces[i]->n3]->x + cent_x, nodes[faces[i]->n3]->y + cent_y, nodes[faces[i]->n3]->z + cent_z);
+				fprintf(surffile, "\tendloop\n");
+				fprintf(surffile, "endfacet\n\n");
+			}
+
+			fprintf(surffile, "endsolid FFEA_tools_STL\n");
+				//fprintf(surffile, "f %d//%d %d//%d %d//%d\n", faces[i]->n1 + 1, faces[i]->n1 + 1, faces[i]->n2 + 1, faces[i]->n2 + 1, faces[i]->n3 + 1, faces[i]->n3 + 1);
+			fclose(surffile);
+
+			printf("Wrote %d nodes and %d faces in STL format to %s\n", num_nodes, num_faces, output_surface_fname);
+		}
+
 		void write_OBJ_file(char *output_surface_fname, double cent_x, double cent_y, double cent_z)
 		{
 			FILE *surffile = NULL;
@@ -275,7 +350,7 @@ class map_to_surf_generator
 				return;
 			}
 
-			fprintf(surffile, "# Created by emdb_map_to_walrus.c\n");
+			fprintf(surffile, "# Created by emdb_map_to_ffea.c\n");
 			fprintf(surffile, "# Number of vertices: %d\n", num_nodes);
 			for(int i = 0; i < num_nodes; i++) {
 				fprintf(surffile, "v %e %e %e\n", nodes[i]->x + cent_x, nodes[i]->y + cent_y, nodes[i]->z + cent_z);
@@ -1183,6 +1258,9 @@ int main(int argc, char **argv)
 				} else if(strcmp(out_format, "obj") == 0) {
 					printf("Output format = wavefront obj\n");
 					choose_format = OUTPUT_FORMAT_OBJ;
+				} else if(strcmp(out_format, "stl") == 0) {
+					printf("Output format = stereolithography stl\n");
+					choose_format = OUTPUT_FORMAT_STL;
 				} else if(strcmp(out_format, "off") == 0) {
 					printf("Output format = Geomview Object\n");
 					choose_format = OUTPUT_FORMAT_OFF;
@@ -1191,7 +1269,7 @@ int main(int argc, char **argv)
 					choose_format = OUTPUT_FORMAT_MAP;
 				} else {
 					Error_text();
-					printf("Unrecognised format '%s'. Recognised formats are:\nsurf\nobj\noff\nmap\n", out_format);
+					printf("Unrecognised format '%s'. Recognised formats are:\nsurf\nobj\nstl\noff\nmap\n", out_format);
 					return 1;
 				}
 
@@ -1238,12 +1316,12 @@ int main(int argc, char **argv)
 			set_euler = 1;
 			printf("calculate euler characteristic number -> yes\n");
 		} else if(strcmp(argv[arg], "help") == 0) {
-			printf("./emdb_map_to_walrus\n");
+			printf("./emdb_map_to_ffea\n");
 			printf("Recognised options:\n");
 			printf("-map [Followed by the name of the input binary map file]\n");
 			printf("-out [Followed by the desired name of the output file]\n");
 			printf("-level [Followed by the density level at which to filter the map]\n");
-			printf("-format [Followed by: text, surf, obj or off]\n");
+			printf("-format [Followed by: text, surf, obj, stl or off]\n");
 			printf("-coarse [Followed by an integer, N, causing groups of NxNxN voxels to be averaged]\n");
 			printf("-interpolate [Followed by yes or no. If yes, then linearly interpolate point position based on density]\n");
 			printf("-pdb [Followed by a pdb filename, inc. extention, if map was created from a pdb file]\n");
@@ -1251,7 +1329,7 @@ int main(int argc, char **argv)
 		} else {
 			Error_text();
 			printf("Unrecgonised option '%s'\n", argv[arg]);
-			printf("For info use 'emdb_map_to_walrus help'\n");
+			printf("For info use 'emdb_map_to_ffea help'\n");
 			return 1;
 		}
 
@@ -1277,7 +1355,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if(choose_format == OUTPUT_FORMAT_SURF || choose_format == OUTPUT_FORMAT_OFF || choose_format == OUTPUT_FORMAT_OBJ) {
+	if(choose_format == OUTPUT_FORMAT_SURF || choose_format == OUTPUT_FORMAT_OFF || choose_format == OUTPUT_FORMAT_OBJ || choose_format == OUTPUT_FORMAT_STL) {
 		if(set_level == 0) {
 			Error_text();
 			printf("Cannot create surface mesh with density filter isolevel unset (use '-level' to set it)\n");
@@ -1367,7 +1445,7 @@ int main(int argc, char **argv)
 	}
 
 	// Generate an output surface file if requested
-	if(choose_format == OUTPUT_FORMAT_SURF || choose_format == OUTPUT_FORMAT_OFF || choose_format == OUTPUT_FORMAT_OBJ) {
+	if(choose_format == OUTPUT_FORMAT_SURF || choose_format == OUTPUT_FORMAT_OFF || choose_format == OUTPUT_FORMAT_OBJ || choose_format == OUTPUT_FORMAT_STL) {
 		map_to_surf_generator m2sgen;
 		printf("Using marching cubes to generate map surface...\n");
 		m2sgen.generate_surface(&map, level, interpolate);
@@ -1378,6 +1456,9 @@ int main(int argc, char **argv)
 		} else if(choose_format == OUTPUT_FORMAT_OBJ) {
 			printf("Writing OBJ file...\n");
 			m2sgen.write_OBJ_file(out_fname, cent_x, cent_y, cent_z);
+		} else if(choose_format == OUTPUT_FORMAT_STL) {
+			printf("Writing STL file...\n");
+			m2sgen.write_STL_file(out_fname, cent_x, cent_y, cent_z);
 		} else if(choose_format == OUTPUT_FORMAT_OFF) {
 			printf("Writing OFF file...\n");
 			m2sgen.write_OFF_file(out_fname, cent_x, cent_y, cent_z);

@@ -1,4 +1,4 @@
-from os import path
+import os
 from time import sleep
 import numpy as np
 
@@ -18,15 +18,22 @@ class FFEA_surface:
 		print("Loading FFEA surface file...")
 
 		# Test file exists
-		if not path.exists(fname):
+		if not os.path.exists(fname):
 			print("\tFile '" + fname + "' not found.")
 			return
 	
 		# File format?
-		base, ext = path.splitext(fname)
+		base, ext = os.path.splitext(fname)
 		if ext == ".surf":
 			try:
 				self.load_surf(fname)
+				self.valid = True
+			except:
+				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
+
+		elif ext == ".face":
+			try:
+				self.load_face(fname)
 				self.valid = True
 			except:
 				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
@@ -93,6 +100,39 @@ class FFEA_surface:
 
 		fin.close()
 
+	def load_face(self, fname):
+
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+
+		# Test format
+		sline = fin.readline().split()
+		if len(sline) != 2:
+			print("\tExpected '<num_faces> 1' but found " + line)
+			raise TypeError
+
+		num_faces = int(sline[0])
+
+		# Read faces now	
+		while(True):
+			sline = fin.readline().split()
+
+			if sline[0].strip() == "#":
+				break
+
+			# Get a face
+			sline = sline[1:4]
+			f = FFEA_face_tri_lin()
+			f.set_indices(sline)
+			self.add_face(f)
+
+		fin.close()
+
 	def add_face(self, f):
 
 		self.face.append(f)
@@ -116,6 +156,29 @@ class FFEA_surface:
 
 			print outline
 	
+	def write_to_file(self, fname):
+
+		print "Writing to " + fname + "..."
+
+		# Write differently depending on format
+		base, ext = os.path.splitext(fname)
+
+		if ext == ".vol":
+			fout = open(fname, "a")
+			fout.write("# surfnr    bcnr   domin  domout      np      p1      p2      p3\nsurfaceelementsgi\n%d\n" % (self.num_faces))
+			findex = 1
+			for f in self.face:
+				#findex += 1
+				fout.write(" %d 1 1 0 %d" % (findex, len(f.n)))
+				for n in f.n:
+					fout.write(" %d" % (n))
+
+				fout.write("\n")
+
+			fout.write("\n\n")
+		fout.close()
+		print "done!"
+
 	def reset(self):
 
 		self.face = []
