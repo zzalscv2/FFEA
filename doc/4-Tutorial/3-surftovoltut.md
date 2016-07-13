@@ -4,11 +4,11 @@ Surface Profile to Volumetric Mesh {#surftovoltut}
 We now have a completed surface profile, a triangular mesh. Our next aim is to fill this empty surface with tetrahedra, as these base elements form the core of the FFEA algorithm.
 Algorithm are available to do this, and our algorithm of choice is provided by NETGEN (http://sourceforge.net/projects/netgen-mesher/), specificallyversion 4.9.13 for stability. However, when passed to the NETGEN volumetric meshing program our current structure gives 448,543 elements. This is almost as bad as having a flully atomistic structure, and so we need to coarsen the surface mesh before creating our volumetric mesh. Luckily, FFEAtools has the appropriate tool for the job:
 
-	FFEA_tools.py surftocgsurf [INPUT .surf fname] [OUTPUT .surf fname] [Length threshold] [Volume conserve (y/n)] [Find smallest edge? (y/n)] OPTIONAL[Coarsening range (xmin, xmax, ymin,ymax, zmin,zmax)]
+	FFEA_tools surftocgsurf [INPUT .surf fname] [OUTPUT .surf fname] [Length threshold] [Volume conserve (y/n)] [Find smallest edge? (y/n)] OPTIONAL[Coarsening range (xmin, xmax, ymin,ymax, zmin,zmax)]
 
 So we can pass a surface profile, and the program will return a coarsened surface such that the smallest length in the system is greater than the length threshold. Although volume conservation and smallest edge searching are optional, we have found that it is always best to set them active for stability reasons. Also, you can define a box around a sub-section of the structure and coarsening will only occur within that region. So, for example, if we wish to coarsen to a level of 5 angstroms:
 
-	FFEA_tools.py surftocgsurf emd_5043.surf emd_5043_5ang.surf 5 y y
+	FFEA_tools surftocgsurf emd_5043.surf emd_5043_5ang.surf 5 y y
 
 Where we simply use '5' because our original structure was in angstroms. Coarsening to a variety of different length scales gives the following structures:
 
