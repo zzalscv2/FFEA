@@ -1,4 +1,4 @@
-from os import path
+import os
 from time import sleep
 import numpy as np
 
@@ -18,15 +18,22 @@ class FFEA_topology:
 		print("Loading FFEA topology file...")
 
 		# Test file exists
-		if not path.exists(fname):
+		if not os.path.exists(fname):
 			print("\tFile '" + fname + "' not found.")
 			return
 	
 		# File format?
-		base, ext = path.splitext(fname)
+		base, ext = os.path.splitext(fname)
 		if ext == ".top":
 			try:
 				self.load_top(fname)
+				self.valid = True
+			except:
+				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
+
+		elif ext == ".ele":
+			try:
+				self.load_ele(fname)
 				self.valid = True
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
@@ -87,6 +94,49 @@ class FFEA_topology:
 
 		fin.close()
 
+	def load_ele(self, fname):
+
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+
+		# Test format
+		sline = fin.readline().split()
+		if len(sline) != 3:
+			print("\tExpected '<num_elements> <num_vertices> 0' but found " + line)
+			raise TypeError
+
+		num_elements = int(sline[0])
+		num_interior_elements = num_elements
+		num_surface_elements = 0
+
+		# Read elements now
+		eltype = 1
+		while(True):
+			sline = fin.readline().split()
+			if sline[0].strip() == "#":
+				break
+
+			sline = sline[1:]
+			# Get an element
+			try:
+				if len(sline) == 4:
+					el = FFEA_element_tet_lin()
+				elif len(sline) == 10:
+					el = FFEA_element_tet_sec()
+
+			except(IndexError):
+				break
+
+			el.set_indices(sline)
+			self.add_element(el, eltype = eltype)
+
+		fin.close()
+
 	def add_element(self, el, eltype = 0):
 
 		self.element.append(el)
@@ -119,6 +169,31 @@ class FFEA_topology:
 				outline += str(n) + " "
 
 			print outline
+
+	def write_to_file(self, fname):
+
+
+		print "Writing to " + fname + "..."
+
+		# Write differently depending on format
+		base, ext = os.path.splitext(fname)
+
+		if ext == ".vol":
+			fout = open(fname, "a")
+			fout.write("#  matnr      np      p1      p2      p3      p4\nvolumeelements\n%d\n" % (self.num_elements))
+			for e in self.element:
+				fout.write("1 %d" % (len(e.n)))
+				for n in e.n:
+					fout.write(" %d" % (n))
+				fout.write("\n")
+
+			fout.write("\n\n")
+
+		else:
+			pass
+
+		fout.close()
+		print "done!"
 
 	def reset(self):
 
