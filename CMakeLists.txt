@@ -149,7 +149,7 @@ include_directories("${EIGEN3_INC}")
 
 
 # 6 ### DOXYGEN ##### 
-find_package(Doxygen)
+find_package(Doxygen 1.8)
 if(DOXYGEN_FOUND)
   configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
                  "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
