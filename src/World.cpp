@@ -176,9 +176,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	}
 
 	// Load the vdw forcefield params matrix
-    	if (lj_matrix.init(params.vdw_params_fname) == FFEA_ERROR) {
-        	FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
-    	}
+	if(params.calc_vdw == 1) {
+    		if (lj_matrix.init(params.vdw_params_fname) == FFEA_ERROR) {
+        		FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
+    		}
+	}
 
     	// detect how many threads we have for openmp
     	int tid;
