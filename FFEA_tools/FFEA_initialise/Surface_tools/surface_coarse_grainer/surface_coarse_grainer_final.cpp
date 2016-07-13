@@ -8,6 +8,14 @@
 #include <unistd.h>
 
 using namespace std;
+
+string GetFileExtension(const string& FileName)
+{
+    if(FileName.find_last_of(".") != std::string::npos)
+        return FileName.substr(FileName.find_last_of(".")+1);
+    return "";
+}
+
 class vector3
 {
 	public:
@@ -352,62 +360,142 @@ class Surface
 		// Surface functions
 		int init(char *surf_fname) {
 		
-			int i, j;
-			
+			int i = 0;
+			string fname(surf_fname), ext;
+			ext = GetFileExtension(fname);
+
 			// Open file
 			FILE *surf_file;
 			surf_file = fopen(surf_fname, "r");
+
 			if(surf_file == NULL) {
 				printf("Error. Filename %s does not exist.\n", surf_fname);
 				return -1;
 			}
+
+			// Read differently depending on extension
+			if(ext.compare("surf") == 0) {
 			
-			// Check file type is correct
-			char line[255];
-			if(fscanf(surf_file, "%s\n", line) != 1) {
-				printf("Error. 'surfacemesh' line does not exist.\n");
-				return -1;
-			}
-			if(strcmp(line, "surfacemesh") != 0) {
-				printf("Error. File %s is not a NETGEN surface file\n", surf_fname);
-				return -1;
-			}
-			
-			// Get num_nodes
-			if(fscanf(surf_file, "%d\n", &num_nodes) != 1) {
-				printf("Error. 'num_nodes' line does not exist.\n");
-				return -1;
-			};
-			num_nodes_initial = num_nodes;
-			
-			// Create nodes
-			node = new vector3[num_nodes];
-			
-			// Read nodes
-			for(i = 0; i < num_nodes; ++i) {
-				if(fscanf(surf_file, "%lf %lf %lf\n", &node[i].x, &node[i].y, &node[i].z) != 3) {
-					printf("Error. Expected %d nodes, found only %d.\n", num_nodes, i);
+				// Check file type is correct
+				char line[255];
+				if(fscanf(surf_file, "%s\n", line) != 1) {
+					printf("Error. 'surfacemesh' line does not exist.\n");
+					return -1;
 				}
-			}
+				if(strcmp(line, "surfacemesh") != 0) {
+					printf("Error. File %s is not a NETGEN surface file\n", surf_fname);
+					return -1;
+				}
 			
-			// Get num_faces
-			if(fscanf(surf_file, "%d\n", &num_faces) != 1) {
-				printf("Error. 'num_faces' line does not exist.\n");
-				return -1;
-			};
-			num_faces_initial = num_faces;
+				// Get num_nodes
+				if(fscanf(surf_file, "%d\n", &num_nodes) != 1) {
+					printf("Error. 'num_nodes' line does not exist.\n");
+					return -1;
+				};
+				num_nodes_initial = num_nodes;
 			
-			// Read faces
-			int n0, n1, n2;
-			for(i = 0; i < num_faces; ++i) {
-				if(fscanf(surf_file, "%d %d %d\n", &n0, &n1, &n2) != 3) {
-					printf("Error. Expected %d faces, found only %d.\n", num_faces, i);
+				// Create nodes
+				node = new vector3[num_nodes];
+			
+				// Read nodes
+				for(i = 0; i < num_nodes; ++i) {
+					if(fscanf(surf_file, "%lf %lf %lf\n", &node[i].x, &node[i].y, &node[i].z) != 3) {
+						printf("Error. Expected %d nodes, found only %d.\n", num_nodes, i);
+					}
+				}
+			
+				// Get num_faces
+				if(fscanf(surf_file, "%d\n", &num_faces) != 1) {
+					printf("Error. 'num_faces' line does not exist.\n");
+					return -1;
+				};
+				num_faces_initial = num_faces;
+			
+				// Read faces
+				int n0, n1, n2;
+				for(i = 0; i < num_faces; ++i) {
+					if(fscanf(surf_file, "%d %d %d\n", &n0, &n1, &n2) != 3) {
+						printf("Error. Expected %d faces, found only %d.\n", num_faces, i);
+					}
+				
+					// Add to list
+					face.push_back(new Face(n0 - 1, n1 - 1, n2 - 1, node));
+				}
+			
+			} else if (ext.compare("obj") == 0) {
+
+				// Check file type is correct
+				size_t len;
+				char line_t, *line2 = new char[255];
+				list<vector3> verts;
+				list<int> fs;
+				vector3 v;
+				int n[3];
+				long int loc;
+
+				line_t = getc (surf_file);
+				while(line_t != EOF) {
+					
+					if(line_t == 'v' || line_t == 'V') {
+
+						// vn is a normal. Not needed
+						loc = ftell(surf_file);
+						line_t = getc (surf_file);
+						if(line_t == 'n' || line_t == 'N') {
+							getline(&line2, &len, surf_file);
+						} else {
+							fseek(surf_file, loc, SEEK_SET);
+							fscanf(surf_file, "%lf %lf %lf\n", &v.x, &v.y, &v.z);
+							verts.push_back(v);
+							num_nodes++;
+						}
+
+
+					} else if (line_t == 'f' || line_t == 'F') {
+
+						// Sometimes there is weird formatting :/
+						loc = ftell(surf_file);
+						if(fscanf(surf_file, "%d %d %d\n", &n[0], &n[1], &n[2]) != 3) {
+							fseek(surf_file, loc, SEEK_SET);
+							fscanf(surf_file, " %d//%*d %d//%*d %d//%*d\n", &n[0], &n[1], &n[2]);
+						}
+
+						// Add to list
+						fs.push_back(n[0]);
+						fs.push_back(n[1]);
+						fs.push_back(n[2]);
+						num_faces++;
+					} else {
+						getline(&line2, &len, surf_file);
+					}
+					line_t = getc (surf_file);
 				}
 				
-				// Add to list
-				face.push_back(new Face(n0 - 1, n1 - 1, n2 - 1, node));
+				// Create nodes and faces and add them from the vectors
+
+				// Build node list
+				node = new vector3[num_nodes];
+				i = -1;
+				for(list<vector3>::iterator it = verts.begin(); it != verts.end(); ++it) {
+					i += 1;
+					node[i].x = (*it).x;
+					node[i].y = (*it).y;
+					node[i].z = (*it).z;
+				}
+				
+				// Build face list
+				for(i = 0; i < num_faces; ++i) {
+					n[0] = fs.front();
+					fs.pop_front();
+					n[1] = fs.front();
+					fs.pop_front();
+					n[2] = fs.front();
+					fs.pop_front();
+					face.push_back(new Face(n[0] - 1, n[1] - 1, n[2] - 1, node));
+				}
+
 			}
-			
+
 			// Close file and return 
 			fclose(surf_file);
 			return 0;
@@ -417,11 +505,10 @@ class Surface
 			
 			// Iterate through faces while any edge is less than limit
 			int i, j, k, runs = 0, breaks = 0, completed_check, num_shared_faces, num_shared_nodes;
-			int node_to_delete[2], remaining_node, do_not_delete, section_deleted, twod_section_exists, face_sharing_remaining_node[2];
-			double length_deleted, original_volume, new_volume, tolerance, upper_limit_vol, lower_limit_vol;
+			int node_to_delete[2], remaining_node, do_not_delete, twod_section_exists, face_sharing_remaining_node[2];
+			double length_deleted, original_volume, new_volume, tolerance;
 			vector3 midpoint, connecting_node, distance_node, normal_vector, translate_vector, upper_limit_pos, lower_limit_pos, nodal_distance, nodal_distance_2;
 			list<Face*>::iterator face_iterator, face_to_delete[4];
-			int t = 0;
 			while(true) {
 				
 				// Output completion data
@@ -539,7 +626,6 @@ class Surface
 				}
 
 				// Coarsen in different ways depending on how many faces are sharing the edge
-				section_deleted = 0;
 	
 				if(num_shared_faces == 2) {
 					
@@ -628,10 +714,8 @@ class Surface
 						tolerance = INFINITY;
 						node[node_to_delete[0]].set_pos(distance_node.x, distance_node.y, distance_node.z);
 						upper_limit_pos.set_pos(distance_node.x, distance_node.y, distance_node.z);
-						upper_limit_vol = local_volume.calc_volume();
 						node[node_to_delete[0]].set_pos(connecting_node.x, connecting_node.y, connecting_node.z);
 						lower_limit_pos.set_pos(connecting_node.x, connecting_node.y, connecting_node.z);
-						lower_limit_vol = local_volume.calc_volume();
 						int while_counts = 0;
 						while(tolerance > 0.01) {
 							while_counts++;
@@ -871,18 +955,33 @@ class Surface
 		}
 
 		int write_to_file(char *surf_fname) {
+
 			int i;
+			list<Face*>::iterator face_iterator;	
+			string fname(surf_fname), ext;
+			ext = GetFileExtension(fname);
+
+			// Open file
 			FILE *surf_out;
-			list<Face*>::iterator face_iterator;
 			surf_out = fopen(surf_fname, "w");
-			fprintf(surf_out, "surfacemesh\n");
-			fprintf(surf_out, "%d\n", num_nodes);
-			for(i = 0; i < num_nodes; ++i) {
-				fprintf(surf_out, "%6.6lf %6.6lf %6.6lf\n", node[i].x, node[i].y, node[i].z);
-			}
-			fprintf(surf_out, "%d\n", num_faces);
-			for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
-				fprintf(surf_out, "%d %d %d\n", (*face_iterator)->n[0] + 1, (*face_iterator)->n[1] + 1, (*face_iterator)->n[2] + 1);
+
+			if(ext.compare("surf") == 0) {
+				fprintf(surf_out, "surfacemesh\n");
+				fprintf(surf_out, "%d\n", num_nodes);
+				for(i = 0; i < num_nodes; ++i) {
+					fprintf(surf_out, "%6.6lf %6.6lf %6.6lf\n", node[i].x, node[i].y, node[i].z);
+				}
+				fprintf(surf_out, "%d\n", num_faces);
+				for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
+					fprintf(surf_out, "%d %d %d\n", (*face_iterator)->n[0] + 1, (*face_iterator)->n[1] + 1, (*face_iterator)->n[2] + 1);
+				}
+			} else if (ext.compare("obj") == 0) {
+				for(i = 0; i < num_nodes; ++i) {
+					fprintf(surf_out, "v %6.6lf %6.6lf %6.6lf\n", node[i].x, node[i].y, node[i].z);
+				}
+				for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
+					fprintf(surf_out, "f %d %d %d\n", (*face_iterator)->n[0] + 1, (*face_iterator)->n[1] + 1, (*face_iterator)->n[2] + 1);
+				}
 			}
 			fclose(surf_out);
 			return 0;
@@ -926,6 +1025,7 @@ class Surface
 		Volume local_volume;
 };
 
+
 // Main program begins
 int main(int argc, char **argv) {
 	if(argc != 6 && argc != 12) {
@@ -934,7 +1034,6 @@ int main(int argc, char **argv) {
 	}
 	
 	char achar[1];
-   int forget; 
 	if(strcmp(argv[5], "N") == 0 || strcmp(argv[5], "n") == 0) {
 		printf("\nYou have selected not to find the smallest edge at each pass.\n");
 		printf("Although slightly quicker, this can result in a 'blockier' final mesh.\n");
@@ -942,7 +1041,7 @@ int main(int argc, char **argv) {
 			printf("This method can also result in instabilities when conserving volume\n");
 		}
 		printf("Would you like to continue (y/n)?:");
-		forget = fscanf(stdin, "%s", achar);
+		fscanf(stdin, "%s", achar);
 		if(strcmp(achar, "n") == 0 || strcmp(achar, "N") == 0) {
 			printf("Bye!");
 			return 0;
@@ -959,6 +1058,7 @@ int main(int argc, char **argv) {
 
 	// Create a surface
 	Surface *surf = new Surface();
+	
 	if(surf->init(argv[1]) != 0) {
 		printf("Error initialising surface\n.");
 		return -1;
