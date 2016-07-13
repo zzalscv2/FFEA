@@ -118,22 +118,23 @@ int main(int argc, char *argv[])
 	}
 
 	// Check we have an input script
-	if (var_map.count("input-file")) {  
-		b_fs::path fs_script_fname = script_fname; 
-		b_fs::path canonicalPath = b_fs::canonical(fs_script_fname.parent_path());
-		fs_script_fname = canonicalPath / fs_script_fname.filename();
-		script_fname = fs_script_fname.string(); 
-		cout << "Input FFEA script - " << script_fname << "\n";
-	} else {
+	if (! var_map.count("input-file")) {  
 		cout << "\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)] [OPTIONS]\n\n\n" << endl;
 		cout << desc << endl;
 		return FFEA_ERROR;
 	}
 
+	// set up a script_fname with the absolute path
+	b_fs::path fs_script_fname = script_fname; 
+	b_fs::path canonicalPath = b_fs::canonical(fs_script_fname.parent_path());
+	fs_script_fname = canonicalPath / fs_script_fname.filename();
+	script_fname = fs_script_fname.string(); 
+	cout << "Input FFEA script - " << script_fname << "\n";
+
 	// Use it to name the logfile
-	vector<string> splitext;
-	boost::split(splitext, script_fname, boost::is_any_of("."));
-	set_log_fname(splitext.at(0) + ".log");	
+	b_fs::path fs_log_fname = fs_script_fname;
+	fs_log_fname.replace_extension(".log");
+	set_log_fname(fs_log_fname.string()); 
 
 	// Open and begin the logfile
 	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
