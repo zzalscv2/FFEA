@@ -10,7 +10,7 @@ Prerequisites
 
 To install FFEA you need:
 
-   * C and a C++ compilers.   
+   * C and C++ compilers.   
      There is some C++ code written using 
        the C++11 standard, so CMake will ensure that you have a 
        recent enough compiler. Still, GCC 4.4 and Intel 13 have shown to work well. 
@@ -26,20 +26,31 @@ and some third-party libraries:
      http://www.boost.org/
 
    * Eigen (>=3.2.1).   
-     FFEA uses Eigen within the Kinetics module.
+     FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
      http://eigen.tuxfamily.org
 
       - Warning - All of the Eigen releases to date (<= 3.3~beta1-2) prove to 
           be incompatible with GCC >= 5 and the C++11 standard. Thus, to compile FFEA,
           you need to stick to either GCC 4, or use the latest development commit 
           from Eigen (3ba633e). 
-
- 
-
-
+     
    * Doxygen (>= 1.8) [OPTIONAL]   
      It will be used to build the documentation. http://www.doxygen.org
 
+Finally, just to help you on your way (not required for installation):
+
+   * VMD, Chimera, Pymol [OPTIONAL]
+     Standard tools for visualising the molecular and EM systems you will use to create FFEA continuum models.
+
+   * GTS - GNU Triangulated Surface Libraries (>=0.7.6) [OPTIONAL]
+     Libraries allowing the manipulation and coarsening of surface profiles.
+
+   * NETGEN / TETGEN [OPTIONAL]
+     Programs which convert surface profile into volumetric meshes to be used by FFEA.
+
+   * pyPcazip [OPTIONAL]
+     The Python FFEA analysis tools interact with these Principal Component Analysis libraries in order to generate the standard
+     PCA output (eigensystems, projections, animations etc) obtained from standard from equivalent MD simulations
 
 
 Configuration
