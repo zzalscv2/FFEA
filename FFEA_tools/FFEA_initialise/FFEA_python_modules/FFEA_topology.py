@@ -101,6 +101,17 @@ class FFEA_topology:
 
 		return len(self.element)
 
+	def get_linear_nodes(self):
+	
+		# Get them all
+		n = []
+		for e in self.element:
+			for index in e.n[0:4]:
+				n.append(index)
+		
+		# Make a list of a set
+		return list(set(n))
+		
 	def print_details(self):
 
 		print "num_elements = %d" % (self.num_elements)
