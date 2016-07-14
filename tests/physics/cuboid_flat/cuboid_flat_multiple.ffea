@@ -1,0 +1,174 @@
+<param>
+	<restart = 0>
+	<dt = 1.00e-14>
+	<kT = 4.11e-21>
+	<check = 1>
+	<num_steps = 1e11>
+	<rng_seed = 0>
+	<trajectory_out_fname = cuboid_flat_multiple_trajectory.out>
+	<measurement_out_fname = cuboid_flat_multiple_measurement.out>
+	<vdw_forcefield_params = ../cuboid_flat_structure/cuboid_flat.lj>
+	<epsilon = 1.00e-02>
+	<max_iterations_cg = 1000>
+	<kappa = 1.00e+09>
+	<epsilon_0 = 1.00e+00>
+	<dielec_ext = 1.00e+00>
+	<calc_stokes = 1>
+	<stokes_visc = 1.00e-03>
+	<calc_vdw = 1>
+	<calc_noise = 1>
+	<calc_es = 0>
+	<es_update = 1>
+	<es_N_x = 40>
+	<es_N_y = 40>
+	<es_N_z = 40>
+	<sticky_wall_xz = 0>
+	<wall_x_1 = PBC>
+	<wall_x_2 = PBC>
+	<wall_y_1 = PBC>
+	<wall_y_2 = PBC>
+	<wall_z_1 = PBC>
+	<wall_z_2 = PBC>
+	<es_h = 3>
+	<num_blobs = 9>
+	<num_conformations = (1,1,1,1,1,1,1,1,1)>
+	<num_states = (1,1,1,1,1,1,1,1,1)>
+</param>
+
+<system>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 0.00, 0.00)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 0.00, 1.50)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 0.00, 3.00)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 3.50, 0.00)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 3.50, 1.50)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 3.50, 3.00)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 7.00, 0.00)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 7.00, 1.50)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cuboid_flat_structure/cuboid_flat.top>
+			<material = ../cuboid_flat_structure/cuboid_flat.mat>
+			<stokes = ../cuboid_flat_structure/cuboid_flat.stokes>
+			<pin = ../cuboid_flat_structure/cuboid_flat.pin>
+			<nodes = ../cuboid_flat_structure/cuboid_flat.node>
+			<surface = ../cuboid_flat_structure/cuboid_flat.surf>
+			<vdw = ../cuboid_flat_structure/cuboid_flat.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 5e-9>
+		<centroid = ( 0.00, 7.00, 3.00)>
+	</blob>
+</system>

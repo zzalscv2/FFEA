@@ -2,6 +2,6 @@ These are some simple tests that are designed to test the ffea code at an interm
 
 All the tests are run by the run_tests.sh script. 
 
-These tests are available in the installed software and the paths set within the script assume that the scripts are within the normal ffea file structure.
+These tests are available in the installed software and the paths set within the script assume that they are relative to the folder where the scripts itself reside.
 
 Currently these tests are not used and so probably do not work as the file formats have changed.

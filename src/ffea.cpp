@@ -25,6 +25,7 @@
 
 using namespace std;
 namespace b_po = boost::program_options;
+namespace b_fs = boost::filesystem; 
 
 int main(int argc, char *argv[])
 {
@@ -117,22 +118,28 @@ int main(int argc, char *argv[])
 	}
 
 	// Check we have an input script
-	if (var_map.count("input-file")) {  
-		cout << "Input FFEA script - " << script_fname << "\n";
-	} else {
+	if (! var_map.count("input-file")) {  
 		cout << "\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)] [OPTIONS]\n\n\n" << endl;
 		cout << desc << endl;
 		return FFEA_ERROR;
 	}
 
-	// Use it to name the logfile
-	vector<string> splitext;
-	boost::split(splitext, script_fname, boost::is_any_of("."));
-	set_log_fname(splitext.at(0) + ".log");	
+	// set up a script_fname with the absolute path
+	b_fs::path fs_script_fname = script_fname; 
+	b_fs::path canonicalPath = b_fs::canonical(fs_script_fname.parent_path());
+	fs_script_fname = canonicalPath / fs_script_fname.filename();
+	script_fname = fs_script_fname.string(); 
+	cout << "Input FFEA script - " << script_fname << "\n";
 
-	// Open and begin the logfile
+	// Use it to name the logfile
+	b_fs::path fs_log_fname = fs_script_fname;
+	fs_log_fname.replace_extension(".log");
+	set_log_fname(fs_log_fname.string()); 
+
+	/* Open and begin the logfile
+	SimulationParams::checkFileName(userInfo::log_out_fname);
 	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
-	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", script_fname.c_str());
+	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", script_fname.c_str()); */
 
 	//The system of all proteins, electrostatics and water
 	World *world;

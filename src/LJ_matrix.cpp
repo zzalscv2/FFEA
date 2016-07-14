@@ -69,11 +69,11 @@ int LJ_matrix::init(const char *vdw_params_fname) {
 
 void LJ_matrix::get_LJ_params(int type1, int type2, scalar *vdw_eps, scalar *vdw_r_eq) {
     if (type1 < 0 || type1 > num_vdw_face_types - 1) {
-        printf("Fuck1 %d %d\n", type1, num_vdw_face_types - 1);
+        printf("Frog1 %d %d\n", type1, num_vdw_face_types - 1);
         return;
     }
     if (type2 < 0 || type2 > num_vdw_face_types - 1) {
-        printf("Fuck2 %d %d\n", type2, num_vdw_face_types - 1);
+        printf("Frog2 %d %d\n", type2, num_vdw_face_types - 1);
         return;
     }
 

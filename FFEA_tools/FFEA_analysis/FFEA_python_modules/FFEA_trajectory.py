@@ -15,7 +15,10 @@ class FFEA_trajectory:
 
 		if self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read) == 1:
 			print("\tLoading of '" + fname + "' failed. Returning empty object...")
-			return	
+		else:
+			self.valid = True
+
+		return	
 		
 	def load(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000):
 
@@ -369,6 +372,7 @@ class FFEA_trajectory:
 		self.num_conformations = []
 		self.num_nodes = []
 		self.blob = []
+		self.valid = False
 
 class FFEA_traj_blob:
 
