@@ -16,7 +16,9 @@ echo "          num_elements = 179"
 echo "          num_nodes    = 452"
 echo " "
 sleep 3
-ffea $scriptdir/cuboid_flat/cuboid_flat.ffea
+cd $scriptdir/cuboid_flat
+ffea cuboid_flat.ffea
+cd - 
 
 echo " "
 echo "ffea: Simulation of Multiple Flat Cuboids Interacting..."
@@ -24,48 +26,62 @@ echo "          num_elements = 179"
 echo "          num_nodes    = 1452"
 echo " "
 sleep 3
-ffea $scriptdir/cuboid_flat/cuboid_flat_multiple.ffea
+cd $scriptdir/cuboid_flat/
+ffea cuboid_flat_multiple.ffea
+cd - 
 
 echo " "
 echo "ffea: running with mass..."
 echo " "
 sleep 3
-ffea $scriptdir/sphere_63_120_mass/sphere_63_120_mass.ffea
+cd $scriptdir/sphere_63_120_mass/
+ffea sphere_63_120_mass.ffea
+cd -
 
 echo " "
 echo "ffea: running with no mass..."
 echo " "
 sleep 3
-ffea $scriptdir/sphere_63_120_nomass/sphere_63_120_nomass.ffea
+cd $scriptdir/sphere_63_120_nomass/
+ffea sphere_63_120_nomass.ffea
+cd -
 
 echo " "
 echo "ffea: running with multiple non-interacting blobs with no mass..."
 echo " "
 sleep 3
-ffea $scriptdir/sphere_63_120_two/sphere_63_120_two.ffea
+cd $scriptdir/sphere_63_120_two/
+ffea sphere_63_120_two.ffea
+cd - 
 
 echo " "
 echo "ffea: running with multiple interacting blobs with mass..."
 echo " "
 sleep 3
-ffea $scriptdir/sphere_63_120_two_vdw/sphere_63_120_two_vdw.ffea
+cd $scriptdir/sphere_63_120_two_vdw/
+ffea sphere_63_120_two_vdw.ffea
+cd -
 
 echo " "
 echo "ffea: running elastic network model of flat cuboid..."
 echo " "
 sleep 3
-ffea -m 1 $scriptdir/cuboid_flat/cuboid_flat_enm.ffea << EOF
+cd $scriptdir/cuboid_flat/
+ffea -m 1 cuboid_flat_enm.ffea << EOF
 0
 q
 5
 EOF
+cd -
 
 echo " "
 echo "ffea: running dynamic mode model of flat cuboid..."
 echo " "
 sleep 3
-ffea -m 2 $scriptdir/cuboid_flat/cuboid_flat_dmm.ffea << EOF
+cd $scriptdir/cuboid_flat/
+ffea -m 2 cuboid_flat_dmm.ffea << EOF
 0
 q
 5
 EOF
+cd -

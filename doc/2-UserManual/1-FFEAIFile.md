@@ -58,7 +58,8 @@ Attributes within blocks are defined between ` < ` `  > `, using International S
 
      <num_steps = 1e8>
 
- Filenames can be written relative to the current working directory or absolute:
+ Filenames can be written relative to the directory where the .ffea script resides, 
+or giving an absolute path:
 
     <trajectory_out_fname = /path/to/your/file/trajectory.out>
 

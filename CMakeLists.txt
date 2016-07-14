@@ -149,7 +149,7 @@ include_directories("${EIGEN3_INC}")
 
 
 # 6 ### DOXYGEN ##### 
-find_package(Doxygen)
+find_package(Doxygen 1.8)
 if(DOXYGEN_FOUND)
   configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
                  "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
@@ -159,7 +159,7 @@ if(DOXYGEN_FOUND)
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
   install(FILES "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/share/doc" OPTIONAL)
+                "${CMAKE_INSTALL_PREFIX}/share/ffea/doc" OPTIONAL)
 endif(DOXYGEN_FOUND)
 
 # 7 ### DEBUG FLAGS ####
@@ -204,10 +204,11 @@ set(PYTHONSTUFF "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYT
 add_subdirectory("${PROJECT_SOURCE_DIR}/FFEA_tools")
 
 
+
 #####################################################
-###### COPY OVER FILES THAT ARE NOT COMPILED ########
-file(COPY 
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/tests_physics
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/tests)
-
-
+############ # # # ENABLE TESTS # # # ###############
+enable_testing()
+# set_tests_properties(ENVIRONMENT OMP_NUM_THREADS=1)
+add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
+# add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency/volume")
+add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
