@@ -19,11 +19,11 @@ We get the following structure:
 
 ![The electron density structure of EMDB ID:EMD-5043 post-processing (countour level 1.15).](emd5043_processed_both.png "GroEL Electron Microscopy Structure")
 
-We can now use exactly the same program to generate a surface profile from our processed EM map:
+We can now use exactly the same program to generate a surface profile from our processed EM map, in either .stl or .obj format:
 
-	FFEA_tools.py emmaptosurf -map emd_5043_processed.map -out emd_5043.surf -format surf -level 1.15
+	FFEA_tools.py emmaptosurf -map emd_5043_processed.map -out emd_5043.stl -format stl -level 1.15
 
-And visualising using Netgen 4.9.13 (http://sourceforge.net/projects/netgen-mesher/):
+Visualising using Netgen 6.0 (http://sourceforge.net/projects/netgen-mesher/):
 
-![Surface profile of EMDB ID:EMD-5043.](emd5043_surf.png "GroEL Surface Profile")
+![STL Surface profile of EMDB ID:EMD-5043.](emd5043_stl.jpg "GroEL Surface Profile")
 	
