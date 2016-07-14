@@ -142,8 +142,10 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
     this->lj_matrix = lj_matrix;
 
-    if (load_vdw(vdw_filename, lj_matrix->get_num_types()) == FFEA_ERROR) {
-        FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
+    if (params->calc_vdw == 1) {
+    	if (load_vdw(vdw_filename, lj_matrix->get_num_types()) == FFEA_ERROR) {
+        	FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
+    	}
     }
 
     if (params->calc_preComp == 1) {

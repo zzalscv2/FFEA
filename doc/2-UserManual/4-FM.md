@@ -65,8 +65,9 @@ Finally, the rest of the input flags are passed within block ` <precomp> ` in ` 
 
      The expected format for these files is explained [here](\ref potfile)
 
- * ` folder ` - relative or absolute path to the folder storing the .pot 
-                 (and optionally .force) interaction files. 
+ * ` folder ` - path (absolute or relative to the folder where the .ffea file resides)
+                 to the folder storing the .pot (and optionally .force) 
+                 interaction files. 
  * ` dist_to_m ` - conversion factor to meters for the distance stored in .pot and .force files. 
  * ` E_to_J ` - conversion factor to Joules for the energies stored in .pot and .force files. 
 

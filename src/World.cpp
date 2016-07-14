@@ -118,6 +118,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 	// Get params section
 	cout << "Extracting Parameters..." << endl;
+	params.FFEA_script_filename = FFEA_script_filename;  // includes absolute path.
 	if(params.extract_params(script_vector) != 0) {
 		FFEA_error_text();
 		printf("Error parsing parameters in SimulationParams::extract_params()\n");
@@ -175,9 +176,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	}
 
 	// Load the vdw forcefield params matrix
-    	if (lj_matrix.init(params.vdw_params_fname) == FFEA_ERROR) {
-        	FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
-    	}
+	if(params.calc_vdw == 1) {
+    		if (lj_matrix.init(params.vdw_params_fname) == FFEA_ERROR) {
+        		FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
+    		}
+	}
 
     	// detect how many threads we have for openmp
     	int tid;
@@ -297,6 +300,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			    }
 			}
 
+			// HEADER FOR TRAJECTORY
 			// Print initial info stuff
 			fprintf(trajectory_out, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs %d\nNumber of Conformations", params.num_blobs);
 			for (i = 0; i < params.num_blobs; ++i) {
@@ -316,6 +320,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			// First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
 			fprintf(trajectory_out, "*\n");
 
+         // HEADER FOR MEASUREMENTS
 			// First line in measurements file should be a header explaining what quantities are in each column
 			for (i = 0; i < params.num_blobs; ++i) {
 			    fprintf(measurement_out[i], "FFEA_measurement_file (Blob %d)\n\n", i);
@@ -1195,39 +1200,39 @@ int World::run() {
             if (com.x < 0) {
                 if (params.wall_x_1 == WALL_TYPE_PBC) {
                     dx += box_dim.x;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             } else if (com.x > box_dim.x) {
                 if (params.wall_x_2 == WALL_TYPE_PBC) {
                     dx -= box_dim.x;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             }
             if (com.y < 0) {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             }
             if (com.z < 0) {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
-                    //					printf("fuck\n");
+                    //					printf("frog\n");
                     check_move = 1;
                 }
             }
@@ -1527,7 +1532,8 @@ int World::read_and_build_system(vector<string> script_vector) {
                  } else if (lrvalue[0] == "approach") {
                    pc_params.approach = lrvalue[1];
                  } else if (lrvalue[0] == "folder") {
-                   pc_params.folder = lrvalue[1];
+                   b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
+                   pc_params.folder = auxpath.string(); //   lrvalue[1];
                  } else if (lrvalue[0] == "dist_to_m") {
                    pc_params.dist_to_m = stod(lrvalue[1]);
                  } else if (lrvalue[0] == "E_to_J") {
@@ -1572,33 +1578,42 @@ int World::read_and_build_system(vector<string> script_vector) {
 					}
 					set_motion_state = 1;
 				} else if (lrvalue[0] == "nodes") {
-					nodes.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					nodes.push_back(auxpath.string()); 
 					set_nodes = 1;
 				} else if (lrvalue[0] == "topology") {
-					topology.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					topology.push_back(auxpath.string()); 
 					set_top = 1;
 				} else if (lrvalue[0] == "surface") {
-					surface.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					surface.push_back(auxpath.string()); 
 					set_surf = 1;
 				} else if (lrvalue[0] == "material") {
-					material.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					material.push_back(auxpath.string()); 
 					set_mat = 1;
 				} else if (lrvalue[0] == "stokes") {
-					stokes.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					stokes.push_back(auxpath.string()); 
 					set_stokes = 1;
 				} else if (lrvalue[0] == "vdw") {
-					vdw.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					vdw.push_back(auxpath.string()); 
 					set_vdw = 1;
 				} else if (lrvalue[0] == "binding_sites") {
 					if(params.calc_kinetics == 1) {
-						binding.push_back(lrvalue[1]);
+						b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+						binding.push_back(auxpath.string()); 
 						set_binding = 1;
 					}
 				} else if (lrvalue[0] == "pin") {
-					pin.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					pin.push_back(auxpath.string()); 
 					set_pin = 1;
 				} else if (lrvalue[0] == "beads") {
-					beads.push_back(lrvalue[1]);
+					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+					beads.push_back(auxpath.string()); 
 					set_preComp = 1;
 				} else {
 					FFEA_error_text();

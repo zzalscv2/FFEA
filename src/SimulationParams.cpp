@@ -127,6 +127,12 @@ SimulationParams::~SimulationParams() {
 
 int SimulationParams::extract_params(vector<string> script_vector) {
 
+	// Check wether a log file with the same name exists, and open it:
+	checkFileName(userInfo::log_out_fname);
+	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
+	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", FFEA_script_filename.c_str());
+	
+
 	// Extract param string from script string
 	vector<string> param_vector;
 	FFEA_input_reader *paramreader = new FFEA_input_reader();
@@ -150,6 +156,8 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 
 int SimulationParams::assign(string lvalue, string rvalue) {
 	
+	b_fs::path ffea_script = FFEA_script_filename;
+	FFEA_script_path = ffea_script.parent_path();
 	// Carry out parameter assignments
 	if (lvalue == "restart") {
 		restart = atoi(rvalue.c_str());
@@ -378,7 +386,8 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("trajectory_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-		sprintf(trajectory_out_fname, "%s", rvalue.c_str());
+		b_fs::path auxpath = FFEA_script_path / rvalue;
+		sprintf(trajectory_out_fname, "%s", auxpath.string().c_str());
         	trajectory_out_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << trajectory_out_fname << endl;
 
@@ -386,7 +395,8 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("measurement_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-		sprintf(temp_fname, "%s", rvalue.c_str());
+		b_fs::path auxpath = FFEA_script_path / rvalue;
+		sprintf(temp_fname, "%s", auxpath.string().c_str());
 	        measurement_out_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << temp_fname << endl;
 
@@ -394,7 +404,8 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("kinetics_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-		sprintf(kinetics_out_fname, "%s", rvalue.c_str());
+                b_fs::path auxpath = FFEA_script_path / rvalue;
+                sprintf(kinetics_out_fname, "%s", auxpath.string().c_str());
 	        kinetics_out_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
    
@@ -402,7 +413,8 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("vdw_forcefield_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-		sprintf(vdw_params_fname, "%s", rvalue.c_str());
+                b_fs::path auxpath = FFEA_script_path / rvalue;
+                sprintf(vdw_params_fname, "%s", auxpath.string().c_str());
         	vdw_params_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << vdw_params_fname << endl;
 
@@ -410,7 +422,8 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("binding_site_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-		sprintf(binding_params_fname, "%s", rvalue.c_str());
+                b_fs::path auxpath = FFEA_script_path / rvalue;
+                sprintf(binding_params_fname, "%s", auxpath.string().c_str());
         	binding_params_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << binding_params_fname << endl;
 
@@ -435,10 +448,11 @@ int SimulationParams::checkFileName(string oFile){
     {
         int cnt = 1;
         b_fs::path fs_oFile = oFile;
-        cout << "oFile: " << oFile << endl;
         string base = "__" + fs_oFile.filename().string() + "__bckp.";
-        if (fs_oFile.parent_path().string().size() != 0)
-          base = fs_oFile.parent_path().string() + "/" + base;
+        if (fs_oFile.parent_path().string().size() != 0) {
+          b_fs::path fs_base = fs_oFile.parent_path() / base;
+          base = fs_base.string(); 
+        }
 
         string bckp = base + boost::lexical_cast<string>(cnt);
         while (b_fs::exists(bckp)) {
