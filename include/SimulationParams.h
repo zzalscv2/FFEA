@@ -13,6 +13,7 @@
 
 #include "FFEA_return_codes.h"
 #include "FFEA_input_reader.h"
+#include "FFEA_user_info.h"
 #include "mat_vec_types.h"
 #include "dimensions.h"
 
@@ -20,7 +21,7 @@
 #define WALL_TYPE_HARD 1
 #define WALL_TYPE_STOP 2
 
-#define MAX_FNAME_SIZE 200
+#define MAX_FNAME_SIZE 2048
 
 #define UNSET 0
 #define SET 1
@@ -87,6 +88,8 @@ public:
 
     scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
 
+    string FFEA_script_filename; 
+    b_fs::path FFEA_script_path; 
     char trajectory_out_fname[MAX_FNAME_SIZE];
     char kinetics_out_fname[MAX_FNAME_SIZE];
     char **measurement_out_fname;

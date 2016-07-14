@@ -19,3 +19,6 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
            broken anything.
 
  * [Tools] - print out ".nodes" coordinate files for a given snapshot.
+
+ * [Comments] - finish translating comments into Doxygen comments. 
+
