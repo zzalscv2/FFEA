@@ -8,6 +8,7 @@ Content:
 
 - @subpage pdbtoemmaptut
 - @subpage emmaptosurftut
+- @subpage surftocgsurftut
 - @subpage surftovoltut
 - @subpage voltoffeatut
 - @subpage FFEAviewertut

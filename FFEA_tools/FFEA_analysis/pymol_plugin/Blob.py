@@ -750,7 +750,7 @@ class Blob:
 
 			mes.extend( [BEGIN, LINES] )
 			#mes.extend([COLOR, 1.0, 1.0, 1.0])
-			mes.extend([COLOR, 0.0, 0.0, 1.0])
+			#mes.extend([COLOR, 0.0, 0.0, 1.0])
 
 			# If surface mesh, draw lines for surface only, else for entire element structure
 			if display_flags['show_mesh'] == 1:
