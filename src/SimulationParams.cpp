@@ -127,6 +127,12 @@ SimulationParams::~SimulationParams() {
 
 int SimulationParams::extract_params(vector<string> script_vector) {
 
+	// Check wether a log file with the same name exists, and open it:
+	checkFileName(userInfo::log_out_fname);
+	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
+	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", FFEA_script_filename.c_str());
+	
+
 	// Extract param string from script string
 	vector<string> param_vector;
 	FFEA_input_reader *paramreader = new FFEA_input_reader();

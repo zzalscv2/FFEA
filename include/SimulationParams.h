@@ -13,6 +13,7 @@
 
 #include "FFEA_return_codes.h"
 #include "FFEA_input_reader.h"
+#include "FFEA_user_info.h"
 #include "mat_vec_types.h"
 #include "dimensions.h"
 
