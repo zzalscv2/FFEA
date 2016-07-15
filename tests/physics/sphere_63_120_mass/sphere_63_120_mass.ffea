@@ -3,8 +3,8 @@
 	<dt = 1e-14>
 	<kT = 4.11e-21>
 	<check = 1e3>
-	<num_steps = 1e4>
-	<rng_seed = time>
+	<num_steps = 1e5>
+	<rng_seed = 44>
 	<trajectory_out_fname = sphere_63_120_mass_trajectory.out>
 	<measurement_out_fname = sphere_63_120_mass_measurement.out>
 	<vdw_forcefield_params = ../sphere_63_120_structure/sphere_63_120.lj>
