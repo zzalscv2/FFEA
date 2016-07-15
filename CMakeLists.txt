@@ -148,7 +148,12 @@ message(STATUS "Found Eigen3 headers: ${EIGEN3_INC}")
 include_directories("${EIGEN3_INC}")
 
 
-# 6 ### DOXYGEN ##### 
+# 6 ### PYTHON ######
+find_package(PythonInterp REQUIRED)
+# python will be used to run some tests.
+
+
+# 7 ### DOXYGEN ##### 
 find_package(Doxygen 1.8)
 if(DOXYGEN_FOUND)
   configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
@@ -162,11 +167,11 @@ if(DOXYGEN_FOUND)
                 "${CMAKE_INSTALL_PREFIX}/share/ffea/doc" OPTIONAL)
 endif(DOXYGEN_FOUND)
 
-# 7 ### DEBUG FLAGS ####
+# 8 ### DEBUG FLAGS ####
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 
-# 8 ### FAST! ##########
+# 9 ### FAST! ##########
 if (USE_FAST)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
