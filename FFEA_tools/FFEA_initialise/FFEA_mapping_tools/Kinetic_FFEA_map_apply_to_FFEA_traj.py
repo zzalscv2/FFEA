@@ -23,6 +23,7 @@ if ext == ".pdb":
 		sys.exit("Error. If mapping to a pdb, we need a pdb topology file as a template")
 		
 	pdbtop = FFEA_pdb.FFEA_pdb(intop)
+
 	
 # Get nodes
 traj = FFEA_trajectory.FFEA_trajectory(intraj)

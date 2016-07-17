@@ -1,7 +1,7 @@
 import sys, os, StringIO
 from numpy import array as nparray
 
-import FFEA_material
+from FFEA_universe import *
 
 def get_path_from_script(path, scriptdir):
 	if os.path.isabs(path):
@@ -445,8 +445,32 @@ class FFEA_script:
 		self.params.num_blobs += 1
 
 	# Loading other FFEA objects
+	def load_node(self, bindex, cindex=0):
+		return FFEA_node.FFEA_node(self.blob[bindex].conformation[cindex].nodes)
+
+	def load_surface(self, bindex, cindex=0):
+		return FFEA_surface.FFEA_surface(self.blob[bindex].conformation[cindex].surface)
+
+	def load_topology(self, bindex, cindex=0):
+		return FFEA_topology.FFEA_topology(self.blob[bindex].conformation[cindex].topology)
+
+	def load_stokes(self, bindex, cindex=0):
+		return FFEA_stokes.FFEA_stokes(self.blob[bindex].conformation[cindex].stokes)
+
+	def load_vdw(self, bindex, cindex=0):
+		return FFEA_vdw.FFEA_vdw(self.blob[bindex].conformation[cindex].vdw)
+
+	def load_pin(self, bindex, cindex=0):
+		return FFEA_pin.FFEA_pin(self.blob[bindex].conformation[cindex].pin)
+
 	def load_mat(self, bindex, cindex=0):
 		return FFEA_material.FFEA_material(self.blob[bindex].conformation[cindex].material)
+
+	def load_trajectory(self):
+		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname)
+
+	def load_measurement(self):
+		return FFEA_measurement.FFEA_measurement(self.params.num_blobs, self.params.measurement_out_basefname)
 
 class FFEA_script_params():
 	

@@ -4,309 +4,236 @@ import matplotlib.pyplot as plt
 
 class FFEA_measurement:
 
-	def __init__(self, fname, num_blobs, num_frames_to_read = float("inf")):
-
-		# Initialise stuff
+	def __init__(self, num_blobs, fname = "", frame_rate=1, num_frames_to_read=1000000):
+	
 		self.reset()
 
-		self.num_blobs = num_blobs
-
-		# Split name into world and blob names
-		basename, ext = os.path.splitext(os.path.abspath(fname))
-		world_fname = basename + "_world" + ext
-		blob_fname = [basename + "_blob" + str(i) + ext for i in range(self.num_blobs)]
-
-		# Start reading the files
-		for fname in blob_fname:
-			ablob = FFEA_blob_measurement(fname, num_frames_to_read)
-			if ablob == None:
-				print "Error. Could not read blob measurement info from " + fname
-				self.reset()
+		# Is initialised wrong, (they set num_blobs as the fname, I think) attempt to compensate
+		if type(num_blobs) is not int:
+			print "num_blobs not set. Will try to guess num_blobs..."
+			
+			if type(num_blobs) != str:
+				print "nevermind. You didn't set an fname. Returning empty object."
 				return
+			
 			else:
-				self.blob.append(ablob)
+				if fname == "":
+					fname = num_blobs
 
-		aworld = FFEA_world_measurement(world_fname, self.num_blobs, num_frames_to_read)
-		if aworld == None:
-			print "Error. Could not read world measurement info from " + fname
-			self.reset()
+			num_blobs = 0
+			base, ext = os.path.splitext(fname)
+			while(os.path.exists(base + "_blob" + str(num_blobs) + ext)):
+				num_blobs += 1
+
+			print "%d? We think you have %d blobs. Let's go with it for now." % (num_blobs, num_blobs)
+
+		
+		if fname == "":
 			return
-		else:
-			self.world = aworld
 
-		self.num_frames = self.blob[0].num_frames
+		try:
+			self.load(fname, num_blobs, frame_rate=frame_rate, num_frames_to_read=num_frames_to_read)
+		except:
+			return
 
+	def load(self, fname, num_blobs, frame_rate=1, num_frames_to_read=1000000):
+
+		print("Loading FFEA measurement files...")
+
+		# Firstly, sort names out
+		fnames = []
+		base, ext = os.path.splitext(fname)
+		for i in range(num_blobs):
+			fnames.append(base + "_blob" + str(i) + ext)
+		fnames.append(base + "_world" + ext)
+
+		# Test files exist
+		findex = -1
+		for f in fnames:
+			findex += 1
+			if not os.path.exists(f):
+				print("\tFile '" + f + "' not found.")
+				return
+
+			if findex == num_blobs:
+				# Load world
+				pass
+			else:
+				# Load blob
+				b = FFEA_measurement_blob(f, frame_rate=frame_rate, num_frames_to_read=num_frames_to_read)
+				self.blob.append(b)
 	def reset(self):
 
 		self.num_blobs = 0
 		self.blob = []
 		self.world = None
 
-	def plot_energies(self, kT = 1, step_length = 1, num_nodes = None):
+class FFEA_measurement_blob:
 
-		# Get a container and work out the number of columns and rows needed
-		plt.figure(1)
-		num_columns = 2
-		num_rows = self.num_blobs
-
-		# Plot everything
-		for i in range(self.num_blobs):
-
-			#
-			# Kinetic
-			#
-
-			# Measured
-			subplt = plt.subplot(num_rows, num_columns, 2 * i)
-			subplt.plot(self.blob[i].step * step_length, self.blob[i].ke * 1.0 / kT, label="Trajectory")
-
-			# Theory
-			if num_nodes != None and kT != 1:
-				subplt.plot(self.blob[i].step * step_length, np.array([3 * num_nodes[i][0] / 2.0 for j in range(self.num_frames)]), "k--", label="Theoretical")
-
-			# Axes
-			plt.ylim((0,  max(self.blob[i].ke * 1.0 / kT) * 1.5))
-
-			# Legend
-			legend = subplt.legend(loc=1, shadow=True)
-
-			# Titles
-			plt.title("Kinetic Energy Trajectory")
-			if kT == 1:
-				plt.ylabel("Kinetic Energy (J)")
-			else:
-				plt.ylabel("Kinetic Energy (kT)")
-
-			if step_length == 1:
-				plt.xlabel("Step")
-			else:
-				plt.xlabel("Time (s)")
-
-			#
-			# Potential
-			#
-
-			# Measured
-			subplt = plt.subplot(num_rows, num_columns, 2 * i + 1)
-			subplt.plot(self.blob[i].step * step_length, self.blob[i].pe * 1.0 / kT, label="Trajectory")
-
-			# Theory
-			if num_nodes != None and kT != 1:
-				subplt.plot(self.blob[i].step * step_length, np.array([(3 * num_nodes[i][0] - 6) / 2.0 for j in range(self.num_frames)]), "k--", label="Theoretical")
-
-			# Axes
-			plt.ylim((0,  max(self.blob[i].pe * 1.0 / kT) * 1.5))	
-			
-			# Legend
-			legend = subplt.legend(loc=1, shadow=True)
-
-			# Titles
-			plt.title("Potential Energy Trajectory")
-			if kT == 1:
-				plt.ylabel("Potential Energy (J)")
-			else:
-				plt.ylabel("Potential Energy (kT)")
-
-			if step_length == 1:
-				plt.xlabel("Step")
-			else:
-				plt.xlabel("Time (s)")
-
-
-			plt.show()
-
-class FFEA_blob_measurement:
-
-	def __init__(self, fname, frames_to_read):
-		
-		# Initialise stuff
+	def __init__(self, fname = "", frame_rate=1, num_frames_to_read=1000000):
+	
 		self.reset()
+		if fname == "":
+			return
 
-		# Start reading
 		try:
-			fin = open(fname, "r")
-		
-		except(IOError):
-			print "Error. File " + fname  + " not found."
-			return None
+			self.load(fname, frame_rate=frame_rate, num_frames_to_read=num_frames_to_read)
+		except:
+			return
+	
+	def load(self, fname, frame_rate=1, num_frames_to_read=1000000):
 
-		self.num_frames = -1
-		just_restarted = 0
-		
-		print "Reading blob measurement data..."
-		for line in fin.readlines():
-			if(self.num_frames >= frames_to_read):
-				break
+		# Test file exists
+		if not os.path.exists(fname):
+			print("\tFile '" + fname + "' not found.")
+			return
 
-			if self.num_frames == -1:
-				if line.strip().split("|")[0].strip() != "# step":
-					print "Error. Expected '# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface' as a header but found " + line
-					return None
-				else:
-					self.num_frames += 1
-					continue
+		# Read (dictionary and measurement keys should be made to line up in the future, or make so that we can have arbitrary extra measurements after the core ones isn't needed)
+		try:
+			with open(fname, "r") as fin:
 
-			if line.strip() == "#==RESTART==":
-				self.num_restarts += 1
-				just_restarted = 1
-				continue
+				# Get to start
+				while(fin.readline()[0]) != "#":
+					pass
 
-			if self.num_frames % 100 == 0:
-				sys.stdout.write("\tRead " + str(self.num_frames) + " frames")
-				if frames_to_read < float("inf"):
-					sys.stdout.write(" out of " + str(int(frames_to_read)) + "\n")
-				else:
-					sys.stdout.write("\n")
-			sline = line.split()
-			if len(sline) != 13:
-				print "Error. Expected 13 columns but found " + str(len(sline))
-				self.reset()
-				return None
+				# Then, assign stuff
+				frame = -1
+				line = fin.readline()
+				while(line != ""):
+					
+					frame += 1
 
-			# Assign stuff
-			if just_restarted == 1:
-				while(True):
-					if self.step[-1] >= int(sline[0]):
-						self.num_frames -= 1
-						self.ke.pop()
-						self.pe.pop()
-						self.com.pop()
-						self.angmom.pop()
-						self.rmsd.pop()
-						self.vdw_surfacearea.pop()
-						self.vdw_surfaceforce.pop()
-						self.vdw_surfaceenergy.pop()
-
-						if self.step[-1] == int(sline[0]):
-							self.step.pop()
-							break
-						else:
-							self.step.pop()
-					else:
+					# Should we end?
+					if frame > num_frames_to_read:
 						break
 
-				just_restarted = 0
+					# Should we skip?
+					if frame % frame_rate != 0:
+						line = fin.readline()
+						continue
 
-			self.step.append(int(sline[0]))
-			self.ke.append(float(sline[1]))
-			self.pe.append(float(sline[2]))
-			self.com.append([float(sline[i]) for i in range(3,6)])
-			self.angmom.append([float(sline[i]) for i in range(6,9)])
-			self.rmsd.append(float(sline[9]))
-			self.vdw_surfacearea.append(float(sline[10]))
-			self.vdw_surfaceforce.append(float(sline[11]))
-			self.vdw_surfaceenergy.append(float(sline[12]))
+					sline = line.split()
+					try:
+						self.params['Step'].append(int(sline[0]))
+						self.params['Kinetic'].append(float(sline[1]))
+						self.params['Elastic'].append(float(sline[2]))
+						self.params['Centre'].append([float(sline[3]), float(sline[4]), float(sline[5])])
+						self.params['AMomentum'].append([float(sline[6]), float(sline[7]), float(sline[8])])
+						self.params['RMSD'].append(float(sline[9]))
+				
+						line = fin.readline()
+					except:
+						line = fin.readline()
+						continue
+		
+				# Make numpy for plotting and analysing and stuff
+				for key in self.params:
+					self.params[key] = np.array(self.params[key])
+		except:
+			print("\tUnable to load FFEA_measurement from " + fname + ". Returning empty object...")
 
-			self.num_frames += 1
 
-		fin.close()
+	def plot(self, key, **opts):
+		
+		if self.params.get(key) == None:
 
-		print "...done! Read %d frames.\n" % (self.num_frames)
-
-		# Numpy stuff up
-		self.step = np.array(self.step)
-		self.ke = np.array(self.ke)
-		self.pe = np.array(self.pe)
-		self.com = np.array(self.com)
-		self.angmom = np.array(self.angmom)
-		self.rmsd = np.array(self.rmsd)
-		self.vdw_surfacearea = np.array(self.vdw_surfacearea)
-		self.vdw_surfaceforce = np.array(self.vdw_surfaceforce)
-		self.vdw_surfaceenergy = np.array(self.vdw_surfaceenergy)
-
-	def reset(self):
-
-		self.num_frames = 0
-		self.num_restarts = 0
-		self.step = []
-		self.ke = []
-		self.pe = []
-		self.com = []
-		self.angmom = []
-		self.rmsd = []
-		self.vdw_surfacearea = []
-		self.vdw_surfaceforce = []
-		self.vdw_surfaceenergy = []
+			print("Error. '" + key + "' is not a recognised variable. Cannot be plotted.")
+			return
+		
+		# Send to the appropriate function
+		if key == "Elastic" or key == "Kinetic":
+			self.plot_energy(opts, energy=key)
+		
+		else:
+			print key + " is currently unsupported. Sorry. If you're a dev, program this in!"
 
 		
 	
-class FFEA_world_measurement:
-
-	def __init__(self, fname, num_blobs, frames_to_read):
-
-		# Initialise stuff
-		self.reset()
-		self.num_blobs = num_blobs
-
-		# Start reading
-		try:
-			fin = open(fname, "r")
+	def plot_energy(self, opts, energy=None):
 		
-		except(IOError):
-			print "Error. File " + fname  + " not found."
-			return None
+		print("Currently unavailable")
+		return
+		"""
+		if energy == None:
+			print "Error. 'energy' should be 'Elastic' or 'Kinetic'"
+			return		
+		
+		# Default graphing options
+		plotType = {"hist": False, "logx": False, "logy": False, "ravg": False}
+		ylabel = energy + " Energy (J)"
+		y = self.params[energy]
+		print y
+		savefig = [False, None]
 
-		self.num_frames = -1
-		num_columns = self.num_blobs * (self.num_blobs - 1) * 3 / 2 + 1
-
-		print "Reading world measurement data..."
-		for line in fin.readlines():
-
-			if(self.num_frames >= frames_to_read):
-				break
-
-			if line.strip() == "#==RESTART==":
-				continue
-			if self.num_frames == -1:
+		xlabel = "Step"
+		x = self.params['Step']
+		print x
+		# Get opts (this is super lazy, and will make the later options take priority rather than raise an error. But! It makes them mutually exclusive)
+		for o in opts:
 			
-				# Check correct number of columns
-				sline = line.split("|")
-				if len(sline) != num_columns:
-					print "Error. Expected 3 columns for each possible blob pairing (%d) but got %d columns" % (num_columns, len(sline))
-					return None
+			for t in plotType:
+				if t == o:
+					plotType[t] = True
 				else:
+					plotType[t] = False
 
-					self.num_frames += 1
-					continue
+		
+		for o, val in opts.items():
+			if o.lower() == "kt" or o.lower() == "kbt":
+				ylabel = ylabel[0:-4] + "(kT)"
+				y /= float(val)
+			
+			elif o.lower() == "dt" or o.lower() == "step":
+				xlabel = "Time (ns)"
+				x *= float(val)
+				x /= 1e-9
 
-			# Build data structures
-			vdw_force = [[0.0 for i in range(self.num_blobs)] for j in range(self.num_blobs)]
-			vdw_area = [[0.0 for i in range(self.num_blobs)] for j in range(self.num_blobs)]
-			vdw_energy = [[0.0 for i in range(self.num_blobs)] for j in range(self.num_blobs)]
+			elif o == "save" or o == "savefig":
+				savefig[0] = "True"
+				savefig[1] = val
 
-			# Read data
-			sline = line.split()[1:]
-			col = 0
-			for i in range(self.num_blobs):
-				for j in range(i + 1, self.num_blobs):
-					vdw_area[i][j] = float(sline[col])
-					vdw_area[j][i] = vdw_area[i][j]
-					col+= 1
-					vdw_force[i][j] = float(sline[col])
-					vdw_force[j][i] = vdw_force[i][j]
-					col+= 1
-					vdw_energy[i][j] = float(sline[col])
-					vdw_energy[j][i] = vdw_energy[i][j]
-					col+= 1
+		# Do stuff
+		if plotType['ravg'] == True:
+			
+			avg = []
+			for i in range(len(y)):
+				avg.append(np.mean(y[0:i]))
 
-			self.vdw_area.append(vdw_area)
-			self.vdw_force.append(vdw_force)
-			self.vdw_energy.append(vdw_energy)
-			self.num_frames += 1
-			print self.num_frames	
-			if self.num_frames % 100 == 0:
-				sys.stdout.write("\tRead " + str(self.num_frames) + " frames")
-				if frames_to_read < float("inf"):
-					sys.stdout.write(" out of " + str(int(frames_to_read)) + "\n")
-				else:
-					sys.stdout.write("\n")
+			plt.plot(x, avg)
+			plt.title(energy + " Energy Running Time Average")
 
+		elif plotType['logx'] == True:
+			
+			plt.semilogx(x, y)
+			plt.title(energy + " Energy Trace (log x)")
+			xlabel = "log " + xlabel[0:-4]
 
-		fin.close()
+		elif plotType['logy'] == True:
+			
+			plt.semilogx(x, y)
+			plt.title(energy + " Energy Trace (log y)")
+			ylabel = "log " + ylabel[0:-4]
+
+		elif plotType['hist'] == True:
+			
+			pass
+		else:
+
+			# Standard time trace
+			plt.plot(x,y)
+			plt.title(energy + " Energy Trace")
+
+		ax = plt.gca()
+		ax.set_ylim(bottom=0, top = max(y) * 1.5)
+		plt.xlabel(xlabel)
+		plt.ylabel(ylabel)
+	
+		if savefig[0] == True:
+			plt.savefig(savefig[1])
+
+		plt.show()
+		"""
 
 	def reset(self):
-		
-		self.num_frames = 0
-		self.vdw_force = []
-		self.vdw_energy = []
-		self.vdw_area = []
+
+		self.params = {'Step': [], 'Kinetic': [], 'Elastic': [], 'Centre': [], 'AMomentum': [], 'RMSD': []}
