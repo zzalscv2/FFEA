@@ -230,6 +230,7 @@ public:
      *
      */
     void add_bulk_elastic_stress(matrix3 stress);
+    void add_bulk_elastic_stress_OLD(matrix3 stress);
 
     /** @brief
      * Given the shape function derivatives, the element volume and a random number generator, this
@@ -262,6 +263,7 @@ public:
     int what_node_is_this(int index);
 
     void print();
+    void print_viscosity_matrix();
 
     /** @brief
      * Applies the mass matrix (for a linear tetrahedral element of density rho and equilibrium volume vol_0)
