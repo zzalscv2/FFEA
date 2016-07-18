@@ -114,11 +114,11 @@ public:
     tetra_element_linear();
 
     /* Properties of this element */
-    scalar rho; /// density
-    scalar A; /// shear viscosity
-    scalar B; /// second coefficient of viscosity
-    scalar G; /// shear modulus
-    scalar E; /// bulk modulus
+    scalar rho; ///< density
+    scalar A; ///< shear viscosity
+    scalar B; ///< second coefficient of viscosity
+    scalar G; ///< shear modulus
+    scalar E; ///< bulk modulus
     scalar dielectric;
     scalar mass;
 
