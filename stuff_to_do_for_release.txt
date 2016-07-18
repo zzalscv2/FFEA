@@ -6,6 +6,7 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
  * Energy recording - we need to record the energy of the system, and
            split it into the different components, Steric, LJ, Springs,
            PreComputed potentials, kinetic ...
+           Make sure it is thread safe. 
 
  * Center of mass movement removal - check the Flying_ice_cube effect.
                   rotation too?
