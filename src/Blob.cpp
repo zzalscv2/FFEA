@@ -469,7 +469,7 @@ int Blob::update() {
             // Now build the stress tensor from the shear elastic, bulk elastic and fluctuating stress contributions
             mat3_set_zero(stress);
             elem[n].add_shear_elastic_stress(J, stress);
-            elem[n].add_bulk_elastic_stress(stress);
+            elem[n].add_bulk_elastic_stress_OLD(stress);
 
             if (params->calc_noise == 1) {
                 elem[n].add_fluctuating_stress(params, rng, stress, tid);
@@ -996,7 +996,7 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
         L_y = 0;
         L_z = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:ke, pe, com_x, com_y, com_z) private(n, vec, temp1, temp2)
+#pragma omp parallel for default(none) reduction(+:ke, pe, com_x, com_y, com_z) private(n, vec, temp1, temp2, temp3)
 #endif
         for (n = 0; n < num_elements; n++) {
 
@@ -1038,20 +1038,17 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
              * Potential energy contribution:
              */
 
-            // Old
-            /*temp2 = elem[n].G/elem[n].E;
-            temp1 = (elem[n].vol/elem[n].vol_0) - (1 + temp2);
-            pe += elem[n].vol_0 * (
-                    elem[n].G * ( mat3_double_contraction_symmetric(elem[n].F_ij) - 3 )
-                    + elem[n].E * ( temp1 * temp1 - temp2 * temp2 ));*/
+	    // Old
+            temp1 = elem[n].E + elem[n].G / 3.0;
+	    temp2 = elem[n].G / temp1;
+	    temp3 = (elem[n].vol / elem[n].vol_0) - (1 + temp2);
 
-            // New 
-            scalar C = elem[n].E - elem[n].G * 2.0 / 3.0;
-            temp1 = elem[n].vol / elem[n].vol_0;
-            pe += elem[n].vol_0 * (
-                    elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3)
-                    + 0.5 * C * (temp1 * temp1 - 1)
-                    - ((2 * elem[n].G) + C) * log(temp1));       
+	    pe += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + temp1 * (temp3 * temp3 - temp2 * temp2));
+
+            // New
+            //scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
+	    //temp1 = elem[n].vol / elem[n].vol_0;
+	    //pe += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1));      
 	}
 
         // And don't forget to multiply by a half
@@ -2876,8 +2873,8 @@ int Blob::aggregate_forces_and_solve() {
             if (params->calc_noise == 1) {
 
 		// Noise depends on the number of dimensions available
-		int prefactor = 3 * (2 ^ params->num_dimensions);
-
+		//int prefactor = 3 * (2 ^ params->num_dimensions);
+		int prefactor = 24;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none) schedule(guided) shared(prefactor)
 #endif

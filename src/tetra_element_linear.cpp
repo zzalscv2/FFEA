@@ -357,12 +357,20 @@ void tetra_element_linear::add_shear_elastic_stress(matrix3 J, matrix3 stress) {
  *
  */
 void tetra_element_linear::add_bulk_elastic_stress(matrix3 stress) {
-    //scalar c = (E + G/3.0) * ((vol - vol_0)/vol_0); //Old
+
     scalar c_2 = E - G * 2.0 / 3.0;
     scalar c = G * (1.0 - (vol_0 / vol)) + 0.5 * c_2 * ((vol / vol_0) - (vol_0 / vol));
     stress[0][0] += c;
     stress[1][1] += c;
     stress[2][2] += c;
+}
+
+void tetra_element_linear::add_bulk_elastic_stress_OLD(matrix3 stress) {
+
+	scalar c = (E + G / 3.0) * ((vol - vol_0) / vol_0);
+	stress[0][0] += c;
+        stress[1][1] += c;
+        stress[2][2] += c;
 }
 
 /*
@@ -474,6 +482,16 @@ void tetra_element_linear::print() {
         printf("volume: %e\n", vol);
     }
 
+}
+
+void tetra_element_linear::print_viscosity_matrix() {
+
+	for(int i = 0; i < 12; ++i) {
+		for(int j = 0; j < 12; ++j) {
+			cout << viscosity_matrix[i][j] << " ";
+		}
+		cout << endl;
+	}
 }
 
 /*
