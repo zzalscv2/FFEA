@@ -22,7 +22,8 @@ ffea_tools = 	{
 		"makekineticmaps": "FFEA_initialise/FFEA_mapping_tools/FFEA_generate_kinetic_maps.py",
 		"split": "FFEA_analysis/FFEA_traj_tools/FFEA_split_trajectory.py",
 		"thin": "FFEA_analysis/FFEA_traj_tools/FFEA_thin_trajectory.py",
-                "view": "FFEA_analysis/FFEA_viewer/FFEA_viewer.py",
+		"view": "FFEA_analysis/FFEA_viewer/FFEA_viewer.py",
+		"nodesFromTraj": "FFEA_analysis/FFEA_traj_tools/FFEA_get_snapshots_in_nodes.py"
 		}
 
 if len(sys.argv) == 1:
