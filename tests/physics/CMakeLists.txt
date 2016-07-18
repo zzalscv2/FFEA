@@ -1,10 +1,10 @@
 # copy every folder here to PROJECT_BINARY_DIR to run the tests. 
 #   consider configuring the number of steps. 
-set (PHYSICS "${PROJECT_BINARY_DIR}/tests/physics")
-file (MAKE_DIRECTORY ${PHYSICS})
+set (TPHYSICS "${PROJECT_BINARY_DIR}/tests/physics")
+file (MAKE_DIRECTORY ${TPHYSICS})
 file (COPY cuboid_flat cuboid_flat_structure sphere_63_120_structure sphere_63_120_two
                   sphere_63_120_two_vdw sphere_63_120_cuboid_flat sphere_63_120_mass 
-                  sphere_63_120_nomass DESTINATION ${PHYSICS})
+                  sphere_63_120_nomass DESTINATION ${TPHYSICS})
 
 # # and run the tests. 
 # add_test(NAME sphere_two_vdw COMMAND ${PROJECT_BINARY_DIR}/src/ffea sphere_63_120_two_vdw/sphere_63_120_two_vdw.ffea)
@@ -15,3 +15,4 @@ file (COPY cuboid_flat cuboid_flat_structure sphere_63_120_structure sphere_63_1
 # 
 # and run the tests. 
 add_subdirectory(sphere_63_120_mass)
+add_subdirectory(sphere_63_120_nomass)
