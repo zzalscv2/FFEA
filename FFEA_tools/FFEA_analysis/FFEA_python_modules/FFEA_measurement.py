@@ -1,6 +1,9 @@
 import sys, os
 import numpy as np
-import matplotlib.pyplot as plt
+try:
+  import matplotlib.pyplot as plt
+except:
+  plt = False
 
 class FFEA_measurement:
 
@@ -153,6 +156,9 @@ class FFEA_measurement_blob:
 		
 		print("Currently unavailable")
 		return
+		if plt == False: 
+			print("plot_energy unavailable: matplotlib could not be imported")
+
 		"""
 		if energy == None:
 			print "Error. 'energy' should be 'Elastic' or 'Kinetic'"
