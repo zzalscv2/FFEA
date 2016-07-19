@@ -24,6 +24,7 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_analysis/FFEA_python_modules/FFEA_trajectory.py 
                 FFEA_analysis/FFEA_python_modules/FFEA_measurement.py 
                 FFEA_analysis/FFEA_python_modules/FFEA_frame.py
+                FFEA_analysis/FFEA_python_modules/FFEA_universe.py
                 FFEA_initialise/FFEA_python_modules/FFEA_binding_sites.py 
                 FFEA_initialise/FFEA_python_modules/FFEA_script.py 
                 FFEA_initialise/FFEA_python_modules/FFEA_pin.py 
@@ -34,7 +35,10 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_initialise/FFEA_python_modules/FFEA_node.py 
                 FFEA_initialise/FFEA_python_modules/FFEA_stokes.py 
                 FFEA_initialise/FFEA_python_modules/FFEA_vdw.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_pdb.py)
+                FFEA_initialise/FFEA_python_modules/FFEA_pdb.py 
+                FFEA_initialise/FFEA_python_modules/FFEA_kinetic_map.py
+                FFEA_initialise/FFEA_python_modules/FFEA_kinetic_rates.py
+                FFEA_initialise/FFEA_python_modules/FFEA_kinetic_states.py)
 file ( COPY ${PYMOL_FILES} DESTINATION "${PROJECT_BINARY_DIR}/FFEA_tools/ffea" )
 set ( FFEA_TAR_BALL "${PROJECT_BINARY_DIR}/FFEA_tools/ffea.tar.gz")
 set ( COMPRESSING TRUE )
@@ -52,6 +56,6 @@ if ( COMPRESSING )
   message(STATUS "PyMOL plugin will be compressed")
   add_custom_target(create_tar ALL COMMAND
                   ${CMAKE_COMMAND} -E tar "cfz" ${FFEA_TAR_BALL} "${PROJECT_BINARY_DIR}/FFEA_tools/ffea")
-  install (FILES ${FFEA_TAR_BALL} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol")
+  install (FILES ${FFEA_TAR_BALL} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ffea/plugins/pymol")
 endif ( COMPRESSING )
 
