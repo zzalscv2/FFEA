@@ -469,7 +469,7 @@ int Blob::update() {
             // Now build the stress tensor from the shear elastic, bulk elastic and fluctuating stress contributions
             mat3_set_zero(stress);
             elem[n].add_shear_elastic_stress(J, stress);
-            elem[n].add_bulk_elastic_stress_OLD(stress);
+            elem[n].add_bulk_elastic_stress(stress);
 
             if (params->calc_noise == 1) {
                 elem[n].add_fluctuating_stress(params, rng, stress, tid);
@@ -1039,16 +1039,16 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
              */
 
 	    // Old
-            temp1 = elem[n].E + elem[n].G / 3.0;
-	    temp2 = elem[n].G / temp1;
-	    temp3 = (elem[n].vol / elem[n].vol_0) - (1 + temp2);
+            //temp1 = elem[n].E + elem[n].G / 3.0;
+	    //temp2 = elem[n].G / temp1;
+	    //temp3 = (elem[n].vol / elem[n].vol_0) - (1 + temp2);
 
-	    pe += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + temp1 * (temp3 * temp3 - temp2 * temp2));
+	    //pe += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + temp1 * (temp3 * temp3 - temp2 * temp2));
 
             // New
-            //scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
-	    //temp1 = elem[n].vol / elem[n].vol_0;
-	    //pe += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1));      
+            scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
+	    temp1 = elem[n].vol / elem[n].vol_0;
+	    pe += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1));      
 	}
 
         // And don't forget to multiply by a half
