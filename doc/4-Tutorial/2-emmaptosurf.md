@@ -21,7 +21,7 @@ We get the following structure:
 
 We can now use exactly the same program to generate a surface profile from our processed EM map, in either .stl or .obj format:
 
-	FFEA_tools.py emmaptosurf -map emd_5043_processed.map -out emd_5043.stl -format stl -level 1.15
+	FFEA_tools emmaptosurf -map emd_5043_processed.map -out emd_5043.stl -format stl -level 1.15
 
 Visualising using Netgen 6.0 (http://sourceforge.net/projects/netgen-mesher/):
 
