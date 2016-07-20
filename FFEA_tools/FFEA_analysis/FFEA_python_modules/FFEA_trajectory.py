@@ -49,14 +49,18 @@ class FFEA_trajectory:
 						break
 				
 				elif(self.load_frame(surf=surf) != 0):
-					print("done! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
+					print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 					break
 
 				elif(self.num_frames == num_frames_to_read):
-					print("done! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
-					break	
-				if all_frames % 100 == 0:
-					print "Frames parsed = ", str(all_frames)
+					print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
+					break
+
+				#if self.num_frames % 100 == 0:
+				#	print "Frames parsed = ", str(all_frames)
+
+				sys.stdout.write("\rFrames read = %d" % (self.num_frames))
+				sys.stdout.flush()
 
 	def load_header(self, fname):
 
