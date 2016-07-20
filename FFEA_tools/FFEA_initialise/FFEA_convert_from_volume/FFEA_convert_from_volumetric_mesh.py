@@ -183,8 +183,8 @@ print "Determining file type from extension:"
 if ext == ".vol":
 
 	# Check consistency of file
-	top = FFEA_topology.FFEA_topology(inputfile)
-	if top == None or top.num_elements == 0:
+	topology = FFEA_topology.FFEA_topology(inputfile)
+	if topology == None or topology.num_elements == 0:
 		sys.exit("Error. No elements found within '" + inputfile + "'. Please provide a consistent file.")
 
 	if small_cull == None:
