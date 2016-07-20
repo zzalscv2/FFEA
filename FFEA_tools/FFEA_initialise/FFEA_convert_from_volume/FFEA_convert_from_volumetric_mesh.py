@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys
+from FFEA_universe import *
 
 def get_num_nodes(nodes_fname):
 	with open(nodes_fname, "r") as f:
@@ -180,6 +181,12 @@ print "scaling factor = " + scaling_factor
 
 print "Determining file type from extension:"
 if ext == ".vol":
+
+	# Check consistency of file
+	top = FFEA_topology.FFEA_topology(inputfile)
+	if top == None or top.num_elements == 0:
+		sys.exit("Error. No elements found within '" + inputfile + "'. Please provide a consistent file.")
+
 	if small_cull == None:
 		print "VOL extension = Netgen mesh output file. Converting to walrus format..."
 		os.system("python " + path + "/netgen_to_walrus.py " + inputfile + " " + node + " " + top + "\n")
@@ -210,6 +217,7 @@ else:
 	print "Error: File extension not recognised. Only '.vol' and '.off' are supported."
 	sys.exit(0)
 
+
 # create stokes file if necessary
 if calc_stokes == True:
 	print "Calculating homogeneous stokes file..."
@@ -227,13 +235,14 @@ if no_mat == True:
 
 # convert 4 node tets to 10 point tets
 os.system("python " + path + "/convert_tetrahedra_linear_to_quadratic.py " + node + " " + top + " " + stokes + "\n")
+#sys.exit()
 
 # extract the surface
 os.system("python " + path + "/extract_surface_from_topology.py " + top + " " + surf + "\n")
-
+#sys.exit()
 # move all surface nodes to the top of the list
 os.system("python " + path + "/put_surface_nodes_first.py " + node + " " + top + " " + surf + " " + stokes + "\n")
-
+#sys.exit()
 # move all surface elements to the top of the list
 os.system("python " + path + "/put_surface_elements_first.py " + node + " " + top + " " + surf + " " + material + "\n")
 
