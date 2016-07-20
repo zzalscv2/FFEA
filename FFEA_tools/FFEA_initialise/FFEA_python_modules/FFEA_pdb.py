@@ -185,7 +185,7 @@ class FFEA_pdb:
 					continue
 					
 			self.num_frames += 1
-			sys.stdout.write("\rRead %d frames\n" % (self.num_frames))
+			sys.stdout.write("\rRead %d frames" % (self.num_frames))
 			sys.stdout.flush()
 			
 		# Last thing, convert all to numpy
