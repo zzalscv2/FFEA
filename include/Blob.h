@@ -166,10 +166,14 @@ public:
     int read_nodes_from_file(FILE *trajectory_out);
 
     /**
-     * Takes measurements of system properties: KE, PE, Centre of Mass and Angular momentum, outputing
-     * the results to the measurement file.
+     * Takes measurements of system properties: KE, PE, Centre of Mass and Angular momentum etc
      */
-    void make_measurements(FILE *measurement_out, int step, vector3 *system_CoM);
+    void make_measurements();
+
+    /**
+     * Writes only the energies local to this blob to file!
+     */
+    void write_energies_to_file(FILE *fout);
 
     /**
      * Calculates the current jacobian and elasticity properties of the structure
@@ -314,6 +318,10 @@ public:
 
     int get_num_beads();
 
+    scalar get_rmsd();
+
+    vector3 get_CoG();
+
     int get_conformation_index();
     int get_previous_conformation_index();
     void set_previous_conformation_index(int index);
@@ -350,6 +358,14 @@ public:
 
     void print_node_positions();
     void print_bead_positions();
+    bool there_is_mass();
+    void set_springs_on_blob(bool state);
+    bool there_are_springs();
+    bool there_are_beads();
+    bool there_is_vdw();
+    
+    scalar get_kinetic_energy();
+    scalar get_strain_energy();
 
 private:
 
@@ -436,11 +452,33 @@ private:
     /** Remember what type of solver we are using */
     int linear_solver;
 
+    /** And whether or not there is mass in this system */
+    bool mass_in_blob;
+
+    /** Are there springs on this blob? */
+    bool springs_on_blob;
+
+    /** Are there vdw on this blob? */
+    bool vdw_on_blob;
+
+    /** Are the preComp beads on this blob? */
+    bool beads_on_blob;
+
     /** The Blob force vector (an array of the force on every node) */
     vector3 *force;
 
     /** The array of random number generators (needed for parallel runs) */
     RngStream *rng;
+
+    /** Energies */
+    scalar kineticenergy, strainenergy;
+
+    /** Momenta */
+    vector3 L;
+
+    /** Geometries */
+    vector3 CoM, CoG;
+    scalar rmsd;
 
     CG_solver *poisson_solver;
     SparseMatrixFixedPattern *poisson_surface_matrix;
