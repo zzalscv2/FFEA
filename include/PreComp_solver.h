@@ -47,6 +47,7 @@ public:
   int solve();
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
+  scalar get_field_energy(int index0, int index1);
 
 private: 
   /** msgc and msg are helpful while developing */
@@ -88,7 +89,11 @@ private:
   /** absolute position of the beads */
   scalar *b_pos; 
   /** bool "matrix" (array) storing for every pair if it is active or not */
-  bool *isPairActive; 
+  bool *isPairActive;
+
+  /** Variables to store the energy field data between each pair of blobs */
+  scalar **fieldenergy;
+  int num_blobs;
 
 };
 
