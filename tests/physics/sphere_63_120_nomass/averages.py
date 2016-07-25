@@ -5,10 +5,9 @@ def readAndAverage(iFile, ini, end, th, Fields):
   H = []
   A = {}
   with open(iFile, 'r') as sta:
-    while (sta.readline() != "Measurements:\n"):
-      continue
-    
-    for i in sta.readline().split(" "):
+    sta.readline()
+    sta.readline()
+    for i in sta.readline()[1:].split("|"):
       H.append([i.strip()])
     for line in sta:
       cnt = 0
@@ -29,11 +28,12 @@ nodes = 63
 KbT = 4.11e-21
 E = KbT*(3*nodes - 6)/2
 print "Equipartition th: ", E
-Tol = {"KineticEnergy": 0.05, "StrainEnergy":0.03}
+# Tol = { "PE":0.03, "KE":0.03 }
+Tol = { "PE":0.03 }
 ini = 40
 end = -1
 
-iFile = ["sphere_63_120_mass_measurement.out"]
+iFile = ["sphere_63_120_nomass_measurement_blob0.out"]
          
 
 err = 0
