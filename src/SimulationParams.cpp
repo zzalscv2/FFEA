@@ -411,7 +411,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		// Break up the meas fname for optional files based on measurements
 		string meas_basename(measurement_out_fname);
 		meas_basename = RemoveFileExtension(meas_basename);
-		energy_out_fname = meas_basename + ".ffeaene";
+		detailed_meas_out_fname = meas_basename + ".dmeas";
 
     	} else if (lvalue == "kinetics_out_fname") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
