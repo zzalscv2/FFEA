@@ -3121,7 +3121,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     // Stuff needed on each blob, and in global energy files
     if(energy_out != NULL) {
-        fprintf(energy_out, "%e ", step * params->dt * mesoDimensions::time);
+        fprintf(energy_out, "%e ", step * params.dt * mesoDimensions::time);
     }
 
     for (int i = 0; i < params.num_blobs; i++) {
@@ -3300,8 +3300,8 @@ void World::write_measurements_to_file(FILE *fout, int step) {
 void World::write_energies_to_file(FILE *fout) {
 	
 	// In same order as initialisation
-	for(i = 0; i < params.num_blobs; ++i) {
-		for(j = 0; j < params.num_blobs; ++j) {
+	for(int i = 0; i < params.num_blobs; ++i) {
+		for(int j = 0; j < params.num_blobs; ++j) {
 			if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
 				fprintf(energy_out, "%e ", vdw_solver->get_field_energy(i, j));
 			}
