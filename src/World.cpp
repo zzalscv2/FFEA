@@ -34,6 +34,7 @@ World::World() {
     kineticenergy = 0.0;
     strainenergy = 0.0;
     springenergy = 0.0;
+    springfieldenergy = NULL;
     vdwenergy = 0.0;
     preCompenergy = 0.0;
 
@@ -93,6 +94,10 @@ World::~World() {
     kineticenergy = 0.0;
     strainenergy = 0.0;
     springenergy = 0.0;
+
+    delete[] springfieldenergy;
+    springfieldenergy = NULL;
+
     vdwenergy = 0.0;
     preCompenergy = 0.0;
 
@@ -380,7 +385,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 				if(params.calc_vdw == 1 || params.calc_preComp == 1 || num_springs != 0) {
 					for(i = 0; i < params.num_blobs; ++i) {
-						for(j = 0; j < params.num_blobs; ++j) {
+						for(j = i; j < params.num_blobs; ++j) {
 							fprintf(energy_out, "| B%dB%d ", i, j);
 							if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
 								fprintf(energy_out, "VdWEnergy ");
@@ -2749,7 +2754,13 @@ int World::load_springs(const char *fname) {
     }
 
     fclose(in);
-    printf("\t\tRead %d springs from %s\n", i, fname);
+
+    // Inititalise the energy array (move to a solver in the future, like the VdW)
+    springfieldenergy = new scalar*[params.num_blobs];
+    for(i = 0; i < num_blobs; ++i) {
+	springfieldenergy[i] = new scalar[params.num_blobs];
+    }
+    printf("\t\tRead %d springs from %s\n", num_springs, fname);
     activate_springs();
     return 0;
 }
@@ -2790,6 +2801,28 @@ void World::apply_springs() {
         }
     }
     return;
+}
+
+scalar World::get_spring_field_energy(int index0, int index1) {
+
+	// Sum over all field
+	if(index0 == -1 || index1 == -1) {
+		scalar energy = 0.0;
+		for(int i = 0; i < num_blobs; ++i) {
+			for(int j = 0; j < num_blobs; ++j) {
+				energy += springfieldenergy[i][j];
+			}
+		}
+
+		return energy;
+
+	} else if (index0 == index1) {
+		return springfieldenergy[index0][index1];
+	} else {
+
+		// Order of blob indices is unknown in the calculations, so must add
+		return springfieldenergy[index0][index1] + springfieldenergy[index1][index0];
+	}
 }
 
 int World::get_next_script_tag(FILE *in, char *buf) {
@@ -3019,7 +3052,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     // Stuff needed on each blob, and in global energy files
     if(energy_out != NULL) {
-        fprintf(energy_out, "%e ", step * params->dt * mesoDimensions::time);
+        fprintf(energy_out, "%e ", step * params.dt * mesoDimensions::time);
     }
 
     for (int i = 0; i < params.num_blobs; i++) {
@@ -3091,7 +3124,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
 void World::make_measurements() {
 
-	int i, total_num_nodes = 0;
+	int i, j, total_num_nodes = 0;
 
 	// Set stuff to zero
 	kineticenergy = 0.0;
@@ -3123,13 +3156,24 @@ void World::make_measurements() {
 
 	// Now global stuff
 	vector3 a, b, c;
+	if(num_springs != 0) {
+		for(i = 0; i < num_blobs; ++i) {
+			for(j = 0; j < num_blobs; ++i) {
+				springfieldenergy[i][j] = 0.0;
+			}
+		}
+	}	
 	for(i = 0; i < num_springs; ++i) {
 		a = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
 		b = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
 		vec3_vec3_subs(&a, &b, &c);
-		springenergy += spring_array[i].k * (mag(&c) - spring_array[i].l) * (mag(&c) - spring_array[i].l);
+		springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag(&c) - spring_array[i].l) * (mag(&c) - spring_array[i].l);
 	}
-	springenergy *= 0.5;
+
+	if(num_springs != 0) {
+		springenergy = get_spring_field_energy(-1, -1);
+	}
+
 	if(params.calc_vdw == 1) {
 		vdwenergy = vdw_solver->get_field_energy(-1, -1);
 	}
@@ -3166,16 +3210,17 @@ void World::write_measurements_to_file(FILE *fout, int step) {
 void World::write_energies_to_file(FILE *fout) {
 	
 	// In same order as initialisation
+	int i, j;
 	for(i = 0; i < params.num_blobs; ++i) {
-		for(j = 0; j < params.num_blobs; ++j) {
+		for(j = i; j < params.num_blobs; ++j) {
 			if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
-				fprintf(energy_out, "%e ", vdw_solver->get_field_energy(i, j));
+				fprintf(energy_out, "%e ", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
 			}
-			if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs()) {
-				//fprintf(energy_out, "SpringEnergy ");
+			if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs() * mesoDimensions::Energy) {
+				fprintf(energy_out, "%e ", get_spring_field_energy(i, j));
 			}
-			if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads()) {
-				//fprintf(energy_out, "PreCompEnergy ");
+			if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads() * mesoDimensions::Energy) {
+				fprintf(energy_out, "%e ", pc_solver.get_field_energy(i, j));
 			}
 		}
 	}
