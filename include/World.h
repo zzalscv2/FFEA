@@ -140,6 +140,12 @@ private:
     /** @brief An array of pointers to random number generators (for use in parallel) */
     RngStream *rng;
 
+    /** @brief A pointer to an array of arrays, containing the seeds of the different RNGStreams */
+    unsigned long **Seeds; 
+
+    /** @brief The number of seeds stored in Seeds. */
+    int num_seeds; 
+
     /** @brief An array of pointers to random number generators for use in kinetics */
     RngStream *kinetic_rng;
 
@@ -163,6 +169,9 @@ private:
 
     /** @brief * Output Parameter file (what parameters were used? */
     FILE *params_out;
+
+    /** @brief * Output Checkpoint file */
+    FILE *checkpoint_out;
 
     /*
      *
