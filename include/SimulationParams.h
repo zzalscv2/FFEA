@@ -133,15 +133,11 @@ public:
 private:
     int trajectory_out_fname_set;
     int measurement_out_fname_set;
-<<<<<<< HEAD
-    int vdw_params_fname_set;
-    int binding_params_fname_set;
     int icheckpoint_fname_set; 
     int ocheckpoint_fname_set; 
-=======
     int vdw_in_fname_set;
     int bsite_in_fname_set;
->>>>>>> 2c9c5b9760ffe1c52373ba2577564db1bc3797bb
+
 /**
   * @brief Check if the file oFile exists, and if so 
            rename it to "__"+oFile+"__bckp.N", 
