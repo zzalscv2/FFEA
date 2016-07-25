@@ -8,9 +8,6 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
            PreComputed potentials, kinetic ...
            Make sure it is thread safe. 
 
- * Center of mass movement removal - check the Flying_ice_cube effect.
-                  rotation too?
-
  * [PreComp] deal with multiple conformations
 
  * [Doc] - visualisation and other tools
@@ -21,3 +18,5 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
 
  * [Comments] - finish translating comments into Doxygen comments. 
 
+ * [PRNG] - save the state of the RNG after finishing a simulation, and 
+            restore this state on a restarted simulation.

@@ -12,6 +12,6 @@ scale = 1.0 / float(sys.argv[4])	# Invert as pdb is in angstroms
 
 # Build objects
 traj = FFEA_trajectory.FFEA_trajectory(infname)
-pdb = FFEA_pdb.FFEA_pdb(outfname)
+pdb = FFEA_pdb.FFEA_pdb("")
 pdb.build_from_traj(traj, scale = scale)
 pdb.write_to_file(outfname)
