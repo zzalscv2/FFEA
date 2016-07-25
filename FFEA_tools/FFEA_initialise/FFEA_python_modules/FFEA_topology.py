@@ -94,6 +94,40 @@ class FFEA_topology:
 
 		fin.close()
 
+	def load_vol(self, fname):
+
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+
+		# Find start of elements
+		while(True):
+			line = fin.readline()
+			if line == "":
+				raise IOError
+			
+			elif line.strip() == "volumeelements":
+				break
+
+		# Read num_elements
+		num_elements = int(fin.readline())
+
+		# Get all elements
+		for i in range(num_elements):
+			sline = fin.readline().split()[2:]
+			el = FFEA_element_tet_lin()
+			el.set_indices(sline)
+			self.add_element(el)
+
+		# Indexing from 0
+		for i in range(self.num_elements):
+			for j in range(4):
+				self.element[i].n[j] -= 1
+
 	def load_ele(self, fname):
 
 		# Open file

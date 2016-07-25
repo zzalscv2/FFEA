@@ -430,7 +430,7 @@ class FFEA_script:
 		fout.close()
 
 	def print_details(self):
-	
+			print "traj = ", self.params.trajectory_out_fname
 			print "num_blobs = ", self.params.num_blobs
 			print "num_conformations = ", self.params.num_conformations
 			

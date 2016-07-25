@@ -40,6 +40,8 @@ void mat12_set_zero(matrix12 A);
 
 void mat3_set_zero(matrix3 A);
 
+void mat3_set_identity(matrix3 A);
+
 void mat4_set_zero(matrix4 A);
 
 void vector3_set_zero(vector3 *v);
