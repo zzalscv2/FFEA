@@ -115,4 +115,4 @@ You can run the software with the command:
 ffea <input-file.ffea>
 
 
-The only caveat in this last step is that <input-file.ffea> points to a number of input files. Details of all these files are in the documentation. You must be in the right folder so that the relative paths in <input-file.ffea> make sense.
+The only caveat in this last step is that <input-file.ffea> points to a number of input files. Details of all these files are in the documentation. Relative paths to them refer to the folder where the <input-file.ffea> script is stored. 
