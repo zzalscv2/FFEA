@@ -25,6 +25,10 @@ Blob::Blob() {
     binding_site = NULL;
     solver = NULL;
     linear_solver = 0;
+    mass_in_blob = false;
+    vdw_on_blob = false;
+    springs_on_blob = false;
+    beads_on_blob = false;
     force = NULL;
     rng = NULL;
     poisson_solver = NULL;
@@ -60,6 +64,10 @@ Blob::~Blob() {
     delete solver;
     solver = NULL;
     linear_solver = 0;
+    mass_in_blob = false;
+    vdw_on_blob = false;
+    springs_on_blob = false;
+    beads_on_blob = false;
 
     /* Release the Poisson Solver */
     delete poisson_solver;
@@ -204,10 +212,13 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         // Create the chosen linear equation Solver for this Blob
         if (linear_solver == FFEA_DIRECT_SOLVER) {
             solver = new SparseSubstitutionSolver();
+	    mass_in_blob = true;
         } else if (linear_solver == FFEA_ITERATIVE_SOLVER) {
             solver = new ConjugateGradientSolver();
+	    mass_in_blob = true;
         } else if (linear_solver == FFEA_MASSLUMPED_SOLVER) {
             solver = new MassLumpedSolver();
+	    mass_in_blob = true;
         } else if (linear_solver == FFEA_NOMASS_CG_SOLVER) {
             solver = new NoMassCGSolver();
         } else {
@@ -469,7 +480,7 @@ int Blob::update() {
             // Now build the stress tensor from the shear elastic, bulk elastic and fluctuating stress contributions
             mat3_set_zero(stress);
             elem[n].add_shear_elastic_stress(J, stress);
-            elem[n].add_bulk_elastic_stress_OLD(stress);
+            elem[n].add_bulk_elastic_stress(stress);
 
             if (params->calc_noise == 1) {
                 elem[n].add_fluctuating_stress(params, rng, stress, tid);
@@ -683,7 +694,7 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
 
 vector3 Blob::position(scalar x, scalar y, scalar z) {
     int i;
-    scalar centroid_x = 0, centroid_y = 0, centroid_z = 0;
+    scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
     vector3 v;
     // scalar dx, dy, dz;
 
@@ -975,28 +986,27 @@ scalar Blob::calculate_strain_energy() {
 	return 0.5 * strain_energy;
 }
 
-void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_CoM) {
-    // Only calculate and write out measurements if there is an open measurement output file
-    if (measurement_out != NULL) {
-        int n, i, j;
-        scalar ke, pe, com_x, com_y, com_z, L_x, L_y, L_z;
-        scalar rmsd;
-        vector3 total_vdw_xz_force;
-        scalar total_vdw_xz_energy = 0.0, total_vdw_xz_area = 0.0;
-        scalar temp1, temp2, temp3;
-        scalar r[4][3];
-        vector12 vec;
+void Blob::make_measurements() {
 
-        ke = 0;
-        pe = 0;
-        com_x = 0;
-        com_y = 0;
-        com_z = 0;
-        L_x = 0;
-        L_y = 0;
-        L_z = 0;
+    int n, i, j;
+    scalar kenergy, senergy;
+    vector3 total_vdw_xz_force;
+    scalar total_vdw_xz_energy = 0.0, total_vdw_xz_area = 0.0;
+    scalar temp1, temp2, temp3;
+    scalar cogx = 0.0, cogy = 0.0, cogz = 0.0, lx = 0.0, ly = 0.0, lz = 0.0, brmsd = 0.0;
+    scalar r[4][3];
+    vector12 vec;
+
+    kenergy = 0.0;
+    senergy = 0.0;
+    
+    // OpenMP can't reduce members of classes :(
+    //vector3_set_zero(&L);
+    //vector3_set_zero(&CoG);
+    vector3_set_zero(&CoM);
+
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:ke, pe, com_x, com_y, com_z) private(n, vec, temp1, temp2, temp3)
+#pragma omp parallel for default(none) reduction(+:kenergy, senergy) private(n, vec, temp1, temp2, temp3)
 #endif
         for (n = 0; n < num_elements; n++) {
 
@@ -1013,7 +1023,7 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
                 elem[n].apply_element_mass_matrix(vec);
 
                 // Dot u with M.u to get the contribution to the kinetic energy
-                ke += elem[n].n[0]->vel.x * vec[0] +
+                kenergy += elem[n].n[0]->vel.x * vec[0] +
                         elem[n].n[1]->vel.x * vec[1] +
                         elem[n].n[2]->vel.x * vec[2] +
                         elem[n].n[3]->vel.x * vec[3] +
@@ -1029,45 +1039,44 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
                 /*
                  * Centre of Mass contribution:
                  */
-                com_x += elem[n].mass * (elem[n].n[0]->pos.x + elem[n].n[1]->pos.x + elem[n].n[2]->pos.x + elem[n].n[3]->pos.x) / 4;
-                com_y += elem[n].mass * (elem[n].n[0]->pos.y + elem[n].n[1]->pos.y + elem[n].n[2]->pos.y + elem[n].n[3]->pos.y) / 4;
-                com_z += elem[n].mass * (elem[n].n[0]->pos.z + elem[n].n[1]->pos.z + elem[n].n[2]->pos.z + elem[n].n[3]->pos.z) / 4;
+                //com_x += elem[n].mass * (elem[n].n[0]->pos.x + elem[n].n[1]->pos.x + elem[n].n[2]->pos.x + elem[n].n[3]->pos.x) / 4;
+                //com_y += elem[n].mass * (elem[n].n[0]->pos.y + elem[n].n[1]->pos.y + elem[n].n[2]->pos.y + elem[n].n[3]->pos.y) / 4;
+                //com_z += elem[n].mass * (elem[n].n[0]->pos.z + elem[n].n[1]->pos.z + elem[n].n[2]->pos.z + elem[n].n[3]->pos.z) / 4;
             }
 
             /*
-             * Potential energy contribution:
+             * Strain energy contribution:
              */
 
 	    // Old
-            temp1 = elem[n].E + elem[n].G / 3.0;
-	    temp2 = elem[n].G / temp1;
-	    temp3 = (elem[n].vol / elem[n].vol_0) - (1 + temp2);
+            //temp1 = elem[n].E + elem[n].G / 3.0;
+	    //temp2 = elem[n].G / temp1;
+	    //temp3 = (elem[n].vol / elem[n].vol_0) - (1 + temp2);
 
-	    pe += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + temp1 * (temp3 * temp3 - temp2 * temp2));
+	    //senergy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + temp1 * (temp3 * temp3 - temp2 * temp2));
 
             // New
-            //scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
-	    //temp1 = elem[n].vol / elem[n].vol_0;
-	    //pe += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1));      
+            scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
+	    temp1 = elem[n].vol / elem[n].vol_0;
+	    senergy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1));
 	}
 
         // And don't forget to multiply by a half
-        ke *= .5;
-        pe *= .5;
-
+        kineticenergy = kenergy * 0.5;
+        strainenergy = senergy * 0.5;
+	get_CoM(&CoM);
         if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
 
             // Get the centre of mass from the calculated totals
-            if (mass <= 0.0) {
-                com_x = 0.0;
-                com_y = 0.0;
-                com_z = 0.0;
-            } else {
-                com_x *= 1.0 / mass;
-                com_y *= 1.0 / mass;
-                com_z *= 1.0 / mass;
-            }
-
+            //if (mass <= 0.0) {
+             //   com_x = 0.0;
+              //  com_y = 0.0;
+                //com_z = 0.0;
+            //} else {
+            //    com_x *= 1.0 / mass;
+            //    com_y *= 1.0 / mass;
+            //    com_z *= 1.0 / mass;
+            //}
 
             /* Calculate angular momentum */
             // mass matrix
@@ -1078,15 +1087,15 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
                     {.05, .05, .05, .1}};
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:L_x,L_y,L_z) shared(MM, system_CoM) private(n, r, temp1, temp2, temp3, i, j)
+#pragma omp parallel for default(none) reduction(+:lx, ly, lz) shared(MM) private(n, r, temp1, temp2, temp3, i, j)
 #endif
             for (n = 0; n < num_elements; n++) {
 
                 // Find the separation vectors for this element
                 for (i = 0; i < 4; i++) {
-                    r[i][0] = elem[n].n[i]->pos.x - system_CoM->x;
-                    r[i][1] = elem[n].n[i]->pos.y - system_CoM->y;
-                    r[i][2] = elem[n].n[i]->pos.z - system_CoM->z;
+                    r[i][0] = elem[n].n[i]->pos.x - CoM.x;
+                    r[i][1] = elem[n].n[i]->pos.y - CoM.y;
+                    r[i][2] = elem[n].n[i]->pos.z - CoM.z;
                 }
 
                 // Calculate contribution to angular momentum from this element
@@ -1102,54 +1111,46 @@ void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_Co
                 }
 
                 // Add this contribution to the sum
-                L_x += elem[n].mass * temp1;
-                L_y += elem[n].mass * temp2;
-                L_z += elem[n].mass * temp3;
+                lx += elem[n].mass * temp1;
+                ly += elem[n].mass * temp2;
+                lz += elem[n].mass * temp3;
             }
         }
 
         /* Calculate RMSD value for this configuration */
-        rmsd = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:rmsd) private(i, temp1, temp2, temp3)
+#pragma omp parallel for default(none) reduction(+:brmsd, cogx, cogy, cogz) private(i, temp1, temp2, temp3)
 #endif
         for (i = 0; i < num_nodes; i++) {
+
+	    /*
+	     * Center of geometry contribution (geometry better on nodes than elements)
+	     */
+	    cogx += node[i].pos.x;
+	    cogy += node[i].pos.y;
+	    cogz += node[i].pos.z;
+
             temp1 = node[i].pos.x - node[i].pos_0.x;
             temp2 = node[i].pos.y - node[i].pos_0.y;
             temp3 = node[i].pos.z - node[i].pos_0.z;
-            rmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
+            brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
         }
-        rmsd = sqrt(rmsd / num_nodes);
+	rmsd = sqrt(brmsd / num_nodes);
+	CoG.x = cogx / num_nodes;
+	CoG.y = cogy / num_nodes;
+	CoG.z = cogz / num_nodes;
+	L.x = lx;
+	L.y = ly;
+	L.z = lz;
+}
 
+void Blob::write_energies_to_file(FILE *fout) {
 
-        /* VdW measurements */
-        vector3_set_zero(&total_vdw_xz_force);
-        if (this->params->calc_vdw == 1) {
-          for (i = 0; i < num_surface_faces; i++) {
-            if (surface[i].vdw_xz_interaction_flag == true) {
-                total_vdw_xz_force.x += surface[i].vdw_xz_force->x;
-                total_vdw_xz_force.y += surface[i].vdw_xz_force->y;
-                total_vdw_xz_force.z += surface[i].vdw_xz_force->z;
-
-                total_vdw_xz_area += surface[i].area;
-                total_vdw_xz_energy += surface[i].vdw_xz_energy;
-
-            }
-          }
-        }
-
-
-        // print out all measurements to file
-        fprintf(measurement_out, 
-         "%d\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\n", 
-         step, ke*mesoDimensions::Energy, pe*mesoDimensions::Energy, 
-         com_x*mesoDimensions::length, com_y*mesoDimensions::length, com_z*mesoDimensions::length, 
-         L_x*mesoDimensions::length, L_y*mesoDimensions::length, L_z*mesoDimensions::length, 
-         rmsd*mesoDimensions::length, 
-         mag(&total_vdw_xz_force)*mesoDimensions::force,
-         total_vdw_xz_energy*mesoDimensions::Energy,
-         total_vdw_xz_area*mesoDimensions::area);
-    }
+	if(there_is_mass()) {
+		fprintf(fout, "%e ", kineticenergy * mesoDimensions::Energy);
+	}
+	fprintf(fout, "%e ", strainenergy * mesoDimensions::Energy);
+	fflush(fout);
 }
 
 void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
@@ -1215,6 +1216,20 @@ int Blob::get_num_faces() {
  */
 int Blob::get_num_beads() {
     return num_beads;
+}
+
+/*
+ *
+ */
+scalar Blob::get_rmsd() {
+	return rmsd;
+}
+
+/*
+ *
+ */
+vector3 Blob::get_CoG() {
+	return CoG;
 }
 
 /*
@@ -1782,6 +1797,14 @@ int Blob::get_num_linear_nodes() {
 	}
 
 	return node_indices.size();
+}
+
+scalar Blob::get_kinetic_energy() {
+	return kineticenergy;
+}
+
+scalar Blob::get_strain_energy() {
+	return strainenergy;
 }
 
 void Blob::get_min_max(vector3 *blob_min, vector3 *blob_max) {
@@ -2474,6 +2497,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
 
     // 2.3 - num_beads:
     num_beads = stypes.size();
+    beads_on_blob = true;
 
     return FFEA_OK; 
 
@@ -2583,6 +2607,13 @@ int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types) {
         }
     }
 
+    // Set whether vdw is active on blob
+    for(i = 0; i < num_surface_faces; ++i) {
+	if(surface[i].vdw_interaction_type != -1) {
+            vdw_on_blob = true;
+	    break;
+	}
+    }
     fclose(in);
 
     printf("\t\t\tRead %d vdw faces from %s\n", i, vdw_filename);
@@ -2664,7 +2695,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 		}
 
 		if(bind_type >= num_binding_site_types) {
-			FFEA_ERROR_MESSG("Binding site %d specifies site type %d, which is outside range of types allowed by the 'binding_site_params' matrix (%d types allowed)\n", i, bind_type, num_binding_site_types)
+			FFEA_ERROR_MESSG("Binding site %d specifies site type %d, which is outside range of types allowed by the 'bsite_in_fname' matrix (%d types allowed)\n", i, bind_type, num_binding_site_types)
 			return FFEA_ERROR;
 		}
 
@@ -3108,3 +3139,24 @@ void Blob::build_mass_matrix() {
     // Build the mass matrix
     M->build();
 }
+
+bool Blob::there_is_mass() {
+	return mass_in_blob;
+}
+
+void Blob::set_springs_on_blob(bool state) {
+	springs_on_blob = state;
+}
+
+bool Blob::there_are_springs() {
+	return springs_on_blob;
+}
+
+bool Blob::there_is_vdw() {
+	return vdw_on_blob;
+}
+
+bool Blob::there_are_beads() {
+	return beads_on_blob;
+}
+

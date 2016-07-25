@@ -18,12 +18,13 @@ tetra_element_linear::tetra_element_linear() {
     //			node_phi[0] = 0; node_phi[1] = 0; node_phi[2] = 0; node_phi[3] = 0;
     vol_0 = 0;
     vol = 0;
-    mat3_set_zero(F_ij);
+    mat3_set_identity(F_ij);
     internal_stress_mag = 0;
     mat3_set_zero(J_inv_0);
     mat12_set_zero(viscosity_matrix);
     zero_force();
     last_det = 0;
+    daddy_blob = NULL;
 }
 
 /*

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include <vector>
+#include <map>
 #include <iostream>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -89,14 +90,15 @@ public:
     scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
 
     string FFEA_script_filename; 
-    b_fs::path FFEA_script_path; 
+    b_fs::path FFEA_script_path, FFEA_script_basename;
     char trajectory_out_fname[MAX_FNAME_SIZE];
     char kinetics_out_fname[MAX_FNAME_SIZE];
-    char **measurement_out_fname;
-    char temp_fname[MAX_FNAME_SIZE];
-
-    char vdw_params_fname[MAX_FNAME_SIZE];
-    char binding_params_fname[MAX_FNAME_SIZE];
+    char measurement_out_fname[MAX_FNAME_SIZE];
+    string energy_out_fname;
+    char vdw_in_fname[MAX_FNAME_SIZE];
+    char bsite_in_fname[MAX_FNAME_SIZE];
+    char icheckpoint_fname[MAX_FNAME_SIZE];  ///< Input Checkpoint file name
+    char ocheckpoint_fname[MAX_FNAME_SIZE];  ///< Output Checkpoint file name
 
     SimulationParams();
 
@@ -131,14 +133,18 @@ public:
 private:
     int trajectory_out_fname_set;
     int measurement_out_fname_set;
-    int vdw_params_fname_set;
-    int binding_params_fname_set;
+    int icheckpoint_fname_set; 
+    int ocheckpoint_fname_set; 
+    int vdw_in_fname_set;
+    int bsite_in_fname_set;
+
 /**
   * @brief Check if the file oFile exists, and if so 
            rename it to "__"+oFile+"__bckp.N", 
   *        where N is an integer so that the resulting file is new.
   */       
-    int checkFileName(string oFile); 
-};
+    int checkFileName(string oFile);
 
+    string RemoveFileExtension(const string& FileName);
+};
 #endif
