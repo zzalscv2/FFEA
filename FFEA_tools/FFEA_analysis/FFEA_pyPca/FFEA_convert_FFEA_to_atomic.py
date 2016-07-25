@@ -70,7 +70,7 @@ if format == "mdcrd":
 	os.system(scriptdir + "../../FFEA_analysis/FFEA_pyPca/FFEA_convert_traj_to_mdcrd " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
 elif format == "pdb":
 	final_traj_fname_pdb = out_basename + ".pdb"
-	pdb = FFEA_pdb.FFEA_pdb(final_traj_fname_pdb)
+	pdb = FFEA_pdb.FFEA_pdb("")
 	pdb.build_from_traj(traj, scale = 1.0 / scale)
 	pdb.write_to_file(final_traj_fname_pdb)
 

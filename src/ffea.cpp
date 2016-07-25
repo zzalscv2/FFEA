@@ -63,10 +63,11 @@ int main(int argc, char *argv[])
   
 	// Options for visible and non-visible cmd line params
 	desc.add_options()
-		("help,h", "print usage message")
-		("input-file,i", b_po::value<string>(&script_fname), "Input Script Filename")
-		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator)\n")
+		("help,h", "Print usage message")
+		("energy,e", "Output energies out at a higher level of detail (to a .ffeaene file)")
+		("input-file,i", b_po::value<string>(&script_fname), "Input script filename")
 		("delete-frames,l", b_po::value<int>(&frames_to_delete)->default_value(0), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
+		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator)\n")
 		("verbose,v", b_po::value<int>(&verbose)->default_value(0), "Prints extra details to stdout on what FFEA is doing\n\t0 - Low\n\t1 - Medium\n\t2 - High\n\t3 - Manic")
 	;
 		
@@ -153,7 +154,7 @@ int main(int argc, char *argv[])
 	
 	// Initialise the world, loading all blobs, parameters, electrostatics, kinetics etc.
 	cout << "Initialising the world:\n" << endl;
-	if(world->init(script_fname, frames_to_delete, mode) == FFEA_ERROR) {
+	if(world->init(script_fname, frames_to_delete, mode, var_map.count("energy")) == FFEA_ERROR) {
 		FFEA_error_text();
 		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 

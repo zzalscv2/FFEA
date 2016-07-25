@@ -77,8 +77,11 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 	    vol *= steric_factor; 
 
 	    // Energy is proportional to the volume of interaction: 
-	    f1->add_bb_vdw_energy_to_record(vol, f2->daddy_blob->blob_index);
-	    f2->add_bb_vdw_energy_to_record(vol, f1->daddy_blob->blob_index);
+	    //f1->add_bb_vdw_energy_to_record(vol, f2->daddy_blob->blob_index);
+	    //f2->add_bb_vdw_energy_to_record(vol, f1->daddy_blob->blob_index);
+
+	    // Store the measurement
+	    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
 
 	    // arr3Resize(vol, force1);  // the provious volume force 
 	    // Force is proportional to the surface area of this volume: 
@@ -186,8 +189,11 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 
 	    scalar ApAq = f1->area * f2->area;
 	    energy *= ApAq;
-	    f1->add_bb_vdw_energy_to_record(energy, f2->daddy_blob->blob_index);
-	    f2->add_bb_vdw_energy_to_record(energy, f1->daddy_blob->blob_index);
+	    //f1->add_bb_vdw_energy_to_record(energy, f2->daddy_blob->blob_index);
+	    //f2->add_bb_vdw_energy_to_record(energy, f1->daddy_blob->blob_index);
+	    
+	    // Store the measurement
+	    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
 
 	    for (int j = 0; j < 3; j++) {
 		vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};

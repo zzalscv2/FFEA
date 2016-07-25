@@ -16,6 +16,7 @@ World::World() {
     num_blobs = 0;
     num_conformations = NULL;
     num_springs = 0;
+    mass_in_system = false;
     num_threads = 1;
     rng = NULL;
     phi_Gamma = NULL;
@@ -26,9 +27,21 @@ World::World() {
     step_initial = 0;
     trajectory_out = NULL;
     measurement_out = NULL;
+    energy_out = NULL;
     kinetics_out = NULL;
-    params_out = NULL;
+    checkpoint_out = NULL;
     vdw_solver = NULL;
+
+    kineticenergy = 0.0;
+    strainenergy = 0.0;
+    springenergy = 0.0;
+    vdwenergy = 0.0;
+    preCompenergy = 0.0;
+
+    vector3_set_zero(&L);
+    vector3_set_zero(&CoM);
+    vector3_set_zero(&CoG);
+    rmsd = 0.0;
 }
 
 World::~World() {
@@ -45,7 +58,9 @@ World::~World() {
     delete[] spring_array;
     spring_array = NULL;
     num_springs = 0;
-  
+
+    mass_in_system = false;
+
     delete[] kinetic_map;
     kinetic_map = NULL;
 
@@ -63,21 +78,32 @@ World::~World() {
     phi_Gamma = NULL;
 
     total_num_surface_faces = 0;
-  
+
     box_dim.x = 0;
     box_dim.y = 0;
     box_dim.z = 0;
     step_initial = 0;
   
     trajectory_out = NULL;
-
-    delete[] measurement_out;
     measurement_out = NULL;  
 
     kinetics_out = NULL;
-    params_out = NULL;
 
+    checkpoint_out = NULL;
+
+    energy_out = NULL;
     vdw_solver = NULL;
+
+    kineticenergy = 0.0;
+    strainenergy = 0.0;
+    springenergy = 0.0;
+    vdwenergy = 0.0;
+    preCompenergy = 0.0;
+
+    vector3_set_zero(&L);
+    vector3_set_zero(&CoM);
+    vector3_set_zero(&CoG);
+    rmsd = 0.0;
 }
 
 /**
@@ -93,7 +119,7 @@ World::~World() {
  * initialise BEM PBE solver
  * */
 
-int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
+int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeEnergy) {
 	
 	// Set some constants and variables
 	int i, j, k;
@@ -138,7 +164,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	if(params.calc_kinetics == 1) {
 
 		// Load the binding params matrix
-		if(binding_matrix.init(params.binding_params_fname) == FFEA_ERROR) {
+		if(binding_matrix.init(params.bsite_in_fname) == FFEA_ERROR) {
 			FFEA_ERROR_MESSG("Error when reading from binding site params file.\n")
 		}
 
@@ -177,7 +203,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 	// Load the vdw forcefield params matrix
 	if(params.calc_vdw == 1) {
-    		if (lj_matrix.init(params.vdw_params_fname) == FFEA_ERROR) {
+    		if (lj_matrix.init(params.vdw_in_fname) == FFEA_ERROR) {
         		FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
     		}
 	}
@@ -198,38 +224,128 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	num_threads = 1;
 #endif
 
-   	// We need one rng for each thread, to avoid concurrency problems,
-    	// so generate an array of instances of RngStreams:
-   // We first initialize the six seeds that RngStream needs:
-	unsigned long sixseed[6];
-	unsigned long twoMax[2] = {4294967087, 4294944443}; // these are max values for RngStream
-	srand(params.rng_seed); 
-	for (int i=0; i<6; i++){
-		sixseed[i] = (rand() + rand())%twoMax[i/3];
-	} 
-   // now initialise the package:
-	RngStream::SetPackageSeed(sixseed);
-	if (userInfo::verblevel > 1) {
-		cout << "RngStream initialised using: ";
-		for (int ni=0; ni<6; ni++){ 
-			cout << sixseed[ni] << " "; 
+	// RNG: initialise the system, and allocate the Seeds:
+	//    This has to be done before calling read_and_build_system.
+	if (params.restart == 0) {
+		// RNG.1 - allocate the Seeds:
+		num_seeds = num_threads;
+		if (params.calc_kinetics == 1) num_seeds += 1; 
+		Seeds = new unsigned long *[num_seeds];
+		for (int i=0; i<num_seeds; i++){ 
+			Seeds[i] = new unsigned long [6];
 		}
-		cout << endl; 
+		// RNG.2 - Initialise the package:
+		// We need one rng for each thread, to avoid concurrency problems,
+	  	// so generate an array of instances of RngStreams:
+		// We first initialize the six seeds that RngStream needs:
+		unsigned long sixseed[6];
+		unsigned long twoMax[2] = {4294967087, 4294944443}; // these are max values for RngStream
+		srand(params.rng_seed); 
+		for (int i=0; i<6; i++){
+			sixseed[i] = (rand() + rand())%twoMax[i/3];
+		} 
+		// now initialise the package:
+		RngStream::SetPackageSeed(sixseed);
+		if (userInfo::verblevel > 1) {
+			cout << "RngStream initialised using: ";
+			for (int ni=0; ni<6; ni++){ 
+				cout << sixseed[ni] << " "; 
+			}
+			cout << endl; 
+		}
+		// RNG.3 - initialise the rngs related to the fluctuating stress, and noise.
+		rng = new RngStream[num_threads];
+		if (userInfo::verblevel > 2) {
+			for (int ni=0; ni<num_threads; ni++){ 
+				cout << "RNG[" << ni << "] initial state:" <<endl; 
+				rng[ni].WriteState(); 
+		 	} 
+		} 
+		// RNG.4 - and optionally initialise an extra Stream for kinetics.
+		if(params.calc_kinetics == 1) {
+			kinetic_rng = new RngStream;
+			cout << "RngStream for kinetics created with initial state:" << endl;       
+			kinetic_rng->WriteState(); 
+		} 
+	} else if (params.restart == 1) {
+		// RNG - We'll now recover the state of the RNGs.
+		printf("Getting state information from %s\n", params.icheckpoint_fname);
+		// RNG.1 - READ Seeds FROM i.cpt into Seeds:
+		// RNG.1.1 - open checkpoint file and check:
+		ifstream checkpoint_in;
+		checkpoint_in.open(params.icheckpoint_fname, ifstream::in);
+		if (checkpoint_in.fail()){
+			FFEA_FILE_ERROR_MESSG(params.icheckpoint_fname)
+		}
+		// RNG.1.2 - readlines, and num_seeds:
+		vector<string> checkpoint_v;
+		string line;
+		while (getline(checkpoint_in, line)) {
+			checkpoint_v.push_back(line);
+		}
+		vector<string> header;
+		int num_seeds_read;
+		boost::split(header, checkpoint_v[0], boost::is_any_of(" "));
+		try {
+			num_seeds_read = stoi(header.back());
+		} catch (invalid_argument& ia) {
+			FFEA_ERROR_MESSG("Error reading the number of stress seeds: %s\n", ia.what());
+		}
+		int num_stress_seeds_read = num_seeds_read;
+		if (params.calc_kinetics) num_seeds_read += 1;
+		// RNG.1.3 - allocate Seeds:
+		int num_active_rng = num_threads; 
+		if (params.calc_kinetics) num_active_rng += 1; 
+		int nlines = checkpoint_v.size();
+		Seeds = new unsigned long *[max(num_active_rng,num_seeds_read)];
+		// RNG.1.4 - get Seeds:
+		int cnt_seeds = 0; 
+		for (int i=1; i<nlines; i++){
+			if (i == num_threads + 1) continue; // skip the header of the kinetics rng
+			vector <string> vline;
+			boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
+			Seeds[cnt_seeds] = new unsigned long [6];
+			// there must be 6 integers per line:
+			if (vline.size() != 6) {
+				FFEA_ERROR_MESSG("ERROR reading seeds\n")
+			}
+			for (int j=0; j<6; j++){
+				try {
+					Seeds[cnt_seeds][j] = stol(vline[j]);
+				} catch (invalid_argument& ia) {
+					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
+				}
+			}
+			cnt_seeds += 1;
+		}
+
+		// RNG.2 - AND initialise rng:
+		// RNG.2.1 - first the package and, and rng[0],
+		cout << "To be initialised by: " << Seeds[0][0] << " " << Seeds[0][1] << " " <<
+          Seeds[0][2] << " " << Seeds[0][3] << " " << Seeds[0][4] << " " << Seeds[0][5] << endl;
+		RngStream::SetPackageSeed(Seeds[0]);
+		rng = new RngStream[num_threads];
+		// RNG.2.2 - and now the rest of them: rng[1:]: 
+		for (int i=1; i<(min(num_threads,num_stress_seeds_read)); i++){
+			rng[i].SetSeed(Seeds[i]);
+		}
+		if (userInfo::verblevel > 2) {
+			for (int ni=0; ni<num_threads; ni++){ 
+				cout << "RNG[" << ni << "] initial state:" <<endl; 
+				rng[ni].WriteState(); 
+		 	} 
+		} 
+		// if num_threads == num_threads in all the previous runs, it was that easy. 
+		// if num_threads < num_threads in a previous run, we have enough seeds, and we'll keep the
+        //    extra seeds to be saved in ocheckpoint_fname.
+		// if num_threads > num_threads in a previous run, we initialised the extra RNG properly
+		//		when we set SetPackageSeed(Seeds[0]).
+		// RNG.2.3 - if kinetics, initialise the last one!
+		if(params.calc_kinetics == 1) {
+			kinetic_rng = new RngStream;
+			kinetic_rng->SetSeed(Seeds[num_seeds_read-1]);
+		}
 	}
-   
-	rng = new RngStream[num_threads];
-	if (userInfo::verblevel > 2) {
-		for (int ni=0; ni<num_threads; ni++){ 
-			cout << "RNG[" << ni << "] initial state:" <<endl; 
-			rng[ni].WriteState(); 
-	 	} 
-   } 
-	// and we'll initialise an extra Stream for kinetics, if we need it.
-	if(params.calc_kinetics == 1) {
-		kinetic_rng = new RngStream;
-		cout << "RngStream for kinetics created with initial state:" << endl;       
-		kinetic_rng->WriteState(); 
-	} 
 
 
 	// Build system of blobs, conformations, kinetics etc
@@ -281,12 +397,16 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 		}
 	}
 
-	// Create measurement files
-	measurement_out = new FILE *[params.num_blobs + 1];
-
 	// If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
 	if(mode == 0) {
+		// In any case, open the output checkpoint file for writing
+		if ((checkpoint_out = fopen(params.ocheckpoint_fname, "w")) == NULL) {
+			// FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname)
+			FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname);
+		}
+
 		if (params.restart == 0) {
+
 		
 			// Open the trajectory output file for writing
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "w")) == NULL) {
@@ -294,10 +414,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			}
 
 			// Open the measurement output file for writing
-			for (i = 0; i < params.num_blobs + 1; ++i) {
-			    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "w")) == NULL) {
-				FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
-			    }
+			if ((measurement_out = fopen(params.measurement_out_fname, "w")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
 			}
 
 			// HEADER FOR TRAJECTORY
@@ -320,24 +438,67 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			// First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
 			fprintf(trajectory_out, "*\n");
 
-         // HEADER FOR MEASUREMENTS
-			// First line in measurements file should be a header explaining what quantities are in each column
-			for (i = 0; i < params.num_blobs; ++i) {
-			    fprintf(measurement_out[i], "FFEA_measurement_file (Blob %d)\n\n", i);
-			    fprintf(measurement_out[i], "# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface\n", i, i, i);
-			    fflush(measurement_out[i]);
-			}
+         		// HEADER FOR MEASUREMENTS
+			// Write header to output file
+			write_output_header(measurement_out, FFEA_script_filename);
 
-			// Print parameters back out, so user has a record
-			fprintf(measurement_out[params.num_blobs], "FFEA_measurement_file (World)\n\n");
-			fprintf(measurement_out[params.num_blobs], "\nInteractions:\n\n# step ");
-			for (i = 0; i < params.num_blobs; ++i) {
-			    for (j = i + 1; j < params.num_blobs; ++j) {
-				fprintf(measurement_out[params.num_blobs], "| vdw_area_%d_%d | vdw_force_%d_%d | vdw_energy_%d_%d ", i, j, i, j, i, j);
-			    }
+			// Write params to this output file
+			params.write_to_file(measurement_out);
+
+			// Get ready to write the measurements (this is the order things must be written later. There will be no floating zeroes!)
+			fprintf(measurement_out, "Measurements:\n");
+			fprintf(measurement_out, "Time ");
+			
+			// Do we need kinetic energy?
+			if(mass_in_system) {
+				fprintf(measurement_out, "KineticEnergy ");
 			}
-			fprintf(measurement_out[params.num_blobs], "\n");
-			fflush(measurement_out[params.num_blobs]);
+			fprintf(measurement_out, "StrainEnergy ");
+			if(num_springs != 0) {
+				fprintf(measurement_out, "SpringEnergy ");	
+			}
+			if(params.calc_vdw != 0) {
+				fprintf(measurement_out, "VdWEnergy ");
+			}
+			if(params.calc_preComp != 0) {
+				fprintf(measurement_out, "PreCompEnergy ");
+			}
+			fprintf(measurement_out, "Centroid RMSD\n");
+			fflush(measurement_out);
+			
+			// HEADER FOR ENERGIES (if necessary)
+			if(writeEnergy) {
+				energy_out = fopen(params.energy_out_fname.c_str(), "w");
+				fprintf(energy_out, "FFEA_energy_file\n\nMeasurements:\n");
+				fprintf(energy_out, "Time ");
+				for(i = 0; i < params.num_blobs; ++i) {
+					fprintf(energy_out, "| B%d ", i);
+					if(active_blob_array[i]->there_is_mass()) {
+						fprintf(energy_out, "KineticEnergy ");
+					}
+					fprintf(energy_out, "StrainEnergy ");
+				}
+
+				if(params.calc_vdw == 1 || params.calc_preComp == 1 || num_springs != 0) {
+					for(i = 0; i < params.num_blobs; ++i) {
+						for(j = 0; j < params.num_blobs; ++j) {
+							fprintf(energy_out, "| B%dB%d ", i, j);
+							if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
+								fprintf(energy_out, "VdWEnergy ");
+							}
+							if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs()) {
+								fprintf(energy_out, "SpringEnergy ");
+							}
+
+							if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads()) {
+								fprintf(energy_out, "PreCompEnergy ");
+							}
+						}
+					}
+				}
+				fprintf(energy_out, "\n");
+				fflush(energy_out);
+			}
 
 			// Open the kinetics output file for writing (if neccessary) and write initial stuff
 			if (params.kinetics_out_fname_set == 1) {
@@ -361,6 +522,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
 			bool singleframe = false;
 			char c;
+
 
 			printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
@@ -473,16 +635,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "a")) == NULL) {
 			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
 			}
-			for (i = 0; i < params.num_blobs + 1; ++i) {
-			    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "a")) == NULL) {
-				FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
-			    }
+			if ((measurement_out = fopen(params.measurement_out_fname, "a")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
 			}
 
 			// Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
-			for (i = 0; i < params.num_blobs + 1; ++i) {
-			    fprintf(measurement_out[i], "#==RESTART==\n");
-			}
+			fprintf(measurement_out, "#==RESTART==\n");
 
 			// And kinetic file
 			if(params.kinetics_out_fname_set == 1) {
@@ -515,7 +673,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL) 
               FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
-	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor);
+	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor, params.num_blobs);
 
 	    // Calculate the total number of vdw interacting faces in the entire system
 	    total_num_surface_faces = 0;
@@ -584,10 +742,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 
 	    if (params.restart == 0 && mode == 0) {
 		// Carry out measurements on the system before carrying out any updates (if this is step 0)
-		print_trajectory_and_measurement_files(0, 0);
+		print_trajectory_and_measurement_files(0, omp_get_wtime());
 		print_kinetic_files(0);
 	    }
-	     
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
 #endif
@@ -597,7 +754,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 #endif
 
     // Log file the params
-    params.write_to_file(userInfo::log_out);
+    //params.write_to_file(userInfo::log_out);
 
 #ifdef USE_MPI
     et = MPI::Wtime() -st;
@@ -740,7 +897,6 @@ int World::get_smallest_time_constants() {
  * this function performs matrix algebra using the Eigen libraries to diagonalise 
  * elasticity matrix and output pseudo-trajectories based upon these eigenvectors
  * */
-
 int World::enm(set<int> blob_indices, int num_modes) {
 
 	int i, j;
@@ -1158,7 +1314,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 	return FFEA_OK;
 }
 
-/*
+/**
  * Update entire World for num_steps time steps
  * */
 int World::run() {
@@ -1288,7 +1444,7 @@ int World::run() {
           st1 = MPI::Wtime();
 #endif
 
-        if (params.calc_vdw == 1) vdw_solver->solve();
+        if (params.calc_vdw == 1) vdw_solver->solve(params.num_blobs);
 
 #ifdef USE_MPI
         time2 = MPI::Wtime() -st1 + time2;
@@ -1348,7 +1504,7 @@ int World::run() {
         }
 
 	// Output traj data to files
-        if (step % params.check == 0) {
+        if ((step + 1) % params.check == 0) {
             print_trajectory_and_measurement_files(step + 1, wtime);
         }
 
@@ -1380,7 +1536,7 @@ int World::run() {
 	}
 
 	// Output kinetic data to files
-        if (step % params.check == 0) {
+        if ((step + 1) % params.check == 0) {
             print_kinetic_files(step + 1);
         }
     }
@@ -1397,6 +1553,7 @@ int World::run() {
 
     return FFEA_OK;
 }
+
 
 /**
  * @brief Changes the active kinetic state for a given blob.
@@ -1745,12 +1902,15 @@ int World::read_and_build_system(vector<string> script_vector) {
 			} else if(lrvalue[0] == "solver") {
 				if(lrvalue[1] == "CG") {
 					solver = FFEA_ITERATIVE_SOLVER;
+					    mass_in_system = true;
 				} else if (lrvalue[1] == "CG_nomass") {
 					solver = FFEA_NOMASS_CG_SOLVER;
 				} else if (lrvalue[1] == "direct") {
 					solver = FFEA_DIRECT_SOLVER;
+					    mass_in_system = true;
 				} else if (lrvalue[1] == "masslumped") {
 					solver = FFEA_MASSLUMPED_SOLVER;
+					    mass_in_system = true;
 				} else {
 					FFEA_error_text();
 					cout << "In blob " << i << ", unrecognised solver type.\nRecognised solvers:CG, CG_nomass, direct, masslumped." << endl;
@@ -2646,6 +2806,10 @@ int World::load_springs(const char *fname) {
         spring_array[i].k *= mesoDimensions::area / mesoDimensions::Energy;
         spring_array[i].l /= mesoDimensions::length;
 
+	// Flag on blob to say springs are present
+	active_blob_array[spring_array[i].blob_index[0]]->set_springs_on_blob(true);
+	active_blob_array[spring_array[i].blob_index[1]]->set_springs_on_blob(true);
+
 	// Error checking
 	for(int j = 0; j < 2; ++j) {
 		if(spring_array[i].blob_index[j] >= params.num_blobs || spring_array[i].blob_index[j] < 0) {
@@ -2935,22 +3099,29 @@ void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes) {
 	fclose(fout);
 }
 
+void World::write_output_header(FILE *fout, string fname) {
+
+	// Write all header data. script fname, time and date etc
+	fprintf(fout, "FFEA Output File\n\nSimulation Details:\n");
+	time_t now = time(0);
+	tm *ltm = localtime(&now);
+	fprintf(fout, "\tSimulation Began on %d/%d/%d at %d:%d:%d\n", ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
+	fprintf(fout, "\tScript Filename = %s\n\n", fname.c_str());
+
+}
+
 void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
-    if ((step - 1) % (params.check * 10) != 0) {
-        printf("step = %d\n", step);
+    if (step % (params.check * 10) != 0) {
+        printf("\rstep = %d", step);
+	fflush(stdout);
     } else {
-        printf("step = %d (simulation time = %.2es, wall clock time = %.2e hrs)\n", step, (scalar) step * params.dt, (omp_get_wtime() - wtime) / 3600.0);
+        printf("\rstep = %d (simulation time = %.2fns, wall clock time = %.3f hrs)\n", step, step * params.dt * (mesoDimensions::time / 1e-9), (omp_get_wtime() - wtime) / 3600.0);
     }
 
-    vector3 system_CoM;
-    get_system_CoM(&system_CoM);
 
-    vector3 system_centroid;
-    get_system_centroid(&system_centroid);
-
-    // Write traj and meas data
-    if (measurement_out[params.num_blobs] != NULL) {
-        fprintf(measurement_out[params.num_blobs], "%d\t", step);
+    // Stuff needed on each blob, and in global energy files
+    if(energy_out != NULL) {
+        fprintf(energy_out, "%e ", step * params.dt * mesoDimensions::time);
     }
 
     for (int i = 0; i < params.num_blobs; i++) {
@@ -2959,19 +3130,57 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         fprintf(trajectory_out, "Blob %d, Conformation %d, step %d\n", i, active_blob_array[i]->get_conformation_index(), step);
         active_blob_array[i]->write_nodes_to_file(trajectory_out);
 
-        // Write the measurement data for this blob
-        active_blob_array[i]->make_measurements(measurement_out[i], step, &system_CoM);
+        // Calculate properties for this blob
+        active_blob_array[i]->make_measurements();
 
-        // Output interblob_vdw info
-	for (int j = i + 1; j < params.num_blobs; ++j) {
-            active_blob_array[i]->calculate_vdw_bb_interaction_with_another_blob(measurement_out[params.num_blobs], j);
-        }
+	// If necessary, write this stuff to a separate file
+	if(energy_out != NULL) {
+		active_blob_array[i]->write_energies_to_file(energy_out);
+	}        
     }
 
-    fprintf(measurement_out[params.num_blobs], "\n");
+    
+    // CHECKPOINT - Write the state of the RNGs:
+    // REWIND! 
+    rewind(checkpoint_out);
+    // Header for the thermal stresses: 
+    fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", num_threads);
+    unsigned long state[6];
+    // First save the state of the running threads: 
+    for (int i=0; i<num_threads; i++) { 
+      rng[i].GetState(state); 
+      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
+                                                           state[3], state[4], state[5]);
+    }
+    // If there were more threads running on the previous run, we'll save them too:
+    int oldThreads = num_seeds - num_threads;
+    if (params.calc_kinetics) oldThreads -=1 ; 
+    for (int i=0; i<oldThreads; i++) {
+      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0], 
+              Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
+              Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
+    }
+    // If we're doing kinetics, we're saving the state of the extra RNG: 
+    if (params.calc_kinetics) {
+      fprintf(checkpoint_out, "RNGStream dedicated to the thermal stress:\n");
+      kinetic_rng->GetState(state); 
+      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
+                                                           state[3], state[4], state[5]);
+
+    } 
+    // Done with the checkpoint!
+
 
     // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
     fprintf(trajectory_out, "*\n");
+
+    // Global Measurement Stuff
+    make_measurements();
+    write_measurements_to_file(measurement_out, step);
+
+    if(energy_out != NULL) {
+	write_energies_to_file(energy_out);
+    }
 
 /*   // And now the kinetics, if necessary
 
@@ -3010,9 +3219,102 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     // Force all output in buffers to be written to the output files now
     fflush(trajectory_out);
-    for (int i = 0; i < params.num_blobs + 1; ++i) {
-        fflush(measurement_out[i]);
-    }
+    fflush(checkpoint_out);
+    fflush(measurement_out);
+}
+
+void World::make_measurements() {
+
+	int i, total_num_nodes = 0;
+
+	// Set stuff to zero
+	kineticenergy = 0.0;
+	strainenergy = 0.0;
+	springenergy = 0.0;
+	vdwenergy = 0.0;
+	preCompenergy = 0.0;
+	rmsd = 0.0;
+	vector3_set_zero(&CoG);
+	
+	vector3 bCoG;
+
+	// Sum stuff from blobs
+	for(i = 0; i < params.num_blobs; ++i) {
+		kineticenergy += active_blob_array[i]->get_kinetic_energy();
+		strainenergy += active_blob_array[i]->get_strain_energy();
+		rmsd += (active_blob_array[i]->get_rmsd() * active_blob_array[i]->get_rmsd()) * active_blob_array[i]->get_num_nodes();
+		bCoG = active_blob_array[i]->get_CoG();
+		CoG.x += bCoG.x * active_blob_array[i]->get_num_nodes();
+		CoG.y += bCoG.y * active_blob_array[i]->get_num_nodes();
+		CoG.z += bCoG.z * active_blob_array[i]->get_num_nodes();
+
+		total_num_nodes += active_blob_array[i]->get_num_nodes();
+	}
+
+	// And divide by num_nodes
+	rmsd = sqrt(rmsd / total_num_nodes);
+	vec3_scale(&CoG, 1.0 / total_num_nodes);
+
+	// Now global stuff
+	vector3 a, b, c;
+	for(i = 0; i < num_springs; ++i) {
+		a = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
+		b = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
+		vec3_vec3_subs(&a, &b, &c);
+		springenergy += spring_array[i].k * (mag(&c) - spring_array[i].l) * (mag(&c) - spring_array[i].l);
+	}
+	springenergy *= 0.5;
+	if(params.calc_vdw == 1) {
+		vdwenergy = vdw_solver->get_field_energy(-1, -1);
+	}
+
+	if(params.calc_preComp == 1) {
+		preCompenergy = pc_solver.get_field_energy(-1, -1);
+	}
+}
+
+void World::write_measurements_to_file(FILE *fout, int step) {
+
+	// In same order as initialisation
+	fprintf(fout, "%e ", step * params.dt * mesoDimensions::time);
+	if(mass_in_system) {
+		fprintf(fout, "%e ", kineticenergy * mesoDimensions::Energy);
+	}
+	fprintf(fout, "%e ", strainenergy * mesoDimensions::Energy);
+	if(num_springs != 0) {
+		fprintf(fout, "%e ", springenergy * mesoDimensions::Energy);	
+	}
+	if(params.calc_vdw != 0) {
+		fprintf(fout, "%e ", vdwenergy * mesoDimensions::Energy);	
+	}
+	if(params.calc_preComp != 0) {
+		fprintf(fout, "%e ", preCompenergy * mesoDimensions::Energy);
+	}
+	fprintf(fout, "%e %e %e ", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length);
+	fprintf(fout, "%e ", rmsd * mesoDimensions::length);
+
+	fprintf(fout, "\n");
+	fflush(fout);
+}
+
+void World::write_energies_to_file(FILE *fout) {
+	
+	// In same order as initialisation
+	for(int i = 0; i < params.num_blobs; ++i) {
+		for(int j = 0; j < params.num_blobs; ++j) {
+			if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
+				fprintf(energy_out, "%e ", vdw_solver->get_field_energy(i, j));
+			}
+			if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs()) {
+				//fprintf(energy_out, "SpringEnergy ");
+			}
+			if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads()) {
+				//fprintf(energy_out, "PreCompEnergy ");
+			}
+		}
+	}
+	fprintf(fout, "\n");
+	fflush(fout);
 }
 
 void World::print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index) {
