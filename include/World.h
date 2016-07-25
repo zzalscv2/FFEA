@@ -171,8 +171,8 @@ private:
     /** @brief * Output measurement file */
     FILE *measurement_out;
 
-    /** @brief * Output energies file. May be unneccesary */
-    FILE *energy_out;
+    /** @brief * Output detailed measurements file. May be unneccesary */
+    FILE *detailed_meas_out;
 
     /** Energies */
     scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, vdwenergy, preCompenergy;
