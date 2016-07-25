@@ -28,6 +28,7 @@ World::World() {
     measurement_out = NULL;
     kinetics_out = NULL;
     params_out = NULL;
+    checkpoint_out = NULL;
     vdw_solver = NULL;
 }
 
@@ -76,6 +77,8 @@ World::~World() {
 
     kinetics_out = NULL;
     params_out = NULL;
+
+    checkpoint_out = NULL;
 
     vdw_solver = NULL;
 }
@@ -198,38 +201,128 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	num_threads = 1;
 #endif
 
-   	// We need one rng for each thread, to avoid concurrency problems,
-    	// so generate an array of instances of RngStreams:
-   // We first initialize the six seeds that RngStream needs:
-	unsigned long sixseed[6];
-	unsigned long twoMax[2] = {4294967087, 4294944443}; // these are max values for RngStream
-	srand(params.rng_seed); 
-	for (int i=0; i<6; i++){
-		sixseed[i] = (rand() + rand())%twoMax[i/3];
-	} 
-   // now initialise the package:
-	RngStream::SetPackageSeed(sixseed);
-	if (userInfo::verblevel > 1) {
-		cout << "RngStream initialised using: ";
-		for (int ni=0; ni<6; ni++){ 
-			cout << sixseed[ni] << " "; 
+	// RNG: initialise the system, and allocate the Seeds:
+	//    This has to be done before calling read_and_build_system.
+	if (params.restart == 0) {
+		// RNG.1 - allocate the Seeds:
+		num_seeds = num_threads;
+		if (params.calc_kinetics == 1) num_seeds += 1; 
+		Seeds = new unsigned long *[num_seeds];
+		for (int i=0; i<num_seeds; i++){ 
+			Seeds[i] = new unsigned long [6];
 		}
-		cout << endl; 
+		// RNG.2 - Initialise the package:
+		// We need one rng for each thread, to avoid concurrency problems,
+	  	// so generate an array of instances of RngStreams:
+		// We first initialize the six seeds that RngStream needs:
+		unsigned long sixseed[6];
+		unsigned long twoMax[2] = {4294967087, 4294944443}; // these are max values for RngStream
+		srand(params.rng_seed); 
+		for (int i=0; i<6; i++){
+			sixseed[i] = (rand() + rand())%twoMax[i/3];
+		} 
+		// now initialise the package:
+		RngStream::SetPackageSeed(sixseed);
+		if (userInfo::verblevel > 1) {
+			cout << "RngStream initialised using: ";
+			for (int ni=0; ni<6; ni++){ 
+				cout << sixseed[ni] << " "; 
+			}
+			cout << endl; 
+		}
+		// RNG.3 - initialise the rngs related to the fluctuating stress, and noise.
+		rng = new RngStream[num_threads];
+		if (userInfo::verblevel > 2) {
+			for (int ni=0; ni<num_threads; ni++){ 
+				cout << "RNG[" << ni << "] initial state:" <<endl; 
+				rng[ni].WriteState(); 
+		 	} 
+		} 
+		// RNG.4 - and optionally initialise an extra Stream for kinetics.
+		if(params.calc_kinetics == 1) {
+			kinetic_rng = new RngStream;
+			cout << "RngStream for kinetics created with initial state:" << endl;       
+			kinetic_rng->WriteState(); 
+		} 
+	} else if (params.restart == 1) {
+		// RNG - We'll now recover the state of the RNGs.
+		printf("Getting state information from %s\n", params.icheckpoint_fname);
+		// RNG.1 - READ Seeds FROM i.cpt into Seeds:
+		// RNG.1.1 - open checkpoint file and check:
+		ifstream checkpoint_in;
+		checkpoint_in.open(params.icheckpoint_fname, ifstream::in);
+		if (checkpoint_in.fail()){
+			FFEA_FILE_ERROR_MESSG(params.icheckpoint_fname)
+		}
+		// RNG.1.2 - readlines, and num_seeds:
+		vector<string> checkpoint_v;
+		string line;
+		while (getline(checkpoint_in, line)) {
+			checkpoint_v.push_back(line);
+		}
+		vector<string> header;
+		int num_seeds_read;
+		boost::split(header, checkpoint_v[0], boost::is_any_of(" "));
+		try {
+			num_seeds_read = stoi(header.back());
+		} catch (invalid_argument& ia) {
+			FFEA_ERROR_MESSG("Error reading the number of stress seeds: %s\n", ia.what());
+		}
+		int num_stress_seeds_read = num_seeds_read;
+		if (params.calc_kinetics) num_seeds_read += 1;
+		// RNG.1.3 - allocate Seeds:
+		int num_active_rng = num_threads; 
+		if (params.calc_kinetics) num_active_rng += 1; 
+		int nlines = checkpoint_v.size();
+		Seeds = new unsigned long *[max(num_active_rng,num_seeds_read)];
+		// RNG.1.4 - get Seeds:
+		int cnt_seeds = 0; 
+		for (int i=1; i<nlines; i++){
+			if (i == num_threads + 1) continue; // skip the header of the kinetics rng
+			vector <string> vline;
+			boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
+			Seeds[cnt_seeds] = new unsigned long [6];
+			// there must be 6 integers per line:
+			if (vline.size() != 6) {
+				FFEA_ERROR_MESSG("ERROR reading seeds\n")
+			}
+			for (int j=0; j<6; j++){
+				try {
+					Seeds[cnt_seeds][j] = stol(vline[j]);
+				} catch (invalid_argument& ia) {
+					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
+				}
+			}
+			cnt_seeds += 1;
+		}
+
+		// RNG.2 - AND initialise rng:
+		// RNG.2.1 - first the package and, and rng[0],
+		cout << "To be initialised by: " << Seeds[0][0] << " " << Seeds[0][1] << " " <<
+          Seeds[0][2] << " " << Seeds[0][3] << " " << Seeds[0][4] << " " << Seeds[0][5] << endl;
+		RngStream::SetPackageSeed(Seeds[0]);
+		rng = new RngStream[num_threads];
+		// RNG.2.2 - and now the rest of them: rng[1:]: 
+		for (int i=1; i<(min(num_threads,num_stress_seeds_read)); i++){
+			rng[i].SetSeed(Seeds[i]);
+		}
+		if (userInfo::verblevel > 2) {
+			for (int ni=0; ni<num_threads; ni++){ 
+				cout << "RNG[" << ni << "] initial state:" <<endl; 
+				rng[ni].WriteState(); 
+		 	} 
+		} 
+		// if num_threads == num_threads in all the previous runs, it was that easy. 
+		// if num_threads < num_threads in a previous run, we have enough seeds, and we'll keep the
+        //    extra seeds to be saved in ocheckpoint_fname.
+		// if num_threads > num_threads in a previous run, we initialised the extra RNG properly
+		//		when we set SetPackageSeed(Seeds[0]).
+		// RNG.2.3 - if kinetics, initialise the last one!
+		if(params.calc_kinetics == 1) {
+			kinetic_rng = new RngStream;
+			kinetic_rng->SetSeed(Seeds[num_seeds_read-1]);
+		}
 	}
-   
-	rng = new RngStream[num_threads];
-	if (userInfo::verblevel > 2) {
-		for (int ni=0; ni<num_threads; ni++){ 
-			cout << "RNG[" << ni << "] initial state:" <<endl; 
-			rng[ni].WriteState(); 
-	 	} 
-   } 
-	// and we'll initialise an extra Stream for kinetics, if we need it.
-	if(params.calc_kinetics == 1) {
-		kinetic_rng = new RngStream;
-		cout << "RngStream for kinetics created with initial state:" << endl;       
-		kinetic_rng->WriteState(); 
-	} 
 
 
 	// Build system of blobs, conformations, kinetics etc
@@ -284,9 +377,17 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	// Create measurement files
 	measurement_out = new FILE *[params.num_blobs + 1];
 
+
 	// If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
 	if(mode == 0) {
+		// In any case, open the output checkpoint file for writing
+		if ((checkpoint_out = fopen(params.ocheckpoint_fname, "w")) == NULL) {
+			// FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname)
+			FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname);
+		}
+
 		if (params.restart == 0) {
+
 		
 			// Open the trajectory output file for writing
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "w")) == NULL) {
@@ -361,6 +462,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 			// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
 			bool singleframe = false;
 			char c;
+
 
 			printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
@@ -740,7 +842,6 @@ int World::get_smallest_time_constants() {
  * this function performs matrix algebra using the Eigen libraries to diagonalise 
  * elasticity matrix and output pseudo-trajectories based upon these eigenvectors
  * */
-
 int World::enm(set<int> blob_indices, int num_modes) {
 
 	int i, j;
@@ -1158,7 +1259,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 	return FFEA_OK;
 }
 
-/*
+/**
  * Update entire World for num_steps time steps
  * */
 int World::run() {
@@ -1397,6 +1498,7 @@ int World::run() {
 
     return FFEA_OK;
 }
+
 
 /**
  * @brief Changes the active kinetic state for a given blob.
@@ -2969,6 +3071,38 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     }
 
     fprintf(measurement_out[params.num_blobs], "\n");
+ 
+
+    // CHECKPOINT - Write the state of the RNGs:
+    // REWIND! 
+    rewind(checkpoint_out);
+    // Header for the thermal stresses: 
+    fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", num_threads);
+    unsigned long state[6];
+    // First save the state of the running threads: 
+    for (int i=0; i<num_threads; i++) { 
+      rng[i].GetState(state); 
+      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
+                                                           state[3], state[4], state[5]);
+    }
+    // If there were more threads running on the previous run, we'll save them too:
+    int oldThreads = num_seeds - num_threads;
+    if (params.calc_kinetics) oldThreads -=1 ; 
+    for (int i=0; i<oldThreads; i++) {
+      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0], 
+              Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
+              Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
+    }
+    // If we're doing kinetics, we're saving the state of the extra RNG: 
+    if (params.calc_kinetics) {
+      fprintf(checkpoint_out, "RNGStream dedicated to the thermal stress:\n");
+      kinetic_rng->GetState(state); 
+      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
+                                                           state[3], state[4], state[5]);
+
+    } 
+    // Done with the checkpoint!
+
 
     // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
     fprintf(trajectory_out, "*\n");
@@ -3013,6 +3147,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     for (int i = 0; i < params.num_blobs + 1; ++i) {
         fflush(measurement_out[i]);
     }
+    fflush(checkpoint_out);
 }
 
 void World::print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index) {
