@@ -11,6 +11,8 @@ PreComp_solver::PreComp_solver() {
   nint = 0;
   msgc = 0;
   n_beads = 0;
+  num_blobs = 0;
+  fieldenergy = NULL;
 } 
 
 /** @brief destructor: deallocates pointers. */
@@ -22,6 +24,9 @@ PreComp_solver::~PreComp_solver() {
   if (n_beads > 0) {
     delete b_elems; 
   }
+  num_blobs = 0;
+  delete[] fieldenergy;
+  fieldenergy = NULL;
 }
 
 
@@ -321,7 +326,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      blob_array[i][0].forget_beads();
      m += n;
    } 
- 
+   num_blobs = params->num_blobs;
    cout << "done!" << endl;
 
    return FFEA_OK; 
@@ -336,6 +341,13 @@ int PreComp_solver::solve() {
     scalar phi_i[4], phi_j[4];
     tetra_element_linear *e_i, *e_j;
     // matrix3 Ji, Jj; // these are the jacobians for the elements i and j
+
+    // Zero some measurement_ stuff
+    for(int i = 0; i < num_blobs; ++i) {
+	for(int j = 0; j < num_blobs; ++j) {
+		fieldenergy[i][j] = 0.0;
+	}
+    }
 
     // 1 - Compute the position of the beads:
     compute_bead_positions();
@@ -362,6 +374,7 @@ int PreComp_solver::solve() {
         
  
         f_ij = get_F(d, type_i, b_types[j]); 
+
         /*e_tot += get_U(d, type_i, b_types[j]);
         f_tot += f_ij;*/
         /*cout << "i: " << i << " j: " << j << " type_i: " << type_i << " type_j: " << b_types[j]
@@ -371,6 +384,10 @@ int PreComp_solver::solve() {
                       << " U: " << mesoDimensions::Energy*get_U(d, type_i, b_types[j])/0.1660539040e-20 
                       << " F: " << mesoDimensions::force*f_ij/0.1660539040e-11 << endl;*/
         e_j = b_elems[j];
+
+	// Add energies to record
+	fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[j]);
+
         vec3_scale(&dx, f_ij);
         dtemp = dx; 
 
@@ -378,7 +395,7 @@ int PreComp_solver::solve() {
         phi_j[2] = b_rel_pos[3*j+1];
         phi_j[3]= b_rel_pos[3*j+2];
         phi_j[0]= 1 - phi_j[1] - phi_j[2] - phi_j[3];
-        // and apply the force to all the nodes in the elements i and j: 
+        // and apply the force to all the nodes in the elements i and j:
         for (int k=0; k<4; k++) {
           // forces for e_i
           vec3_scale(&dx, -phi_i[k]);
@@ -387,7 +404,8 @@ int PreComp_solver::solve() {
           // forces for e_j
           vec3_scale(&dx, phi_j[k]);
           e_j->add_force_to_node(k, &dx);
-          dx = dtemp; 
+          dx = dtemp;
+
         } 
       }
     }
@@ -624,5 +642,27 @@ scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
    return Z[index] + (Z[index +1] - Z[index])*(x - x0)/Dx;
 
 }  
+
+scalar PreComp_solver::get_field_energy(int index0, int index1) {
+
+	// Sum over all field
+	if(index0 == -1 || index1 == -1) {
+		scalar energy = 0.0;
+		for(int i = 0; i < num_blobs; ++i) {
+			for(int j = 0; j < num_blobs; ++j) {
+				energy += fieldenergy[i][j];
+			}
+		}
+
+		return energy;
+
+	} else if (index0 == index1) {
+		return fieldenergy[index0][index1];
+	} else {
+
+		// Order of blob indices is unknown in the calculations, so must add
+		return fieldenergy[index0][index1] + fieldenergy[index1][index0];
+	}
+}
 
 /**@}*/
