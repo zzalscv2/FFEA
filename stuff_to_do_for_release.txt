@@ -8,6 +8,9 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
            PreComputed potentials, kinetic ...
            Make sure it is thread safe. 
 
+ * [Springs] Springs should ideally be set up as a spring solver, to bring it
+	     in line with the other global things
+
  * [PreComp] deal with multiple conformations
 
  * [Doc] - visualisation and other tools
