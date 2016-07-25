@@ -97,6 +97,8 @@ public:
 
     char vdw_params_fname[MAX_FNAME_SIZE];
     char binding_params_fname[MAX_FNAME_SIZE];
+    char icheckpoint_fname[MAX_FNAME_SIZE];  ///< Input Checkpoint file name
+    char ocheckpoint_fname[MAX_FNAME_SIZE];  ///< Output Checkpoint file name
 
     SimulationParams();
 
@@ -133,6 +135,8 @@ private:
     int measurement_out_fname_set;
     int vdw_params_fname_set;
     int binding_params_fname_set;
+    int icheckpoint_fname_set; 
+    int ocheckpoint_fname_set; 
 /**
   * @brief Check if the file oFile exists, and if so 
            rename it to "__"+oFile+"__bckp.N", 
