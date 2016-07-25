@@ -463,7 +463,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			if(params.calc_preComp != 0) {
 				fprintf(measurement_out, "PreCompEnergy ");
 			}
-			fprintf(measurement_out, "Centroid RMSD\n");
+			fprintf(measurement_out, "Centroid.x Centroid.y Centroid.z RMSD\n");
 			fflush(measurement_out);
 			
 			// HEADER FOR ENERGIES (if necessary)
