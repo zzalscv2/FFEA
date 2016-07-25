@@ -169,7 +169,7 @@ private:
     FILE *energy_out;
 
     /** Energies */
-    scalar kineticenergy, strainenergy, springenergy, vdwenergy, preCompenergy;
+    scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, vdwenergy, preCompenergy;
 
     /** Momenta */
     vector3 L;
@@ -230,6 +230,8 @@ private:
     void activate_springs();
 
     void apply_springs();
+
+    scalar get_spring_field_energy(int index0, int index1);
 
     /** @brief calculates the kinetic rates as a function of the energy of the system*/
     int calculate_kinetic_rates();
