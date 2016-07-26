@@ -2,11 +2,11 @@
 	<restart = 0>
 	<dt = 1e-14>
 	<kT = 4.11e-21>
-	<check = 1e3>
-	<num_steps = 1e5>
+	<check = 1>
+	<num_steps = 10>
 	<rng_seed = 44>
-	<trajectory_out_fname = sphere_63_120_nomass_trajectory.out>
-	<measurement_out_fname = sphere_63_120_nomass_measurement.out>
+	<trajectory_out_fname = sphere_63_120_nomass_I_trajectory.out>
+	<measurement_out_fname = sphere_63_120_nomass_I_measurement.out>
 	<vdw_forcefield_params = ../sphere_63_120_structure/sphere_63_120.lj>
 	<epsilon = 0.01>
 	<max_iterations_cg = 1000>
