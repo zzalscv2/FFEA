@@ -124,7 +124,7 @@ World::~World() {
  * initialise BEM PBE solver
  * */
 
-int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeEnergy) {
+int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeDetailed) {
 	
 	// Set some constants and variables
 	int i, j, k;
@@ -452,36 +452,40 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 			// Get ready to write the measurements (this is the order things must be written later. There will be no floating zeroes!)
 			fprintf(measurement_out, "Measurements:\n");
-			fprintf(measurement_out, "Time ");
+			fprintf(measurement_out, "%-14s", "Time");
 			
 			// Do we need kinetic energy?
 			if(mass_in_system) {
-				fprintf(measurement_out, "KineticEnergy ");
+				fprintf(measurement_out, "%-14s", "KineticEnergy");
 			}
-			fprintf(measurement_out, "StrainEnergy ");
+			fprintf(measurement_out, "%-14s", "StrainEnergy");
+			fprintf(measurement_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
+
+			// Are these field enabled?
 			if(num_springs != 0) {
-				fprintf(measurement_out, "SpringEnergy ");	
+				fprintf(measurement_out, "%-14s", "SpringEnergy");	
 			}
 			if(params.calc_vdw != 0) {
-				fprintf(measurement_out, "VdWEnergy ");
+				fprintf(measurement_out, "%-14s", "VdWEnergy");
 			}
 			if(params.calc_preComp != 0) {
-				fprintf(measurement_out, "PreCompEnergy ");
+				fprintf(measurement_out, "%-14s", "PreCompEnergy");
 			}
-			fprintf(measurement_out, "Centroid.x Centroid.y Centroid.z RMSD\n");
+			fprintf(measurement_out, "\n");
 			fflush(measurement_out);
 			
-			// HEADER FOR ENERGIES (if necessary)
-			if(writeEnergy) {
+			// HEADER FOR DETAILED MEASUREMENTS (if necessary)
+			if(writeDetailed) {
 				detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "w");
 				fprintf(detailed_meas_out, "FFEA Detailed Measurement File\n\nMeasurements:\n");
-				fprintf(detailed_meas_out, "Time ");
+				fprintf(detailed_meas_out, "%-14s", "Time");
 				for(i = 0; i < params.num_blobs; ++i) {
 					fprintf(detailed_meas_out, "| B%d ", i);
 					if(active_blob_array[i]->there_is_mass()) {
-						fprintf(detailed_meas_out, "KineticEnergy ");
+						fprintf(detailed_meas_out, "%-14s", "KineticEnergy");
 					}
-					fprintf(detailed_meas_out, "StrainEnergy ");
+					fprintf(detailed_meas_out, "%-14s", "StrainEnergy");
+					fprintf(detailed_meas_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
 				}
 
 				if(params.calc_vdw == 1 || params.calc_preComp == 1 || num_springs != 0) {
@@ -489,14 +493,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 						for(j = i; j < params.num_blobs; ++j) {
 							fprintf(detailed_meas_out, "| B%dB%d ", i, j);
 							if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
-								fprintf(detailed_meas_out, "VdWEnergy ");
+								fprintf(detailed_meas_out, "%-14s", "VdWEnergy");
 							}
 							if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs()) {
-								fprintf(detailed_meas_out, "SpringEnergy ");
+								fprintf(detailed_meas_out, "%-14s", "SpringEnergy");
 							}
 
 							if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads()) {
-								fprintf(detailed_meas_out, "PreCompEnergy ");
+								fprintf(detailed_meas_out, "%-14s", "PreCompEnergy");
 							}
 						}
 					}
@@ -3154,9 +3158,10 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     // Stuff needed on each blob, and in global energy files
     if(detailed_meas_out != NULL) {
-        fprintf(detailed_meas_out, "%e ", step * params.dt * mesoDimensions::time);
+        fprintf(detailed_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
     }
 
+    // Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used)
     for (int i = 0; i < params.num_blobs; i++) {
 
         // Write the node data for this blob
@@ -3168,7 +3173,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
 	// If necessary, write this stuff to a separate file
 	if(detailed_meas_out != NULL) {
-		active_blob_array[i]->write_energies_to_file(detailed_meas_out);
+		active_blob_array[i]->write_measurements_to_file(detailed_meas_out);
 	}        
     }
 
@@ -3212,7 +3217,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     write_measurements_to_file(measurement_out, step);
 
     if(detailed_meas_out != NULL) {
-	write_energies_to_file(detailed_meas_out);
+	write_detailed_measurements_to_file(detailed_meas_out);
     }
 
 /*   // And now the kinetics, if necessary
@@ -3320,42 +3325,43 @@ void World::make_measurements() {
 void World::write_measurements_to_file(FILE *fout, int step) {
 
 	// In same order as initialisation
-	fprintf(fout, "%e ", step * params.dt * mesoDimensions::time);
+	fprintf(fout, "%-14.6e", step * params.dt * mesoDimensions::time);
 	if(mass_in_system) {
-		fprintf(fout, "%e ", kineticenergy * mesoDimensions::Energy);
+		fprintf(fout, "%-14.6e", kineticenergy * mesoDimensions::Energy);
 	}
-	fprintf(fout, "%e ", strainenergy * mesoDimensions::Energy);
+	fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
+	fprintf(fout, "%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length);
+	fprintf(fout, "%-14.6e ", rmsd * mesoDimensions::length);
 	if(num_springs != 0) {
-		fprintf(fout, "%e ", springenergy * mesoDimensions::Energy);	
+		fprintf(fout, "%-14.6e", springenergy * mesoDimensions::Energy);	
 	}
 	if(params.calc_vdw != 0) {
-		fprintf(fout, "%e ", vdwenergy * mesoDimensions::Energy);	
+		fprintf(fout, "%-14.6e", vdwenergy * mesoDimensions::Energy);	
 	}
 	if(params.calc_preComp != 0) {
-		fprintf(fout, "%e ", preCompenergy * mesoDimensions::Energy);
+		fprintf(fout, "%-14.6e", preCompenergy * mesoDimensions::Energy);
 	}
-	fprintf(fout, "%e %e %e ", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length);
-	fprintf(fout, "%e ", rmsd * mesoDimensions::length);
 
 	fprintf(fout, "\n");
 	fflush(fout);
 }
 
-void World::write_energies_to_file(FILE *fout) {
+void World::write_detailed_measurements_to_file(FILE *fout) {
 	
 	// In same order as initialisation
 	int i, j;
 	for(i = 0; i < params.num_blobs; ++i) {
 		for(j = i; j < params.num_blobs; ++j) {
-
+			// White space for blob index bit
+			fprintf(fout, "       ");
 			if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
-				fprintf(detailed_meas_out, "%e ", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
+				fprintf(detailed_meas_out, "%-14.6e", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
 			}
 			if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs() * mesoDimensions::Energy) {
-				fprintf(detailed_meas_out, "%e ", get_spring_field_energy(i, j));
+				fprintf(detailed_meas_out, "%-14.6e", get_spring_field_energy(i, j));
 			}
 			if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads() * mesoDimensions::Energy) {
-				fprintf(detailed_meas_out, "%e ", pc_solver.get_field_energy(i, j));
+				fprintf(detailed_meas_out, "%-14.6e", pc_solver.get_field_energy(i, j));
 			}
 		}
 	}
