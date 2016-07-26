@@ -385,7 +385,7 @@ int PreComp_solver::solve() {
                       << " F: " << mesoDimensions::force*f_ij/0.1660539040e-11 << endl;*/
         e_j = b_elems[j];
 
-	// Add energies to record
+	// Add energies to record 
 	fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[j]);
 
         vec3_scale(&dx, f_ij);

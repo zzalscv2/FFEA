@@ -171,11 +171,11 @@ private:
     /** @brief * Output measurement file */
     FILE *measurement_out;
 
-    /** @brief * Output energies file. May be unneccesary */
-    FILE *energy_out;
+    /** @brief * Output detailed measurements file. May be unneccesary */
+    FILE *detailed_meas_out;
 
     /** Energies */
-    scalar kineticenergy, strainenergy, springenergy, vdwenergy, preCompenergy;
+    scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, vdwenergy, preCompenergy;
 
     /** Momenta */
     vector3 L;
@@ -240,6 +240,8 @@ private:
 
     void apply_springs();
 
+    scalar get_spring_field_energy(int index0, int index1);
+
     /** @brief calculates the kinetic rates as a function of the energy of the system*/
     int calculate_kinetic_rates();
 
@@ -271,7 +273,7 @@ private:
 
     void write_measurements_to_file(FILE *fout, int step);
 
-    void write_energies_to_file(FILE *fout);
+    void write_detailed_measurements_to_file(FILE *fout);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
 
