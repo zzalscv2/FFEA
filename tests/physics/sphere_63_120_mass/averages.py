@@ -29,7 +29,7 @@ nodes = 63
 KbT = 4.11e-21
 E = KbT*(3*nodes - 6)/2
 print "Equipartition th: ", E
-Tol = {"KineticEnergy": 0.05, "StrainEnergy":0.03}
+Tol = {"KineticEnergy": 0.09, "StrainEnergy":0.03}
 ini = 40
 end = -1
 
