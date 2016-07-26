@@ -1,4 +1,5 @@
-import sys, os
+import sys
+from os import path
 import numpy as np
 try:
   import matplotlib.pyplot as plt
@@ -7,70 +8,148 @@ except:
 
 class FFEA_measurement:
 
-	def __init__(self, num_blobs, fname = "", frame_rate=1, num_frames_to_read=1000000):
-	
+	def __init__(self, fname):
+
 		self.reset()
 
-		# Is initialised wrong, (they set num_blobs as the fname, I think) attempt to compensate
-		if type(num_blobs) is not int:
-			print "num_blobs not set. Will try to guess num_blobs..."
-			
-			if type(num_blobs) != str:
-				print "nevermind. You didn't set an fname. Returning empty object."
-				return
-			
-			else:
-				if fname == "":
-					fname = num_blobs
-
-			num_blobs = 0
-			base, ext = os.path.splitext(fname)
-			while(os.path.exists(base + "_blob" + str(num_blobs) + ext)):
-				num_blobs += 1
-
-			print "%d? We think you have %d blobs. Let's go with it for now." % (num_blobs, num_blobs)
-
+		# Test what type of file it is
+		if not path.exists(fname):
+			print("\tFile '" + fname + "' not found.")
+			return
 		
-		if fname == "":
-			return
-
+		fin = open(fname, "r")
+		line = fin.readline().strip()
+		fin.close()
 		try:
-			self.load(fname, num_blobs, frame_rate=frame_rate, num_frames_to_read=num_frames_to_read)
-		except:
-			return
-
-	def load(self, fname, num_blobs, frame_rate=1, num_frames_to_read=1000000):
-
-		print("Loading FFEA measurement files...")
-
-		# Firstly, sort names out
-		fnames = []
-		base, ext = os.path.splitext(fname)
-		for i in range(num_blobs):
-			fnames.append(base + "_blob" + str(i) + ext)
-		fnames.append(base + "_world" + ext)
-
-		# Test files exist
-		findex = -1
-		for f in fnames:
-			findex += 1
-			if not os.path.exists(f):
-				print("\tFile '" + f + "' not found.")
+			if line == "FFEA Global Measurement File":
+				self.load_global(fname)
+			else:		
+				print("\tPlease supply us with the global measurement file, not the '-d' .fdm file")				
 				return
 
-			if findex == num_blobs:
-				# Load world
-				pass
-			else:
-				# Load blob
-				b = FFEA_measurement_blob(f, frame_rate=frame_rate, num_frames_to_read=num_frames_to_read)
-				self.blob.append(b)
+			dfname = path.splitext(fname)[0] + ".fdm"
+			if path.exists(fname):
+				self.load_detailed(dfname)
+
+		except:
+			self.reset()
+			return
+	
+	def load_global(self, fname):
+
+		print("Loading FFEA Global Measurement file...")
+	
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+		
+		line = fin.readline().strip()
+		while(line != "Measurements:"):
+			if "num_blobs" in line:
+				self.num_blobs = int(line.split("=")[1])
+
+			line = fin.readline().strip()
+
+		# Build a dictionary of possible variables and a map to those
+		self.global_meas = {'Time': None, 'KineticEnergy': None, 'StrainEnergy': None, 'SpringEnergy': None, 'VdWEnergy': 'None', 'PreCompEnergy': None, 'Centroid.x': None, 'Centroid.y': None, 'Centroid.z': None, 'Centroid': None, 'RMSD': None}
+		sline = fin.readline().strip().split()
+		measmap = ["" for i in range(len(sline))]		
+		i = -1
+		for title in sline:
+			i += 1
+			measmap[i] = title.strip()
+			self.global_meas[measmap[i]] = []
+
+		# Read measurements
+		line = fin.readline()
+		while(line != ""):
+			sline = line.split()
+			for i in range(len(sline)):
+				self.global_meas[measmap[i]].append(float(sline[i]))
+			line = fin.readline()
+			
+		# Move centroid into more useful format
+		self.global_meas["Centroid"] = []
+		for i in range(len(self.global_meas['Time'])):
+			self.global_meas["Centroid"].append([self.global_meas["Centroid.x"][i], self.global_meas["Centroid.y"][i], self.global_meas["Centroid.z"][i]])
+
+		del self.global_meas["Centroid.x"]
+		del self.global_meas["Centroid.y"]
+		del self.global_meas["Centroid.z"]
+	
+		for key in self.global_meas:
+			self.global_meas[key] = np.array(self.global_meas[key])
+
+	def load_detailed(self, fname):
+
+		print("Loading FFEA Detailed Measurement file...")
+	
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+
+		line = fin.readline().strip()
+		while(line != "Measurements:"):
+			line = fin.readline().strip()
+
+		# Build a dictionary of possible variables and a map to those for each blob
+		sline = fin.readline().strip().split("|")
+		measmap = []	# No time this time...
+		indexmap = []
+		index = -1
+		for i in range(self.num_blobs):
+			self.blob_meas.append({'KineticEnergy': None, 'StrainEnergy': None, 'Centroid.x': None, 'Centroid.y': None, 'Centroid.z': None, 'Centroid': None, 'RMSD': None})
+			ssline = sline[i + 1].split()[1:]
+			measmap.extend("" for j in range(len(ssline)))
+			indexmap.extend("" for j in range(len(ssline)))
+			j = -1
+			for title in ssline:
+				index += 1
+				j += 1
+				indexmap[index] = i
+				measmap[index] = title.strip()
+				self.blob_meas[i][measmap[index]] = []
+
+		# Read measurements
+		line = fin.readline()
+		while(line != ""):
+			sline = line.split()[1:]
+			for i in range(len(sline)):
+				self.blob_meas[indexmap[i]][measmap[i]].append(float(sline[i]))
+			line = fin.readline()
+
+		# Move centroid into more useful format, and turn stuff to numpy
+		for i in range(self.num_blobs):
+			self.blob_meas[i]["Centroid"] = []
+
+			for j in range(len(self.global_meas['Time'])):
+				self.blob_meas[i]["Centroid"].append([self.blob_meas[i]["Centroid.x"][j], self.blob_meas[i]["Centroid.y"][j], self.blob_meas[i]["Centroid.z"][j]])
+
+			del self.blob_meas[i]["Centroid.x"]
+			del self.blob_meas[i]["Centroid.y"]
+			del self.blob_meas[i]["Centroid.z"]
+	
+		
+			for key in self.blob_meas[i]:
+				self.blob_meas[i][key] = np.array(self.blob_meas[i][key])
+
 	def reset(self):
 
 		self.num_blobs = 0
-		self.blob = []
-		self.world = None
+		self.global_meas = None
+		self.blob_meas = []
+		self.inter_blob_meas = []
+				
 
+'''
 class FFEA_measurement_blob:
 
 	def __init__(self, fname = "", frame_rate=1, num_frames_to_read=1000000):
@@ -243,3 +322,5 @@ class FFEA_measurement_blob:
 	def reset(self):
 
 		self.params = {'Step': [], 'Kinetic': [], 'Elastic': [], 'Centre': [], 'AMomentum': [], 'RMSD': []}
+
+'''

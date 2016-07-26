@@ -171,9 +171,9 @@ public:
     void make_measurements();
 
     /**
-     * Writes only the energies local to this blob to file!
+     * Writes only the detailed measurements local to this blob to file!
      */
-    void write_energies_to_file(FILE *fout);
+    void write_measurements_to_file(FILE *fout);
 
     /**
      * Calculates the current jacobian and elasticity properties of the structure
