@@ -273,7 +273,7 @@ private:
 
     void write_measurements_to_file(FILE *fout, int step);
 
-    void write_energies_to_file(FILE *fout);
+    void write_detailed_measurements_to_file(FILE *fout);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
 
