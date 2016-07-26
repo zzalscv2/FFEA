@@ -275,7 +275,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	} else if (params.restart == 1) {
 		// RNG - We'll now recover the state of the RNGs.
 		printf("Getting state information from %s\n", params.icheckpoint_fname);
-		// RNG.1 - READ Seeds FROM i.cpt into Seeds:
+		// RNG.1 - READ Seeds FROM i.fcp into Seeds:
 		// RNG.1.1 - open checkpoint file and check:
 		ifstream checkpoint_in;
 		checkpoint_in.open(params.icheckpoint_fname, ifstream::in);
