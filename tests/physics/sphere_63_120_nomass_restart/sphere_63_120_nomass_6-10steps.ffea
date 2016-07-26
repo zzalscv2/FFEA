@@ -1,12 +1,13 @@
 <param>
-	<restart = 0>
+	<restart = 1>
 	<dt = 1e-14>
 	<kT = 4.11e-21>
-	<check = 1e3>
-	<num_steps = 1e5>
+	<check = 1>
+	<num_steps = 10>
 	<rng_seed = 44>
-	<trajectory_out_fname = sphere_63_120_nomass_trajectory.out>
-	<measurement_out_fname = sphere_63_120_nomass_measurement.out>
+	<checkpoint_in = sphere_63_120_nomass_1-5steps.cpt> 
+	<trajectory_out_fname = sphere_63_120_nomass_II_trajectory.out>
+	<measurement_out_fname = sphere_63_120_nomass_II_measurement.out>
 	<vdw_forcefield_params = ../sphere_63_120_structure/sphere_63_120.lj>
 	<epsilon = 0.01>
 	<max_iterations_cg = 1000>
