@@ -15,9 +15,9 @@ Additionally:
      - A 6-12 [Lennard-Jones Potential](\ref ljPotential)
      - A repulsive potential that is proportional 
         to the [volume overlap](\ref sPotential).
-     - Coulombic interactions [EXPERIMENTAL]. 
-     - Specific interactions can be defined using precomputed potentials.
+     - Specific interactions defined using precomputed potentials.
         More documentation can be found [here](\ref fmApproach).
+     - Coulombic interactions [EXPERIMENTAL]. 
 
  * Kinetic state changes can be simulated together with the continuum model to
     account for conformational changes and binding events. Read the
@@ -45,7 +45,8 @@ Once configured, a trajectory can be simulated through the command line, typing:
 
 where ` <myInputFile.ffea> ` has consistently defined all the attributes.
 
-Finally the trajectory can be analysed using a set of [FFEA_tools](\ref analysisTools).
+Finally the trajectory can be analysed using a set of [FFEA_tools](\ref analysisTools). More details on all these steps can be found in the following chapters
+ of this maual.
 
 
 How to read this manual
@@ -56,14 +57,7 @@ Because the software is split between the FFEA runner (written in C++)
   this manual is split also in these two sections: 
    [FFEA_runner](\ref userManual) and [FFEA_tools](\ref FFEAtools)
   to be used as reference pages.
-
-However, the new user may want read it following
-  the [natural workflow](\ref ffeaWorkFlow):
-   * setting up the system with an 
-  [FFEA_tool](\ref makeffeablob)
-   * configuring the [input file](\ref ffea_iFile) and running an
-        FFEA trajectory.
-   * and [analysing](\ref analysisTools) the trajectory.
-
+However, the new user may want start reading the [tutorial](\ref Tutorial),
+  and consult the reference pages later. 
 
 
