@@ -30,7 +30,7 @@ where "my-system" is whatever the file you have, and this field is
 
 where "Number-Of-Active-Faces" is the number of faces that your system has 
  pointing outwards, and every line can have values ranging from -1, 
- corresponding to inactive, up to 7 for the rest of faces types. 
+ corresponding to **inactive**, up to 7 for the rest of faces types. 
  This file should have been automatically generated when
   [configuring the system](\ref makeffeablob), 
  with all the faces set up to "inactive", 
