@@ -8,6 +8,9 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
            PreComputed potentials, kinetic ...
            Make sure it is thread safe. 
 
+ * [Springs] Springs should ideally be set up as a spring solver, to bring it
+	     in line with the other global things
+
  * [PreComp] deal with multiple conformations
 
  * [Doc] - visualisation and other tools
@@ -16,7 +19,9 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
  * [Tests] - add a number of tests, to ensure that changes have not 
            broken anything.
 
- * [Comments] - finish translating comments into Doxygen comments. 
+ * [Comments] - finish translating comments into Doxygen comments.
 
- * [PRNG] - save the state of the RNG after finishing a simulation, and 
-            restore this state on a restarted simulation.
+ * [Steric] - calculate the gradient of the volume, 
+            instead of using the enclosing area.
+
+ * [TimeStep Calculator] - Work out mechanical timesteps from forces... :(

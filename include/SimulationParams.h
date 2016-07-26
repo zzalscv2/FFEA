@@ -94,7 +94,7 @@ public:
     char trajectory_out_fname[MAX_FNAME_SIZE];
     char kinetics_out_fname[MAX_FNAME_SIZE];
     char measurement_out_fname[MAX_FNAME_SIZE];
-    string energy_out_fname;
+    string detailed_meas_out_fname;
     char vdw_in_fname[MAX_FNAME_SIZE];
     char bsite_in_fname[MAX_FNAME_SIZE];
     char icheckpoint_fname[MAX_FNAME_SIZE];  ///< Input Checkpoint file name
