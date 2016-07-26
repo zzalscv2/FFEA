@@ -411,7 +411,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		// Break up the meas fname for optional files based on measurements
 		string meas_basename(measurement_out_fname);
 		meas_basename = RemoveFileExtension(meas_basename);
-		detailed_meas_out_fname = meas_basename + ".dmeas";
+		detailed_meas_out_fname = meas_basename + ".fdm";
 
     	} else if (lvalue == "kinetics_out_fname") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
@@ -589,12 +589,12 @@ int SimulationParams::validate() {
     }
 
     if (trajectory_out_fname_set == 0) {
-	b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".ffeatraj";
+	b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".ftj";
         sprintf(trajectory_out_fname, "%s", auxpath.string().c_str());
     }
 
     if (measurement_out_fname_set == 0) {
-	b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".ffeameas";
+	b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".fm";
         sprintf(measurement_out_fname, "%s", auxpath.string().c_str());
     }
   
