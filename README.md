@@ -53,21 +53,21 @@ Finally, just to help you on your way (not required for installation):
      PCA output (eigensystems, projections, animations etc) obtained from standard from equivalent MD simulations
 
 
-Configuration
-=============
+Configure
+=========
 
 It is generally advisable to configure and compile FFEA outside of the source tree. 
 Therefore, to configure FFEA, we would recommend to:
 
     mkdir $FFEA_BUILD
-    cd $FFEA_BUILD
-    cmake $FFEA_SRC
+    cd $FFEA_BUILD 
+    cmake $FFEA_SRC [OPTIONS]
 
 where ` $FFEA_SRC ` denotes the directory with the FFEA sources while 
   ` $FFEA_BUILD` is an arbitrary folder where the generated files will be placed.
-Several options can be added to `cmake`, being the most important:
+Several ` [OPTIONS] ` can be added to `cmake`, being the most important:
 
-  * `-DCMAKE_INSTALL_PREFIX=<dir>`       -  (default /usr/local) installation directory
+  * `-DCMAKE_INSTALL_PREFIX=<install_dir>`       -  (default /usr/local) installation directory
   * `-DCMAKE_BUILD_TYPE=<Debug|Release>` -  (default Release) build type
   * `-DCMAKE_CXX_COMPILER=<program>`     -  (default g++)  C++ compiler.
 
@@ -77,11 +77,11 @@ CMake will look for the required Boost and Eigen libraries. In the case they are
   * configuring with ` -DCMAKE_PREFIX_PATH="Path-to-Eigen;Path-to-Boost" `,
   * exporting enviroment variables ` EIGEN_HOME `  and ` BOOST_ROOT ` to the corresponding 
       software folders
-  * or configuring with ` -DEIGEN_HOME="Path-to-Eigen" ` and  ` -DBOOST_ROOT="Path-to-Boost `
+  * or configuring with ` -DEIGEN_HOME="Path-to-Eigen" ` and  ` -DBOOST_ROOT="Path-to-Boost" `
 
 Specific FFEA flags include:
 
-  * `USE_FAST`    (default OFF) will try to find the best compiler flags in terms of performance.
+  * `USE_FAST`    (default ON) will try to find the best compiler flags in terms of performance.
   * `USE_OPENMP`  (default ON) will enable OpenMP parallel calculations.
   * `USE_OMP_MODE` (default 1) where:
 
@@ -89,9 +89,15 @@ Specific FFEA flags include:
     - 1 uses all the threads within blobs.
     - 2 uses one thread per blob.
 
+Thus, for production runs, one could configure the package typing:
 
-Building
-========
+  cmake $FFEA_SRC -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea -DUSE_FAST=ON
+
+
+
+
+Build
+=====
 After configuring you will be able to build FFEA typing:
 
     make 
@@ -101,18 +107,49 @@ Optionally, if Doxygen was found at configure time,
 
     make doc 
 
-there are some mathematical formulae that will not render correctly if latex and ghostview are not found. You can read the documentation with a browser, if firefox was the browser available to you the coomand would be:
+There are some mathematical formulae that will not render correctly if latex
+  and ghostview are not found.
 
-firefox $FFEA_HOME/share/doc/html/index.html &
+
+Finally you may want to check your installation running a provided suite of tests, 
+ either sequentially:
+  
+   make test
+
+or concurrently:
+
+   ctest -j <number-of-processes> 
 
 
+  
+
+Install
+=======
 Finally, you can install FFEA:
 
     make install
 
-You can run the software with the command:
 
-ffea <input-file.ffea>
+If you built the documentation you will be able to read it wit a browser, 
+  and so if firefox was the browser available to you, and you installed 
+  FFEA in $FFEA_HOME, the comand would be:
+
+    firefox $FFEA_HOME/share/ffea/doc/html/index.html &
 
 
-The only caveat in this last step is that <input-file.ffea> points to a number of input files. Details of all these files are in the documentation. Relative paths to them refer to the folder where the <input-file.ffea> script is stored. 
+The FFEA_runner, ` ffea `, as well as the FFEA_tools, ` FFEA_tools ` will be found 
+ in ` $FFEA_HOME/bin `. Instructions on how to use them can be read 
+ [here](\ref userManual) and [here](\ref FFEAtools) respectively. 
+
+In addition, a plugin to visualise systems and trajectories in 
+ [PyMOL](https://www.pymol.org) should be found in:
+
+    $FFEA_HOME/share/ffea/plugins/pymol/ffea.tar.gz
+
+
+In order to use it, one would need to run PyMOL (>= 1.8), and then click on
+  ` Plugin ` -> ` Plugin Manager `, and on the new window, go to tab 
+  ` Install New Plugin `, click ` Choose file... ` and finally find and 
+  select ` ffea.tar.gz ` from your disk.
+
+
