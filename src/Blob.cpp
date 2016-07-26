@@ -1144,12 +1144,15 @@ void Blob::make_measurements() {
 	L.z = lz;
 }
 
-void Blob::write_energies_to_file(FILE *fout) {
+void Blob::write_measurements_to_file(FILE *fout) {
 
+	// White space for blob index bit
+	fprintf(fout, "     ");
 	if(there_is_mass()) {
-		fprintf(fout, "%e ", kineticenergy * mesoDimensions::Energy);
+		fprintf(fout, "%-14.6e", kineticenergy * mesoDimensions::Energy);
 	}
-	fprintf(fout, "%e ", strainenergy * mesoDimensions::Energy);
+	fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
+	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length, rmsd * mesoDimensions::length);
 	fflush(fout);
 }
 

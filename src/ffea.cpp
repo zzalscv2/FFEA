@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 	
 	// Initialise the world, loading all blobs, parameters, electrostatics, kinetics etc.
 	cout << "Initialising the world:\n" << endl;
-	if(world->init(script_fname, frames_to_delete, mode, var_map.count("energy")) == FFEA_ERROR) {
+	if(world->init(script_fname, frames_to_delete, mode, var_map.count("detailed")) == FFEA_ERROR) {
 		FFEA_error_text();
 		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 

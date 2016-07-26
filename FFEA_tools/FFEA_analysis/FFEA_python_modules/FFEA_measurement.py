@@ -27,7 +27,7 @@ class FFEA_measurement:
 				print("\tPlease supply us with the global measurement file, not the '-d' .dmeas file")				
 				return
 
-			dfname = os.path.splitext(fname)[0] + ".dmeas"
+			dfname = path.splitext(fname)[0] + ".dmeas"
 			if path.exists(fname):
 				self.load_detailed(dfname)
 
@@ -56,21 +56,22 @@ class FFEA_measurement:
 
 		# Build a dictionary of possible variables and a map to those
 		self.global_meas = {'Time': None, 'KineticEnergy': None, 'StrainEnergy': None, 'SpringEnergy': None, 'VdWEnergy': 'None', 'PreCompEnergy': None, 'Centroid.x': None, 'Centroid.y': None, 'Centroid.z': None, 'Centroid': None, 'RMSD': None}
-		self.measmap = ["" for i in range(len(self.global_meas))]
 		sline = fin.readline().strip().split()
-		print sline
+		measmap = ["" for i in range(len(sline))]		
+		i = -1
 		for title in sline:
-			self.measmap[i] = title.strip()
-			self.global_meas[self.measmap[i]] = []
+			i += 1
+			measmap[i] = title.strip()
+			self.global_meas[measmap[i]] = []
 
 		# Read measurements
 		line = fin.readline()
 		while(line != ""):
 			sline = line.split()
 			for i in range(len(sline)):
-				self.global_meas[self.measmap[i]].append(float(sline[i]))
+				self.global_meas[measmap[i]].append(float(sline[i]))
 			line = fin.readline()
-
+			
 		# Move centroid into more useful format
 		self.global_meas["Centroid"] = []
 		for i in range(len(self.global_meas['Time'])):
@@ -82,7 +83,6 @@ class FFEA_measurement:
 	
 		for key in self.global_meas:
 			self.global_meas[key] = np.array(self.global_meas[key])
-			print self.global_meas[key]
 
 	def load_detailed(self, fname):
 
@@ -96,12 +96,58 @@ class FFEA_measurement:
 			self.reset()
 			raise
 
+		line = fin.readline().strip()
+		while(line != "Measurements:"):
+			line = fin.readline().strip()
+
+		# Build a dictionary of possible variables and a map to those for each blob
+		sline = fin.readline().strip().split("|")
+		measmap = []	# No time this time...
+		indexmap = []
+		index = -1
+		for i in range(self.num_blobs):
+			self.blob_meas.append({'KineticEnergy': None, 'StrainEnergy': None, 'Centroid.x': None, 'Centroid.y': None, 'Centroid.z': None, 'Centroid': None, 'RMSD': None})
+			ssline = sline[i + 1].split()[1:]
+			measmap.extend("" for j in range(len(ssline)))
+			indexmap.extend("" for j in range(len(ssline)))
+			j = -1
+			for title in ssline:
+				index += 1
+				j += 1
+				indexmap[index] = i
+				measmap[index] = title.strip()
+				self.blob_meas[i][measmap[index]] = []
+
+		# Read measurements
+		line = fin.readline()
+		while(line != ""):
+			sline = line.split()[1:]
+			for i in range(len(sline)):
+				self.blob_meas[indexmap[i]][measmap[i]].append(float(sline[i]))
+			line = fin.readline()
+
+		# Move centroid into more useful format, and turn stuff to numpy
+		for i in range(self.num_blobs):
+			self.blob_meas[i]["Centroid"] = []
+
+			for j in range(len(self.global_meas['Time'])):
+				self.blob_meas[i]["Centroid"].append([self.blob_meas[i]["Centroid.x"][j], self.blob_meas[i]["Centroid.y"][j], self.blob_meas[i]["Centroid.z"][j]])
+
+			del self.blob_meas[i]["Centroid.x"]
+			del self.blob_meas[i]["Centroid.y"]
+			del self.blob_meas[i]["Centroid.z"]
+	
+		
+			for key in self.blob_meas[i]:
+				self.blob_meas[i][key] = np.array(self.blob_meas[i][key])
+
 	def reset(self):
 
 		self.num_blobs = 0
 		self.global_meas = None
-		self.measmap = None
-		self.world = None
+		self.blob_meas = []
+		self.inter_blob_meas = []
+				
 
 '''
 class FFEA_measurement_blob:
