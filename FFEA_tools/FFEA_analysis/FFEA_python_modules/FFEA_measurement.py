@@ -24,10 +24,10 @@ class FFEA_measurement:
 			if line == "FFEA Global Measurement File":
 				self.load_global(fname)
 			else:		
-				print("\tPlease supply us with the global measurement file, not the '-d' .dmeas file")				
+				print("\tPlease supply us with the global measurement file, not the '-d' .fdm file")				
 				return
 
-			dfname = path.splitext(fname)[0] + ".dmeas"
+			dfname = path.splitext(fname)[0] + ".fdm"
 			if path.exists(fname):
 				self.load_detailed(dfname)
 
