@@ -88,7 +88,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     */
 
     //////////////////////////////////////////////
-    /// One more check ////// One more check /////
+    // One more check ////// One more check /////
     /*
     arr3 inwards; 
     vec3Vec3SubsToArr3(f1->n[3]->pos, f1->centroid, inwards); 
