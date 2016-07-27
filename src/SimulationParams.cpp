@@ -602,7 +602,7 @@ int SimulationParams::validate() {
     // CPT.1 - If we don't have a name for checkpoint_out we're assigning one.
     if (ocheckpoint_fname_set == 0) {
       b_fs::path fs_ocpt_fname = FFEA_script_filename;
-      fs_ocpt_fname.replace_extension(".cpt");
+      fs_ocpt_fname.replace_extension(".fcp");
       ocheckpoint_fname_set = 1;
       strcpy(ocheckpoint_fname, fs_ocpt_fname.string().c_str());
       printf("\tFRIENDLY WARNING: Checkpoint output file name was not specified, so it will be set to %s\n", ocheckpoint_fname ); 
