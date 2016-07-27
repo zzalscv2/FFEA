@@ -31,6 +31,7 @@ class FFEA_script:
 		# Check for params block		
 		if "<param>\n" not in lines:
 			print "Error. File " + fname  + " not an FFEA script file."
+			self.reset()
 			return
 
 
@@ -177,7 +178,7 @@ class FFEA_script:
 				rvalue = line.split("=")[1].strip()
 				
 			except:
-				#print "Error. Could not parse param '" + param + "'"
+				print "Error. Could not parse line '" + param + "'"
 				continue
 
 			
@@ -529,7 +530,7 @@ class FFEA_script_params():
 		elif lvalue == "kT":
 			self.kT = float(rvalue)
 		elif lvalue == "check":
-			self.check = int(rvalue)
+			self.check = int(float(rvalue))
 		elif lvalue == "num_steps":
 			self.num_steps = int(float(rvalue))
 		elif lvalue == "trajectory_out_fname":
