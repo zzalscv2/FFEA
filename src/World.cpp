@@ -1558,7 +1558,7 @@ int World::run() {
     cout<< "benchmarking--------Total MPI time in World::run():" << time1 << "seconds"<< endl;
 #endif
     
-    printf("Time taken: %2f seconds\n", (omp_get_wtime() - wtime));
+    printf("\n\nTime taken: %2f seconds\n", (omp_get_wtime() - wtime));
 
     return FFEA_OK;
 }
