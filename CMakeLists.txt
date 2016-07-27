@@ -163,7 +163,7 @@ if(DOXYGEN_FOUND)
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
-  install(FILES "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
+  install(DIRECTORY "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
                 "${CMAKE_INSTALL_PREFIX}/share/ffea/doc" OPTIONAL)
 endif(DOXYGEN_FOUND)
 
