@@ -5,7 +5,7 @@
 	<check = 1>
 	<num_steps = 10>
 	<rng_seed = 44>
-	<checkpoint_in = sphere_63_120_nomass_1-5steps.cpt> 
+	<checkpoint_in = sphere_63_120_nomass_1-5steps.fcp> 
 	<trajectory_out_fname = sphere_63_120_nomass_II_trajectory.out>
 	<measurement_out_fname = sphere_63_120_nomass_II_measurement.out>
 	<vdw_forcefield_params = ../sphere_63_120_structure/sphere_63_120.lj>
