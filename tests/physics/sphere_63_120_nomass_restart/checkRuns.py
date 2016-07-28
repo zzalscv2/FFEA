@@ -8,7 +8,7 @@ import sys
 #   otherwise artifacts could rise. 
 # 
 # sphere_63_120_nomass_6-10steps.cpt must be the same as sphere_63_120_nomass_10steps.cpt. Exactly.
-CPT = ["sphere_63_120_nomass_6-10steps.cpt", "sphere_63_120_nomass_10steps.cpt"]
+CPT = ["sphere_63_120_nomass_6-10steps.fcp", "sphere_63_120_nomass_10steps.fcp"]
 STA = []
 for f in CPT:
   sta = open(f,'r')
