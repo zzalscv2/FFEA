@@ -35,12 +35,7 @@ class FFEA_script:
 			return
 
 
-		# Write to a temp file, preserving original file with all comments and stuff
-		fname = os.path.splitext(fname)[0] + "__temp__.ffea"
-		fout = open(fname, "w")
-		for line in lines:
-			fout.write(line)
-		fout.close()
+		# Get params
 		try:
 			self.params = self.read_params_from_script(fname)
 		except:
@@ -63,9 +58,6 @@ class FFEA_script:
 			print "Error. Failed to load <spring>...</spring> "
 			self.reset()
 			return
-
-		# Remove temp file
-		os.system("rm " + fname)
 
 	# # # # # # # # # # # # # # # # # # # # # #
 	# we will take the comments out of iFile,
@@ -183,14 +175,10 @@ class FFEA_script:
 
 			
 			params.assign_param(lvalue, rvalue, scriptdir = scriptdir)
-		
-		# Sort measurement names
-		base, ext = os.path.splitext(params.measurement_out_basefname)
-		for i in range(params.num_blobs):
-			params.measurement_out_fname.append(base + "_blob" + str(i) + ext)
-		params.measurement_out_fname.append(base + "_world" + ext)
+
 
 		# Now, if params have not been correctly initialised, use the measurement world file to get them
+		'''
 		if not params.completed():
 			try:
 				fin = open(params.measurement_out_fname[-1], "r")
@@ -227,7 +215,7 @@ class FFEA_script:
 				line = fin.readline().strip()
 
 			fin.close()
-			
+		'''	
 		return params
 
 
@@ -471,7 +459,7 @@ class FFEA_script:
 		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname)
 
 	def load_measurement(self):
-		return FFEA_measurement.FFEA_measurement(self.params.num_blobs, self.params.measurement_out_basefname)
+		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_fname)
 
 class FFEA_script_params():
 	
@@ -484,8 +472,7 @@ class FFEA_script_params():
 		self.check = 10000
 		self.num_steps = 1e11
 		self.trajectory_out_fname = ""
-		self.measurement_out_basefname = ""
-		self.measurement_out_fname = []
+		self.measurement_out_fname = ""
 		self.vdw_forcefield_params = ""
 		self.kinetics_out_fname = ""
 		self.binding_site_params = ""
@@ -536,7 +523,7 @@ class FFEA_script_params():
 		elif lvalue == "trajectory_out_fname":
 			self.trajectory_out_fname = get_path_from_script(rvalue, scriptdir)
 		elif lvalue == "measurement_out_fname":
-			self.measurement_out_basefname = get_path_from_script(rvalue, scriptdir)
+			self.measurement_out_fname = get_path_from_script(rvalue, scriptdir)
 		elif lvalue == "vdw_forcefield_params":
 			self.vdw_forcefield_params = get_path_from_script(rvalue, scriptdir)
 		elif lvalue == "kinetics_out_fname":
@@ -650,7 +637,7 @@ class FFEA_script_params():
 		astr += "\t<num_steps = %1.0e>\n" % (self.num_steps)
 		astr += "\t<rng_seed = time>\n"
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
-		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_basefname, os.path.dirname(os.path.abspath(fname))))
+		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<vdw_forcefield_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
 		if self.kinetics_out_fname != "":
 			astr += "\t<kinetics_out_fname = %s>\n" % (os.path.relpath(self.kinetics_out_fname, os.path.dirname(os.path.abspath(fname))))
