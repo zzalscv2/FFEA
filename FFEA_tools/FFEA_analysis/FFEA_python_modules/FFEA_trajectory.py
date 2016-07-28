@@ -41,25 +41,30 @@ class FFEA_trajectory:
 
 		# Then rest of trajectory.
 		if(load_all == 1):
-			all_frames = -1
+			all_frames = 0
 			while(True):
-				all_frames += 1
+
+				# Have we read enough frames?
+				#print all_frames, num_frames_to_read
+				if(all_frames == num_frames_to_read):
+					print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
+					break
+
+				# Skip or load
 				if all_frames % frame_rate != 0:
 					if self.skip_frame() == 1:
+						print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 						break
 				
 				elif(self.load_frame(surf=surf) != 0):
 					print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 					break
 
-				elif(self.num_frames == num_frames_to_read):
-					print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
-					break
-
+				all_frames += 1
 				#if self.num_frames % 100 == 0:
 				#	print "Frames parsed = ", str(all_frames)
 
-				sys.stdout.write("\rFrames read = %d" % (self.num_frames))
+				sys.stdout.write("\rFrames read = %d, Frames skipped = %d" % (self.num_frames, all_frames - self.num_frames))
 				sys.stdout.flush()
 
 	def load_header(self, fname):

@@ -20,5 +20,5 @@ if thin_percent < 1:
 
 
 frame_rate = ceil(100 / thin_percent)
-traj = FFEA_trajectory.FFEA_trajectory(traj_fname, frame_rate = frame_rate)
+traj = FFEA_trajectory.FFEA_trajectory(traj_fname, frame_rate = frame_rate, num_frames_to_read = frames_to_read)
 traj.write_to_file(out_fname)
