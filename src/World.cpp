@@ -3202,7 +3202,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     }
     // If we're doing kinetics, we're saving the state of the extra RNG: 
     if (params.calc_kinetics) {
-      fprintf(checkpoint_out, "RNGStream dedicated to the thermal stress:\n");
+      fprintf(checkpoint_out, "RNGStream dedicated to the kinetics:\n");
       kinetic_rng->GetState(state); 
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
                                                            state[3], state[4], state[5]);
