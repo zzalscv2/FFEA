@@ -57,7 +57,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 	    */
 
 	    //////////////////////////////////////////////
-	    /// One more check ////// One more check /////
+	    // One more check ////// One more check /////
 	    /*
 	    arr3 inwards; 
 	    vec3Vec3SubsToArr3(f1->n[3]->pos, f1->centroid, inwards); 
@@ -221,7 +221,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 		force2.y *= ApAq;
 		force2.z *= ApAq;
 		f2->add_force_to_node(j, &force2);
-		f2->add_bb_vdw_force_to_record(&force1, f1->daddy_blob->blob_index);
+		f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
 	    }
 
     }
