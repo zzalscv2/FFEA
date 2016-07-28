@@ -12,7 +12,8 @@ add_executable(ffea ffea.cpp
     NearestNeighbourLinkedListCube.cpp NoMassCGSolver.cpp 
     PoissonMatrixQuadratic.cpp SparseMatrixFixedPattern.cpp 
     SparseMatrixTypes.cpp SparseMatrixUnknownPattern.cpp SparsityPattern.cpp 
-    Spring.cpp World.cpp VdW_solver.cpp Steric_solver.cpp LJSteric_solver KineticState.cpp 
+    Spring.cpp World.cpp VdW_solver.cpp 
+    Steric_solver.cpp  Steric_solverII.cpp LJSteric_solver.cpp KineticState.cpp 
     PreComp_solver.cpp CheckTetrahedraOverlap.cpp VolumeIntersection.cpp FFEA_user_info.cpp 
     RngStream.cpp )
     
