@@ -192,6 +192,9 @@ Specifically, a springs file with 3 springs could look like:
 
 
 
+Checkpoint file .fcp {# ffeaCheckpointFileIn }
+----------------------------------------------
+This is the same type of file than the output [checkpoint file](\ref ffeaCheckpointFileOut). 
 
 
 States file
@@ -281,4 +284,27 @@ This file records the Lennard-jones
     # step — vdw area 0 1 — vdw force 0 1 — vdw energy 0 1
 .
 .
+
+
+Checkpoint file .fcp {#ffeaCheckpointFileOut}
+------------------------------------------------
+The checkpoint file stores the state of the Random Number Generator(s) RNG(s) at the 
+ last saved step. The format of this file, that should be automatically writen,
+ starts with a single header line specifying the number of RNGStreams dedicated to 
+ the thermal stress:
+
+     RNGStreams dedicated to the thermal stress: <N>
+
+then it follows ` <N> ` lines with 6 integers per line specifying the state of the
+  stream, e. g.:
+
+     1828815773 2063911640 1007531883 4278127031 1691073935 2862951708
+
+
+Afterwards, in the case of using kinetics, the following line will be found:
+
+    RNGStream dedicated to the thermal stress:\n
+
+followed by a single line with 6 integers describing the state of 
+   the RNGStream dedicated to the kinetic stress.
 
