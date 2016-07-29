@@ -389,7 +389,6 @@ void Face::getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &v
   geoscalar tetA[4][3], tetB[4][3], tetC[4][3];
   geoscalar dr = 1e-3;
   geoscalar vol_m, vol_M;
-  // geoscalar dVdr, dAdr;
 
   for (int i=0; i<4; i++) {
      tetA[i][0] = n[i]->pos.x;
@@ -401,22 +400,11 @@ void Face::getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &v
      tetC[i][0] = f2->n[i]->pos.x + dr*r[0];
      tetC[i][1] = f2->n[i]->pos.y + dr*r[1];
      tetC[i][2] = f2->n[i]->pos.z + dr*r[2];
-    /* printf("r: %e, %e, %e\n", r[0], r[1], r[2]);
-     printf("B: %e, %e, %e\n", tetB[i][0], tetB[i][1], tetB[i][2]);
-     printf("C: %e, %e, %e\n", tetC[i][0], tetC[i][1], tetC[i][2]);*/
   }
-  /* volumeAndAreaIntersection<geoscalar,grr3>(tetA, tetB, vol, area);
-  volumeAndAreaIntersection<geoscalar,grr3>(tetA, tetC, vol_t, area_t); */
   vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetB);
   vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);
 
   dVdr = (vol_M - vol_m)/(2*dr); 
   vol  = (vol_m + vol_M)/2;
-
-  /*printf("vol: %e, vol_t: %e, dVdr: %e\n", vol, vol_t, dVdr);
-  printf("area: %e, area_t: %e, dAdr: %e\n", area, area_t, dAdr);*/
-  
-
-  
 
 } 
