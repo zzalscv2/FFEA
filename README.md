@@ -143,7 +143,18 @@ In order to use it, one would need to run PyMOL (>=1.8), and then click on
 Working environment
 ===================
 
-After installing FFEA, you may want to provide yourself with some 
+Executing ` ffea ` and ` FFEA_tools ` is probably what most users will wish, so 
+ UNIX users may find convenient to add the install folder in the ` PATH `:
+
+      export PATH=$FFEA_HOME/bin:$PATH
+
+In addition, those users willing to write new measure tools may find useful to 
+ use the provided python modules. In order to be able to do so, these should be 
+ found in the ` PYTHONPATH `:
+
+     export PYTHONPATH=$FFEA_HOME/lib/python<version>/FFEA_python_modules
+
+Finally, users may want to provide themselve with some 
  extra packages that have proven to be useful at setting up the system
  to simulate, as well as at analysing the results: 
 
@@ -160,7 +171,6 @@ After installing FFEA, you may want to provide yourself with some
      allowing the manipulation and coarsening of surface profiles.
 
 
-
    * [NETGEN](https://sourceforge.net/projects/netgen-mesher/) 
    or [TETGEN](http://wias-berlin.de/software/tetgen/) [OPTIONAL]. 
      Programs which convert surface profile into volumetric meshes 
@@ -173,5 +183,7 @@ After installing FFEA, you may want to provide yourself with some
      PCA output (eigensystems, projections, animations etc)
      obtained from standard from equivalent MD simulations.
 
-Instructions on how these tools can be used in relation to FFEA can be found 
- in the [Tutorial](\ref Tutorial).
+Some notes on how to use these tools in relation to FFEA can be found 
+ in the [Tutorial](\ref Tutorial). However, mastering these tools 
+ may imply consulting the documentation provided by the packages themselves.
+ 

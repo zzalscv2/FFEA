@@ -8,7 +8,7 @@ def readAndAverage(iFile, ini, end, th, Fields):
     while (sta.readline() != "Measurements:\n"):
       continue
     
-    for i in sta.readline().split(" "):
+    for i in sta.readline().split():
       H.append([i.strip()])
     for line in sta:
       cnt = 0
