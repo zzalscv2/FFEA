@@ -353,9 +353,9 @@ int PreComp_solver::solve() {
 
     // Zero some measurement_ stuff
     for(int i = 0; i < num_blobs; ++i) {
-	for(int j = 0; j < num_blobs; ++j) {
-		fieldenergy[i][j] = 0.0;
-	}
+      for(int j = 0; j < num_blobs; ++j) {
+        fieldenergy[i][j] = 0.0;
+      }
     }
 
     // 1 - Compute the position of the beads:
