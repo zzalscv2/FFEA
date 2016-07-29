@@ -111,7 +111,8 @@ Steric potential {#sPotential}
  a steric repulsion that is proportional to the overlapping of the tetrahedra 
   of the interacting faces will be calculated. More specifically, the repulsive 
   energy will be proportional to the volume of the overlapping tetrahedra, and 
-  the repulsive force proportional to the area enclosing the ovelapping volume. 
+  the repulsive force proportional to the gradient of this volume in the direction
+  of the line joining the node in every tetrahedra that is not part of the interacting face.
  The magnitude of this interaction can be modulated through a single parameter, 
   
       < vdw_steric_factor = F >
