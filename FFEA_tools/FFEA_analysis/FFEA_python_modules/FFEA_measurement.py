@@ -28,7 +28,7 @@ class FFEA_measurement:
 				return
 
 			dfname = path.splitext(fname)[0] + ".fdm"
-			if path.exists(fname):
+			if path.exists(dfname):
 				self.load_detailed(dfname)
 
 		except:
