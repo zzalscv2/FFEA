@@ -24,8 +24,11 @@ PreComp_solver::~PreComp_solver() {
   if (n_beads > 0) {
     delete b_elems; 
   }
-  num_blobs = 0;
+  for (int i=0; i<num_blobs; i++){
+    delete fieldenergy[i];
+  } 
   delete[] fieldenergy;
+  num_blobs = 0;
   fieldenergy = NULL;
 }
 
@@ -89,6 +92,12 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      return FFEA_ERROR;
    } 
     
+
+    num_blobs = params->num_blobs;
+    fieldenergy = new scalar*[num_blobs];
+    for(int i = 0; i < num_blobs; ++i) {
+      fieldenergy[i] = new scalar[num_blobs];
+    }
 
 
    stringstream ssfile; 
