@@ -8,20 +8,25 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
            PreComputed potentials, kinetic ...
            Make sure it is thread safe. 
 
- * [Springs] Springs should ideally be set up as a spring solver, to bring it
-	     in line with the other global things
-
- * [PreComp] deal with multiple conformations
-
  * [Doc] - visualisation and other tools
          - finish the tutorial
+         - document the python tools and the modules 
 
- * [Tests] - add a number of tests, to ensure that changes have not 
-           broken anything.
+ * [Tests] - add a test using the precomputed potentials. A set of potentials
+           have been added in tests/physics/ff-2x4beads/. 
+           - one last test with the colliding balls could be added. 
+           One would still to think on what to exactly check for that one.
 
  * [Comments] - finish translating comments into Doxygen comments.
 
- * [Steric] - calculate the gradient of the volume, 
-            instead of using the enclosing area.
+
+
+
+# The following will come with the next release:
+
+ * [PreComp] deal with multiple conformations 
+
+ * [Springs] Springs should ideally be set up as a spring solver, to bring it
+	     in line with the other global things
 
  * [TimeStep Calculator] - Work out mechanical timesteps from forces... :(
