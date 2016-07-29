@@ -678,6 +678,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
               vdw_solver = new VdW_solver();
             else if (params.vdw_type == "steric")
               vdw_solver = new Steric_solver();
+            else if (params.vdw_type == "stericII")
+              vdw_solver = new Steric_solverII();
 	    else if (params.vdw_type == "ljsteric")
 	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL) 
@@ -2031,7 +2033,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		            		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
 
 				// Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
-				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
+				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "stericII" || params.vdw_type == "ljsteric")) {
 					blob_array[i][j].add_steric_nodes();
 				}
 
@@ -3200,7 +3202,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     }
     // If we're doing kinetics, we're saving the state of the extra RNG: 
     if (params.calc_kinetics) {
-      fprintf(checkpoint_out, "RNGStream dedicated to the thermal stress:\n");
+      fprintf(checkpoint_out, "RNGStream dedicated to the kinetics:\n");
       kinetic_rng->GetState(state); 
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
                                                            state[3], state[4], state[5]);

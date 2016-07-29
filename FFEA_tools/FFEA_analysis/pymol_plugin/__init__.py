@@ -464,6 +464,10 @@ class FFEA_viewer_control_window:
 			self.remove_frame_from_blobs()
 		else:
 			break
+
+	# Finally show the "progress bar":
+	if self.num_frames > 1:
+		cmd.mset("1-"+str(self.num_frames))
 	return
 
   def get_system_dimensions(self, findex):

@@ -314,7 +314,7 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
         force2.y *= ApAq;
         force2.z *= ApAq;
         f2->add_force_to_node(j, &force2);
-        f2->add_bb_vdw_force_to_record(&force1, f1->daddy_blob->blob_index);
+        f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
         //				printf("2:: %d %e %e %e\n", j, force2.x, force2.y, force2.z);
 
         //				f2->add_force_to_node_atomic(j, &force);
