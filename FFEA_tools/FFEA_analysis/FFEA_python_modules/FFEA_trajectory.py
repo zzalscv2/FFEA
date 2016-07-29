@@ -237,6 +237,12 @@ class FFEA_trajectory:
 				except:
 					continue	
 
+	def translate(self, trans):
+		for b in range(self.num_blobs):
+			for c in range(self.num_conformations[b]):
+				for f in range(self.num_frames):
+					self.blob[b][c].frame[f].translate(trans)
+
 	def skip_frame(self):
 
 		num_asterisks = 0
