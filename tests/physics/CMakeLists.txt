@@ -4,7 +4,8 @@ set (TPHYSICS "${PROJECT_BINARY_DIR}/tests/physics")
 file (MAKE_DIRECTORY ${TPHYSICS})
 file (COPY cuboid_flat cuboid_flat_structure sphere_63_120_structure sphere_63_120_two
                   sphere_63_120_two_vdw sphere_63_120_cuboid_flat sphere_63_120_mass 
-                  sphere_63_120_nomass sphere_63_120_nomass_restart DESTINATION ${TPHYSICS})
+                  sphere_63_120_nomass sphere_63_120_nomass_restart
+                  sphere_63_120_nomass_two_vdw-preComp DESTINATION ${TPHYSICS})
 
 # and run the tests. 
 add_subdirectory(sphere_63_120_mass)
