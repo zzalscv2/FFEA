@@ -289,6 +289,11 @@ public:
     int build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A);
 
     /**
+     * Build the mass distribution matrix for this blob
+     */
+    int build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M);
+
+    /**
      * Returns the total mass of this Blob.
      */
     scalar get_mass();
@@ -319,6 +324,8 @@ public:
     int get_num_beads();
 
     scalar get_rmsd();
+
+    int get_linear_solver();
 
     vector3 get_CoG();
 

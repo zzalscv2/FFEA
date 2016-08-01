@@ -138,14 +138,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
   
   st=MPI::Wtime();
 #endif
-  
-	// Open script
-	ifstream fin;
-	fin.open(FFEA_script_filename.c_str());
 
 	// Copy entire script into string
 	vector<string> script_vector;
-	ffeareader->file_to_lines(FFEA_script_filename, &script_vector);
+	if(ffeareader->file_to_lines(FFEA_script_filename, &script_vector) == FFEA_ERROR) {
+		return FFEA_ERROR;
+	}
 
 	// Get params section
 	cout << "Extracting Parameters..." << endl;
@@ -782,6 +780,215 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
  *   ffea numerical integration.
  * */
 int World::get_smallest_time_constants() {
+
+	// This is currently only for active blob, as inactive blobs are all at infinity due to linked list problems
+
+	// Global variables
+	int i, j, dt_min_bin, dt_max_bin, num_nodes, num_rows;
+	scalar dt_min_world = INFINITY, dt_max_world = -1 * INFINITY;
+	string dt_min_world_type = "viscous", dt_max_world_type = "viscous";
+	Eigen::EigenSolver<Eigen_MatrixX> es_v, es_m;
+	vector<scalar> tauv, taum;
+	vector<scalar>::iterator it;
+
+	cout << "Calculating time constants..." << endl << endl;
+	for(i = 0; i < params.num_blobs; ++i) {
+		cout << "\tBlob " << i << ":" << endl << endl;
+
+		// Ignore if we have a static blob
+		if(active_blob_array[i]->get_motion_state() == FFEA_BLOB_IS_STATIC) {
+			cout << "\t\tBlob " << i << " is STATIC. No associated timesteps." << endl;
+			continue;
+		}
+
+		// What will be the fastest dynamics? Inertial or viscous?
+
+		// Viscous only
+			
+		// Build matrices
+		num_nodes = active_blob_array[i]->get_num_linear_nodes();
+
+		// Direction matters here
+		num_rows = 3 * num_nodes;
+
+		Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
+		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
+		Eigen_MatrixX K_inv(num_rows, num_rows);
+		Eigen_MatrixX I(num_rows, num_rows);
+		Eigen_MatrixX tau_inv(num_rows, num_rows);
+
+		// Build viscosity matrix, K
+		cout << "\r\t\tCalculating the Viscosity Matrix, K (task 1/5)..." << flush;
+		if(active_blob_array[i]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
+			cout << endl << "\t\t";
+			FFEA_error_text();
+			cout << endl << endl << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << i << endl;
+			return FFEA_ERROR;
+		}
+		cout << "done!" << flush;
+
+		// Build elasticity matrix, A
+		cout << "\r\t\tCalculating the Elasticity Matrix, A (task 2/5)..." << flush;
+		if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
+			cout << endl << "\t\t";
+			FFEA_error_text();
+			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << i << endl;
+			return FFEA_ERROR;
+		}
+		cout << "done!" << flush;
+
+		// Invert K (it's symmetric! Will not work if stokes_visc == 0)
+		cout << "\r\t\tAttempting to invert K to form K_inv (task 3/5)..." << flush;
+		Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(K); // performs a Cholesky factorization of K
+		I.setIdentity();
+		K_inv = Cholesky.solve(I);
+		if(Cholesky.info() == Eigen::Success) {
+			cout << "done!" << flush;
+		} else if (Cholesky.info() == Eigen::NumericalIssue) {
+			cout << endl << "\t\t" << "Viscosity Matrix could not be inverted via Cholesky factorisation due to numerical issues. You possibly don't have an external solvent set, or it is too low." << endl;
+			return FFEA_ERROR;
+		} else if (Cholesky.info() == Eigen::NoConvergence) {
+			cout << "\nInversion iteration couldn't converge. K must be a crazy matrix. Possibly has zero eigenvalues?" << endl;
+			return FFEA_ERROR;
+		}
+
+		// Apply to A
+		cout << "\r\t\tCalculating inverse time constant matrix, tau_inv = K_inv * A (task 4/5)..." << flush;
+		tau_inv = K_inv * A;
+		cout << "done!" << flush;
+
+		// Diagonalise
+		cout << "\r" << "\t\t                                                                     " << flush;
+		cout << "\r\t\tDiagonalising tau_inv (task 5/5)..." << flush;
+		es_v.compute(tau_inv);
+		for(j = 0; j < num_rows; ++j) {
+			tauv.push_back(1.0 / fabs(es_v.eigenvalues()[j].real()));
+		}
+		cout << "done!" << flush;
+
+		if(active_blob_array[i]->get_linear_solver() != FFEA_NOMASS_CG_SOLVER) {
+
+			// Inertial 'always' fastest
+			
+			// Build matrices
+			num_nodes = active_blob_array[i]->get_num_linear_nodes();
+
+			// Direction still matters here due to viscosity
+			num_rows = 3 * num_nodes;
+
+			Eigen::SparseMatrix<scalar> M(num_rows, num_rows);
+			Eigen_MatrixX M_inv(num_rows, num_rows);
+
+			// Build mass matrix, M
+			cout << "\r\t\tCalculating the Mass Matrix, M (task 1/4)..." << flush;
+			if(active_blob_array[i]->build_linear_node_mass_matrix(&M) == FFEA_ERROR) {
+				cout << endl << "\t\t";
+				FFEA_error_text();
+				cout << endl << endl << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << i << endl;
+				return FFEA_ERROR;
+			}
+			cout << "done!" << flush;
+
+			// Invert M (it's symmetric!)
+			cout << "\r\t\tAttempting to invert M to form M_inv (task 2/4)..." << flush;
+			Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(M); // performs a Cholesky factorization of K
+			M_inv = Cholesky.solve(I);
+			if(Cholesky.info() == Eigen::Success) {
+				cout << "done!" << flush;
+			} else if (Cholesky.info() == Eigen::NumericalIssue) {
+				cout << endl << "\t\t" << "Mass Matrix could not be inverted via Cholesky factorisation due to numerical issues. This...should not be the case. You have a very odd mass distribution. Try the CG_nomass solver" << endl;
+				return FFEA_ERROR;
+			} else if (Cholesky.info() == Eigen::NoConvergence) {
+				cout << endl << "\t\t" << "Inversion iteration couldn't converge. M must be a crazy matrix. Possibly has zero eigenvalues? Try the CG_nomass solver." << endl;
+				return FFEA_ERROR;
+			}
+
+			// Apply to K
+			cout << "\r\t\tCalculating inverse time constant matrix, tau_inv = M_inv * K (task 3/4)..." << flush;
+			tau_inv = M_inv * K;
+			cout << "done!" << flush;
+
+			// Diagonalise
+			cout << "\r" << "\t\t                                                                                                            " << flush;
+			cout << "\r\t\tDiagonalising tau_inv (task 4/4)..." << flush;
+			es_m.compute(tau_inv);
+			for(j = 0; j < num_rows; ++j) {
+				taum.push_back(1.0 / fabs(es_m.eigenvalues()[j].real()));
+			}
+			cout << "done!" << flush;
+		}
+
+		// But is it a numerical instability problem, or a small elements problem? Solve 1 step to find out (at a later date)
+
+		// Get extreme timesteps from this eigendecomposition.)
+
+		// Sort eigenvalues
+		cout << "\r\t\tSorting eigenvalues (task 1/1)..." << flush;
+		sort(tauv.begin(), tauv.end());
+		sort(taum.begin(), taum.end());
+		cout << "done!" << flush;
+
+		// Ignore the 6 translational / rotational modes (they are likely the slowest 6 modes)
+		scalar dt_max_blob = tauv.at(num_rows - 7);
+		scalar dt_min_blob = tauv.at(0);
+		string dt_min_blob_type = "viscous", dt_max_blob_type = "viscous";
+
+		//for(int l = 0; l < 10; ++l) {
+		//	cout << endl << "ev " << l << " visc - " << tauv.at(l) << " mass - " << taum.at(l) << endl;
+		//}
+		//for(int l = num_rows - 10; l < num_rows; ++l) {
+	//		cout << endl << "ev " << l << " visc - " << tauv.at(l) << " mass - " << taum.at(l) << endl;
+		//}
+		//exit(0);
+
+		// We don't need to ignore top 6 here as they have energy associated with them now i.e. not zero eigenvalues
+		if(active_blob_array[i]->get_linear_solver() != FFEA_NOMASS_CG_SOLVER) {
+
+			if(taum.at(num_rows - 1) > dt_max_blob) {
+				dt_max_blob = taum.at(num_rows - 1);
+				dt_max_blob_type = "inertial";
+			}
+			if(taum.at(0) < dt_min_blob) {
+				dt_min_blob = taum.at(0);
+				dt_min_blob_type = "inertial";
+			}
+		}
+
+		//cout << "\r\t\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << (1.0 / smallest_val) * mesoDimensions::time << "s" << endl;
+		//cout << "\t\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << (1.0 / largest_val) * mesoDimensions::time << "s" << endl << endl;
+		cout << "\r\t\tFastest Mode: tau (" << dt_min_blob_type << ") = " << dt_min_blob * mesoDimensions::time << "s" << endl;
+		cout << "\t\tSlowest Mode: tau (" << dt_max_blob_type << ") = " << dt_max_blob * mesoDimensions::time << "s" << endl << endl;
+
+		// Global stuff
+		if(dt_max_blob > dt_max_world) {
+			dt_max_world = dt_max_blob;
+			dt_max_world_type = dt_max_blob_type;
+			dt_max_bin = i;
+		}
+
+		if(dt_min_blob < dt_min_world) {
+			dt_min_world = dt_min_blob;
+			dt_min_world_type = dt_min_blob_type;
+			dt_min_bin = i;
+		}
+		
+		
+	}
+
+	cout << endl << "Global Time Constant Details:" << endl << endl;
+	cout << "\t\tFastest Mode: Blob " << dt_min_bin << ", tau (" << dt_min_world_type << ") = " << dt_min_world * mesoDimensions::time << "s" << endl;
+	cout << "\t\tSlowest Mode: Blob " << dt_max_bin << ", tau (" << dt_max_world_type << ") = " << dt_max_world * mesoDimensions::time << "s" << endl << endl;
+	cout << "\t\tPlease make sure your simulation timestep is less than " << dt_min_world * mesoDimensions::time << "s, for a stable simulation." << endl;
+	cout << "\t\tTake note than the energies will become inaccurate before this, so check your energy equilibrates correctly. If unsure, set dt << " << dt_min_world * mesoDimensions::time << "s" << endl << endl;
+	cout << "\t\tFor dynamical convergence, your simulation must run for longer than " << dt_max_world * mesoDimensions::time << "s." << endl << endl;
+
+	cout << "\t\tFINAL NOTE - If, after taking into account the above time constants, your simulation still fails (due to element inversion) it is not due to numerical instability from the integration, ";
+	cout << "but because a single timestep, with the average size of the noise, causes a step size larger than your smallest element. You must therefore coarsen your mesh further for the ";
+	cout << "continuum approximation to be valid. Thanks :)" << endl << endl;
+	return FFEA_OK;
+}
+
+/*int World::get_smallest_time_constants() {
 	
 	int blob_index;
 	int num_nodes, num_rows;
@@ -811,7 +1018,7 @@ int World::get_smallest_time_constants() {
 		Eigen_MatrixX I(num_rows, num_rows);
 		Eigen_MatrixX tau_inv(num_rows, num_rows);
 
-		/* Build K */
+		// Build K
 		cout << "\tCalculating the Global Viscosity Matrix, K...";
 		if(active_blob_array[blob_index]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
 			cout << endl;
@@ -821,7 +1028,7 @@ int World::get_smallest_time_constants() {
 		}
 		cout << "done!" << endl;
 
-		/* Build A */
+		// Build A
 		cout << "\tCalculating the Global Linearised Elasticity Matrix, A...";
 		if(active_blob_array[blob_index]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
 			cout << endl;
@@ -831,7 +1038,7 @@ int World::get_smallest_time_constants() {
 		}
 		cout << "done!" << endl;
 
-		/* Invert K (it's symmetric! Will not work if stokes_visc == 0) */
+		// Invert K (it's symmetric! Will not work if stokes_visc == 0)
 		cout << "\tAttempting to invert K to form K_inv...";
 		Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(K); // performs a Cholesky factorization of K
 		I.setIdentity();
@@ -846,31 +1053,15 @@ int World::get_smallest_time_constants() {
 			return FFEA_OK;
 		}
 
-		/* Apply to A */
+		// Apply to A
 		cout << "\tCalculating inverse time constant matrix, tau_inv = K_inv * A...";
 		tau_inv = K_inv * A;
 		cout << "done!" << endl;
 
-		/* Diagonalise */
+		// Diagonalise
 		cout << "\tDiagonalising tau_inv..." << flush;
 		Eigen::EigenSolver<Eigen_MatrixX> es(tau_inv);
-		//cout << es.eigenvalues() << endl;
-		/*double smallest_val = INFINITY;
-		double largest_val = -1 * INFINITY;
-		for(int i = 0; i < num_rows; ++i) {
 
-			// Quick fix for weird eigenvalues. Will look into this later
-			if(es.eigenvalues()[i].imag() != 0) {
-				continue;
-			} else {
-				if(es.eigenvalues()[i].real() < smallest_val && es.eigenvalues()[i].real() > 0) {
-					smallest_val = es.eigenvalues()[i].real();
-				} 
-				if (es.eigenvalues()[i].real() > largest_val) {
-					largest_val = es.eigenvalues()[i].real();
-				}
-			}	
-		}*/
 
 		cout << "done!" << endl;
 
@@ -878,8 +1069,8 @@ int World::get_smallest_time_constants() {
 		scalar smallest_val = fabs(es.eigenvalues()[6].real());
 		scalar largest_val = fabs(es.eigenvalues()[0].real());
 
-		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << 1.0 / smallest_val << "s" << endl;
-		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << 1.0 / largest_val << "s" << endl << endl;
+		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << (1.0 / smallest_val) * mesoDimensions::time << "s" << endl;
+		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << (1.0 / largest_val) * mesoDimensions::time << "s" << endl << endl;
 
 		// Global stuff
 		if(1.0 / smallest_val > dt_max) {
@@ -893,11 +1084,11 @@ int World::get_smallest_time_constants() {
 		}
 
 	}
-	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max << "s, from Blob " << dt_max_bin << endl;
-	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min << "s, from Blob " << dt_min_bin << endl << endl;
+	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max * mesoDimensions::time << "s, from Blob " << dt_max_bin << endl;
+	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min * mesoDimensions::time << "s, from Blob " << dt_min_bin << endl << endl;
 	cout << "Remember, the energies in your system will begin to be incorrect long before the dt = tau_min. I'd have dt << tau_min if I were you." << endl;
 	return FFEA_OK;
-}
+}*/
 
 
 /**
