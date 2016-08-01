@@ -88,8 +88,7 @@ int main(int argc, char *argv[])
 	
 	// Verbosity
 	set_verbosity_level(verbose);
-	//userInfo::verblevel = verbose;
-	cout << userInfo::verblevel << endl;
+
 	// --mode
 	if(var_map.count("mode")) {
 		if(mode != 0 && mode != 1 && mode != 2 && mode != 3 && mode != 4) {
@@ -322,13 +321,12 @@ int main(int argc, char *argv[])
 	} else if(mode == 3) {
 		
 		/* Calculate maximum allowed timestep for system */
-		cout << endl << "FFEA - Calculating System Timescales" << endl << endl;
+		cout << "\n\n\n***************************************************\n\tFFEA - Timestep Calculator\n***************************************************\n\n";
 		if(world->get_smallest_time_constants() == FFEA_ERROR) {
 			FFEA_error_text();
 			cout << "Error occurred in 'get_smallest_time_constants()' in World\n" << endl;
 			myreturn = FFEA_ERROR;
 		} else {
-			cout << "...done\n" << endl;
 			myreturn = FFEA_OK;
 		}
 	} else {
