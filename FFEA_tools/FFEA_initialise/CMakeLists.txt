@@ -4,7 +4,7 @@ add_subdirectory("FFEA_mapping_tools")
 add_subdirectory("FFEA_node_tools")
 add_subdirectory("PDB_tools")
 add_subdirectory("Surface_tools")
-add_subdirectory("Volume_tools")
+add_subdirectory("FFEA_volume_tools")
 add_subdirectory("FFEA_python_modules")
 
 install(DIRECTORY FFEA_convert_from_volume
