@@ -211,6 +211,33 @@ class FFEA_face:
 			
 		return centroid * (1.0 / len(self.n))
 
+	def isSame(self, face):
+		n = np.array(self.n)
+		m = np.array(face.n[0:3])
+
+		# Do all permutations of indices
+		cycle = np.array([[0,0,1],[1,0,0],[0,1,0]])
+		swap = np.array([[0,1,0],[1,0,0],[0,0,1]])
+
+		# The faces should be in the opposite order (for connectivity reasons), so swap first
+		m = np.dot(swap, m)
+
+		for i in range(3):
+			m = np.dot(cycle, m)
+			if np.array_equal(n, m):
+				return True
+
+		# If not in this order, then mesh is wrong anyway, so return False
+		#m = np.dot(swap, m)
+		#for i in range(3):
+		#	m = np.dot(cycle, m)
+		#	print n, m
+		#	if np.array_equal(n, m):
+		#		print "Equal!"
+		#		return True
+		
+		return False
+
 	def reset(self):
 		
 		self.n = []

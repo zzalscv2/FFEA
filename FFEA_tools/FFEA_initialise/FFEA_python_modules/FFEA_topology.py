@@ -1,6 +1,7 @@
 import os
 from time import sleep
 import numpy as np
+import FFEA_surface
 
 class FFEA_topology:
 
@@ -90,7 +91,7 @@ class FFEA_topology:
 				break
 
 			el.set_indices(sline)
-			self.add_element(el, eltype = eltype)
+			self.add_element(el)
 
 		fin.close()
 
@@ -145,11 +146,10 @@ class FFEA_topology:
 			raise TypeError
 
 		num_elements = int(sline[0])
-		num_interior_elements = num_elements
-		num_surface_elements = 0
+		num_interior_elements = 0
+		num_surface_elements = num_elements
 
 		# Read elements now
-		eltype = 1
 		while(True):
 			sline = fin.readline().split()
 			if sline[0].strip() == "#":
@@ -167,19 +167,25 @@ class FFEA_topology:
 				break
 
 			el.set_indices(sline)
-			self.add_element(el, eltype = eltype)
+			self.add_element(el)
 
 		fin.close()
 
-	def add_element(self, el, eltype = 0):
+	def add_element(self, el, eltype = -1):
+
+		if eltype == -1:
+			self.num_surface_elements += 1
+			el.interior = None
+
+		elif eltype == 0:
+			self.num_surface_elements += 1
+			el.interior = False
+		else:
+			self.num_interior_elements += 1
+			el.interior = True
 
 		self.element.append(el)
 		self.num_elements += 1
-
-		if eltype == 0:
-			self.num_surface_elements += 1
-		else:
-			self.num_interior_elements += 1
 
 	def get_num_elements(self):
 
@@ -195,7 +201,60 @@ class FFEA_topology:
 		
 		# Make a list of a set
 		return list(set(n))
+	
+	def isElementInterior(self, index):
 		
+		try:
+			testEl = self.element[index]
+		except(IndexError):
+			print "Element ", index, " does not exist."
+			return False
+
+		# First, see if already calculated. Else, set default assumption
+		if testEl.interior != None:
+			return testEl.interior
+
+		else:
+			testEl.interior = False
+
+		# To test if interior, see if a faces are repeated. If all are, element is interior
+		i = -1
+		faces_not_found = [0,1,2,3]
+		for el in self.element:
+			i += 1
+			el_connected = False
+			faces_to_remove = -1
+
+			# Same element doesn't count
+			if i == index:
+				continue
+		
+			for j in faces_not_found:
+				testFace = testEl.get_linear_face(j)
+				
+				for k in range(4):
+					face = el.get_linear_face(k)
+
+					if face.isSame(testFace):
+						faces_to_remove = j
+						print j
+						el_connected = True
+						break
+
+				if el_connected:
+					break
+	
+			try:
+				faces_not_found.remove(faces_to_remove)
+				print faces_to_remove, faces_not_found
+			except:
+				pass
+			if faces_not_found == []:
+				testEl.interior = True
+				break
+
+		return testEl.interior
+			
 	def print_details(self):
 
 		print "num_elements = %d" % (self.num_elements)
@@ -271,19 +330,44 @@ class FFEA_element:
 			centroid += node.pos[i]
 			
 		return centroid * (1.0 / len(self.n))
+	
+	def get_linear_face(self, index):
 		
+		face = FFEA_surface.FFEA_face_tri_lin()
+		if index == 0:
+			n = [self.n[0], self.n[1], self.n[2]]
+		elif index == 1:
+			n = [self.n[0], self.n[3], self.n[1]]
+		elif index == 2:
+			n = [self.n[0], self.n[2], self.n[3]]
+		elif index == 3:
+			n = [self.n[1], self.n[3], self.n[2]]
+
+		face.set_indices(n)
+		return face
+
+	def get_volume(self, node):
+		e = []
+		for i in range(3):
+			e.append(node.pos[self.n[i + 1]] - node.pos[self.n[0]])		
+
+		return np.fabs(np.dot(e[2], np.cross(e[1], e[0])) / 6.0)
+
 	def reset(self):
 		
 		self.n = []
+		self.interior = None
 
 class FFEA_element_tet_lin(FFEA_element):
 
 	def reset(self):
 
 		self.n = [0,1,2,3]
+		self.interior = None
 
 class FFEA_element_tet_sec(FFEA_element):
 
 	def reset(self):
 
 		self.n = [0,1,2,3,4,5,6,7,8,9]
+		self.interior = None
