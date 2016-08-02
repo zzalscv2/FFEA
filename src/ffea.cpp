@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	// Options for visible and non-visible cmd line params
 	desc.add_options()
 		("help,h", "Print usage message")
-		("detailed,d", "Output measurements out at a higher level of detail (to a .dmeas file)")
+		("no-detail,d", "Stop measurements being outputted at a higher level of detail (to a .fdm file)")
 		("input-file,i", b_po::value<string>(&script_fname), "Input script filename")
 		("delete-frames,l", b_po::value<int>(&frames_to_delete)->default_value(0), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
 		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator)\n")
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 	
 	// Initialise the world, loading all blobs, parameters, electrostatics, kinetics etc.
 	cout << "Initialising the world:\n" << endl;
-	if(world->init(script_fname, frames_to_delete, mode, var_map.count("detailed")) == FFEA_ERROR) {
+	if(world->init(script_fname, frames_to_delete, mode, !var_map.count("detailed")) == FFEA_ERROR) {
 		FFEA_error_text();
 		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 
