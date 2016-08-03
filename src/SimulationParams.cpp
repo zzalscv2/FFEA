@@ -65,6 +65,7 @@ SimulationParams::SimulationParams() {
     sprintf(bsite_in_fname, "\n");
     sprintf(icheckpoint_fname, "\n");
     sprintf(ocheckpoint_fname, "\n");
+    detailed_meas_out_fname = "\n";
 }
 
 SimulationParams::~SimulationParams() {
@@ -129,6 +130,7 @@ SimulationParams::~SimulationParams() {
     sprintf(ocheckpoint_fname, "\n");
     sprintf(bsite_in_fname, "\n");
     sprintf(vdw_in_fname, "\n");
+    detailed_meas_out_fname = "\n";
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
