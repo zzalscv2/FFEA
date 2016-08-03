@@ -67,6 +67,10 @@ class FFEA_measurement:
 		# Read measurements
 		line = fin.readline()
 		while(line != ""):
+			if line.strip() == "#==RESTART==":
+				line = fin.readline()
+				continue
+
 			sline = line.split()
 			for i in range(len(sline)):
 				self.global_meas[measmap[i]].append(float(sline[i]))
@@ -143,7 +147,11 @@ class FFEA_measurement:
 		# Now, read measurements and fill the relevent arrays
 		line = fin.readline()
 		
-		while(line.strip() != ""):
+		while(line != ""):
+			if line.strip() == "#==RESTART==":
+				line = fin.readline()
+				continue
+
 			sline = line.split()[1:]
 
 			localsline = sline[:len(indexmap)]
