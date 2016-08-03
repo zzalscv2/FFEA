@@ -300,9 +300,50 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		int num_active_rng = num_threads; 
 		if (params.calc_kinetics) num_active_rng += 1; 
 		int nlines = checkpoint_v.size();
+		cout << nlines << endl;
+
 		Seeds = new unsigned long *[max(num_active_rng,num_seeds_read)];
-		// RNG.1.4 - get Seeds:
-		int cnt_seeds = 0; 
+		// RNG.1.4 - get Seeds :
+		// BEN CHANGE - stream was printing out stuff if ctrl-c was pressed, so I'm looping more accurately
+		int cnt_seeds = 0;
+		for(int i = 1; i < num_threads + 1; ++i) {
+			vector <string> vline;
+			boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
+			Seeds[cnt_seeds] = new unsigned long [6];
+			// there must be 6 integers per line:
+			if (vline.size() != 6) {
+				FFEA_ERROR_MESSG("ERROR reading seeds\n")
+			}
+			for (int j=0; j<6; j++){
+				try {
+					Seeds[cnt_seeds][j] = stol(vline[j]);
+				} catch (invalid_argument& ia) {
+					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
+				}
+			}
+			cnt_seeds += 1;
+		}
+
+		// If kinetics active, one more seed to get (on line num_threads + 2)
+		if(params.calc_kinetics) {
+			vector <string> vline;
+			boost::split(vline, checkpoint_v[num_threads + 2], boost::is_any_of(" "));
+			Seeds[cnt_seeds] = new unsigned long [6];
+			// there must be 6 integers per line:
+			if (vline.size() != 6) {
+				FFEA_ERROR_MESSG("ERROR reading seeds\n")
+			}
+			for (int j=0; j<6; j++){
+				try {
+					Seeds[cnt_seeds][j] = stol(vline[j]);
+				} catch (invalid_argument& ia) {
+					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
+				}
+			}
+		}
+
+		/* OLD */
+		/*
 		for (int i=1; i<nlines; i++){
 			if (i == num_threads + 1) continue; // skip the header of the kinetics rng
 			vector <string> vline;
@@ -320,7 +361,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				}
 			}
 			cnt_seeds += 1;
-		}
+		} */
 
 		// RNG.2 - AND initialise rng:
 		// RNG.2.1 - first the package and, and rng[0],
@@ -527,6 +568,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		} else {
 
 			// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
+
+			/*
+			 * Trajectory first
+			 */
 			bool singleframe = false;
 			char c;
 
@@ -546,7 +591,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 
 			// Variable to store position of last asterisk in trajectory file (initialise it at end of file)
-			off_t last_asterisk_pos = ftello(trajectory_out);
+			off_t last_asterisk_pos;
+			last_asterisk_pos = ftello(trajectory_out);
 
 			int num_asterisks = 0;
 			int num_asterisks_to_find = 3 + (frames_to_delete) * 2 + 1; // 3 to get to top of last frame, then two for every subsequent frame. Final 1 to find ending conformations of last step
@@ -632,9 +678,89 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			fclose(trajectory_out);
 
 			// Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
-			printf("Truncating the trajectory file to the last asterisk (to remove any half-written time steps)\n");
+			printf("Truncating the trajectory file to the last asterisk...\n");
 			if (truncate(params.trajectory_out_fname, last_asterisk_pos) != 0) {
 			    FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname)
+			}
+
+			/*
+			 * Measurement files
+			 */
+
+			// Global
+
+			if ((measurement_out = fopen(params.measurement_out_fname, "r")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
+			}
+
+			if (fseek(measurement_out, 0, SEEK_END) != 0) {
+			    FFEA_ERROR_MESSG("Could not seek to end of file\n")
+			}
+
+			last_asterisk_pos = ftello(measurement_out);
+
+			// Looking for newlines this time, as each measurement frame is a single line
+			int num_newlines = 0;
+			int num_newlines_to_find = frames_to_delete + 1; // 1 for every frame, plus the first one, assuming all were written correctly
+			while (num_newlines != num_newlines_to_find) {
+			    if (fseek(measurement_out, -2, SEEK_CUR) != 0) {
+				FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.measurement_out_fname)
+			    }
+			    c = fgetc(measurement_out);
+			    if (c == '\n') {
+				num_newlines++;
+				printf("Found %d\n", num_newlines);
+			    }
+			}
+
+			last_asterisk_pos = ftello(measurement_out);
+
+			// Truncate the measurement file up to the point of the last newline
+			printf("Truncating the measurement file to the appropriate line...\n");
+			if (truncate(params.measurement_out_fname, last_asterisk_pos) != 0) {
+			    FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.measurement_out_fname)
+			}
+
+			// Append a newline to the end of this truncated measurement file (to replace the one that may or may not have been there)
+			//fprintf(measurement_out, "#==RESTART==\n");
+
+			last_asterisk_pos = ftello(measurement_out);
+
+
+			// Detailed
+			if(writeDetailed) {
+
+				if ((detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "r")) == NULL) {
+				    FFEA_FILE_ERROR_MESSG(params.detailed_meas_out_fname.c_str())
+				}
+
+				if (fseek(detailed_meas_out, 0, SEEK_END) != 0) {
+				    FFEA_ERROR_MESSG("Could not seek to end of file\n")
+				}
+
+				last_asterisk_pos = ftello(detailed_meas_out);
+
+				// Looking for newlines this time, as each measurement frame is a single line
+				num_newlines = 0;
+				num_newlines_to_find = frames_to_delete + 1; // 1 for every frame, plus the first one, assuming all were written correctly
+				while (num_newlines != num_newlines_to_find) {
+				    if (fseek(detailed_meas_out, -2, SEEK_CUR) != 0) {
+					FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.detailed_meas_out_fname.c_str())
+				    }
+				    c = fgetc(detailed_meas_out);
+				    if (c == '\n') {
+					num_newlines++;
+					printf("Found %d\n", num_newlines);
+				    }
+				}
+
+				last_asterisk_pos = ftello(detailed_meas_out);
+
+				// Truncate the measurement file up to the point of the last newline
+				printf("Truncating the detailed measurement file to the appropriate line...\n");
+				if (truncate(params.detailed_meas_out_fname.c_str(), last_asterisk_pos) != 0) {
+				    FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.detailed_meas_out_fname.c_str())
+				}
 			}
 
 			// Open trajectory and measurment files for appending
@@ -646,15 +772,19 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
 			}
 
-			// Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
-			fprintf(measurement_out, "#==RESTART==\n");
+			// And the detailed meas file, maybe
+			if(writeDetailed) {
+				if((detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "a")) == NULL) {
+					FFEA_FILE_ERROR_MESSG(params.detailed_meas_out_fname.c_str())
+				}
+			}
 
 			// And kinetic file
 			if(params.kinetics_out_fname_set == 1) {
 			    if ((kinetics_out = fopen(params.kinetics_out_fname, "a")) == NULL) {
 				FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname)
 			    }
-			    fprintf(kinetics_out, "#==RESTART==\n");
+			    //fprintf(kinetics_out, "#==RESTART==\n");
 			}
 			
 			/*
@@ -3382,6 +3512,10 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
       rng[i].GetState(state); 
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
                                                            state[3], state[4], state[5]);
+     // for(int j = 0; j < 6; ++j) {
+	//    cout << state[j] << " ";
+//      }
+    //  cout << endl;
     }
     // If there were more threads running on the previous run, we'll save them too:
     int oldThreads = num_seeds - num_threads;
@@ -3390,6 +3524,10 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0], 
               Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
               Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
+      //for(int j = 0; j < 6; ++j) {
+///	    cout << Seeds[i+num_threads][j] << " ";
+   //   }
+     // cout << endl;
     }
     // If we're doing kinetics, we're saving the state of the extra RNG: 
     if (params.calc_kinetics) {
@@ -3398,12 +3536,14 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
                                                            state[3], state[4], state[5]);
 
-    } 
+    }
+    fflush(checkpoint_out);
     // Done with the checkpoint!
 
 
     // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
     fprintf(trajectory_out, "*\n");
+    fflush(trajectory_out);
 
     // Global Measurement Stuff
     make_measurements();
@@ -3412,7 +3552,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     if(detailed_meas_out != NULL) {
 	write_detailed_measurements_to_file(detailed_meas_out);
     }
-
+    fflush(measurement_out);
 /*   // And now the kinetics, if necessary
 
     // Inform whoever is watching of changes (print to screen)
@@ -3448,10 +3588,6 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 	fflush(kinetics_out);
     }*/
 
-    // Force all output in buffers to be written to the output files now
-    fflush(trajectory_out);
-    fflush(checkpoint_out);
-    fflush(measurement_out);
 }
 
 void World::make_measurements() {
