@@ -455,8 +455,8 @@ class FFEA_script:
 	def load_mat(self, bindex, cindex=0):
 		return FFEA_material.FFEA_material(self.blob[bindex].conformation[cindex].material)
 
-	def load_trajectory(self):
-		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname)
+	def load_trajectory(self, num_frames=100000000):
+		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname, num_frames_to_read = num_frames)
 
 	def load_measurement(self):
 		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_fname)
