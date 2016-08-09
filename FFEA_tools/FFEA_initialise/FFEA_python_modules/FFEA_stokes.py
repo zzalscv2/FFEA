@@ -52,8 +52,6 @@ class FFEA_stokes:
 
 		num_nodes = int(fin.readline().split()[1])
 
-		fin.readline()
-
 		# Read stokes radii now
 		while(True):
 			line = fin.readline().strip()
