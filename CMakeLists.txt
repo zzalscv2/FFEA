@@ -147,6 +147,11 @@ set (EIGEN3_INC "${EIGEN3_INC}/..")
 message(STATUS "Found Eigen3 headers: ${EIGEN3_INC}")
 include_directories("${EIGEN3_INC}")
 
+# This snippet here works for me but the stuff above doesn't
+# However I get the impression that I am in the minority.
+# I will leave this here until Albert's back.
+#find_package(Eigen3 REQUIRED)
+#include_directories(EIGEN3_INCLUDE_DIR)
 
 # 6 ### PYTHON ######
 find_package(PythonInterp REQUIRED)
