@@ -1,5 +1,6 @@
 from os import path
 from time import sleep
+from numpy import pi
 
 class FFEA_stokes:
 
@@ -51,8 +52,6 @@ class FFEA_stokes:
 
 		num_nodes = int(fin.readline().split()[1])
 
-		fin.readline()
-
 		# Read stokes radii now
 		while(True):
 			line = fin.readline().strip()
@@ -79,6 +78,14 @@ class FFEA_stokes:
 			
 		print outline
 	
+	def calc_drag(self, viscosity, scale = 1.0):
+		
+		drag = 0.0
+		for r in self.radius:
+			drag += 6 * pi * viscosity * r
+
+		return drag
+
 	def reset(self):
 
 		self.radius = []
