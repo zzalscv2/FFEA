@@ -299,6 +299,15 @@ class FFEA_topology:
 		fout.close()
 		print "done!"
 
+	def calc_mass(self, mat, node):
+	
+		mass = 0.0
+		index = 0
+		for e in self.element:
+			mass += e.get_volume(node) * mat.element[index][0]
+			index += 1
+		return mass
+
 	def reset(self):
 
 		self.element = []
