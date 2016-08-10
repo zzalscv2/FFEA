@@ -82,7 +82,7 @@ class FFEA_stokes:
 		
 		drag = 0.0
 		for r in self.radius:
-			drag += 6 * pi * viscosity * r
+			drag += 6 * pi * viscosity * r * scale
 
 		return drag
 

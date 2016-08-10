@@ -452,7 +452,7 @@ class FFEA_script:
 	def load_pin(self, bindex, cindex=0):
 		return FFEA_pin.FFEA_pin(self.blob[bindex].conformation[cindex].pin)
 
-	def load_mat(self, bindex, cindex=0):
+	def load_material(self, bindex, cindex=0):
 		return FFEA_material.FFEA_material(self.blob[bindex].conformation[cindex].material)
 
 	def load_trajectory(self, num_frames=100000000):
