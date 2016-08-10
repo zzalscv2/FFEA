@@ -299,12 +299,12 @@ class FFEA_topology:
 		fout.close()
 		print "done!"
 
-	def calc_mass(self, mat, node):
+	def calc_mass(self, mat, node, scale = 1.0):
 	
 		mass = 0.0
 		index = 0
 		for e in self.element:
-			mass += e.get_volume(node) * mat.element[index][0]
+			mass += e.get_volume(node, scale) * mat.element[index][0]
 			index += 1
 		return mass
 
@@ -355,12 +355,12 @@ class FFEA_element:
 		face.set_indices(n)
 		return face
 
-	def get_volume(self, node):
+	def get_volume(self, node, scale = 1.0):
 		e = []
 		for i in range(3):
 			e.append(node.pos[self.n[i + 1]] - node.pos[self.n[0]])		
 
-		return np.fabs(np.dot(e[2], np.cross(e[1], e[0])) / 6.0)
+		return np.fabs(np.dot(e[2], np.cross(e[1], e[0])) / 6.0) * np.power(scale, 3.0)
 
 	def reset(self):
 		
