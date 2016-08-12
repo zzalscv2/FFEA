@@ -2,7 +2,7 @@ Installation {#install}
 ============
 
 This file describes how to install FFEA TEST, conisting of the FFEA_runner 
- and the FFEA_tools. The instructions in this file
+ and the ffeatools. The instructions in this file
 are for the most common use cases, and cover the command line tools.
 
 - @subpage quickstart

@@ -118,7 +118,7 @@ If you built the documentation you will be able to read it wit a browser,
       firefox $FFEA_HOME/share/ffea/doc/html/index.html &
 
 
-The FFEA_runner, ` ffea `, as well as the FFEA_tools, ` FFEA_tools ` will be found 
+The FFEA_runner, ` ffea `, as well as the ffeatools, ` ffeatools ` will be found 
  in ` $FFEA_HOME/bin `. Instructions on how to use them can be read 
  [here](\ref userManual) and [here](\ref FFEAtools) respectively. 
 
@@ -138,7 +138,7 @@ In order to use it, one would need to run PyMOL (>=1.8), and then click on
 Working environment
 ===================
 
-Executing ` ffea ` and ` FFEA_tools ` is probably what most users will wish, so 
+Executing ` ffea ` and ` ffeatools ` is probably what most users will wish, so 
  UNIX users may find convenient to add the install folder in the ` PATH `:
 
       export PATH=$FFEA_HOME/bin:$PATH

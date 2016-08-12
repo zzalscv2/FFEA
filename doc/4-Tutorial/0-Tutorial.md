@@ -23,7 +23,7 @@ Once configured, a trajectory can be simulated through the command line, typing:
 
 where ` <myInputFile.ffea> ` has consistently defined all the attributes.
 
-Finally the trajectory can be analysed using a set of [FFEA_tools](\ref analysisTools). More details on all these steps can be found in the following chapters
+Finally the trajectory can be analysed using a set of [ffeatools](\ref analysisTools). More details on all these steps can be found in the following chapters
  of this maual.
 
 Content:
