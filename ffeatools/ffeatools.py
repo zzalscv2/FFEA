@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 import os, sys
 
-# Get the path to FFEA_tools
+# Get the path to ffeatools
 FFEA_TOOLS_PATH = os.path.abspath(os.path.dirname(sys.argv[0]))
 FFEA_TOOLS_PATH += "/"
 
-# Make sure it is in the "FFEA_tools/" folder. If not, then it has erroneously been moved and the relative paths in the rest of this script will not work.
-# if FFEA_TOOLS_PATH.endswith("/FFEA_tools"):
-	# FFEA_TOOLS_PATH = FFEA_TOOLS_PATH + "/" # so we get the base path to FFEA_tools
+# Make sure it is in the "ffeatools/" folder. If not, then it has erroneously been moved and the relative paths in the rest of this script will not work.
+# if FFEA_TOOLS_PATH.endswith("/ffeatools"):
+	# FFEA_TOOLS_PATH = FFEA_TOOLS_PATH + "/" # so we get the base path to ffeatools
 # else:
-	# sys.exit("Error: FFEA_tools.py must be in the FFEA_tools/ folder. Relative paths will not work otherwise.\n")
+	# sys.exit("Error: ffeatools.py must be in the ffeatools/ folder. Relative paths will not work otherwise.\n")
 
 # Build the lookup dictionary for all FFEA tools
 ffea_tools = 	{
@@ -27,7 +27,7 @@ ffea_tools = 	{
 		}
 
 if len(sys.argv) == 1:
-	usage_string = "\nUsage: ./FFEA_tools ACTION ARGS\n"
+	usage_string = "\nUsage: ./ffeatools ACTION ARGS\n"
 	usage_string += "With ACTION as one of:\n\t"
 	usage_string += " ".join(ffea_tools.keys()) + "\n"
 	sys.exit(usage_string)

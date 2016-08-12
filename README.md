@@ -59,7 +59,7 @@ How to read this manual
 Because the software is split between the FFEA runner (written in C++) 
   and the rest of FFEA tools (written mostly Python, with some C++ and C), 
   this manual is split also in these two sections: 
-   [FFEA_runner](\ref userManual) and [FFEA_tools](\ref FFEAtools)
+   [FFEA_runner](\ref userManual) and [ffeatools](\ref FFEAtools)
   to be used as reference pages.
 However, the new user may want start reading the [tutorial](\ref Tutorial),
   and consult the reference pages later. 
