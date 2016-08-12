@@ -1,12 +1,12 @@
 
-# 1 - Configure and install the FFEA_tools script:
-configure_file("FFEA_tools.in"
-               "${PROJECT_BINARY_DIR}/FFEA_tools/FFEA_tools" @ONLY)
-install(PROGRAMS "${PROJECT_BINARY_DIR}/FFEA_tools/FFEA_tools" 
+# 1 - Configure and install the ffeatools script:
+configure_file("ffeatools.in"
+               "${PROJECT_BINARY_DIR}/ffeatools/ffeatools" @ONLY)
+install(PROGRAMS "${PROJECT_BINARY_DIR}/ffeatools/ffeatools" 
         DESTINATION  "${CMAKE_INSTALL_PREFIX}/bin")
 
 # 2 - Install python files here:
-install(FILES "FFEA_tools.py"
+install(FILES "ffeatools.py"
         DESTINATION ${PYTHONSTUFF})
 
 # 3 - and go through the subdirectories:
@@ -15,7 +15,7 @@ add_subdirectory("FFEA_analysis")
 add_subdirectory("FFEA_initialise")
 
 # 4 - install the PyMOL plugin:
-file (MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/FFEA_tools/ffea")
+file (MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/ffeatools/ffea")
 set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_analysis/pymol_plugin/__init__.py
 		FFEA_analysis/pymol_plugin/system_names_pokemon.txt
@@ -39,8 +39,8 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_initialise/FFEA_python_modules/FFEA_kinetic_map.py
                 FFEA_initialise/FFEA_python_modules/FFEA_kinetic_rates.py
                 FFEA_initialise/FFEA_python_modules/FFEA_kinetic_states.py)
-file ( COPY ${PYMOL_FILES} DESTINATION "${PROJECT_BINARY_DIR}/FFEA_tools/ffea" )
-set ( FFEA_TAR_BALL "${PROJECT_BINARY_DIR}/FFEA_tools/ffea.tar.gz")
+file ( COPY ${PYMOL_FILES} DESTINATION "${PROJECT_BINARY_DIR}/ffeatools/ffea" )
+set ( FFEA_TAR_BALL "${PROJECT_BINARY_DIR}/ffeatools/ffea.tar.gz")
 set ( COMPRESSING TRUE )
 
 # compress the folder.
@@ -55,7 +55,7 @@ endif (CMAKE_VERSION VERSION_LESS "3.2")
 if ( COMPRESSING )
   message(STATUS "PyMOL plugin will be compressed")
   add_custom_target(create_tar ALL COMMAND
-                  ${CMAKE_COMMAND} -E tar "cfz" ${FFEA_TAR_BALL} "${PROJECT_BINARY_DIR}/FFEA_tools/ffea")
+                  ${CMAKE_COMMAND} -E tar "cfz" ${FFEA_TAR_BALL} "${PROJECT_BINARY_DIR}/ffeatools/ffea")
   install (FILES ${FFEA_TAR_BALL} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ffea/plugins/pymol")
 endif ( COMPRESSING )
 

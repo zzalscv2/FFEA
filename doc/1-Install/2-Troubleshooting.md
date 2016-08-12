@@ -68,9 +68,14 @@ Eigen's website and documentation state that Eigen doesn't need to be compiled, 
 cmake /path/to/seigen/source
 make install
 ```
-You should then add Eigen's install folder to your CPATH environment variable. This will allow C and C++ compilers to find the Eigen header files:
+You should then add Eigen's install folder to your CPATH environment variable. This will allow C and C++ compilers to find the Eigen header files.
+If you are using a Red Hat based distro (e.g. CentOS, Red Hat, Fedora, or Scientific Linux), run this command:
 ```sh
 export CPATH="~/Software/LocalInstall/usr/local/include/eigen3"
+```
+The directory structure of Debian-based distros (e.g. Ubuntu and Debian) is different, so you should only run:
+```sh
+export CPATH="~/Software/LocalInstall/usr/local/include"
 ```
 Finally, the EIGEN_HOME environment variable will ensure that cmake can detect Eigen.
 ```sh
@@ -123,8 +128,8 @@ And you can start the unit tests by running
 ```sh
 make test
 ```
-## FFEA_tools
-FFEA_tools have been tested on Python versions after 2.6x and 2.7x. If you do not already have Python, the easiest way to install it is probably through Anaconda, available at continuum.io/downloads. The Anaconda distribution will install a selection of common Python packages, a package manager (conda) and a basic Python IDE (spyder). Even if you do already have Python, it is recommended, and it will not overwrite the default python (although it will launch as 'Python' from the terminal).
+## ffeatools
+ffeatools have been tested on Python versions after 2.6x and 2.7x. If you do not already have Python, the easiest way to install it is probably through Anaconda, available at continuum.io/downloads. The Anaconda distribution will install a selection of common Python packages, a package manager (conda) and a basic Python IDE (spyder). Even if you do already have Python, it is recommended, and it will not overwrite the default python (although it will launch as 'Python' from the terminal).
 
 Anaconda's website provides a shell script, which can be executed using the following command
 ```sh
@@ -134,5 +139,5 @@ After some red tape, this will automatically install Anaconda.
 
 The FFEA tools are installed alongisde the runner, and can be accessed using the following command:
 ```sh
-FFEA_tools
+ffeatools
 ```

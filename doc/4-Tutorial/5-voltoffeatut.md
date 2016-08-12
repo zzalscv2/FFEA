@@ -3,7 +3,7 @@ Volumetric Mesh to FFEA {#voltoffeatut}
 
 We have a volumetric mesh! This is almost all of the required data needed for an FFEA simulation; all that remains are the material paramters and FFEAtools can help us to set these. The following program enables us to generate a set of FFEA input files that can be immediately used for simulation:
 
-	FFEA_tools voltoffea -mesh [INPUT .vol fname] -density [INPUT density] -shear_visc [INPUT shear viscosity] -bulk_visc [INPUT bulk viscosity] -shear_mod [INPUT shear modulus] -bulk_mod [INPUT bulk modulus] -stokes_radius [INPUT effective node hydrodynamic radius] -dielec [INPUT dielectric constant] -make_script
+	ffeatools voltoffea -mesh [INPUT .vol fname] -density [INPUT density] -shear_visc [INPUT shear viscosity] -bulk_visc [INPUT bulk viscosity] -shear_mod [INPUT shear modulus] -bulk_mod [INPUT bulk modulus] -stokes_radius [INPUT effective node hydrodynamic radius] -dielec [INPUT dielectric constant] -make_script
 
 As you can see, this program needs the structural detail of the mesh together with the material properties of our protein in order to generate the file set for FFEA. Let us parameterise GroEL as though it was water, simply for testing purposes (very approximate values obtained from...wikipedia. For testing purpses only!).
 
@@ -15,7 +15,7 @@ Firstly, create a directory called 'simulation' and move into it, and move the .
 
 Now, using the .vol file:
 
-	FFEA_tools voltoffea -mesh emd_5043_10ang.vol -density 1.5e3 -shear_visc 1e-3  -bulk_visc 1e-3 -shear_mod 5.5e8 -bulk_mod 2.2e9 -dielec 1.0 -make_script
+	ffeatools voltoffea -mesh emd_5043_10ang.vol -density 1.5e3 -shear_visc 1e-3  -bulk_visc 1e-3 -shear_mod 5.5e8 -bulk_mod 2.2e9 -dielec 1.0 -make_script
 
 The program will ask if you want a stokes_radius calculating. Select 'y' and the program calculates an approximate value for the total hydrodynamic radius of your object. Now you will see a whole group of new files have appeared:
 

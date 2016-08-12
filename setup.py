@@ -8,4 +8,11 @@ setup(name='ffeatools',
       author_email='???',
       license='???',
       packages=['ffeatools'],
+      install_requires=[
+          'numpy',
+          'pymol',
+          'matplotlib',
+          'argparse',
+          'math'
+      ],
       zip_safe=False)
