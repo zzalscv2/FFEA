@@ -19,3 +19,5 @@ import FFEA_stokes
 import FFEA_surface
 import FFEA_topology
 import FFEA_vdw
+
+# instead of having these here, put them in a new folder called 'modules' separate to analysis and init
