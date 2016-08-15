@@ -13,14 +13,7 @@
 #include <set>
 #include <omp.h>
 #include <algorithm>  // std::find
-try{
-	#include <Eigen/Sparse>
-}
-catch{
-	#include <eigen3/Eigen/Sparse>
-}
-
-
+#include <Eigen/Sparse>
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "mat_vec_fns.h"
