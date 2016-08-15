@@ -1,5 +1,7 @@
 from os import path
 from time import sleep
+import numpy as np
+from FFEA_topology import FFEA_topology
 
 class FFEA_material:
 
@@ -18,7 +20,7 @@ class FFEA_material:
 
 		# Test file exists
 		if not path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
+			print("\tFile '" + fname + "' not found. Returning empty object...")
 			return
 	
 		# File format?
@@ -64,6 +66,37 @@ class FFEA_material:
 			self.add_element(el)
 
 		fin.close()
+
+		# Numpy the params up, as they are basically a matrix
+		self.element = np.array(self.element)
+
+	def build(self, num_elements, **params):
+		
+		# Get a number of elements
+		if num_elements == 0:
+			self.reset()
+			return
+		
+		# Check params are valid
+		plist = []
+		order = ["d", "sv", "bv", "sm", "bm", "di"]
+		for key in order:
+			try:
+				plist.append(float(params[key]))
+			except(KeyError):
+				print "Error. Required build parameters not present. We need:"
+				for key2 in order:
+					print "\t" + key2
+
+				raise
+		
+		# Get params
+		# Now build in correct way
+		for i in range(num_elements):
+			self.add_element(plist)
+	
+		# Numpy the params up, as they are basically a matrix
+		self.element = np.array(self.element)
 
 	def write_to_file(self, fname):
 	
