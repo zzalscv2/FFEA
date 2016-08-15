@@ -11,7 +11,7 @@ def get_path_from_script(path, scriptdir):
 
 class FFEA_script:
 
-	def __init__(self, fname):
+	def __init__(self, fname = ""):
 
 		self.reset()
 
@@ -19,7 +19,7 @@ class FFEA_script:
 		try:
 			fin = open(fname, "r")	
 		except(IOError):
-			print "Error. File " + fname  + " not found. Returning empty object..."
+			print "File " + fname  + " not found. Returning empty object..."
 			self.reset()
 			return
 
@@ -176,46 +176,6 @@ class FFEA_script:
 			
 			params.assign_param(lvalue, rvalue, scriptdir = scriptdir)
 
-
-		# Now, if params have not been correctly initialised, use the measurement world file to get them
-		'''
-		if not params.completed():
-			try:
-				fin = open(params.measurement_out_fname[-1], "r")
-
-			except(IOError):
-				print "Error. File " + params.measurement_out_fname[-1]  + " not found."
-				return
-			
-			
-			line = fin.readline().strip()
-			while line != "Parameters:":
-				if line == "":
-					line = fin.readline().strip()
-					continue
-				elif line.split()[0].strip() == "#":
-					print "Old measurement file. Parameters not available here."
-					return
-				
-				else:
-					line = fin.readline().strip()
-
-			line = fin.readline().strip()
-			while line != "":
-
-				try:
-					line = param.strip().replace("<", "").replace(">", "")
-					lvalue = line.split("=")[0].strip()
-					rvalue = line.split("=")[1].strip()
-				except:
-					print "Error. Could not parse param '" + param + "'"
-					return
-
-				params.assign_param(lvalue, rvalue, scriptdir = scriptdir)
-				line = fin.readline().strip()
-
-			fin.close()
-		'''	
 		return params
 
 
@@ -403,10 +363,25 @@ class FFEA_script:
 			
 		return
 
-	def write_to_file(self, fname):
+	def default(self, basename):
+		
+		# Just in case it's not a basename...
+		basename = os.path.splitext(basename)[0]
+
+		# Default params, but change fnames
+		self.params = FFEA_script_params()
+		self.params.trajectory_out_fname = basename + "_trajectory.ftj"
+		self.params.measurement_out_fname = basename + "_measurement.fm"
+		self.params.vdw_forcefield_params = basename + ".lj"
+
+		# Default, single blob, containing 1 conformation and no kinetics
+		self.add_empty_blob()
+		self.blob[-1].default(basename)
+
+	def write_to_file(self, fname, verbose=False):
 
 		fout = open(fname, "w")
-		self.params.write_to_file(fout, fname)
+		self.params.write_to_file(fout, fname, verbose=verbose)
 		fout.write("<system>\n")
 		for blob in self.blob:
 			blob.write_to_file(fout, fname, self.params.calc_kinetics, self.params.calc_preComp)
@@ -432,6 +407,7 @@ class FFEA_script:
 
 		self.blob.append(FFEA_script_blob())
 		self.params.num_blobs += 1
+		self.params.num_conformations.append(1)
 
 	# Loading other FFEA objects
 	def load_node(self, bindex, cindex=0):
@@ -616,7 +592,7 @@ class FFEA_script_params():
 		else:
 			return True
 
-	def write_to_file(self, fout, fname):
+	def write_to_file(self, fout, fname, verbose=False):
 		
 		num_conformations_string = ""
 		num_states_string = ""
@@ -627,15 +603,15 @@ class FFEA_script_params():
 		num_conformations_string = num_conformations_string[0:-1]
 		#num_states_string = num_states_string[0:-1]
 		
-
 		astr = ""
 		astr += "<param>\n"
 		astr += "\t<restart = %d>\n" % (self.restart)
-		astr += "\t<dt = %5.2e>\n" % (self.dt)
-		astr += "\t<kT = %5.2e>\n" % (self.kT)
-		astr += "\t<check = %d>\n" % (self.check)
-		astr += "\t<num_steps = %1.0e>\n" % (self.num_steps)
-		astr += "\t<rng_seed = time>\n"
+		if verbose:
+			astr += "\t<dt = %5.2e>\n" % (self.dt)
+			astr += "\t<kT = %5.2e>\n" % (self.kT)
+			astr += "\t<check = %d>\n" % (self.check)
+			astr += "\t<num_steps = %1.0e>\n" % (self.num_steps)
+			astr += "\t<rng_seed = time>\n"
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<vdw_forcefield_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
@@ -644,34 +620,36 @@ class FFEA_script_params():
 
 		if self.binding_site_params != "":
 			astr += "\t<binding_site_params = %s>\n" % (os.path.relpath(self.binding_site_params, os.path.dirname(os.path.abspath(fname))))
-		astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
-		astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
-		astr += "\t<kappa = %5.2e>\n" % (self.kappa)
-		astr += "\t<epsilon_0 = %5.2e>\n" % (self.epsilon_0)
-		astr += "\t<dielec_ext = %5.2e>\n" % (self.dielec_ext)
-		astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
-		astr += "\t<stokes_visc = %5.2e>\n" % (self.stokes_visc)
-		astr += "\t<calc_vdw = %d>\n" % (self.calc_vdw)
-		if self.calc_vdw == 1:
-			astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
-			if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
-				astr += "\t<vdw_steric_factor = %f>\n" % (self.vdw_steric_factor)
 
-		astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
-		astr += "\t<calc_es = %d>\n" % (self.calc_es)
-		astr += "\t<es_update = %d>\n" % (self.es_update)
-		astr += "\t<es_N_x = %d>\n" % (self.es_N[0])
-		astr += "\t<es_N_y = %d>\n" % (self.es_N[1])
-		astr += "\t<es_N_z = %d>\n" % (self.es_N[2])
-		astr += "\t<move_into_box = %d>\n" % (self.move_into_box)
-		astr += "\t<sticky_wall_xz = %d>\n" % (self.sticky_wall_xz)
-		astr += "\t<wall_x_1 = %s>\n" % (self.wall_x_1)
-		astr += "\t<wall_x_2 = %s>\n" % (self.wall_x_2)
-		astr += "\t<wall_y_1 = %s>\n" % (self.wall_y_1)
-		astr += "\t<wall_y_2 = %s>\n" % (self.wall_y_2)
-		astr += "\t<wall_z_1 = %s>\n" % (self.wall_z_1)
-		astr += "\t<wall_z_2 = %s>\n" % (self.wall_z_2)
-		astr += "\t<es_h = %d>\n" % (self.es_h)
+		if verbose:
+			astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
+			astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
+			astr += "\t<kappa = %5.2e>\n" % (self.kappa)
+			astr += "\t<epsilon_0 = %5.2e>\n" % (self.epsilon_0)
+			astr += "\t<dielec_ext = %5.2e>\n" % (self.dielec_ext)
+			astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
+			astr += "\t<stokes_visc = %5.2e>\n" % (self.stokes_visc)
+			astr += "\t<calc_vdw = %d>\n" % (self.calc_vdw)
+			if self.calc_vdw == 1:
+				astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
+				if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
+					astr += "\t<vdw_steric_factor = %f>\n" % (self.vdw_steric_factor)
+
+			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
+			astr += "\t<calc_es = %d>\n" % (self.calc_es)
+			astr += "\t<es_update = %d>\n" % (self.es_update)
+			astr += "\t<es_N_x = %d>\n" % (self.es_N[0])
+			astr += "\t<es_N_y = %d>\n" % (self.es_N[1])
+			astr += "\t<es_N_z = %d>\n" % (self.es_N[2])
+			astr += "\t<move_into_box = %d>\n" % (self.move_into_box)
+			astr += "\t<sticky_wall_xz = %d>\n" % (self.sticky_wall_xz)
+			astr += "\t<wall_x_1 = %s>\n" % (self.wall_x_1)
+			astr += "\t<wall_x_2 = %s>\n" % (self.wall_x_2)
+			astr += "\t<wall_y_1 = %s>\n" % (self.wall_y_1)
+			astr += "\t<wall_y_2 = %s>\n" % (self.wall_y_2)
+			astr += "\t<wall_z_1 = %s>\n" % (self.wall_z_1)
+			astr += "\t<wall_z_2 = %s>\n" % (self.wall_z_2)
+			astr += "\t<es_h = %d>\n" % (self.es_h)
 		astr += "\t<num_blobs = %d>\n" % (self.num_blobs)
 		astr += "\t<num_conformations = (%s)>\n" % (num_conformations_string)
 		#astr += "\t<num_states = (%s)>\n" % (num_states_string)
@@ -689,7 +667,7 @@ class FFEA_script_blob:
 		self.map = []
 		self.map_indices = []
 		self.solver = ""
-		self.scale = 0.0
+		self.scale = 1.0
 		self.centroid = None
 		self.rotation = None
 
@@ -736,6 +714,14 @@ class FFEA_script_blob:
 			fout.write(")>\n")
 		fout.write("\t</blob>\n")
 
+	def default(self, basename):
+		
+		self.add_empty_conformation()
+		self.conformation[-1].default(basename)
+
+		self.solver = "CG_nomass"
+		self.scale = 1e-10
+
 	def add_empty_conformation(self):
 
 		self.conformation.append(FFEA_script_conformation())
@@ -755,6 +741,17 @@ class FFEA_script_conformation:
 		self.pin = ""
 		self.bsites = ""
 		self.beads = ""
+
+	def default(self, basename):
+
+		self.motion_state = "DYNAMIC"
+		self.nodes = basename + ".node"
+		self.topology = basename + ".top"
+		self.surface = basename + ".surf"
+		self.material = basename + ".mat"
+		self.stokes = basename + ".stokes"
+		self.vdw = basename + ".vdw"
+		self.pin = basename + ".pin"	
 
 	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp):
 

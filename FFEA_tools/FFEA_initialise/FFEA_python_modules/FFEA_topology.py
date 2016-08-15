@@ -1,4 +1,4 @@
-import os
+import os, sys
 from time import sleep
 import numpy as np
 import FFEA_surface
@@ -20,7 +20,7 @@ class FFEA_topology:
 
 		# Test file exists
 		if not os.path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
+			print("\tFile '" + fname + "' not found. Returning empty object...")
 			return
 	
 		# File format?
@@ -28,21 +28,18 @@ class FFEA_topology:
 		if ext == ".top":
 			try:
 				self.load_top(fname)
-				self.valid = True
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
 		elif ext == ".ele":
 			try:
 				self.load_ele(fname)
-				self.valid = True
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
 		elif ext == ".vol":
 			try:
 				self.load_vol(fname)
-				self.valid = True
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
@@ -188,7 +185,6 @@ class FFEA_topology:
 		self.num_elements += 1
 
 	def get_num_elements(self):
-
 		return len(self.element)
 
 	def get_linear_nodes(self):
@@ -202,6 +198,105 @@ class FFEA_topology:
 		# Make a list of a set
 		return list(set(n))
 	
+	def calculateInterior(self, surf=None):
+
+		# Don't continue without surface (we could do, but it's slow)
+		if surf == None:
+			print "Error. Cannot proceed without a surface."
+			return
+
+		# Set all elements as default to interior elements
+		self.num_interior_elements = self.num_elements
+		self.num_surface_elements = 0
+
+		for i in range(self.num_elements):
+			self.element[i].interior = True
+
+		# Get a map, so we know what element wil go where
+		amap = [-1 for i in range(self.num_elements)]
+		index = 0
+
+		# Now, use surface to work out which are surface elements
+		for i in range(surf.num_faces):
+			if self.element[surf.face[i].elindex].interior:
+				self.element[surf.face[i].elindex].interior = False
+				self.num_interior_elements -= 1
+				self.num_surface_elements += 1
+
+		# Get a map, so we know what element wil go where
+		amap = [-1 for i in range(self.num_elements)]
+		index = 0
+
+		for i in range(self.num_elements):
+			if self.element[i].interior:
+				amap[i] = index 
+				index += 1
+
+		for i in range(len(amap)):
+			if amap[i] == -1:
+				amap[i] = index
+				index += 1
+
+		# Now, reorder actual elements
+		old_els = self.element
+		self.element = [None for i in range(self.num_elements)]
+
+		for i in range(self.num_elements):
+			self.element[amap[i]] = old_els[i]
+
+		# And reorder the surface indices
+		for i in range(surf.num_faces):
+			surf.face[i].elindex = amap[surf.face[i].elindex]
+	'''
+	def calculateInterior(self, surf=None, reorder=True):
+		
+		# Easy if surface is present
+		if surf != None:
+
+			# Initialise
+			self.num_surface_elements = 0
+			self.num_interior_elements = self.num_elements
+			for e in self.element:
+				e.interior = True
+
+			for f in surf.face:
+				if self.element[f.elindex].interior:
+					self.element[f.elindex].interior = False
+					self.num_interior_elements -= 1
+					self.num_surface_elements += 1
+			
+		else:
+			
+			# This is very slow :(
+			# Initialise
+			self.num_surface_elements = 0
+			self.num_interior_elements = 0
+
+			for i in range(self.num_elements):
+				self.element[i].interior = self.isElementInterior(i)
+				if self.element[i].interior:
+					self.num_interior_elements += 1
+				else:
+					self.num_surface_elements += 1
+
+				sys.stdout.write("\r\t%d elements checked of %d; interior %d, surface %d" % (i, self.num_elements, self.num_interior_elements, self.num_surface_elements))
+				sys.stdout.flush()
+
+		# Must reorder them if we intend to print stuff out	
+		if reorder:
+			old_els = self.element
+			self.element = []
+			while len(self.element) != self.num_surface_elements:
+				for i in range(len(old_els)):
+					if not old_els[i].interior:
+						self.element.append(old_els[i])
+						old_els.pop(i)
+						break
+
+			for i in range(len(old_els)):
+				self.element.append(old_els[i])
+
+	'''
 	def isElementInterior(self, index):
 		
 		try:
@@ -221,6 +316,7 @@ class FFEA_topology:
 		i = -1
 		faces_not_found = [0,1,2,3]
 		for el in self.element:
+			
 			i += 1
 			el_connected = False
 			faces_to_remove = -1
@@ -237,7 +333,6 @@ class FFEA_topology:
 
 					if face.isSame(testFace):
 						faces_to_remove = j
-						print j
 						el_connected = True
 						break
 
@@ -246,7 +341,6 @@ class FFEA_topology:
 	
 			try:
 				faces_not_found.remove(faces_to_remove)
-				print faces_to_remove, faces_not_found
 			except:
 				pass
 			if faces_not_found == []:
@@ -254,7 +348,126 @@ class FFEA_topology:
 				break
 
 		return testEl.interior
+	
+	def increase_order(self, node = None, surf = None, stokes = None):
+		
+		# Increases the order of this topology, and all of the associated structures (if they exist)
+
+		# Check current order (function currently only for 1st order - 2nd order)
+		for e in self.element:
+			if len(e.n) == 10:
+				print "Error. Increasing to order > 2 is currently not supported"
+				return
+
+		# Get a unique edge list (edge is two nodes, and a potential 3rd node)
+		# Also get num_nodes whilst we're at it (in case node object not provided)
+		edges = []
+		max_node_index = -1 * float("inf")
+		for i in range(self.num_elements):
+			n = self.element[i].n
+			n = sorted(n)
+
+			nmax = max(n)
+			if nmax > max_node_index:
+				max_node_index = nmax
+
+			for j in range(3):
+				for k in range(j + 1, 4):
+					ed = (n[j], n[k], -1)
+					edges.append(ed)
 			
+		edges = list(set(edges))
+
+		# For each edge, add a new midpoint
+		new_edges = []
+		for e in edges:
+			max_node_index += 1
+			new_edge = (e[0], e[1], max_node_index)
+			new_edges.append(new_edge)
+			
+			# Now actually add the nodes if necessary
+
+			# Stokes 2nd order nodes should have no drag
+			if stokes != None:
+				stokes.add_node(0.0)
+			
+			if node != None:
+				nnpos = 0.5 * (node.pos[e[0]] + node.pos[e[1]])
+				node.add_node(nnpos)
+
+		# Now, rebuild topology (and surface, maybe)
+		# Make a dictionary
+		new_edges = dict(((e[0],e[1]), e[2]) for e in new_edges)
+		for i in range(self.num_elements):
+
+			# Replace element with a second order one
+			self.upgrade_element(i)
+
+			# Get local edges and append nodes to element
+			n = self.element[i].n
+			#n = sorted(n)
+
+			# 6 edges
+			for j in range(3):
+				for k in range(j + 1, 4):
+					ed = (n[j], n[k])
+					try:
+						self.element[i].n.append(new_edges[ed])
+					except(KeyError):
+						ed = (n[k], n[j])
+						self.element[i].n.append(new_edges[ed])
+		# Now surface
+		if surf != None:
+			for i in range(surf.num_faces):
+
+				# Replace face with a second order one, then convert to 4 linear ones
+				surf.upgrade_face(i)
+
+				# Get local edges and append nodes to element
+				n = surf.face[i].n
+				#n = sorted(n)
+
+				# 3 edges
+				for j in range(2):
+					for k in range(j + 1, 3):
+						ed = (n[j], n[k])
+						try:
+							surf.face[i].n.append(new_edges[ed])
+						except(KeyError):
+							ed = (n[k], n[j])
+							surf.face[i].n.append(new_edges[ed])
+			# Now make linear again
+			for i in range(surf.num_faces):
+				surf.split_face(0)			# Always zero, as split_face deletes the face at index
+
+	def upgrade_element(self, index):
+
+		# Replace element with a higher order one
+		e = FFEA_element_tet_sec()
+		e.n = self.element[index].n
+		
+		self.element.insert(index, e)
+		self.element.pop(index + 1)
+
+	#def check_normals(self, node, surf=None):
+	#	
+	#	# Get all faces on all elements and check that the normals are correctly oriented (pointing outwards)
+	#	# Keep interior nodes interior!
+#
+#		num_elements_checked = 0
+#		num_elements_correct = 0
+#		while num_elements_correct != self.num_interior_elements:
+#			num_elements_correct = 0
+#			num_elements_checked = 0
+#	
+#			for i in range(self.num_interior_elements):
+#				
+#				# Get the 4 faces
+#				efaces = [self.element[i].get_linear_face[n] for n in range(4)]
+#
+#				# For each face, check normal. If any one normal is wrong, they are all wrong. A switch of two indices will fix it.
+#				# Trust me on this, or do some index permutations on a piece of paper :)
+
 	def print_details(self):
 
 		print "num_elements = %d" % (self.num_elements)
@@ -292,9 +505,23 @@ class FFEA_topology:
 				fout.write("\n")
 
 			fout.write("\n\n")
-
+		
+		elif ext == ".top":
+			fout = open(fname, "w")
+			fout.write("ffea topology file\nnum_elements %d\nnum_surface_elements %d\nnum_interior_elements %d\n" % (self.num_elements, self.num_surface_elements, self.num_interior_elements))
+			fout.write("surface elements:\n")
+			for i in range(self.num_surface_elements):
+				for n in self.element[i].n:
+					fout.write("%d " % (n))
+				fout.write("\n")
+			fout.write("interior elements:\n")
+			for i in range(self.num_surface_elements, self.num_elements):
+				for n in self.element[i].n:
+					fout.write("%d " % (n))
+				fout.write("\n")
 		else:
-			pass
+			print "Could not write topology to " + fname
+			return
 
 		fout.close()
 		print "done!"
@@ -314,7 +541,6 @@ class FFEA_topology:
 		self.num_elements = 0
 		self.num_surface_elements = 0
 		self.num_interior_elements = 0
-		self.valid = False
 
 class FFEA_element:
 

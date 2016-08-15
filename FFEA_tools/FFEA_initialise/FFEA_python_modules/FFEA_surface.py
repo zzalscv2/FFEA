@@ -19,7 +19,7 @@ class FFEA_surface:
 
 		# Test file exists
 		if not os.path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
+			print("\tFile '" + fname + "' not found. Returning empty object...")
 			return
 	
 		# File format?
@@ -133,11 +133,130 @@ class FFEA_surface:
 
 		fin.close()
 
-	def add_face(self, f):
+	def load_vol(self, fname):
 
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+
+		lines = fin.readlines()
+		fin.close()
+
+		# Test format and get to write place
+		i = 0
+		line = lines[i].strip()
+		while line != "surfaceelements":
+			i += 1
+			try:
+				line = lines[i].strip()
+			except(IndexError):
+				print("\tCouldn't find 'surfaceelements' line. File '" + fname + "' not formatted correctly.")
+				self.reset()
+				return
+
+			continue
+
+		# Get num_faces
+		i += 1
+		num_faces = int(lines[i])
+		for j in range(i + 1, i + 1 + num_faces):
+			try:
+				sline = lines[j].split()
+				face = FFEA_face_tri_lin()
+				face.set_indices([int(sline[5]) - 1, int(sline[6]) - 1, int(sline[7]) - 1])
+				self.add_face(face)
+
+			except:
+				print("\tCouldn't find the specified %d faces. Only found %d. File '" + fname + "' not formatted correctly." % (num_faces, i))
+				self.reset()
+				return
+
+	def add_face(self, f):
 		self.face.append(f)
 		self.num_faces += 1
+
+	def get_element_indices(self, top):
+
+		elcheck = range(top.num_elements)
+		success = 0
+		for f in self.face:
+			for i in elcheck:
+				compare = 0
+				for j in range(3):
+					if f.n[j] in top.element[i].n:
+						compare += 1
+				if compare == 3:
+					success += 1
+					f.elindex = i
+					elcheck.remove(i)
+					break
+
+		if success != self.num_faces:
+			print "Error. This topology cannot be paired with this surface."
+			for f in self.face:
+				f.elindex = None
+			return
+
+	def upgrade_face(self, index):
+
+		# Replace element with a higher order one
+		f = FFEA_face_tri_sec()
+		f.n = self.face[index].n
+		f.elindex = self.face[index].elindex
+
+		self.face.insert(index, f)
+		self.face.pop(index + 1)
+
+	def split_face(self, index):
+
+		# Split second order face into 4 1st orders
+		if isinstance(self.face[index], FFEA_face_tri_sec):
+			
+			# Order is lin0, lin1, lin2, sec01, sec02, sec12
+			# So, 4 tris are 034, 153, 245, 354
+			oldf = self.face[index]
+			f = [FFEA_face_tri_lin() for i in range(4)]
+			f[0].set_indices([oldf.n[0], oldf.n[3], oldf.n[4]], oldf.elindex)
+			f[1].set_indices([oldf.n[1], oldf.n[5], oldf.n[3]], oldf.elindex)
+			f[2].set_indices([oldf.n[2], oldf.n[4], oldf.n[5]], oldf.elindex)
+			f[3].set_indices([oldf.n[3], oldf.n[5], oldf.n[4]], oldf.elindex)
+			
+			# Insert in this order after the old face
+			for face in f:
+				self.face.append(face)
+			
+			self.face.pop(index)
+
+			# 1 -> 4 means += 3
+			self.num_faces += 3
+
+	def check_normals(self, node, top):
 		
+		# Get element for each face and make normal point away from it
+		for i in range(self.num_faces):
+			elindex = self.face[i].elindex
+			
+			# El to face vector
+			cf = self.face[i].calc_centroid(node) - top.element[elindex].calc_centroid(node)
+
+			# Current face normal
+			norm = np.cross(node.pos[self.face[i].n[1]] - node.pos[self.face[i].n[0]], node.pos[self.face[i].n[2]] - node.pos[self.face[i].n[0]])
+
+			# Switch if in different directions
+			if np.dot(cf, norm) < 0.0:
+				index = [self.face[i].n[1], self.face[i].n[2]]
+				self.face[i].n[1] = index[1]
+				self.face[i].n[2] = index[0]
+				for j in range(4):
+					if top.element[elindex].n[j] == index[0]:
+						top.element[elindex].n[j] = index[1]
+					elif top.element[elindex].n[j] == index[1]:
+						top.element[elindex].n[j] = index[0]
+
 	def print_details(self):
 
 		print "num_faces = %d" % (self.num_faces)
@@ -151,7 +270,7 @@ class FFEA_surface:
 			for n in f.n:
 				outline += str(n) + " "
 			
-			if f.elindex != -1:
+			if f.elindex != None:
 				outline += ", Parent Element = %d" % (f.elindex)
 
 			print outline
@@ -176,6 +295,16 @@ class FFEA_surface:
 				fout.write("\n")
 
 			fout.write("\n\n")
+
+		elif ext == ".surf":
+			fout = open(fname, "w")
+			fout.write("ffea surface file\nnum_surface_faces %d\n" % (self.num_faces))
+			fout.write("faces:\n")
+			for i in range(self.num_faces):
+				fout.write("%d " % (self.face[i].elindex))
+				for n in self.face[i].n:
+					fout.write("%d " % (n))
+				fout.write("\n")
 		fout.close()
 		print "done!"
 
@@ -191,7 +320,7 @@ class FFEA_face:
 
 		self.reset()
 
-	def set_indices(self, alist, elindex = -1):
+	def set_indices(self, alist, elindex = None):
 
 		# Test for correct number of nodes
 		if len(alist) != len(self.n):
@@ -201,7 +330,10 @@ class FFEA_face:
 		for i in range(len(self.n)):
 			self.n[i] = int(alist[i])
 
-		self.elindex = int(elindex)
+		try:
+			self.elindex = int(elindex)
+		except:
+			self.elindex = None
 
 	def calc_centroid(self, node):
 	
@@ -241,18 +373,18 @@ class FFEA_face:
 	def reset(self):
 		
 		self.n = []
-		self.elindex = -1
+		self.elindex = None
 
 class FFEA_face_tri_lin(FFEA_face):
 
 	def reset(self):
 
 		self.n = [0,1,2]
-		self.elindex = -1
+		self.elindex = None
 
 class FFEA_face_tri_sec(FFEA_face):
 
 	def reset(self):
 
 		self.n = [0,1,2,3,4,5]
-		self.elindex = -1
+		self.elindex = None
