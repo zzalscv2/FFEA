@@ -1,271 +1,153 @@
-#!/usr/bin/env python
+#
+# This script converts the .vol file from the initialisation routines into the necessary file formats for an FFEA simulation
+# This means get linear element from vol and make 2nd order, store new faces, tets etc, build vdw, pin, bsites, stokes, move blob to centroid
+#
 
-import os, sys
+# Node - 2nd order
+# Top - 2nd order
+# Surf - 2nd order
+# Mat - 1st order
+# Pin - N/A or 2nd order (linked to nodes)
+# VdW - 2nd Order
+# lj - N/A
+# Stokes - 2nd order
+# Bsites - N/A or 2nd order (linked to surf)
+# beads - N/A
+
+def error():
+	sys.stdout.write("\033[91mERROR:\033[0m ")
+
+def print_usage(av):
+	print "\nUsage: python " + os.path.basename(os.path.abspath(av[0])) + " --mesh [INPUT .vol] --out [OUTPUT .ffea]"
+
+def print_help(av):
+	print_usage(av)
+	print "\nOptions:\n"
+	help = {"help": "Prints this help message", "mesh": "input .vol file", "stokes": "a stokes radius for each node"}
+	matparams = {"density": "Density", "shear-viscosity": "Shear Viscosity", "bulk-viscosity": "Bulk Viscosity", "shear-modulus": "Shear Modulus", "bulk-modulus": "Bulk Modulus", "dielectric": "Dielectric Constant"}
+
+	for key in help:
+		print "\t--" + str(key) + "\t\t\t" + help[key]
+
+	print "\nMaterial Parameters\n"
+	for key in matparams:
+		print "\t--" + str(key) + "\t\t" + matparams[key]
+
+	sys.exit("\n")
+
+
+import sys, os
+import FFEA_script
 from FFEA_universe import *
 
-def get_num_nodes(nodes_fname):
-	with open(nodes_fname, "r") as f:
-		for line in f:
-			line = line.split()
-			if "num_nodes" in line[0]:
-				return int(line[1])
+av = sys.argv
 
-def get_num_elements(top_fname):
-	with open(top_fname, "r") as f:
-		for line in f:
-			line = line.split()
-			if "num_elements" in line[0]:
-				return int(line[1])
+if len(av) < 2:
+	print_usage(av)
+	sys.exit()
 
-inputfile = None
-node = None
-top = None
-surf = None
-scaling_factor = "1.0"
-stokes = None
-stokes_radius = None
-material = None
-mat_rho = None
-mat_shear_visc = None
-mat_bulk_visc = None
-mat_shear_mod = None
-mat_bulk_mod = None
-mat_dielec = None
-quality = None
-small_cull = None
+# Default args
+volfname = ""
+outfname = ""
 make_script = False
+matparams = {"d": 1.5e3, "sv": 1e-3, "bv": 1e-3, "sm": 370e6, "bm": 111e7, "di": 1.0}
+stokes_radius = None
 
-no_stokes = True
-calc_stokes = False
-no_mat = True
+# Get args
 i = 1
-
-while i < len(sys.argv):
-	if sys.argv[i] == "-mesh":
-		i += 1
-		inputfile = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-node":
-		i += 1
-		node = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-top":
-		i += 1
-		top = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-surf":
-		i += 1
-		surf = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-scale":
-		i += 1
-		scaling_factor = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-stokes":
-		i += 1
-		stokes = sys.argv[i]
-		no_stokes = False
-		i += 1
-		continue
-	if sys.argv[i] == "-stokes_radius":
-		i += 1
-		stokes_radius = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-material":
-		i += 1
-		material = sys.argv[i]
-		no_mat = False
-		i += 1
-		continue
-	if sys.argv[i] == "-density":
-		i += 1
-		mat_rho = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-shear_visc":
-		i += 1
-		mat_shear_visc = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-bulk_visc":
-		i += 1
-		mat_bulk_visc = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-shear_mod":
-		i += 1
-		mat_shear_mod = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-bulk_mod":
-		i += 1
-		mat_bulk_mod = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-dielec":
-		i += 1
-		mat_dielec = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-quality":
-		i += 1
-		quality = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-small_cull":
-		i += 1
-		small_cull = sys.argv[i]
-		i += 1
-		continue
-	if sys.argv[i] == "-make_script":
+while i < len(av):
+	if av[i] == "--mesh" or av[i] == "-m":
+		volfname = av[i + 1]
+	elif av[i] == "--out" or av[i] == "-o":
+		outfname = av[i + 1]
+	elif av[i] == "--make-script":
 		make_script = True
-		i += 1
-		continue
-	sys.exit("Unrecognised option '"+ sys.argv[i] +"'")
+		i -= 1
 
-if inputfile == None:
-	sys.exit("Please specify an inputfile (.vol, .off or .dat) using -mesh")
-
-if stokes == None and stokes_radius == None:
-	if(raw_input("No stokes file or homogeneous stokes radius specified.\nWould you like us to calculate an optimum radius (y or n)?") == "y"):
-		calc_stokes = True
-		no_stokes = False
+	elif av[i] == "--help" or av[i] == "-h":
+		print_help(av)
+	elif av[i] == "--density" or av[i] == "-d":
+		matparams["d"] = float(av[i + 1])
+	elif av[i] == "--shear-viscosity" or av[i] == "--shear-visc" or av[i] == "-sv":
+		matparams["sv"] = float(av[i + 1])
+	elif av[i] == "--bulk-viscosity" or av[i] == "--bulk-visc" or av[i] == "-bv":
+		matparams["bv"] = float(av[i + 1])
+	elif av[i] == "--shear-modulus" or av[i] == "--shear-mod" or av[i] == "-sm":
+		matparams["sm"] = float(av[i + 1])
+	elif av[i] == "--bulk-modulus" or av[i] == "--bulk-mod" or av[i] == "-bm":
+		matparams["bm"] = float(av[i + 1])
+	elif av[i] == "--dielectric" or av[i] == "--dielec" or av[i] == "-di":
+		matparams["di"] = float(av[i + 1])
+	elif av[i] == "--stokes" or av[i] == "--stokes-radius" or av[i] == "-s":
+		stokes_radius = float(av[i + 1])
 	else:
-		sys.exit("Please specify a stokes file using -stokes, or a homogeneous stokes radius using -stokes_radius")
+		pass
 
-if material == None and (mat_rho == None or mat_shear_visc == None or mat_bulk_visc == None or mat_shear_mod == None or mat_bulk_mod == None or mat_dielec == None):
-	sys.exit("Please specify a material file using -material, or specify ALL homogeneous parameters using -density, -shear_visc, -bulk_visc, -shear_mod, -bulk_mod and -dielec")
+	i += 2
 
-path = os.path.dirname(sys.argv[0])
-if path == '':
-	path = '.'
+# Test args
+if volfname == "":
+	error()
+	sys.exit("You must specify a .vol filename with '--mesh'")
 
-print "path of running script: " + path
-
-print "Input file = " + inputfile
-root, ext = os.path.splitext(inputfile)
-base = os.path.basename(root)
-print "root = " + root
-print "extension = " + ext
-print "base = " + base
-
-if node == None:
-	node = base + ".node"	
-if top == None:
-	top = base + ".top"	
-if surf == None:
-	surf = base + ".surf"	
-if stokes == None:
-	stokes = base + ".stokes"	
-if material == None:
-	material = base + ".mat"	
-
-vdw = base + ".vdw"
-ljmat = base + ".lj"
-default_script_fname = base + ".ffea"
-pin = base + ".pin"
-
-print "Script will run with the following parameters:"
-print "node file = " + node
-print "topology file = " + top
-print "surface file = " + surf
-print "stokes file = " + stokes
-print "material file = " + material
-print "scaling factor = " + scaling_factor
-
-print "Determining file type from extension:"
-if ext == ".vol":
-
-	# Check consistency of file
-	topology = FFEA_topology.FFEA_topology(inputfile)
-	if topology == None or topology.num_elements == 0:
-		sys.exit("Error. No elements found within '" + inputfile + "'. Please provide a consistent file.")
-
-	if small_cull == None:
-		print "VOL extension = Netgen mesh output file. Converting to walrus format..."
-		os.system("python " + path + "/netgen_to_walrus.py " + inputfile + " " + node + " " + top + "\n")
-	else:
-		os.system("python " + path + "/convert_vol_to_tetgen_output.py " + inputfile + " " + root + ".1.node " + root + ".1.ele\n")
-		print "Culling all elements below volume " + small_cull
-		os.system("python " + path + "/cull_small_elements.py " + root + ".1.node " + root + ".1.ele " + small_cull + " " + scaling_factor + "\n")
-		print "Now converting tetgen output to walrus format..."
-		os.system("python " + path + "/tetgen_to_walrus.py " + root + ".1.node " + root + ".1.ele " + node + " " + top + "\n")
-elif ext == ".off":
-	print "OFF extension = DEC Object File Format."
-	print "Warning: This is a surface mesh, and needs to be meshed."
-	if quality == None:
-		print "Meshing with 'tetgen -a -Q " + inputfile + "'..."
-		os.system("tetgen -a -Q " + inputfile)
-	else:
-		print "Meshing with 'tetgen -e " + inputfile + "'..."
-		os.system("tetgen -e " + inputfile)
-	if small_cull != None:
-		print "Culling all elements below volume " + small_cull
-		os.system("python " + path + "/cull_small_elements.py " + root + ".1.node " + root + ".1.ele " + small_cull + " " + scaling_factor + "\n")
-	print "Now converting tetgen output to walrus format..."
-	os.system("python " + path + "/tetgen_to_walrus.py " + root + ".1.node " + root + ".1.ele " + node + " " + top + "\n")
-elif ext == ".dat":
-	print "DAT extension = Mesh format"
-	os.system("python " + path + "/DAT_to_walrus.py " + inputfile + " " + node + " " + top + "\n")
+if outfname == "":
+	basename = os.path.splitext(os.path.abspath(volfname))[0]
 else:
-	print "Error: File extension not recognised. Only '.vol' and '.off' are supported."
-	sys.exit(0)
+	basename = os.path.splitext(os.path.abspath(outfname))[0]
+	
+# Get initial stuff from .vol file!
+node = FFEA_node.FFEA_node(volfname)
+top = FFEA_topology.FFEA_topology(volfname)
+surf = FFEA_surface.FFEA_surface(volfname)
 
+# Let each surface face know which element it is connected to (if this is slow, just load surface from topology instead)
+surf.get_element_indices(top)
 
-# create stokes file if necessary
-if calc_stokes == True:
-	print "Calculating homogeneous stokes file..."
-	os.system("python " + path + "/calc_homo_stokes_file.py " + node + " " + stokes + "\n")
-if no_stokes == True:
-	print "Creating homogeneous stokes file..."
-	num_nodes = get_num_nodes(node)
-	os.system("python " + path + "/create_homo_stokes_file.py " + str(num_nodes) + " " + stokes_radius + " " + stokes + "\n")
+# Now, build necessary things that only have linear properties
+mat = FFEA_material.FFEA_material()
+mat.build(top.num_elements, d=matparams["d"], sv=matparams["sv"], bv=matparams["bv"], sm=matparams["sm"], bm=matparams["bm"], di=matparams["di"])
 
-# create material file if necessary
-if no_mat == True:
-	num_elements = get_num_elements(top)
-	os.system("python " + path + "/create_homo_material_params_file.py " + str(num_elements) + " " + mat_rho + " " + mat_shear_visc + " " + mat_bulk_visc + " " + mat_shear_mod + " " + mat_bulk_mod + " " + mat_dielec + " " + material + "\n")
+# Convert stuff to 2nd order
+top.increase_order(node=node, surf=surf)
 
+# Find out what is interior and what is surface and reorder stuff
+top.calculateInterior(surf=surf)
+node.calculateInterior(top=top, surf=surf)
 
-# convert 4 node tets to 10 point tets
-os.system("python " + path + "/convert_tetrahedra_linear_to_quadratic.py " + node + " " + top + " " + stokes + "\n")
-#sys.exit()
+# Check the normals in the and surface files only (this is all that is necessary for FFEA)
+surf.check_normals(node, top)
 
-# extract the surface
-os.system("python " + path + "/extract_surface_from_topology.py " + top + " " + surf + "\n")
-#sys.exit()
-# move all surface nodes to the top of the list
-os.system("python " + path + "/put_surface_nodes_first.py " + node + " " + top + " " + surf + " " + stokes + "\n")
-#sys.exit()
-# move all surface elements to the top of the list
-os.system("python " + path + "/put_surface_elements_first.py " + node + " " + top + " " + surf + " " + material + "\n")
+# Everything should be set! Make default files for the other stuff
+pin = FFEA_pin.FFEA_pin()
+vdw = FFEA_vdw.FFEA_vdw()
+vdw.default(surf.num_faces)
+lj = FFEA_lj.FFEA_lj()
+lj.default()
 
-# cycle surface indices so that all normals point out of the mesh
-os.system("python " + path + "/make_all_normals_point_outwards.py " + node + " " + top + " " + surf + "\n")
+# User may set a stokes radius. If they don't, make a default one
+if stokes_radius == None:
 
-# calculate the element connectivity (for use with van der waals calculations)
-#os.system("python " + path + "/calculate_element_connectivity.py " + top + " " + vdw + "\n")
+	# All drag is currently local, so get largest length scale and treat as sphere. Very bad approximation for long molecules
+	dims = node.calculate_dimensions()
+	stokes_radius = max(dims) / len(top.get_linear_nodes())
 
-# scale the cube by the desired factor
-os.system("python " + path + "/scale.py " + node + " " + node + " " + scaling_factor + "\n")
+stokes = FFEA_stokes.FFEA_stokes()
+stokes.default(node.num_nodes, top, stokes_radius)
 
-# make a default noninteracting vdw file
-os.system("python " + path + "/make_default_vdw.py " + surf + " " + vdw + "\n")
+# Script will be defaulted
+if make_script:
+	script = FFEA_script.FFEA_script()
+	script.default(basename)
 
-# make a default vdw interaction matrix file
-os.system("python " + path + "/make_default_LJmatrix.py " + ljmat + "\n")
+# Now, print them all out!
+node.write_to_file(basename + ".node")
+top.write_to_file(basename + ".top")
+surf.write_to_file(basename + ".surf")
+mat.write_to_file(basename + ".mat")
+vdw.write_to_file(basename + ".vdw")
+lj.write_to_file(basename + ".lj")
+pin.write_to_file(basename + ".pin")
+stokes.write_to_file(basename + ".stokes")
 
-# make a default no pinning pin file
-os.system("python " + path + "/make_default_pin.py " + pin + "\n")
-
-# if requested, make a default script for this one blob
-if make_script == True:
-	os.system("python " + path + "/make_default_script.py " + base + " " + default_script_fname + "\n")
-
-print "All done"
+if make_script:
+	script.write_to_file(basename + ".ffea")
