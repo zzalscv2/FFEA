@@ -101,7 +101,8 @@ top = FFEA_topology.FFEA_topology(volfname)
 surf = FFEA_surface.FFEA_surface(volfname)
 
 # Let each surface face know which element it is connected to (if this is slow, just load surface from topology instead)
-surf.get_element_indices(top)
+if surf.get_element_indices(top) == -1:
+	surf = top.extract_surface()
 
 # Now, build necessary things that only have linear properties
 mat = FFEA_material.FFEA_material()
