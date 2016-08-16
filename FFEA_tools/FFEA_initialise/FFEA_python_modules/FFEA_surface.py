@@ -149,7 +149,7 @@ class FFEA_surface:
 		# Test format and get to write place
 		i = 0
 		line = lines[i].strip()
-		while line != "surfaceelements":
+		while line != "surfaceelements" and line != "surfaceelementsgi":
 			i += 1
 			try:
 				line = lines[i].strip()
@@ -199,7 +199,7 @@ class FFEA_surface:
 			print "Error. This topology cannot be paired with this surface."
 			for f in self.face:
 				f.elindex = None
-			return
+			return -1
 
 	def upgrade_face(self, index):
 
@@ -290,7 +290,7 @@ class FFEA_surface:
 				#findex += 1
 				fout.write(" %d 1 1 0 %d" % (findex, len(f.n)))
 				for n in f.n:
-					fout.write(" %d" % (n))
+					fout.write(" %d" % (n + 1))
 
 				fout.write("\n")
 

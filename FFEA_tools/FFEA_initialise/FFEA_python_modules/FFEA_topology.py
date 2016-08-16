@@ -198,6 +198,57 @@ class FFEA_topology:
 		# Make a list of a set
 		return list(set(n))
 	
+	def extract_surface(self):
+		
+		faces = []
+		facessorted = []
+		elindex = []
+		surf = FFEA_surface.FFEA_surface()
+
+		# Get all faces in entire system. If only occurs once, it's a surface face. Keep the order
+		for i in range(self.num_elements):
+			e = self.element[i]
+
+			if len(e.n) == 10:
+				print "Error. Functionality not yet available for 2nd order elements"
+				return
+
+			for j in range(4):
+				faces.append(e.get_linear_face(j, obj=False))
+				facessorted.append(sorted(e.get_linear_face(j, obj=False)))
+				elindex.append(i)
+
+		# Now, go through sorted faces and if it occurs twice, delete both from the actual surface
+		run = -1
+		while(facessorted != []):
+			run += 1
+			# Get a face
+			fsort = facessorted.pop(0)					
+			f = faces.pop(0)
+			eind = elindex.pop(0)
+
+			# Is it in the list?
+			if fsort not in facessorted:
+				
+				# It was only there once! Surface face baby
+				sf = FFEA_surface.FFEA_face_tri_lin()
+				sf.set_indices(f, elindex = eind)				
+				surf.add_face(sf)
+			else:
+				# Delete the other face in the list
+				for i in range(len(facessorted)):
+					if facessorted[i] == fsort:
+						index = i
+						break
+				try:
+					facessorted.pop(index)
+					faces.pop(index)
+					elindex.pop(index)
+				except:
+					break
+	
+		return surf
+
 	def calculateInterior(self, surf=None):
 
 		# Don't continue without surface (we could do, but it's slow)
@@ -501,7 +552,7 @@ class FFEA_topology:
 			for e in self.element:
 				fout.write("1 %d" % (len(e.n)))
 				for n in e.n:
-					fout.write(" %d" % (n))
+					fout.write(" %d" % (n + 1))
 				fout.write("\n")
 
 			fout.write("\n\n")
@@ -566,9 +617,8 @@ class FFEA_element:
 			
 		return centroid * (1.0 / len(self.n))
 	
-	def get_linear_face(self, index):
+	def get_linear_face(self, index, obj=True):
 		
-		face = FFEA_surface.FFEA_face_tri_lin()
 		if index == 0:
 			n = [self.n[0], self.n[1], self.n[2]]
 		elif index == 1:
@@ -578,8 +628,13 @@ class FFEA_element:
 		elif index == 3:
 			n = [self.n[1], self.n[3], self.n[2]]
 
-		face.set_indices(n)
-		return face
+		# Return either a face object, or a node list
+		if obj:
+			face = FFEA_surface.FFEA_face_tri_lin()
+			face.set_indices(n)
+			return face
+		else:
+			return n
 
 	def get_volume(self, node, scale = 1.0):
 		e = []
