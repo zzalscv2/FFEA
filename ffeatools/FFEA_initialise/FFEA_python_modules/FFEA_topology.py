@@ -253,8 +253,13 @@ class FFEA_topology:
 
 		# Don't continue without surface (we could do, but it's slow)
 		if surf == None:
-			print "Error. Cannot proceed without a surface."
+			print "Cannot calculate interior elements without an associated surface (currently)."
 			return
+
+		# Don't continue if we're already done
+		for e in self.element:
+			if e != None:
+				return
 
 		# Set all elements as default to interior elements
 		self.num_interior_elements = self.num_elements
@@ -298,56 +303,7 @@ class FFEA_topology:
 		# And reorder the surface indices
 		for i in range(surf.num_faces):
 			surf.face[i].elindex = amap[surf.face[i].elindex]
-	'''
-	def calculateInterior(self, surf=None, reorder=True):
-		
-		# Easy if surface is present
-		if surf != None:
 
-			# Initialise
-			self.num_surface_elements = 0
-			self.num_interior_elements = self.num_elements
-			for e in self.element:
-				e.interior = True
-
-			for f in surf.face:
-				if self.element[f.elindex].interior:
-					self.element[f.elindex].interior = False
-					self.num_interior_elements -= 1
-					self.num_surface_elements += 1
-			
-		else:
-			
-			# This is very slow :(
-			# Initialise
-			self.num_surface_elements = 0
-			self.num_interior_elements = 0
-
-			for i in range(self.num_elements):
-				self.element[i].interior = self.isElementInterior(i)
-				if self.element[i].interior:
-					self.num_interior_elements += 1
-				else:
-					self.num_surface_elements += 1
-
-				sys.stdout.write("\r\t%d elements checked of %d; interior %d, surface %d" % (i, self.num_elements, self.num_interior_elements, self.num_surface_elements))
-				sys.stdout.flush()
-
-		# Must reorder them if we intend to print stuff out	
-		if reorder:
-			old_els = self.element
-			self.element = []
-			while len(self.element) != self.num_surface_elements:
-				for i in range(len(old_els)):
-					if not old_els[i].interior:
-						self.element.append(old_els[i])
-						old_els.pop(i)
-						break
-
-			for i in range(len(old_els)):
-				self.element.append(old_els[i])
-
-	'''
 	def isElementInterior(self, index):
 		
 		try:
@@ -519,6 +475,63 @@ class FFEA_topology:
 #				# For each face, check normal. If any one normal is wrong, they are all wrong. A switch of two indices will fix it.
 #				# Trust me on this, or do some index permutations on a piece of paper :)
 
+	def cull_interior(self, limitvol, node, surf=None):
+
+		# First, get the interior stuff sorted, if we can
+		calculateInterior(self, surf=surf)
+
+		# Now, for all interior elements, cull if vol < limitvol
+		while(True):
+			completed = True
+
+			for i in range(self.num_elements):
+				e = self.element
+				if not e.interior:
+					continue
+		
+				vol = e.calc_volume(node)
+			
+				if vol < limitvol:
+					
+					completed = False
+
+					# Get the new node to add and it's index
+					cent = e.calc_centroid()
+					newnin = node.num_nodes
+
+					# Get the 4 adjacent elements we need to delete
+					elstodelete = []
+					for j in range(self.num_elements):
+						if e.sharesface(self.element[j]):
+							elstodelete.append(j)
+
+					
+					'''
+					# Cull by replacing element with a node at the center
+					# Add node (it will be interior)				
+					cent = e.calc_centroid()
+					node.add_node(cent, nodetype = 1)
+
+					# Reconnect all old nodes to this node
+					for j in range(self.num_elements):
+						for k in range(4):
+							if self.element[j].n[k] in e.n[0:4]:
+								self.element[j].n[k] = node.num_nodes	# New index
+
+					# Delete all old nodes and element (in reverse order so as to not ruin everything)
+					for n in reversed(sorted(e.n)):
+						node.pop(n)
+						node.num_nodes -= 1
+						node.num_interior_nodes -= 1
+
+					self.element.remove(e)
+					self.num_elements -= 1
+					self.num_interior_elements -= 1
+					break
+					'''
+			if completed:
+				break
+
 	def print_details(self):
 
 		print "num_elements = %d" % (self.num_elements)
@@ -636,7 +649,8 @@ class FFEA_element:
 		else:
 			return n
 
-	def get_volume(self, node, scale = 1.0):
+	def sharesface(self, index)
+	def calc_volume(self, node, scale = 1.0):
 		e = []
 		for i in range(3):
 			e.append(node.pos[self.n[i + 1]] - node.pos[self.n[0]])		

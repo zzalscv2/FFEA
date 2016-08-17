@@ -23,7 +23,7 @@ def print_usage(av):
 def print_help(av):
 	print_usage(av)
 	print "\nOptions:\n"
-	help = {"help": "Prints this help message", "mesh": "input .vol file", "stokes": "a stokes radius for each node"}
+	help = {"help": "Prints this help message", "mesh": "input .vol file", "stokes": "a stokes radius for each node", "cull": "removes interior elements with volume less than that specified"}
 	matparams = {"density": "Density", "shear-viscosity": "Shear Viscosity", "bulk-viscosity": "Bulk Viscosity", "shear-modulus": "Shear Modulus", "bulk-modulus": "Bulk Modulus", "dielectric": "Dielectric Constant"}
 
 	for key in help:
@@ -52,6 +52,7 @@ outfname = ""
 make_script = False
 matparams = {"d": 1.5e3, "sv": 1e-3, "bv": 1e-3, "sm": 370e6, "bm": 111e7, "di": 1.0}
 stokes_radius = None
+cull = [False, 0.0]
 
 # Get args
 i = 1
@@ -80,6 +81,9 @@ while i < len(av):
 		matparams["di"] = float(av[i + 1])
 	elif av[i] == "--stokes" or av[i] == "--stokes-radius" or av[i] == "-s":
 		stokes_radius = float(av[i + 1])
+	elif av[i] == "--cull" or av[i] == "-c":
+		cull[0] = True
+		cull[1] = float(av[i + 1])
 	else:
 		pass
 
@@ -117,6 +121,10 @@ node.calculateInterior(top=top, surf=surf)
 
 # Check the normals in the and surface files only (this is all that is necessary for FFEA)
 surf.check_normals(node, top)
+
+# Cull small elements
+if cull[0]:
+	top.cull_interior(cull[1], node)
 
 # Everything should be set! Make default files for the other stuff
 pin = FFEA_pin.FFEA_pin()
