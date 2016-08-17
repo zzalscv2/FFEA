@@ -4,7 +4,7 @@ import numpy as np
 
 class FFEA_pin:
 
-	def __init__(self, fname):
+	def __init__(self, fname = ""):
 	
 		self.reset()
 

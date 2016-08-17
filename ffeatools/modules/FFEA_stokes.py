@@ -4,7 +4,7 @@ from numpy import pi
 
 class FFEA_stokes:
 
-	def __init__(self, fname):
+	def __init__(self, fname = ""):
 	
 		self.reset()
 
@@ -27,7 +27,6 @@ class FFEA_stokes:
 		if ext == ".stokes":
 			try:
 				self.load_stokes(fname)
-				self.valid = True
 			except:
 				print("\tUnable to load FFEA_stokes from " + fname + ". Returning empty object...")
 
@@ -62,11 +61,31 @@ class FFEA_stokes:
 
 		fin.close()
 
+	def default(self, num_nodes, top, rad):
+
+		self.num_nodes = num_nodes
+
+		# Default
+		self.radius = [0.0 for i in range(self.num_nodes)]
+
+		for el in top.element:
+			
+			# Only linear nodes
+			for n in el.n[0:4]:
+				self.radius[n] = float(rad)
+
 	def add_node(self, afloat):
 
 		self.radius.append(float(afloat))
 		self.num_nodes += 1
-		
+
+	def write_to_file(self, fname):
+
+		with open(fname, "w") as f:
+			f.write("ffea stokes radii file\nnum_nodes %d\n" % (self.num_nodes))
+			for rad in self.radius:
+				f.write("%6.3f\n" % (rad))
+	
 	def print_details(self):
 
 		print "num_nodes = %d" % (self.num_nodes)
@@ -82,7 +101,7 @@ class FFEA_stokes:
 		
 		drag = 0.0
 		for r in self.radius:
-			drag += 6 * pi * viscosity * r
+			drag += 6 * pi * viscosity * r * scale
 
 		return drag
 
@@ -90,4 +109,3 @@ class FFEA_stokes:
 
 		self.radius = []
 		self.num_nodes = 0
-		self.valid = False
