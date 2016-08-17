@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import os
-=======
 import os, sys
->>>>>>> master
 from time import sleep
 import numpy as np
 import FFEA_surface
@@ -24,11 +20,7 @@ class FFEA_topology:
 
 		# Test file exists
 		if not os.path.exists(fname):
-<<<<<<< HEAD
-			print("\tFile '" + fname + "' not found.")
-=======
 			print("\tFile '" + fname + "' not found. Returning empty object...")
->>>>>>> master
 			return
 	
 		# File format?
@@ -36,30 +28,18 @@ class FFEA_topology:
 		if ext == ".top":
 			try:
 				self.load_top(fname)
-<<<<<<< HEAD
-				self.valid = True
-=======
->>>>>>> master
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
 		elif ext == ".ele":
 			try:
 				self.load_ele(fname)
-<<<<<<< HEAD
-				self.valid = True
-=======
->>>>>>> master
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
 		elif ext == ".vol":
 			try:
 				self.load_vol(fname)
-<<<<<<< HEAD
-				self.valid = True
-=======
->>>>>>> master
 			except:
 				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
 
@@ -205,10 +185,6 @@ class FFEA_topology:
 		self.num_elements += 1
 
 	def get_num_elements(self):
-<<<<<<< HEAD
-
-=======
->>>>>>> master
 		return len(self.element)
 
 	def get_linear_nodes(self):
@@ -222,8 +198,6 @@ class FFEA_topology:
 		# Make a list of a set
 		return list(set(n))
 	
-<<<<<<< HEAD
-=======
 	def extract_surface(self):
 		
 		faces = []
@@ -374,7 +348,6 @@ class FFEA_topology:
 				self.element.append(old_els[i])
 
 	'''
->>>>>>> master
 	def isElementInterior(self, index):
 		
 		try:
@@ -394,10 +367,7 @@ class FFEA_topology:
 		i = -1
 		faces_not_found = [0,1,2,3]
 		for el in self.element:
-<<<<<<< HEAD
-=======
 			
->>>>>>> master
 			i += 1
 			el_connected = False
 			faces_to_remove = -1
@@ -414,10 +384,6 @@ class FFEA_topology:
 
 					if face.isSame(testFace):
 						faces_to_remove = j
-<<<<<<< HEAD
-						print j
-=======
->>>>>>> master
 						el_connected = True
 						break
 
@@ -426,10 +392,6 @@ class FFEA_topology:
 	
 			try:
 				faces_not_found.remove(faces_to_remove)
-<<<<<<< HEAD
-				print faces_to_remove, faces_not_found
-=======
->>>>>>> master
 			except:
 				pass
 			if faces_not_found == []:
@@ -437,9 +399,6 @@ class FFEA_topology:
 				break
 
 		return testEl.interior
-<<<<<<< HEAD
-			
-=======
 	
 	def increase_order(self, node = None, surf = None, stokes = None):
 		
@@ -560,7 +519,6 @@ class FFEA_topology:
 #				# For each face, check normal. If any one normal is wrong, they are all wrong. A switch of two indices will fix it.
 #				# Trust me on this, or do some index permutations on a piece of paper :)
 
->>>>>>> master
 	def print_details(self):
 
 		print "num_elements = %d" % (self.num_elements)
@@ -594,15 +552,6 @@ class FFEA_topology:
 			for e in self.element:
 				fout.write("1 %d" % (len(e.n)))
 				for n in e.n:
-<<<<<<< HEAD
-					fout.write(" %d" % (n))
-				fout.write("\n")
-
-			fout.write("\n\n")
-
-		else:
-			pass
-=======
 					fout.write(" %d" % (n + 1))
 				fout.write("\n")
 
@@ -624,25 +573,16 @@ class FFEA_topology:
 		else:
 			print "Could not write topology to " + fname
 			return
->>>>>>> master
 
 		fout.close()
 		print "done!"
 
-<<<<<<< HEAD
-	def calc_mass(self, mat, node):
-=======
 	def calc_mass(self, mat, node, scale = 1.0):
->>>>>>> master
 	
 		mass = 0.0
 		index = 0
 		for e in self.element:
-<<<<<<< HEAD
-			mass += e.get_volume(node) * mat.element[index][0]
-=======
 			mass += e.get_volume(node, scale) * mat.element[index][0]
->>>>>>> master
 			index += 1
 		return mass
 
@@ -652,10 +592,6 @@ class FFEA_topology:
 		self.num_elements = 0
 		self.num_surface_elements = 0
 		self.num_interior_elements = 0
-<<<<<<< HEAD
-		self.valid = False
-=======
->>>>>>> master
 
 class FFEA_element:
 
@@ -681,14 +617,8 @@ class FFEA_element:
 			
 		return centroid * (1.0 / len(self.n))
 	
-<<<<<<< HEAD
-	def get_linear_face(self, index):
-		
-		face = FFEA_surface.FFEA_face_tri_lin()
-=======
 	def get_linear_face(self, index, obj=True):
 		
->>>>>>> master
 		if index == 0:
 			n = [self.n[0], self.n[1], self.n[2]]
 		elif index == 1:
@@ -698,12 +628,6 @@ class FFEA_element:
 		elif index == 3:
 			n = [self.n[1], self.n[3], self.n[2]]
 
-<<<<<<< HEAD
-		face.set_indices(n)
-		return face
-
-	def get_volume(self, node):
-=======
 		# Return either a face object, or a node list
 		if obj:
 			face = FFEA_surface.FFEA_face_tri_lin()
@@ -713,16 +637,11 @@ class FFEA_element:
 			return n
 
 	def get_volume(self, node, scale = 1.0):
->>>>>>> master
 		e = []
 		for i in range(3):
 			e.append(node.pos[self.n[i + 1]] - node.pos[self.n[0]])		
 
-<<<<<<< HEAD
-		return np.fabs(np.dot(e[2], np.cross(e[1], e[0])) / 6.0)
-=======
 		return np.fabs(np.dot(e[2], np.cross(e[1], e[0])) / 6.0) * np.power(scale, 3.0)
->>>>>>> master
 
 	def reset(self):
 		
@@ -742,3 +661,4 @@ class FFEA_element_tet_sec(FFEA_element):
 
 		self.n = [0,1,2,3,4,5,6,7,8,9]
 		self.interior = None
+
