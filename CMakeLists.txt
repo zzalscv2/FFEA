@@ -206,7 +206,7 @@ set(PYTHONSTUFF "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYT
 #               FFEA_mapping_tools and FFEA_node_tools
 # PENDING # FFEA_initialise/PDB_tools # deprecate FFEA_convert_traj_to_pdb.c (?)
 # EVEN WORSE: make_structure_map2 in FFEA_initialise/FFEA_node_tools
-add_subdirectory("${PROJECT_SOURCE_DIR}/FFEA_tools")
+add_subdirectory("${PROJECT_SOURCE_DIR}/ffeatools")
 
 
 
