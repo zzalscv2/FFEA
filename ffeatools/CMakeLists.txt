@@ -14,6 +14,8 @@ add_subdirectory("FFEA_analysis")
 
 add_subdirectory("FFEA_initialise")
 
+add_subdirectory("modules")
+
 # 4 - install the PyMOL plugin:
 file (MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/FFEA_tools/ffea")
 set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
@@ -21,24 +23,24 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
 		FFEA_analysis/pymol_plugin/system_names_pokemon.txt
 		FFEA_analysis/pymol_plugin/system_names_dbzcharacters.txt
 		FFEA_analysis/pymol_plugin/system_names_greekletters.txt
-                FFEA_analysis/FFEA_python_modules/FFEA_trajectory.py 
-                FFEA_analysis/FFEA_python_modules/FFEA_measurement.py 
-                FFEA_analysis/FFEA_python_modules/FFEA_frame.py
-                FFEA_analysis/FFEA_python_modules/FFEA_universe.py
-                FFEA_initialise/FFEA_python_modules/FFEA_binding_sites.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_script.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_pin.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_springs.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_material.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_topology.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_surface.py
-                FFEA_initialise/FFEA_python_modules/FFEA_node.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_stokes.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_vdw.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_pdb.py 
-                FFEA_initialise/FFEA_python_modules/FFEA_kinetic_map.py
-                FFEA_initialise/FFEA_python_modules/FFEA_kinetic_rates.py
-                FFEA_initialise/FFEA_python_modules/FFEA_kinetic_states.py)
+                modules/FFEA_trajectory.py 
+                modules/FFEA_measurement.py 
+                modules/FFEA_frame.py
+                modules/FFEA_universe.py
+                modules/FFEA_binding_sites.py 
+                modules/FFEA_script.py 
+                modules/FFEA_pin.py 
+                modules/FFEA_springs.py 
+                modules/FFEA_material.py 
+                modules/FFEA_topology.py 
+                modules/FFEA_surface.py
+                modules/FFEA_node.py 
+                modules/FFEA_stokes.py 
+                modules/FFEA_vdw.py 
+                modules/FFEA_pdb.py 
+                modules/FFEA_kinetic_map.py
+                modules/FFEA_kinetic_rates.py
+                modules/FFEA_kinetic_states.py)
 file ( COPY ${PYMOL_FILES} DESTINATION "${PROJECT_BINARY_DIR}/FFEA_tools/ffea" )
 set ( FFEA_TAR_BALL "${PROJECT_BINARY_DIR}/FFEA_tools/ffea.tar.gz")
 set ( COMPRESSING TRUE )
