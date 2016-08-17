@@ -3,7 +3,7 @@ from time import sleep
 
 class FFEA_vdw:
 
-	def __init__(self, fname):
+	def __init__(self, fname = ""):
 	
 		self.reset()
 
@@ -62,7 +62,7 @@ class FFEA_vdw:
 
 		fin.close()
 
-	def set_num_faces(self, num_faces):
+	def default(self, num_faces):
 		self.num_faces = num_faces
 		self.index = [-1 for i in range(num_faces)]
 		
@@ -81,7 +81,14 @@ class FFEA_vdw:
 			outline += "%d " % (i)
 			
 		print outline
-	
+
+	def write_to_file(self, fname):
+		
+		with open(fname, "w") as f:
+			f.write("ffea vdw file\nnum_faces %d\nvdw params:\n" % (self.num_faces))
+			for i in self.index:
+				f.write("%d\n" % (i))
+
 	def reset(self):
 
 		self.index = []

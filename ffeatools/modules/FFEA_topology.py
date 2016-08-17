@@ -649,7 +649,8 @@ class FFEA_element:
 		else:
 			return n
 
-	def sharesface(self, index)
+	def sharesface(self, index):
+		return
 	def calc_volume(self, node, scale = 1.0):
 		e = []
 		for i in range(3):
@@ -675,4 +676,3 @@ class FFEA_element_tet_sec(FFEA_element):
 
 		self.n = [0,1,2,3,4,5,6,7,8,9]
 		self.interior = None
-
