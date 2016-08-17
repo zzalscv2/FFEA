@@ -14,7 +14,6 @@
 #include <omp.h>
 #include <algorithm>  // std::find
 #include <Eigen/Sparse>
-
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "mat_vec_fns.h"

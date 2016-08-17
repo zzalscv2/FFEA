@@ -472,7 +472,7 @@ int main(int argc, char **argv)
 	header.MACHST = 0;
 	header.RMS = 0;
 	header.NLABL = 1;
-	sprintf(header.LABEL_N, "Created by FFEA_tools: convert_pdb_to_emdb_map %s %s %d %d %d\n", pdb_fname, out_fname, nx, ny, nz);
+	sprintf(header.LABEL_N, "Created by ffeatools: convert_pdb_to_emdb_map %s %s %d %d %d\n", pdb_fname, out_fname, nx, ny, nz);
 
 	// Convert protein to density map
 	for(int i = 0; i < num_atoms; i++) {
