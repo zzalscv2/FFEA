@@ -320,7 +320,7 @@ class map_to_surf_generator
 				return;
 			}
 
-			fprintf(surffile, "solid FFEA_tools_STL\n\n");
+			fprintf(surffile, "solid ffeatools_STL\n\n");
 			vector3 n;
 			for(int i = 0; i < num_faces; i++) {
 
@@ -335,7 +335,7 @@ class map_to_surf_generator
 				fprintf(surffile, "endfacet\n\n");
 			}
 
-			fprintf(surffile, "endsolid FFEA_tools_STL\n");
+			fprintf(surffile, "endsolid ffeatools_STL\n");
 				//fprintf(surffile, "f %d//%d %d//%d %d//%d\n", faces[i]->n1 + 1, faces[i]->n1 + 1, faces[i]->n2 + 1, faces[i]->n2 + 1, faces[i]->n3 + 1, faces[i]->n3 + 1);
 			fclose(surffile);
 
