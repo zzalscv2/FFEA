@@ -41,3 +41,4 @@ import FFEA_surface
 import FFEA_topology
 import FFEA_trajectory
 import FFEA_vdw
+import FFEA_lj
