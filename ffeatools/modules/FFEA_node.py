@@ -21,7 +21,7 @@ class FFEA_node:
 
 		# Test file exists
 		if not os.path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
+			print("\tFile '" + fname + "' not found. Returning empty object...")
 			return
 	
 		# File format?
@@ -36,13 +36,11 @@ class FFEA_node:
 						
 						try:
 							self.load_FFEA_node(fname)
-							self.valid = True
 						except:
 							print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 					else:
 						try:
 							self.load_tetgen_node(fname)
-							self.valid = True
 						except:
 							print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 			except:
@@ -51,14 +49,12 @@ class FFEA_node:
 		elif ext == ".out" or ext == ".traj":
 			try:
 				self.load_traj(fname, findex)
-				self.valid = True
 			except:
 				print("\tUnable to load FFEA_node from " + fname + ", frame " + str(findex) + ". Returning empty object...")
 
 		elif ext == ".vol":
 			try:
 				self.load_vol(fname)
-				self.valid = True
 			except:
 				print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 
@@ -130,8 +126,7 @@ class FFEA_node:
 		num_surface_nodes = 0
 		num_interior_nodes = num_nodes
 
-		# Read nodes now
-		nodetype = 0	
+		# Read nodes now	
 		while(True):
 			sline = fin.readline().split()
 
@@ -146,23 +141,144 @@ class FFEA_node:
 			except(IndexError):
 				break
 
-			self.add_node(n, nodetype = nodetype)
+			self.add_node(n)
 
 		fin.close()
 
 		# Numpy it up, for speed
 		self.pos = np.array(self.pos)
 
-	def add_node(self, n, nodetype = 0):
+	def load_vol(self, fname):
 
-		self.pos.append(n)
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+
+		lines = fin.readlines()
+		fin.close()
+
+		# Test format and get to write place
+		i = 0
+		line = lines[i].strip()
+		while line != "points":
+			i += 1
+			try:
+				line = lines[i].strip()
+			except(IndexError):
+				print("\tCouldn't find 'points' line. File '" + fname + "' not formatted correctly.")
+				self.reset()
+				return
+
+			continue
+
+		# Get num_nodes
+		i += 1
+		num_nodes = int(lines[i])
+		for j in range(i + 1, i + 1 + num_nodes):
+			try:
+				sline = lines[j].split()
+				self.add_node([float(sline[0]), float(sline[1]), float(sline[2])])	
+			except:
+				print("\tCouldn't find the specified %d nodes. Only found %d. File '" + fname + "' not formatted correctly." % (num_nodes, i))
+				self.reset()
+				return
+
+		# Numpy stuff up
+		self.pos = np.array(self.pos)
+
+	def add_node(self, n, nodetype = -1):
+
+		# Numpy or not?
+		if isinstance(self.pos, list):
+			self.pos.append(n)
+		else:
+			self.pos = np.append(self.pos, [n], axis=0)
+
 		self.num_nodes += 1
 		
-		if nodetype == 0:
+		if nodetype == -1:
+			self.num_surface_nodes += 1
+		elif nodetype == 0:
 			self.num_surface_nodes += 1
 		else:
 			self.num_interior_nodes += 1
+
+	def calculateInterior(self, top=None, surf=None):
+
+		# We must have a topology and an associated surface, otherwise interior makes no sense
+		if top == None or surf == None:
+			print "Error. Cannot proceed without both a topology and a surface."
+			return
 		
+		# Use surface to determine which nodes are interior and build a map
+		amap = [-1 for i in range(self.num_nodes)]
+		index = 0
+
+		# Surface
+		for f in surf.face:
+			for n in f.n:
+				if amap[n] == -1:
+					amap[n] = index
+					index += 1
+
+		self.num_surface_nodes = index
+		self.num_interior_nodes = self.num_nodes - self.num_surface_nodes
+
+		# Now remainder are interior
+		for i in range(self.num_nodes):
+			if amap[i] == -1:
+				amap[i] = index
+				index += 1
+
+		# Alter order of nodes
+		oldpos = self.pos
+ 		self.pos = [np.array([0.0,0.0,0.0]) for i in range(self.num_nodes)]
+
+		for n in range(len(amap)):
+			self.pos[amap[n]] = oldpos[n]
+
+		# And reassign surface and topologies
+		for i in range(top.num_elements):
+
+			# Map node indices
+			for j in range(len(top.element[i].n)):
+				top.element[i].n[j] = amap[top.element[i].n[j]]
+
+		for i in range(surf.num_faces):
+			for j in range(len(surf.face[i].n)):
+				surf.face[i].n[j] = amap[surf.face[i].n[j]]
+	
+		# And make sure the interior node of surface elements if at the end of the list of the linear indices
+		#for i in range(top.num_interior_elements, top.num_elements):
+		#	for j in range(4):
+		#		if top.element[i].n[j] < node.num_interior_nodes:
+		#			break
+		#	
+		#	# j is the index of the interior node
+		#	if j < 3:
+		#		# Permute the first 3 indices
+		#		while j < 4
+		#	else:
+		#		# Permute the last 3 indices 
+
+	def calculate_dimensions(self):
+		
+		# min, max
+		dims = [[float("inf"), -1 * float("inf")] for i in range(3)]
+
+		for p in self.pos:
+			for i in range(3):
+				if p[i] < dims[i][0]:
+					dims[i][0] = p[i]
+				if p[i] > dims[i][1]:
+					dims[i][1] = p[i]
+
+		return [d[1] - d[0] for d in dims]
+
 	def print_details(self):
 
 		print "num_nodes = %d" % (self.num_nodes)
@@ -272,4 +388,3 @@ class FFEA_node:
 		self.num_nodes = 0
 		self.num_surface_nodes = 0
 		self.num_interior_nodes = 0
-		self.valid = False
