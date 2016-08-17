@@ -2,7 +2,6 @@
 add_subdirectory("Euler_characteristic_analysis")
 add_subdirectory("FFEA_pyPca")
 add_subdirectory("FFEA_traj_tools")
-add_subdirectory("FFEA_python_modules")
 
 install(DIRECTORY FFEA_gromacs FFEA_meas_tools
                   FFEA_viewer
