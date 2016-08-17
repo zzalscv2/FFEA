@@ -150,7 +150,7 @@ while True:
 	if delete_spring.lower() == "y":
 		node_pairs.pop()
 		node_pair_string = node_pair_string[0:-4]
-		os.system("python /localhome/py09bh/Software/FFEA/FFEA_git/FFEA_tools/FFEA_initialise/Kinetic_FFEA_convert_from_FFEA/Kinetic_FFEA_create_working_spring_file.py " + working_spring_fname + " " + str(k) + " " + str(l) + " " + node_pair_string)
+		os.system("python /localhome/py09bh/Software/FFEA/FFEA_git/ffeatools/FFEA_initialise/Kinetic_FFEA_convert_from_FFEA/Kinetic_FFEA_create_working_spring_file.py " + working_spring_fname + " " + str(k) + " " + str(l) + " " + node_pair_string)
 		continue
 
 # Satisfied! Now make two node files and create two maps!
