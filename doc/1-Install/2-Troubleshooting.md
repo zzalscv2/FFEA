@@ -116,9 +116,14 @@ USE_FAST tries to find the best compiler flags for performance. USE_OPENMP enabl
 
 Now that you have installed FFEA, you should be able to run it just by typing 'ffea' into the terminal. If you get an error that says 'error while loading shared libraties: libboost ... no such file or directory', then add the following line to your .bashrc file:
 ```sh
-export LD_LIBRARY_PATH="/localhome/yourusername/Software/LocalInstall/lib"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/localhome/yourusername/Software/LocalInstall/lib"
 ```
 and restart the terminal.
+While you're at it, you might also want to add:
+'''sh
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/localhome/yourusername/Software/LocalInstall/usr/local/lib"
+'''
+As some packages (such as GTS, which we will need later) prefer their libraries to be in /usr when compiled from source.
 
 If you installed doxygen, you can build the documentation from the same folder, using
 ```sh
