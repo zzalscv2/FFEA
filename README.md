@@ -1,21 +1,14 @@
 Overview {#overview}
 =========
 
-[screenshot goes here]
+Fluctuating Finite Element Analysis is a new molecular modelling technique, built from the ground-up to support systems that are larger and more complex than those modelled by atomistic molecular dynamics. Instead of modelling biological systems as a collection of connected atoms, it models them as 3D volumes comprised of tetrahedrons. Unlike previous coarse-grained models, the models FFEA generates are viso-elastic continuum solids. Unlike other applications of Finite Element Analysis, these systems are subject to thermal fluctuations.
 
-[need a paragraph or so of explanatory text text]
+This technique has the potential to model large, complex systems, made of many molecules, and complex processes at the frontiers of molecular biology. It also allows very large biological entities that cannot be imaged using X-ray crystallography to be modelled, as it can be used without atomistic detail.
 
-Fluctuating Finite Element Analysis models proteins as visco-elastic bodies subject to
- thermal fluctuations. The model is described in the following paper:
-
- * [A stochastic finite element model for the dynamics of globular macromolecules](http://www.sciencedirect.com/science/article/pii/S0021999112007589),
-    R. C. Oliver, D. J. Read, O. G. Harlen, S. A. Harris, J Comp Phys, (2013), 2399:147-165. 
-
+[cool image]
 
 ## Features
 
- * [Kinetic state changes](\ref kineticApproach) can be simulated together with the continuum model to
-    account for conformational changes and binding events.
  * Protein Interactions:
   * A 6-12 [Lennard-Jones Potential](\ref ljPotential)
   * A repulsive potential that is proportional 
@@ -23,11 +16,23 @@ Fluctuating Finite Element Analysis models proteins as visco-elastic bodies subj
   * Specific interactions defined using precomputed potentials.
         More documentation can be found [here](\ref fmApproach).
   * Coulombic interactions [EXPERIMENTAL].
+ * [Kinetic state changes](\ref kineticApproach) can be simulated together with the continuum model to
+    account for conformational changes and binding events.
  * Conversion of EM density data and atomistic structures into FFEA simulations
  * PyMOL visualisation plugin and detailed analysis tools (equilibration, euler characteristic, principal component analysis, gemoetric measurements)
 
 
 ## Videos
+
+[video will go here]
+
+## Publications
+
+   * [A stochastic finite element model for the dynamics of globular macromolecules](http://www.sciencedirect.com/science/article/pii/S0021999112007589),
+    R. C. Oliver, D. J. Read, O. G. Harlen, S. A. Harris, J Comp Phys, (2013), 2399:147-165. 
+   * List
+   * Of
+   * Publications
 
 ## Technology
    * [Boost](http://www.boost.org)
@@ -52,6 +57,35 @@ Fluctuating Finite Element Analysis models proteins as visco-elastic bodies subj
      Principal Component Analysis library in order to generate the standard
      PCA output (eigensystems, projections, animations etc)
      obtained from standard from equivalent MD simulations.
+
+## Contribute
+
+FFEA is maintained by a small but dedicated team at the University of Leeds. If you want to see where we can take FFEA, then you can:
+
+   * Use the software for something cool
+   * Send bug reports and feature requests to our [issue tracker](#)
+   * [Fork us](#)
+
+## FFEA Team
+
+ * Code:
+   * Albert Solernou
+   * Ben Hanson
+   * Robin Richardson
+ * Theory
+   * Oliver Harlen
+   * Sarah Harris
+   * Robin Oliver
+   * Daniel Read
+   * Robin Richardson
+   * Ben Hanson
+   * Albert Solernou
+ * Thanks
+   * Lorem Ipsum
+   * Dolor Sit
+   * Amet
+
+
 
 How to read this manual
 -----------------------
