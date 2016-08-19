@@ -258,7 +258,7 @@ class FFEA_topology:
 
 		# Don't continue if we're already done
 		for e in self.element:
-			if e != None:
+			if e.interior != None:
 				return
 
 		# Set all elements as default to interior elements
@@ -478,34 +478,83 @@ class FFEA_topology:
 	def cull_interior(self, limitvol, node, surf=None):
 
 		# First, get the interior stuff sorted, if we can
-		calculateInterior(self, surf=surf)
+		self.calculateInterior(surf=surf)
+		node.calculateInterior(top=self, surf=surf)
 
 		# Now, for all interior elements, cull if vol < limitvol
-		while(True):
+		culled_elements = 0
+		completed = False
+		while(not completed):
 			completed = True
 
 			for i in range(self.num_elements):
-				e = self.element
+				e = self.element[i]
 				if not e.interior:
 					continue
 		
 				vol = e.calc_volume(node)
-			
 				if vol < limitvol:
 					
-					completed = False
+					#completed = False
 
-					# Get the new node to add and it's index
-					cent = e.calc_centroid()
-					newnin = node.num_nodes
-
-					# Get the 4 adjacent elements we need to delete
-					elstodelete = []
+					# Get the new node to add
+					cent = e.calc_centroid(node)
+					
+					# Get the 4 adjacent elements we need to delete in addition to this one
+					elstodelete = [i]
 					for j in range(self.num_elements):
-						if e.sharesface(self.element[j]):
+						#if e.sharesaface(self.element[j]):
+						#	elstodelete.append(j)
+						if e.sharesanedge(self.element[j]):
 							elstodelete.append(j)
 
-					
+					nodestorenumber = sorted(e.n[0:4])
+
+					# Delete elements (all interior)
+					for j in reversed(elstodelete):
+						self.element.pop(j)
+					self.num_elements -= len(elstodelete)
+					self.num_interior_elements -= len(elstodelete)
+					culled_elements += len(elstodelete)
+
+					# Delete all necessary nodes (not all interior :( )
+					for j in reversed(nodestorenumber):
+						if j < node.num_surface_nodes:
+							node.num_surface_nodes -= 1
+						else:
+							node.num_interior_nodes -= 1
+						
+						try:
+							node.pos.pop(j)
+						except:
+							node.pos = np.delete(node.pos, j, axis=0)
+
+					node.num_nodes -= 4
+
+					# Add new node (which will be interior!) and store new index
+					node.add_node(cent)
+					newnin = node.num_nodes - 1
+
+					# Now renumber all nodes (to new node if in old element, else, to the new position in the node list)
+					print nodestorenumber
+					for j in range(self.num_elements):
+						for k in range(len(self.element[j].n)):
+							if self.element[j].n[k] in nodestorenumber:
+								self.element[j].n[k] = newnin
+							else:
+								if self.element[j].n[k] < nodestorenumber[0]:
+									pass
+								elif self.element[j].n[k] < nodestorenumber[1]:
+									self.element[j].n[k] -= 1
+								elif self.element[j].n[k] < nodestorenumber[2]:
+									self.element[j].n[k] -= 2
+								elif self.element[j].n[k] < nodestorenumber[3]:
+									self.element[j].n[k] -= 3
+								else:
+									self.element[j].n[k] -= 4
+
+					break
+
 					'''
 					# Cull by replacing element with a node at the center
 					# Add node (it will be interior)				
@@ -529,8 +578,7 @@ class FFEA_topology:
 					self.num_interior_elements -= 1
 					break
 					'''
-			if completed:
-				break
+		print "Culled %d elements with volume < %e." % (culled_elements, limitvol)
 
 	def print_details(self):
 
@@ -649,8 +697,20 @@ class FFEA_element:
 		else:
 			return n
 
-	def sharesface(self, index):
-		return
+	def sharesanedge(self, e):
+	
+		if len(set(e.n[0:4]) & set(self.n[0:4])) > 1:
+			return True
+		else:	
+			return False
+
+	def sharesaface(self, e):
+
+		if len(set(e.n[0:4]) & set(self.n[0:4])) == 3:
+			return True
+		else:	
+			return False
+
 	def calc_volume(self, node, scale = 1.0):
 		e = []
 		for i in range(3):
