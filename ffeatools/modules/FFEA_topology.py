@@ -163,6 +163,8 @@ class FFEA_topology:
 			except(IndexError):
 				break
 
+			# Indexing from zero
+			sline = [int(s) - 1 for s in sline]
 			el.set_indices(sline)
 			self.add_element(el)
 

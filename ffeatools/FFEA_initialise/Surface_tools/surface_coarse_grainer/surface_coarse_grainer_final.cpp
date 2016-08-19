@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <list>
+#include <vector>
 #include <iterator>
 #include <string.h>
 #include <unistd.h>
@@ -470,10 +471,12 @@ class Surface
 					}
 					line_t = getc (surf_file);
 				}
-				
+				//delete[] line2;
+
 				// Create nodes and faces and add them from the vectors
 
 				// Build node list
+				num_nodes_initial = num_nodes;
 				node = new vector3[num_nodes];
 				i = -1;
 				for(list<vector3>::iterator it = verts.begin(); it != verts.end(); ++it) {
@@ -494,6 +497,16 @@ class Surface
 					face.push_back(new Face(n[0] - 1, n[1] - 1, n[2] - 1, node));
 				}
 
+			} else if (ext.compare("stl") == 0) {
+				cout << "Error. Currently do not read stl files. Please use an alternate format.\nIf you are making intermediate structures, only use .stl as your last output. Use .surf for intermediaries." << endl;
+				cout << flush;				
+				return 1;
+				/*// Connectivity not present in stl files. Will need to sort it out :(
+				list<vector3> tempnodes;
+				size_t len;
+				char *line = new char[255];
+				
+				getline(&line, &len, surf_file);*/
 			}
 
 			// Close file and return 
@@ -509,6 +522,9 @@ class Surface
 			double length_deleted, original_volume, new_volume, tolerance;
 			vector3 midpoint, connecting_node, distance_node, normal_vector, translate_vector, upper_limit_pos, lower_limit_pos, nodal_distance, nodal_distance_2;
 			list<Face*>::iterator face_iterator, face_to_delete[4];
+			for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
+				//cout << (*face_iterator)->n[0] << " " << (*face_iterator)->n[1] << " " << (*face_iterator)->n[2] << endl;
+			}
 			while(true) {
 				
 				// Output completion data
@@ -538,7 +554,7 @@ class Surface
 						}
 					}
 					//printf("%d %d %d\n", (*face_to_delete[0])->n[0], (*face_to_delete[0])->n[1], (*face_to_delete[0])->n[2]);
-					//printf("%e\n", length_deleted);
+					//printf("%e %e %d\n", length_deleted, limit, length_deleted < limit);
 					// Not finished if length < limit
 					if(length_deleted < limit) {
 						completed_check = 0;
@@ -930,25 +946,37 @@ class Surface
 		int clean() {
 			
 			list<Face*>::iterator face_iterator, neighbour_iterator, temp_iterator;
-			list<Face*> to_erase;
+			//list<Face*> to_erase;
+			list<int> to_erase;
+			list<int>::iterator it, it2;
 
+			int index[2];
 			// Clear all non-manifold faces
+			index[0] = -1;
 			for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
-				
+				index[0]++;
+				index[1] = index[0];
 				temp_iterator = face_iterator;
 				advance(temp_iterator, 1);
 				for(neighbour_iterator = temp_iterator; neighbour_iterator != face.end(); ++neighbour_iterator) {
-
+					index[1]++;
 					// Check if same face
 					if((*neighbour_iterator)->same_as(*face_iterator)) {
-						to_erase.push_back(*neighbour_iterator);
-						to_erase.push_back(*face_iterator);
+						//to_erase.push_back(*neighbour_iterator);
+						//to_erase.push_back(*face_iterator);
+						to_erase.push_back(index[0]);
+						to_erase.push_back(index[1]);
 					}
 				}
 				
 			}
-			for(face_iterator = to_erase.begin(); face_iterator != to_erase.end(); ++face_iterator) {
+			to_erase.sort();
+			int count = 0;
+			for(it = to_erase.begin(); it != to_erase.end(); ++it) {
+				face_iterator = face.begin();
+				advance(face_iterator, (*it) - count);
 				face.erase(face_iterator);
+				count++;
 			}
 
 			return 0;
@@ -964,7 +992,6 @@ class Surface
 			// Open file
 			FILE *surf_out;
 			surf_out = fopen(surf_fname, "w");
-
 			if(ext.compare("surf") == 0) {
 				fprintf(surf_out, "surfacemesh\n");
 				fprintf(surf_out, "%d\n", num_nodes);
@@ -982,6 +1009,30 @@ class Surface
 				for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
 					fprintf(surf_out, "f %d %d %d\n", (*face_iterator)->n[0] + 1, (*face_iterator)->n[1] + 1, (*face_iterator)->n[2] + 1);
 				}
+			} else if (ext.compare("stl") == 0) {
+				
+				// Header
+				fprintf(surf_out, "solid ffeatools_STL\n\n");
+				for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
+
+					// Calculate normal
+					vector3 e0, e1, n;
+					e0 = node[(*face_iterator)->n[1]] - node[(*face_iterator)->n[0]];
+					e1 = node[(*face_iterator)->n[2]] - node[(*face_iterator)->n[0]];
+
+					n = vector3::cross_product(e0, e1);
+					n.normalise();
+
+					// Now write everything
+					fprintf(surf_out, "facet normal %3.2f %3.2f %3.2f\n", n.x, n.y, n.z);
+					fprintf(surf_out, "\touterloop\n");
+					for(i = 0; i < 3; ++i) {
+						fprintf(surf_out, "\t\tvertex %10.6f %10.6f %10.6f\n", node[(*face_iterator)->n[i]].x, node[(*face_iterator)->n[i]].y, node[(*face_iterator)->n[i]].z);
+					}
+					fprintf(surf_out, "\tendloop\n");
+					fprintf(surf_out, "endfacet\n");
+				}
+				fprintf(surf_out, "endsolid ffeatools_STL\n");
 			}
 			fclose(surf_out);
 			return 0;
@@ -1058,18 +1109,18 @@ int main(int argc, char **argv) {
 
 	// Create a surface
 	Surface *surf = new Surface();
-	
 	if(surf->init(argv[1]) != 0) {
-		printf("Error initialising surface\n.");
+		cout << "Error initialising surface\n.";
+		cout << flush;
 		return -1;
 	};
-	
+
 	// Coarsen surface
 	surf->coarsen(atof(argv[3]), argv[4], argv[5], limits);
 	
 	// Get rid of surface errors
-	//surf->clean();
-	
+	surf->clean();
+
 	// Output surface filebuf
 	surf->write_to_file(argv[2]);
 	
