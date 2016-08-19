@@ -116,9 +116,14 @@ USE_FAST tries to find the best compiler flags for performance. USE_OPENMP enabl
 
 Now that you have installed FFEA, you should be able to run it just by typing 'ffea' into the terminal. If you get an error that says 'error while loading shared libraties: libboost ... no such file or directory', then add the following line to your .bashrc file:
 ```sh
-export LD_LIBRARY_PATH="/localhome/yourusername/Software/LocalInstall/lib"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/localhome/yourusername/Software/LocalInstall/lib"
 ```
 and restart the terminal.
+While you're at it, you might also want to add:
+'''sh
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/localhome/yourusername/Software/LocalInstall/usr/local/lib"
+'''
+As some packages (such as GTS, which we will need later) prefer their libraries to be in /usr when compiled from source.
 
 If you installed doxygen, you can build the documentation from the same folder, using
 ```sh
@@ -128,6 +133,7 @@ And you can start the unit tests by running
 ```sh
 make test
 ```
+
 ## ffeatools
 ffeatools have been tested on Python versions after 2.6x and 2.7x. If you do not already have Python, the easiest way to install it is probably through Anaconda, available at continuum.io/downloads. The Anaconda distribution will install a selection of common Python packages, a package manager (conda) and a basic Python IDE (spyder). Even if you do already have Python, it is recommended, and it will not overwrite the default python (although it will launch as 'Python' from the terminal).
 
