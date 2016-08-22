@@ -24,7 +24,8 @@ ffea_tools = 	{
 		"split": "FFEA_analysis/FFEA_traj_tools/FFEA_split_trajectory.py",
 		"thin": "FFEA_analysis/FFEA_traj_tools/FFEA_thin_trajectory.py",
 		"view": "FFEA_analysis/FFEA_viewer/FFEA_viewer.py",
-		"nodesFromTraj": "FFEA_analysis/FFEA_traj_tools/FFEA_get_snapshots_in_nodes.py"
+		"nodesFromTraj": "FFEA_analysis/FFEA_traj_tools/FFEA_get_snapshots_in_nodes.py",
+		"tettonet": "FFEA_initialise/FFEA_volume_tools/convert_tet_to_net.py"
 		}
 
 if len(sys.argv) == 1:
