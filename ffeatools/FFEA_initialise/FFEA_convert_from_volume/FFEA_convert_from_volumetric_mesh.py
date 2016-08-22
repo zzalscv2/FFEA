@@ -124,7 +124,7 @@ surf.check_normals(node, top)
 
 # Cull small elements
 if cull[0]:
-	top.cull_interior(cull[1], node)
+	top.cull_interior(cull[1], node, surf=surf)
 
 # Everything should be set! Make default files for the other stuff
 pin = FFEA_pin.FFEA_pin()
