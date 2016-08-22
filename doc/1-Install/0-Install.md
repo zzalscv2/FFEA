@@ -1,6 +1,8 @@
 Installation {#install}
 ============
 
+> **Warning!** FFEA is still a work in progress, and may have some rough edges. If you find one of these edges, please get in touch with us using our [issue tracker](https://bitbucket.org/sohpc-ffea/ffea/issues) so that we can round it down.
+
 This file describes how to install FFEA TEST, conisting of the FFEA_runner 
  and the ffeatools. The instructions in this file
 are for the most common use cases, and cover the command line tools.
