@@ -18,7 +18,7 @@ add_subdirectory("modules")
 
 # 4 - install the PyMOL plugin:
 set ( FFEA_TAR_DIR "${PROJECT_BINARY_DIR}")
-file (MAKE_DIRECTORY "${FFEA_TAR_DIR}/plugin")
+file (MAKE_DIRECTORY "${FFEA_TAR_DIR}/FFEAplugin")
 set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_analysis/pymol_plugin/__init__.py
 		FFEA_analysis/pymol_plugin/system_names_pokemon.txt
@@ -42,7 +42,7 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 modules/FFEA_kinetic_map.py
                 modules/FFEA_kinetic_rates.py
                 modules/FFEA_kinetic_states.py)
-file ( COPY ${PYMOL_FILES} DESTINATION "${FFEA_TAR_DIR}/plugin" )
+file ( COPY ${PYMOL_FILES} DESTINATION "${FFEA_TAR_DIR}/FFEAplugin" )
 set ( FFEA_TAR_BALL "${FFEA_TAR_DIR}/FFEAplugin.tar.gz")
 set ( COMPRESSING TRUE )
 
@@ -58,7 +58,7 @@ endif (CMAKE_VERSION VERSION_LESS "3.2")
 if ( COMPRESSING )
   message(STATUS "PyMOL plugin will be compressed")
   add_custom_target(create_tar ALL COMMAND
-                  ${CMAKE_COMMAND} -E tar "cfz" ${FFEA_TAR_BALL} "${FFEA_TAR_DIR}/plugin/")
+                  ${CMAKE_COMMAND} -E tar "cfz" ${FFEA_TAR_BALL} "${FFEA_TAR_DIR}/FFEAplugin/")
   install (FILES ${FFEA_TAR_BALL} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ffea/plugins/pymol")
 endif ( COMPRESSING )
 
