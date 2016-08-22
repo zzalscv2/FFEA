@@ -645,7 +645,7 @@ class FFEA_topology:
 		mass = 0.0
 		index = 0
 		for e in self.element:
-			mass += e.get_volume(node, scale) * mat.element[index][0]
+			mass += e.calc_volume(node, scale) * mat.element[index][0]
 			index += 1
 		return mass
 
