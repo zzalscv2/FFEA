@@ -402,7 +402,6 @@ class FFEA_viewer_control_window:
     		       
 	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
 	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
-	print p.trajectory_out_fname
 	self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
 	self.load_trajectory_thread.start()
 
