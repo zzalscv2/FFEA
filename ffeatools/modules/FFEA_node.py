@@ -36,11 +36,13 @@ class FFEA_node:
 						
 						try:
 							self.load_FFEA_node(fname)
+							self.valid = True
 						except:
 							print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 					else:
 						try:
 							self.load_tetgen_node(fname)
+							self.valid = True
 						except:
 							print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 			except:
@@ -49,12 +51,14 @@ class FFEA_node:
 		elif ext == ".out" or ext == ".traj":
 			try:
 				self.load_traj(fname, findex)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_node from " + fname + ", frame " + str(findex) + ". Returning empty object...")
 
 		elif ext == ".vol":
 			try:
 				self.load_vol(fname)
+				self.valid = True
 			except:
 				print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
 
@@ -66,6 +70,7 @@ class FFEA_node:
 		# Open file
 		try:
 			fin = open(fname, "r")
+			self.valid = True
 		except(IOError):
 			print("\tFile '" + fname + "' not found.")
 			self.reset()

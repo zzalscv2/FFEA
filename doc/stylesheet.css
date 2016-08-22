@@ -986,4 +986,6 @@ li.navelem a:hover{
 	font-weight:bold !important;
 }
 
-
+html{
+overflow-x: hidden;
+}
