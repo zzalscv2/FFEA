@@ -6,7 +6,7 @@ def error(m = ""):
 	sys.exit()
 
 def usage():
-	print "Usage: python " + os.path.basename(os.path.abspath(sys.argv[0]) + "-i <input_file> -o <output_file>")
+	print "Usage: python " + os.path.basename(os.path.abspath(sys.argv[0]) + " -i <input_file> -o <output_file>")
 
 if len(sys.argv) == 1 or (len(sys.argv) - 1) % 2 != 0:
 	usage()
