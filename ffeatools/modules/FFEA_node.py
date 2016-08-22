@@ -214,6 +214,10 @@ class FFEA_node:
 			print "Error. Cannot proceed without both a topology and a surface."
 			return
 		
+		# Don't continue if we're already done
+		if self.num_nodes == self.num_surface_nodes:
+			return
+
 		# Use surface to determine which nodes are interior and build a map
 		amap = [-1 for i in range(self.num_nodes)]
 		index = 0

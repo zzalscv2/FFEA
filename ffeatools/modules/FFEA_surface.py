@@ -127,6 +127,7 @@ class FFEA_surface:
 
 			# Get a face
 			sline = sline[1:4]
+			sline = [int(s) - 1 for s in sline]
 			f = FFEA_face_tri_lin()
 			f.set_indices(sline)
 			self.add_face(f)
