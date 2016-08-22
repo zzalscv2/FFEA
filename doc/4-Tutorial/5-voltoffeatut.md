@@ -15,7 +15,7 @@ Firstly, create a directory called 'simulation' and move into it, and move the .
 
 Now, using the .vol file:
 
-	ffeatools voltoffea -mesh emd_5043_8ang.vol -density 1.5e3 -shear_visc 1e-3  -bulk_visc 1e-3 -shear_mod 5.5e8 -bulk_mod 2.2e9 -dielec 1.0 -make_script
+	ffeatools voltoffea --mesh emd_5043_8ang.vol -density 1.5e3 -shear_visc 1e-3  -bulk_visc 1e-3 -shear_mod 5.5e8 -bulk_mod 2.2e9 -dielec 1.0 -make_script
 
 The program will ask if you want a stokes_radius calculating. Select 'y' and the program calculates an approximate value for the total hydrodynamic radius of your object. Now you will see a whole group of new files have appeared:
 
@@ -33,7 +33,15 @@ Now, emd_5043_8ang.ffea is ready to run immediately! But let's have a look insid
 
 ![An example of an FFEA script file (.ffea)](ffeascript.png "GroEL FFEA Script")
 
-The structure of file script tries to be as helpful as possible, but if you are unsure what is going on, check the [input file reference](\ref keywordReference) for details. What we need to do first of all is change a few global parameters. So, for now, go ahead and set 'dt = 1e-15', 'num_steps = 1000' and 'check = 10'. This will set us up for a run of 1 nanosecond, output a frame every 10 simulation timesteps which are 0.01 nanoseconds in length. Now, let's run ffea!
+The structure of file script tries to be as helpful as possible, but if you are unsure what is going on, check the [input file reference](\ref keywordReference) for details. What we need to do first of all is change a few global parameters. So, for now, go ahead and set 'dt = 1e-15', 'num_steps = 1000' and 'check = 10'. This will set us up for a run of 1 nanosecond, output a frame every 10 simulation timesteps which are 0.01 nanoseconds in length.
+
+Before starting the FFEA runner, you may want to consider setting your OMP_NUM_THREADS environment variable. The recommended number of threads is between 4 and 16. 16 will produce the best results, but will only be around 30-40% faster than running on 4 threads. For now, we will set
+
+'''sh
+export OMP_NUM_THREADS=4
+'''
+
+Now, let's run ffea!
 
 	ffea emd_5043_8ang.ffea
 
