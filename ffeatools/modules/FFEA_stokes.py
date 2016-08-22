@@ -27,6 +27,7 @@ class FFEA_stokes:
 		if ext == ".stokes":
 			try:
 				self.load_stokes(fname)
+    				self.valid = True
 			except:
 				print("\tUnable to load FFEA_stokes from " + fname + ". Returning empty object...")
 
