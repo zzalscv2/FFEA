@@ -874,7 +874,6 @@ class Blob:
 			# Only load if there are pinned nodes (dur!)
 			if len(pinsphere) != 0:
 				cmd.load_cgo(pinsphere, display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_load_" + str(self.num_loads), frameLabel) 
-
 #		if display_flags['vdw_edit_mode'] == 1 and self.idnum == display_flags['selected_index']:
 #			glBegin(GL_TRIANGLES)
 #			for f in range(self.surf.num_faces):
