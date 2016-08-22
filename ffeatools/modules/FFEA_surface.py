@@ -197,7 +197,7 @@ class FFEA_surface:
 					break
 
 		if success != self.num_faces:
-			print "Error. This topology cannot be paired with this surface."
+			print "Error. "+str(success)+" nodes but "+str(self.num_faces)+" faces. This topology cannot be paired with this surface."
 			for f in self.face:
 				f.elindex = None
 			return -1
