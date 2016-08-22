@@ -3,7 +3,7 @@ Overview {#overview}
 
 Fluctuating Finite Element Analysis is a new molecular modelling technique, built from the ground-up to support systems that are larger and more complex than those modelled by atomistic molecular dynamics. Instead of modelling biological systems as a collection of connected atoms, it models them as 3D volumes comprised of tetrahedrons. Unlike previous coarse-grained models, the models FFEA generates are viso-elastic continuum solids. Unlike other applications of Finite Element Analysis, these systems are subject to thermal fluctuations.
 
-This technique has the potential to model large, complex systems, made of many molecules, and complex processes at the frontiers of molecular biology. It also allows very large biological entities that cannot be imaged using X-ray crystallography to be modelled, as it can be used without atomistic detail.
+This technique has the potential to model large, complex systems, made of many molecules, and complex processes at the frontiers of molecular biology. As it does not not require an atomistic level of detail, it can also be used to simulate biological molecules that cannot be imaged using X-ray crystallography.
 
 [cool image]
 
