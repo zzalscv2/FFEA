@@ -60,7 +60,7 @@ for b in script.blob:
 
 # Final script change
 script.params.trajectory_out_fname = trajdir + os.path.basename(os.path.abspath(script.params.trajectory_out_fname))
-script.params.measurement_out_basefname = measdir + os.path.basename(os.path.abspath(script.params.measurement_out_basefname))
+script.params.measurement_out_fname = measdir + os.path.basename(os.path.abspath(script.params.measurement_out_fname))
 os.system("cp " + script.params.vdw_forcefield_params + " " + structdir)
 script.params.vdw_forcefield_params = structdir +  os.path.basename(os.path.abspath(script.params.vdw_forcefield_params))
 print "done!"

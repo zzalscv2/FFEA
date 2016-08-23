@@ -402,9 +402,9 @@ class FFEA_viewer_control_window:
     		       
 	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
 	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
-	print p.trajectory_out_fname
 	self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
 	self.load_trajectory_thread.start()
+	#self.load_trajectory(p.trajectory_out_fname)
 
 	# Make sure we have at least 1 frame sorted before continuing, so main thread doesn't overtake
 	#print self.num_frames, p.trajectory_out_fname
@@ -569,7 +569,7 @@ class FFEA_viewer_control_window:
   		for j in range(self.script.params.num_conformations[i]):
   			del self.blob_list[i][j].frames[index]
   			self.blob_list[i][j].num_frames -= 1
-  		
+	
   def init_vars(self):
 
 	# num times loaded
