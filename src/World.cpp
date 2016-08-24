@@ -3466,8 +3466,8 @@ void World::write_output_header(FILE *fout, string fname) {
 	time_t now = time(0);
 	tm *ltm = localtime(&now);
 	fprintf(fout, "\tSimulation Began on %d/%d/%d at %d:%d:%d\n", ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
-	fprintf(fout, "\tScript Filename = %s\n\n", fname.c_str());
-
+	fprintf(fout, "\tScript Filename = %s\n", fname.c_str());
+	fprintf(fout, "\tSimulation Type = %s\n\n", "Full");
 }
 
 void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
