@@ -5,7 +5,7 @@ import sys
 
 class FFEA_trajectory:
 
-	def __init__(self, fname="", surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000):
+	def __init__(self, fname="", surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0):
 
 		self.reset()
 
@@ -13,14 +13,14 @@ class FFEA_trajectory:
 		if fname == "" or fname == None:
 			return
 
-		if self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read) == 1:
+		if self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read, start = start) == 1:
 			print("\tLoading of '" + fname + "' failed. Returning empty object...")
 		else:
 			self.valid = True
 
 		return	
 		
-	def load(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000):
+	def load(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0):
 
 		print("Loading FFEA trajectory file...")
 
@@ -46,12 +46,12 @@ class FFEA_trajectory:
 
 				# Have we read enough frames?
 				#print all_frames, num_frames_to_read
-				if(all_frames == num_frames_to_read):
+				if((all_frames - start) == num_frames_to_read):
 					print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 					break
 
 				# Skip or load
-				if all_frames % frame_rate != 0:
+				if (all_frames - start) % frame_rate != 0 or all_frames < start:
 					if self.skip_frame() == 1:
 						print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 						break
@@ -305,6 +305,8 @@ class FFEA_trajectory:
 		self.num_frames = 1
 	
 	def write_to_file(self, fname, frames=None, frame_rate = 1):
+
+		print "Writing trajectory to file\n\tData will be written to %s\n" % (fname)
 
 		# Get a file object
 		fout = open(fname, "w")

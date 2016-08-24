@@ -342,7 +342,7 @@ class FFEA_node:
 		
 		self.pos *= factor
 
-	def get_centroid(self):
+	def calc_centroid(self):
 		
 		return (1.0 / self.num_nodes) * np.sum(self.pos, axis = 0)
 		
