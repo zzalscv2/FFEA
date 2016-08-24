@@ -17,7 +17,7 @@ add_subdirectory("FFEA_initialise")
 add_subdirectory("modules")
 
 # 4 - install the PyMOL plugin:
-set ( FFEA_TAR_DIR "${PROJECT_BINARY_DIR}")
+set ( FFEA_TAR_DIR "${PROJECT_BINARY_DIR}/ffeatools")
 file (MAKE_DIRECTORY "${FFEA_TAR_DIR}/FFEAplugin")
 set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_analysis/pymol_plugin/__init__.py
@@ -38,6 +38,7 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 modules/FFEA_node.py 
                 modules/FFEA_stokes.py 
                 modules/FFEA_vdw.py 
+                modules/FFEA_lj.py 
                 modules/FFEA_pdb.py 
                 modules/FFEA_kinetic_map.py
                 modules/FFEA_kinetic_rates.py
@@ -50,7 +51,7 @@ set ( COMPRESSING TRUE )
 if (CMAKE_VERSION VERSION_LESS "3.2")
   if (NOT UNIX)
      set ( COMPRESSING FALSE)
-     install(DIRECTORY ${PROJECT_BINARY_DIR}/pymol_plugin/ DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
+     install(DIRECTORY ${FFEA_TAR_DIR}/FFEAplugin/ DESTINATION "${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea")
      message(STATUS "PyMOL plugin won't be compressed. The sources will be found in ${CMAKE_INSTALL_PREFIX}/share/plugins/pymol/ffea. You will need to zip or tar.gz the folder yourself before installing it into PyMOL")
   endif(NOT UNIX)
 endif (CMAKE_VERSION VERSION_LESS "3.2")
