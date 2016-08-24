@@ -111,54 +111,29 @@ else (Boost_FOUND)
 endif (Boost_FOUND)
 
 # 6 ### EIGEN3 #####
-#set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
-#if (EIGEN3_HOME)
-#  find_path(EIGEN3_I_OK Sparse PATHS "${EIGEN3_HOME}/include/eigen3/Eigen"
-#	  "${EIGEN3_HOME}/include/Eigen" NO_DEFAULT_PATH)
-#  if (EIGEN3_I_OK)
-#    set(EIGEN3_INC "${EIGEN3_I_OK}" CACHE PATH "Path to the Eigen3 headers" FORCE)
-#  else (EIGEN3_I_OK)
-#    message(FATAL_ERROR "Eigen/Sparse not found in ${EIGEN3_HOME}/include/eigen3")
-#  endif (EIGEN3_I_OK)
-#  unset(EIGEN3_I_OK CACHE)
-#else(EIGEN3_HOME)
-#  find_path(EIGEN3_INC "Sparse" HINTS
-#    $ENV{EIGEN_HOME}/include/eigen3/Eigen
-#    $ENV{EIGEN3_HOME}/include/eigen3/Eigen
-#    $ENV{EIGEN_HOME}/include/Eigen
-#    $ENV{EIGEN3_HOME}/include/Eigen
-#    ${CMAKE_INCLUDE_PATH}/Eigen 
-#    ${CMAKE_INCLUDE_PATH}/eigen3/Eigen 
-#    ${CMAKE_PREFIX_PATH}/include/eigen3/Eigen
-#    ${CMAKE_PREFIX_PATH}/include/Eigen
-#    /usr/include/eigen3/Eigen
-#    /usr/include/Eigen
-#    /usr/local/include/eigen3/Eigen
-#    /usr/local/include/Eigen
-#    /opt/local/include/eigen3/Eigen
-#    /opt/local/include//Eigen
-#  )
-#
-#  if(NOT EIGEN3_INC)
-#    message(FATAL_ERROR "Could NOT find EIGEN3: use variable EIGEN3_HOME if you have any local installation")
-#  endif(NOT EIGEN3_INC)
-#endif(EIGEN3_HOME)
-#set (EIGEN3_INC "${EIGEN3_INC}/..")
-#message(STATUS "Found Eigen3 headers: ${EIGEN3_INC}")
-#include_directories("${EIGEN3_INC}")
+# 6.1 # set up EIGEN3_HOME
+if (EIGEN3_HOME)  
+  set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
+else(EIGEN3_HOME)   
+  set(EIGEN3_HOME $ENV{EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
+endif(EIGEN3_HOME)
+# 6.2 # we guarantee that if $EIGEN3_HOME is given, it will be take 
+      # before than any of the other possible installations available.
+set(CMAKE_PREFIX_PATH ${EIGEN3_HOME} $ENV{EIGEN_HOME} ${CMAKE_PREFIX_PATH})
+# 6.3 # Sometimes "FindEigen3.cmake" is not distributed with CMake, so we're shipping it:
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+# 6.4 # Go for it:
+find_package(Eigen3 3.2.0 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
 
-# This snippet here works for me but the stuff above doesn't
-# However I get the impression that I am in the minority.
-# I will leave this here until Albert's back.
-find_package(Eigen3 REQUIRED)
-include_directories(EIGEN3_INCLUDE_DIR)
 
-# 6 ### PYTHON ######
+
+# 7 ### PYTHON ######
 find_package(PythonInterp REQUIRED)
 # python will be used to run some tests.
 
 
-# 7 ### DOXYGEN ##### 
+# 8 ### DOXYGEN ##### 
 find_package(Doxygen 1.8)
 if(DOXYGEN_FOUND)
   configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
@@ -172,11 +147,11 @@ if(DOXYGEN_FOUND)
                 "${CMAKE_INSTALL_PREFIX}/share/ffea/doc" OPTIONAL)
 endif(DOXYGEN_FOUND)
 
-# 8 ### DEBUG FLAGS ####
+# 9 ### DEBUG FLAGS ####
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 
-# 9 ### FAST! ##########
+# 10 ### FAST! ##########
 if (USE_FAST)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
