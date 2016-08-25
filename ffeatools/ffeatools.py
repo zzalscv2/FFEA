@@ -19,11 +19,13 @@ ffea_tools = 	{
 		"surftoobj": "FFEA_initialise/Surface_tools/Obj_convert_from_netgen_surf.py",
 		"surftocgsurf": "FFEA_initialise/Surface_tools/surface_coarse_grainer/surface_coarse_grainer_final",
 		"voltoffea": "FFEA_initialise/FFEA_convert_from_volume/FFEA_convert_from_volumetric_mesh.py",
+      "cullvol": "FFEA_initialise/FFEA_volume_tools/cull_small_interior_elements.py",
 		"makekineticmaps": "FFEA_initialise/FFEA_mapping_tools/FFEA_generate_kinetic_maps.py",
 		"split": "FFEA_analysis/FFEA_traj_tools/FFEA_split_trajectory.py",
 		"thin": "FFEA_analysis/FFEA_traj_tools/FFEA_thin_trajectory.py",
 		"view": "FFEA_analysis/FFEA_viewer/FFEA_viewer.py",
-		"nodesFromTraj": "FFEA_analysis/FFEA_traj_tools/FFEA_get_snapshots_in_nodes.py"
+      "nodesFromTraj": "FFEA_analysis/FFEA_traj_tools/FFEA_get_snapshots_in_nodes.py",
+      "tettonet": "FFEA_initialise/FFEA_volume_tools/convert_tet_to_net.py"
 		}
 
 if len(sys.argv) == 1:
