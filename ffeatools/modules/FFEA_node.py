@@ -1,110 +1,119 @@
-import os
+import sys, os
 from time import sleep
 import numpy as np
+from FFEA_exceptions import *
 
 class FFEA_node:
 
 	def __init__(self, fname = "", frame = 0):
 	
 		self.reset()
+
+		# Empty fname give an empty object
 		if fname == "":
 			return
 
 		try:
 			self.load(fname)
-		except:
-			return
+
+		except FFEAFormatError as e:
+			print_error()
+			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			raise
+
+		except FFEAIOError as e:
+			print_error()
+			print "Input error for file " + e.fname
+			if e.fext != [""]:
+				print "       Acceptable file types:"
+				for ext in e.fext:
+					print "       " + ext
+		except IOError:
+			raise
+
+		finally:
+			self.reset()
 
 	def load(self, fname, findex = 0):
 
-		print("Loading FFEA node file...")
-
-		# Test file exists
-		if not os.path.exists(fname):
-			print("\tFile '" + fname + "' not found. Returning empty object...")
-			return
+		sys.stdout.write("Loading FFEA node file...")
 	
 		# File format?
 		base, ext = os.path.splitext(fname)
-		if ext == ".node":
+		try:
+			if ext == ".node":
 
-			# Check if tetgen
-			try:
+				# Check if tetgen
 				with open(fname, "r") as fin:
 					line = fin.readline().strip()
-					if line == "ffea node file" or line == "walrus node file":
-						
-						try:
-							self.load_FFEA_node(fname)
-							self.valid = True
-						except:
-							print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
-					else:
-						try:
-							self.load_tetgen_node(fname)
-							self.valid = True
-						except:
-							print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
-			except:
-				print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
+				if line == "ffea node file" or line == "walrus node file":
+					self.load_FFEA_node(fname)
+				elif len(line.split()) == 4:
+					self.load_tetgen_node(fname)
+				else:
+					raise FFEAFormatError(lin=1)
 
-		elif ext == ".out" or ext == ".traj":
-			try:
+			elif ext == ".out" or ext == ".traj" or ext == ".ftj":
 				self.load_traj(fname, findex)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_node from " + fname + ", frame " + str(findex) + ". Returning empty object...")
 
-		elif ext == ".vol":
-			try:
+			elif ext == ".vol":
 				self.load_vol(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_node from " + fname + ". Returning empty object...")
+			else:
+				raise FFEAIOError(fname=fname, fext=[".node", ".out", ".traj", ".ftj", ".vol"])
 
-		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+		except:
+			raise
+
+		self.valid = True
+		sys.stdout.write("done!\n")
 
 	def load_FFEA_node(self, fname):
 
 		# Open file
 		try:
 			fin = open(fname, "r")
-			self.valid = True
+
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Test format
 		line = fin.readline().strip()
 		if line != "ffea node file" and line != "walrus node file":
-			print("\tExpected 'ffea node file' but found " + line)
-			raise TypeError
+			raise FFEAFormatError(lin=1, lstr="ffea node file")
 
-		num_nodes = int(fin.readline().split()[1])
-		num_surface_nodes = int(fin.readline().split()[1])
-		num_interior_nodes = int(fin.readline().split()[1])
+		try:
+			num_nodes = int(fin.readline().split()[1])
+			num_surface_nodes = int(fin.readline().split()[1])
+			num_interior_nodes = int(fin.readline().split()[1])
 
-		fin.readline()
+		except IndexError:
+			raise FFEAFormatError(lin="2-4", lstr="num_nodes %d\nnum_surface_nodes %d\nnum_interior_nodes %d")
+
+		if fin.readline().strip() != "surface nodes:":
+			raise FFEAFormatError(lin="5", lstr="surface nodes:")
 
 		# Read nodes now
-		nodetype = 0	
-		while(True):
-			sline = fin.readline().split()
-
-			# Get a node
-			try:
-				if sline[0].strip() == "interior":
-					nodetype = 1
-					continue
-	
+		try:
+			j = 0
+			for i in range(num_surface_nodes):
+				sline = fin.readline().split()
 				n = [float(sline[0]), float(sline[1]), float(sline[2])]
+				self.add_node(n, nodetype = 0)
 
-			except(IndexError):
-				break
+			if fin.readline().strip() != "interior nodes:":
+				if num_interior_nodes != 0:
+					raise FFEAFormatError(lin=num_surface_nodes + 6, lstr="interior nodes:")
 
-			self.add_node(n, nodetype = nodetype)
+			i = num_surface_nodes
+			for j in range(num_interior_nodes):
+				sline = fin.readline().split()
+				n = [float(sline[0]), float(sline[1]), float(sline[2])]
+				self.add_node(n, nodetype = 1)
+
+		except (IndexError, ValueError):
+			raise FFEAFormatError(lin=i+j+6, lstr="%f %f %f")
+		except:
+			raise
 
 		fin.close()
 
@@ -117,36 +126,50 @@ class FFEA_node:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Test format
 		sline = fin.readline().split()
-		if len(sline) != 4:
-			print("\tExpected '<num_nodes> <num_dimensions> 0 0' but found " + line)
-			raise TypeError
-
-		num_nodes = int(sline[0])
-		num_surface_nodes = 0
-		num_interior_nodes = num_nodes
-
-		# Read nodes now	
-		while(True):
+		if int(sline[0]) == 1:
+			pos = fin.tell()
 			sline = fin.readline().split()
-
-			if sline[0].strip() == "#":
-				break
-
-			sline = sline[1:]
-			# Get a node
 			try:
-				n = [float(sline[0]), float(sline[1]), float(sline[2])]
+				if int(sline[0]) == 2:
+
+					# Missing first line
+					raise FFEAFormatError(lin=1, lstr="<num_nodes> <num_dimensions> 0 0")
 
 			except(IndexError):
-				break
+				# Missing first line
+				raise FFEAFormatError(lin=1, lstr="<num_nodes> <num_dimensions> 0 0")
 
-			self.add_node(n)
+			fin.seek(pos)
+			sline = fin.readline().split()
+		try:
+			num_nodes = int(sline[0])
+			num_surface_nodes = 0
+			num_interior_nodes = num_nodes
+
+		except(IndexError, ValueError):
+			raise FFEAFormatError(lin=1, lstr="<num_nodes> <num_dimensions> 0 0")
+
+		# Read nodes now	
+		for i in range(num_nodes):
+			try:
+				sline = fin.readline().split()
+				if sline[0].strip() == "#":
+					raise FFEAFormatError(lin=i + 2, lstr=str(i + 1) + " %f %f %f")
+
+				sline = sline[1:]
+
+				# Get a node
+				n = [float(sline[0]), float(sline[1]), float(sline[2])]
+				
+				self.add_node(n)
+
+			except(IndexError, ValueError):
+				raise FFEAFormatError(lin=i + 2, lstr=str(i + 1) + " %f %f %f")
+
 
 		fin.close()
 
@@ -196,12 +219,15 @@ class FFEA_node:
 		self.pos = np.array(self.pos)
 
 	def add_node(self, n, nodetype = -1):
-
+		
 		# Numpy or not?
-		if isinstance(self.pos, list):
-			self.pos.append(n)
-		else:
-			self.pos = np.append(self.pos, [n], axis=0)
+		try:
+			if isinstance(self.pos, list):
+				self.pos.append(n)
+			else:
+				self.pos = np.append(self.pos, [n], axis=0)
+		except IndexError, ValueError:
+			raise
 
 		self.num_nodes += 1
 		
