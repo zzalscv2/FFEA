@@ -48,7 +48,7 @@ class FFEA_frame(FFEA_node.FFEA_node):
 	def write_to_traj(self, fo):
 
 		for p in self.pos:
-			fo.write("%10.7e %10.7e %10.7e %10.7e %10.7e %10.7e %10.7e %10.7e %10.7e %10.7e\n" % (p[0], p[1], p[2], 0, 0, 0, 0, 0, 0, 0))
+			fo.write("%10.6e %10.6e %10.6e %10.6e %10.6e %10.6e %10.6e %10.6e %10.6e %10.6e\n" % (p[0], p[1], p[2], 0, 0, 0, 0, 0, 0, 0))
 
 	# Function to calculate normals at each node, average of connecting faces
 	def calc_normals(self, surf):
