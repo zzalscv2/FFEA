@@ -207,9 +207,9 @@ The topology is made up of elements, and the elements can be accessed like this:
 [859, 887, 32, 4, 1540, 1254, 1474, 1403, 1316, 466]
 ```
 
->Another aside: why are there 10 values? Isn't this element supposed to comprise a tetrahedron? The first four elements are indeed the elements that make up the tetrahedron, but the next six actually make up points on the same tetrahedron.
+> Another aside: why are there 10 values? Isn't this element supposed to comprise a tetrahedron? The first four elements are indeed the elements that make up the tetrahedron, but the next six actually make up points on the same tetrahedron.
 
->If we think about just one face of the tetrahedron, that face is described by three points, connected by straight (linear) lines. But some calculationas in FFEA (such as electrostatics) can make use of second-order elements - the lines connecting the sides of the triangle are no longer linear, they can bend inward or outward. This second set of values are at the midpoint between two 'first-order' nodes, and thus describe the second-order behaviour of the element. In most simualtions (and most analyses) they can be safely ignored.
+> If we think about just one face of the tetrahedron, that face is described by three points, connected by straight (linear) lines. But some calculationas in FFEA (such as electrostatics) can make use of second-order elements - the lines connecting the sides of the triangle are no longer linear, they can bend inward or outward. This second set of values are at the midpoint between two 'first-order' nodes, and thus describe the second-order behaviour of the element. In most simualtions (and most analyses) they can be safely ignored.
 
 In the FFEA_topography module, we can also calculate the volume of a given element. As the topology module only contains information about the connectivity of the nodes, we need to supply our node object in order to retrieve the volume:
 
