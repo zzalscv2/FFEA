@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 		("no-detail,d", "Stop measurements being outputted at a higher level of detail (to a .fdm file)")
 		("input-file,i", b_po::value<string>(&script_fname), "Input script filename")
 		("delete-frames,l", b_po::value<int>(&frames_to_delete)->default_value(0), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
-		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator)\n")
+		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator\n")
 		("verbose,v", b_po::value<int>(&verbose)->default_value(0), "Prints extra details to stdout on what FFEA is doing\n\t0 - Low\n\t1 - Medium\n\t2 - High\n\t3 - Manic")
 	;
 		
