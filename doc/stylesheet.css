@@ -725,8 +725,7 @@ ul ul,
 ul ol,
 ol ol,
 ol ul {
-  margin: 1.5rem 0 1.5rem 3rem;
-  font-size: 90%; }
+  margin: 1.5rem 0 1.5rem 3rem;}
 li {
   margin-bottom: 1rem; }
 
@@ -984,6 +983,10 @@ li.navelem a:hover{
 #nav-tree-contents .item.selected a{
 	color:black !important;
 	font-weight:bold !important;
+}
+
+.fragment{
+	margin-bottom:2.5rem !important;
 }
 
 html{
