@@ -4,7 +4,12 @@ import numpy as np
 from pymol import cmd
 from pymol.callback import Callback
 
-from Tkinter import *
+try:
+    from mtTkinter import *
+except ImportError:
+    print("mtTkinter not found. Falling back to Tkinter.")
+    from Tkinter import *
+
 import tkFileDialog
 import tkMessageBox
 import tkColorChooser
