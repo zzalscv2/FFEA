@@ -341,7 +341,9 @@ class FFEA_script:
 		spring_lines = extract_block_from_lines("springs", 0, lines)
 		
 		if len(spring_lines) == 0:
-			return
+			spring_lines = extract_block_from_lines("spring", 0, lines)
+			if len(spring_lines) == 0:
+				return
 
 		if len(spring_lines) != 1:
 			print "Error. Expected only one filename."
