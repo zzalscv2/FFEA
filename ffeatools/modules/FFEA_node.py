@@ -17,11 +17,13 @@ class FFEA_node:
 			self.load(fname)
 
 		except FFEAFormatError as e:
+			self.reset()
 			print_error()
 			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
 			raise
 
 		except FFEAIOError as e:
+			self.reset()
 			print_error()
 			print "Input error for file " + e.fname
 			if e.fext != [""]:
@@ -30,9 +32,6 @@ class FFEA_node:
 					print "       " + ext
 		except IOError:
 			raise
-
-		finally:
-			self.reset()
 
 	def load(self, fname, findex = 0):
 
