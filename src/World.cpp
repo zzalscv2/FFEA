@@ -3186,8 +3186,8 @@ int World::load_springs(const char *fname) {
 
     // Inititalise the energy array (move to a solver in the future, like the VdW)
     springfieldenergy = new scalar*[params.num_blobs];
-    for(i = 0; i < num_blobs; ++i) {
-	springfieldenergy[i] = new scalar[params.num_blobs];
+    for(i = 0; i < params.num_blobs; ++i) {
+      springfieldenergy[i] = new scalar[params.num_blobs];
     }
     printf("\t\tRead %d springs from %s\n", num_springs, fname);
     activate_springs();
