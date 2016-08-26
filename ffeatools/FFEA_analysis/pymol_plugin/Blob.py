@@ -547,7 +547,7 @@ class Blob:
 			print "=============================="
             
 			aframe.set_pos(self.init_centroid)
-			print aframe.get_centroid()
+			print aframe.calc_centroid()
 
 		if self.init_rotation != None:
 			print "=============================="
@@ -603,7 +603,7 @@ class Blob:
 	def set_num_loads(self, i):
 		self.num_loads = i
 
-	def get_centroid(self, i):
+	def calc_centroid(self, i):
 
 		if self.motion_state == "STATIC":
 			i = 0
@@ -621,7 +621,7 @@ class Blob:
 			i = self.num_frames - 1
 
 		f = self.frames[i]
-		return f.get_centroid()
+		return f.calc_centroid()
 
 	def draw_frame(self, i, frameLabel, display_flags):
 
