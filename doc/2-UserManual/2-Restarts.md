@@ -24,7 +24,9 @@ The previous run will have provided this set of files, their names being
   - ` trajectory_out_fname ` 
   - ` checkpoint_out ` 
   - ` measurement_out ` 
+
 or having default values:
+
   - ` <ffea-input-file>.ftj ` 
   - ` <ffea-input-file>.fcp ` 
   - ` <ffea-input-file>.fm `  
@@ -32,7 +34,7 @@ or having default values:
 
 In addition one needs to modify the already used FFEA input file, to indicate
  that the will to extend to simulations. Specifically one needs to set:
-  - ` < restart = 1 >
+  - ` < restart = 1 > `
   - ` < checkpoint_in = <valid-checkpoint-file> > ` 
 while keeping ` trajectory_out_fname ` and ` measurement_out_fname ` unchanged.
 
@@ -40,7 +42,7 @@ while keeping ` trajectory_out_fname ` and ` measurement_out_fname ` unchanged.
 There is a last rule that applies. Values for files ` checkpoint_out `
  and ` checkpoint_in ` must differ. Therefore, if in the previous run 
  ` checkpoint_out ` was not specified we recommed to 
- rename the old ` checkpoint_out ` ` .fcp ` file with its default name 
+ rename the old ` checkpoint_out ` file with its default name 
  to something else and use it as ` checkpoint_in ` value. 
 
 
