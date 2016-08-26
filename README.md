@@ -63,8 +63,8 @@ This technique has the potential to model large, complex systems, made of many m
 FFEA is maintained by a small but dedicated team at the University of Leeds. If you want to see where we can take FFEA, then you can:
 
    * Use the software for something cool
-   * Send bug reports and feature requests to our [issue tracker](#)
-   * [Fork us](#)
+   * Send bug reports and feature requests to our [issue tracker](https://bitbucket.org/sohpc-ffea/ffea/issues)
+   * [Fork us](https://bitbucket.org/sohpc-ffea/ffea/fork)
 
 ## FFEA Team
 
@@ -72,11 +72,12 @@ FFEA is maintained by a small but dedicated team at the University of Leeds. If 
    * Albert Solernou
    * Ben Hanson
    * Robin Richardson
+   * [Rob Welch](http://robwel.ch/)
  * Theory
-   * Oliver Harlen
-   * Sarah Harris
+   * [Oliver Harlen](https://www.maths.leeds.ac.uk/index.php?id=263&uid=1025)
+   * [Sarah Harris](http://www.comp-bio.physics.leeds.ac.uk/)
    * Robin Oliver
-   * Daniel Read
+   * [Daniel Read](http://www1.maths.leeds.ac.uk/~djread/)
    * Robin Richardson
    * Ben Hanson
    * Albert Solernou
