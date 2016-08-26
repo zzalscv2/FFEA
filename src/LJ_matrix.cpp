@@ -5,7 +5,34 @@ LJ_matrix::LJ_matrix() {
     num_vdw_face_types = 0;
 }
 
-int LJ_matrix::init(const char *vdw_params_fname) {
+int LJ_matrix::init(const char *vdw_params_fname, string vdw_type) {
+
+    int err;
+    // In that case we do not need an input parameter file, 
+    //      but just to initialise a number of values
+    if (vdw_type == "steric" || vdw_type == "stericII") {
+       err = init_steric(); 
+    } else {
+       err = init_lj(vdw_params_fname); 
+    } 
+    return err; 
+} 
+
+int LJ_matrix::init_steric() {
+
+    num_vdw_face_types = 1;
+    // Allocate the memory for that LJ pair
+    params = new LJ_pair[num_vdw_face_types * num_vdw_face_types];
+    if (params == NULL) {
+        FFEA_ERROR_MESSG("Unable to allocate memory for LJ matrix.\n")
+    }
+    params[LJI(0, 0)].vdw_eps = 0; 
+    params[LJI(0, 0)].vdw_r_eq = 0; 
+
+    return FFEA_OK; 
+}
+
+int LJ_matrix::init_lj(const char *vdw_params_fname) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
@@ -62,7 +89,7 @@ int LJ_matrix::init(const char *vdw_params_fname) {
 
     fclose(in);
 
-    printf("\t\tRead %d vdw forcefeild parameter entries from %s\n", num_vdw_face_types * num_vdw_face_types, vdw_params_fname);
+    printf("\t\tRead %d vdw forcefield parameter entries from %s\n", num_vdw_face_types * num_vdw_face_types, vdw_params_fname);
 
     return FFEA_OK;
 }
