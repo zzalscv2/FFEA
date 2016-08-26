@@ -4,7 +4,12 @@ import numpy as np
 from pymol import cmd
 from pymol.callback import Callback
 
-from Tkinter import *
+try:
+    from mtTkinter import *
+except ImportError:
+    print("mtTkinter not found. Falling back to Tkinter.")
+    from Tkinter import *
+
 import tkFileDialog
 import tkMessageBox
 import tkColorChooser
@@ -330,7 +335,7 @@ class FFEA_viewer_control_window:
 		
 				c.set_nodes_as_frame()
 
-				x, y, z = c.get_centroid(0)
+				x, y, z = c.calc_centroid(0)
 				world_centroid[0] += x * c.node.num_nodes
 				world_centroid[1] += y * c.node.num_nodes
 				world_centroid[2] += z * c.node.num_nodes
@@ -386,7 +391,7 @@ class FFEA_viewer_control_window:
 	if p.calc_vdw == 1:
 		for b in self.blob_list:
 			trans = np.array([0.0,0.0,0.0])
-			cent = b[0].frames[0].get_centroid()
+			cent = b[0].frames[0].calc_centroid()
 			print "Centroid = ", cent
 			for i in range(3):
 				if cent[i] > self.box[i]:
@@ -650,7 +655,7 @@ class FFEA_viewer_control_window:
 			cindex += 1
 			if cindex == 0:
 
-				x, y, z = c.get_centroid(frameIndex)
+				x, y, z = c.calc_centroid(frameIndex)
 				cent[0] += x * c.node.num_nodes
 				cent[1] += y * c.node.num_nodes
 				cent[2] += z * c.node.num_nodes
