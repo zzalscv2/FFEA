@@ -206,8 +206,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 	// Load the vdw forcefield params matrix
 	if(params.calc_vdw == 1) {
-    		if (lj_matrix.init(params.vdw_in_fname) == FFEA_ERROR) {
-        		FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
+    		if (lj_matrix.init(params.vdw_in_fname, params.vdw_type) == FFEA_ERROR) {
+        		FFEA_ERROR_MESSG("Error when reading from vdw forcefield params file.\n")
     		}
 	}
 
