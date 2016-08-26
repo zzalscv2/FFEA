@@ -541,9 +541,11 @@ int SimulationParams::validate() {
     }
 
     if (calc_vdw == 1) {
+      if (vdw_type != "steric" && vdw_type != "stericII") { 
         if (vdw_in_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
+      }
     }
  
     if (vdw_type != "lennard-jones" && vdw_type != "steric" &&
