@@ -411,7 +411,7 @@ class FFEA_traj_blob:
 		self.subblob.append(pin.index)
 		self.num_subblobs += 1
 	
-	def get_centroid_trajectory(self, subblob_index = -1):
+	def calc_centroid_trajectory(self, subblob_index = -1):
 		
 		if subblob_index == -1:
 			indices = [i for i in range(self.num_nodes)]
