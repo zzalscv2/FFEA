@@ -67,22 +67,36 @@ class Blob:
 		self.motion_state = c.motion_state
 		
 		# All will be present
-		self.node = FFEA_node.FFEA_node(c.nodes)
-		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')
-		self.surf = FFEA_surface.FFEA_surface(c.surface)
+
+		# Try to load
+		try:
+			self.node = FFEA_node.FFEA_node(c.nodes)
+			self.surf = FFEA_surface.FFEA_surface(c.surface)
+			self.vdw = FFEA_vdw.FFEA_vdw(c.vdw)
+		except:
+			raise
+
+		# Successfully loaded, but structurally incorrect
+		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
 		if (not self.surf.valid): raise IOError('Something went wrong initialising surface')
-		self.vdw = FFEA_vdw.FFEA_vdw(c.vdw)
 		if (not self.vdw.valid): raise IOError('Something went wrong initialising vdw')
 		
 		# only necessary for dynamic blobs
 		if self.motion_state == "DYNAMIC":
-			self.top = FFEA_topology.FFEA_topology(c.topology)
+
+			# Try to load
+			try:
+				self.top = FFEA_topology.FFEA_topology(c.topology)
+				self.mat = FFEA_material.FFEA_material(c.material)
+				self.stokes = FFEA_stokes.FFEA_stokes(c.stokes)
+				self.pin = FFEA_pin.FFEA_pin(c.pin)
+			except:
+				raise
+
+			# Successfully loaded, but structurally incorrect
 			if (not self.top.valid): raise IOError('Something went wrong initialising topology')
-			self.mat = FFEA_material.FFEA_material(c.material)
 			if (not self.mat.valid): raise IOError('Something went wrong initialising material')
-			self.stokes = FFEA_stokes.FFEA_stokes(c.stokes)
 			if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
-			self.pin = FFEA_pin.FFEA_pin(c.pin)
 			if (not self.pin.valid): raise IOError('Something went wrong initialising pinned nodes')
 		
 		# Only necessary if kinetics are active
@@ -262,7 +276,6 @@ class Blob:
 		print "num_surface_faces = ", self.surf.num_faces
 
 		line = surf.readline().rstrip()
-		print "hi"
 		if line != "faces:":
 			print "Error: surface file " + surf_fname + " missing 'faces:' line"
 			return
