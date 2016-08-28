@@ -306,7 +306,7 @@ class FFEA_pdb:
 		c = np.array([0.0,0.0,0.0])
 		num_nodes = 0
 		for i in range(len(self.blob)):
-			c +=  len(self.blob[i].frame[0].pos) * self.blob[i].frame[0].get_centroid()
+			c +=  len(self.blob[i].frame[0].pos) * self.blob[i].frame[0].calc_centroid()
 			num_nodes += len(self.blob[i].frame[0].pos)
 			
 		c *= 1.0 / num_nodes
@@ -335,7 +335,7 @@ class FFEA_pdb:
 			for j in range(len(self.blob[i].frame)):
 			
 				# Translate to origin
-				origin_trans = np.array([0.0,0.0,0.0]) - self.blob[i].frame[j].get_centroid()
+				origin_trans = np.array([0.0,0.0,0.0]) - self.blob[i].frame[j].calc_centroid()
 				self.blob[i].frame[j].translate(origin_trans)
 		
 				for k in range(len(self.blob[i].frame[j].pos)):
@@ -443,14 +443,18 @@ class FFEA_pdb_frame:
 
 		self.pos = []
 
-	def get_centroid(self):
+	def calc_centroid(self):
 		return (1.0 / len(self.pos)) * np.sum(self.pos, axis = 0)
-		
+	
+	def get_centroid(self):
+
+		return self.centroid
+	
 	def translate(self, trans):
 		self.pos += np.array(trans)
 		
 	def set_pos(self, pos):
-		self.translate(np.array(pos) - self.get_centroid())
+		self.translate(np.array(pos) - self.calc_centroid())
 	
 	def set_atomic_pos(self, atom_index, x, y, z):
 		
