@@ -164,24 +164,30 @@ class FFEA_surface:
 	def get_element_indices(self, top):
 
 		elcheck = range(top.num_elements)
-		success = 0
+		index = -1
 		for f in self.face:
+			index += 1			
+			success = 0
 			for i in elcheck:
+				print "Element ", i, " = ", top.element[i].n
 				compare = 0
 				for j in range(3):
 					if f.n[j] in top.element[i].n:
 						compare += 1
 				if compare == 3:
-					success += 1
+					success = 1
+					print "Face found = ", f.n
+					print "Element removed = ", top.element[i].n
 					f.elindex = i
-					elcheck.remove(i)
+					#elcheck.remove(i)	# Can't remove, as elements can have more than one surface face (especially in coarse structures :( )
 					break
 
-		if success != self.num_faces:
-			print(str(success)+" successes but "+str(self.num_faces)+" faces. This topology cannot be paired with this surface. Regenerating surface...")
-			for f in self.face:
-				f.elindex = None
-			return -1
+			if success != 1:
+				print("Face " + str(index) + " could not be found in the topology structure. This topology cannot be paired with this surface. Regenerating surface...")
+				print "Face in error = ", self.face[index].n
+				for f in self.face:
+					f.elindex = None
+				return -1
 
 	def upgrade_face(self, index):
 
