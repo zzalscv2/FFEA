@@ -387,7 +387,7 @@ class FFEA_node:
 		print rot
 		
 		# Translate to origin
-		origin_trans = np.array([0.0,0.0,0.0]) - self.get_centroid()
+		origin_trans = np.array([0.0,0.0,0.0]) - self.calc_centroid()
 		self.translate(origin_trans)
 		
 		if rot.size == 3:

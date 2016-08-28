@@ -13,8 +13,6 @@ World::World() {
     kinetic_state = NULL;
     kinetic_rate = NULL;
     kinetic_base_rate = NULL;
-    num_blobs = 0;
-    num_conformations = NULL;
     num_springs = 0;
     mass_in_system = false;
     num_threads = 1;
@@ -52,9 +50,6 @@ World::~World() {
 
     delete[] blob_array;
     blob_array = NULL;
-    num_blobs = 0;
-    delete[] num_conformations;
-    num_conformations = NULL;
 
     delete[] spring_array;
     spring_array = NULL;
@@ -3186,8 +3181,8 @@ int World::load_springs(const char *fname) {
 
     // Inititalise the energy array (move to a solver in the future, like the VdW)
     springfieldenergy = new scalar*[params.num_blobs];
-    for(i = 0; i < num_blobs; ++i) {
-	springfieldenergy[i] = new scalar[params.num_blobs];
+    for(i = 0; i < params.num_blobs; ++i) {
+      springfieldenergy[i] = new scalar[params.num_blobs];
     }
     printf("\t\tRead %d springs from %s\n", num_springs, fname);
     activate_springs();
@@ -3237,8 +3232,8 @@ scalar World::get_spring_field_energy(int index0, int index1) {
 	// Sum over all field
 	if(index0 == -1 || index1 == -1) {
 		scalar energy = 0.0;
-		for(int i = 0; i < num_blobs; ++i) {
-			for(int j = 0; j < num_blobs; ++j) {
+		for(int i = 0; i < params.num_blobs; ++i) {
+			for(int j = 0; j < params.num_blobs; ++j) {
 				energy += springfieldenergy[i][j];
 			}
 		}
@@ -3625,8 +3620,8 @@ void World::make_measurements() {
 	// Now global stuff
 	vector3 a, b, c;
 	if(num_springs != 0) {
-		for(i = 0; i < num_blobs; ++i) {
-			for(j = 0; j < num_blobs; ++i) {
+		for(i = 0; i < params.num_blobs; ++i) {
+			for(j = 0; j < params.num_blobs; ++j) {
 				springfieldenergy[i][j] = 0.0;
 			}
 		}

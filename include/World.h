@@ -107,12 +107,6 @@ public:
 
 private:
 
-    /** @brief How many Blobs populate this world */
-    int num_blobs;
-
-    /** @brief How many conformations does each blob have? */
-    int *num_conformations;
-
     /** @brief 2-D Array of Blob objects (blob i, conformation j) */
     Blob **blob_array;
 
