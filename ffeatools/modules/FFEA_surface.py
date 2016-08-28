@@ -8,45 +8,29 @@ class FFEA_surface:
 	
 		self.reset()
 
-		try:
-			self.load(fname)
-		except:
-			return
+		self.load(fname)
 
-	def load(self, fname):
+	def load(self, fname=""):
 
 		print("Loading FFEA surface file...")
 
-		# Test file exists
-		if not os.path.exists(fname):
-			print("\tFile '" + fname + "' not found. Returning empty object...")
+		if fname=="":
+			print("\tCreating empty object...")
 			return
 	
 		# File format?
 		base, ext = os.path.splitext(fname)
 		if ext == ".surf":
-			try:
-				self.load_surf(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
-
+			self.load_surf(fname)
 		elif ext == ".face":
-			try:
-				self.load_face(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
-
+			self.load_face(fname)
 		elif ext == ".vol":
-			try:
-				self.load_vol(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_surface from " + fname + ". Returning empty object...")
-
+			self.load_vol(fname)
 		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+			raise IOError("Unrecognised file extension '" + ext + "'.")
+
+		self.valid = True
+		return
 
 	def load_surf(self, fname):
 
@@ -54,15 +38,12 @@ class FFEA_surface:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
-			raise
+			raise IOError("File '" + fname + "' not found.")
 
 		# Test format
 		line = fin.readline().strip()
 		if line != "ffea surface file" and line != "walrus surface file":
-			print("\tExpected 'ffea surf file' but found " + line)
-			raise TypeError
+			raise TypeError("Expected 'ffea surf file' but found " + line)
 
 		num_faces = int(fin.readline().split()[1])
 
@@ -197,7 +178,7 @@ class FFEA_surface:
 					break
 
 		if success != self.num_faces:
-			print "Error. "+str(success)+" nodes but "+str(self.num_faces)+" faces. This topology cannot be paired with this surface."
+			print(str(success)+" successes but "+str(self.num_faces)+" faces. This topology cannot be paired with this surface. Regenerating surface...")
 			for f in self.face:
 				f.elindex = None
 			return -1
