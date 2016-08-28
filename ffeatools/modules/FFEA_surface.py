@@ -344,6 +344,9 @@ class FFEA_face:
 			
 		return centroid * (1.0 / len(self.n))
 
+	def get_centroid(self):
+		return self.centroid
+
 	def isSame(self, face):
 		n = np.array(self.n)
 		m = np.array(face.n[0:3])

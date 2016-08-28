@@ -683,6 +683,9 @@ class FFEA_element:
 			
 		return centroid * (1.0 / len(self.n))
 	
+	def get_centroid(self):
+		return self.centroid
+
 	def get_linear_face(self, index, obj=True):
 		
 		if index == 0:
