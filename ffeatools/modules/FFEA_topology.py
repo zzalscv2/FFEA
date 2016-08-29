@@ -585,6 +585,16 @@ class FFEA_topology:
 					'''
 		print "Culled %d elements with volume < %e." % (culled_elements, limitvol)
 
+	def get_smallest_lengthscale(self, node):
+
+		length = float("inf")
+		for e in self.element:
+			new_length = e.get_smallest_lengthscale(node)
+			if new_length < length:
+				length = new_length
+
+		return length
+
 	def print_details(self):
 
 		print "num_elements = %d" % (self.num_elements)
@@ -688,14 +698,15 @@ class FFEA_element:
 
 	def get_linear_face(self, index, obj=True):
 		
+		# Define face i as the face that doesn't have node i in it
 		if index == 0:
-			n = [self.n[0], self.n[1], self.n[2]]
-		elif index == 1:
-			n = [self.n[0], self.n[3], self.n[1]]
-		elif index == 2:
-			n = [self.n[0], self.n[2], self.n[3]]
-		elif index == 3:
 			n = [self.n[1], self.n[3], self.n[2]]
+		elif index == 1:
+			n = [self.n[0], self.n[2], self.n[3]]
+		elif index == 2:
+			n = [self.n[0], self.n[3], self.n[1]]
+		elif index == 3:
+			n = [self.n[0], self.n[1], self.n[2]]
 
 		# Return either a face object, or a node list
 		if obj:
@@ -725,6 +736,29 @@ class FFEA_element:
 			e.append(node.pos[self.n[i + 1]] - node.pos[self.n[0]])		
 
 		return np.fabs(np.dot(e[2], np.cross(e[1], e[0])) / 6.0) * np.power(scale, 3.0)
+
+	def get_smallest_lengthscale(self, node):
+
+		# Smallest length is smalles node to opposite plane normal distance
+		length = float("inf")
+		for i in range(4):
+			
+			# Get a face
+			f = self.get_linear_face(i)
+			p = node.pos[self.n[i]]
+			otherp = node.pos[self.n[(i + 1) % 4]] # A point in the plane (anything other than i in this element)
+			n = f.calc_normal(node)
+
+			# Define plane a plane[i]x_i + plane[3]
+			plane = [n[0], n[1], n[2], -1 * np.dot(n, otherp)]
+			
+			# Distance is on the internet somewhere
+			distance = np.fabs(np.dot(n, p) + plane[3])
+			if distance < length:
+				length = distance
+
+		return length
+
 
 	def reset(self):
 		
