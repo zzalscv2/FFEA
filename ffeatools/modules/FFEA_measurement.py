@@ -27,10 +27,13 @@ class FFEA_measurement:
 				print("\tPlease supply us with the global measurement file, not the '-d' .fdm file")				
 				return
 
+			# Get num frames for quick access
+			self.num_frames = len(self.global_meas["Time"])
+
 			dfname = path.splitext(fname)[0] + ".fdm"
 			if path.exists(dfname):
 				self.load_detailed(dfname)
-
+			
 		except:
 			self.reset()
 			return
@@ -236,7 +239,6 @@ class FFEA_measurement:
 		if self.blob_meas != []:
 			print "\tDetailed will be written to %s\n" % (blobfname)
 
-		num_frames = len(self.global_meas["Time"])
 
 		#
 		# Global first
@@ -272,7 +274,7 @@ class FFEA_measurement:
 			else:
 				fout.write("%-14s" % (key))
 		fout.write("\n")
-		for i in range(num_frames):
+		for i in range(self.num_frames):
 			for key in keys_to_write:
 				if key == "Centroid":
 					fout.write("%-14.6e%-14.6e%-14.6e" % (self.global_meas[key][i][0],self.global_meas[key][i][1], self.global_meas[key][i][2]))
@@ -334,7 +336,7 @@ class FFEA_measurement:
 								fout.write("%-14s" % (key))
 			fout.write("\n")
 
-			for i in range(num_frames):
+			for i in range(self.num_frames):
 				fout.write("%-14.6e" % (self.global_meas["Time"][i]))
 				for j in range(self.num_blobs):
 					fout.write("     ")
@@ -360,6 +362,7 @@ class FFEA_measurement:
 		self.time = None
 		self.script_fname = ""
 		self.num_blobs = 0
+		self.num_frames = 0
 		self.global_meas = None
 		self.blob_meas = []
 		self.interblob_meas = []
