@@ -380,7 +380,7 @@ class FFEA_script:
 		self.add_empty_blob()
 		self.blob[-1].default(basename)
 
-	def write_to_file(self, fname, verbose=False):
+	def write_to_file(self, fname, verbose=True):
 
 		fout = open(fname, "w")
 		self.params.write_to_file(fout, fname, verbose=verbose)

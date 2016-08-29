@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 	// Help text is built in to boost	
 	if (var_map.count("help")) {  
 		cout << desc << endl;
-		return 0;
+		return FFEA_OK;
 	}
 
 	// Check we have an input script
