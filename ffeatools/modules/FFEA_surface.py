@@ -169,15 +169,12 @@ class FFEA_surface:
 			index += 1			
 			success = 0
 			for i in elcheck:
-				print "Element ", i, " = ", top.element[i].n
 				compare = 0
 				for j in range(3):
 					if f.n[j] in top.element[i].n:
 						compare += 1
 				if compare == 3:
 					success = 1
-					print "Face found = ", f.n
-					print "Element removed = ", top.element[i].n
 					f.elindex = i
 					#elcheck.remove(i)	# Can't remove, as elements can have more than one surface face (especially in coarse structures :( )
 					break
@@ -322,6 +319,13 @@ class FFEA_face:
 			self.elindex = int(elindex)
 		except:
 			self.elindex = None
+
+	def calc_normal(self, node):
+
+		e1 = node.pos[self.n[1]] - node.pos[self.n[0]]
+		e2 = node.pos[self.n[2]] - node.pos[self.n[0]]
+		norm = np.cross(e1, e2)
+		return norm * (1.0 / np.linalg.norm(norm))
 
 	def calc_centroid(self, node):
 	
