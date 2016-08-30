@@ -3,8 +3,6 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
 <!--  <tab type="user" url="http://ffea.bitbucket.org/" title="Home"/> -->
-<!--    <tab type="mainpage" visible="yes" title="Home"/> -->
-  <!-- <tab type="user" url="file:../../doc/html/index.html" title="Home"/> -->
   <tab type="pages" visible="yes" title="Contents" intro=""/>
   <tab type="usergroup" title="API Reference">
       <tab type="modules" visible="yes" title="" intro=""/>
@@ -24,13 +22,7 @@
       </tab>
       <tab type="examples" visible="yes" title="" intro=""/>  
   </tab>
-  <tab type="user" title="FFEA Tools API" url="file:../../ffeamodules/html/index.html"/>
-  <!-- <tab type="usergroup" title="FFEA Tools API">
-      <tab type="usergroup" visible="yes" title="Namespaces">
-        <tab type="user" url="file:../../ffeamodules/html/namespaces.html" title="Namespace List"/>
-        <tab type="user" url="file:../../ffeamodules/html/namespacemembers.html" title="Namespace Members"/>
-      </tab>
-  </tab> --> 
+  <tab type="user" title="FFEA main page" url="file:../../doc/html/index.html"/>
   <tab type="user" url="https://bitbucket.org/sohpc-ffea/ffea" title="Download"/>
   <tab type="user" url="https://bitbucket.org/sohpc-ffea/ffea/issues" title="Issue Tracker"/>
 
