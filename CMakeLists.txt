@@ -138,8 +138,16 @@ find_package(Doxygen 1.8)
 if(DOXYGEN_FOUND)
   configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
                  "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/DoxygenPyM.in"
+                 "${PROJECT_BINARY_DIR}/DoxyfilePyM" @ONLY)
+  add_custom_target(docpy ${DOXYGEN_EXECUTABLE}
+                        ${PROJECT_BINARY_DIR}/DoxyfilePyM
+                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
+                        COMMENT "Generating documentation for developers"
+                        VERBATIM)
   add_custom_target(doc ${DOXYGEN_EXECUTABLE}
                         ${PROJECT_BINARY_DIR}/Doxyfile
+                        DEPENDS docpy
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
