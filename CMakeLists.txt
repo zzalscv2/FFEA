@@ -153,6 +153,8 @@ if(DOXYGEN_FOUND)
                         VERBATIM)
   install(DIRECTORY "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
                 "${CMAKE_INSTALL_PREFIX}/share/ffea/doc" OPTIONAL)
+  install(DIRECTORY "${PROJECT_BINARY_DIR}/src/ffeamodules/html" DESTINATION
+                "${CMAKE_INSTALL_PREFIX}/share/ffea/ffeamodules" OPTIONAL)
 endif(DOXYGEN_FOUND)
 
 # 9 ### DEBUG FLAGS ####
