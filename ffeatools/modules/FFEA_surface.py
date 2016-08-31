@@ -94,8 +94,7 @@ class FFEA_surface:
 		# Test format
 		sline = fin.readline().split()
 		if len(sline) != 2:
-			print("\tExpected '<num_faces> 1' but found " + line)
-			raise TypeError
+			raise TypeError("\tExpected '<num_faces> 1' but found " + line)
 
 		num_faces = int(sline[0])
 
@@ -121,9 +120,8 @@ class FFEA_surface:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
 			self.reset()
-			raise
+			raise IOError("\tFile '" + fname + "' not found.")
 
 		lines = fin.readlines()
 		fin.close()
@@ -136,9 +134,8 @@ class FFEA_surface:
 			try:
 				line = lines[i].strip()
 			except(IndexError):
-				print("\tCouldn't find 'surfaceelements' line. File '" + fname + "' not formatted correctly.")
 				self.reset()
-				return
+				raise IndexError("\tCouldn't find 'surfaceelements' line. File '" + fname + "' not formatted correctly.")
 
 			continue
 
@@ -153,9 +150,8 @@ class FFEA_surface:
 				self.add_face(face)
 
 			except:
-				print("\tCouldn't find the specified %d faces. Only found %d. File '" + fname + "' not formatted correctly." % (num_faces, i))
 				self.reset()
-				return
+				raise Exception("\tCouldn't find the specified %d faces. Only found %d. File '" + fname + "' not formatted correctly." % (num_faces, i))
 
 	def add_face(self, f):
 		self.face.append(f)
@@ -315,10 +311,7 @@ class FFEA_face:
 		for i in range(len(self.n)):
 			self.n[i] = int(alist[i])
 
-		try:
-			self.elindex = int(elindex)
-		except:
-			self.elindex = None
+		self.elindex = int(elindex)
 
 	def calc_normal(self, node):
 
