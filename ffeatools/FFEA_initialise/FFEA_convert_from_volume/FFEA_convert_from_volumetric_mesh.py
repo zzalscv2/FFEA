@@ -67,23 +67,31 @@ while i < len(av):
 
 	elif av[i] == "--help" or av[i] == "-h":
 		print_help(av)
-	elif av[i] == "--density" or av[i] == "-d":
+
+	elif "dens" in av[i] or av[i] == "-d":
+#	elif av[i] == "--density" or av[i] == "-d":
 		matparams["d"] = float(av[i + 1])
-	elif av[i] == "--shear-viscosity" or av[i] == "--shear-visc" or av[i] == "-sv":
+	elif ("shear" in av[i] and "visc" in av[i]) or av[i] == "-sv":
+#	elif av[i] == "--shear-viscosity" or av[i] == "--shear-visc" or av[i] == "-sv":
 		matparams["sv"] = float(av[i + 1])
-	elif av[i] == "--bulk-viscosity" or av[i] == "--bulk-visc" or av[i] == "-bv":
+	elif ("bulk" in av[i] and "visc" in av[i]) or av[i] == "-bv":
+#	elif av[i] == "--bulk-viscosity" or av[i] == "--bulk-visc" or av[i] == "-bv":
 		matparams["bv"] = float(av[i + 1])
-	elif av[i] == "--shear-modulus" or av[i] == "--shear-mod" or av[i] == "-sm":
+	elif ("shear" in av[i] and "mod" in av[i]) or av[i] == "-sm":
+#	elif av[i] == "--shear-modulus" or av[i] == "--shear-mod" or av[i] == "-sm":
 		matparams["sm"] = float(av[i + 1])
-	elif av[i] == "--bulk-modulus" or av[i] == "--bulk-mod" or av[i] == "-bm":
+	elif ("bulk" in av[i] and "mod" in av[i]) or av[i] == "-bm":
+#	elif av[i] == "--bulk-modulus" or av[i] == "--bulk-mod" or av[i] == "-bm":
 		matparams["bm"] = float(av[i + 1])
-	elif av[i] == "--dielectric" or av[i] == "--dielec" or av[i] == "-di":
+	elif "dielec" in av[i] or av[i] == "-di":
+#	elif av[i] == "--dielectric" or av[i] == "--dielec" or av[i] == "-di":
 		matparams["di"] = float(av[i + 1])
-	elif av[i] == "--stokes" or av[i] == "--stokes-radius" or av[i] == "-s":
+	elif ("stokes" in av[i] and "rad" in av[i]) or av[i] == "-sr":
+#	elif av[i] == "--stokes" or av[i] == "--stokes-radius" or av[i] == "-sr":
 		stokes_radius = float(av[i + 1])
-	elif av[i] == "--cull" or av[i] == "-c":
-		cull[0] = True
-		cull[1] = float(av[i + 1])
+#	elif av[i] == "--cull" or av[i] == "-c":
+#		cull[0] = True
+#		cull[1] = float(av[i + 1])
 	else:
 		pass
 
