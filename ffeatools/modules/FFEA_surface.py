@@ -311,7 +311,10 @@ class FFEA_face:
 		for i in range(len(self.n)):
 			self.n[i] = int(alist[i])
 
-		self.elindex = int(elindex)
+		try:
+			self.elindex = int(elindex)
+		except:
+			pass
 
 	def calc_normal(self, node):
 

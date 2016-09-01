@@ -30,7 +30,7 @@ def strip_equilibration(fname, limit, split=True):
 
 
 	# Calculate running averages, stop when we reach equilibration
-	num_frames = len(meas.global_meas["Time"])
+	num_frames = meas.num_frames
 	kT = script.params.kT
 	keavg = [0.0 for i in range(script.params.num_blobs)]
 	seavg = [0.0 for i in range(script.params.num_blobs)]
@@ -69,9 +69,9 @@ def strip_equilibration(fname, limit, split=True):
 
 	# Check if never equilibrated
 	eqtime = meas.global_meas["Time"][eqat]
-	print split
 	if eqat == -1:
-		sys.exit("\n\tYour system never equilibrated with a %5.2f%% limit on the energy values. Please run for longer." % (eqlimit * 100))
+		print "\n\tYour system never equilibrated with a %5.2f%% limit on the energy values. Please run for longer." % (eqlimit * 100)
+		return eqat
 	else:
 		print "\n\tYour system equilibrated to within a %5.2f%% limit after %d steps, or %e ns." % (eqlimit * 100, eqat, eqtime * 1e9)
 		if not split:
