@@ -57,17 +57,42 @@ for i in range(num_modes):
 	row_labels.append(str(i))
 	column_labels.append(str((num_modes - 1) - i))
 
-ax = plt.subplot(111)
-ax.set_xticks(np.arange(data.shape[1]) + 0.5, minor=False)
-ax.set_xticklabels(row_labels)
-ax.set_yticks(np.arange(data.shape[0]) + 0.5, minor=False)
-ax.set_yticklabels(column_labels)
+# Get figure properties
+fig, ax = plt.subplots(figsize=(13,10))
+
+# Plot data
 heatmap = ax.pcolor(data, cmap=plt.cm.Blues)
-plt.title("Dot Products Between two Eigensystems")
-plt.xlabel("EigenSystem 1")
-plt.ylabel("Eigensystem 2")
-#legend
-cbar = plt.colorbar(heatmap)
-cbar.set_label('Eigenstate - Eigenstate Dot Products')
+heatmap.set_clim([0, 1])
+
+# And 'plot' colorbar
+cbar = plt.colorbar(heatmap, ticks=[i / 10.0 for i in range(11)])
+
+# All ticks
+ax.set_xticks(np.arange(data.shape[1]) + 0.5, minor=False)
+ax.set_yticks(np.arange(data.shape[0]) + 0.5, minor=False)
+
+
+# And now titles and stuff
+ax.set_xticklabels(row_labels, fontsize=18)
+ax.set_yticklabels(column_labels, fontsize=18)
+
+ax.set_title("Eigenvector Dot Product Array", fontsize=24)
+ax.set_xlabel("Eigensystem 1 Modes", fontsize=18)
+ax.set_ylabel("Eigensystem 2 Modes", fontsize=18)
+
+cbar.ax.set_yticklabels(["%2.1f" % (i / 10.0) for i in range(11)], fontsize=18)
+cbar.set_label('Normalised Dot Product Values', fontsize=18)
+
 plt.savefig(base + ".png")
 plt.show()
+
+#fig, ax = plt.subplots()
+
+#data = np.clip(randn(250, 250), -1, 1)
+
+#cax = ax.imshow(data, interpolation='nearest', cmap=cm.coolwarm)
+#ax.set_title('Gaussian noise with vertical colorbar')
+
+# Add colorbar, make sure to specify tick locations to match desired ticklabels
+#cbar = fig.colorbar(cax, ticks=[-1, 0, 1])
+#cbar.ax.set_yticklabels(['< -1', '0', '> 1'])  # vertically oriented colorbar
