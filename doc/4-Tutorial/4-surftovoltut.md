@@ -13,7 +13,7 @@ Meshing with TETGEN is by default a simple command line interface. However, in t
 
 As simple as that. The -Y flags keeps the surface structure exactly as it was, ensuring elements are optimised without compromising their lower size limit as much as possible. We now have a series of files; emd_5043_10ang.1.* that contain the volumetric data. Let's convert this into the NETGEN .vol format for completeness:
 
-	ffeatools tettonet -i emd_5043_8ang.1.ele -i emd_5043_8ang.1.face -i emd_5043_8ang.1.node -o emd_5043_8ang.vol
+	ffeatools tettonet -i emd_5043_8ang.1.ele emd_5043_8ang.1.face emd_5043_8ang.1.node -o emd_5043_8ang.vol
 
 ![Coasened surface profiles of EMDB ID:5043 built using TETGEN. From the top, moving clockwise: 1A, 3A, 5A, 8A, 10A](tetgencoarsening.png "TETGEN - Coarsening Process")
 
