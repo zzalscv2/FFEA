@@ -13,6 +13,8 @@ After installing FFEA, the plugin ` FFEAplugin.tar.gz ` will be found in ` $FFEA
 
 ![Installing the PyMOL viewer plugin](viewer_1_installation.png "Installing the PyMOL viewer plugin")
 
+If you encounter frequent PyMOL crashes or ominous warnings on the console such as `main thread is not in main loop` or `Tcl_AsyncDelete: async handler deleted by the wrong thread`, you may want to install the thread safe version of Tkinter, called [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter). 
+
 ## Loading your system
 
 When PyMOL loads, open the 'plugin' menu, and you should see a new option called 'FFEA loader'. This has a file menu that will allow you to select an FFEA script and load the FFEA script file, but before doing that, review the options. The model needs to be reloaded every time these settings are changed.
