@@ -395,6 +395,7 @@ int PreComp_solver::solve() {
         e_j = b_elems[j];
 
 	// Add energies to record 
+	#pragma omp atomic
 	fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[j]);
 
         vec3_scale(&dx, f_ij);
