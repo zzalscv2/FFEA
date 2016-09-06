@@ -4,10 +4,12 @@ import numpy as np
 from pymol import cmd
 from pymol.callback import Callback
 
+import warnings
+
 try:
     from mtTkinter import *
 except ImportError:
-    print("mtTkinter not found. Falling back to Tkinter.")
+    warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer will now crash. Please install mtTKinter.", RuntimeWarning)
     from Tkinter import *
 
 import tkFileDialog
