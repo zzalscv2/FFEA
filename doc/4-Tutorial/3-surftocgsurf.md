@@ -11,7 +11,7 @@ The recommended settings are to have volume conserve and find smallest edge turn
 
 To coarsen the surface, run
 
-	ffeatools surftocgsurf emd_5043.obj emd_5043_8A.stl 8 y y
+	ffeatools surftocgsurf emd_5043.obj emd_5043_8ang.stl 8 y y
 
 Which leaves us with a coarsened surface strucure in which the smallest edge is 8A. We also convert it to the .stl format.
 
