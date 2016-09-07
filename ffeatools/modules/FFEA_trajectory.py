@@ -13,10 +13,7 @@ class FFEA_trajectory:
 		if fname == "" or fname == None:
 			return
 
-		if self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read, start = start) == 1:
-			print("\tLoading of '" + fname + "' failed. Returning empty object...")
-		else:
-			self.valid = True
+		self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read, start = start)
 
 		return	
 		
@@ -26,18 +23,13 @@ class FFEA_trajectory:
 
 		# Test file exists
 		if not path.exists(fname):
-			print("\tFile '" + fname + "' not found. Returning empty object...")
-			self.reset()
-			return 1
+			raise IOError("No trajectory found at that location")
 	
 		# Clear everything for beginning
 		self.reset()
 
 		# Header first, for sure
-		if self.load_header(fname) == 1:
-			print("\tUnable to load header information from FFEA_trajectory '" + fname + "'.")
-			self.reset()
-			return 1
+		self.load_header(fname)
 
 		# Then rest of trajectory.
 		if(load_all == 1):
@@ -74,18 +66,14 @@ class FFEA_trajectory:
 			self.traj = open(fname, "r")
 
 		except(IOError):
-			print("\tFailed to open '" + fname + "' for reading.")
-			return 1
+			raise IOError("\tFailed to open '" + fname + "' for reading.")
 
 		# Now, read only the information from the top of the file
 
 		# Title
 		line = self.traj.readline().strip()
 		if line != "FFEA_trajectory_file":
-			print("\tExpected to read 'FFEA_trajectory_file' but read '" + line + "'. This may not be an FFEA trajectory file.")
-			self.reset()
-			return 1
-
+			raise IOError("\tExpected to read 'FFEA_trajectory_file' but read '" + line + "'. This may not be an FFEA trajectory file.")
 
 		self.traj.readline()
 		self.traj.readline()
@@ -96,9 +84,7 @@ class FFEA_trajectory:
 			self.num_blobs = int(line.split()[3])
 
 		except(IndexError, ValueError):
-			print("\tExpected to read 'Number of Blobs %d' but read '" + line + "'.")
-			self.reset()
-			return 1
+			raise IOError("\tExpected to read 'Number of Blobs %d' but read '" + line + "'.")
 
 		# num_conformations
 		try:
@@ -107,9 +93,7 @@ class FFEA_trajectory:
 			self.num_conformations = [int(s) for s in sline]
 
 		except(IndexError, ValueError):
-			print("\tExpected to read 'Number of Conformations %d %d ....%d' but read '" + line + "'.")
-			self.reset()
-			return 1
+			raise IOError("\tExpected to read 'Number of Conformations %d %d ....%d' but read '" + line + "'.")
 
 		# num_nodes
 		self.num_nodes = [[0 for i in range(self.num_conformations[j])] for j in range(self.num_blobs)]
@@ -122,9 +106,7 @@ class FFEA_trajectory:
 					self.num_nodes[i][j] = int(sline[4 * j + 3])
 
 			except(IndexError, ValueError):
-				print("\tExpected to read 'Blob " + str(i) + ": Conformation 0 Nodes %d Conformation 1 Nodes %d....Conformation " + str(num_conformations[i] - 1) + " Nodes %d' but read '" + line + "'.")
-				self.reset()
-				return 1
+				raise IOError("\tExpected to read 'Blob " + str(i) + ": Conformation 0 Nodes %d Conformation 1 Nodes %d....Conformation " + str(num_conformations[i] - 1) + " Nodes %d' but read '" + line + "'.")
 
 		# final whitespace until '*' and save the file pos
 		while(self.traj.readline().strip() != "*"):
@@ -162,7 +144,7 @@ class FFEA_trajectory:
 
 			except(IndexError):
 				self.traj.seek(self.fpos)
-				return 1
+				return 1 #why
 
 			except(ValueError):
 
@@ -405,8 +387,7 @@ class FFEA_traj_blob:
 	def set_subblob(self, pin):
 
 		if max(pin.index) >= self.num_nodes:
-			print("Error. Pinned node index %d is larger than num_nodes, %d." % (max(pin.index), self.num_nodes))
-			return None 
+			raise IndexError("Error. Pinned node index %d is larger than num_nodes, %d." % (max(pin.index), self.num_nodes))
 			
 		self.subblob.append(pin.index)
 		self.num_subblobs += 1
@@ -419,8 +400,7 @@ class FFEA_traj_blob:
 			try:
 				indices = self.subblob[subblob_index]
 			except(IndexError):
-				print("Error. Subblob index %d out of range (num_subblobs = %d)." % (subblob_index, self.num_subblobs))
-				return None, None
+				raise IndexError("Error. Subblob index %d out of range (num_subblobs = %d)." % (subblob_index, self.num_subblobs))
 
 		# Build the trajectory
 		subblob_size = len(indices)		
