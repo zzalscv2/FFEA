@@ -284,7 +284,7 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     energy *= ApAq;
 
     // Store the measurement
-    #pragma omp critical
+    #pragma omp atomic
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
 
     for (int j = 0; j < 3; j++) {
