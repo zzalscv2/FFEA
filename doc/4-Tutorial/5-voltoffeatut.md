@@ -15,9 +15,11 @@ Firstly, create a directory called 'simulation' and move into it, and move the .
 
 Now, using the .vol file:
 
-	ffeatools voltoffea --mesh emd_5043_8ang.vol --density 1.5e3 --shear-viscosity 1e-3  --bulk-viscosity 1e-3 --shear-modulus 5.5e8 --bulk_modulus 2.2e9 --dielectric 1.0 --make-script
+	ffeatools voltoffea --mesh emd_5043_8ang.vol --density 1.5e3 --shear-visc 1e-3  --bulk-visc 1e-3 --shear-mod 5.5e8 --bulk_mods 2.2e9 --dielec 1.0 --make-script
+	
+By default, the program will automatically calculate an approximate value for the total hydronamic radius of your object. This can be specified using the `--stokes_radius` argument.
 
-The program will ask if you want a stokes_radius calculating. Select 'y' and the program calculates an approximate value for the total hydrodynamic radius of your object. Now you will see a whole group of new files have appeared:
+Once the script has run its course, you will see a whole group of new files have appeared:
 
   * <b>emd_5043_8ang.node</b>		The file containing the positions of each vertex of the mesh
   * <b>emd_5043_8ang.top</b>		The file describing the connectivity of the nodes; how they are arranged into elements

@@ -33,7 +33,7 @@ kinetic_map = FFEA_kinetic_map.FFEA_kinetic_map(inmap)
 
 # Test against target topology if necessary
 if intop != "":
-	if kinetic_map.num_rows != pdbtop.blob[0].num_atoms:
+	if kinetic_map.num_rows != pdbtop.blob[0].num_atoms and kinetic_map.num_rows != sum(pdbtop.num_atoms):
 		sys.exit("Error. Provided topology has %d atoms. Map expects %d target atoms." % (pdbtop.blob[0].num_atoms, kinetic_map.num_rows))
 
 # Apply matrix to all possible blobs!
@@ -64,7 +64,8 @@ if ext == ".pdb":
 		outpdb.add_empty_blob()
 		
 		# Populate with atoms
-		outpdb.blob[-1].atom = pdbtop.blob[0].atom
+		for blob in pdbtop.blob:
+			outpdb.blob[-1].atom = outpdb.blob[-1].atom + blob.atom #smush any sub-regions of PDBs together
 		outpdb.blob[-1].num_atoms = len(outpdb.blob[-1].atom)
 
 		# Now add frames
