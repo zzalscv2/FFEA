@@ -65,7 +65,7 @@ if ext == ".pdb":
 		
 		# Populate with atoms
 		for blob in pdbtop.blob:
-			outpdb.blob[-1].atom.append(blob.atom)
+			outpdb.blob[-1].atom = outpdb.blob[-1].atom + blob.atom #smush any sub-regions of PDBs together
 		outpdb.blob[-1].num_atoms = len(outpdb.blob[-1].atom)
 
 		# Now add frames
