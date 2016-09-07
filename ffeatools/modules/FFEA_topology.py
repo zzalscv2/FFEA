@@ -202,7 +202,21 @@ class FFEA_topology:
 		
 		# Make a list of a set
 		return list(set(n))
-	
+
+	def calc_CoM(self, node, mat):
+
+		CoM = np.array([0.0,0.0,0.0])
+
+		eindex = -1
+		for e in self.element:
+			eindex += 1
+			elmass = e.calc_volume(self) * mat[eindex][0]
+			CoM += elmass * (np.mean([node.pos[n] for n in e.n[0:4]]))
+		self.CoM = CoM * 1.0/num_elements
+		return self.CoM
+
+	def get_CoM(self):
+		return self.CoM	
 	def extract_surface(self):
 		
 		faces = []
@@ -647,8 +661,9 @@ class FFEA_topology:
 					fout.write("%d " % (n))
 				fout.write("\n")
 		else:
-			print "Could not write topology to " + fname
-			return
+			print "Extension not recognised"
+			raise IOError
+
 
 		fout.close()
 		print "done!"
@@ -664,6 +679,7 @@ class FFEA_topology:
 
 	def reset(self):
 
+		self.CoM = None
 		self.element = []
 		self.num_elements = 0
 		self.num_surface_elements = 0
