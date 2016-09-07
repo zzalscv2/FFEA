@@ -36,6 +36,8 @@ from pymol.vfont import plain
 # FFEA stuff
 import FFEA_script
 import FFEA_trajectory
+import FFEA_turbotrajectory
+import FFEA_surface
 
 from numpy.random import randint as rint
 
@@ -224,10 +226,8 @@ class FFEA_viewer_control_window:
 
      # load the file
      self.root.destroy()
-     try:
-	self.load_ffea(ffea_fname)
-     except:
-	print "Couldn't load system from ", ffea_fname	
+     self.load_ffea(ffea_fname)
+
 
 
   # # # # # # # # # # # # # # # # # # # # # #
@@ -290,12 +290,7 @@ class FFEA_viewer_control_window:
 			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
 			new_blob = Blob.Blob()
 			#new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_mat[i], blob_binding[i], blob_centroid_pos, blob_rotation, ffea_path)
-			try:
-				new_blob.load(idnum, bindex, cindex, self.script)
-			except:
-				print "Could not load Blob ", bindex, ", conformation ", cindex
-				raise
-	
+			new_blob.load(idnum, bindex, cindex, self.script)
 			new_blob.set_num_loads(self.num_loads)
      
 			self.blob_list[bindex][cindex] = new_blob
@@ -414,9 +409,16 @@ class FFEA_viewer_control_window:
     		       
 	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
 	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
-	self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
-	self.load_trajectory_thread.start()
-	#self.load_trajectory(p.trajectory_out_fname)
+	traj_fname = self.script.params.trajectory_out_fname
+	turbotraj_fname = traj_fname.split(".")[0]+".npy"
+	if os.path.isfile(turbotraj_fname):
+		turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
+		turbotraj.load_traj(turbotraj_fname)
+		self.load_turbotrajectory(turbotraj)
+	else:
+		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
+		self.load_trajectory_thread.start()
+		#self.load_trajectory(p.trajectory_out_fname)
 
 	# Make sure we have at least 1 frame sorted before continuing, so main thread doesn't overtake
 	#print self.num_frames, p.trajectory_out_fname
@@ -433,6 +435,56 @@ class FFEA_viewer_control_window:
 	self.system_index += 1
 	self.system_name = self.system_names[self.system_index]
 
+  def get_normal(self, node0, node1, node2):
+	ax = node1[0] - node0[0]
+	ay = node1[1] - node0[1]
+	az = node1[2] - node0[2]
+	bx = node2[0] - node1[0]
+	by = node2[1] - node1[1]
+	bz = node2[2] - node1[2]
+
+	return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
+
+  def load_turbotrajectory(self, turbotraj):
+      
+    def setup(self, turbotraj):
+        frames = range(len(turbotraj.turbotraj[0][0]))
+        surfs = []
+
+        # cerate a list of surfaces, one for each blob
+        for i in range(len(self.blob_list)):
+            surfs.append(self.script.load_surface(i)) 
+        return surfs, frames
+        
+    def get_nodes_in_face(turbotraj, face):
+        return [turbotraj.turbotraj[blob_num][0][frame][face.n[0]], turbotraj.turbotraj[blob_num][0][frame][face.n[1]], turbotraj.turbotraj[blob_num][0][frame][face.n[2]]]
+    
+    surfs, frames = setup(self, turbotraj)
+
+    # for every frame, create a cgo object
+    for frame in frames:
+        print("Loading frame "+str(frame)+"...")
+        sol = [ BEGIN, TRIANGLES ]
+
+        # for each face in each surf, load the nodes into the cgo as triangles
+        for blob_num in range(len(surfs)):
+            for face in surfs[blob_num].face:
+                nodexyz = get_nodes_in_face(turbotraj, face)
+                norm = self.get_normal(nodexyz[0], nodexyz[1], nodexyz[2])
+                sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2], VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+        sol.append(END)#
+        cmd.load_cgo(sol, self.display_flags['system_name'], frame)
+
+    
+    # Each trajectory is composed of several blobs, do it for all blobs
+    # if each blob has several conformations, do it for all of those
+    # skip when 'none' obviously
+    # in each blob->conformation, consult the surface file
+    # for each surf.face.n, grab the points at that index and draw a trinagle with them
+    return
+    
+
+ 
   def load_trajectory(self, trajectory_out_fname):
 	
 	#
