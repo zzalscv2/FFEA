@@ -61,6 +61,7 @@ class FFEA_pdb:
 			elif line[0:3] == "TER":
 				blobend = "TER"
 				bindex += 1
+				continue
 				
 			if line[0:4] == "ATOM":
 
@@ -159,21 +160,27 @@ class FFEA_pdb:
 				for j in range(self.num_atoms[i]):
 
 					line = fin.readline()
-					if "ATOM" not in line:
+					if "ATOM" not in line or "REMARK" in line:
 						continue
-						
-					res_type = line[17:20].strip()
+					
+					try:
+						res_type = line[17:20].strip()
+					except:
+						raise IOError("Error getting res type at file pointer "+str(fin.tell()))
 					
 					if res_type == "SOL" or res_type == "NA" or res_type == "CL"or res_type == "K":
 						continue
 					else:
 					
-						# Get position data
-						x = float(line[30:38].strip())
-						y = float(line[38:46].strip())
-						z = float(line[46:54].strip())
+						try:
+							# Get position data
+							x = float(line[30:38].strip())
+							y = float(line[38:46].strip())
+							z = float(line[46:54].strip())
 	
-						self.blob[i].frame[-1].set_atomic_pos(j, x, y, z)
+							self.blob[i].frame[-1].set_atomic_pos(j, x, y, z)
+						except:
+							raise IOError("Error getting position at file pointer "+str(fin.tell()))
 				
 						
 				if blobend == "TER":
