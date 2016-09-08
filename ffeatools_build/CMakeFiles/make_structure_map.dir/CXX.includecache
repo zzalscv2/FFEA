@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/localhome/py12rw/Software/src/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Elements.hpp
+
+/localhome/py12rw/Software/src/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Matrices.hpp
+cmath
+-
+Vectors.hpp
+/localhome/py12rw/Software/src/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Vectors.hpp
+
+/localhome/py12rw/Software/src/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Vectors.hpp
+cmath
+-
+
+/localhome/py12rw/Software/src/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/make_structure_map.cpp
+iostream
+-
+cstdlib
+-
+cstring
+-
+fstream
+-
+vector
+-
+Vectors.hpp
+/localhome/py12rw/Software/src/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Vectors.hpp
+Elements.hpp
+/localhome/py12rw/Software/src/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Elements.hpp
+Matrices.hpp
+/localhome/py12rw/Software/src/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Matrices.hpp
+
