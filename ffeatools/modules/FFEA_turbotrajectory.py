@@ -71,13 +71,13 @@ class FFEA_turbotrajectory:
         return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
 
     def create_cgo(self, script):
-    """
-    This sript creates a cgo object that can be fed into pymol for each frame
-    and blob. The cgo object contains the vertices of each triangle in the mesh,
-    a normal vector, and some control codes. This method also creates an index
-    file listing the name of each cgo object and which frame it belongs to.
-    """
-      
+	"""
+	This sript creates a cgo object that can be fed into pymol for each frame
+	and blob. The cgo object contains the vertices of each triangle in the mesh,
+	a normal vector, and some control codes. This method also creates an index
+	file listing the name of each cgo object and which frame it belongs to.
+	"""
+
         def setup(self):
             frames = range(len(self.turbotraj[0][0]))
             surfs = []
