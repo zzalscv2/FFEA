@@ -1,6 +1,7 @@
 import sys, os
 import FFEA_script
 from FFEA_universe import *
+
 import argparse as _argparse
 
 # Set up argparse
@@ -14,9 +15,10 @@ parser.add_argument("--bulk_mod", action="store", type=float, default=111e7, hel
 parser.add_argument("--stokes_radius", action="store", help="Stokes radius (for hydrodynamics)")
 parser.add_argument("--dielec", action="store", type=float, default=1.0, help="Dielectric constant (unitless)")
 parser.add_argument("--make_script", action="store_true", help="Whether to generate a .ffea script file")
+parser.add_argument("--out", action="store", help="Output filename")
 parser.add_argument("--cull", action="store", type=float, help="Cull all elements smaller than a certain volume")
 
-def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], density=1.5e3, shear_visc=1e-3, bulk_visc=1e-3, shear_mod=370e6, bulk_mod=111e7, dielectric=1.0, make_script=False):
+def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], density=1.5e3, shear_visc=1e-3, bulk_visc=1e-3, shear_mod=370e6, bulk_mod=111e7, dielectric=1.0, make_script=False, outfname=None):
     """
     This script converts the .vol file from the initialisation routines into the necessary file formats for an FFEA simulation
     This means get linear element from vol and make 2nd order, store new faces, tets etc, build vdw, pin, bsites, stokes, move blob to centroid
@@ -39,8 +41,11 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     if volfname == None:
         raise IOError("You must specify a .vol filename with '--mesh'. Run this script with the -h flag to get help.")
     
-    basename = os.path.splitext(os.path.abspath(volfname))[0]
-        
+    if outfname == None:
+	    basename = os.path.splitext(os.path.abspath(volfname))[0]
+    else:
+	    basename = os.path.splitext(os.path.abspath(outfname))[0]
+
     # Get initial stuff from .vol file!
     node = FFEA_node.FFEA_node(volfname)
     top = FFEA_topology.FFEA_topology(volfname)
@@ -101,8 +106,8 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     stokes.write_to_file(basename + ".stokes")
     
     if make_script:
-        script.write_to_file(basename + ".ffea")
-
+	script.write_to_file(basename + ".ffea")
+		
 if sys.stdin.isatty():
     args = parser.parse_args()
-    convert_from_volumetric_mesh(args.mesh, args.stokes_radius, args.cull, args.density, args.shear_visc, args.bulk_visc, args.shear_mod, args.bulk_mod, args.dielec, args.make_script)
+    convert_from_volumetric_mesh(args.mesh, args.stokes_radius, args.cull, args.density, args.shear_visc, args.bulk_visc, args.shear_mod, args.bulk_mod, args.dielec, args.make_script, args.out)
