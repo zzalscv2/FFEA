@@ -74,3 +74,37 @@ The arguments are
 * -`vf`, user-configurable filter. PyMOL can often output files with very awkward dimensions, which are hard to encode - this filter fixes that.
 
 Finally, the output filename is a positional argument.
+
+## Converting FFEA trajectories back to atomistic data
+
+If the data in our original PDB file and our final trajectory file is aligned correctly, then we can map our FFEA trajectory back onto the original PDB. Although we have not done anything to misalign our final FFEA mesh from our EM density map, there is no guarantee that our EM density map is aligned with our PDB file.
+
+The first thing to do is to open both the PDB and EM density map in UCSF Chimera. 
+
+![The PDB and EM density map are misalgined](structuremap1.png "The PDB and EM density map are misalgined")
+
+If they are not aligned, select 'tools' on the volume viewer menu bar, and select 'Fit in map' and push 'fit'. If nothing happens (as it didn't, in our example) you may need to give the algorithm some help. On the main UCSF Chimera window, select 'movement' and 'movement mouse mode'. Select 'move molecule' from the dropdown menu, and use the middle mouse button to drag the PDB object over the electron density map. Then, use the left mouse button to rotate the PDB into the approximate correct position. Push 'fit' on the 'Fit in Map' window to finish the job.
+
+![Aligned PDB and EM density map](structuremap2.png "Aligned PDB and EM density map")
+
+The new PDB can be saved by opening the file menu and selecting 'save PDB'. For this example, we will save it as '4hel_fit.pdb'.
+
+The next step is to create the map between the PDB structure and FFEA structure. To do this, run the following command from the terminal:
+
+```sh
+ffeatools makestructuremap -i emd_5043_10ang.node -t emd_5043_10ang.top -o 4hel_fit.pdb -m GroELFFEAtoPDB.map -scale 1.0
+```
+
+This will use the .node and .top files from before, and the .pdb file you just made, to create a .map file. We then run
+
+```sh
+ffeatools maptosparse GroELFFEAtoPDB.map  GroELFFEAtoPDB_sparse.map
+```
+
+This conversts our map into a sparse matrix. Finally, we apply the map by running
+
+```sh
+ffeatools maptraj emd_5043_10ang_trajectory.ftj emd_5043_10ang_trajectory.pdb GroELFFEAtoPDB_sparse.map 4hel_fit.pdb
+```
+
+This script will create the file specified by the second positional argument, in this case `emd_5043_10ang_trajectory.pdb`. This file can be opened in a visualisation program such as PyMOL or VMD.
