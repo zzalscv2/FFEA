@@ -1,9 +1,0 @@
-ffeatools/__init__.py
-ffeatools/enthusiasm.py
-ffeatools/ffeatools.py
-ffeatools.egg-info/PKG-INFO
-ffeatools.egg-info/SOURCES.txt
-ffeatools.egg-info/dependency_links.txt
-ffeatools.egg-info/not-zip-safe
-ffeatools.egg-info/requires.txt
-ffeatools.egg-info/top_level.txt

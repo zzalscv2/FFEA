@@ -1,1 +1,0 @@
-/usr/bin/c++      -L/localhome/py12rw/Software/LocalInstall/usr/local/lib CMakeFiles/make_structure_map.dir/make_structure_map.o  -o make_structure_map -rdynamic 
