@@ -256,7 +256,7 @@ class FFEA_surface:
 
 			print outline
 	
-	def write_to_file(self, fname):
+	def write_to_file(self, fname, node=None):
 
 		print "Writing to " + fname + "..."
 
@@ -286,6 +286,23 @@ class FFEA_surface:
 				for n in self.face[i].n:
 					fout.write("%d " % (n))
 				fout.write("\n")
+
+		elif ext == ".obj":
+			if node == None:
+				print "Error. Cannot write to '.obj' format without an associated 'node' object"
+				raise IOError
+			
+			fout=open(fname, "w")
+			for n in node.pos:
+				fout.write("v %10.6f %10.6f %10.6f\n" % (n[0], n[1], n[2]))
+
+			for f in self.face:
+				fout.write("f %d %d %d\n" % (f.n[0], f.n[1], f.n[2]))
+			
+		else:
+			print "Extension not recognised"
+			raise IOError
+
 		fout.close()
 		print "done!"
 
