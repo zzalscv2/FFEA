@@ -1,0 +1,1 @@
+/usr/bin/c++      -L/localhome/py12rw/Software/LocalInstall/usr/local/lib CMakeFiles/FFEA_convert_traj_to_pdb.dir/FFEA_convert_traj_to_pdb.o  -o FFEA_convert_traj_to_pdb -rdynamic 
