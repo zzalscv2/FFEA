@@ -1,1 +1,0 @@
-/usr/bin/c++      -L/localhome/py12rw/Software/LocalInstall/usr/local/lib CMakeFiles/surface_coarse_grainer_final.dir/surface_coarse_grainer_final.o  -o surface_coarse_grainer_final -rdynamic 
