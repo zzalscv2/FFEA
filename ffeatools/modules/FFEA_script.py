@@ -131,6 +131,12 @@ class FFEA_script:
 		self.blob = []
 		self.spring = ""
 
+	def remove_blob(self, index=-1):
+		
+		self.blob.pop(index)
+		self.params.num_blobs -= 1
+		self.params.num_conformations.pop(index)
+
 	def add_blob(self, blob):
 		self.blob.append(blob)
 		self.params.num_blobs += 1

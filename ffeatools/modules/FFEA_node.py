@@ -333,7 +333,7 @@ class FFEA_node:
 			
 			print outline
 	
-	def write_to_file(self, fname):
+	def write_to_file(self, fname, surf=None):
 
 		print "Writing to " + fname + "..."
 
@@ -347,7 +347,8 @@ class FFEA_node:
 				fout.write("%22.16f  %22.16f  %22.16f\n" % (p[0], p[1], p[2]))
 
 			fout.write("\n\n")
-		else:
+
+		elif ext == ".node":
 			fout = open(fname, "w")
 			fout.write("ffea node file\nnum_nodes %d\nnum_surface_nodes %d\nnum_interior_nodes %d\n" % (self.num_nodes, self.num_surface_nodes, self.num_interior_nodes))
 		
@@ -360,6 +361,17 @@ class FFEA_node:
 			fout.write("interior nodes:\n")
 			for i in range(self.num_surface_nodes, self.num_nodes, 1):
 				fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
+
+		elif ext == ".obj":
+			if surf == None:
+				print "Error. Cannot write to '.obj' format without an associated 'surf' object"
+				raise IOError
+			else:
+				surf.write_to_file(fname, node=self)
+		else:
+			print "Extension not recognised"
+			raise IOError
+
 		fout.close()
 		print "done!"
 
@@ -371,6 +383,21 @@ class FFEA_node:
 		
 		return (1.0 / self.num_nodes) * np.sum(self.pos, axis = 0)
 	
+	def calc_CoM(self, top, mat):
+
+		CoM = np.array([0.0,0.0,0.0])
+
+		eindex = -1
+		for e in top.element:
+			eindex += 1
+			elmass = e.calc_volume(self) * mat[eindex][0]
+			CoM += elmass * (np.mean([self.pos[n] for n in e.n[0:4]]))
+		self.CoM = CoM * 1.0/num_elements
+		return self.CoM
+
+	def get_CoM(self):
+		return self.CoM
+
 	def get_centroid(self):
 
 		return self.centroid
@@ -423,6 +450,8 @@ class FFEA_node:
 	def reset(self):
 
 		self.pos = []
+		self.centroid = None
+		self.CoM = None
 		self.num_nodes = 0
 		self.num_surface_nodes = 0
 		self.num_interior_nodes = 0
