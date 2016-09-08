@@ -25,6 +25,7 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
 		FFEA_analysis/pymol_plugin/system_names_dbzcharacters.txt
 		FFEA_analysis/pymol_plugin/system_names_greekletters.txt
                 modules/FFEA_trajectory.py 
+                modules/FFEA_turbotrajectory.py
                 modules/FFEA_measurement.py 
                 modules/FFEA_frame.py
                 modules/FFEA_universe.py
