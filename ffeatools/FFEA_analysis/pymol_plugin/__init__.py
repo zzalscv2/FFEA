@@ -9,7 +9,7 @@ import warnings
 try:
     from mtTkinter import *
 except ImportError:
-    warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer will now crash. Please install mtTKinter.", RuntimeWarning)
+    warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer is highly likely to crash :( . Please install mtTKinter.", RuntimeWarning)
     from Tkinter import *
 
 import tkFileDialog
