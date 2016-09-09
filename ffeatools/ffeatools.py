@@ -25,13 +25,17 @@ ffea_tools = 	{
 		"thin": "FFEA_analysis/FFEA_traj_tools/FFEA_thin_trajectory.py",
 		"view": "FFEA_analysis/FFEA_viewer/FFEA_viewer.py",
       "nodesFromTraj": "FFEA_analysis/FFEA_traj_tools/FFEA_get_snapshots_in_nodes.py",
-      "tettonet": "FFEA_initialise/FFEA_volume_tools/convert_tet_to_net.py"
+      "tettonet": "FFEA_initialise/FFEA_volume_tools/convert_tet_to_net.py",
+      "makestructuremap": "FFEA_initialise/FFEA_mapping_tools/make_structure_map",
+      "maptosparse": "FFEA_initialise/FFEA_mapping_tools/FFEA_convert_kinetic_map_to_sparse.py",
+      "maptraj": "FFEA_initialise/FFEA_mapping_tools/Kinetic_FFEA_map_apply_to_FFEA_traj.py"
 		}
 
 if len(sys.argv) == 1:
 	usage_string = "\nUsage: ./ffeatools ACTION ARGS\n"
-	usage_string += "With ACTION as one of:\n\t"
-	usage_string += " ".join(ffea_tools.keys()) + "\n"
+	usage_string += "With ACTION as one of:\n\n"
+	for script in ffea_tools.keys():
+		usage_string += script+"\n"
 	sys.exit(usage_string)
 
 action = sys.argv[1]
