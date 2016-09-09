@@ -231,7 +231,7 @@ class FFEA_node:
 		self.num_nodes += 1
 		
 		if nodetype == -1:
-			self.num_surface_nodes += 1
+			self.num_interior_nodes += 1
 		elif nodetype == 0:
 			self.num_surface_nodes += 1
 		else:
@@ -246,6 +246,7 @@ class FFEA_node:
 		
 		# Don't continue if we're already done
 		if self.num_nodes == self.num_surface_nodes:
+			print "HAHAHAAHAHAHA"
 			return
 
 		# Use surface to determine which nodes are interior and build a map
