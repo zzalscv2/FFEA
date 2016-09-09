@@ -6,5 +6,5 @@ Created on Tue Aug 16 09:21:19 2016
 """
 
 from .Euler_characteristic_analysis import * # c
-#from .FFEA_meas_tools import test_equilibration # command line
+from .FFEA_meas_tools import __init__ # command line
 #from .FFEA_traj_tools import FFEA_thin_trajectory # command line
