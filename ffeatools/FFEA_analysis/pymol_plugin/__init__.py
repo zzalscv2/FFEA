@@ -8,7 +8,10 @@ import warnings
 try:
     from mtTkinter import *
 except ImportError:
-    warnings.warn("HORRIBLE DANGER\HERE BE DRAGONS ERROR: Tkinter is not thread-safe. Viewer will now crash. Please install mtTKinter.", RuntimeWarning)
+
+    # Warn and print
+    warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer is highly likely to crash :( . Please install mtTKinter.", RuntimeWarning)
+    print("mtTkinter not found. Falling back to Tkinter.")
     from Tkinter import *
 
 import tkFileDialog
