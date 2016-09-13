@@ -9,7 +9,7 @@ try:
 except ImportError:
 
     # Warn and print
-    warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer is highly likely to crash :( . Please install mtTKinter.", RuntimeWarning)
+    # warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer is highly likely to crash :( . Please install mtTKinter.", RuntimeWarning)
     print("mtTkinter not found. Falling back to Tkinter.")
     from Tkinter import *
 
