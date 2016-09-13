@@ -413,8 +413,14 @@ class FFEA_viewer_control_window:
 	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
 	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
 	traj_fname = self.script.params.trajectory_out_fname
-	cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
-	cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
+	
+	try:
+		cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
+		cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
+	except:
+		cgo_fname = ""
+		cgo_index_fname = ""
+
 	if os.path.isfile(cgo_fname):
      		self.load_cgo(cgo_fname, cgo_index_fname)
 #		turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
