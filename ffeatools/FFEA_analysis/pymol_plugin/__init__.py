@@ -815,8 +815,12 @@ class FFEA_viewer_control_window:
                correct_frame[i] = 0
          # print "correct_frame: ", correct_frame
 
-         # Draw, because this spring exists
-         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
+         # Draw, if this spring exists
+	 try:
+	         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
+	 except:
+		 # This spring is not active as a conformation is not active
+	         continue
 
          # Axes for helix
          zax = springjoints[1] - springjoints[0]
