@@ -454,19 +454,35 @@ class FFEA_viewer_control_window:
 	# All subsequent frames will be readed, loaded, drawn and deleted until failure
 	#	
 
-	# Load header and skip first frame (we already have it from the node files)
-	traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
-	try:
-		failure = traj.skip_frame()
-	except:
-		failure = 1
-
 	# Draw first frame
 	self.num_frames = 1
 	self.draw_frame(self.num_frames - 1)
 
+	# Load header and skip first frame (we already have it from the node files)
+	try:
+		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+	except(IOError):
+		
+		# No trajectory exists for some reason. Return to safety
+		print "Could not find a trajectory object. Please make sure it exists and reload if necessary"
+		traj=None
+		failure = 1
+
+	
+	if traj != None:
+		try:
+			failure = traj.skip_frame()
+		except:
+			print "Trajectory incorrectly formatted, or contains zero frames."
+			failure = 1
+
 	# If necessary, stop now (broken traj or user asked for)
-	if traj.num_blobs == 0 or failure == 1 or self.display_flags['load_trajectory'] != 1:		
+	if failure == 1:
+		print "Trajectory could not be loaded. Returning to safety"		
+		return
+
+	if self.display_flags['load_trajectory'] != 1:
+		print "Requested not to load trajectory. Only first frame loaded from structure files."
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
