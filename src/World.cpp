@@ -3682,10 +3682,10 @@ void World::write_detailed_measurements_to_file(FILE *fout) {
 				fprintf(detailed_meas_out, "%-14.6e", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
 			}
 			if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs() * mesoDimensions::Energy) {
-				fprintf(detailed_meas_out, "%-14.6e", get_spring_field_energy(i, j));
+				fprintf(detailed_meas_out, "%-14.6e", get_spring_field_energy(i, j) * mesoDimensions::Energy);
 			}
 			if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads() * mesoDimensions::Energy) {
-				fprintf(detailed_meas_out, "%-14.6e", pc_solver.get_field_energy(i, j));
+				fprintf(detailed_meas_out, "%-14.6e", pc_solver.get_field_energy(i, j) * mesoDimensions::Energy);
 			}
 		}
 	}
