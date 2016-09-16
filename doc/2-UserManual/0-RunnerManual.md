@@ -26,6 +26,7 @@ The following pages describe the gory details to run FFEA simulations:
 - @subpage ffea_iFile
 - @subpage ffea_RB
 - @subpage shortRange
+- @subpage springs
 - @subpage kineticApproach
 - @subpage fmApproach
 - @subpage ioFiles
