@@ -206,13 +206,14 @@ class FFEA_topology:
 	def calc_CoM(self, node, mat):
 
 		CoM = np.array([0.0,0.0,0.0])
-
 		eindex = -1
+		total_mass = 0.0
 		for e in self.element:
 			eindex += 1
-			elmass = e.calc_volume(self) * mat[eindex][0]
-			CoM += elmass * (np.mean([node.pos[n] for n in e.n[0:4]]))
-		self.CoM = CoM * 1.0/num_elements
+			elmass = e.calc_volume(node) * mat.element[eindex][0]
+			total_mass += elmass			
+			CoM += elmass * (np.mean([node.pos[n] for n in e.n[0:4]], axis=0))
+		self.CoM = CoM * 1.0/total_mass
 		return self.CoM
 
 	def get_CoM(self):
