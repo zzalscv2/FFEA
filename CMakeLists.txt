@@ -99,7 +99,7 @@ endif(UNIX)
 # set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_NO_BOOST_CMAKE ON)
 # Check version:
-find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system )
+find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
 if (Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
   set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${Boost_LIBRARY_DIRS}")
@@ -109,6 +109,9 @@ else (Boost_FOUND)
    -- BOOST_ROOT or
    -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
 endif (Boost_FOUND)
+
+
+
 
 # 6 ### EIGEN3 #####
 # 6.1 # set up EIGEN3_HOME
@@ -183,7 +186,6 @@ endif(USE_FAST)
 #############################################
 ###### SOURCES TO BUILD AND INSTALL  ########
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
-
 
 #######################################
 ######## INSTALL THE FFEA TOOLS  ######
