@@ -18,7 +18,7 @@ parser.add_argument("--make_script", action="store_true", help="Whether to gener
 parser.add_argument("--out", action="store", help="Output filename")
 parser.add_argument("--cull", action="store", type=float, help="Cull all elements smaller than a certain volume")
 
-def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], density=1.5e3, shear_visc=1e-3, bulk_visc=1e-3, shear_mod=370e6, bulk_mod=111e7, dielectric=1.0, make_script=False, outfname=None):
+def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], density=1.5e3, shear_visc=1e-3, bulk_visc=1e-3, shear_mod=285714285.7, bulk_mod=1333333333.3, dielectric=1.0, make_script=False, outfname=None):
     """
     This script converts the .vol file from the initialisation routines into the necessary file formats for an FFEA simulation
     This means get linear element from vol and make 2nd order, store new faces, tets etc, build vdw, pin, bsites, stokes, move blob to centroid
