@@ -1,23 +1,29 @@
 import sys, os
 import FFEA_vdw, FFEA_binding_sites
+import argparse as _argparse
 
-if len(sys.argv) != 5:
-	sys.exit("Usage: python " + os.path.basename(os.path.abspath(sys.argv[0])) + " [INPUT .bsites] [INPUT .vdw] [OUTPUT .vdw] [vdw type]")
+parser = _argparse.ArgumentParser(description="FFEA Thin Trajectory")
+parser.add_argument("bsitefname", action="store", help="INPUT .bsites")
+parser.add_argument("vdwfname", action="store", help="INPUT .vdw)")
+parser.add_argument("vdwoutfname", action="store", help="OUTPUT .vdw")
+parser.add_argument("vdw_type", action="store", help="vdw type")
 
-# Get args
-bsitefname = sys.argv[1]
-vdwinfname = sys.argv[2]
-vdwoutfname = sys.argv[3]
-vdw_type = int(sys.argv[4])
+def make_bsites_vdwactive(bsite, vdwin, vdw_type):
+    # Set all bsites as vdw active
+    for s in bsites.bsites:
+        for f in s.face_index:
+            vdw.vdw_index[f] = vdw_type
+    
+    return vdw
 
-# Build objects
-bsites = FFEA_binding_sites.FFEA_binding_sites(bsitefname)
-vdw = FFEA_vdw.FFEA_vdw(vdwinfname)
+if sys.stdin.isatty():
+    args = parser.parse_args()
+    # Get args and build objects
 
-# Set all bsites as vdw active
-for s in bsites.bsites:
-	for f in s.face_index:
-		vdw.vdw_index[f] = vdw_type
+    # Build objects
+    bsites = FFEA_binding_sites.FFEA_binding_sites(args.bsitefname)
+    vdw = FFEA_vdw.FFEA_vdw(args.vdwinfname)
 
-# Write new file
-vdw.write_to_file(vdwoutfname)
+    # Write new file
+    out_vdw = make_bsites_vdwactive(bsites, vdw, args.vdw_type)
+    out_vdw.write_to_file(args.vdwoutfname)
