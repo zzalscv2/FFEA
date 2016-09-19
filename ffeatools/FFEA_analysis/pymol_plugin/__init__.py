@@ -1,5 +1,6 @@
 import sys, os, time
 import numpy as np
+import warnings
 
 from pymol import cmd
 from pymol.callback import Callback
@@ -824,17 +825,25 @@ class FFEA_viewer_control_window:
 
          # Axes for helix
          zax = springjoints[1] - springjoints[0]
-         xax = np.cross(zax, np.array([1.0,0]))
+         xax = np.cross(zax, np.array([1.0,0.0,0.0]))
          yax = np.cross(zax, xax)
 
-         xax = xax / np.linalg.norm(xax)
-         yax = yax / np.linalg.norm(yax)
+	 
+	 # I couldn't figure out how to catch the numpy 'RuntimeWarning' via a raise condition.
+	 # If you know how, please replace this with a try/except ZeroDivisionError. Thanks
+	 if np.linalg.norm(xax) != 0.0:
+		 xax = xax / np.linalg.norm(xax)
+		 yax = yax / np.linalg.norm(yax)
+	 else:
+		 # zax was in fact already [1,0,0]. Therefore...
+		 xax = np.array([0.0,1.0,0.0])	         
+		 yax = np.array([0.0,0.0,1.0])
 
          l = np.linalg.norm(zax)
-
          zax = zax / l
 
-         # Radius of helix (let original radius be 5A, poisson ration = 0.01)
+         # Radius of helix (let original radius be 5A, 'poisson ratio' = 0.01)
+	 # Make this some function of the scale in the future please. Thanks!
          r = 5 - 0.01 * (l - s.l)
 
          # We want 5 spins, say, so pitch:
