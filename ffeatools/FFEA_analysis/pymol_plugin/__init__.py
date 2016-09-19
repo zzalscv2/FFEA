@@ -849,15 +849,29 @@ class FFEA_viewer_control_window:
          step = (10 * np.pi) / 40
          obj = [ BEGIN, LINES, LINEWIDTH, 4.0 ]
          # obj.extend( [ COLOR, 192/255.0, 192/255.0, 192/255.0 ] )
+
+	 # Start must be different
+	 verts = springjoints[0]
+	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+	 verts = springjoints[0] + np.array([r * xax[i] for i in range(3)])
+	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+	 
+	 # Now the loops
          for i in range(40):
             tstart = step * i
             tend = step * (i + 1)
-            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
+            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[j] + r * np.sin(tstart) * yax[j] + c * tstart * zax[j] for j in range(3)])
             obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
+            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[j] + r * np.sin(tend) * yax[j] + c * tend * zax[j] for j in range(3)])
             obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
 
+	 # Now the end bit
+	 verts = springjoints[0] + np.array([r * xax[j] + c * tend * zax[j] for j in range(3)])
+	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+	 verts = springjoints[1]
+	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
          obj.append(END)
+
          cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), f + 1)
          
 
