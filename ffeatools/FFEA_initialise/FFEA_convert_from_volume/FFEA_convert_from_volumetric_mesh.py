@@ -8,17 +8,17 @@ import argparse as _argparse
 parser = _argparse.ArgumentParser(description="Convert .vol files to the standard gamut of FFEA files (.ffea, .top, .surf, .mat, etc)")
 parser.add_argument("--mesh", action="store", help="Input mesh file in .vol format")
 parser.add_argument("--density", action="store", type=float, default=1.5e3, help="Density of material (kg/m^3)")
-parser.add_argument("--shear_visc", action="store", type=float, default=1e-3, help="Shear viscosity of material (Pa.s)")
-parser.add_argument("--bulk_visc", action="store", type=float, default=1e-3, help="Bulk viscosity of material (Pa.s)")
-parser.add_argument("--shear_mod", action="store", type=float, default=370e6,help="Shear modulus of material (Pa)")
-parser.add_argument("--bulk_mod", action="store", type=float, default=111e7, help="Shear viscosity of material (Pa)")
-parser.add_argument("--stokes_radius", action="store", help="Stokes radius (for hydrodynamics)")
+parser.add_argument("--shear-visc", action="store", dest='shear_visc', type=float, default=1e-3, help="Shear viscosity of material (Pa.s)")
+parser.add_argument("--bulk-visc", action="store", dest='bulk_visc', type=float, default=1e-3, help="Bulk viscosity of material (Pa.s)")
+parser.add_argument("--shear-mod", action="store", dest='shear_mod', type=float, default=370e6,help="Shear modulus of material (Pa)")
+parser.add_argument("--bulk-mod", action="store", dest='bulk_mod', type=float, default=111e7, help="Shear viscosity of material (Pa)")
+parser.add_argument("--stokes-radius", action="store", dest='stokes_radius', help="Stokes radius (for hydrodynamics)")
 parser.add_argument("--dielec", action="store", type=float, default=1.0, help="Dielectric constant (unitless)")
-parser.add_argument("--make_script", action="store_true", help="Whether to generate a .ffea script file")
+parser.add_argument("--make-script", action="store_true", dest='make_script', help="Whether to generate a .ffea script file")
 parser.add_argument("--out", action="store", help="Output filename")
 parser.add_argument("--cull", action="store", type=float, help="Cull all elements smaller than a certain volume")
 
-def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], density=1.5e3, shear_visc=1e-3, bulk_visc=1e-3, shear_mod=370e6, bulk_mod=111e7, dielectric=1.0, make_script=False, outfname=None):
+def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], density=1.5e3, shear_visc=1e-3, bulk_visc=1e-3, shear_mod=285714285.7, bulk_mod=1333333333.3, dielectric=1.0, make_script=False, outfname=None):
     """
     This script converts the .vol file from the initialisation routines into the necessary file formats for an FFEA simulation
     This means get linear element from vol and make 2nd order, store new faces, tets etc, build vdw, pin, bsites, stokes, move blob to centroid
