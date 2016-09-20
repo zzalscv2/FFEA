@@ -340,12 +340,15 @@ class FFEA_script:
 
 	def read_springs_from_file(self, fname):
 
+		# Get scriptdir
+		scriptdir = os.path.dirname(fname)
+
 		fin = open(fname, "r")
 		lines = fin.readlines()
 		fin.close()
 		
 		spring_lines = extract_block_from_lines("springs", 0, lines)
-		
+
 		if len(spring_lines) == 0:
 			spring_lines = extract_block_from_lines("spring", 0, lines)
 			if len(spring_lines) == 0:
