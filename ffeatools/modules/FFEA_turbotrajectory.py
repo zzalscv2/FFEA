@@ -7,9 +7,11 @@ Created on Wed Aug 24 15:22:28 2016
 import numpy as np
 import FFEA_trajectory
 #from pymol import cmd
-from pymol.cgo import *
-import pymol.cgo as _cgo
-
+#from pymol.cgo import *
+#import pymol.cgo as _cgo
+from os import path
+import sys
+import re as _re
 
 class FFEA_turbotrajectory:
 
@@ -17,7 +19,7 @@ class FFEA_turbotrajectory:
         self.dimensions = 3
         return
     
-    def load_traj(self, path):
+    def load_traj(self, path): # convert trajectory object to turbotraj
         self.path = path.split(".")[0]
         if path.endswith("out"):
             traj = FFEA_trajectory.FFEA_trajectory(path)
@@ -70,14 +72,13 @@ class FFEA_turbotrajectory:
 
         return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
 
-    def create_cgo(self, script):
-	"""
-	This sript creates a cgo object that can be fed into pymol for each frame
-	and blob. The cgo object contains the vertices of each triangle in the mesh,
-	a normal vector, and some control codes. This method also creates an index
-	file listing the name of each cgo object and which frame it belongs to.
-	"""
-
+    def create_cgo(self, script, highlight_nodes=[]):
+        """
+        This sript creates a cgo object that can be fed into pymol for each frame
+        and blob. The cgo object contains the vertices of each triangle in the mesh,
+        a normal vector, and some control codes. This method also creates an index
+        file listing the name of each cgo object and which frame it belongs to.
+        """
         def setup(self):
             frames = range(len(self.turbotraj[0][0]))
             surfs = []
@@ -115,3 +116,186 @@ class FFEA_turbotrajectory:
         cgo_blob_index_array = np.array(self.cgo_blob_index)
         np.save(self.path+"_cgo", cgo_array)
         np.save(self.path+"_cgoindex", cgo_blob_index_array)
+
+    def load_ftj_header(self, fname): # load header data from ftj file and create empty turbotraj
+            
+        # Get a file object and store it
+        try:
+            self.ftj = open(fname, "r")
+
+        except(IOError):
+            raise IOError("\tFailed to open '" + fname + "' for reading.")
+
+        # Now, read only the information from the top of the file
+
+        # Title
+        line = self.ftj.readline().strip()
+        if line != "FFEA_trajectory_file":
+            raise IOError("\tExpected to read 'FFEA_trajectory_file' but read '" + line + "'. This may not be an FFEA trajectory file.")
+
+        self.ftj.readline()
+        self.ftj.readline()
+
+        # num_blobs
+        try:
+            #self.blob = [[FFEA_trajectory.FFEA_traj_blob(self.num_nodes[i][j]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
+
+            line = self.ftj.readline()
+            self.num_blobs = int(line.split()[3])
+
+        except(IndexError, ValueError):
+            raise IOError("\tExpected to read 'Number of Blobs %d' but read '" + line + "'.")
+
+        # num_conformations
+        try:
+            line = self.ftj.readline()
+            sline = line.split()[3:]
+            self.num_conformations = [int(s) for s in sline]
+
+        except(IndexError, ValueError):
+            raise IOError("\tExpected to read 'Number of Conformations %d %d ....%d' but read '" + line + "'.")
+
+        # num_nodes
+        self.num_nodes = [[0 for i in range(self.num_conformations[j])] for j in range(self.num_blobs)]
+        for i in range(self.num_blobs):
+            try:
+                line = self.ftj.readline()
+                sline = line.split()[2:]
+
+                for j in range(self.num_conformations[i]):
+                    self.num_nodes[i][j] = int(sline[4 * j + 3])
+
+            except(IndexError, ValueError):
+                raise IOError("\tExpected to read 'Blob " + str(i) + ": Conformation 0 Nodes %d Conformation 1 Nodes %d....Conformation " + str(self.num_conformations[i] - 1) + " Nodes %d' but read '" + line + "'.")
+
+        # final whitespace until '*' and save the file pos
+        while(self.ftj.readline().strip() != "*"):
+            pass
+
+        self.fpos = self.ftj.tell()
+        
+        # cheeky way of getting the number of frames
+        self.ftj.seek(0)
+        asterisks = self.ftj.read().count("*")
+        self.num_frames = (asterisks-1)/2 # 1 frame for every 2 asterisks, plus an extra one at the end
+        
+        # Finally, build the objects
+        self.turbotraj = np.empty([self.num_blobs, self.num_conformations[0], self.num_frames, self.num_nodes[0][0], self.dimensions])
+        
+    def populate_turbotraj_from_ftj(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0): # load the contents of a .ftj trajectory into a turbotraj object
+    
+        def skip_line(ftj, n):
+            for i in range(n):
+                ftj.readline()
+                
+        def match_line(line):
+            line_contents = line.split(',')
+            line_contents_formatted = []
+            for thing in line_contents:
+                chars = _re.findall("[0-9]", thing)
+                num = ""
+                for char in chars:
+                    num = num+char
+                line_contents_formatted.append(int(num))
+            try:
+                return line_contents_formatted[0], line_contents_formatted[1], line_contents_formatted[2] # blob, conf, step
+            except IndexError:
+                raise IndexError("Expected line contents to contain 3 items, got "+str(line_contents_formatted)+" of length "+str(len(line_contents_formatted)))
+            
+        def convert_step_to_frame(self, step):
+            if step > 1:
+                step += -1
+                step = step/self.step
+                return step + 1
+            else:
+                return step
+                    
+
+        print("Loading FFEA trajectory file...")
+
+        # Test file exists
+        if not path.exists(fname):
+            raise IOError("No trajectory found at that location")
+
+        # Header first, for sure
+        self.load_ftj_header(fname)
+
+        try:
+            self.ftj = open(fname, "r")
+        except(IOError):
+            raise IOError("\tFailed to open '" + fname + "' for reading.")
+            
+        
+        # get step - find the 2nd and 3rd frames, get the step difference
+        seek = True
+        steps = []
+        while seek:
+            line = self.ftj.readline()
+            if line.startswith('Blob') and "->" not in line and "Nodes" not in line: # Only lines with blob, conf, step
+                blob, conf, step = match_line(line) # regex the line to get the values
+                steps.append(step)
+            if len(steps) >= 3:
+                break
+            
+        self.step = steps[2] - steps[1]
+        
+        print("Steps calculated successfully...")
+        print("Loading trajectory...")
+            
+        self.ftj.seek(0)
+        
+        seek = True
+        while seek:
+            line = self.ftj.readline()
+            if line.startswith('Blob') and "->" not in line and "Nodes" not in line: #Only lines with blob, conf, step
+                blob, conf, step = match_line(line) # regex the line to get the values
+                self.ftj.readline() # skip the word 'DYNAMIC'
+                for node in range(self.num_nodes[0][0]): # num_nodes[0][0] is the number of nodes, where each node occupies one line
+                    line_node = self.ftj.readline()
+                    frame = convert_step_to_frame(self, step)
+                    self.turbotraj[blob][conf][frame][node][:] = np.fromstring(line_node, dtype=float, sep=' ')[0:3]
+                    # fill the contents of the node with the first 3 numbers in the line, converted from a string. first 3 numbers = ignore second order elements
+            if line == "": #empty string (no /n) at eof
+                break
+                    
+        print("Trajectory loaded.")
+                
+                
+            
+    
+class _cgo:
+    POINTS             = 0.0
+    LINES              = 1.0
+    LINE_LOOP          = 2.0
+    LINE_STRIP         = 3.0
+    TRIANGLES          = 4.0
+    TRIANGLE_STRIP     = 5.0
+    TRIANGLE_FAN       = 6.0
+    STOP               =  0.0
+    NULL               =  1.0
+    BEGIN              =  2.0
+    END                =  3.0
+    VERTEX             =  4.0
+    NORMAL             =  5.0
+    COLOR              =  6.0
+    SPHERE             =  7.0
+    TRIANGLE           =  8.0
+    CYLINDER           =  9.0
+    LINEWIDTH          = 10.0
+    WIDTHSCALE         = 11.0
+    ENABLE             = 12.0
+    DISABLE            = 13.0
+    SAUSAGE            = 14.0
+    CUSTOM_CYLINDER    = 15.0
+    DOTWIDTH           = 16.0
+    ALPHA_TRIANGLE     = 17.0
+    ELLIPSOID          = 18.0
+    FONT               = 19.0
+    FONT_SCALE         = 20.0
+    FONT_VERTEX        = 21.0
+    FONT_AXES          = 22.0
+    CHAR               = 23.0
+    ALPHA              = 25.0
+    QUADRIC            = 26.0 # NOTE: Only works with ellipsoids and disks
+    CONE               = 27.0 
+    LIGHTING           = float(0x0B50)

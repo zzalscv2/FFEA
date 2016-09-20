@@ -1,5 +1,6 @@
 import sys, os, time
 import numpy as np
+import warnings
 
 from pymol import cmd
 from pymol.callback import Callback
@@ -10,7 +11,7 @@ try:
 except ImportError:
 
     # Warn and print
-    warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer is highly likely to crash :( . Please install mtTKinter.", RuntimeWarning)
+    # warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer is highly likely to crash :( . Please install mtTKinter.", RuntimeWarning)
     print("mtTkinter not found. Falling back to Tkinter.")
     from Tkinter import *
 
@@ -414,8 +415,14 @@ class FFEA_viewer_control_window:
 	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
 	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
 	traj_fname = self.script.params.trajectory_out_fname
-	cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
-	cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
+	
+	try:
+		cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
+		cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
+	except:
+		cgo_fname = ""
+		cgo_index_fname = ""
+
 	if os.path.isfile(cgo_fname):
      		self.load_cgo(cgo_fname, cgo_index_fname)
 #		turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
@@ -455,19 +462,35 @@ class FFEA_viewer_control_window:
 	# All subsequent frames will be readed, loaded, drawn and deleted until failure
 	#	
 
-	# Load header and skip first frame (we already have it from the node files)
-	traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
-	try:
-		failure = traj.skip_frame()
-	except:
-		failure = 1
-
 	# Draw first frame
 	self.num_frames = 1
 	self.draw_frame(self.num_frames - 1)
 
+	# Load header and skip first frame (we already have it from the node files)
+	try:
+		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+	except(IOError):
+		
+		# No trajectory exists for some reason. Return to safety
+		print "Could not find a trajectory object. Please make sure it exists and reload if necessary"
+		traj=None
+		failure = 1
+
+	
+	if traj != None:
+		try:
+			failure = traj.skip_frame()
+		except:
+			print "Trajectory incorrectly formatted, or contains zero frames."
+			failure = 1
+
 	# If necessary, stop now (broken traj or user asked for)
-	if traj.num_blobs == 0 or failure == 1 or self.display_flags['load_trajectory'] != 1:		
+	if failure == 1:
+		print "Trajectory could not be loaded. Returning to safety"		
+		return
+
+	if self.display_flags['load_trajectory'] != 1:
+		print "Requested not to load trajectory. Only first frame loaded from structure files."
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
@@ -794,22 +817,30 @@ class FFEA_viewer_control_window:
                correct_frame[i] = 0
          # print "correct_frame: ", correct_frame
 
-         # Draw, because this spring exists
-         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
+         # Draw, if this spring exists
+	 try:
+	         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
+	 except:
+		 # This spring is not active as a conformation is not active
+	         continue
 
          # Axes for helix
          zax = springjoints[1] - springjoints[0]
-         xax = np.cross(zax, np.array([1.0,0]))
-         yax = np.cross(zax, xax)
+	 l = np.linalg.norm(zax)
+	 zax /= l
 
-         xax = xax / np.linalg.norm(xax)
-         yax = yax / np.linalg.norm(yax)
+         xax = np.cross(np.array([0.0,1.0,0.0]), zax)
+	 if np.linalg.norm(xax) == 0.0:
+	 	xax = np.array([0.0,0.0,1.0])
+		yax = np.array([1.0,0.0,0.0])
+	 else:
+		xax /= np.linalg.norm(xax)
+		yax = np.cross(zax, xax)
+		yax /= np.linalg.norm(yax)
 
-         l = np.linalg.norm(zax)
 
-         zax = zax / l
-
-         # Radius of helix (let original radius be 5A, poisson ration = 0.01)
+         # Radius of helix (let original radius be 5A, 'poisson ratio' = 0.01)
+	 # Make this some function of the scale in the future please. Thanks!
          r = 5 - 0.01 * (l - s.l)
 
          # We want 5 spins, say, so pitch:
@@ -819,15 +850,29 @@ class FFEA_viewer_control_window:
          step = (10 * np.pi) / 40
          obj = [ BEGIN, LINES, LINEWIDTH, 4.0 ]
          # obj.extend( [ COLOR, 192/255.0, 192/255.0, 192/255.0 ] )
+
+	 # Start must be different
+	 verts = springjoints[0]
+	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+	 verts = springjoints[0] + np.array([r * xax[i] for i in range(3)])
+	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+	 
+	 # Now the loops
          for i in range(40):
             tstart = step * i
             tend = step * (i + 1)
-            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
+            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[j] + r * np.sin(tstart) * yax[j] + c * tstart * zax[j] for j in range(3)])
             obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
+            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[j] + r * np.sin(tend) * yax[j] + c * tend * zax[j] for j in range(3)])
             obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
 
+	 # Now the end bit
+	 verts = springjoints[0] + np.array([r * xax[j] + c * tend * zax[j] for j in range(3)])
+	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+	 verts = springjoints[1]
+	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
          obj.append(END)
+
          cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), f + 1)
          
 

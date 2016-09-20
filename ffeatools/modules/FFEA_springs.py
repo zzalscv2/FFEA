@@ -22,7 +22,7 @@ class FFEA_springs:
 	
 		# File format?
 		base, ext = path.splitext(fname)
-		if ext == ".springs":
+		if ext == ".springs" or ext == ".spring":
 			try:
 				self.load_springs(fname)
 			except:
