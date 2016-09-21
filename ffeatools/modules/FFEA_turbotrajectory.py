@@ -178,9 +178,11 @@ class FFEA_turbotrajectory:
         self.ftj.seek(0)
         asterisks = self.ftj.read().count("*")
         self.num_frames = (asterisks-1)/2 # 1 frame for every 2 asterisks, plus an extra one at the end
+        self.num_nodes = self.num_nodes[0][0] # not sure why it's trapped in those lists
+        self.num_conformations = max(self.num_conformations) # get max number of conformations
         
         # Finally, build the objects
-        self.turbotraj = np.empty([self.num_blobs, self.num_conformations[0], self.num_frames, self.num_nodes[0][0], self.dimensions])
+        self.turbotraj = np.empty([self.num_blobs, self.num_conformations, self.num_frames, self.num_nodes, self.dimensions])
         
     def populate_turbotraj_from_ftj(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0): # load the contents of a .ftj trajectory into a turbotraj object
     
@@ -193,20 +195,16 @@ class FFEA_turbotrajectory:
             line_contents_formatted = []
             for thing in line_contents:
                 chars = _re.findall("[0-9]", thing)
-                num = ""
-                for char in chars:
-                    num = num+char
+                num = "".join(chars)
                 line_contents_formatted.append(int(num))
             try:
                 return line_contents_formatted[0], line_contents_formatted[1], line_contents_formatted[2] # blob, conf, step
             except IndexError:
                 raise IndexError("Expected line contents to contain 3 items, got "+str(line_contents_formatted)+" of length "+str(len(line_contents_formatted)))
             
-        def convert_step_to_frame(self, step):
+        def convert_step_to_frame(steps_per_frame, step):
             if step > 1:
-                step += -1
-                step = step/self.step
-                return step + 1
+                return ((step-1)/steps_per_frame)+1
             else:
                 return step
                     
@@ -221,7 +219,7 @@ class FFEA_turbotrajectory:
         self.load_ftj_header(fname)
 
         try:
-            self.ftj = open(fname, "r")
+            ftj = open(fname, "r")
         except(IOError):
             raise IOError("\tFailed to open '" + fname + "' for reading.")
             
@@ -230,7 +228,7 @@ class FFEA_turbotrajectory:
         seek = True
         steps = []
         while seek:
-            line = self.ftj.readline()
+            line = ftj.readline()
             if line.startswith('Blob') and "->" not in line and "Nodes" not in line: # Only lines with blob, conf, step
                 blob, conf, step = match_line(line) # regex the line to get the values
                 steps.append(step)
@@ -238,25 +236,34 @@ class FFEA_turbotrajectory:
                 break
             
         self.step = steps[2] - steps[1]
+        steps_per_frame = self.step
         
         print("Steps calculated successfully...")
         print("Loading trajectory...")
+        
+        turbotraj = self.turbotraj #faster to access a local object
             
-        self.ftj.seek(0)
+        ftj.seek(0)
         
         seek = True
         while seek:
-            line = self.ftj.readline()
+            line = ftj.readline()
             if line.startswith('Blob') and "->" not in line and "Nodes" not in line: #Only lines with blob, conf, step
                 blob, conf, step = match_line(line) # regex the line to get the values
-                self.ftj.readline() # skip the word 'DYNAMIC'
-                for node in range(self.num_nodes[0][0]): # num_nodes[0][0] is the number of nodes, where each node occupies one line
-                    line_node = self.ftj.readline()
-                    frame = convert_step_to_frame(self, step)
-                    self.turbotraj[blob][conf][frame][node][:] = np.fromstring(line_node, dtype=float, sep=' ')[0:3]
+                frame = convert_step_to_frame(steps_per_frame, step)
+                ftj.readline() # skip the word 'DYNAMIC'
+                nodes_range = xrange(self.num_nodes)
+                for node in nodes_range: #  each node occupies one line
+                    #self.turbotraj[blob][conf][frame][node] = np.fromstring(self.ftj.readline(), dtype=float, sep=' ')[0:3]
+                    node_line = ftj.readline().split()
+                    for i in [0,1,2]: # 3 points
+                        turbotraj[blob][conf][frame][node][i] = float(node_line[i])
                     # fill the contents of the node with the first 3 numbers in the line, converted from a string. first 3 numbers = ignore second order elements
             if line == "": #empty string (no /n) at eof
                 break
+
+        self.ftj =  ftj
+        self.turbotraj = turbotraj
                     
         print("Trajectory loaded.")
                 
