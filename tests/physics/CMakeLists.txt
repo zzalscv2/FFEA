@@ -13,4 +13,5 @@ file (COPY cuboid_flat cuboid_flat_structure sphere_63_120_structure sphere_63_1
 add_subdirectory(sphere_63_120_mass)
 add_subdirectory(sphere_63_120_nomass)
 add_subdirectory(sphere_63_120_nomass_restart)
+add_subdirectory(sphere_63_120_nomass_two_vdw-preComp)
 add_subdirectory(steric_cubes_w_springs)
