@@ -1374,7 +1374,7 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 					for(j = 0; j < 3; ++j) {
 						val = (1.0 / (2 * dx)) * (elastic_force[1][4 * j + b] - elastic_force[0][4 * j + b]);
 						
-						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,x1,x2...xn,y0,y1.....yn....zn
+						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,y0,z0,x1,y1,z1...xn,yn,zn
 						//row = num_linear_nodes * i + global_a;
 						//column = num_linear_nodes * j + global_b;
 						row = 3 * global_a_lin + i;
