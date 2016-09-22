@@ -53,9 +53,27 @@ data = np.array(data)
 #row_labels = list('01234')
 column_labels = []
 row_labels = []
-for i in range(num_modes):
-	row_labels.append(str(i))
-	column_labels.append(str((num_modes - 1) - i))
+#xticks = []	# cols
+#yticks = []	# rows
+
+# We only want 11 labels if num_modes > 20!
+
+if num_modes <= 20:
+	for i in range(num_modes):
+		row_labels.append(str(i))
+		#column_labels.append(str((num_modes - 1) - i))
+		column_labels.append(str(i))
+else:
+	count = 0
+	for i in range(num_modes):
+		
+		if i % int(num_modes / 10.0) == 0:
+			row_labels.append(int((count / 10.0) * num_modes))
+			#column_labels.append(int((1 - (count / 10.0)) * num_modes))
+			column_labels.append(int((count / 10.0) * num_modes))
+			count += 1
+		else:
+			pass
 
 # Get figure properties
 fig, ax = plt.subplots(figsize=(13,10))
@@ -66,15 +84,22 @@ heatmap.set_clim([0, 1])
 
 # And 'plot' colorbar
 cbar = plt.colorbar(heatmap, ticks=[i / 10.0 for i in range(11)])
+	
+# All tick
+if num_modes <= 20:
+	ax.set_xticks(np.arange(data.shape[0]) + 0.5, minor=False)
+	ax.set_yticks(np.arange(data.shape[1], 0, -1) - 0.5, minor=False)
+else:
+	ax.set_xticks(np.array([int((i / 10.0) * num_modes) for i in range(11)]), minor=False)
+	ax.set_yticks(np.array([int((1 - (i / 10.0)) * num_modes) for i in range(11)]), minor=False)
 
-# All ticks
-ax.set_xticks(np.arange(data.shape[1]) + 0.5, minor=False)
-ax.set_yticks(np.arange(data.shape[0]) + 0.5, minor=False)
-
+# Labels
+ax.set_yticklabels(row_labels, fontsize=18)
+ax.set_xticklabels(column_labels, fontsize=18)
 
 # And now titles and stuff
-ax.set_xticklabels(row_labels, fontsize=18)
-ax.set_yticklabels(column_labels, fontsize=18)
+ax.set_xlim(0, num_modes)
+ax.set_ylim(0, num_modes)
 
 ax.set_title("Eigenvector Dot Product Array", fontsize=24)
 ax.set_xlabel("Eigensystem 1 Modes", fontsize=18)

@@ -1,12 +1,22 @@
 import sys, os
 import numpy as np
-if len(sys.argv) != 4:
-	sys.exit("Usage: python " + sys.argv[0] + " [INPUT .evecs file 1] [INPUT .evecs file 2] [OUTPUT fname]")
+import copy
+
+if len(sys.argv) < 4:
+	sys.exit("Usage: python " + sys.argv[0] + " [INPUT .evecs file 1] [INPUT .evecs file 2] [OUTPUT fname] OPTIONAL{[EIG SWITCH (x,y)]}")
 
 infile = [sys.argv[1], sys.argv[2]]
 out_fname = sys.argv[3]
 evec_fname = [[],[]]
 evecs = [[],[]]
+
+eig_switch = []
+if len(sys.argv) > 4:
+	for arg in sys.argv[4:]:
+		try:
+			eig_switch.append([int(a) for a in arg.split(",")])
+		except:
+			sys.exit("EIG SWITCH input error. Pairs of integer values separated by columns please")
 
 # Get motion eigenvectors
 print("Reading eigenvectors from inputs...")
@@ -14,11 +24,23 @@ for i in range(2):
 	fin = open(infile[i])
 	for line in fin.readlines():
 		sline = line.split()
-		evecs[i].append([float(s) for s in sline])
+		evecs[i].append(np.array([float(s) for s in sline]))
 	fin.close()
-	evecs[i] = np.array(evecs[i])
+	#evecs[i] = np.array(evecs[i])
 
 print("done!")
+
+# In one of these, switch the eigenvectors of necessary
+if eig_switch != []:
+	for e in eig_switch:
+		try:
+			e1 = copy.copy(evecs[0][e[0]])
+			e2 = copy.copy(evecs[0][e[1]])
+		except:
+			sys.exit("EIG SWITCH values greater than number of eigenvectors present. Please try again")
+
+		evecs[0][e[0]] = e2
+		evecs[0][e[1]] = e1
 
 # Do some dot products!
 print("Building the Eigenvectors Dot Product Matrix...")
