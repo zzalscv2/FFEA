@@ -2,7 +2,7 @@ import sys, os
 import FFEA_trajectory, FFEA_pdb
 
 if len(sys.argv) < 8:
-	sys.exit("Usage: python " + sys.argv[0] + " -traj [FFEA trajectory (.out)] -scale [FFEA scale (inverts to work in metres)] -out [OUT fname] -format[mdcrd/pdb] -blob [blob_number (optional)] -frames [num_frames (optional)]")
+	sys.exit("Usage: python " + sys.argv[0] + " -traj [FFEA trajectory (.ftj)] -scale [FFEA scale (inverts to work in metres)] -out [Output fname] -format[mdcrd/pdb] -blob [blob_number (optional)] -frames [num_frames (optional)]")
 
 # Get arguments
 scriptdir = os.path.dirname(os.path.abspath(sys.argv[0])) + "/"
@@ -56,7 +56,7 @@ if blob_num != -1:
 	traj.set_single_blob(blob_num)
 
 # Extract first frame from trajectory
-first_frame_fname = out_basename + "_frame0.out"
+first_frame_fname = out_basename + "_frame0.ftj"
 traj.write_to_file(first_frame_fname, frames=[0,1])
 
 # Convert first frame to a pseudo .pdb file
