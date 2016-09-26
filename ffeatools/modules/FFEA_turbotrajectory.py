@@ -118,6 +118,8 @@ class FFEA_turbotrajectory:
         np.save(self.path+"_cgoindex", cgo_blob_index_array)
 
     def load_ftj_header(self, fname): # load header data from ftj file and create empty turbotraj
+    
+        self.path = fname.split(".")[0]
             
         # Get a file object and store it
         try:
