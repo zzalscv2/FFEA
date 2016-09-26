@@ -128,7 +128,7 @@ class FFEA_viewer_control_window:
 
      SolidModes = [(0, "Plain Solid", 1),\
                    (1, "Material", 2),\
-                   (3, "No Solid", 0)] 
+                   (2, "No Solid", 0)] 
      for col, text, mode in SolidModes:
         check_button_show_solid = Radiobutton(display_flags_frame, text=text, variable=self.show_solid, value=mode, command=lambda:self.update_display_flags("show_solid", val=self.show_solid.get()))
         check_button_show_solid.grid(row=2, column=col+1, sticky=W) # first col is label
@@ -182,7 +182,12 @@ class FFEA_viewer_control_window:
        check_button_do_load_trajectory = Radiobutton(display_flags_frame, text=text, variable=self.do_load_trajectory, value=mode, command=lambda:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get()))
        check_button_do_load_trajectory.grid(row=6, column=mode, sticky=W)
   
-
+     label_traj= Label(display_flags_frame, text="Highlight element(s):")
+     label_traj.grid(row=7, column=0, sticky=E)
+     
+     self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
+     highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
+     highlight_entry_box.grid(row=7, column=1, sticky=W)
 
      # flags
      self.animate = False
@@ -432,7 +437,7 @@ class FFEA_viewer_control_window:
 			print("No cached traj found at "+cgo_fname+", generating one...")
 			turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
 			turbotraj.populate_turbotraj_from_ftj(self.script.params.trajectory_out_fname)
-			turbotraj.create_cgo(self.script)
+			turbotraj.create_cgo(self.script, self.display_flags)
 			turbotraj.dump_cgo()
 		self.load_cgo(cgo_fname, cgo_index_fname)
 		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
@@ -707,6 +712,7 @@ class FFEA_viewer_control_window:
 		'show_box': 0,
 		'load_trajectory': 1, ## PYMOL OK
 		'show_inverted': 0,
+		'highlight': '',
       'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
 
 	self.selected_index = 0
