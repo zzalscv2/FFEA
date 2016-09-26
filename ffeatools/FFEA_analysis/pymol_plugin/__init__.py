@@ -176,7 +176,8 @@ class FFEA_viewer_control_window:
      ## # Trajectory Radiobutton # #
      TrjModes = [("Trajectory", 1), \
                  ("System (Into box)", 2), \
-                 ("System (Plainly)",3)]
+                 ("System (Plainly)",3), \
+                 ("CGO", 4)]
      for text, mode in TrjModes:
        check_button_do_load_trajectory = Radiobutton(display_flags_frame, text=text, variable=self.do_load_trajectory, value=mode, command=lambda:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get()))
        check_button_do_load_trajectory.grid(row=6, column=mode, sticky=W)
@@ -274,9 +275,9 @@ class FFEA_viewer_control_window:
 	bl = self.script.blob
 	
 	# See whether or not to remove traj file (make this better later i.e. rolling loading by storing file pointers)
-	if self.display_flags['load_trajectory'] != 1:
+	if self.display_flags['load_trajectory'] == 2 or 3:
 		print "Requested not to load the trajectory"
-		p.trajectory_out_fname = None
+		#p.trajectory_out_fname = None
 	if self.display_flags['load_trajectory'] == 3:
 		print "Requested to show the coordinates as they are in the .node(s) file(s)"
 		print "... equivalently, setting < move_into_box = 0 >"
@@ -424,11 +425,17 @@ class FFEA_viewer_control_window:
 	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
 	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
 	traj_fname = self.script.params.trajectory_out_fname
-	turbotraj_fname = traj_fname.split(".")[0]+".npy"
-	if os.path.isfile(turbotraj_fname):
-		turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
-		turbotraj.load_traj(turbotraj_fname)
-		self.load_turbotrajectory(turbotraj)
+	cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
+	cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
+	if self.display_flags['load_trajectory'] == 4:
+		if os.path.isfile(cgo_fname) == False:
+			print("No cached traj found at "+cgo_fname+", generating one...")
+			turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
+			turbotraj.populate_turbotraj_from_ftj(self.script.params.trajectory_out_fname)
+			turbotraj.create_cgo(self.script)
+			turbotraj.dump_cgo()
+		self.load_cgo(cgo_fname, cgo_index_fname)
+		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
 	else:
 		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
 		self.load_trajectory_thread.start()
@@ -458,6 +465,13 @@ class FFEA_viewer_control_window:
 	bz = node2[2] - node1[2]
 
 	return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
+
+  def load_cgo(self, cgo_fname, cgo_index_fname):
+      cgo = np.load(cgo_fname)
+      cgo_index = np.load(cgo_index_fname)
+      print("Loading the cgo object...")
+      for frame in range(len(cgo_index)):
+          cmd.load_cgo(cgo[frame], cgo_index[frame][0], str(cgo_index[frame][1]))
 
   def load_turbotrajectory(self, turbotraj):
       
