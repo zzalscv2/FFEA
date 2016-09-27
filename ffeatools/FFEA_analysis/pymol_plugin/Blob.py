@@ -15,7 +15,25 @@ from pymol.vfont import plain
 
 # from pymol.callback import Callback
 
-
+def get_vdw_colour(index):
+	if index == -1:
+		return [0.5,0.5,0.5]
+	elif index == 0:
+		return [0.0,1.0,0.0]
+	elif index == 1:
+		return [1.0,0.0,0.0]
+	elif index == 2:
+		return [0.0,0.0,1.0]
+	elif index == 3:
+		return [1.0,1.0,0.0]
+	elif index == 4:
+		return [0.0,1.0,1.0]
+	elif index == 5:
+		return [1.0,0.0,1.0]
+	elif index == 6:
+		return [1.0,0.0,1.0]
+	elif index == 7:
+		return [0.5,0.0,0.0]
 class Blob:
 	
 	def __init__(self, energy_thresh=1.06e6):
@@ -685,6 +703,11 @@ class Blob:
 				
 		                        norm = self.calc_normal_2(n1, n2, n3)
 
+					if display_flags['show_vdw'] == 1:
+						if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
+							bc = get_vdw_colour(self.vdw.index[f])
+							sol.extend([ COLOR, bc[0], bc[1], bc[2] ])
+
 		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
 		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
@@ -692,6 +715,8 @@ class Blob:
 
 			elif display_flags['show_solid'] == 2:
 
+				if display_flags['show_vdw'] == 1:
+					print "Sorry, can't draw material properties and vdw at same time. Defaulting to material."
 				# material drawing
 				
 				# Get param
