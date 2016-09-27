@@ -1,17 +1,15 @@
 import sys, os, time
 import numpy as np
-import warnings
 
 from pymol import cmd
 from pymol.callback import Callback
 
+import warnings
+
 try:
     from mtTkinter import *
 except ImportError:
-
-    # Warn and print
-    # warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer is highly likely to crash :( . Please install mtTKinter.", RuntimeWarning)
-    print("mtTkinter not found. Falling back to Tkinter.")
+    warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer will now crash. Please install mtTKinter.", RuntimeWarning)
     from Tkinter import *
 
 import tkFileDialog
@@ -97,7 +95,7 @@ class FFEA_viewer_control_window:
 
  
      # # Display flags frame
-     display_flags_frame = Frame(self.root, relief=SUNKEN, bd=1)
+     display_flags_frame = Frame(self.root)
      display_flags_frame.pack(anchor=CENTER, expand=True)
 
 
@@ -108,50 +106,61 @@ class FFEA_viewer_control_window:
      text_button_system_name.grid(row=0, column=1, sticky=W)
      
      random_name_button = Button(display_flags_frame, text="Random Name", command=lambda:self.new_system_name());
-     random_name_button.grid(row=0, column=2, sticky=E)
+     random_name_button.grid(row=0, column=2, sticky=W)
+
+     label_display = Label(display_flags_frame, text="Display:")
+     label_display.grid(row=1, column=0, sticky=E)
 
      # show springs: 
      check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
-     check_button_show_springs.grid(row=1, column=0)
+     check_button_show_springs.grid(row=1, column=1, sticky=W)
 
 
      # show pinned_nodes: 
      check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
-     check_button_show_pinned.grid(row=1, column=1)
+     check_button_show_pinned.grid(row=1, column=2, sticky=W)
  
 
      # # show solid:
+
+     label_solid = Label(display_flags_frame, text="Show Solid:")
+     label_solid.grid(row=2, column=0, sticky=E)
+
      SolidModes = [(0, "Plain Solid", 1),\
                    (1, "Material", 2),\
-                   (3, "No Solid", 0)] 
+                   (2, "No Solid", 0)] 
      for col, text, mode in SolidModes:
         check_button_show_solid = Radiobutton(display_flags_frame, text=text, variable=self.show_solid, value=mode, command=lambda:self.update_display_flags("show_solid", val=self.show_solid.get()))
-        check_button_show_solid.grid(row=2, column=col)
+        check_button_show_solid.grid(row=2, column=col+1, sticky=W) # first col is label
 
      # Selectable box for material param
      spinbox_material_param = Spinbox(display_flags_frame, textvariable=self.matparam, values=("Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus"), validate="focus", validatecommand=lambda:self.update_display_flags("matparam", val=-2, text=self.matparam.get()))
-     spinbox_material_param.grid(row=2, column=2)
+     spinbox_material_param.grid(row=2, column=2, sticky=W)
 
      # # show mesh:
+
+     label_mesh = Label(display_flags_frame, text="Show Mesh:")
+     label_mesh.grid(row=3, column=0, sticky=E)
+
      MeshModes = [(0, "Surface Mesh", 2),\
                   (1, "Whole Mesh", 1),\
                   (2, "No Mesh", 0)]
      for col, text, mode in MeshModes:
         check_button_show_mesh = Radiobutton(display_flags_frame, text=text, variable=self.show_mesh, value=mode, command=lambda:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
-        check_button_show_mesh.grid(row=3, column=col)
+        check_button_show_mesh.grid(row=3, column=col+1, sticky=W) # first col is label
 
+     label_mesh= Label(display_flags_frame, text="Show Indices:")
+     label_mesh.grid(row=4, column=0, sticky=E)
 
      # # show Numbers:
-     IndexModes = [(4, 0, "Node Indices", 1),\
-                   (4, 1, "Node Indices (Linear)", 2),\
-                   (4, 2, "Element Indices", 3),\
-                   (5, 1, "Face Indices", 4),\
-                   (5, 2, "No Indices", 0)]
-     for row, col, text, mode in IndexModes:
-        check_button_show_node_numbers = Radiobutton(display_flags_frame, text=text, variable=self.show_numbers, value=mode, command=lambda:self.update_display_flags("show_numbers", val=self.show_numbers.get()))
-        check_button_show_node_numbers.grid(row=row, column=col)
 
+     self.show_numbers = StringVar(display_flags_frame)
+     self.show_numbers.set("No Indices")
+     index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
+     index_option.grid(row=4, column=1, sticky=W)
 
+     label_box= Label(display_flags_frame, text="Show Box:")
+     label_box.grid(row=5, column=0, sticky=E)
  
      # Outer simulation box
      BoxModes = [(0, "Simulation Box (outline)", 1),\
@@ -159,19 +168,26 @@ class FFEA_viewer_control_window:
                  (2, "No Box", 0)]
      for col, text, mode in BoxModes:
        check_button_show_box = Radiobutton(display_flags_frame, text=text, variable=self.show_box, value=mode, command=lambda:self.update_display_flags("show_box", val=self.show_box.get()))
-       check_button_show_box.grid(row=6, column=col)
+       check_button_show_box.grid(row=5, column=col+1, sticky=W) # first col is label
 
-
+     label_traj= Label(display_flags_frame, text="Load:")
+     label_traj.grid(row=6, column=0, sticky=E)
 
      ## # Trajectory Radiobutton # #
-     TrjModes = [("Load Trajectory", 1), \
-                 ("Load System (Into box)", 2), \
-                 ("Load System (Plainly)",3)]
+     TrjModes = [("Trajectory", 1), \
+                 ("System (Into box)", 2), \
+                 ("System (Plainly)",3), \
+                 ("CGO", 4)]
      for text, mode in TrjModes:
        check_button_do_load_trajectory = Radiobutton(display_flags_frame, text=text, variable=self.do_load_trajectory, value=mode, command=lambda:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get()))
-       check_button_do_load_trajectory.grid(row=7, column=mode-1)
+       check_button_do_load_trajectory.grid(row=6, column=mode, sticky=W)
   
-
+     label_traj= Label(display_flags_frame, text="Highlight element(s):")
+     label_traj.grid(row=7, column=0, sticky=E)
+     
+     self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
+     highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
+     highlight_entry_box.grid(row=7, column=1, sticky=W)
 
      # flags
      self.animate = False
@@ -264,9 +280,9 @@ class FFEA_viewer_control_window:
 	bl = self.script.blob
 	
 	# See whether or not to remove traj file (make this better later i.e. rolling loading by storing file pointers)
-	if self.display_flags['load_trajectory'] != 1:
+	if self.display_flags['load_trajectory'] == 2 or 3:
 		print "Requested not to load the trajectory"
-		p.trajectory_out_fname = None
+		#p.trajectory_out_fname = None
 	if self.display_flags['load_trajectory'] == 3:
 		print "Requested to show the coordinates as they are in the .node(s) file(s)"
 		print "... equivalently, setting < move_into_box = 0 >"
@@ -415,19 +431,17 @@ class FFEA_viewer_control_window:
 	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
 	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
 	traj_fname = self.script.params.trajectory_out_fname
-	
-	try:
-		cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
-		cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
-	except:
-		cgo_fname = ""
-		cgo_index_fname = ""
-
-	if os.path.isfile(cgo_fname):
-     		self.load_cgo(cgo_fname, cgo_index_fname)
-#		turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
-#		turbotraj.load_traj(turbotraj_fname)
-#		self.load_turbotrajectory(turbotraj)
+	cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
+	cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
+	if self.display_flags['load_trajectory'] == 4:
+		if os.path.isfile(cgo_fname) == False:
+			print("No cached traj found at "+cgo_fname+", generating one...")
+			turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
+			turbotraj.populate_turbotraj_from_ftj(self.script.params.trajectory_out_fname)
+			turbotraj.create_cgo(self.script, self.display_flags)
+			turbotraj.dump_cgo()
+		self.load_cgo(cgo_fname, cgo_index_fname)
+		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
 	else:
 		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
 		self.load_trajectory_thread.start()
@@ -448,12 +462,62 @@ class FFEA_viewer_control_window:
 	self.system_index += 1
 	self.system_name = self.system_names[self.system_index]
 
+  def get_normal(self, node0, node1, node2):
+	ax = node1[0] - node0[0]
+	ay = node1[1] - node0[1]
+	az = node1[2] - node0[2]
+	bx = node2[0] - node1[0]
+	by = node2[1] - node1[1]
+	bz = node2[2] - node1[2]
+
+	return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
+
   def load_cgo(self, cgo_fname, cgo_index_fname):
       cgo = np.load(cgo_fname)
       cgo_index = np.load(cgo_index_fname)
       print("Loading the cgo object...")
       for frame in range(len(cgo_index)):
           cmd.load_cgo(cgo[frame], cgo_index[frame][0], str(cgo_index[frame][1]))
+
+  def load_turbotrajectory(self, turbotraj):
+      
+    def setup(self, turbotraj):
+        frames = range(len(turbotraj.turbotraj[0][0]))
+        surfs = []
+
+        # cerate a list of surfaces, one for each blob
+        for i in range(len(self.blob_list)):
+            surfs.append(self.script.load_surface(i)) 
+        return surfs, frames
+        
+    def get_nodes_in_face(turbotraj, face):
+        return [turbotraj.turbotraj[blob_num][0][frame][face.n[0]], turbotraj.turbotraj[blob_num][0][frame][face.n[1]], turbotraj.turbotraj[blob_num][0][frame][face.n[2]]]
+    
+    surfs, frames = setup(self, turbotraj)
+
+    # for every frame, create a cgo object
+    for frame in frames:
+        print("Loading frame "+str(frame)+"...")
+        sol = [ BEGIN, TRIANGLES ]
+
+        # for each face in each surf, load the nodes into the cgo as triangles
+        for blob_num in range(len(surfs)):
+            for face in surfs[blob_num].face:
+                nodexyz = get_nodes_in_face(turbotraj, face)
+                norm = self.get_normal(nodexyz[0], nodexyz[1], nodexyz[2])
+                sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2], VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+        sol.append(END)#
+        cmd.load_cgo(sol, self.display_flags['system_name'], frame)
+
+    
+    # Each trajectory is composed of several blobs, do it for all blobs
+    # if each blob has several conformations, do it for all of those
+    # skip when 'none' obviously
+    # in each blob->conformation, consult the surface file
+    # for each surf.face.n, grab the points at that index and draw a trinagle with them
+    return
+    
+
  
   def load_trajectory(self, trajectory_out_fname):
 	
@@ -462,35 +526,19 @@ class FFEA_viewer_control_window:
 	# All subsequent frames will be readed, loaded, drawn and deleted until failure
 	#	
 
+	# Load header and skip first frame (we already have it from the node files)
+	traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+	try:
+		failure = traj.skip_frame()
+	except:
+		failure = 1
+
 	# Draw first frame
 	self.num_frames = 1
 	self.draw_frame(self.num_frames - 1)
 
-	# Load header and skip first frame (we already have it from the node files)
-	try:
-		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
-	except(IOError):
-		
-		# No trajectory exists for some reason. Return to safety
-		print "Could not find a trajectory object. Please make sure it exists and reload if necessary"
-		traj=None
-		failure = 1
-
-	
-	if traj != None:
-		try:
-			failure = traj.skip_frame()
-		except:
-			print "Trajectory incorrectly formatted, or contains zero frames."
-			failure = 1
-
 	# If necessary, stop now (broken traj or user asked for)
-	if failure == 1:
-		print "Trajectory could not be loaded. Returning to safety"		
-		return
-
-	if self.display_flags['load_trajectory'] != 1:
-		print "Requested not to load trajectory. Only first frame loaded from structure files."
+	if traj.num_blobs == 0 or failure == 1 or self.display_flags['load_trajectory'] != 1:		
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
@@ -665,6 +713,7 @@ class FFEA_viewer_control_window:
 		'show_box': 0,
 		'load_trajectory': 1, ## PYMOL OK
 		'show_inverted': 0,
+		'highlight': '',
       'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
 
 	self.selected_index = 0
@@ -817,30 +866,22 @@ class FFEA_viewer_control_window:
                correct_frame[i] = 0
          # print "correct_frame: ", correct_frame
 
-         # Draw, if this spring exists
-	 try:
-	         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
-	 except:
-		 # This spring is not active as a conformation is not active
-	         continue
+         # Draw, because this spring exists
+         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
 
          # Axes for helix
          zax = springjoints[1] - springjoints[0]
-	 l = np.linalg.norm(zax)
-	 zax /= l
+         xax = np.cross(zax, np.array([1.0,0]))
+         yax = np.cross(zax, xax)
 
-         xax = np.cross(np.array([0.0,1.0,0.0]), zax)
-	 if np.linalg.norm(xax) == 0.0:
-	 	xax = np.array([0.0,0.0,1.0])
-		yax = np.array([1.0,0.0,0.0])
-	 else:
-		xax /= np.linalg.norm(xax)
-		yax = np.cross(zax, xax)
-		yax /= np.linalg.norm(yax)
+         xax = xax / np.linalg.norm(xax)
+         yax = yax / np.linalg.norm(yax)
 
+         l = np.linalg.norm(zax)
 
-         # Radius of helix (let original radius be 5A, 'poisson ratio' = 0.01)
-	 # Make this some function of the scale in the future please. Thanks!
+         zax = zax / l
+
+         # Radius of helix (let original radius be 5A, poisson ration = 0.01)
          r = 5 - 0.01 * (l - s.l)
 
          # We want 5 spins, say, so pitch:
@@ -850,29 +891,15 @@ class FFEA_viewer_control_window:
          step = (10 * np.pi) / 40
          obj = [ BEGIN, LINES, LINEWIDTH, 4.0 ]
          # obj.extend( [ COLOR, 192/255.0, 192/255.0, 192/255.0 ] )
-
-	 # Start must be different
-	 verts = springjoints[0]
-	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-	 verts = springjoints[0] + np.array([r * xax[i] for i in range(3)])
-	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-	 
-	 # Now the loops
          for i in range(40):
             tstart = step * i
             tend = step * (i + 1)
-            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[j] + r * np.sin(tstart) * yax[j] + c * tstart * zax[j] for j in range(3)])
+            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
             obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[j] + r * np.sin(tend) * yax[j] + c * tend * zax[j] for j in range(3)])
+            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
             obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
 
-	 # Now the end bit
-	 verts = springjoints[0] + np.array([r * xax[j] + c * tend * zax[j] for j in range(3)])
-	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-	 verts = springjoints[1]
-	 obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
          obj.append(END)
-
          cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), f + 1)
          
 
