@@ -151,13 +151,16 @@ class FFEA_viewer_control_window:
 
      label_mesh= Label(display_flags_frame, text="Show Indices:")
      label_mesh.grid(row=4, column=0, sticky=E)
-
+     
      # # show Numbers:
 
      self.show_numbers = StringVar(display_flags_frame)
      self.show_numbers.set("No Indices")
      index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
      index_option.grid(row=4, column=1, sticky=W)
+     
+     button_node_indices_psuedoatoms = Button(display_flags_frame, text="Add node psuedoatoms", command=lambda:self.add_node_psuedoatoms())
+     button_node_indices_psuedoatoms.grid(row=4, column=2, sticky=W)
 
      label_box= Label(display_flags_frame, text="Show Box:")
      label_box.grid(row=5, column=0, sticky=E)
@@ -245,7 +248,7 @@ class FFEA_viewer_control_window:
              return
 
      # load the file
-     self.root.destroy()
+#     self.root.destroy()
      self.load_ffea(ffea_fname)
 
 
@@ -516,7 +519,25 @@ class FFEA_viewer_control_window:
     # for each surf.face.n, grab the points at that index and draw a trinagle with them
     return
     
-
+  def add_node_psuedoatoms(self):
+      node_object_list = []
+      for blob_num in range(len(self.blob_list)):
+          traj = self.script.load_trajectory(1)
+          node_object_list.append(traj.blob[blob_num])
+      for node_object in range(len(node_object_list)):
+          for conformation in node_object_list[node_object]:
+              for node in range(len(conformation.frame[0].pos)):
+                  if conformation.frame[0].pos[node] !=None:
+                      cmd.pseudoatom(pos = (conformation.frame[0].pos[node]*10000000000).tolist(), name = str(node), color="black")
+                          
+  def add_node_psuedoatoms_from_nodes(self):
+      node_object_list = []
+      for blob_num in range(len(self.blob_list)):
+          node_object_list.append(self.script.load_node(blob_num))
+      for node_object in range(len(node_object_list)):
+          for node in range(len(node_object_list[node_object].pos)):
+              cmd.pseudoatom(pos = node_object_list[node_object].pos[node].tolist())   
+        
  
   def load_trajectory(self, trajectory_out_fname):
 	
