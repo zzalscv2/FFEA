@@ -834,7 +834,7 @@ class Blob:
 		#  Numbers       (again, can't always do elements)
 		#
 
-		if display_flags['show_numbers'] != 0:
+		if display_flags['show_numbers'] != "No Indices":
 
 			# Only first frame
 			if frameLabel == 1:
@@ -843,17 +843,17 @@ class Blob:
 				scale = 0.1	 # * self.scale * self.global_scale	# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
                          # No, the clever function should be a function of the shortest edge.
 	
-				if display_flags['show_numbers'] == 1:
+				if display_flags['show_numbers'] == 'Node Indices':
 					for n in range(self.node.num_nodes):
 						nn = (self.frames[i].pos[n])[0:3]
 						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
 	
-				elif display_flags['show_numbers'] == 2:
+				elif display_flags['show_numbers'] == 'Node Indices (Linear)':
 					for n in self.linear_node_list:
 						nn = (self.frames[i].pos[n])[0:3]
 						cyl_text(numtxt,plain,nn,str(n),0.10 * scale, axes=axes * scale)
 	
-				elif display_flags['show_numbers'] == 3:
+				elif display_flags['show_numbers'] == "Element Indicies":
 						
 					# Catch elements (but don't mislead i.e. no numbers
 					if self.top == None:
@@ -863,7 +863,7 @@ class Blob:
 							en = self.top.element[e].calc_centroid(self.frames[i])
 							cyl_text(numtxt, plain, en, str(e), 0.10 * scale, axes=axes * scale)
 						
-				elif display_flags['show_numbers'] == 4:
+				elif display_flags['show_numbers'] == "Face Indices":
 					for f in range(self.surf.num_faces):
 						fn = self.surf.face[f].calc_centroid(self.frames[i])
 						cyl_text(numtxt, plain, fn, str(f), 0.10 * scale, axes=axes * scale)

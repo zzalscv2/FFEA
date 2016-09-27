@@ -72,7 +72,7 @@ class FFEA_turbotrajectory:
 
         return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
 
-    def create_cgo(self, script, highlight_nodes=[]):
+    def create_cgo(self, script, display_params):
         """
         This sript creates a cgo object that can be fed into pymol for each frame
         and blob. The cgo object contains the vertices of each triangle in the mesh,
@@ -111,6 +111,36 @@ class FFEA_turbotrajectory:
             # save it for later
             self.cgo_blob_index.append(["blob_"+str(blob_num), frame])
 
+        # optional params
+        if display_params['highlight'] != '':
+            print("Highlighted nodes "+display_params['highlight']+" detected")
+            highlighted = np.fromstring(display_params['highlight'], sep=",", dtype=int) 
+            self.write_cgo_for_elements(highlighted, script, self.turbotraj)
+
+    def write_cgo_for_elements(self, element_list, script, turbotraj):
+        frames = xrange(len(self.turbotraj[0][0]))
+        tops = []
+        for i in xrange(len(turbotraj)):
+            tops.append(script.load_topology(i)) 
+        for frame in frames:
+            print("Highlighting nodes in frame "+str(frame))
+            sol = [ _cgo.BEGIN, _cgo.TRIANGLES ]
+            for blob_num in xrange(len(tops)):
+                for element in element_list:
+                    nodes = tops[blob_num].element[element].n[:4]
+                    face1 = [nodes[0], nodes[1], nodes[2]]
+                    face2 = [nodes[1], nodes[2], nodes[3]]
+                    face3 = [nodes[0], nodes[2], nodes[3]]
+                    face4 = [nodes[0], nodes[1], nodes[3]]
+                    faces = [face1, face2, face3, face4]
+                    for face in faces:
+                        nodexyz = [turbotraj[blob_num][0][frame][face[0]], turbotraj[blob_num][0][frame][face[1]], turbotraj[blob_num][0][frame][face[2]]]
+                        norm = self.get_normal(nodexyz[0], nodexyz[1], nodexyz[2])
+                        sol.extend( [ _cgo.NORMAL, -norm[0], -norm[1], -norm[2], _cgo.VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, _cgo.VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, _cgo.VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+            sol.append(_cgo.END)
+            self.cgo.append(sol)
+            self.cgo_blob_index.append(["highlight", frame])
+
     def dump_cgo(self):
         cgo_array = np.array(self.cgo)
         cgo_blob_index_array = np.array(self.cgo_blob_index)
@@ -118,6 +148,8 @@ class FFEA_turbotrajectory:
         np.save(self.path+"_cgoindex", cgo_blob_index_array)
 
     def load_ftj_header(self, fname): # load header data from ftj file and create empty turbotraj
+    
+        self.path = fname.split(".")[0]
             
         # Get a file object and store it
         try:
@@ -207,7 +239,6 @@ class FFEA_turbotrajectory:
                 return ((step-1)/steps_per_frame)+1
             else:
                 return step
-                    
 
         print("Loading FFEA trajectory file...")
 
