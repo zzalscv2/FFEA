@@ -418,14 +418,15 @@ class FFEA_viewer_control_window:
 			trans = np.array([0.0,0.0,0.0])
 			cent = b[0].frames[0].calc_centroid()
 			print "Centroid = ", cent
-			for i in range(3):
-				if cent[i] > self.box[i]:
-					trans[i] = -1 * self.box[i]
-				elif cent[i] < 0:
-					trans[i] = self.box[i]
+			if self.box_exists:
+				for i in range(3):
+					if cent[i] > self.box[i]:
+						trans[i] = -1 * self.box[i]
+					elif cent[i] < 0:
+						trans[i] = self.box[i]
 
-			b[0].frames[0].translate(trans)
-			print "Translation = ", trans
+				b[0].frames[0].translate(trans)
+				print "Translation = ", trans
 
     	# Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
 	# Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
