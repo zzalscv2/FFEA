@@ -219,15 +219,13 @@ class FFEA_pdb:
 				index = 0
 				chain = chr(ord("A") + j) 
 				for a in self.blob[j].atom:
-					fout.write("ATOM  ")
-					fout.write(str(a.atom_index).rjust(5))
+					fout.write("ATOM")
+					fout.write(str(a.atom_index).rjust(7))
 					fout.write("  " + a.atom_type.ljust(4))
 					fout.write(a.res_type.rjust(3))
 					fout.write(" " + chain)
 					fout.write(str(a.res_index).rjust(4))
-					fout.write(" ")
-					fout.write("   ")
-					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][0])
+					fout.write("%12.3f" % self.blob[j].frame[i].pos[index][0])
 					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][1])
 					fout.write("%8.3f" % self.blob[j].frame[i].pos[index][2])
 					fout.write("%6.2f" % a.occupancy)
@@ -287,12 +285,12 @@ class FFEA_pdb:
 
 		# Build a pseudo-structure
 		for i in range(self.num_blobs):
-			res_index = -1
-			if i % 10 == 0:
-				res_index += 1
+			# res_index = -1
+			# if i % 10 == 0:
+			#	res_index += 1
 			for j in range(self.blob[i].num_atoms):
 				anatom = FFEA_pdb_atom()
-				anatom.set_structure(atom_index = j, atom_type = "C", res_type = "ARG", chain = "A", res_index = res_index, occupancy = 0, temp_factor = 1.0, segment = "", elem = "C", charge = "1.0")
+				anatom.set_structure(atom_index = j, atom_type = "CA", res_type = "ARG", chain = "A", res_index = j, occupancy = 0, temp_factor = 1.0, segment = "", elem = "C", charge = "1.0")
 				self.blob[i].atom.append(anatom)
 
 		for i in range(self.num_frames):
