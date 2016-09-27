@@ -128,16 +128,15 @@ class FFEA_turbotrajectory:
             for blob_num in xrange(len(tops)):
                 for element in element_list:
                     nodes = tops[blob_num].element[element].n[:4]
-                    for node in nodes:
-                        face1 = [nodes[0], nodes[1], nodes[2]]
-                        face2 = [nodes[1], nodes[2], nodes[3]]
-                        face3 = [nodes[0], nodes[2], nodes[3]]
-                        face4 = [nodes[0], nodes[1], nodes[3]]
-                        faces = [face1, face2, face3, face4]
-                        for face in faces:
-                            nodexyz = [turbotraj[blob_num][0][frame][face[0]], turbotraj[blob_num][0][frame][face[1]], turbotraj[blob_num][0][frame][face[2]]]
-                            norm = self.get_normal(nodexyz[0], nodexyz[1], nodexyz[2])
-                            sol.extend( [ _cgo.NORMAL, -norm[0], -norm[1], -norm[2], _cgo.VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, _cgo.VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, _cgo.VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+                    face1 = [nodes[0], nodes[1], nodes[2]]
+                    face2 = [nodes[1], nodes[2], nodes[3]]
+                    face3 = [nodes[0], nodes[2], nodes[3]]
+                    face4 = [nodes[0], nodes[1], nodes[3]]
+                    faces = [face1, face2, face3, face4]
+                    for face in faces:
+                        nodexyz = [turbotraj[blob_num][0][frame][face[0]], turbotraj[blob_num][0][frame][face[1]], turbotraj[blob_num][0][frame][face[2]]]
+                        norm = self.get_normal(nodexyz[0], nodexyz[1], nodexyz[2])
+                        sol.extend( [ _cgo.NORMAL, -norm[0], -norm[1], -norm[2], _cgo.VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, _cgo.VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, _cgo.VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
             sol.append(_cgo.END)
             self.cgo.append(sol)
             self.cgo_blob_index.append(["highlight", frame])
