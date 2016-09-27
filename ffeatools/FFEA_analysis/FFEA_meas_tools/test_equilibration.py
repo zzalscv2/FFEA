@@ -31,48 +31,49 @@ def test_equilibration(script):
     #
     # First, global graph (strain and kinetic)
     #
-    
-    plt.figure(0)
     cmeas = meas.global_meas
     num_steps = len(cmeas["Time"])
-    
+
     # Get x axis data (time)
     x = cmeas["Time"] * 1e9    # ns
-    
-    # And y axis data (all energies)
-    ys = []
-    yk = []
-    for i in range(num_steps):
-        ys.append(np.mean(cmeas["StrainEnergy"][0:i + 1]) / kT)
-        if cmeas["KineticEnergy"] != None:
-            yk.append(np.mean(cmeas["KineticEnergy"][0:i + 1]) / kT)
-    
-    print "\nGlobal System:\n"
-    
-    ysEXP = [(3 * total_num_nodes - 6) / 2.0 for i in range(num_steps)]
-    ysh, = plt.plot(x, ys, label='ysh')
-    ysEXPh, = plt.plot(x, ysEXP, "-", label='ysEXPh')
-    
-    yserr = (np.fabs(ys[-1] - ysEXP[-1]) / ysEXP[-1]) * 100.0
-    print "\tTheoretical strain energy = %f; Simulation strain energy = %f; Error is %f%%" % (ysEXP[-1], ys[-1], yserr) 
-    if cmeas["KineticEnergy"] != None:
-        ykEXP = [(3 * total_num_mass_nodes) / 2.0 for i in range(num_steps)]
-        ykh, = plt.plot(x, yk, label='ykh')
-        ykEXPh, = plt.plot(x, ykEXP, "-", label='ykEXPh')
-    
-        ykerr = (np.fabs(yk[-1] - ykEXP[-1]) / ykEXP[-1]) * 100.0
-        print "\tTheoretical kinetic energy = %f; Simulation kinetic energy = %f; Error is %f%%" % (ykEXP[-1], yk[-1], ykerr)
-    
-    plt.xlabel("Time (ns)")
-    plt.ylabel("Energy (kT)")
-    plt.title("Global Energy - Running Average")
-    
-    # Put details on the graph
-    if cmeas["KineticEnergy"] != None:
-        plt.legend([ysh, ysEXPh, ykh, ykEXPh], ['Global Strain Energy - Sim', 'Global Strain Energy - Theory', 'Global Kinetic Energy - Sim', 'Global Kinetic Energy - Theory'], loc = 4)
-    else:
-        plt.legend([ysh, ysEXPh], ['Global Strain Energy - Sim', 'Global Strain Energy - Theory'], loc = 4)
-    plt.show()
+
+    if script.params.num_blobs > 1:
+	    plt.figure(0)
+	    
+	    # And y axis data (all energies)
+	    ys = []
+	    yk = []
+	    for i in range(num_steps):
+		ys.append(np.mean(cmeas["StrainEnergy"][0:i + 1]) / kT)
+		if cmeas["KineticEnergy"] != None:
+		    yk.append(np.mean(cmeas["KineticEnergy"][0:i + 1]) / kT)
+	    
+	    print "\nGlobal System:\n"
+	    
+	    ysEXP = [(3 * total_num_nodes - 6) / 2.0 for i in range(num_steps)]
+	    ysh, = plt.plot(x, ys, label='ysh')
+	    ysEXPh, = plt.plot(x, ysEXP, "-", label='ysEXPh')
+	    
+	    yserr = (np.fabs(ys[-1] - ysEXP[-1]) / ysEXP[-1]) * 100.0
+	    print "\tTheoretical strain energy = %f; Simulation strain energy = %f; Error is %f%%" % (ysEXP[-1], ys[-1], yserr) 
+	    if cmeas["KineticEnergy"] != None:
+		ykEXP = [(3 * total_num_mass_nodes) / 2.0 for i in range(num_steps)]
+		ykh, = plt.plot(x, yk, label='ykh')
+		ykEXPh, = plt.plot(x, ykEXP, "-", label='ykEXPh')
+	    
+		ykerr = (np.fabs(yk[-1] - ykEXP[-1]) / ykEXP[-1]) * 100.0
+		print "\tTheoretical kinetic energy = %f; Simulation kinetic energy = %f; Error is %f%%" % (ykEXP[-1], yk[-1], ykerr)
+	    
+	    plt.xlabel("Time (ns)")
+	    plt.ylabel("Energy (kT)")
+	    plt.title("Global Energy - Running Average")
+	    
+	    # Put details on the graph
+	    if cmeas["KineticEnergy"] != None:
+		plt.legend([ysh, ysEXPh, ykh, ykEXPh], ['Global Strain Energy - Sim', 'Global Strain Energy - Theory', 'Global Kinetic Energy - Sim', 'Global Kinetic Energy - Theory'], loc = 4)
+	    else:
+		plt.legend([ysh, ysEXPh], ['Global Strain Energy - Sim', 'Global Strain Energy - Theory'], loc = 4)
+	    plt.show()
     
     #
     # Now, individual blobs (strain and kinetic), if we can

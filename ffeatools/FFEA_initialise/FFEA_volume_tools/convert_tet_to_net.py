@@ -59,4 +59,7 @@ def convert_tet_to_net(input_fnames, output_fname):
 # Run argparse if we detect a tty
 if sys.stdin.isatty():
     args = parser.parse_args()
-    convert_tet_to_net(args.i, args.o)
+    try:
+	convert_tet_to_net(args.i, args.o)
+    except IOError:
+	parser.print_help()
