@@ -80,11 +80,35 @@ def test_equilibration(script):
     #
     if meas.blob_meas == []:
         sys.exit()
-    
-    fig = plt.figure(1)
+
+    # Get figure size
+    blobs_to_plot = 0
     for i in range(script.params.num_blobs):
-    
-        ax = fig.add_subplot(np.ceil(np.sqrt(script.params.num_blobs)), np.ceil(np.sqrt(script.params.num_blobs)), i + 1)
+	
+	if script.blob[i].conformation[0].motion_state == "DYNAMIC":
+		blobs_to_plot += 1
+
+    # Too many??
+    if blobs_to_plot > 10:
+	sys.exit("Too many blobs to print out like this!")
+
+    plot_index = 0
+    if blobs_to_plot == 2:
+	fig = plt.figure(1, figsize=(10,10))
+	subplot_x = 2
+	subplot_y = 1
+    else:
+	fig = plt.figure(1, figsize=(20,20))
+	subplot_x = np.ceil(np.sqrt(blobs_to_plot))
+    	subplot_y = np.ceil(np.sqrt(blobs_to_plot))
+    for i in range(script.params.num_blobs):
+	
+	if script.blob[i].conformation[0].motion_state == "STATIC":
+		print "Skipping STATIC blob " + str(i)
+		continue
+        
+	plot_index += 1
+        ax = fig.add_subplot(subplot_x, subplot_y, plot_index)
     
         cmeas = meas.blob_meas[i]
         num_nodes = len(top[i].get_linear_nodes())
