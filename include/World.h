@@ -3,8 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <cstring>
-#include <string>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
@@ -46,6 +45,13 @@
 #include "KineticState.h"
 
 #include "dimensions.h"
+
+#ifdef USE_MPI
+#include "mpi.h"
+#include <math.h>
+#include "DerivedDatatype.h"
+#endif
+
 using namespace std;
 
 class World {
@@ -106,6 +112,56 @@ public:
     int get_num_blobs();
 
 private:
+
+	#ifdef USE_MPI
+	//get value from NearestNeighbourLinkedListCube lookup;
+	FaceMpi **lookup_buf;
+	
+	// get value from lookup->pool and root
+	LinkedListNodeMpi *pool_mpi, **root_mpi;	
+	
+	//N_x N_y N_z
+	int nx, ny, nz;
+	
+	//total_num_srface_faces
+	int total_surfaces;
+	// num_blobs do not get value
+	int params_num_blobs;
+	
+	//data arrays
+	vector3 *normal_array;
+	vector3 *centroid_array;
+	vector3 **n_pos_array;
+	
+	scalar **vdw_bb_force_array_x;
+	scalar **vdw_bb_force_array_y;
+	scalar **vdw_bb_force_array_z;
+	scalar **force_array_x;
+	scalar **force_array_y;
+	scalar **force_array_z;
+	
+	scalar ** fieldenergy;
+	
+	Steric_solver *vdw_solver_mpi;
+	
+	void vdw_solve_mpi(int rank, int size);
+	
+	void set_proc_sendbuf();
+	
+	void set_master_sendbuf();
+	
+	void return_proc_buf(scalar **recv_force_x, scalar **recv_force_y, scalar **recv_force_z,
+					scalar **recv_vdw_x, scalar **recv_vdw_y, scalar **recv_vdw_z);
+					
+	void return_master_buf(scalar **recv_force_x, scalar **recv_force_y, scalar **recv_force_z,
+					scalar **recv_vdw_x, scalar **recv_vdw_y, scalar **recv_vdw_z);				
+	#endif
+	
+    /** @brief How many Blobs populate this world */
+    int num_blobs;
+
+    /** @brief How many conformations does each blob have? */
+    int *num_conformations;
 
     /** @brief 2-D Array of Blob objects (blob i, conformation j) */
     Blob **blob_array;

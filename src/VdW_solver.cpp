@@ -1,7 +1,10 @@
 #include "VdW_solver.h"
 #ifdef USE_MPI
 #include "mpi.h"
+#include "DerivedDatatype.h"
 #endif
+
+
 
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
@@ -36,15 +39,27 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;
+#ifdef USE_MPI	
+	if(0){
+#endif
     fieldenergy = new scalar*[num_blobs];
     for(int i = 0; i < num_blobs; ++i) {
 	fieldenergy[i] = new scalar[num_blobs];
     }
+#ifdef USE_MPI	
+	}
+	DerivedDatatype *drived_dt = new DerivedDatatype();
+	fieldenergy = drived_dt->alloc_2d_scalar(num_blobs, num_blobs);
+#endif
     return FFEA_OK;
 }
 
 int VdW_solver::solve(int num_blobs) {
     // double st, time1, time2, time3;
+	int size = 1;
+#ifdef USE_MPI
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
     const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
         {-1, -1, -1},
         {-1, -1, 0},
@@ -74,39 +89,50 @@ int VdW_solver::solve(int num_blobs) {
         {+1, +1, 0},
         {+1, +1, +1}
     };
-
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
     Face *f_i, *f_j;
     int c;
+#ifdef USE_MPI
+	//printf("rank %d\n",rank);
+	//if(rank == 0){
+#endif
     total_num_surface_faces = surface_face_lookup->get_pool_size();
     //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
     // Zero some measurement_ stuff
     for(int i = 0; i < num_blobs; ++i) {
-	for(int j = 0; j < num_blobs; ++j) {
-		fieldenergy[i][j] = 0.0;
-	}
+		for(int j = 0; j < num_blobs; ++j) {
+			fieldenergy[i][j] = 0.0;
+		}
     }
-
+	
+	/*int send = 0;
+	l_j = surface_face_lookup->get_top_of_stack( 
+                    surface_face_lookup->get_from_pool(0)->x -1,
+                    surface_face_lookup->get_from_pool(0)->y -1,
+                    surface_face_lookup->get_from_pool(0)->z-1 ) ;
+	while (l_j != NULL){
+		send++;
+		//l_j->index;
+		l_j = l_j->next;
+	}*/
+	//cout<<"stack size count"<<send<<"real one"<<surface_face_lookup->get_stack_size()<<endl;
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/ 
 #ifdef USE_OPENMP
 #pragma omp parallel for private(c, l_i, l_j, f_i, f_j)
 #endif
-    //st = MPI::Wtime();
-    for (int i = 0; i < total_num_surface_faces; i++) {
-
+    for (int i = 0; i < total_num_surface_faces/size; i++) {
+		
+	//for (int i = total_num_surface_faces-1; i > -1; i--) { 
         // get the ith face
         l_i = surface_face_lookup->get_from_pool(i);
+		
         if(!l_i->obj->is_kinetic_active()) {
-		continue;
-	}
+			continue;
+		}
         f_i = l_i->obj;
-
-        //time2 = MPI::Wtime() - st;       
-        //cout<< "time to get the ith face:" << time2 << "seconds" << endl;
-        //cout<< "inner loop" << endl;
-        
+        //cout<< "face index on iter"<<i<<"index"<<f_i->index<<endl;
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
@@ -115,6 +141,7 @@ int VdW_solver::solve(int num_blobs) {
                     l_i->y + adjacent_cell_lookup_table[c].iy,
                     l_i->z + adjacent_cell_lookup_table[c].iz);
             while (l_j != NULL) {
+				
                 if (l_i->index != l_j->index) {
                     f_j = l_j->obj;
                     if (f_i->daddy_blob != f_j->daddy_blob) {
@@ -122,22 +149,67 @@ int VdW_solver::solve(int num_blobs) {
                         f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
 			//fprintf(stderr, "%d %d\n", f_i->index, f_j->index);
                         do_interaction(f_i, f_j);
+						//cout<<f_j->index<<endl;
                         // do_volumeExclusion(f_i, f_j);
                     }
                 }
                 l_j = l_j->next;
             }
         }
-        //timing 1000 face execution
-        /*if (i = 1000){
-          time3 = MPI::Wtime() - st;
-          cout<<"calculating face's interaction for 1000 face"<<time3<<"seconds"<<endl;
-        }*/        
-
     }
+#ifdef USE_MPI
+	//while loop , recieving face pairs and do_interaction, 
+	//wait until get all the ending message from all process
+	/*DerivedDatatype *derived_dt = new DerivedDatatype();
+	FaceMpi *face_pairs = new FaceMpi[2*sizeof(FaceMpi)];
+	MPI_Datatype face_mpi_type = derived_dt->derived_face_mpi();
+	MPI_Request request, *request_finish, *request_null;
+	request_finish = new MPI_Request[(size-1)*sizeof(MPI_Request)];
+	//request_null = new MPI_Request[(size-1)*sizeof(MPI_Request)];
+	
+	MPI_Status *status_finish = new MPI_Status[(size-1)*sizeof(MPI_Status)];
+	//MPI_Status *status_null = new MPI_Status[(size-1)*sizeof(MPI_Status)];
+	//recieve message from other processes.
+	for(int i=0;i<size-1;i++){
+		MPI_Irecv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &request_finish[i]);
+		//MPI_Irecv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &request_null[i]);
+	}
+	//cout<<"master vdw ok2"<<endl;
+	bool flag = false;
+	int test_finish = 0;
+	int test_null = 0;
+	cout<<"rank 0 ok"<<endl;
+	while(!flag){
+		MPI_Testall(size-1, request_finish, &test_finish, status_finish);
+		//MPI_Testall(size-1, request_null, &test_null, status_null);
+		if(test_finish){
+			flag = true;
+			continue;
+		}		
+		//if(test_null){
+			//MPI_Cancel(request);
+		//	flag = true;
+		//	continue;
+		//}
+		sleep(2);
+		cout<<"master still working"<<endl;
+		MPI_Irecv(face_pairs, 2, face_mpi_type, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &request);
+		//cout<<"recv one message"<<endl;
+		int flag = 0;
+		
+		MPI_Status status;
+		MPI_Test(&request, &flag, &status);
+		if(flag){
+			f_i = surface_face_lookup->get_from_pool(face_pairs[0].node_index)->obj;
+			f_j = surface_face_lookup->get_from_pool(face_pairs[1].node_index)->obj;
+			f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
+			f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
+			do_interaction(f_i, f_j);
+		}
+		
+	}*/
 
-    //time1 = MPI::Wtime()-st;
-    //cout<<"total time for the outer loop: "<<time1<<"seconds"<<endl;
+#endif
     return FFEA_OK;
 }
 
@@ -284,7 +356,7 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     energy *= ApAq;
 
     // Store the measurement
-    #pragma omp atomic
+    #pragma omp critical
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
 
     for (int j = 0; j < 3; j++) {

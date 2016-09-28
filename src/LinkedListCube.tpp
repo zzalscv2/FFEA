@@ -133,6 +133,12 @@ int LinkedListCube<T>::get_pool_size() {
     return num_nodes_in_pool;
 }
 
+/* */
+template <class T>
+int LinkedListCube<T>::get_stack_size() {
+    return num_nodes_in_stack;
+}
+
 template <class T>
 void LinkedListCube<T>::get_dim(int *Nx, int *Ny, int *Nz) {
     *Nx = N_x;

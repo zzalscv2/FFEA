@@ -1231,13 +1231,6 @@ scalar Blob::get_rmsd() {
 /*
  *
  */
-int Blob::get_linear_solver() {
-	return linear_solver;
-};
-
-/*
- *
- */
 vector3 Blob::get_CoG() {
 	return CoG;
 }
@@ -1374,7 +1367,7 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 					for(j = 0; j < 3; ++j) {
 						val = (1.0 / (2 * dx)) * (elastic_force[1][4 * j + b] - elastic_force[0][4 * j + b]);
 						
-						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,y0,z0,x1,y1,z1...xn,yn,zn
+						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,x1,x2...xn,y0,y1.....yn....zn
 						//row = num_linear_nodes * i + global_a;
 						//column = num_linear_nodes * j + global_b;
 						row = 3 * global_a_lin + i;
@@ -1473,75 +1466,6 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 	}
 	K->setFromTriplets(components.begin(), components.end());
 	return FFEA_OK;
-}
-
-int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
-	
-
-	int i, j, a, b, global_a, global_b, row, column;
-	int elem_index, num_linear_nodes;
-	scalar val;
-	MassMatrixQuadratic M_el;
-	vector<Eigen::Triplet<scalar> > components;
-
-	// Firstly, get a mapping from all node indices to just linear node indices
-	int map[num_nodes];
-	int offset = 0;
-	for(int i = 0; i < num_nodes; ++i) {
-		if(node[i].am_I_linear()) {
-			map[i] = i - offset;
-		} else {
-			offset += 1;
-			map[i] = -1;
-		}
-	}
-
-	num_linear_nodes = get_num_linear_nodes();
-
-	// For each element
-	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
-
-		// Build mass matrix
-		elem[elem_index].construct_element_mass_matrix(&M_el);
-
-		// Add each component of the local matrix to the global matrix
-
-		// For each node
-		for(a = 0; a < 4; ++a) {
-			global_a = map[elem[elem_index].n[a]->index];
-
-			for(b = 0; b < 4; ++b) {
-				global_b = map[elem[elem_index].n[b]->index];
-		
-				// From another function that get's actual memory location. Dereference for value
-				// Val same for each direction
-				val = *(M_el.get_M_alpha_mem_loc(a, b));
-				//cout << "val = " << val << endl;
-
-
-				// And each direction
-				for(i = 0; i < 3; ++i) {
-
-					row = 3 * global_a + i;
-					column = 3 * global_b + i;
-					components.push_back(Eigen::Triplet<scalar>(row, column, val));
-				}
-			}
-		}
-	}
-
-	// Now build the matrix and get the symmetric part (just in case)
-	M->setFromTriplets(components.begin(), components.end());
-	components.clear();
-	for(j = 0; j < M->outerSize(); ++j) {
-		for(Eigen::SparseMatrix<scalar>::InnerIterator it(*M,j); it; ++it) {
-			components.push_back(Eigen::Triplet<scalar>(it.row(), it.col(), 0.5 * it.value()));
-			components.push_back(Eigen::Triplet<scalar>(it.col(), it.row(), 0.5 * it.value()));
-		}
-	}
-	M->setFromTriplets(components.begin(), components.end());
-	return FFEA_OK;
-
 }
 
 int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {

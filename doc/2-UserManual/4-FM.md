@@ -55,8 +55,7 @@ where the directive ` nodes ` ensures that no accidental confusion arises with
  B-factors or other information after the position of the beads. 
 
 
-Finally, the rest of the input flags are passed within block ` <precomp> ` in ` <interactions> ` 
- which in turn belongs to ` <system> ` (see the [input file syntax](\ref ffea_ifsyntax)). 
+Finally, the rest of the input flags are passed within block ` <precomp> ` in ` <interactions> `. 
  Fields to be provided are: 
  * ` types ` 
  * ` inputData ` 

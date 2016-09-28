@@ -1,8 +1,179 @@
 #include "World.h"
-#ifdef USE_MPI
-#include "mpi.h"
-#endif
 
+#ifdef USE_MPI
+void World::set_proc_sendbuf(){
+	for(int i=0;i<total_surfaces;i++){
+		for (int k=0;k<3;k++){
+			force_array_x[i][k] = pool_mpi[i].face[0].force[k].x;
+			force_array_y[i][k] = pool_mpi[i].face[0].force[k].y;
+			force_array_z[i][k] = pool_mpi[i].face[0].force[k].z;
+		}
+		for(int j=0;j<params_num_blobs;j++){
+			vdw_bb_force_array_x[i][j] = pool_mpi[i].face[j].vdw_bb_force.x;
+			vdw_bb_force_array_y[i][j] = pool_mpi[i].face[j].vdw_bb_force.y;
+			vdw_bb_force_array_z[i][j] = pool_mpi[i].face[j].vdw_bb_force.z;
+		}
+	}
+}
+
+void World::set_master_sendbuf(){
+	for(int i=0;i<total_surfaces;i++){
+		for (int k=0;k<3;k++){
+			force_array_x[i][k] = lookup.get_from_pool(i)->obj->force[k].x;
+			force_array_y[i][k] = lookup.get_from_pool(i)->obj->force[k].y;
+			force_array_z[i][k] = lookup.get_from_pool(i)->obj->force[k].z;
+		}
+		for(int j=0;j<params_num_blobs;j++){
+			vdw_bb_force_array_x[i][j] = lookup.get_from_pool(i)->obj->vdw_bb_force[j].x;
+			vdw_bb_force_array_y[i][j] = lookup.get_from_pool(i)->obj->vdw_bb_force[j].y;
+			vdw_bb_force_array_z[i][j] = lookup.get_from_pool(i)->obj->vdw_bb_force[j].z;
+		}
+	}
+}
+
+void World::return_proc_buf(scalar **recv_force_x, scalar **recv_force_y, scalar **recv_force_z,
+					scalar **recv_vdw_x, scalar **recv_vdw_y, scalar **recv_vdw_z){
+	for(int i=0;i<total_surfaces;i++){
+		for (int k=0;k<3;k++){
+			pool_mpi[i].face[0].force[k].x = recv_force_x[i][k];
+			pool_mpi[i].face[0].force[k].y = recv_force_y[i][k];
+			pool_mpi[i].face[0].force[k].z = recv_force_z[i][k];
+		}
+		for(int j=0;j<params_num_blobs;j++){
+			pool_mpi[i].face[j].vdw_bb_force.x = recv_vdw_x[i][j];
+			pool_mpi[i].face[j].vdw_bb_force.y = recv_vdw_y[i][j];
+			pool_mpi[i].face[j].vdw_bb_force.z = recv_vdw_z[i][j];
+		}
+	}
+}
+
+void World::return_master_buf(scalar **recv_force_x, scalar **recv_force_y, scalar **recv_force_z,
+					scalar **recv_vdw_x, scalar **recv_vdw_y, scalar **recv_vdw_z){
+	vector3 *temp_buf;
+	for(int i=0;i<total_surfaces;i++){
+		lookup.get_from_pool(i)->obj->zero_force();
+		for (int k=0;k<3;k++){
+			temp_buf->x = recv_force_x[i][k];
+			temp_buf->y = recv_force_y[i][k];
+			temp_buf->z = recv_force_z[i][k];
+			lookup.get_from_pool(i)->obj->add_force_to_node(k,temp_buf);
+		}
+		lookup.get_from_pool(i)->obj->zero_vdw_bb_measurement_data();
+		for(int j=0;j<params_num_blobs;j++){
+			temp_buf->x = recv_vdw_x[i][j];
+			temp_buf->y = recv_vdw_y[i][j];
+			temp_buf->z = recv_vdw_z[i][j];
+			lookup.get_from_pool(i)->obj->add_bb_vdw_force_to_record(temp_buf, j);
+		}
+	}
+}
+
+struct adjacent_cell_lookup_table_entry {
+        int ix, iy, iz;
+    };
+	
+void World::vdw_solve_mpi(int size, int rank){
+	
+	int process_num_surface_faces;
+	int begin_index;
+	//if the processes can't divide the total_surface_faces, put the extra ones on the last processes
+	if(total_surfaces%size >= (size-rank)){
+		process_num_surface_faces = total_surfaces/size + 1;
+		begin_index = rank*process_num_surface_faces - (size-total_surfaces%size);
+	}else{
+		process_num_surface_faces = total_surfaces/size;
+		begin_index = rank*process_num_surface_faces;
+	}
+	const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
+        {-1, -1, -1},
+        {-1, -1, 0},
+        {-1, -1, +1},
+        {-1, 0, -1},
+        {-1, 0, 0},
+        {-1, 0, +1},
+        {-1, +1, -1},
+        {-1, +1, 0},
+        {-1, +1, +1},
+        {0, -1, -1},
+        {0, -1, 0},
+        {0, -1, +1},
+        {0, 0, -1},
+        {0, 0, 0},
+        {0, 0, +1},
+        {0, +1, -1},
+        {0, +1, 0},
+        {0, +1, +1},
+        {+1, -1, -1},
+        {+1, -1, 0},
+        {+1, -1, +1},
+        {+1, 0, -1},
+        {+1, 0, 0},
+        {+1, 0, +1},
+        {+1, +1, -1},
+        {+1, +1, 0},
+        {+1, +1, +1}
+    };
+	//FaceMpi *face_pair = new FaceMpi[2*sizeof(FaceMpi)];
+	
+	for(int i = 0; i < params_num_blobs; ++i) {
+		for(int j = 0; j < params_num_blobs; ++j) {
+			fieldenergy[i][j] = 0.0;
+		}
+    }
+	
+	LinkedListNodeMpi *l_j;
+	
+	//derived datatype
+	DerivedDatatype *derived_dt = new DerivedDatatype(); 
+	
+	int sendcount = 0;
+	for(int i = 0; i<process_num_surface_faces; i++){
+		if(!pool_mpi[i+begin_index].face[0].kinetically_active){
+			continue;
+		}
+		for(int c=0;c<27;c++){
+			int x = pool_mpi[i+begin_index].x + adjacent_cell_lookup_table[c].ix;
+			int y = pool_mpi[i+begin_index].y + adjacent_cell_lookup_table[c].iy;
+			int z = pool_mpi[i+begin_index].z + adjacent_cell_lookup_table[c].iz;
+			if(x * ny * nz + y * nz + z >= 0 && x * ny * nz + y * nz + z< nx*ny*nz){
+				l_j = root_mpi[x * ny * nz + y * nz + z];
+				while (l_j !=NULL){
+					if(pool_mpi[i+begin_index].index != l_j->index){
+						if(pool_mpi[i+begin_index].face[0].daddy_blob_index != l_j->face[0].daddy_blob_index){
+							//face_pair[0] = pool_mpi[i].face[0];
+							//face_pair[1] = l_j->face[0];
+							//derived_dt->assign_face(face_pair[0], pool_mpi[i+begin_index].face[0]);
+							//derived_dt->assign_face(face_pair[1], l_j->face[0]);
+							//MPI_Datatype face_mpi_type = derived_dt->derived_face_mpi();
+							//MPI_Request request;
+							
+							//MPI_Isend(face_pair, 2, face_mpi_type, 0, 0, MPI_COMM_WORLD, &request);
+							//sendcount++;
+							Face *f1 = new Face();
+							Face *f2 = new Face();
+							derived_dt->facempi_to_face(pool_mpi[i+begin_index].face,f1,params_num_blobs);
+							derived_dt->facempi_to_face(l_j->face,f2, params_num_blobs);
+
+							vdw_solver_mpi->do_interaction_mpi(f1,f2);
+							
+							derived_dt->face_to_facempi(f1,pool_mpi[i+begin_index].face,params_num_blobs);
+							derived_dt->face_to_facempi(f2,l_j->face,params_num_blobs);
+							derived_dt->face_to_facempi(f1,lookup_buf[i+begin_index],params_num_blobs);
+							derived_dt->face_to_facempi(f2,l_j->face,params_num_blobs);
+						}
+					}
+					l_j = l_j->next;
+				}
+			}
+			
+		}
+		
+	}
+	//MPI_Request request;
+	//MPI_Isend(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
+}
+
+#endif
 World::World() {
 
     // Initialise everything to zero
@@ -13,6 +184,8 @@ World::World() {
     kinetic_state = NULL;
     kinetic_rate = NULL;
     kinetic_base_rate = NULL;
+    num_blobs = 0;
+    num_conformations = NULL;
     num_springs = 0;
     mass_in_system = false;
     num_threads = 1;
@@ -50,6 +223,9 @@ World::~World() {
 
     delete[] blob_array;
     blob_array = NULL;
+    num_blobs = 0;
+    delete[] num_conformations;
+    num_conformations = NULL;
 
     delete[] spring_array;
     spring_array = NULL;
@@ -120,7 +296,13 @@ World::~World() {
  * */
 
 int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeDetailed) {
-	
+#ifdef USE_MPI
+	double st,et, st1, et1;
+	int rank;
+	st=MPI_Wtime();
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	if(rank == 0){
+#endif	
 	// Set some constants and variables
 	int i, j, k;
 
@@ -128,20 +310,19 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	string buf_string;
 	FFEA_input_reader *ffeareader;
 	ffeareader = new FFEA_input_reader();
-#ifdef USE_MPI
-  double st,et;
+
   
-  st=MPI::Wtime();
-#endif
+	// Open script
+	ifstream fin;
+	fin.open(FFEA_script_filename.c_str());
 
 	// Copy entire script into string
 	vector<string> script_vector;
-	if(ffeareader->file_to_lines(FFEA_script_filename, &script_vector) == FFEA_ERROR) {
-		return FFEA_ERROR;
-	}
+	ffeareader->file_to_lines(FFEA_script_filename, &script_vector);
 
 	// Get params section
 	cout << "Extracting Parameters..." << endl;
+	
 	params.FFEA_script_filename = FFEA_script_filename;  // includes absolute path.
 	if(params.extract_params(script_vector) != 0) {
 		FFEA_error_text();
@@ -152,6 +333,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 	// Check for consistency
 	cout << "\nVerifying Parameters..." << endl;
+	
 	if(params.validate() != 0) {
 		FFEA_error_text();
 		printf("Parameters found to be inconsistent in SimulationParams::validate()\n");
@@ -201,8 +383,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 	// Load the vdw forcefield params matrix
 	if(params.calc_vdw == 1) {
-    		if (lj_matrix.init(params.vdw_in_fname, params.vdw_type) == FFEA_ERROR) {
-        		FFEA_ERROR_MESSG("Error when reading from vdw forcefield params file.\n")
+    		if (lj_matrix.init(params.vdw_in_fname) == FFEA_ERROR) {
+        		FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
     		}
 	}
 
@@ -295,50 +477,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		int num_active_rng = num_threads; 
 		if (params.calc_kinetics) num_active_rng += 1; 
 		int nlines = checkpoint_v.size();
-		cout << nlines << endl;
-
 		Seeds = new unsigned long *[max(num_active_rng,num_seeds_read)];
-		// RNG.1.4 - get Seeds :
-		// BEN CHANGE - stream was printing out stuff if ctrl-c was pressed, so I'm looping more accurately
-		int cnt_seeds = 0;
-		for(int i = 1; i < num_threads + 1; ++i) {
-			vector <string> vline;
-			boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
-			Seeds[cnt_seeds] = new unsigned long [6];
-			// there must be 6 integers per line:
-			if (vline.size() != 6) {
-				FFEA_ERROR_MESSG("ERROR reading seeds\n")
-			}
-			for (int j=0; j<6; j++){
-				try {
-					Seeds[cnt_seeds][j] = stol(vline[j]);
-				} catch (invalid_argument& ia) {
-					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
-				}
-			}
-			cnt_seeds += 1;
-		}
-
-		// If kinetics active, one more seed to get (on line num_threads + 2)
-		if(params.calc_kinetics) {
-			vector <string> vline;
-			boost::split(vline, checkpoint_v[num_threads + 2], boost::is_any_of(" "));
-			Seeds[cnt_seeds] = new unsigned long [6];
-			// there must be 6 integers per line:
-			if (vline.size() != 6) {
-				FFEA_ERROR_MESSG("ERROR reading seeds\n")
-			}
-			for (int j=0; j<6; j++){
-				try {
-					Seeds[cnt_seeds][j] = stol(vline[j]);
-				} catch (invalid_argument& ia) {
-					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
-				}
-			}
-		}
-
-		/* OLD */
-		/*
+		// RNG.1.4 - get Seeds:
+		int cnt_seeds = 0; 
 		for (int i=1; i<nlines; i++){
 			if (i == num_threads + 1) continue; // skip the header of the kinetics rng
 			vector <string> vline;
@@ -356,7 +497,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				}
 			}
 			cnt_seeds += 1;
-		} */
+		}
 
 		// RNG.2 - AND initialise rng:
 		// RNG.2.1 - first the package and, and rng[0],
@@ -563,10 +704,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		} else {
 
 			// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
-
-			/*
-			 * Trajectory first
-			 */
 			bool singleframe = false;
 			char c;
 
@@ -586,8 +723,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 
 			// Variable to store position of last asterisk in trajectory file (initialise it at end of file)
-			off_t last_asterisk_pos;
-			last_asterisk_pos = ftello(trajectory_out);
+			off_t last_asterisk_pos = ftello(trajectory_out);
 
 			int num_asterisks = 0;
 			int num_asterisks_to_find = 3 + (frames_to_delete) * 2 + 1; // 3 to get to top of last frame, then two for every subsequent frame. Final 1 to find ending conformations of last step
@@ -673,89 +809,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			fclose(trajectory_out);
 
 			// Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
-			printf("Truncating the trajectory file to the last asterisk...\n");
+			printf("Truncating the trajectory file to the last asterisk (to remove any half-written time steps)\n");
 			if (truncate(params.trajectory_out_fname, last_asterisk_pos) != 0) {
 			    FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname)
-			}
-
-			/*
-			 * Measurement files
-			 */
-
-			// Global
-
-			if ((measurement_out = fopen(params.measurement_out_fname, "r")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
-			}
-
-			if (fseek(measurement_out, 0, SEEK_END) != 0) {
-			    FFEA_ERROR_MESSG("Could not seek to end of file\n")
-			}
-
-			last_asterisk_pos = ftello(measurement_out);
-
-			// Looking for newlines this time, as each measurement frame is a single line
-			int num_newlines = 0;
-			int num_newlines_to_find = frames_to_delete + 1; // 1 for every frame, plus the first one, assuming all were written correctly
-			while (num_newlines != num_newlines_to_find) {
-			    if (fseek(measurement_out, -2, SEEK_CUR) != 0) {
-				FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.measurement_out_fname)
-			    }
-			    c = fgetc(measurement_out);
-			    if (c == '\n') {
-				num_newlines++;
-				printf("Found %d\n", num_newlines);
-			    }
-			}
-
-			last_asterisk_pos = ftello(measurement_out);
-
-			// Truncate the measurement file up to the point of the last newline
-			printf("Truncating the measurement file to the appropriate line...\n");
-			if (truncate(params.measurement_out_fname, last_asterisk_pos) != 0) {
-			    FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.measurement_out_fname)
-			}
-
-			// Append a newline to the end of this truncated measurement file (to replace the one that may or may not have been there)
-			//fprintf(measurement_out, "#==RESTART==\n");
-
-			last_asterisk_pos = ftello(measurement_out);
-
-
-			// Detailed
-			if(writeDetailed) {
-
-				if ((detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "r")) == NULL) {
-				    FFEA_FILE_ERROR_MESSG(params.detailed_meas_out_fname.c_str())
-				}
-
-				if (fseek(detailed_meas_out, 0, SEEK_END) != 0) {
-				    FFEA_ERROR_MESSG("Could not seek to end of file\n")
-				}
-
-				last_asterisk_pos = ftello(detailed_meas_out);
-
-				// Looking for newlines this time, as each measurement frame is a single line
-				num_newlines = 0;
-				num_newlines_to_find = frames_to_delete + 1; // 1 for every frame, plus the first one, assuming all were written correctly
-				while (num_newlines != num_newlines_to_find) {
-				    if (fseek(detailed_meas_out, -2, SEEK_CUR) != 0) {
-					FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.detailed_meas_out_fname.c_str())
-				    }
-				    c = fgetc(detailed_meas_out);
-				    if (c == '\n') {
-					num_newlines++;
-					printf("Found %d\n", num_newlines);
-				    }
-				}
-
-				last_asterisk_pos = ftello(detailed_meas_out);
-
-				// Truncate the measurement file up to the point of the last newline
-				printf("Truncating the detailed measurement file to the appropriate line...\n");
-				if (truncate(params.detailed_meas_out_fname.c_str(), last_asterisk_pos) != 0) {
-				    FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.detailed_meas_out_fname.c_str())
-				}
 			}
 
 			// Open trajectory and measurment files for appending
@@ -767,19 +823,15 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
 			}
 
-			// And the detailed meas file, maybe
-			if(writeDetailed) {
-				if((detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "a")) == NULL) {
-					FFEA_FILE_ERROR_MESSG(params.detailed_meas_out_fname.c_str())
-				}
-			}
+			// Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
+			fprintf(measurement_out, "#==RESTART==\n");
 
 			// And kinetic file
 			if(params.kinetics_out_fname_set == 1) {
 			    if ((kinetics_out = fopen(params.kinetics_out_fname, "a")) == NULL) {
 				FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname)
 			    }
-			    //fprintf(kinetics_out, "#==RESTART==\n");
+			    fprintf(kinetics_out, "#==RESTART==\n");
 			}
 			
 			/*
@@ -891,8 +943,116 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     //params.write_to_file(userInfo::log_out);
 
 #ifdef USE_MPI
-    et = MPI::Wtime() -st;
-    cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
+	}
+	st1 = MPI_Wtime();
+	//string vdw_type;
+	char *vdw_type_c = new char[50*sizeof(char)];
+
+	DerivedDatatype *derived_dt = new DerivedDatatype();
+	
+	if(rank == 0){	
+		params_num_blobs= params.num_blobs;
+		total_surfaces = total_num_surface_faces;
+		nx = params.es_N_x;
+		ny = params.es_N_y;
+		nz = params.es_N_z;
+		//vdw_type = params.vdw_type;
+		//strcpy(vdw_type_c, vdw_type.c_str());
+	}
+
+	MPI_Bcast(&total_surfaces, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&params_num_blobs, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&nx, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&ny, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&nz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	//MPI_Bcast(vdw_type_c, 50, MPI_CHAR, 0, MPI_COMM_WORLD);
+	if(rank != 0) fieldenergy = derived_dt->alloc_2d_scalar(params_num_blobs, params_num_blobs);
+	lookup_buf = derived_dt->alloc_2d_facempi(total_surfaces, params_num_blobs);
+	/*if(rank != 0){
+		vdw_type = string(vdw_type_c);
+		if (vdw_type == "lennard-jones")
+			vdw_solver_mpi = new VdW_solver();
+		else if (vdw_type == "steric")
+			vdw_solver_mpi = new Steric_solver();
+		else if (vdw_type == "stericII")
+			vdw_solver_mpi = new Steric_solverII();
+		else if (vdw_type == "ljsteric")
+			vdw_solver_mpi = new LJSteric_solver();
+	}*/
+	normal_array = new vector3[total_surfaces*sizeof(vector3)];
+	centroid_array = new vector3[total_surfaces*sizeof(vector3)];
+	n_pos_array = derived_dt->alloc_2d_vector3(total_surfaces, 4);
+	vdw_bb_force_array_x = derived_dt->alloc_2d_scalar(total_surfaces, params_num_blobs);
+	vdw_bb_force_array_y = derived_dt->alloc_2d_scalar(total_surfaces, params_num_blobs);
+	vdw_bb_force_array_z = derived_dt->alloc_2d_scalar(total_surfaces, params_num_blobs);
+	force_array_x = derived_dt->alloc_2d_scalar(total_surfaces, 3);
+	force_array_y = derived_dt->alloc_2d_scalar(total_surfaces, 3);
+	force_array_z = derived_dt->alloc_2d_scalar(total_surfaces, 3);
+	if(rank == 0){
+		for(int i=0;i<total_surfaces;i++){
+			for(int j=0;j<params_num_blobs;j++){
+				lookup_buf[i][j].index = lookup.get_from_pool(i)->obj->index;
+				lookup_buf[i][j].normal = lookup.get_from_pool(i)->obj->normal;
+				lookup_buf[i][j].daddy_blob_index = lookup.get_from_pool(i)->obj->daddy_blob->blob_index;
+				lookup_buf[i][j].kinetically_active = lookup.get_from_pool(i)->obj->kinetically_active;
+				lookup_buf[i][j].centroid.x = lookup.get_from_pool(i)->obj->centroid.x;
+				lookup_buf[i][j].centroid.y = lookup.get_from_pool(i)->obj->centroid.y;
+				lookup_buf[i][j].centroid.z = lookup.get_from_pool(i)->obj->centroid.z;
+				for(int k=0;k<3;k++){
+					lookup_buf[i][j].force[k].x = lookup.get_from_pool(i)->obj->force[k].x;
+					lookup_buf[i][j].force[k].y = lookup.get_from_pool(i)->obj->force[k].y;
+					lookup_buf[i][j].force[k].z = lookup.get_from_pool(i)->obj->force[k].z;
+				}
+				lookup_buf[i][j].vdw_bb_interaction_flag = lookup.get_from_pool(i)->obj->vdw_bb_interaction_flag[j];
+				lookup_buf[i][j].vdw_bb_energy = lookup.get_from_pool(i)->obj->vdw_bb_energy[j];
+				lookup_buf[i][j].vdw_bb_force.x = lookup.get_from_pool(i)->obj->vdw_bb_force[j].x;
+				lookup_buf[i][j].vdw_bb_force.y = lookup.get_from_pool(i)->obj->vdw_bb_force[j].y;
+				lookup_buf[i][j].vdw_bb_force.z = lookup.get_from_pool(i)->obj->vdw_bb_force[j].z;
+				for(int k=0;k<4;k++){
+					lookup_buf[i][j].n_index[k] = lookup.get_from_pool(i)->obj->n[k]->index;
+					lookup_buf[i][j].n_pos[k].x = lookup.get_from_pool(i)->obj->n[k]->pos.x;
+					lookup_buf[i][j].n_pos[k].y = lookup.get_from_pool(i)->obj->n[k]->pos.y;
+					lookup_buf[i][j].n_pos[k].z = lookup.get_from_pool(i)->obj->n[k]->pos.z;		
+				}
+				for (int k=0;k<3;k++){
+					force_array_x[i][k] = 0.0;
+					force_array_y[i][k] = 0.0;
+					force_array_z[i][k] = 0.0;
+				}
+				for(int j=0;j<params_num_blobs;j++){
+					vdw_bb_force_array_x[i][j] = 0.0;
+					vdw_bb_force_array_y[i][j] = 0.0;
+					vdw_bb_force_array_z[i][j] = 0.0;
+				}
+				//derived_dt->face_to_facempi(lookup.get_from_pool(i)->obj,lookup_buf[i], params_num_blobs);
+			}	
+		}
+	}
+	//cout<<"size of face"<<sizeof(lookup.get_from_pool(1)->obj)<<endl;
+	//cout<<"size of buf"<< sizeof(lookup_buf[1][1])<<endl;
+	MPI_Datatype face_mpi_type = derived_dt->derived_face_mpi();
+	MPI_Bcast(lookup_buf[0], total_surfaces*params_num_blobs, face_mpi_type, 0, MPI_COMM_WORLD);
+	if(rank !=0){
+		pool_mpi = new LinkedListNodeMpi[total_surfaces*sizeof(LinkedListNodeMpi)];
+		root_mpi = new LinkedListNodeMpi*[nx*ny*nz*sizeof(LinkedListNodeMpi*)];	
+		for(int i=0;i<total_surfaces;i++){
+			pool_mpi[i].index = i;
+			pool_mpi[i].face = new FaceMpi[params_num_blobs*sizeof(FaceMpi)];
+			for(int j=0;j<params_num_blobs;j++){
+				derived_dt->assign_face(pool_mpi[i].face[j], lookup_buf[i][j]);
+			}
+		}
+	}
+	//cout<<"rank"<<rank<<"get value"<<lookup_buf[1][1].centroid.x<<endl;
+	//init the data array
+	
+	
+	et1 = MPI_Wtime() -st1;
+	et = MPI_Wtime() -st;
+	if(rank == 0){
+		cout<<"benchmarking--------mpi code:"<<et1<<"seconds"<<endl;
+		cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
+	}
 #endif
     return FFEA_OK;
 }
@@ -905,215 +1065,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
  *   ffea numerical integration.
  * */
 int World::get_smallest_time_constants() {
-
-	// This is currently only for active blob, as inactive blobs are all at infinity due to linked list problems
-
-	// Global variables
-	int i, j, dt_min_bin, dt_max_bin, num_nodes, num_rows;
-	scalar dt_min_world = INFINITY, dt_max_world = -1 * INFINITY;
-	string dt_min_world_type = "viscous", dt_max_world_type = "viscous";
-	Eigen::EigenSolver<Eigen_MatrixX> es_v, es_m;
-	vector<scalar> tauv, taum;
-	vector<scalar>::iterator it;
-
-	cout << "Calculating time constants..." << endl << endl;
-	for(i = 0; i < params.num_blobs; ++i) {
-		cout << "\tBlob " << i << ":" << endl << endl;
-
-		// Ignore if we have a static blob
-		if(active_blob_array[i]->get_motion_state() == FFEA_BLOB_IS_STATIC) {
-			cout << "\t\tBlob " << i << " is STATIC. No associated timesteps." << endl;
-			continue;
-		}
-
-		// What will be the fastest dynamics? Inertial or viscous?
-
-		// Viscous only
-			
-		// Build matrices
-		num_nodes = active_blob_array[i]->get_num_linear_nodes();
-
-		// Direction matters here
-		num_rows = 3 * num_nodes;
-
-		Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
-		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
-		Eigen_MatrixX K_inv(num_rows, num_rows);
-		Eigen_MatrixX I(num_rows, num_rows);
-		Eigen_MatrixX tau_inv(num_rows, num_rows);
-
-		// Build viscosity matrix, K
-		cout << "\r\t\tCalculating the Viscosity Matrix, K (task 1/5)..." << flush;
-		if(active_blob_array[i]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
-			cout << endl << "\t\t";
-			FFEA_error_text();
-			cout << endl << endl << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << i << endl;
-			return FFEA_ERROR;
-		}
-		cout << "done!" << flush;
-
-		// Build elasticity matrix, A
-		cout << "\r\t\tCalculating the Elasticity Matrix, A (task 2/5)..." << flush;
-		if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
-			cout << endl << "\t\t";
-			FFEA_error_text();
-			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << i << endl;
-			return FFEA_ERROR;
-		}
-		cout << "done!" << flush;
-
-		// Invert K (it's symmetric! Will not work if stokes_visc == 0)
-		cout << "\r\t\tAttempting to invert K to form K_inv (task 3/5)..." << flush;
-		Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(K); // performs a Cholesky factorization of K
-		I.setIdentity();
-		K_inv = Cholesky.solve(I);
-		if(Cholesky.info() == Eigen::Success) {
-			cout << "done!" << flush;
-		} else if (Cholesky.info() == Eigen::NumericalIssue) {
-			cout << endl << "\t\t" << "Viscosity Matrix could not be inverted via Cholesky factorisation due to numerical issues. You possibly don't have an external solvent set, or it is too low." << endl;
-			return FFEA_ERROR;
-		} else if (Cholesky.info() == Eigen::NoConvergence) {
-			cout << "\nInversion iteration couldn't converge. K must be a crazy matrix. Possibly has zero eigenvalues?" << endl;
-			return FFEA_ERROR;
-		}
-
-		// Apply to A
-		cout << "\r\t\tCalculating inverse time constant matrix, tau_inv = K_inv * A (task 4/5)..." << flush;
-		tau_inv = K_inv * A;
-		cout << "done!" << flush;
-
-		// Diagonalise
-		cout << "\r" << "\t\t                                                                     " << flush;
-		cout << "\r\t\tDiagonalising tau_inv (task 5/5)..." << flush;
-		es_v.compute(tau_inv);
-		for(j = 0; j < num_rows; ++j) {
-			tauv.push_back(1.0 / fabs(es_v.eigenvalues()[j].real()));
-		}
-		cout << "done!" << flush;
-
-		if(active_blob_array[i]->get_linear_solver() != FFEA_NOMASS_CG_SOLVER) {
-
-			// Inertial 'always' fastest
-			
-			// Build matrices
-			num_nodes = active_blob_array[i]->get_num_linear_nodes();
-
-			// Direction still matters here due to viscosity
-			num_rows = 3 * num_nodes;
-
-			Eigen::SparseMatrix<scalar> M(num_rows, num_rows);
-			Eigen_MatrixX M_inv(num_rows, num_rows);
-
-			// Build mass matrix, M
-			cout << "\r\t\tCalculating the Mass Matrix, M (task 1/4)..." << flush;
-			if(active_blob_array[i]->build_linear_node_mass_matrix(&M) == FFEA_ERROR) {
-				cout << endl << "\t\t";
-				FFEA_error_text();
-				cout << endl << endl << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << i << endl;
-				return FFEA_ERROR;
-			}
-			cout << "done!" << flush;
-
-			// Invert M (it's symmetric!)
-			cout << "\r\t\tAttempting to invert M to form M_inv (task 2/4)..." << flush;
-			Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(M); // performs a Cholesky factorization of K
-			M_inv = Cholesky.solve(I);
-			if(Cholesky.info() == Eigen::Success) {
-				cout << "done!" << flush;
-			} else if (Cholesky.info() == Eigen::NumericalIssue) {
-				cout << endl << "\t\t" << "Mass Matrix could not be inverted via Cholesky factorisation due to numerical issues. This...should not be the case. You have a very odd mass distribution. Try the CG_nomass solver" << endl;
-				return FFEA_ERROR;
-			} else if (Cholesky.info() == Eigen::NoConvergence) {
-				cout << endl << "\t\t" << "Inversion iteration couldn't converge. M must be a crazy matrix. Possibly has zero eigenvalues? Try the CG_nomass solver." << endl;
-				return FFEA_ERROR;
-			}
-
-			// Apply to K
-			cout << "\r\t\tCalculating inverse time constant matrix, tau_inv = M_inv * K (task 3/4)..." << flush;
-			tau_inv = M_inv * K;
-			cout << "done!" << flush;
-
-			// Diagonalise
-			cout << "\r" << "\t\t                                                                                                            " << flush;
-			cout << "\r\t\tDiagonalising tau_inv (task 4/4)..." << flush;
-			es_m.compute(tau_inv);
-			for(j = 0; j < num_rows; ++j) {
-				taum.push_back(1.0 / fabs(es_m.eigenvalues()[j].real()));
-			}
-			cout << "done!" << flush;
-		}
-
-		// But is it a numerical instability problem, or a small elements problem? Solve 1 step to find out (at a later date)
-
-		// Get extreme timesteps from this eigendecomposition.)
-
-		// Sort eigenvalues
-		cout << "\r\t\tSorting eigenvalues (task 1/1)..." << flush;
-		sort(tauv.begin(), tauv.end());
-		sort(taum.begin(), taum.end());
-		cout << "done!" << flush;
-
-		// Ignore the 6 translational / rotational modes (they are likely the slowest 6 modes)
-		scalar dt_max_blob = tauv.at(num_rows - 7);
-		scalar dt_min_blob = tauv.at(0);
-		string dt_min_blob_type = "viscous", dt_max_blob_type = "viscous";
-
-		//for(int l = 0; l < 10; ++l) {
-		//	cout << endl << "ev " << l << " visc - " << tauv.at(l) << " mass - " << taum.at(l) << endl;
-		//}
-		//for(int l = num_rows - 10; l < num_rows; ++l) {
-	//		cout << endl << "ev " << l << " visc - " << tauv.at(l) << " mass - " << taum.at(l) << endl;
-		//}
-		//exit(0);
-
-		// We don't need to ignore top 6 here as they have energy associated with them now i.e. not zero eigenvalues
-		if(active_blob_array[i]->get_linear_solver() != FFEA_NOMASS_CG_SOLVER) {
-
-			if(taum.at(num_rows - 1) > dt_max_blob) {
-				dt_max_blob = taum.at(num_rows - 1);
-				dt_max_blob_type = "inertial";
-			}
-			if(taum.at(0) < dt_min_blob) {
-				dt_min_blob = taum.at(0);
-				dt_min_blob_type = "inertial";
-			}
-		}
-
-		//cout << "\r\t\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << (1.0 / smallest_val) * mesoDimensions::time << "s" << endl;
-		//cout << "\t\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << (1.0 / largest_val) * mesoDimensions::time << "s" << endl << endl;
-		cout << "\r\t\tFastest Mode: tau (" << dt_min_blob_type << ") = " << dt_min_blob * mesoDimensions::time << "s" << endl;
-		cout << "\t\tSlowest Mode: tau (" << dt_max_blob_type << ") = " << dt_max_blob * mesoDimensions::time << "s" << endl << endl;
-
-		// Global stuff
-		if(dt_max_blob > dt_max_world) {
-			dt_max_world = dt_max_blob;
-			dt_max_world_type = dt_max_blob_type;
-			dt_max_bin = i;
-		}
-
-		if(dt_min_blob < dt_min_world) {
-			dt_min_world = dt_min_blob;
-			dt_min_world_type = dt_min_blob_type;
-			dt_min_bin = i;
-		}
-		
-		
-	}
-
-	cout << endl << "Global Time Constant Details:" << endl << endl;
-	cout << "\t\tFastest Mode: Blob " << dt_min_bin << ", tau (" << dt_min_world_type << ") = " << dt_min_world * mesoDimensions::time << "s" << endl;
-	cout << "\t\tSlowest Mode: Blob " << dt_max_bin << ", tau (" << dt_max_world_type << ") = " << dt_max_world * mesoDimensions::time << "s" << endl << endl;
-	cout << "\t\tPlease make sure your simulation timestep is less than " << dt_min_world * mesoDimensions::time << "s, for a stable simulation." << endl;
-	cout << "\t\tTake note than the energies will become inaccurate before this, so check your energy equilibrates correctly. If unsure, set dt << " << dt_min_world * mesoDimensions::time << "s" << endl << endl;
-	cout << "\t\tFor dynamical convergence, your simulation must run for longer than " << dt_max_world * mesoDimensions::time << "s." << endl << endl;
-
-	cout << "\t\tFINAL NOTE - If, after taking into account the above time constants, your simulation still fails (due to element inversion) it is not due to numerical instability from the integration, ";
-	cout << "but because a single timestep, with the average size of the noise, causes a step size larger than your smallest element. You must therefore coarsen your mesh further for the ";
-	cout << "continuum approximation to be valid. Thanks :)" << endl << endl;
-	return FFEA_OK;
-}
-
-/*int World::get_smallest_time_constants() {
 	
 	int blob_index;
 	int num_nodes, num_rows;
@@ -1143,7 +1094,7 @@ int World::get_smallest_time_constants() {
 		Eigen_MatrixX I(num_rows, num_rows);
 		Eigen_MatrixX tau_inv(num_rows, num_rows);
 
-		// Build K
+		/* Build K */
 		cout << "\tCalculating the Global Viscosity Matrix, K...";
 		if(active_blob_array[blob_index]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
 			cout << endl;
@@ -1153,7 +1104,7 @@ int World::get_smallest_time_constants() {
 		}
 		cout << "done!" << endl;
 
-		// Build A
+		/* Build A */
 		cout << "\tCalculating the Global Linearised Elasticity Matrix, A...";
 		if(active_blob_array[blob_index]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
 			cout << endl;
@@ -1163,7 +1114,7 @@ int World::get_smallest_time_constants() {
 		}
 		cout << "done!" << endl;
 
-		// Invert K (it's symmetric! Will not work if stokes_visc == 0)
+		/* Invert K (it's symmetric! Will not work if stokes_visc == 0) */
 		cout << "\tAttempting to invert K to form K_inv...";
 		Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(K); // performs a Cholesky factorization of K
 		I.setIdentity();
@@ -1178,15 +1129,31 @@ int World::get_smallest_time_constants() {
 			return FFEA_OK;
 		}
 
-		// Apply to A
+		/* Apply to A */
 		cout << "\tCalculating inverse time constant matrix, tau_inv = K_inv * A...";
 		tau_inv = K_inv * A;
 		cout << "done!" << endl;
 
-		// Diagonalise
+		/* Diagonalise */
 		cout << "\tDiagonalising tau_inv..." << flush;
 		Eigen::EigenSolver<Eigen_MatrixX> es(tau_inv);
+		//cout << es.eigenvalues() << endl;
+		/*double smallest_val = INFINITY;
+		double largest_val = -1 * INFINITY;
+		for(int i = 0; i < num_rows; ++i) {
 
+			// Quick fix for weird eigenvalues. Will look into this later
+			if(es.eigenvalues()[i].imag() != 0) {
+				continue;
+			} else {
+				if(es.eigenvalues()[i].real() < smallest_val && es.eigenvalues()[i].real() > 0) {
+					smallest_val = es.eigenvalues()[i].real();
+				} 
+				if (es.eigenvalues()[i].real() > largest_val) {
+					largest_val = es.eigenvalues()[i].real();
+				}
+			}	
+		}*/
 
 		cout << "done!" << endl;
 
@@ -1194,8 +1161,8 @@ int World::get_smallest_time_constants() {
 		scalar smallest_val = fabs(es.eigenvalues()[6].real());
 		scalar largest_val = fabs(es.eigenvalues()[0].real());
 
-		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << (1.0 / smallest_val) * mesoDimensions::time << "s" << endl;
-		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << (1.0 / largest_val) * mesoDimensions::time << "s" << endl << endl;
+		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << 1.0 / smallest_val << "s" << endl;
+		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << 1.0 / largest_val << "s" << endl << endl;
 
 		// Global stuff
 		if(1.0 / smallest_val > dt_max) {
@@ -1209,11 +1176,11 @@ int World::get_smallest_time_constants() {
 		}
 
 	}
-	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max * mesoDimensions::time << "s, from Blob " << dt_max_bin << endl;
-	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min * mesoDimensions::time << "s, from Blob " << dt_min_bin << endl << endl;
+	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max << "s, from Blob " << dt_max_bin << endl;
+	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min << "s, from Blob " << dt_min_bin << endl << endl;
 	cout << "Remember, the energies in your system will begin to be incorrect long before the dt = tau_min. I'd have dt << tau_min if I were you." << endl;
 	return FFEA_OK;
-}*/
+}
 
 
 /**
@@ -1645,15 +1612,71 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
  * Update entire World for num_steps time steps
  * */
 int World::run() {
-    int es_count = params.es_update;
-    scalar wtime = omp_get_wtime();
-    long long timestep = 1;
 #ifdef USE_MPI
-    double st, st1, st2, time1, time2, time3;
-    st =MPI::Wtime();
-#endif 
-    for (long long step = step_initial; step < params.num_steps; step++) {
+	int rank,size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+    int es_count;
+    scalar wtime;
+	int step_initial_new;
+	int params_num_steps;
+	int params_calc_vdw;	
+	//string vdw_type;
 
+#ifdef USE_MPI
+	double st1, st2, st3, st4, time1, time2, time3, time4;
+
+	//char *vdw_type_c = new char[50*sizeof(char)];
+	if(rank == 0){
+#endif
+	es_count = params.es_update;
+	wtime = omp_get_wtime();
+	//replaced with sharing values in mpi processes
+	step_initial_new = step_initial;
+	params_num_steps = params.num_steps;
+	//define whether do vdw calculation
+	params_calc_vdw = params.calc_vdw;
+	//define using which solver 
+	//vdw_type = params.vdw_type;
+#ifdef USE_MPI
+	time1 = 0.0;
+	time2 = 0.0;
+	time3 = 0.0;
+	time4 = 0.0;
+	//strcpy(vdw_type_c, vdw_type.c_str());
+	}
+	st1 = MPI_Wtime();
+	MPI_Bcast(&step_initial_new, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&params_num_steps, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&params_calc_vdw, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	//MPI_Bcast(vdw_type_c, 50, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+	//derived datatype
+	DerivedDatatype *derived_dt = new DerivedDatatype();
+	
+	MPI_Datatype scalar_mpi_type = derived_dt->derived_scalar_mpi();
+	
+	MPI_Datatype vector3_mpi_type = derived_dt->derived_vector3_mpi();
+	
+	MPI_Datatype face_mpi_type = derived_dt->derived_face_mpi();
+	
+	bool *kinetic_array = new bool[total_surfaces];
+	
+	scalar ** recv_force_x = derived_dt->alloc_2d_scalar(total_surfaces, 3);
+	scalar ** recv_force_y = derived_dt->alloc_2d_scalar(total_surfaces, 3);
+	scalar ** recv_force_z = derived_dt->alloc_2d_scalar(total_surfaces, 3);
+	scalar ** recv_vdw_x = derived_dt->alloc_2d_scalar(total_surfaces, params_num_blobs);
+	scalar ** recv_vdw_y = derived_dt->alloc_2d_scalar(total_surfaces, params_num_blobs);
+	scalar ** recv_vdw_z = derived_dt->alloc_2d_scalar(total_surfaces, params_num_blobs);
+	
+#endif
+
+    //for (long long step = step_initial; step < params.num_steps; step++) {
+	for (long long step = step_initial_new; step < params_num_steps; step++) {	
+		#ifdef USE_MPI
+		if(rank == 0){
+		#endif
         // Zero the force across all blobs
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) schedule(runtime)
@@ -1667,7 +1690,6 @@ int World::run() {
                 active_blob_array[i]->zero_vdw_xz_measurement_data();
             }
         }
-
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) schedule(guided) shared(stderr)
 #endif
@@ -1677,7 +1699,7 @@ int World::run() {
             vector3 com;
             active_blob_array[i]->get_centroid(&com);
    
-	    scalar dx = 0, dy = 0, dz = 0;
+			scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
 
             if (com.x < 0) {
@@ -1728,7 +1750,6 @@ int World::run() {
         }
 
 
-
         if (params.calc_es == 1 || params.calc_vdw == 1 || params.sticky_wall_xz == 1) {
             if (es_count == params.es_update) {
 
@@ -1740,7 +1761,6 @@ int World::run() {
                     active_blob_array[i]->reset_all_faces();
                 }
 
-
                 // Attempt to place all faces in the nearest neighbour lookup table
                 if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
                     FFEA_error_text();
@@ -1749,11 +1769,9 @@ int World::run() {
                     // attempt to print out the final (bad) time step
                     printf("Dumping final step:\n");
                     print_trajectory_and_measurement_files(step, wtime);
-		    print_kinetic_files(0);
-
+					print_kinetic_files(0);
                     return FFEA_ERROR;
                 }
-
                 if (params.sticky_wall_xz == 1) {
                     vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
                 }
@@ -1768,13 +1786,195 @@ int World::run() {
         }
         // timing solve() function
 #ifdef USE_MPI
-          st1 = MPI::Wtime();
+		}
+		st4 = MPI_Wtime();
+		//set to zero
+		if(rank != 0){
+			for(int i=0;i<total_surfaces;i++){
+				for(int j=0;j<params_num_blobs;j++){
+						
+						pool_mpi[i].face[j].vdw_bb_interaction_flag = false;
+	
+						pool_mpi[i].face[j].vdw_bb_energy = 0.0;
+						
+						pool_mpi[i].face[j].vdw_bb_force.x = 0.0;
+						pool_mpi[i].face[j].vdw_bb_force.y = 0.0;
+						pool_mpi[i].face[j].vdw_bb_force.z = 0.0;					
+					}
+			}
+		}
+		
+		//**************** MPI ****BROADCAST ****************//
+		//face->normal && face->centroid
+		//face->vdw_bb_interaction_flag
+		//face->node->pos
+		//face->vdw_xz_force
+		//face->vdw_bb_force
+		//face->vdw_xz_energy
+		//face->vdw_bb_energy
+		//node->vel
+		//face->vdw_xz_interaction_flag
+		if(rank == 0){
+			for(int i=0;i<total_surfaces;i++){
+				normal_array[i].x = lookup.get_from_pool(i)->obj->normal.x;
+				normal_array[i].y = lookup.get_from_pool(i)->obj->normal.y;
+				normal_array[i].z = lookup.get_from_pool(i)->obj->normal.z;
+				
+				centroid_array[i].x = lookup.get_from_pool(i)->obj->centroid.x;
+				centroid_array[i].y = lookup.get_from_pool(i)->obj->centroid.y;
+				centroid_array[i].z = lookup.get_from_pool(i)->obj->centroid.z;
+				
+				kinetic_array[i] = lookup.get_from_pool(i)->obj->kinetically_active;
+				
+				for(int j=0;j<4;j++){
+					n_pos_array[i][j].x = lookup.get_from_pool(i)->obj->n[j]->pos.x;
+					n_pos_array[i][j].y = lookup.get_from_pool(i)->obj->n[j]->pos.y;
+					n_pos_array[i][j].z = lookup.get_from_pool(i)->obj->n[j]->pos.z;
+				}
+			}
+		}
+		MPI_Bcast(normal_array, total_surfaces, vector3_mpi_type, 0, MPI_COMM_WORLD);
+		MPI_Bcast(centroid_array, total_surfaces, vector3_mpi_type, 0, MPI_COMM_WORLD);
+		MPI_Bcast(n_pos_array[0], total_surfaces*4, vector3_mpi_type, 0, MPI_COMM_WORLD);
+		MPI_Bcast(kinetic_array, total_surfaces, MPI::BOOL, 0, MPI_COMM_WORLD);
+
+		//**************** MPI **** CREATE LINKEDLISTS ***//
+		/*
+		   . build_nearest_neighbour_lookup linkedLists on other process   
+		*/
+		scalar h;
+		if(rank == 0) h =params.es_h * (1.0 / params.kappa);	
+		MPI_Bcast(&h, 1, scalar_mpi_type, 0, MPI_COMM_WORLD);
+
+		if(rank !=0 && params_calc_vdw == 1){
+			int i;
+			// Clear the pool and root
+			for (i = 0; i < nx * ny * nz; i++)
+				root_mpi[i] = NULL;
+			for (i = 0; i < total_surfaces; i++)
+				pool_mpi[i].next = NULL;
+			for(i=0;i<total_surfaces;i++){
+				//-------set new values recieved from master process-----
+				pool_mpi[i].face[0].normal.x = normal_array[i].x;
+				pool_mpi[i].face[0].normal.y = normal_array[i].y;
+				pool_mpi[i].face[0].normal.z = normal_array[i].z;
+				
+				pool_mpi[i].face[0].centroid.x = centroid_array[i].x;
+				pool_mpi[i].face[0].centroid.y = centroid_array[i].y;
+				pool_mpi[i].face[0].centroid.z = centroid_array[i].z;
+				
+				for(int k=0;k<4;k++){
+					pool_mpi[i].face[0].n_pos[k].x = n_pos_array[i][k].x;
+					pool_mpi[i].face[0].n_pos[k].y = n_pos_array[i][k].y;
+					pool_mpi[i].face[0].n_pos[k].z = n_pos_array[i][k].z;
+				}
+				pool_mpi[i].face[0].kinetically_active = kinetic_array[i];
+				
+				//set faces to the linkedlist
+				if(!pool_mpi[i].face[0].kinetically_active){
+					continue;
+				}
+				int x = (int) floor(pool_mpi[i].face[0].centroid.x / h);
+				int y = (int) floor(pool_mpi[i].face[0].centroid.y / h);
+				int z = (int) floor(pool_mpi[i].face[0].centroid.z / h);
+				//pbc(&x, &y, &z);
+				if (x < 0) {
+					x += nx;
+				} else if (x >= nx) {
+					x -= nx;
+				}
+				if (y < 0) {
+					y += ny;
+				} else if (y >= ny) {
+					y -= ny;
+				}
+				if (z < 0) {
+					z += nz;
+				} else if (z >= nz) {
+					z -= nz;
+				}
+				//if (x < 0 || x >= nx || y < 0 || y >= ny || z < 0 || z >= nz) {
+				//	printf("Face centroid out of bounds of LinkedListCube (coords are [%d, %d, %d])\n", x, y, z);
+				//	return FFEA_ERROR;
+				//}
+				//if(x>=0 && x<nx &&y>=0 &&y<ny &&z>=0 && z<nz){
+					int abs_index = x * ny * nz + y * nz + z;
+					if(abs_index < nx*ny*nz && abs_index>=0){
+						pool_mpi[i].x = x;
+						pool_mpi[i].y = y;
+						pool_mpi[i].z = z;
+						pool_mpi[i].next = root_mpi[abs_index];
+						root_mpi[abs_index] = &pool_mpi[i];	
+					}
+				//}
+				
+			}
+		}
+		time4 = MPI_Wtime() - st4 + time4;
+        st2 = MPI_Wtime();
 #endif
 
-        if (params.calc_vdw == 1) vdw_solver->solve(params.num_blobs);
-
+        if (params_calc_vdw == 1) {
+			#ifdef USE_MPI
+			if (rank == 0){
+			#endif
+			vdw_solver->solve(params_num_blobs);
+			//set template sendbuf
+			//set_master_sendbuf();
+			#ifdef USE_MPI
+			}else{
+				//do steric_solver  solve 
+				vdw_solve_mpi(size, rank);
+				//set template sendbuf
+				set_proc_sendbuf();
+			}
+			#ifdef USE_DOUBLE
+			MPI_Reduce(force_array_x[0], recv_force_x[0], total_surfaces*3, MPI_DOUBLE, MPI_SUM, 0,MPI_COMM_WORLD);
+			MPI_Reduce(force_array_y[0], recv_force_y[0], total_surfaces*3, MPI_DOUBLE, MPI_SUM, 0,MPI_COMM_WORLD);
+			MPI_Reduce(force_array_z[0], recv_force_z[0], total_surfaces*3, MPI_DOUBLE, MPI_SUM, 0,MPI_COMM_WORLD);
+			MPI_Reduce(vdw_bb_force_array_x[0], recv_vdw_x[0],total_surfaces*params_num_blobs, MPI_DOUBLE, MPI_SUM, 0,MPI_COMM_WORLD);
+			MPI_Reduce(vdw_bb_force_array_y[0], recv_vdw_y[0],total_surfaces*params_num_blobs, MPI_DOUBLE, MPI_SUM, 0,MPI_COMM_WORLD);
+			MPI_Reduce(vdw_bb_force_array_z[0], recv_vdw_z[0],total_surfaces*params_num_blobs, MPI_DOUBLE, MPI_SUM, 0,MPI_COMM_WORLD);
+			#else
+			MPI_Allreduce(force_array_x[0], recv_force_x[0], total_surfaces*3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Allreduce(force_array_y[0], recv_force_y[0], total_surfaces*3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Allreduce(force_array_z[0], recv_force_z[0], total_surfaces*3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Allreduce(vdw_bb_force_array_x[0], recv_vdw_x[0],total_surfaces*params_num_blobs, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Allreduce(vdw_bb_force_array_y[0], recv_vdw_y[0],total_surfaces*params_num_blobs, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Allreduce(vdw_bb_force_array_z[0], recv_vdw_z[0],total_surfaces*params_num_blobs, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+			#endif
+			
+			if(rank == 0){
+				//master need to update
+				//return_master_buf(recv_force_x, recv_force_y,recv_force_z,
+				//					recv_vdw_x,recv_vdw_y,recv_vdw_z);
+				for(int i=0;i<total_surfaces;i++){
+					for(int k=0;k<3;k++){
+						lookup.get_from_pool(i)->obj->force[k].x += recv_force_x[i][k];	
+						lookup.get_from_pool(i)->obj->force[k].y += recv_force_y[i][k];	
+						lookup.get_from_pool(i)->obj->force[k].z += recv_force_z[i][k];	
+					}
+					for(int j=0;j<params_num_blobs;j++){
+						lookup.get_from_pool(i)->obj->vdw_bb_force[j].x += recv_vdw_x[i][j];
+						lookup.get_from_pool(i)->obj->vdw_bb_force[j].y += recv_vdw_y[i][j];
+						lookup.get_from_pool(i)->obj->vdw_bb_force[j].z += recv_vdw_z[i][j];
+					}
+				}
+								
+				
+									//cout<<"okrank0"<<endl;
+			}else{
+				//update other processes too
+				//return_proc_buf(recv_force_x, recv_force_y,recv_force_z,
+				//				recv_vdw_x,recv_vdw_y,recv_vdw_z);
+				//				cout<<"okrankn"<<endl;
+			}
+			
+			#endif
+		}
 #ifdef USE_MPI
-        time2 = MPI::Wtime() -st1 + time2;
+		if(rank == 0){
+			time2 = MPI_Wtime() -st2 + time2;
 #endif
         
         // Update all Blobs in the World
@@ -1797,7 +1997,8 @@ int World::run() {
         
         // timing update() function
 #ifdef USE_MPI
-        st2 = MPI::Wtime();
+        st3 = MPI_Wtime();
+		//}
 #endif
 
 #ifdef FFEA_PARALLEL_PER_BLOB
@@ -1805,79 +2006,95 @@ int World::run() {
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
         	if (active_blob_array[i]->update() == FFEA_ERROR) {
+				#ifdef USE_MPI
+				if(rank == 0){
+				#endif
         		FFEA_error_text();
-               		printf("A problem occurred when updating Blob %d on step %lld\n", i, step);
-                	printf("Simulation ran for %2f seconds (wall clock time) before error ocurred\n", (omp_get_wtime() - wtime));
-                	//return FFEA_ERROR;
-                	fatal_errors++;
+				printf("A problem occurred when updating Blob %d on step %lld\n", i, step);
+				printf("Simulation ran for %2f seconds (wall clock time) before error ocurred\n", (omp_get_wtime() - wtime));
+				//return FFEA_ERROR;
+				#ifdef USE_MPI
+				}
+				#endif
+				fatal_errors++;
             	}
         }
         
-#ifdef USE_MPI
-        time3 = MPI::Wtime()-st2 + time3;
-#endif
-        timestep = timestep + 10;
+		#ifdef USE_MPI
+        //if(rank ==0 ) {
+			time3 = MPI_Wtime()-st3 + time3;
+		#endif
+        //timestep = timestep + 10;
 
         if (fatal_errors > 0) {
             FFEA_error_text();
             printf("Detected %d fatal errors in this system update. Exiting now...\n", fatal_errors);
-
             // attempt to print out the final (bad) time step
             printf("Dumping final step:\n");
             print_trajectory_and_measurement_files(step, wtime);
-	    print_kinetic_files(step);
-
+			print_kinetic_files(step);
             return FFEA_ERROR;
         }
 
-	// Output traj data to files
+		// Output traj data to files
         if ((step + 1) % params.check == 0) {
             print_trajectory_and_measurement_files(step + 1, wtime);
         }
 
-	/* Kinetic Part of each step */
-	if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
-		
-		// Calculate the kinetic switching probablilites. These are scaled from the base rates provided
-		if(calculate_kinetic_rates() != FFEA_OK) {
-			FFEA_ERROR_MESSG("'calculate_kinetic_rates()' failed.\n")
-		}
-
-	//	print_kinetic_rates_to_screen(0);
-	//	print_kinetic_rates_to_screen(1);
-
-		// Now we can treat each blob separately
-		int target;
-		for(int i = 0; i < params.num_blobs; ++i) {
-
-			// Find out what the state change should be based on the rates
-			target = active_blob_array[i]->get_state_index();
-			if(choose_new_kinetic_state(i, &target) != FFEA_OK) {
+		/* Kinetic Part of each step */
+		if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
+			
+			// Calculate the kinetic switching probablilites. These are scaled from the base rates provided
+			if(calculate_kinetic_rates() != FFEA_OK) {
 				FFEA_ERROR_MESSG("'calculate_kinetic_rates()' failed.\n")
 			}
 
-			if(change_kinetic_state(i, target) != FFEA_OK) {
-				FFEA_ERROR_MESSG("'change_kinetic_state()' failed.\n")
+		//	print_kinetic_rates_to_screen(0);
+		//	print_kinetic_rates_to_screen(1);
+
+			// Now we can treat each blob separately
+			int target;
+			for(int i = 0; i < params.num_blobs; ++i) {
+
+				// Find out what the state change should be based on the rates
+				target = active_blob_array[i]->get_state_index();
+				if(choose_new_kinetic_state(i, &target) != FFEA_OK) {
+					FFEA_ERROR_MESSG("'calculate_kinetic_rates()' failed.\n")
+				}
+
+				if(change_kinetic_state(i, target) != FFEA_OK) {
+					FFEA_ERROR_MESSG("'change_kinetic_state()' failed.\n")
+				}
 			}
 		}
-	}
 
 	// Output kinetic data to files
         if ((step + 1) % params.check == 0) {
             print_kinetic_files(step + 1);
         }
+		#ifdef USE_MPI
+		}
+		#endif
     }
+	
     // Total mpi timing, compare with openmp timing
 #ifdef USE_MPI
-    time1 = MPI::Wtime() -st;
-    cout<<"total steps:"<< params.num_steps <<endl;
-    cout<< "benchmarking--------calculate vdw for \t"<< time2 << "seconds"<< endl;
-    cout<< "benchmarking--------update blobs for \t"<< time3 << "seconds"<< endl;
-    cout<< "benchmarking--------Total MPI time in World::run():" << time1 << "seconds"<< endl;
+	if(rank ==0 ){
+		time1 = MPI_Wtime() -st1;
+		cout<<"total steps:"<< params.num_steps <<endl;
+		cout<<"working on "<<size<<"processes"<<endl;
+		cout<< "benchmarking--------calculate vdw for \t"<< time2 << "seconds"<< endl;
+		cout<< "benchmarking--------update blobs for \t"<< time3 << "seconds"<< endl;
+		cout<< "benchmarking--------Total MPI time in World::run():" << time1 << "seconds"<< endl;
+		cout<< "benchmarking--------rank 0 MPI assign lookup_buf"<<time4<<endl;
 #endif
     
     printf("\n\nTime taken: %2f seconds\n", (omp_get_wtime() - wtime));
-
+#ifdef USE_MPI
+	}else{
+		//cout<< "working time"<<time4<<"on rank"<< rank<<endl;
+	}
+#endif
     return FFEA_OK;
 }
 
@@ -3181,8 +3398,8 @@ int World::load_springs(const char *fname) {
 
     // Inititalise the energy array (move to a solver in the future, like the VdW)
     springfieldenergy = new scalar*[params.num_blobs];
-    for(i = 0; i < params.num_blobs; ++i) {
-      springfieldenergy[i] = new scalar[params.num_blobs];
+    for(i = 0; i < num_blobs; ++i) {
+	springfieldenergy[i] = new scalar[params.num_blobs];
     }
     printf("\t\tRead %d springs from %s\n", num_springs, fname);
     activate_springs();
@@ -3232,8 +3449,8 @@ scalar World::get_spring_field_energy(int index0, int index1) {
 	// Sum over all field
 	if(index0 == -1 || index1 == -1) {
 		scalar energy = 0.0;
-		for(int i = 0; i < params.num_blobs; ++i) {
-			for(int j = 0; j < params.num_blobs; ++j) {
+		for(int i = 0; i < num_blobs; ++i) {
+			for(int j = 0; j < num_blobs; ++j) {
 				energy += springfieldenergy[i][j];
 			}
 		}
@@ -3461,8 +3678,8 @@ void World::write_output_header(FILE *fout, string fname) {
 	time_t now = time(0);
 	tm *ltm = localtime(&now);
 	fprintf(fout, "\tSimulation Began on %d/%d/%d at %d:%d:%d\n", ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
-	fprintf(fout, "\tScript Filename = %s\n", fname.c_str());
-	fprintf(fout, "\tSimulation Type = %s\n\n", "Full");
+	fprintf(fout, "\tScript Filename = %s\n\n", fname.c_str());
+
 }
 
 void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
@@ -3507,10 +3724,6 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
       rng[i].GetState(state); 
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
                                                            state[3], state[4], state[5]);
-     // for(int j = 0; j < 6; ++j) {
-	//    cout << state[j] << " ";
-//      }
-    //  cout << endl;
     }
     // If there were more threads running on the previous run, we'll save them too:
     int oldThreads = num_seeds - num_threads;
@@ -3519,10 +3732,6 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0], 
               Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
               Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
-      //for(int j = 0; j < 6; ++j) {
-///	    cout << Seeds[i+num_threads][j] << " ";
-   //   }
-     // cout << endl;
     }
     // If we're doing kinetics, we're saving the state of the extra RNG: 
     if (params.calc_kinetics) {
@@ -3531,14 +3740,12 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
                                                            state[3], state[4], state[5]);
 
-    }
-    fflush(checkpoint_out);
+    } 
     // Done with the checkpoint!
 
 
     // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
     fprintf(trajectory_out, "*\n");
-    fflush(trajectory_out);
 
     // Global Measurement Stuff
     make_measurements();
@@ -3547,7 +3754,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     if(detailed_meas_out != NULL) {
 	write_detailed_measurements_to_file(detailed_meas_out);
     }
-    fflush(measurement_out);
+
 /*   // And now the kinetics, if necessary
 
     // Inform whoever is watching of changes (print to screen)
@@ -3583,6 +3790,10 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 	fflush(kinetics_out);
     }*/
 
+    // Force all output in buffers to be written to the output files now
+    fflush(trajectory_out);
+    fflush(checkpoint_out);
+    fflush(measurement_out);
 }
 
 void World::make_measurements() {
@@ -3620,8 +3831,8 @@ void World::make_measurements() {
 	// Now global stuff
 	vector3 a, b, c;
 	if(num_springs != 0) {
-		for(i = 0; i < params.num_blobs; ++i) {
-			for(j = 0; j < params.num_blobs; ++j) {
+		for(i = 0; i < num_blobs; ++i) {
+			for(j = 0; j < num_blobs; ++i) {
 				springfieldenergy[i][j] = 0.0;
 			}
 		}
@@ -3682,10 +3893,10 @@ void World::write_detailed_measurements_to_file(FILE *fout) {
 				fprintf(detailed_meas_out, "%-14.6e", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
 			}
 			if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs() * mesoDimensions::Energy) {
-				fprintf(detailed_meas_out, "%-14.6e", get_spring_field_energy(i, j) * mesoDimensions::Energy);
+				fprintf(detailed_meas_out, "%-14.6e", get_spring_field_energy(i, j));
 			}
 			if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads() * mesoDimensions::Energy) {
-				fprintf(detailed_meas_out, "%-14.6e", pc_solver.get_field_energy(i, j) * mesoDimensions::Energy);
+				fprintf(detailed_meas_out, "%-14.6e", pc_solver.get_field_energy(i, j));
 			}
 		}
 	}

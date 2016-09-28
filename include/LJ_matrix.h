@@ -2,8 +2,7 @@
 #define LJMATRIXHINCLUDED
 
 #include <stdio.h>
-#include <cstring> 
-#include <string>
+#include <string.h>
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "dimensions.h"
@@ -22,15 +21,13 @@ class LJ_matrix {
 public:
     LJ_matrix();
 
-    int init(const char *vdw_params_fname, std::string vdw_type);
+    int init(const char *vdw_params_fname);
 
     void get_LJ_params(int type1, int type2, scalar *vdw_eps, scalar *vdw_r_eq);
 
     int get_num_types();
 
 private:
-    int init_lj(const char *vdw_params_fname);
-    int init_steric(); 
     LJ_pair *params;
     int num_vdw_face_types;
 };

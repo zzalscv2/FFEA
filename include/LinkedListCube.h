@@ -56,6 +56,9 @@ public:
 
     /* Returns how many objects are in the 'pool' */
     int get_pool_size();
+	
+	/* Returns how many objects are in the 'stack' */
+	int get_stack_size();
 
     void get_dim(int *Nx, int *Ny, int *Nz);
 

@@ -176,9 +176,9 @@ where the first column give positions and the second column has energies and for
 Springs file: .springs
 ----------------------
 
-This file contains a set of Hookean springs joining pairs of nodes to allow the addition of arbitrary interactions, if necessary.
- After an introductory header, every line specifies the details of a single spring through:
- spring constant (in ` N/m `), equilibrium distance (in meters)
+This file contains a set of springs joining pairs of nodes. After an introductory header, 
+ every line specifies the details of a single spring through:
+ equilibrium distance (in meters), potential well depth (in ` N/m `), 
  blob i, blob j, conformation k, conformation l, node m, node n. 
 Specifically, a springs file with 3 springs could look like:
 
@@ -192,7 +192,7 @@ Specifically, a springs file with 3 springs could look like:
 
 
 
-Checkpoint file .fcp {#ffeaCheckpointFileIn}
+Checkpoint file .fcp {# ffeaCheckpointFileIn }
 ----------------------------------------------
 This is the same type of file than the output [checkpoint file](\ref ffeaCheckpointFileOut). 
 
@@ -214,7 +214,7 @@ Map file: .map
 Output files {#oFiles}
 ======================
 
-Trajectory file: .ftj
+Trajectory file: .trj
 ---------------------
 Contains a list of `*` separated frames specifying the structure of the blob at
 each outputted timestep. The frames contain a list of blobs which themselves
@@ -231,8 +231,8 @@ sizes are specified at the beginning of the file.
 
     Initialisation:
     Number of Blobs 2
-    Number of Conformations 2 1
-    Blob 0: Conformation 0 Nodes 305	Conformation 1 409
+    Number of Conformations 1 1
+    Blob 0: Conformation 0 Nodes 305
     Blob 1: Conformation 0 Nodes 305
 
     *
@@ -251,69 +251,40 @@ sizes are specified at the beginning of the file.
     *
     Blob 0, Conformation 1, step 1001
     ... 
-    *
 
 
 
-Measurement files: .fm / .fdm
+
+Measurement files: .out
 ------------------------
  
 Contains a list of the relevant system properties of each outputted timestep.
 Two seperate types of file for internal and external measurements.
 
 
-### Global measurements: .fm ### 
+### Blob measurements: .out ### 
 
-Every simulation will print this file, which contains measurements of the entire
-system. Internal properties such as strain and kinetic energies, Centroids, Angular momentum, RMSD etc
-are included, as well as the total interaction energies within the system from VdW, springs and Precomp potentials.
-Additionally, system details and a copy of the total input parameter set are written to this file.
- The format is:
-
-
-	FFEA Global Measurement File
-
-	Simulation Details:
-		Simulation Began on DD/MM/YYYY at hh:mm:ss
-		Script Filename = /path/to/script/script.ffea
-		Simulation Type = Full
-
-	Parameters:
-		restart = 0
-		dt = 1.000000e-14
-		...
-
-	Measurements:
-	Time          StrainEnergy  Centroid.x    Centroid.y    Centroid.z    RMSD          
-	0.000000e+00  0.000000e+00  8.095944e-09  1.491714e-09  5.000000e-10  0.000000e+00   
-	5.000000e-11  2.478548e-19  8.017644e-09  1.455046e-09  5.094042e-10  1.446259e-10   
-	1.000000e-10  2.868027e-19  7.978989e-09  1.376037e-09  4.846020e-10  2.252258e-10
-	...
+There is a file of this kind for every blob, containing a 
+ list of internal properties for each outputted timestep. Specifically,
+ all energies, centres of mass, momenta, rmsd and vdw interactions with the
+ simulation box (if sticky wall xz = 1) are recorded in these files. The format
+ is:
 
 
-A small thing to note; if mass is not included, momenta and kinetic energies are not written. If VdW is not active, it is not written. Anything optional may not be written,
-as seen here with KineticEnergy, SpringEnergy, VdWEnergy and PreCompEnergy.
-This is to avoid writing out many zeroes and to save memory. The FFEA toolkit is equipped to read in these files in general.
-
-### Detailed measurements: .fdm ### 
-
-This file records the measurements on individual blobs, and between each specific pair of blobs. It is created by default but can be supressed with '-d' and the command line.
-and allows one to know specific details about individual molecules / pairs of molecules in a multi-blob simulation. Measurements specific to each blob are printed first, followed by each interacting pair.
- The format is:
+    # step — KE — PE — CoM x — CoM y — CoM z — L x — L y — L z — rmsd — vdw area 0 surface — vdw force 0 surface — vdw energy 0 surface
+    ... 
 
 
-	FFEA Detailed Measurement File
+### World measurements: .out ### 
 
-	Measurements:
-	Time          | B0 StrainEnergy  Centroid.x    Centroid.y    Centroid.z    RMSD          | B1 StrainEnergy  Centroid.x    Centroid.y    Centroid.z    RMSD          | B0B1 SpringEnergy  VdWEnergy   
-	0.000000e+00       0.000000e+00  8.095944e-09  1.491714e-09  5.000000e-10  0.000000e+00       0.000000e+00  8.095944e-09  1.491714e-09  5.000000e-10  0.000000e+00	   0.000000e+00  0.000000e+00
-	5.000000e-11       2.478548e-19  8.017644e-09  1.455046e-09  5.094042e-10  1.446259e-10       2.478548e-19  8.017644e-09  1.455046e-09  5.094042e-10  1.446259e-10 	   5.123413e-21  0.000000e+00
-	1.000000e-10       2.868027e-19  7.978989e-09  1.376037e-09  4.846020e-10  2.252258e-10       2.868027e-19  7.978989e-09  1.376037e-09  4.846020e-10  2.252258e-10	   3.567162e-21  0.000000e+00
-	...
+This file records the Lennard-jones 
+  interaction values between each pair of blobs in the whole system along the trajectory:
 
 
-Again, if something is not include, it's associated column is not written. So here, Blob 0 had no mass but Blob 1 did. Additionally, 2 interaction types were included between blobs 0 and 1 but VdW is currently out of range,
-hence the zeroes. No blobs were interacting with themselves.
+    # step — vdw area 0 1 — vdw force 0 1 — vdw energy 0 1
+.
+.
+
 
 Checkpoint file .fcp {#ffeaCheckpointFileOut}
 ------------------------------------------------

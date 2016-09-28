@@ -65,7 +65,6 @@ SimulationParams::SimulationParams() {
     sprintf(bsite_in_fname, "\n");
     sprintf(icheckpoint_fname, "\n");
     sprintf(ocheckpoint_fname, "\n");
-    detailed_meas_out_fname = "\n";
 }
 
 SimulationParams::~SimulationParams() {
@@ -130,15 +129,14 @@ SimulationParams::~SimulationParams() {
     sprintf(ocheckpoint_fname, "\n");
     sprintf(bsite_in_fname, "\n");
     sprintf(vdw_in_fname, "\n");
-    detailed_meas_out_fname = "\n";
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
 
 	// Check wether a log file with the same name exists, and open it:
-	//checkFileName(userInfo::log_out_fname);
-	//userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
-	//fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", FFEA_script_filename.c_str());
+	checkFileName(userInfo::log_out_fname);
+	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
+	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", FFEA_script_filename.c_str());
 	
 
 	// Extract param string from script string
@@ -541,11 +539,9 @@ int SimulationParams::validate() {
     }
 
     if (calc_vdw == 1) {
-      if (vdw_type != "steric" && vdw_type != "stericII") { 
         if (vdw_in_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
-      }
     }
  
     if (vdw_type != "lennard-jones" && vdw_type != "steric" &&

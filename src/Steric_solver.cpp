@@ -20,6 +20,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
 
     //  Firstly, check that no nodes are shared,
     //     only in the case that faces belong to the same blob:
+
     if (f1->daddy_blob == f2->daddy_blob) {
       if (f1->n[3] == f2->n[3]) {
             return;
@@ -130,3 +131,61 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
 
 }
 
+#ifdef USE_MPI
+void Steric_solver::do_interaction_mpi(Face *f1, Face *f2){ 
+
+    // First check two things (either of which results in not having to calculate anything):
+    // Check that faces are facing each other, if not then they are not interacting
+    if (dot(&f1->normal, &f2->normal) > ffea_const::zero) {
+        return;
+    }
+
+    vector3 sep = {f2->centroid.x - f1->centroid.x, f2->centroid.y - f1->centroid.y, f2->centroid.z - f1->centroid.z};
+    if(dot(&sep, &f1->normal) < 0 && dot(&sep, &f2->normal) > 0) {
+        return;
+    }
+	//change the condition of equal
+	#ifdef USE_MPI
+	if (f1->daddy_blob->blob_index == f2->daddy_blob->blob_index) {
+	  if (f1->n[3]->index == f2->n[3]->index) {
+			return;
+	  }
+	  for (int i=0; i<4; i++) {
+		  int in_i = f1->n[i]->index;
+		  for (int j=0; j<4; j++) {
+			 if (f2->n[j]->index == in_i){
+				 return;
+			 }
+		  }
+	  }
+    }
+	#endif
+
+    if (!f1->checkTetraIntersection(f2)) {
+	return;
+    }
+
+    arr3 force1, force2; //, n1_b; 
+    vec3Vec3SubsToArr3(f1->n[3]->pos, f2->n[3]->pos, force1);
+    arr3Normalise<scalar,arr3>(force1); // that is the direction of the force for f1 (backwards). 
+
+    geoscalar vol, area; 
+    f1->getTetraIntersectionVolumeAndArea(f2,vol,area);
+
+    area *= steric_factor;
+    vol *= steric_factor; 
+
+    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
+
+    arr3Resize(scalar(area), force1); 
+    arr3Resize2(ffea_const::mOne, force1, force2);
+    
+    for (int j = 0; j < 3; j++) {
+      f1->add_force_to_node(j, force1); 
+      f1->add_bb_vdw_force_to_record(force1, f2->daddy_blob->blob_index);
+      f2->add_force_to_node(j, force2); 
+      f2->add_bb_vdw_force_to_record(force2, f1->daddy_blob->blob_index);
+    } 
+}
+
+#endif
