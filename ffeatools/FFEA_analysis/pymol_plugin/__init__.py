@@ -62,7 +62,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("630x200")
+     self.root.geometry("680x200")
 
      self.root.title("FFEA")
 
@@ -86,6 +86,7 @@ class FFEA_viewer_control_window:
      self.show_box = IntVar(self.root, value=self.display_flags['show_box'])
      self.show_numbers = IntVar(self.root, value=self.display_flags['show_numbers'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
+     self.show_vdw = IntVar(self.root, value=self.display_flags['show_vdw'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
      self.show_solid = IntVar(self.root, value=self.display_flags['show_solid'])
      self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
@@ -120,6 +121,9 @@ class FFEA_viewer_control_window:
      check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
      check_button_show_pinned.grid(row=1, column=2, sticky=W)
  
+    # # show vdw
+     check_button_show_vdw = Checkbutton(display_flags_frame, text="VdW Faces", variable=self.show_vdw, command=lambda:self.update_display_flags("show_vdw"))
+     check_button_show_vdw.grid(row=1, column=3, sticky=W)
 
      # # show solid:
 
@@ -128,14 +132,14 @@ class FFEA_viewer_control_window:
 
      SolidModes = [(0, "Plain Solid", 1),\
                    (1, "Material", 2),\
-                   (2, "No Solid", 0)] 
+                   (3, "No Solid", 0)] 
      for col, text, mode in SolidModes:
         check_button_show_solid = Radiobutton(display_flags_frame, text=text, variable=self.show_solid, value=mode, command=lambda:self.update_display_flags("show_solid", val=self.show_solid.get()))
         check_button_show_solid.grid(row=2, column=col+1, sticky=W) # first col is label
 
      # Selectable box for material param
      spinbox_material_param = Spinbox(display_flags_frame, textvariable=self.matparam, values=("Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus"), validate="focus", validatecommand=lambda:self.update_display_flags("matparam", val=-2, text=self.matparam.get()))
-     spinbox_material_param.grid(row=2, column=2, sticky=W)
+     spinbox_material_param.grid(row=2, column=3, sticky=W)
 
      # # show mesh:
 
@@ -548,18 +552,21 @@ class FFEA_viewer_control_window:
 	#	
 
 	# Load header and skip first frame (we already have it from the node files)
-	traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
 	try:
-		failure = traj.skip_frame()
-	except:
-		failure = 1
+		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+		try:
+			failure = traj.skip_frame()
+		except:
+			failure = 1
+	except(IOError):
+		failure = 1	
 
 	# Draw first frame
 	self.num_frames = 1
 	self.draw_frame(self.num_frames - 1)
 
 	# If necessary, stop now (broken traj or user asked for)
-	if traj.num_blobs == 0 or failure == 1 or self.display_flags['load_trajectory'] != 1:		
+	if failure == 1 or self.display_flags['load_trajectory'] != 1 or traj.num_blobs == 0:		
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
@@ -729,6 +736,7 @@ class FFEA_viewer_control_window:
 		'show_mesh': 0,
 		'show_numbers': 0, ## PYMOL OK
 		'show_pinned': 1,
+		'show_vdw': 0,
 		'show_shortest_edge': 0,
 		'show_springs': 1,
 		'show_box': 0,
