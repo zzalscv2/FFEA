@@ -70,7 +70,14 @@ class FFEA_vdw:
 
 		self.index.append(int(anint))
 		self.num_faces += 1
+	
+	def set_index(self, findex, vdwindex):
 		
+		try:
+			self.index[findex] = int(vdwindex)
+		except:
+			raise
+	
 	def print_details(self):
 
 		print "num_faces = %d" % (self.num_faces)
