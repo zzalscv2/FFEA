@@ -1,1 +1,0 @@
-g++ script_loader.cpp /home/rob/Software/ffea/src/FFEA_return_codes.cpp /home/rob/Software/ffea/src/FFEA_input_reader.cpp -I/home/rob/Software/ffea/include/ -I/usr/local/include/eigen3 -std=c++11 -lboost_system
