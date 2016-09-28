@@ -3,26 +3,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <cstring>
-#include <string>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <omp.h>
-#include <ctime>
 #include <boost/algorithm/string.hpp>
 #include <typeinfo>
 #include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
 
-// #include "MersenneTwister.h"
-#include "RngStream.h"
+#include "MersenneTwister.h"
 #include "NearestNeighbourLinkedListCube.h"
 #include "BEM_Poisson_Boltzmann.h"
 #include "BiCGSTAB_solver.h"
-#include "FFEA_user_info.h"
 #include "FFEA_return_codes.h"
 #include "FFEA_input_reader.h"
 #include "mat_vec_types.h"
@@ -36,7 +32,6 @@
 #include "World.h"
 #include "VdW_solver.h"
 #include "Steric_solver.h"
-#include "Steric_solverII.h"
 #include "LJSteric_solver.h"
 #include "PreComp_solver.h"
 #include "LJ_matrix.h"
@@ -55,7 +50,7 @@ public:
     ~World();
 
     /* */
-    int init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeEnergy);
+    int init(string FFEA_script_filename, int frames_to_delete, int mode);
 
     /* */
     int get_smallest_time_constants();
@@ -107,6 +102,12 @@ public:
 
 private:
 
+    /** @brief How many Blobs populate this world */
+    int num_blobs;
+
+    /** @brief How many conformations does each blob have? */
+    int *num_conformations;
+
     /** @brief 2-D Array of Blob objects (blob i, conformation j) */
     Blob **blob_array;
 
@@ -131,23 +132,14 @@ private:
     /** @brief How many kinetic binding sites are there? */
     int num_binding_sites;
 
-    /** @brief Check whether mass is present anywhere, to determine whether or not to write kinetic energies to files */
-    bool mass_in_system;
-
     /** @brief How many threads are available for parallelisation */
     int num_threads;
 
     /** @brief An array of pointers to random number generators (for use in parallel) */
-    RngStream *rng;
-
-    /** @brief A pointer to an array of arrays, containing the seeds of the different RNGStreams */
-    unsigned long **Seeds; 
-
-    /** @brief The number of seeds stored in Seeds. */
-    int num_seeds; 
+    MTRand *rng;
 
     /** @brief An array of pointers to random number generators for use in kinetics */
-    RngStream *kinetic_rng;
+    MTRand kinetic_rng;
 
     /** @brief Parameters being used for this simulation */
     SimulationParams params;
@@ -165,23 +157,10 @@ private:
     FILE *kinetics_out;
 
     /** @brief * Output measurement file */
-    FILE *measurement_out;
+    FILE **measurement_out;
 
-    /** @brief * Output detailed measurements file. May be unneccesary */
-    FILE *detailed_meas_out;
-
-    /** Energies */
-    scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, vdwenergy, preCompenergy;
-
-    /** Momenta */
-    vector3 L;
-
-    /** Geometries */
-    vector3 CoM, CoG;
-    scalar rmsd;
-
-    /** @brief * Output Checkpoint file */
-    FILE *checkpoint_out;
+    /** @brief * Output Parameter file (what parameters were used? */
+    FILE *params_out;
 
     /*
      *
@@ -236,8 +215,6 @@ private:
 
     void apply_springs();
 
-    scalar get_spring_field_energy(int index0, int index1);
-
     /** @brief calculates the kinetic rates as a function of the energy of the system*/
     int calculate_kinetic_rates();
 
@@ -259,17 +236,10 @@ private:
 
     void print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes);
 
+
     void write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes);
 
-    void write_output_header(FILE *fout, string fname);
-
     void print_trajectory_and_measurement_files(int step, scalar wtime);
-
-    void make_measurements();
-
-    void write_measurements_to_file(FILE *fout, int step);
-
-    void write_detailed_measurements_to_file(FILE *fout);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
 

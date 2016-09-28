@@ -178,17 +178,6 @@ void mat3_set_zero(matrix3 A) {
 /*
  *
  */
-void mat3_set_identity(matrix3 A) {
-
-    mat3_set_zero(A);
-    int i;
-    for (i = 0; i < 3; i++)
-        A[i][i] = 1;
-}
-
-/*
- *
- */
 void mat4_set_zero(matrix4 A) {
     int i, j;
     for (i = 0; i < 4; i++)

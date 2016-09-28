@@ -88,7 +88,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     */
 
     //////////////////////////////////////////////
-    // One more check ////// One more check /////
+    /// One more check ////// One more check /////
     /*
     arr3 inwards; 
     vec3Vec3SubsToArr3(f1->n[3]->pos, f1->centroid, inwards); 
@@ -109,11 +109,8 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     vol *= steric_factor; 
 
     // Energy is proportional to the volume of interaction: 
-//    f1->add_bb_vdw_energy_to_record(vol, f2->daddy_blob->blob_index);
-//    f2->add_bb_vdw_energy_to_record(vol, f1->daddy_blob->blob_index);
-
-    // Store the measurement
-    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
+    f1->add_bb_vdw_energy_to_record(vol, f2->daddy_blob->blob_index);
+    f2->add_bb_vdw_energy_to_record(vol, f1->daddy_blob->blob_index);
 
     // arr3Resize(vol, force1);  // the provious volume force 
     // Force is proportional to the surface area of this volume: 

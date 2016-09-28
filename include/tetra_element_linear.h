@@ -11,7 +11,7 @@
 #include "mat_vec_fns.h"
 #include "SimulationParams.h"
 #include "FFEA_return_codes.h"
-#include "RngStream.h"
+#include "MersenneTwister.h"
 #include "SecondOrderFunctions.h"
 #include "PoissonMatrixQuadratic.h"
 #include "MassMatrixQuadratic.h"
@@ -90,7 +90,7 @@ class Blob;
 	V[I + 3][J + 2] = B * K[3][2] + A * K[2][3]; \
 	V[I + 3][J + 3] = (B + A) * K[3][3]; \
 
-#define RAND(A, B) ((A) + ((B)-(A))*(rng[thread_id].RandU01()))
+#define RAND(A, B) ((A) + ((B)-(A))*(rng[thread_id].rand()))
 
 #define DPSI1_DX 0
 #define DPSI2_DX 1
@@ -114,11 +114,11 @@ public:
     tetra_element_linear();
 
     /* Properties of this element */
-    scalar rho; ///< density
-    scalar A; ///< shear viscosity
-    scalar B; ///< second coefficient of viscosity
-    scalar G; ///< shear modulus
-    scalar E; ///< bulk modulus
+    scalar rho; /// density
+    scalar A; /// shear viscosity
+    scalar B; /// second coefficient of viscosity
+    scalar G; /// shear modulus
+    scalar E; /// bulk modulus
     scalar dielectric;
     scalar mass;
 
@@ -230,7 +230,6 @@ public:
      *
      */
     void add_bulk_elastic_stress(matrix3 stress);
-    void add_bulk_elastic_stress_OLD(matrix3 stress);
 
     /** @brief
      * Given the shape function derivatives, the element volume and a random number generator, this
@@ -239,7 +238,7 @@ public:
      * to the given 12-vector du.
      *
      */
-    void add_fluctuating_stress(SimulationParams *params, RngStream rng[], matrix3 stress, int thread_id);
+    void add_fluctuating_stress(SimulationParams *params, MTRand rng[], matrix3 stress, int thread_id);
 
     /** @brief
      * Applies the given stress tensor to the shape function derivatives to get the contribution to du
@@ -263,7 +262,6 @@ public:
     int what_node_is_this(int index);
 
     void print();
-    void print_viscosity_matrix();
 
     /** @brief
      * Applies the mass matrix (for a linear tetrahedral element of density rho and equilibrium volume vol_0)

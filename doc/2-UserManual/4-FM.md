@@ -55,17 +55,21 @@ where the directive ` nodes ` ensures that no accidental confusion arises with
  B-factors or other information after the position of the beads. 
 
 
-Finally, the rest of the input flags are passed within block ` <precomp> ` in ` <interactions> ` 
- which in turn belongs to ` <system> ` (see the [input file syntax](\ref ffea_ifsyntax)). 
+Finally, the rest of the input flags are passed within block ` <precomp> ` in ` <interactions> `. 
  Fields to be provided are: 
- * ` types ` 
- * ` inputData ` 
- * ` folder ` 
- * ` dist_to_m `
- * ` E_to_J `
+ * ` types ` - a comma separated list between parenthesis with the bead type names, e. g., 
+                 (B1, B2, B3, B4).
+ * ` inputData ` - can take values 1 and 2 where:
+      - 1 will read .force and .pot files 
+      - 2 will read .pot files and compute the forces. 
 
-Details on how to use these keywords can be found in the
-  [corresponding subsection](\ref preCompBlock) of the FFEA input file.
+     The expected format for these files is explained [here](\ref potfile)
+
+ * ` folder ` - relative or absolute path to the folder storing the .pot 
+                 (and optionally .force) interaction files. 
+ * ` approach ` - must be ` solid `. This field will be removed.
+ * ` dist_to_m ` - conversion factor to meters for the distance stored in .pot and .force files. 
+ * ` E_to_J ` - conversion factor to Joules for the energies stored in .pot and .force files. 
 
 
 Implementation details {#fm_implementation}

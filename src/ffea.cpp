@@ -17,24 +17,18 @@
 #include "Blob.h"
 #include "World.h"
 
-#ifdef USE_MPI
 #include "mpi.h"
-#endif
 
 #define MAX_FNAME_LENGTH 255
 
 using namespace std;
 namespace b_po = boost::program_options;
-namespace b_fs = boost::filesystem; 
 
 int main(int argc, char *argv[])
 {
-#ifdef USE_MPI
   MPI::Init();
-#endif
 	cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
-	//cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
-	cout << " Version:\tSuper Saiyan " << FFEA_MASCOT << " " << FFEA_VERSION << "(Version " << FFEA_VERSION << ")" << endl;
+	cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
 	cout << "Compiled:\t" << __DATE__ " at " << __TIME__ << endl;
 	cout << "  Coding:\tAlbert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk),\n" << endl;
 	cout << "  Theory:\tOliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou\n" << endl;
@@ -56,19 +50,16 @@ int main(int argc, char *argv[])
 	int mode = 0;
 	int frames_to_delete = 0;
 	int verbose;
-#ifdef USE_MPI
   double st,et,st1,et1;
-
-  st1=MPI::Wtime();
-#endif
   
+  st1=MPI::Wtime();
+	
 	// Options for visible and non-visible cmd line params
 	desc.add_options()
-		("help,h", "Print usage message")
-		("no-detail,d", "Stop measurements being outputted at a higher level of detail (to a .fdm file)")
-		("input-file,i", b_po::value<string>(&script_fname), "Input script filename")
+		("help,h", "print usage message")
+		("input-file,i", b_po::value<string>(&script_fname), "Input Script Filename")
+		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator)\n")
 		("delete-frames,l", b_po::value<int>(&frames_to_delete)->default_value(0), "If restarting a simulation, this will delete the final 'arg' frames before restarting")
-		("mode,m", b_po::value<int>(&mode)->default_value(0), "Simulation Mode\n\t0 - FFEA\n\t1 - Elastic Network Model\n\t2 - Dynamic Mode Model\n\t3 - Timestep Calculator\n")
 		("verbose,v", b_po::value<int>(&verbose)->default_value(0), "Prints extra details to stdout on what FFEA is doing\n\t0 - Low\n\t1 - Medium\n\t2 - High\n\t3 - Manic")
 	;
 		
@@ -89,7 +80,7 @@ int main(int argc, char *argv[])
 	
 	// Verbosity
 	set_verbosity_level(verbose);
-
+	
 	// --mode
 	if(var_map.count("mode")) {
 		if(mode != 0 && mode != 1 && mode != 2 && mode != 3 && mode != 4) {
@@ -115,32 +106,17 @@ int main(int argc, char *argv[])
 	// Help text is built in to boost	
 	if (var_map.count("help")) {  
 		cout << desc << endl;
-		return FFEA_OK;
+		return 0;
 	}
 
 	// Check we have an input script
-	if (! var_map.count("input-file")) {  
+	if (var_map.count("input-file")) {  
+		cout << "Input FFEA script - " << script_fname << "\n";
+	} else {
 		cout << "\n\nUsage: ffea [FFEA SCRIPT FILE (.ffea)] [OPTIONS]\n\n\n" << endl;
 		cout << desc << endl;
 		return FFEA_ERROR;
 	}
-
-	// set up a script_fname with the absolute path
-	b_fs::path fs_script_fname = script_fname; 
-	b_fs::path canonicalPath = b_fs::canonical(fs_script_fname.parent_path());
-	fs_script_fname = canonicalPath / fs_script_fname.filename();
-	script_fname = fs_script_fname.string(); 
-	cout << "Input FFEA script - " << script_fname << "\n";
-
-	// Use it to name the logfile
-	b_fs::path fs_log_fname = fs_script_fname;
-	fs_log_fname.replace_extension(".log");
-	set_log_fname(fs_log_fname.string()); 
-
-	/* Open and begin the logfile
-	SimulationParams::checkFileName(userInfo::log_out_fname);
-	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
-	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", script_fname.c_str()); */
 
 	//The system of all proteins, electrostatics and water
 	World *world;
@@ -154,7 +130,7 @@ int main(int argc, char *argv[])
 	
 	// Initialise the world, loading all blobs, parameters, electrostatics, kinetics etc.
 	cout << "Initialising the world:\n" << endl;
-	if(world->init(script_fname, frames_to_delete, mode, !var_map.count("detailed")) == FFEA_ERROR) {
+	if(world->init(script_fname, frames_to_delete, mode) == FFEA_ERROR) {
 		FFEA_error_text();
 		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 
@@ -213,7 +189,7 @@ int main(int argc, char *argv[])
 
 				// Get index as string
 				cin >> buf;
-				if(buf.compare("q") == 0 or buf.compare("Q") == 0 or buf.compare("") == 0) {
+				if(buf.compare("q") == 0 or buf.compare("Q") == 0) {
 					cout << endl << "\tThat's all the blobs!" << endl;
 					break;
 				}
@@ -322,12 +298,13 @@ int main(int argc, char *argv[])
 	} else if(mode == 3) {
 		
 		/* Calculate maximum allowed timestep for system */
-		cout << "\n\n\n***************************************************\n\tFFEA - Timestep Calculator\n***************************************************\n\n";
+		cout << endl << "FFEA - Calculating System Timescales" << endl << endl;
 		if(world->get_smallest_time_constants() == FFEA_ERROR) {
 			FFEA_error_text();
 			cout << "Error occurred in 'get_smallest_time_constants()' in World\n" << endl;
 			myreturn = FFEA_ERROR;
 		} else {
+			cout << "...done\n" << endl;
 			myreturn = FFEA_OK;
 		}
 	} else {
@@ -337,18 +314,14 @@ int main(int argc, char *argv[])
 
 	/* Delete the world (oh no!) */
 	cout << "Deleting world..." << endl;
-#ifdef USE_MPI
   st = MPI::Wtime();
 	delete world;
   et = MPI::Wtime()-st;
   et1 = MPI::Wtime()-st1;
   cout<< "benchmarking--------Finalising time of ffea:"<<et<<"seconds"<<endl;
   cout<< "benchmarking--------total executing time:"<<et1<<"seconds"<<endl;
-#endif 
 	cout << "...done. World has been sucessfully destroyed." << endl;
 
-#ifdef USE_MPI
   MPI::Finalize();
-#endif
 	return myreturn;
 }

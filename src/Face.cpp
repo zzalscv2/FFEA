@@ -347,6 +347,43 @@ bool Face::checkTetraIntersection(Face *f2) {
      tetB[i][1] = f2->n[i]->pos.y;
      tetB[i][2] = f2->n[i]->pos.z;
   }
+  if (tet_a_tet(tetA, tetB)) {
+   /* #pragma omp critical
+    {
+	fprintf(stderr, "%d %d InsideIntersect", this->index, f2->index);
+	for(int i = 0; i < 4; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6.3f", tetA[i][j]);
+		}
+		fprintf(stderr, "  ");
+	}
+	for(int i = 0; i < 4; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6.3f", tetB[i][j]);
+		}
+		fprintf(stderr, "  ");	
+	}
+	fprintf(stderr, "\n");
+    }*/
+  } else {
+  /*  #pragma omp critical
+    {
+	fprintf(stderr, "%d %d InsideNointersect", this->index, f2->index);
+	for(int i = 0; i < 4; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6.3f", tetA[i][j]);
+		}
+		fprintf(stderr, "  ");
+	}
+	for(int i = 0; i < 4; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, " %6.3f", tetB[i][j]);
+		}
+		fprintf(stderr, "  ");	
+	}
+	fprintf(stderr, "\n");
+   }*/
+}
   return (tet_a_tet(tetA, tetB)); 
  
 } 
@@ -381,30 +418,5 @@ void Face::getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar
      tetB[i][2] = f2->n[i]->pos.z;
   }
   volumeAndAreaIntersection<geoscalar,grr3>(tetA, tetB, vol, area);
-
-} 
-
-void Face::getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &vol, geoscalar &dVdr){
-
-  geoscalar tetA[4][3], tetB[4][3], tetC[4][3];
-  geoscalar dr = 1e-3;
-  geoscalar vol_m, vol_M;
-
-  for (int i=0; i<4; i++) {
-     tetA[i][0] = n[i]->pos.x;
-     tetA[i][1] = n[i]->pos.y;
-     tetA[i][2] = n[i]->pos.z;
-     tetB[i][0] = f2->n[i]->pos.x -dr*r[0];
-     tetB[i][1] = f2->n[i]->pos.y -dr*r[1];
-     tetB[i][2] = f2->n[i]->pos.z -dr*r[2];
-     tetC[i][0] = f2->n[i]->pos.x + dr*r[0];
-     tetC[i][1] = f2->n[i]->pos.y + dr*r[1];
-     tetC[i][2] = f2->n[i]->pos.z + dr*r[2];
-  }
-  vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetB);
-  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);
-
-  dVdr = (vol_M - vol_m)/(2*dr); 
-  vol  = (vol_m + vol_M)/2;
 
 } 

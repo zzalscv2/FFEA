@@ -5,7 +5,8 @@ SimulationParams::SimulationParams() {
     // Constructor used to give default values where necessary
 
     // Defaulted (into SI units)
-    dt = 1e-14 / mesoDimensions::time;
+    restart = 0;
+    dt = 1e-14;
     num_steps = 1e11;
     check = 10000;
     kT = 4.11e-21 / mesoDimensions::Energy;
@@ -31,6 +32,10 @@ SimulationParams::SimulationParams() {
     kinetics_update = 0;
     calc_preComp = 0;
 
+    num_dimensions = 3;
+    restrict_motion[0] = 0;
+    restrict_motion[1] = 0;
+    restrict_motion[2] = 0;
 
     wall_x_1 = WALL_TYPE_PBC;
     wall_x_2 = WALL_TYPE_PBC;
@@ -40,7 +45,6 @@ SimulationParams::SimulationParams() {
     wall_z_2 = WALL_TYPE_PBC;
 
     // Initialised to zero or equivalent for later initialisation
-    restart = -1;
     num_blobs = 0;
     num_conformations = NULL;
     num_states = NULL;
@@ -53,19 +57,15 @@ SimulationParams::SimulationParams() {
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
-    icheckpoint_fname_set = 0;
-    ocheckpoint_fname_set = 0;
-    bsite_in_fname_set = 0;
-    vdw_in_fname_set = 0;
+    binding_params_fname_set = 0;
+    vdw_params_fname_set = 0;
 
     sprintf(trajectory_out_fname, "\n");
     sprintf(kinetics_out_fname, "\n");
-    sprintf(measurement_out_fname, "\n");
-    sprintf(vdw_in_fname, "\n");
-    sprintf(bsite_in_fname, "\n");
-    sprintf(icheckpoint_fname, "\n");
-    sprintf(ocheckpoint_fname, "\n");
-    detailed_meas_out_fname = "\n";
+    sprintf(temp_fname, "\n");
+    measurement_out_fname = NULL;
+    sprintf(vdw_params_fname, "\n");
+    sprintf(binding_params_fname, "\n");
 }
 
 SimulationParams::~SimulationParams() {
@@ -89,6 +89,10 @@ SimulationParams::~SimulationParams() {
     es_N_y = -1;
     es_N_z = -1;
     move_into_box = 0;
+    restrict_motion[0] = 0;
+    restrict_motion[1] = 0;
+    restrict_motion[2] = 0;
+    num_dimensions = 0;
     es_h = 0;
     kappa = 0;
     dielec_ext = 0;
@@ -118,28 +122,18 @@ SimulationParams::~SimulationParams() {
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
-    icheckpoint_fname_set = 0;
-    ocheckpoint_fname_set = 0;
-    bsite_in_fname_set = 0;
-    vdw_in_fname_set = 0;
+    binding_params_fname_set = 0;
+    vdw_params_fname_set = 0;
 
     sprintf(trajectory_out_fname, "\n");
-    sprintf(measurement_out_fname, "\n");
     sprintf(kinetics_out_fname, "\n");
-    sprintf(icheckpoint_fname, "\n");
-    sprintf(ocheckpoint_fname, "\n");
-    sprintf(bsite_in_fname, "\n");
-    sprintf(vdw_in_fname, "\n");
-    detailed_meas_out_fname = "\n";
+    sprintf(temp_fname, "\n");
+    delete[] measurement_out_fname;
+    sprintf(binding_params_fname, "\n");
+    sprintf(vdw_params_fname, "\n");
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
-
-	// Check wether a log file with the same name exists, and open it:
-	//checkFileName(userInfo::log_out_fname);
-	//userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
-	//fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", FFEA_script_filename.c_str());
-	
 
 	// Extract param string from script string
 	vector<string> param_vector;
@@ -164,10 +158,6 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 
 int SimulationParams::assign(string lvalue, string rvalue) {
 	
-	b_fs::path ffea_script = FFEA_script_filename;
-	FFEA_script_path = ffea_script.parent_path();
-	FFEA_script_basename = ffea_script.stem();
-
 	// Carry out parameter assignments
 	if (lvalue == "restart") {
 		restart = atoi(rvalue.c_str());
@@ -260,6 +250,18 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "move_into_box") {
         	move_into_box = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << move_into_box << endl;
+
+        } else if (lvalue == "restrict_x") {
+		restrict_motion[0] = atoi(rvalue.c_str());
+		cout << "\tSetting " << lvalue << " = " << restrict_motion[0] << endl;
+
+        } else if (lvalue == "restrict_y") {
+		restrict_motion[1] = atoi(rvalue.c_str());
+		cout << "\tSetting " << lvalue << " = " << restrict_motion[1] << endl;
+
+        } else if (lvalue == "restrict_z") {
+		restrict_motion[2] = atoi(rvalue.c_str());
+		cout << "\tSetting " << lvalue << " = " << restrict_motion[2] << endl;
 
 	} else if (lvalue == "sticky_wall_xz") {
         	sticky_wall_xz = atoi(rvalue.c_str());
@@ -396,8 +398,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("trajectory_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-		b_fs::path auxpath = FFEA_script_path / rvalue;
-		sprintf(trajectory_out_fname, "%s", auxpath.string().c_str());
+		sprintf(trajectory_out_fname, "%s", rvalue.c_str());
         	trajectory_out_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << trajectory_out_fname << endl;
 
@@ -405,60 +406,33 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("measurement_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-		b_fs::path auxpath = FFEA_script_path / rvalue;
-		sprintf(measurement_out_fname, "%s", auxpath.string().c_str());
+		sprintf(temp_fname, "%s", rvalue.c_str());
 	        measurement_out_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
-
-		// Break up the meas fname for optional files based on measurements
-		string meas_basename(measurement_out_fname);
-		meas_basename = RemoveFileExtension(meas_basename);
-		detailed_meas_out_fname = meas_basename + ".fdm";
+		cout << "\tSetting " << lvalue << " = " << temp_fname << endl;
 
     	} else if (lvalue == "kinetics_out_fname") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("kinetics_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(kinetics_out_fname, "%s", auxpath.string().c_str());
+		sprintf(kinetics_out_fname, "%s", rvalue.c_str());
 	        kinetics_out_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
    
-	} else if (lvalue == "vdw_in_fname" || lvalue == "vdw_forcefield_params") {
+	} else if (lvalue == "vdw_forcefield_params") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("vdw_forcefield_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(vdw_in_fname, "%s", auxpath.string().c_str());
-        	vdw_in_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << vdw_in_fname << endl;
+		sprintf(vdw_params_fname, "%s", rvalue.c_str());
+        	vdw_params_fname_set = 1;
+		cout << "\tSetting " << lvalue << " = " << vdw_params_fname << endl;
 
-	} else if (lvalue == "checkpoint_in") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("checkpoint input file name is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(icheckpoint_fname, "%s", auxpath.string().c_str());
-        	icheckpoint_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << icheckpoint_fname << endl;
-
-	} else if (lvalue == "checkpoint_out") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("checkpoint output file name is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(ocheckpoint_fname, "%s", auxpath.string().c_str());
-        	ocheckpoint_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << ocheckpoint_fname << endl;
-
-	} else if (lvalue == "bsite_in_fname") {
+	} else if (lvalue == "binding_site_params") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("binding_site_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
 		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(bsite_in_fname, "%s", auxpath.string().c_str());
-        	bsite_in_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << bsite_in_fname << endl;
+		sprintf(binding_params_fname, "%s", rvalue.c_str());
+        	binding_params_fname_set = 1;
+		cout << "\tSetting " << lvalue << " = " << binding_params_fname << endl;
 
     	} else if (lvalue == "stress_out_fname") {
 		cout << lvalue << " no longer recognised" << endl;
@@ -466,7 +440,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	FFEA_error_text();
         	cout << "Error: '" << lvalue << "' is not a recognised lvalue" << endl;
         	cout << "Recognised lvalues are:" << endl;
-        	cout << "\tdt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\n\tepsilon_0\n\trestart\n\tcalc_vdw\n\tcalc_noise\n\tcalc_preComp\n" << endl;
+        	cout << "dt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\tepsilon_0\n\trestart\n\tcalc_vdw\n\tcalc_noise\n\tcalc_preComp\n" << endl;
         	return FFEA_ERROR;
    	}
 
@@ -481,11 +455,10 @@ int SimulationParams::checkFileName(string oFile){
     {
         int cnt = 1;
         b_fs::path fs_oFile = oFile;
+        cout << "oFile: " << oFile << endl;
         string base = "__" + fs_oFile.filename().string() + "__bckp.";
-        if (fs_oFile.parent_path().string().size() != 0) {
-          b_fs::path fs_base = fs_oFile.parent_path() / base;
-          base = fs_base.string(); 
-        }
+        if (fs_oFile.parent_path().string().size() != 0)
+          base = fs_oFile.parent_path().string() + "/" + base;
 
         string bckp = base + boost::lexical_cast<string>(cnt);
         while (b_fs::exists(bckp)) {
@@ -507,11 +480,6 @@ int SimulationParams::validate() {
     if (restart != 0 && restart != 1) {
         FFEA_ERROR_MESSG("Required: Restart flag, 'restart', must be 0 (false) or 1 (true).\n");
     }
-    if (restart == 1) {
-        if (icheckpoint_fname_set == 0) {
-            FFEA_ERROR_MESSG("Checkpoint input file required if restart is required.\n");
-        }
-    } 
 
     if (num_steps < 0) {
         FFEA_ERROR_MESSG("Required: Number of time steps, 'num_steps', must be greater than or equal to 0.\n");
@@ -541,15 +509,12 @@ int SimulationParams::validate() {
     }
 
     if (calc_vdw == 1) {
-      if (vdw_type != "steric" && vdw_type != "stericII") { 
-        if (vdw_in_fname_set == 0) {
+        if (vdw_params_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
-      }
     }
  
-    if (vdw_type != "lennard-jones" && vdw_type != "steric" &&
-        vdw_type != "stericII" && vdw_type != "ljsteric") {
+    if (vdw_type != "lennard-jones" && vdw_type != "steric" && vdw_type != "ljsteric") {
         FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'steric' (default), 'lennard-jones' or 'ljsteric' (both methods combined).\n");
     }
 
@@ -589,40 +554,57 @@ int SimulationParams::validate() {
 		es_N_z = 0;
     }
 
+    // Check for motion restriction conditions
+    for(int i = 0; i < 3; ++i) {
+        if(restrict_motion[i] != 0 && restrict_motion[i] != 1) {
+            FFEA_ERROR_MESSG("restrict_x, restrict_y and restrict_z must all be either 0 (no restriction) or 1 (motion restricted).\n")
+        } else if (restrict_motion[i] == 0) {
+	    num_dimensions += 1;
+	}
+	
+    }
+
     if (calc_noise != 0 && calc_noise != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_noise', must be 0 (no) or 1 (yes).\n");
     }
 
     if (trajectory_out_fname_set == 0) {
-	b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".ftj";
-        sprintf(trajectory_out_fname, "%s", auxpath.string().c_str());
+        FFEA_ERROR_MESSG("Trajectory output file name required (trajectory_out_fname).\n");
     }
 
     if (measurement_out_fname_set == 0) {
-	b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".fm";
-        sprintf(measurement_out_fname, "%s", auxpath.string().c_str());
+        FFEA_ERROR_MESSG("Measurement output file name required (measurement_out_fname).\n");
+    } else {
+        measurement_out_fname = new char*[num_blobs + 1];
+	vector<string> all;
+	char temp[MAX_FNAME_SIZE];
+	string orig, base, ext;
+	orig = string(temp_fname);
+	boost::split(all, temp_fname, boost::is_any_of("."));
+	ext = "." + all.at(all.size() - 1);
+	base = boost::erase_last_copy(orig, ext);
+
+        for (int i = 0; i < num_blobs + 1; ++i) {
+            measurement_out_fname[i] = new char[MAX_FNAME_SIZE];
+            sprintf(measurement_out_fname[i], base.c_str());
+
+            if (i < num_blobs) {
+                sprintf(temp, "_blob%d", i);
+                strcat(measurement_out_fname[i], temp);
+            } else {
+                strcat(measurement_out_fname[i], "_world");
+            }
+            strcat(measurement_out_fname[i], ext.c_str());
+
+
+        }
     }
-  
-    // Three checkings for checkpoint files:
-    // CPT.1 - If we don't have a name for checkpoint_out we're assigning one.
-    if (ocheckpoint_fname_set == 0) {
-      b_fs::path fs_ocpt_fname = FFEA_script_filename;
-      fs_ocpt_fname.replace_extension(".fcp");
-      ocheckpoint_fname_set = 1;
-      strcpy(ocheckpoint_fname, fs_ocpt_fname.string().c_str());
-      printf("\tFRIENDLY WARNING: Checkpoint output file name was not specified, so it will be set to %s\n", ocheckpoint_fname ); 
-    } 
-    // CPT.2 - checkpoint_out must differ from checkpoint_in
-    if (strcmp(ocheckpoint_fname,icheckpoint_fname) == 0) {
-        FFEA_ERROR_MESSG("it is not allowed to set up checkpoint_in and checkpoint_out with the same file names\n");
-    } 
-    // CPT.3 - checkpoint_out will be backed up if it exists 
-    checkFileName(boost::lexical_cast<string>(ocheckpoint_fname));
-    
 
     // check if the output files exists, and if so, rename it. 
     if (restart == 0) {
-      checkFileName(boost::lexical_cast<string>(measurement_out_fname)); 
+      for (int i = 0; i < num_blobs + 1; ++i) {
+        checkFileName(boost::lexical_cast<string>(measurement_out_fname[i])); 
+      }
       checkFileName(boost::lexical_cast<string>(trajectory_out_fname));
       checkFileName(boost::lexical_cast<string>(kinetics_out_fname));
     } 
@@ -674,13 +656,11 @@ int SimulationParams::validate() {
     printf("\trng_seed = %d\n", rng_seed);
     printf("\tkT = %e\n", kT*mesoDimensions::Energy);
     printf("\ttrajectory_out_fname = %s\n", trajectory_out_fname);
-    printf("\tmeasurement_out_fname = %s\n", measurement_out_fname);
+    for (int i = 0; i < num_blobs + 1; ++i) {
+        printf("\tmeasurement_out_fname %d = %s\n", i, measurement_out_fname[i]);
+    }
     printf("\tkinetics_out_fname = %s\n", kinetics_out_fname);
-    if (icheckpoint_fname_set == 1) {
-      printf("\tcheckpoint_in = %s\n", icheckpoint_fname);
-    } 
-    printf("\tcheckpoint_out = %s\n", ocheckpoint_fname);
-    printf("\tvdw_forcefield_params = %s\n", vdw_in_fname);
+    printf("\tvdw_forcefield_params = %s\n", vdw_params_fname);
     printf("\tmax_iterations_cg = %d\n", max_iterations_cg);
     printf("\tepsilon2 = %e\n", epsilon2);
     printf("\tes_update = %d\n", es_update);
@@ -701,10 +681,10 @@ int SimulationParams::validate() {
     printf("\tstokes_visc = %f\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
 
-    if(calc_kinetics == 1 && bsite_in_fname_set == 1) {
-	printf("\tbsite_in_fname = %s\n", bsite_in_fname);
+    if(calc_kinetics == 1 && binding_params_fname_set == 1) {
+	printf("\tbinding_params_fname = %s\n", binding_params_fname);
     }
-    if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "stericII" || vdw_type == "ljsteric")) {
+    if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "ljsteric")) {
         printf("\tvdw_steric_factor = %e\n", vdw_steric_factor);
     }
     return FFEA_OK;
@@ -723,41 +703,42 @@ int SimulationParams::get_max_num_states() {
 
 void SimulationParams::write_to_file(FILE *fout) {
 
-	// This should be getting added to the top of the measurement file!!
+	// This should be getting added to the top of the measurement_world file!!
 
-	// Then, every parameter (if anyone hates this goddamn class in the future, please make a Param struct / dictionary / vector / list thing so we can just loop over all parameters)
+	// Then, every parameter (if anyone hates this goddamn class in the future, please make a Param struct / dictionary thing so we can just loop over all parameters)
 	fprintf(fout, "Parameters:\n");
-    	fprintf(fout, "\trestart = %d\n", restart);
-    	fprintf(fout, "\tdt = %e\n", dt*mesoDimensions::time);
-    	fprintf(fout, "\tnum_steps = %lld\n", num_steps);
-    	fprintf(fout, "\tcheck = %d\n", check);
-	fprintf(fout, "\trng_seed = %d\n", rng_seed);
-	fprintf(fout, "\tkT = %e\n", kT*mesoDimensions::Energy);
+    	fprintf(fout, "restart = %d\n", restart);
+    	fprintf(fout, "dt = %e\n", dt*mesoDimensions::time);
+    	fprintf(fout, "num_steps = %lld\n", num_steps);
+    	fprintf(fout, "check = %d\n", check);
+	fprintf(fout, "rng_seed = %d\n", rng_seed);
+	fprintf(fout, "kT = %e\n", kT*mesoDimensions::Energy);
 
-    	fprintf(fout, "\tcalc_vdw = %d\n", calc_vdw);
-    	fprintf(fout, "\tvdw_type = %s\n", vdw_type.c_str());
-    	fprintf(fout, "\tcalc_es = %d\n", calc_es);
-    	fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
-    	fprintf(fout, "\tcalc_kinetics = %d\n", calc_kinetics);
-    	fprintf(fout, "\tcalc_preComp = %d\n", calc_preComp);
-    	fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
-    	fprintf(fout, "\tstokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
+    	fprintf(fout, "calc_vdw = %d\n", calc_vdw);
+    	fprintf(fout, "vdw_type = %s\n", vdw_type.c_str());
+    	fprintf(fout, "calc_es = %d\n", calc_es);
+    	fprintf(fout, "calc_noise = %d\n", calc_noise);
+    	fprintf(fout, "calc_kinetics = %d\n", calc_kinetics);
+    	fprintf(fout, "calc_preComp = %d\n", calc_preComp);
+    	fprintf(fout, "calc_stokes = %d\n", calc_stokes);
+    	fprintf(fout, "stokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
+    	fprintf(fout, "calc_kinetics = %d\n", calc_kinetics);
 
-    	fprintf(fout, "\tes_update = %d\n", es_update);
-    	fprintf(fout, "\tes_N_x = %d\n", es_N_x);
-   	fprintf(fout, "\tes_N_y = %d\n", es_N_y);
-    	fprintf(fout, "\tes_N_z = %d\n", es_N_z);
-    	fprintf(fout, "\tes_h = %f\n", es_h);
-	fprintf(fout, "\tmove_into_box = %d\n", move_into_box);
+    	fprintf(fout, "es_update = %d\n", es_update);
+    	fprintf(fout, "es_N_x = %d\n", es_N_x);
+   	fprintf(fout, "es_N_y = %d\n", es_N_y);
+    	fprintf(fout, "es_N_z = %d\n", es_N_z);
+    	fprintf(fout, "es_h = %f\n", es_h);
+	fprintf(fout, "move_into_box = %d\n", move_into_box);
 
-    	fprintf(fout, "\tkappa = %e\n", kappa/mesoDimensions::length);
-    	fprintf(fout, "\tepsilon_0 = %e\n", epsilon_0);
-    	fprintf(fout, "\tdielec_ext = %e\n", dielec_ext);
+    	fprintf(fout, "kappa = %e\n", kappa/mesoDimensions::length);
+    	fprintf(fout, "epsilon_0 = %e\n", epsilon_0);
+    	fprintf(fout, "dielec_ext = %e\n", dielec_ext);
 
-	fprintf(fout, "\tmax_iterations_cg = %d\n", max_iterations_cg);
-    	fprintf(fout, "\tepsilon2 = %e\n", epsilon2);
-	fprintf(fout, "\tnum_blobs = %d\n", num_blobs);
-	fprintf(fout, "\tnum_conformations = (");
+	fprintf(fout, "max_iterations_cg = %d\n", max_iterations_cg);
+    	fprintf(fout, "epsilon2 = %e\n", epsilon2);
+	fprintf(fout, "num_blobs = %d\n", num_blobs);
+	fprintf(fout, "num_conformations = (");
     	for (int i = 0; i < num_blobs; ++i) {
         	fprintf(fout, "%d", num_conformations[i]);
 		if(i == num_blobs - 1) {
@@ -781,13 +762,11 @@ void SimulationParams::write_to_file(FILE *fout) {
 		fprintf(fout, "\n");
 	}
 
-    	fprintf(fout, "\n\n");
-}
-
-string SimulationParams::RemoveFileExtension(const string& FileName)
-{
-    cout << FileName.find_last_of(".") << endl;
-    if(FileName.find_last_of(".") != std::string::npos)
-        return FileName.substr(0, FileName.find_last_of("."));
-    return "";
+    	/*fprintf(fout, "trajectory_out_fname = %s\n", trajectory_out_fname);
+    	for (int i = 0; i < num_blobs + 1; ++i) {
+    	    fprintf(fout, "measurement_out_fname %d = %s\n", i, measurement_out_fname[i]);
+    	}
+        if(calc_kinetics == 1) {
+	    	fprintf(fout, "kinetics_out_fname = %s\n", kinetics_out_fname);
+	}*/
 }

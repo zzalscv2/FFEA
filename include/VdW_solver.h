@@ -14,24 +14,21 @@ public:
 
     ~VdW_solver();
 
-    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs);
+    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor);
 
-    int solve(int num_blobs);
+    int solve();
 
     /** Allow protein VdW interactions along the top and bottom x-z planes */
     int solve_sticky_wall(scalar h);
-
-    scalar get_field_energy(int i, int j);
 
 protected:
     int total_num_surface_faces;
     NearestNeighbourLinkedListCube *surface_face_lookup;
 
     vector3 box_size;
+
     LJ_matrix *lj_matrix;
 
-    scalar **fieldenergy;
-    int num_blobs;
     struct adjacent_cell_lookup_table_entry {
         int ix, iy, iz;
     };

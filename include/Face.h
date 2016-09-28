@@ -72,26 +72,17 @@ public:
  
     /** Get the volume that the enclose the intersection
       *   of the tetrahedron formed by this face an the opposite 
-      *   linear node with the corresponding tetrahedron in f2. 
+      *   linear node does intersect with the corresponding tetrahedron in f2. 
       * It calls volumeIntersection, at volumeIntersection.h 
       **/
     scalar getTetraIntersectionVolume(Face *f2); 
 
     /** Get the volume and area that the enclose the intersection
       *   of the tetrahedron formed by this face an the opposite 
-      *   linear node with the corresponding tetrahedron in f2. 
+      *   linear node does intersect with the corresponding tetrahedron in f2. 
       * It calls volumeIntersection, at volumeIntersection.h 
       **/
     void getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area); 
-
-    /** Get the volume that enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite 
-      *   linear node with the corresponding tetrahedron in f2.
-      *   In addition, return the gradient of this volume,
-      *     with respect to the unit vector r.
-      * It calls volumeIntersection, at volumeIntersection.h 
-      **/
-    void getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &vol, geoscalar &dVdr);
 
     Blob *daddy_blob;
 

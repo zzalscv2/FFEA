@@ -14,6 +14,7 @@
 #include <omp.h>
 #include <algorithm>  // std::find
 #include <Eigen/Sparse>
+
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "mat_vec_fns.h"
@@ -74,7 +75,7 @@ public:
      */
     int init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
             const char *stokes_filename, const char *vdw_filename, const char *pin_filename, const char *binding_filename, const char *beads_filename, scalar scale, int linear_solver,
-            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, RngStream rng[], int num_threads);
+            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, MTRand rng[], int num_threads);
     //int init(const int blob_index, const int conformation_index, const string node_filename, const string topology_filename, const string surface_filename, const string material_params_filename,
       //  const string stokes_filename, const string vdw_filename, const string pin_filename, scalar scale, int linear_solver,
         //int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, MTRand rng[], int num_threads);
@@ -165,14 +166,10 @@ public:
     int read_nodes_from_file(FILE *trajectory_out);
 
     /**
-     * Takes measurements of system properties: KE, PE, Centre of Mass and Angular momentum etc
+     * Takes measurements of system properties: KE, PE, Centre of Mass and Angular momentum, outputing
+     * the results to the measurement file.
      */
-    void make_measurements();
-
-    /**
-     * Writes only the detailed measurements local to this blob to file!
-     */
-    void write_measurements_to_file(FILE *fout);
+    void make_measurements(FILE *measurement_out, int step, vector3 *system_CoM);
 
     /**
      * Calculates the current jacobian and elasticity properties of the structure
@@ -288,11 +285,6 @@ public:
     int build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A);
 
     /**
-     * Build the mass distribution matrix for this blob
-     */
-    int build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M);
-
-    /**
      * Returns the total mass of this Blob.
      */
     scalar get_mass();
@@ -321,12 +313,6 @@ public:
     int get_num_linear_nodes();
 
     int get_num_beads();
-
-    scalar get_rmsd();
-
-    int get_linear_solver();
-
-    vector3 get_CoG();
 
     int get_conformation_index();
     int get_previous_conformation_index();
@@ -364,14 +350,6 @@ public:
 
     void print_node_positions();
     void print_bead_positions();
-    bool there_is_mass();
-    void set_springs_on_blob(bool state);
-    bool there_are_springs();
-    bool there_are_beads();
-    bool there_is_vdw();
-    
-    scalar get_kinetic_energy();
-    scalar get_strain_energy();
 
 private:
 
@@ -458,33 +436,11 @@ private:
     /** Remember what type of solver we are using */
     int linear_solver;
 
-    /** And whether or not there is mass in this system */
-    bool mass_in_blob;
-
-    /** Are there springs on this blob? */
-    bool springs_on_blob;
-
-    /** Are there vdw on this blob? */
-    bool vdw_on_blob;
-
-    /** Are the preComp beads on this blob? */
-    bool beads_on_blob;
-
     /** The Blob force vector (an array of the force on every node) */
     vector3 *force;
 
     /** The array of random number generators (needed for parallel runs) */
-    RngStream *rng;
-
-    /** Energies */
-    scalar kineticenergy, strainenergy;
-
-    /** Momenta */
-    vector3 L;
-
-    /** Geometries */
-    vector3 CoM, CoG;
-    scalar rmsd;
+    MTRand *rng;
 
     CG_solver *poisson_solver;
     SparseMatrixFixedPattern *poisson_surface_matrix;

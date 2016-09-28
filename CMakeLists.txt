@@ -11,9 +11,7 @@ set(PACKAGE_VERSION "${VERSION}.${MINOR}")
 
 option(USE_OPENMP "Build with OpenMP support" ON)
 set(USE_OMP_MODE 1 CACHE STRING "0: disabled; 1: threads within blob; 2: threads per blob")
-option(USE_MPI "Use MPI parallelisation: EXPERIMENTAL!" OFF)
-mark_as_advanced(USE_MPI)
-option(USE_FAST "Add automatic compiler flags" ON)
+option(USE_FAST "Add automatic compiler flags" OFF)
 mark_as_advanced(USE_FAST)
 option(USE_DOUBLE "Use double precision" ON)
 mark_as_advanced(USE_DOUBLE)
@@ -24,16 +22,11 @@ set (LIBS_TO_LINK)
 #### LIBRARIES AND CFLAGS #######
 
 # benchmark ### MPI #########
-if (USE_MPI)
-  add_definitions(-DUSE_MPI)
-
-  find_package(MPI REQUIRED)
-  set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-  set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
-  include_directories(${MPI_INCLUDE_PATH})
-  set(LIBS_TO_LINK ${LIBS_TO_LINK} ${MPI_LIBRARIES}) 
-endif(USE_MPI)
-
+find_package(MPI REQUIRED)
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+include_directories(${MPI_INCLUDE_PATH})
+set(LIBS_TO_LINK ${LIBS_TO_LINK} ${MPI_LIBRARIES}) 
 
 # 0 #### PRECISION ###
 if (USE_DOUBLE)
@@ -96,10 +89,10 @@ if (UNIX)
 endif(UNIX)
 
 # 5 ### BOOST #####
-# set (Boost_NO_SYSTEM_PATHS ON)
+set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_NO_BOOST_CMAKE ON)
 # Check version:
-find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
+find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem )
 if (Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
   set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${Boost_LIBRARY_DIRS}")
@@ -110,61 +103,63 @@ else (Boost_FOUND)
    -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
 endif (Boost_FOUND)
 
-
-
-
 # 6 ### EIGEN3 #####
-# 6.1 # set up EIGEN3_HOME
-if (EIGEN3_HOME)  
-  set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
-else(EIGEN3_HOME)   
-  set(EIGEN3_HOME $ENV{EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
+set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
+if (EIGEN3_HOME)
+  find_path(EIGEN3_I_OK Sparse PATHS "${EIGEN3_HOME}/include/eigen3/Eigen"
+	  "${EIGEN3_HOME}/include/Eigen" NO_DEFAULT_PATH)
+  if (EIGEN3_I_OK)
+    set(EIGEN3_INC "${EIGEN3_I_OK}" CACHE PATH "Path to the Eigen3 headers" FORCE)
+  else (EIGEN3_I_OK)
+    message(FATAL_ERROR "Eigen/Sparse not found in ${EIGEN3_HOME}/include/eigen3")
+  endif (EIGEN3_I_OK)
+  unset(EIGEN3_I_OK CACHE)
+else(EIGEN3_HOME)
+  find_path(EIGEN3_INC "Sparse" HINTS
+    $ENV{EIGEN_HOME}/include/eigen3/Eigen
+    $ENV{EIGEN3_HOME}/include/eigen3/Eigen
+    $ENV{EIGEN_HOME}/include/Eigen
+    $ENV{EIGEN3_HOME}/include/Eigen
+    ${CMAKE_INCLUDE_PATH}/Eigen 
+    ${CMAKE_INCLUDE_PATH}/eigen3/Eigen 
+    ${CMAKE_PREFIX_PATH}/include/eigen3/Eigen
+    ${CMAKE_PREFIX_PATH}/include/Eigen
+    /usr/include/eigen3/Eigen
+    /usr/include/Eigen
+    /usr/local/include/eigen3/Eigen
+    /usr/local/include/Eigen
+    /opt/local/include/eigen3/Eigen
+    /opt/local/include//Eigen
+  )
+
+  if(NOT EIGEN3_INC)
+    message(FATAL_ERROR "Could NOT find EIGEN3: use variable EIGEN3_HOME if you have any local installation")
+  endif(NOT EIGEN3_INC)
 endif(EIGEN3_HOME)
-# 6.2 # we guarantee that if $EIGEN3_HOME is given, it will be take 
-      # before than any of the other possible installations available.
-set(CMAKE_PREFIX_PATH ${EIGEN3_HOME} $ENV{EIGEN_HOME} ${CMAKE_PREFIX_PATH})
-# 6.3 # Sometimes "FindEigen3.cmake" is not distributed with CMake, so we're shipping it:
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
-# 6.4 # Go for it:
-find_package(Eigen3 3.2.0 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIR})
+set (EIGEN3_INC "${EIGEN3_INC}/..")
+message(STATUS "Found Eigen3 headers: ${EIGEN3_INC}")
+include_directories("${EIGEN3_INC}")
 
 
-
-# 7 ### PYTHON ######
-find_package(PythonInterp REQUIRED)
-# python will be used to run some tests.
-
-
-# 8 ### DOXYGEN ##### 
-find_package(Doxygen 1.8)
+# 6 ### DOXYGEN ##### 
+find_package(Doxygen)
 if(DOXYGEN_FOUND)
   configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
                  "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
-  configure_file("${PROJECT_SOURCE_DIR}/DoxygenPyM.in"
-                 "${PROJECT_BINARY_DIR}/DoxyfilePyM" @ONLY)
-  add_custom_target(docpy ${DOXYGEN_EXECUTABLE}
-                        ${PROJECT_BINARY_DIR}/DoxyfilePyM
-                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
-                        COMMENT "Generating documentation for developers"
-                        VERBATIM)
   add_custom_target(doc ${DOXYGEN_EXECUTABLE}
                         ${PROJECT_BINARY_DIR}/Doxyfile
-                        DEPENDS docpy
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
-  install(DIRECTORY "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/share/ffea/doc" OPTIONAL)
-  install(DIRECTORY "${PROJECT_BINARY_DIR}/src/ffeamodules/html" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/share/ffea/ffeamodules" OPTIONAL)
+  install(FILES "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
+                "${CMAKE_INSTALL_PREFIX}/share/doc" OPTIONAL)
 endif(DOXYGEN_FOUND)
 
-# 9 ### DEBUG FLAGS ####
+# 7 ### DEBUG FLAGS ####
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 
-# 10 ### FAST! ##########
+# 8 ### FAST! ##########
 if (USE_FAST)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
@@ -187,6 +182,7 @@ endif(USE_FAST)
 ###### SOURCES TO BUILD AND INSTALL  ########
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 
+
 #######################################
 ######## INSTALL THE FFEA TOOLS  ######
 # 1 - Set up the install python path
@@ -198,14 +194,12 @@ set(PYTHONSTUFF "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYT
 #               FFEA_mapping_tools and FFEA_node_tools
 # PENDING # FFEA_initialise/PDB_tools # deprecate FFEA_convert_traj_to_pdb.c (?)
 # EVEN WORSE: make_structure_map2 in FFEA_initialise/FFEA_node_tools
-add_subdirectory("${PROJECT_SOURCE_DIR}/ffeatools")
-
-
+add_subdirectory("${PROJECT_SOURCE_DIR}/FFEA_tools")
 
 #####################################################
-############ # # # ENABLE TESTS # # # ###############
-enable_testing()
-# set_tests_properties(ENVIRONMENT OMP_NUM_THREADS=1)
-add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
-# add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency/volume")
-add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
+###### COPY OVER FILES THAT ARE NOT COMPILED ########
+file(COPY 
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/tests_physics
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/tests)
+
+

@@ -16,9 +16,6 @@ In between it can take the following parameters:
         If set up to 1, it will continue from the last snapshot found in 
         ` trajectory_out_fname `. Otherwise, FFEA will start from timestep 0.
 
-   * ` checkpoint_in ` <string> <BR>
-        The name of the checkpoint file to be read in case of setting ` <restart = 1> `.
-        
    * ` dt ` <float>  <BR>
         Time step. Typically ranging 1e-12 to 1e-14, although the ideal 
         value depends on the shortest edge of the mesh and on the forces 
@@ -47,15 +44,13 @@ In between it can take the following parameters:
         Number of blobs to be simulated.
 
    * ` num_conformations ` <(list of ints)> <BR>
-        List of comma separated integers enclosed in parenthesis 
-        listing the number of conformations
+        List of integers enclosed in parenthesis listing the number of conformations
         that exist for each blob. E. g., (2,2,1) would indicate two conformations for
         the first blob, two conformations for the second blob and 1 conformation for 
         the third blob. 
 
    * ` num_states ` <(list of ints)> <BR>
-	List of comma separated integers enclosed in parenthesis defining the number 
-        of defined for each blob E. g., (2,2,1) would indicate two conformations for
+	List of integers defining the number of defined for each blob E. g., (2,2,1) would indicate two conformations for
         the first blob, two conformations for the second blob and 1 conformation for 
         the third blob. A state defines which conformation is active and which binding sites are bound
 
@@ -75,11 +70,6 @@ In between it can take the following parameters:
    * ` kinetics_out_fname ` <string> <BR>
         The name of the file where kinetic trajectory will be recorded.
 
-   * ` checkpoint_out ` <string> <BR>
-        The name of the checkpoint file where the details of the state 
-          of the last recorded frame will be saved in order to be able to use restarts.
-
-
 #### Enable different calculations #### 
 
    * ` calc_noise ` <int>  <BR>
@@ -92,8 +82,7 @@ In between it can take the following parameters:
         Enter either 1 or 0 to enable or disable the electrostatic interactions. 
 
    * ` calc_preComp ` <int> <BR>
-        Enter either 1 or 0 to enable or disable the calculation of 
-      [pre-computed interactions](\ref fmApproach) between beads.
+        Enter either 1 or 0 to enable or disable the [pre-
  
 
 #### Short range parameters #### 
@@ -191,21 +180,14 @@ It has both it's own parameters and a set of subblocks:
      must be 1e-10 to convert everthing into meters, the SI units required by FFEA
 
    * ` centroid ` <list of 3 floats> <BR>
-      List of comma separated floats enclosed in parenthesis 
-      defining the initial centroid of your blob. 
-      This should have the same units as your node file.
+      The initial centroid of your blob. This should have the same units as your node file
 
-   * ` rotation ` either <list of 3 floats> or <list of 9 floats> <BR>
-      List of comma separated floats enclosed in parenthesis 
-      defining the initial rotation applied to your blob. 
-      If you specify 3 values, a rotation is applied first about the x axis, 
-      then y, then z.
+   * ` rotation ` <list of 3 floats> / <list of 9 floats> <BR>
+      The initial rotation applied to your blob. If you specify 3 values, a rotation is applied first about the x axis, then y, then z.
       If you specify 9 values, this is taken directly as a rotation matrix and applied to your blob.
 
    * ` velocity ` <list of 3 floats> <BR>
-      List of comma separated floats enclosed in parenthesis
-      defining the initial velocity of your blob. 
-      This has no effect for a system using the CG_nomass ` solver `.
+      The initial velocity of your blob. This has no effect for a system using the CG_nomass ` solver `.
 
 ### Conformation Block {#conformationBlock} ###
 
@@ -243,8 +225,7 @@ It contains mostly structural information:
      The filename specifying the sets of faces which constitute kinetic binding sites, and the type of site
 
    * ` beads ` <string> <BR>
-     The filename specifying the position of every bead in the system. The formatting 
- of this file can be found [here](\ref fm_inputfile).
+     The filename specifying...
 
 #### Kinetics Block {#kineticsBlock} ####
 
@@ -276,43 +257,6 @@ Interactions Block {#interactionsBlock}
 It only contains other blocks, each of which define a different way blobs can interact between one another.
 
 ### PreComp Block {#preCompBlock} ###
-
-  This block is used to describe the pre-computed interactions. It should open with
-   the line ` <precomp> ` and close with the line ` </precomp> `. The following 
-   fields need to be found in this block if ` calc_preComp ` is set to ` 1 `:
-
- * ` dist_to_m ` - conversion factor to meters for the distance stored in .pot and .force files.
-
- * ` E_to_J ` - conversion factor to Joules for the energies stored in .pot files.
-
- * ` types ` - a comma separated list enclosed in parenthesis with the bead type names, e. g.,
-                 (B1, B2, B3).
-
- * ` inputData ` - can take values 1 and 2 where:
-      - 1 will read .force and .pot files
-      - 2 will read .pot files and compute the forces.
-
-     The expected format for these files is explained [here](\ref potfile)
-
- * ` folder ` - path (either absolute or relative to the folder where the .ffea file resides)
-                 pointing to the folder storing the .pot (and optionally .force)
-                 interaction files.
-
-If the value given for ` types ` were ` (B1, B2, B3) `, FFEA would try to read files:
-
-
-     B1-B1.pot     B1-B1.force
-     B1-B2.pot     B1-B2.force
-     B1-B3.pot     B1-B3.force
-     B2-B2.pot     B2-B2.force
-     B2-B3.pot     B2-B3.force
-     B3-B3.pot     B3-B3.force
-
-
-from the given ` folder `. If a file were not found, the corresponding pair
- would be treated as **inactive**, and a warning would be raised. If no files were
- found, an error would be raised.
- 
 
 
 ### Springs Block {#springsBlock} ###

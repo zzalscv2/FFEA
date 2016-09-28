@@ -1,100 +1,101 @@
-Overview {#overview}
-=========
+Install 
+=======
 
-Fluctuating Finite Element Analysis is a new molecular modelling technique, built from the ground-up to support systems that are larger and more complex than those modelled by atomistic molecular dynamics. Instead of modelling biological systems as a collection of connected atoms, it models them as 3D volumes comprised of tetrahedrons. Unlike previous coarse-grained models, the models FFEA generates are viso-elastic continuum solids. Unlike other applications of Finite Element Analysis, these systems are subject to thermal fluctuations.
-
-This technique has the potential to model large, complex systems, made of many molecules, and complex processes at the frontiers of molecular biology. As it does not not require an atomistic level of detail, it can also be used to simulate biological molecules that cannot be imaged using X-ray crystallography.
-
-[cool image]
-
-## Features
-
- * Protein Interactions:
-  * A 6-12 [Lennard-Jones Potential](\ref ljPotential)
-  * A repulsive potential that is proportional 
-        to the [volume overlap](\ref sPotential).
-  * Specific interactions defined using precomputed potentials.
-        More documentation can be found [here](\ref fmApproach).
-  * Coulombic interactions [EXPERIMENTAL].
- * [Kinetic state changes](\ref kineticApproach) can be simulated together with the continuum model to
-    account for conformational changes and binding events.
- * Conversion of EM density data and atomistic structures into FFEA simulations
- * PyMOL visualisation plugin and detailed analysis tools (equilibration, euler characteristic, principal component analysis, gemoetric measurements)
+This file describes how to install FFEA. The instructions in this file
+are for the most common use cases, and cover the command line tools.
 
 
-## Videos
+Prerequisites
+=============
 
-[video will go here]
+To install FFEA you need:
 
-## Publications
+   * C and a C++ compilers.   
+     There is some C++ code written using 
+       the C++11 standard, so CMake will ensure that you have a 
+       recent enough compiler. Still, GCC 4.4 and Intel 13 have shown to work well. 
 
-   * [A stochastic finite element model for the dynamics of globular macromolecules](http://www.sciencedirect.com/science/article/pii/S0021999112007589),
-    R. C. Oliver, D. J. Read, O. G. Harlen, S. A. Harris, J Comp Phys, (2013), 2399:147-165. 
-   * List
-   * Of
-   * Publications
+   * CMake (>=2.8.11).   
+     Required for building FFEA.
+     https://cmake.org/
 
-## Technology
-   * [Boost](http://www.boost.org)
-   * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1).   
-     FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
-   * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL]   
-   * [PyMOL](https://www.pymol.org) (>=1.8) can 
-        be used to visualise FFEA systems and trajectories
-        as well as molecular and EM systems. Alternatives 
-        to visualise molecular systems and create FFEA continuum models
-        include [Chimera](https://www.cgl.ucsf.edu/chimera/)
-        and [VMD](http://www.ks.uiuc.edu/Research/vmd/).
-   * [GTS](http://gts.sourceforge.net) (>=0.7.6)[OPTIONAL]. The
-     GNU Triangulated Surface Libraries
-     allowing the manipulation and coarsening of surface profiles.
-   * [NETGEN](https://sourceforge.net/projects/netgen-mesher/) 
-   or [TETGEN](http://wias-berlin.de/software/tetgen/) [OPTIONAL]. 
-     Programs which convert surface profile into volumetric meshes 
-        to be used by FFEA.
-   * [pyPcazip](https://pypi.python.org/pypi/pyPcazip) [OPTIONAL]
-     Some of the Python FFEA analysis tools interact with these 
-     Principal Component Analysis library in order to generate the standard
-     PCA output (eigensystems, projections, animations etc)
-     obtained from standard from equivalent MD simulations.
+some third-party libraries:
 
-## Contribute
+   * Boost (>=1.54.0).   
+     Required compiled Boost library: program_options. 
+     http://www.boost.org/
 
-FFEA is maintained by a small but dedicated team at the University of Leeds. If you want to see where we can take FFEA, then you can:
-
-   * Use the software for something cool
-   * Send bug reports and feature requests to our [issue tracker](https://bitbucket.org/sohpc-ffea/ffea/issues)
-   * [Fork us](https://bitbucket.org/sohpc-ffea/ffea/fork)
-
-## FFEA Team
-
- * Code:
-   * Albert Solernou
-   * Ben Hanson
-   * Robin Richardson
-   * [Rob Welch](http://robwel.ch/)
- * Theory
-   * [Oliver Harlen](https://www.maths.leeds.ac.uk/index.php?id=263&uid=1025)
-   * [Sarah Harris](http://www.comp-bio.physics.leeds.ac.uk/)
-   * Robin Oliver
-   * [Daniel Read](http://www1.maths.leeds.ac.uk/~djread/)
-   * Robin Richardson
-   * Ben Hanson
-   * Albert Solernou
- * Thanks
-   * Lorem Ipsum
-   * Dolor Sit
-   * Amet
+   * Eigen (>=3.2.1).   
+     FFEA uses Eigen within the Kinetics module.
+     http://eigen.tuxfamily.org
+ 
+   * Doxygen (>= 1.8) [OPTIONAL]   
+     It will be used to build the documentation. http://www.doxygen.org
 
 
 
-How to read this manual
------------------------
+Configuration
+=============
 
-Because the software is split between the FFEA runner (written in C++) 
-  and the rest of FFEA tools (written mostly Python, with some C++ and C), 
-  this manual is split also in these two sections: 
-   [FFEA_runner](\ref userManual) and [ffeatools](\ref FFEAtools)
-  to be used as reference pages.
-However, the new user may want start reading the [tutorial](\ref Tutorial),
-  and consult the reference pages later. 
+It is generally advisable to configure and compile FFEA outside of the source tree. 
+Therefore, to configure FFEA, we would recommend to:
+
+    mkdir $FFEA_BUILD
+    cd $FFEA_BUILD
+    cmake $FFEA_SRC
+
+where ` $FFEA_SRC ` denotes the directory with the FFEA sources while 
+  ` $FFEA_BUILD` is an arbitrary folder where the generated files will be placed.
+Several options can be added to `cmake`, being the most important:
+
+  * `-DCMAKE_INSTALL_PREFIX=<dir>`       -  (default /usr/local) installation directory
+  * `-DCMAKE_BUILD_TYPE=<Debug|Release>` -  (default Release) build type
+  * `-DCMAKE_CXX_COMPILER=<program>`     -  (default g++)  C++ compiler.
+
+CMake will look for the required Boost and Eigen libraries. In the case they are not 
+ installed in a standard place, you can help CMake either through 
+
+  * configuring with ` -DCMAKE_PREFIX_PATH="Path-to-Eigen;Path-to-Boost" `,
+  * exporting enviroment variables ` EIGEN_HOME `  and ` BOOST_ROOT ` to the corresponding 
+      software folders
+  * or configuring with ` -DEIGEN_HOME="Path-to-Eigen" ` and  ` -DBOOST_ROOT="Path-to-Boost `
+
+Specific FFEA flags include:
+
+  * `USE_FAST`    (default OFF) will try to find the best compiler flags in terms of performance.
+  * `USE_OPENMP`  (default ON) will enable OpenMP parallel calculations.
+  * `USE_OMP_MODE` (default 1) where:
+
+    - 0 is for ` USE_OPENMP=OFF `.
+    - 1 uses all the threads within blobs.
+    - 2 uses one thread per blob.
+
+
+Building
+========
+After configuring you will be able to build FFEA typing:
+
+    make 
+
+Optionally, if Doxygen was found at configure time, 
+ you can build the documentation typing:
+
+    make doc 
+
+there are some mathematical formulae that will not render correctly if latex and ghostview are not found. You can read the documentation with a browser, if firefox was the browser available to you the coomand would be:
+
+firefox $FFEA_HOME/share/doc/html/index.html &
+
+
+Finally, you can install FFEA:
+
+    make install
+
+You can run the software with the command:
+
+ffea <input-file.ffea>
+
+
+The only caveat in this last step is that <input-file.ffea> points to a number of input files. Details of all these files are in the documentation. You must be in the right folder so that the relative paths in <input-file.ffea> make sense.
+
+

@@ -1,7 +1,5 @@
 #include "VdW_solver.h"
-#ifdef USE_MPI
 #include "mpi.h"
-#endif
 
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
@@ -9,8 +7,6 @@ VdW_solver::VdW_solver() {
     box_size.x = 0;
     box_size.y = 0;
     box_size.z = 0;
-    num_blobs = 0;
-    fieldenergy = NULL;
 }
 
 VdW_solver::~VdW_solver() {
@@ -19,12 +15,9 @@ VdW_solver::~VdW_solver() {
     box_size.x = 0;
     box_size.y = 0;
     box_size.z = 0;
-    num_blobs = 0;
-    delete[] fieldenergy;
-    fieldenergy = NULL;
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
@@ -33,18 +26,10 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     this->lj_matrix = lj_matrix;
 
     this->steric_factor = vdw_steric_factor;
-
-    // And some measurement stuff it should know about
-    this->num_blobs = num_blobs;
-    fieldenergy = new scalar*[num_blobs];
-    for(int i = 0; i < num_blobs; ++i) {
-	fieldenergy[i] = new scalar[num_blobs];
-    }
     return FFEA_OK;
 }
 
-int VdW_solver::solve(int num_blobs) {
-    // double st, time1, time2, time3;
+int VdW_solver::solve() {
     const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
         {-1, -1, -1},
         {-1, -1, 0},
@@ -82,30 +67,18 @@ int VdW_solver::solve(int num_blobs) {
     total_num_surface_faces = surface_face_lookup->get_pool_size();
     //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
-    // Zero some measurement_ stuff
-    for(int i = 0; i < num_blobs; ++i) {
-	for(int j = 0; j < num_blobs; ++j) {
-		fieldenergy[i][j] = 0.0;
-	}
-    }
-
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/ 
 #ifdef USE_OPENMP
-#pragma omp parallel for private(c, l_i, l_j, f_i, f_j)
+#pragma omp parallel for private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1)
 #endif
-    //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
 
         // get the ith face
         l_i = surface_face_lookup->get_from_pool(i);
         if(!l_i->obj->is_kinetic_active()) {
 		continue;
-	}
+	    }
         f_i = l_i->obj;
-
-        //time2 = MPI::Wtime() - st;       
-        //cout<< "time to get the ith face:" << time2 << "seconds" << endl;
-        //cout<< "inner loop" << endl;
         
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
@@ -127,17 +100,9 @@ int VdW_solver::solve(int num_blobs) {
                 }
                 l_j = l_j->next;
             }
-        }
-        //timing 1000 face execution
-        /*if (i = 1000){
-          time3 = MPI::Wtime() - st;
-          cout<<"calculating face's interaction for 1000 face"<<time3<<"seconds"<<endl;
-        }*/        
-
+        }        
     }
 
-    //time1 = MPI::Wtime()-st;
-    //cout<<"total time for the outer loop: "<<time1<<"seconds"<<endl;
     return FFEA_OK;
 }
 
@@ -282,10 +247,8 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
 
     scalar ApAq = f1->area * f2->area;
     energy *= ApAq;
-
-    // Store the measurement
-    #pragma omp atomic
-    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
+    f1->add_bb_vdw_energy_to_record(energy, f2->daddy_blob->blob_index);
+    f2->add_bb_vdw_energy_to_record(energy, f1->daddy_blob->blob_index);
 
     for (int j = 0; j < 3; j++) {
         vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
@@ -314,7 +277,7 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
         force2.y *= ApAq;
         force2.z *= ApAq;
         f2->add_force_to_node(j, &force2);
-        f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+        f2->add_bb_vdw_force_to_record(&force1, f1->daddy_blob->blob_index);
         //				printf("2:: %d %e %e %e\n", j, force2.x, force2.y, force2.z);
 
         //				f2->add_force_to_node_atomic(j, &force);
@@ -472,26 +435,4 @@ scalar VdW_solver::minimum_image(scalar delta, scalar size) {
     }
 
     return delta;
-}
-
-scalar VdW_solver::get_field_energy(int index0, int index1) {
-
-	// Sum over all field
-	if(index0 == -1 || index1 == -1) {
-		scalar energy = 0.0;
-		for(int i = 0; i < num_blobs; ++i) {
-			for(int j = 0; j < num_blobs; ++j) {
-				energy += fieldenergy[i][j];
-			}
-		}
-
-		return energy;
-
-	} else if (index0 == index1) {
-		return fieldenergy[index0][index1];
-	} else {
-
-		// Order of blob indices is unknown in the calculations, so must add
-		return fieldenergy[index0][index1] + fieldenergy[index1][index0];
-	}
 }

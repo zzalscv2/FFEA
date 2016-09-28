@@ -1,7 +1,5 @@
 #include "World.h"
-#ifdef USE_MPI
 #include "mpi.h"
-#endif
 
 World::World() {
 
@@ -13,8 +11,9 @@ World::World() {
     kinetic_state = NULL;
     kinetic_rate = NULL;
     kinetic_base_rate = NULL;
+    num_blobs = 0;
+    num_conformations = NULL;
     num_springs = 0;
-    mass_in_system = false;
     num_threads = 1;
     rng = NULL;
     phi_Gamma = NULL;
@@ -25,22 +24,9 @@ World::World() {
     step_initial = 0;
     trajectory_out = NULL;
     measurement_out = NULL;
-    detailed_meas_out = NULL;
     kinetics_out = NULL;
-    checkpoint_out = NULL;
+    params_out = NULL;
     vdw_solver = NULL;
-
-    kineticenergy = 0.0;
-    strainenergy = 0.0;
-    springenergy = 0.0;
-    springfieldenergy = NULL;
-    vdwenergy = 0.0;
-    preCompenergy = 0.0;
-
-    vector3_set_zero(&L);
-    vector3_set_zero(&CoM);
-    vector3_set_zero(&CoG);
-    rmsd = 0.0;
 }
 
 World::~World() {
@@ -50,13 +36,14 @@ World::~World() {
 
     delete[] blob_array;
     blob_array = NULL;
+    num_blobs = 0;
+    delete[] num_conformations;
+    num_conformations = NULL;
 
     delete[] spring_array;
     spring_array = NULL;
     num_springs = 0;
-
-    mass_in_system = false;
-
+  
     delete[] kinetic_map;
     kinetic_map = NULL;
 
@@ -74,36 +61,21 @@ World::~World() {
     phi_Gamma = NULL;
 
     total_num_surface_faces = 0;
-
+  
     box_dim.x = 0;
     box_dim.y = 0;
     box_dim.z = 0;
     step_initial = 0;
   
     trajectory_out = NULL;
+
+    delete[] measurement_out;
     measurement_out = NULL;  
 
     kinetics_out = NULL;
+    params_out = NULL;
 
-    checkpoint_out = NULL;
-
-    detailed_meas_out = NULL;
     vdw_solver = NULL;
-
-    kineticenergy = 0.0;
-    strainenergy = 0.0;
-    springenergy = 0.0;
-
-    delete[] springfieldenergy;
-    springfieldenergy = NULL;
-
-    vdwenergy = 0.0;
-    preCompenergy = 0.0;
-
-    vector3_set_zero(&L);
-    vector3_set_zero(&CoM);
-    vector3_set_zero(&CoG);
-    rmsd = 0.0;
 }
 
 /**
@@ -119,7 +91,7 @@ World::~World() {
  * initialise BEM PBE solver
  * */
 
-int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeDetailed) {
+int World::init(string FFEA_script_filename, int frames_to_delete, int mode) {
 	
 	// Set some constants and variables
 	int i, j, k;
@@ -128,21 +100,20 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	string buf_string;
 	FFEA_input_reader *ffeareader;
 	ffeareader = new FFEA_input_reader();
-#ifdef USE_MPI
   double st,et;
   
   st=MPI::Wtime();
-#endif
+  
+	// Open script
+	ifstream fin;
+	fin.open(FFEA_script_filename.c_str());
 
 	// Copy entire script into string
 	vector<string> script_vector;
-	if(ffeareader->file_to_lines(FFEA_script_filename, &script_vector) == FFEA_ERROR) {
-		return FFEA_ERROR;
-	}
+	ffeareader->file_to_lines(FFEA_script_filename, &script_vector);
 
 	// Get params section
 	cout << "Extracting Parameters..." << endl;
-	params.FFEA_script_filename = FFEA_script_filename;  // includes absolute path.
 	if(params.extract_params(script_vector) != 0) {
 		FFEA_error_text();
 		printf("Error parsing parameters in SimulationParams::extract_params()\n");
@@ -162,7 +133,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	if(params.calc_kinetics == 1) {
 
 		// Load the binding params matrix
-		if(binding_matrix.init(params.bsite_in_fname) == FFEA_ERROR) {
+		if(binding_matrix.init(params.binding_params_fname) == FFEA_ERROR) {
 			FFEA_ERROR_MESSG("Error when reading from binding site params file.\n")
 		}
 
@@ -197,14 +168,13 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 		}
 
+		kinetic_rng.seed(params.rng_seed);		
 	}
 
 	// Load the vdw forcefield params matrix
-	if(params.calc_vdw == 1) {
-    		if (lj_matrix.init(params.vdw_in_fname, params.vdw_type) == FFEA_ERROR) {
-        		FFEA_ERROR_MESSG("Error when reading from vdw forcefield params file.\n")
-    		}
-	}
+    	if (lj_matrix.init(params.vdw_params_fname) == FFEA_ERROR) {
+        	FFEA_ERROR_MESSG("Error when reading from vdw forcefeild params file.\n")
+    	}
 
     	// detect how many threads we have for openmp
     	int tid;
@@ -222,170 +192,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	num_threads = 1;
 #endif
 
-	// RNG: initialise the system, and allocate the Seeds:
-	//    This has to be done before calling read_and_build_system.
-	if (params.restart == 0) {
-		// RNG.1 - allocate the Seeds:
-		num_seeds = num_threads;
-		if (params.calc_kinetics == 1) num_seeds += 1; 
-		Seeds = new unsigned long *[num_seeds];
-		for (int i=0; i<num_seeds; i++){ 
-			Seeds[i] = new unsigned long [6];
-		}
-		// RNG.2 - Initialise the package:
-		// We need one rng for each thread, to avoid concurrency problems,
-	  	// so generate an array of instances of RngStreams:
-		// We first initialize the six seeds that RngStream needs:
-		unsigned long sixseed[6];
-		unsigned long twoMax[2] = {4294967087, 4294944443}; // these are max values for RngStream
-		srand(params.rng_seed); 
-		for (int i=0; i<6; i++){
-			sixseed[i] = (rand() + rand())%twoMax[i/3];
-		} 
-		// now initialise the package:
-		RngStream::SetPackageSeed(sixseed);
-		if (userInfo::verblevel > 1) {
-			cout << "RngStream initialised using: ";
-			for (int ni=0; ni<6; ni++){ 
-				cout << sixseed[ni] << " "; 
-			}
-			cout << endl; 
-		}
-		// RNG.3 - initialise the rngs related to the fluctuating stress, and noise.
-		rng = new RngStream[num_threads];
-		if (userInfo::verblevel > 2) {
-			for (int ni=0; ni<num_threads; ni++){ 
-				cout << "RNG[" << ni << "] initial state:" <<endl; 
-				rng[ni].WriteState(); 
-		 	} 
-		} 
-		// RNG.4 - and optionally initialise an extra Stream for kinetics.
-		if(params.calc_kinetics == 1) {
-			kinetic_rng = new RngStream;
-			cout << "RngStream for kinetics created with initial state:" << endl;       
-			kinetic_rng->WriteState(); 
-		} 
-	} else if (params.restart == 1) {
-		// RNG - We'll now recover the state of the RNGs.
-		printf("Getting state information from %s\n", params.icheckpoint_fname);
-		// RNG.1 - READ Seeds FROM i.fcp into Seeds:
-		// RNG.1.1 - open checkpoint file and check:
-		ifstream checkpoint_in;
-		checkpoint_in.open(params.icheckpoint_fname, ifstream::in);
-		if (checkpoint_in.fail()){
-			FFEA_FILE_ERROR_MESSG(params.icheckpoint_fname)
-		}
-		// RNG.1.2 - readlines, and num_seeds:
-		vector<string> checkpoint_v;
-		string line;
-		while (getline(checkpoint_in, line)) {
-			checkpoint_v.push_back(line);
-		}
-		vector<string> header;
-		int num_seeds_read;
-		boost::split(header, checkpoint_v[0], boost::is_any_of(" "));
-		try {
-			num_seeds_read = stoi(header.back());
-		} catch (invalid_argument& ia) {
-			FFEA_ERROR_MESSG("Error reading the number of stress seeds: %s\n", ia.what());
-		}
-		int num_stress_seeds_read = num_seeds_read;
-		if (params.calc_kinetics) num_seeds_read += 1;
-		// RNG.1.3 - allocate Seeds:
-		int num_active_rng = num_threads; 
-		if (params.calc_kinetics) num_active_rng += 1; 
-		int nlines = checkpoint_v.size();
-		cout << nlines << endl;
+    	// We need one rng for each thread, to avoid concurrency problems,
+    	// so generate an array of instances of mersenne-twister rngs.
+    	rng = new MTRand[num_threads];
 
-		Seeds = new unsigned long *[max(num_active_rng,num_seeds_read)];
-		// RNG.1.4 - get Seeds :
-		// BEN CHANGE - stream was printing out stuff if ctrl-c was pressed, so I'm looping more accurately
-		int cnt_seeds = 0;
-		for(int i = 1; i < num_threads + 1; ++i) {
-			vector <string> vline;
-			boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
-			Seeds[cnt_seeds] = new unsigned long [6];
-			// there must be 6 integers per line:
-			if (vline.size() != 6) {
-				FFEA_ERROR_MESSG("ERROR reading seeds\n")
-			}
-			for (int j=0; j<6; j++){
-				try {
-					Seeds[cnt_seeds][j] = stol(vline[j]);
-				} catch (invalid_argument& ia) {
-					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
-				}
-			}
-			cnt_seeds += 1;
-		}
-
-		// If kinetics active, one more seed to get (on line num_threads + 2)
-		if(params.calc_kinetics) {
-			vector <string> vline;
-			boost::split(vline, checkpoint_v[num_threads + 2], boost::is_any_of(" "));
-			Seeds[cnt_seeds] = new unsigned long [6];
-			// there must be 6 integers per line:
-			if (vline.size() != 6) {
-				FFEA_ERROR_MESSG("ERROR reading seeds\n")
-			}
-			for (int j=0; j<6; j++){
-				try {
-					Seeds[cnt_seeds][j] = stol(vline[j]);
-				} catch (invalid_argument& ia) {
-					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
-				}
-			}
-		}
-
-		/* OLD */
-		/*
-		for (int i=1; i<nlines; i++){
-			if (i == num_threads + 1) continue; // skip the header of the kinetics rng
-			vector <string> vline;
-			boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
-			Seeds[cnt_seeds] = new unsigned long [6];
-			// there must be 6 integers per line:
-			if (vline.size() != 6) {
-				FFEA_ERROR_MESSG("ERROR reading seeds\n")
-			}
-			for (int j=0; j<6; j++){
-				try {
-					Seeds[cnt_seeds][j] = stol(vline[j]);
-				} catch (invalid_argument& ia) {
-					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
-				}
-			}
-			cnt_seeds += 1;
-		} */
-
-		// RNG.2 - AND initialise rng:
-		// RNG.2.1 - first the package and, and rng[0],
-		cout << "To be initialised by: " << Seeds[0][0] << " " << Seeds[0][1] << " " <<
-          Seeds[0][2] << " " << Seeds[0][3] << " " << Seeds[0][4] << " " << Seeds[0][5] << endl;
-		RngStream::SetPackageSeed(Seeds[0]);
-		rng = new RngStream[num_threads];
-		// RNG.2.2 - and now the rest of them: rng[1:]: 
-		for (int i=1; i<(min(num_threads,num_stress_seeds_read)); i++){
-			rng[i].SetSeed(Seeds[i]);
-		}
-		if (userInfo::verblevel > 2) {
-			for (int ni=0; ni<num_threads; ni++){ 
-				cout << "RNG[" << ni << "] initial state:" <<endl; 
-				rng[ni].WriteState(); 
-		 	} 
-		} 
-		// if num_threads == num_threads in all the previous runs, it was that easy. 
-		// if num_threads < num_threads in a previous run, we have enough seeds, and we'll keep the
-        //    extra seeds to be saved in ocheckpoint_fname.
-		// if num_threads > num_threads in a previous run, we initialised the extra RNG properly
-		//		when we set SetPackageSeed(Seeds[0]).
-		// RNG.2.3 - if kinetics, initialise the last one!
-		if(params.calc_kinetics == 1) {
-			kinetic_rng = new RngStream;
-			kinetic_rng->SetSeed(Seeds[num_seeds_read-1]);
-		}
+    	// Seed each rng differently
+    	for (i = 0; i < num_threads; i++) {
+        	rng[i].seed(params.rng_seed + i);
 	}
-
 
 	// Build system of blobs, conformations, kinetics etc
 	if(read_and_build_system(script_vector) != 0) {
@@ -423,7 +237,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
 	        box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
-
+		
 		shift.x = box_dim.x / 2.0 - world_centroid.x;
 		shift.y = box_dim.y / 2.0 - world_centroid.y;
 		shift.z = box_dim.z / 2.0 - world_centroid.z;
@@ -435,17 +249,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 		}
 	}
+	// Create measurement files
+	measurement_out = new FILE *[params.num_blobs + 1];
 
 	// If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
 	if(mode == 0) {
-		// In any case, open the output checkpoint file for writing
-		if ((checkpoint_out = fopen(params.ocheckpoint_fname, "w")) == NULL) {
-			// FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname)
-			FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname);
-		}
-
 		if (params.restart == 0) {
-
 		
 			// Open the trajectory output file for writing
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "w")) == NULL) {
@@ -453,11 +262,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 
 			// Open the measurement output file for writing
-			if ((measurement_out = fopen(params.measurement_out_fname, "w")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
+			for (i = 0; i < params.num_blobs + 1; ++i) {
+			    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "w")) == NULL) {
+				FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
+			    }
 			}
 
-			// HEADER FOR TRAJECTORY
 			// Print initial info stuff
 			fprintf(trajectory_out, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs %d\nNumber of Conformations", params.num_blobs);
 			for (i = 0; i < params.num_blobs; ++i) {
@@ -477,71 +287,23 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			// First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
 			fprintf(trajectory_out, "*\n");
 
-         		// HEADER FOR MEASUREMENTS
-			// Write header to output file
-			write_output_header(measurement_out, FFEA_script_filename);
-
-			// Write params to this output file
-			params.write_to_file(measurement_out);
-
-			// Get ready to write the measurements (this is the order things must be written later. There will be no floating zeroes!)
-			fprintf(measurement_out, "Measurements:\n");
-			fprintf(measurement_out, "%-14s", "Time");
-			
-			// Do we need kinetic energy?
-			if(mass_in_system) {
-				fprintf(measurement_out, "%-14s", "KineticEnergy");
+			// First line in measurements file should be a header explaining what quantities are in each column
+			for (i = 0; i < params.num_blobs; ++i) {
+			    fprintf(measurement_out[i], "FFEA_measurement_file (Blob %d)\n\n", i);
+			    fprintf(measurement_out[i], "# step | KE | PE | CoM x | CoM y | CoM z | L_x | L_y | L_z | rmsd | vdw_area_%d_surface | vdw_force_%d_surface | vdw_energy_%d_surface\n", i, i, i);
+			    fflush(measurement_out[i]);
 			}
-			fprintf(measurement_out, "%-14s", "StrainEnergy");
-			fprintf(measurement_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
 
-			// Are these field enabled?
-			if(num_springs != 0) {
-				fprintf(measurement_out, "%-14s", "SpringEnergy");	
+			// Print parameters back out, so user has a record
+			fprintf(measurement_out[params.num_blobs], "FFEA_measurement_file (World)\n\n");
+			fprintf(measurement_out[params.num_blobs], "\nInteractions:\n\n# step ");
+			for (i = 0; i < params.num_blobs; ++i) {
+			    for (j = i + 1; j < params.num_blobs; ++j) {
+				fprintf(measurement_out[params.num_blobs], "| vdw_area_%d_%d | vdw_force_%d_%d | vdw_energy_%d_%d ", i, j, i, j, i, j);
+			    }
 			}
-			if(params.calc_vdw != 0) {
-				fprintf(measurement_out, "%-14s", "VdWEnergy");
-			}
-			if(params.calc_preComp != 0) {
-				fprintf(measurement_out, "%-14s", "PreCompEnergy");
-			}
-			fprintf(measurement_out, "\n");
-			fflush(measurement_out);
-			
-			// HEADER FOR DETAILED MEASUREMENTS (if necessary)
-			if(writeDetailed) {
-				detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "w");
-				fprintf(detailed_meas_out, "FFEA Detailed Measurement File\n\nMeasurements:\n");
-				fprintf(detailed_meas_out, "%-14s", "Time");
-				for(i = 0; i < params.num_blobs; ++i) {
-					fprintf(detailed_meas_out, "| B%d ", i);
-					if(active_blob_array[i]->there_is_mass()) {
-						fprintf(detailed_meas_out, "%-14s", "KineticEnergy");
-					}
-					fprintf(detailed_meas_out, "%-14s", "StrainEnergy");
-					fprintf(detailed_meas_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
-				}
-
-				if(params.calc_vdw == 1 || params.calc_preComp == 1 || num_springs != 0) {
-					for(i = 0; i < params.num_blobs; ++i) {
-						for(j = i; j < params.num_blobs; ++j) {
-							fprintf(detailed_meas_out, "| B%dB%d ", i, j);
-							if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
-								fprintf(detailed_meas_out, "%-14s", "VdWEnergy");
-							}
-							if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs()) {
-								fprintf(detailed_meas_out, "%-14s", "SpringEnergy");
-							}
-
-							if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads()) {
-								fprintf(detailed_meas_out, "%-14s", "PreCompEnergy");
-							}
-						}
-					}
-				}
-				fprintf(detailed_meas_out, "\n");
-				fflush(detailed_meas_out);
-			}
+			fprintf(measurement_out[params.num_blobs], "\n");
+			fflush(measurement_out[params.num_blobs]);
 
 			// Open the kinetics output file for writing (if neccessary) and write initial stuff
 			if (params.kinetics_out_fname_set == 1) {
@@ -563,13 +325,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		} else {
 
 			// Otherwise, seek backwards from the end of the trajectory file looking for '*' character (delimitter for snapshots)
-
-			/*
-			 * Trajectory first
-			 */
 			bool singleframe = false;
 			char c;
-
 
 			printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
@@ -586,8 +343,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 
 			// Variable to store position of last asterisk in trajectory file (initialise it at end of file)
-			off_t last_asterisk_pos;
-			last_asterisk_pos = ftello(trajectory_out);
+			off_t last_asterisk_pos = ftello(trajectory_out);
 
 			int num_asterisks = 0;
 			int num_asterisks_to_find = 3 + (frames_to_delete) * 2 + 1; // 3 to get to top of last frame, then two for every subsequent frame. Final 1 to find ending conformations of last step
@@ -627,14 +383,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 
 			// Get the conformations for the last snapshot (or set them as 0 if we have only 1 frame)
-			int current_conf, crap;
+			int current_conf;
 			if(!singleframe) {
-				crap = fscanf(trajectory_out, "Conformation Changes:\n");
+				fscanf(trajectory_out, "Conformation Changes:\n");
 				for(i = 0; i < params.num_blobs; ++i) {
-					crap = fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %d\n", &current_conf);
+					fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %d\n", &current_conf);
 					active_blob_array[i] = &blob_array[i][current_conf];
 				}
-				crap = fscanf(trajectory_out, "*\n");
+				fscanf(trajectory_out, "*\n");
 				last_asterisk_pos = ftello(trajectory_out);
 			} else {
 				for(i = 0; i < params.num_blobs; ++i) {
@@ -660,11 +416,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 
 			// Final conformation bit
-			crap = fscanf(trajectory_out, "*\nConformation Changes:\n");
+			fscanf(trajectory_out, "*\nConformation Changes:\n");
 			for(i = 0; i < params.num_blobs; ++i) {
-				crap = fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %*d\n");
+				fscanf(trajectory_out, "Blob %*d: Conformation %*d -> Conformation %*d\n");
 			}
-			crap = fscanf(trajectory_out, "*\n");
+			fscanf(trajectory_out, "*\n");
 
 			// Set truncation location
 			last_asterisk_pos = ftello(trajectory_out);
@@ -673,89 +429,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			fclose(trajectory_out);
 
 			// Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
-			printf("Truncating the trajectory file to the last asterisk...\n");
+			printf("Truncating the trajectory file to the last asterisk (to remove any half-written time steps)\n");
 			if (truncate(params.trajectory_out_fname, last_asterisk_pos) != 0) {
 			    FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname)
-			}
-
-			/*
-			 * Measurement files
-			 */
-
-			// Global
-
-			if ((measurement_out = fopen(params.measurement_out_fname, "r")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
-			}
-
-			if (fseek(measurement_out, 0, SEEK_END) != 0) {
-			    FFEA_ERROR_MESSG("Could not seek to end of file\n")
-			}
-
-			last_asterisk_pos = ftello(measurement_out);
-
-			// Looking for newlines this time, as each measurement frame is a single line
-			int num_newlines = 0;
-			int num_newlines_to_find = frames_to_delete + 1; // 1 for every frame, plus the first one, assuming all were written correctly
-			while (num_newlines != num_newlines_to_find) {
-			    if (fseek(measurement_out, -2, SEEK_CUR) != 0) {
-				FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.measurement_out_fname)
-			    }
-			    c = fgetc(measurement_out);
-			    if (c == '\n') {
-				num_newlines++;
-				printf("Found %d\n", num_newlines);
-			    }
-			}
-
-			last_asterisk_pos = ftello(measurement_out);
-
-			// Truncate the measurement file up to the point of the last newline
-			printf("Truncating the measurement file to the appropriate line...\n");
-			if (truncate(params.measurement_out_fname, last_asterisk_pos) != 0) {
-			    FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.measurement_out_fname)
-			}
-
-			// Append a newline to the end of this truncated measurement file (to replace the one that may or may not have been there)
-			//fprintf(measurement_out, "#==RESTART==\n");
-
-			last_asterisk_pos = ftello(measurement_out);
-
-
-			// Detailed
-			if(writeDetailed) {
-
-				if ((detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "r")) == NULL) {
-				    FFEA_FILE_ERROR_MESSG(params.detailed_meas_out_fname.c_str())
-				}
-
-				if (fseek(detailed_meas_out, 0, SEEK_END) != 0) {
-				    FFEA_ERROR_MESSG("Could not seek to end of file\n")
-				}
-
-				last_asterisk_pos = ftello(detailed_meas_out);
-
-				// Looking for newlines this time, as each measurement frame is a single line
-				num_newlines = 0;
-				num_newlines_to_find = frames_to_delete + 1; // 1 for every frame, plus the first one, assuming all were written correctly
-				while (num_newlines != num_newlines_to_find) {
-				    if (fseek(detailed_meas_out, -2, SEEK_CUR) != 0) {
-					FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.detailed_meas_out_fname.c_str())
-				    }
-				    c = fgetc(detailed_meas_out);
-				    if (c == '\n') {
-					num_newlines++;
-					printf("Found %d\n", num_newlines);
-				    }
-				}
-
-				last_asterisk_pos = ftello(detailed_meas_out);
-
-				// Truncate the measurement file up to the point of the last newline
-				printf("Truncating the detailed measurement file to the appropriate line...\n");
-				if (truncate(params.detailed_meas_out_fname.c_str(), last_asterisk_pos) != 0) {
-				    FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.detailed_meas_out_fname.c_str())
-				}
 			}
 
 			// Open trajectory and measurment files for appending
@@ -763,15 +439,15 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "a")) == NULL) {
 			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
 			}
-			if ((measurement_out = fopen(params.measurement_out_fname, "a")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
+			for (i = 0; i < params.num_blobs + 1; ++i) {
+			    if ((measurement_out[i] = fopen(params.measurement_out_fname[i], "a")) == NULL) {
+				FFEA_FILE_ERROR_MESSG(params.measurement_out_fname[i])
+			    }
 			}
 
-			// And the detailed meas file, maybe
-			if(writeDetailed) {
-				if((detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "a")) == NULL) {
-					FFEA_FILE_ERROR_MESSG(params.detailed_meas_out_fname.c_str())
-				}
+			// Append a newline to the end of this truncated trajectory file (to replace the one that may or may not have been there)
+			for (i = 0; i < params.num_blobs + 1; ++i) {
+			    fprintf(measurement_out[i], "#==RESTART==\n");
 			}
 
 			// And kinetic file
@@ -779,7 +455,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			    if ((kinetics_out = fopen(params.kinetics_out_fname, "a")) == NULL) {
 				FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname)
 			    }
-			    //fprintf(kinetics_out, "#==RESTART==\n");
+			    fprintf(kinetics_out, "#==RESTART==\n");
 			}
 			
 			/*
@@ -792,6 +468,37 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		}
 
 	}
+	 /*   // Initialise the Van der Waals solver
+	    if(params.calc_vdw == 1 || params.calc_es == 1) {
+		vector3 world_centroid, shift;
+	        get_system_centroid(&world_centroid);
+		if(params.es_N_x < 1 || params.es_N_y < 1 || params.es_N_z < 1) {
+			vector3 dimension_vector;
+			get_system_dimensions(&dimension_vector);
+			
+			// Calculate decent box size
+			params.es_N_x = 2 * (int)ceil(dimension_vector.x * (params.kappa / params.es_h));
+			params.es_N_y = 2 * (int)ceil(dimension_vector.y * (params.kappa / params.es_h));
+			params.es_N_z = 2 * (int)ceil(dimension_vector.z * (params.kappa / params.es_h));
+		}
+
+		// Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
+		box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
+	        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
+	        box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
+		
+		shift.x = box_dim.x / 2.0 - world_centroid.x;
+		shift.y = box_dim.y / 2.0 - world_centroid.y;
+		shift.z = box_dim.z / 2.0 - world_centroid.z;
+		if(params.move_into_box == 1 && params.restart == 0) {
+			for (i = 0; i < params.num_blobs; i++) {
+				//active_blob_array[i]->get_centroid(&world_centroid);
+				active_blob_array[i]->move(shift.x, shift.y, shift.z);
+				active_blob_array[i]->calc_all_centroids();
+			}
+		}
+	    }*/
+	// vector3 world_centroid;
 
 	    box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
 	    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
@@ -801,13 +508,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
               vdw_solver = new VdW_solver();
             else if (params.vdw_type == "steric")
               vdw_solver = new Steric_solver();
-            else if (params.vdw_type == "stericII")
-              vdw_solver = new Steric_solverII();
 	    else if (params.vdw_type == "ljsteric")
 	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL) 
               FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
-	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor, params.num_blobs);
+	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor);
 
 	    // Calculate the total number of vdw interacting faces in the entire system
 	    total_num_surface_faces = 0;
@@ -876,9 +581,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 	    if (params.restart == 0 && mode == 0) {
 		// Carry out measurements on the system before carrying out any updates (if this is step 0)
-		print_trajectory_and_measurement_files(0, omp_get_wtime());
+		print_trajectory_and_measurement_files(0, 0);
 		print_kinetic_files(0);
 	    }
+	     
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
 #endif
@@ -888,12 +594,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 #endif
 
     // Log file the params
-    //params.write_to_file(userInfo::log_out);
+//    params.write_to_file(userInfo::log_out);
 
-#ifdef USE_MPI
     et = MPI::Wtime() -st;
     cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
-#endif
     return FFEA_OK;
 }
 
@@ -905,215 +609,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
  *   ffea numerical integration.
  * */
 int World::get_smallest_time_constants() {
-
-	// This is currently only for active blob, as inactive blobs are all at infinity due to linked list problems
-
-	// Global variables
-	int i, j, dt_min_bin, dt_max_bin, num_nodes, num_rows;
-	scalar dt_min_world = INFINITY, dt_max_world = -1 * INFINITY;
-	string dt_min_world_type = "viscous", dt_max_world_type = "viscous";
-	Eigen::EigenSolver<Eigen_MatrixX> es_v, es_m;
-	vector<scalar> tauv, taum;
-	vector<scalar>::iterator it;
-
-	cout << "Calculating time constants..." << endl << endl;
-	for(i = 0; i < params.num_blobs; ++i) {
-		cout << "\tBlob " << i << ":" << endl << endl;
-
-		// Ignore if we have a static blob
-		if(active_blob_array[i]->get_motion_state() == FFEA_BLOB_IS_STATIC) {
-			cout << "\t\tBlob " << i << " is STATIC. No associated timesteps." << endl;
-			continue;
-		}
-
-		// What will be the fastest dynamics? Inertial or viscous?
-
-		// Viscous only
-			
-		// Build matrices
-		num_nodes = active_blob_array[i]->get_num_linear_nodes();
-
-		// Direction matters here
-		num_rows = 3 * num_nodes;
-
-		Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
-		Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
-		Eigen_MatrixX K_inv(num_rows, num_rows);
-		Eigen_MatrixX I(num_rows, num_rows);
-		Eigen_MatrixX tau_inv(num_rows, num_rows);
-
-		// Build viscosity matrix, K
-		cout << "\r\t\tCalculating the Viscosity Matrix, K (task 1/5)..." << flush;
-		if(active_blob_array[i]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
-			cout << endl << "\t\t";
-			FFEA_error_text();
-			cout << endl << endl << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << i << endl;
-			return FFEA_ERROR;
-		}
-		cout << "done!" << flush;
-
-		// Build elasticity matrix, A
-		cout << "\r\t\tCalculating the Elasticity Matrix, A (task 2/5)..." << flush;
-		if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
-			cout << endl << "\t\t";
-			FFEA_error_text();
-			cout << "In function 'Blob::build_linear_node_elasticity_matrix'" << i << endl;
-			return FFEA_ERROR;
-		}
-		cout << "done!" << flush;
-
-		// Invert K (it's symmetric! Will not work if stokes_visc == 0)
-		cout << "\r\t\tAttempting to invert K to form K_inv (task 3/5)..." << flush;
-		Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(K); // performs a Cholesky factorization of K
-		I.setIdentity();
-		K_inv = Cholesky.solve(I);
-		if(Cholesky.info() == Eigen::Success) {
-			cout << "done!" << flush;
-		} else if (Cholesky.info() == Eigen::NumericalIssue) {
-			cout << endl << "\t\t" << "Viscosity Matrix could not be inverted via Cholesky factorisation due to numerical issues. You possibly don't have an external solvent set, or it is too low." << endl;
-			return FFEA_ERROR;
-		} else if (Cholesky.info() == Eigen::NoConvergence) {
-			cout << "\nInversion iteration couldn't converge. K must be a crazy matrix. Possibly has zero eigenvalues?" << endl;
-			return FFEA_ERROR;
-		}
-
-		// Apply to A
-		cout << "\r\t\tCalculating inverse time constant matrix, tau_inv = K_inv * A (task 4/5)..." << flush;
-		tau_inv = K_inv * A;
-		cout << "done!" << flush;
-
-		// Diagonalise
-		cout << "\r" << "\t\t                                                                     " << flush;
-		cout << "\r\t\tDiagonalising tau_inv (task 5/5)..." << flush;
-		es_v.compute(tau_inv);
-		for(j = 0; j < num_rows; ++j) {
-			tauv.push_back(1.0 / fabs(es_v.eigenvalues()[j].real()));
-		}
-		cout << "done!" << flush;
-
-		if(active_blob_array[i]->get_linear_solver() != FFEA_NOMASS_CG_SOLVER) {
-
-			// Inertial 'always' fastest
-			
-			// Build matrices
-			num_nodes = active_blob_array[i]->get_num_linear_nodes();
-
-			// Direction still matters here due to viscosity
-			num_rows = 3 * num_nodes;
-
-			Eigen::SparseMatrix<scalar> M(num_rows, num_rows);
-			Eigen_MatrixX M_inv(num_rows, num_rows);
-
-			// Build mass matrix, M
-			cout << "\r\t\tCalculating the Mass Matrix, M (task 1/4)..." << flush;
-			if(active_blob_array[i]->build_linear_node_mass_matrix(&M) == FFEA_ERROR) {
-				cout << endl << "\t\t";
-				FFEA_error_text();
-				cout << endl << endl << "In function 'Blob::build_linear_node_viscosity_matrix' from blob " << i << endl;
-				return FFEA_ERROR;
-			}
-			cout << "done!" << flush;
-
-			// Invert M (it's symmetric!)
-			cout << "\r\t\tAttempting to invert M to form M_inv (task 2/4)..." << flush;
-			Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(M); // performs a Cholesky factorization of K
-			M_inv = Cholesky.solve(I);
-			if(Cholesky.info() == Eigen::Success) {
-				cout << "done!" << flush;
-			} else if (Cholesky.info() == Eigen::NumericalIssue) {
-				cout << endl << "\t\t" << "Mass Matrix could not be inverted via Cholesky factorisation due to numerical issues. This...should not be the case. You have a very odd mass distribution. Try the CG_nomass solver" << endl;
-				return FFEA_ERROR;
-			} else if (Cholesky.info() == Eigen::NoConvergence) {
-				cout << endl << "\t\t" << "Inversion iteration couldn't converge. M must be a crazy matrix. Possibly has zero eigenvalues? Try the CG_nomass solver." << endl;
-				return FFEA_ERROR;
-			}
-
-			// Apply to K
-			cout << "\r\t\tCalculating inverse time constant matrix, tau_inv = M_inv * K (task 3/4)..." << flush;
-			tau_inv = M_inv * K;
-			cout << "done!" << flush;
-
-			// Diagonalise
-			cout << "\r" << "\t\t                                                                                                            " << flush;
-			cout << "\r\t\tDiagonalising tau_inv (task 4/4)..." << flush;
-			es_m.compute(tau_inv);
-			for(j = 0; j < num_rows; ++j) {
-				taum.push_back(1.0 / fabs(es_m.eigenvalues()[j].real()));
-			}
-			cout << "done!" << flush;
-		}
-
-		// But is it a numerical instability problem, or a small elements problem? Solve 1 step to find out (at a later date)
-
-		// Get extreme timesteps from this eigendecomposition.)
-
-		// Sort eigenvalues
-		cout << "\r\t\tSorting eigenvalues (task 1/1)..." << flush;
-		sort(tauv.begin(), tauv.end());
-		sort(taum.begin(), taum.end());
-		cout << "done!" << flush;
-
-		// Ignore the 6 translational / rotational modes (they are likely the slowest 6 modes)
-		scalar dt_max_blob = tauv.at(num_rows - 7);
-		scalar dt_min_blob = tauv.at(0);
-		string dt_min_blob_type = "viscous", dt_max_blob_type = "viscous";
-
-		//for(int l = 0; l < 10; ++l) {
-		//	cout << endl << "ev " << l << " visc - " << tauv.at(l) << " mass - " << taum.at(l) << endl;
-		//}
-		//for(int l = num_rows - 10; l < num_rows; ++l) {
-	//		cout << endl << "ev " << l << " visc - " << tauv.at(l) << " mass - " << taum.at(l) << endl;
-		//}
-		//exit(0);
-
-		// We don't need to ignore top 6 here as they have energy associated with them now i.e. not zero eigenvalues
-		if(active_blob_array[i]->get_linear_solver() != FFEA_NOMASS_CG_SOLVER) {
-
-			if(taum.at(num_rows - 1) > dt_max_blob) {
-				dt_max_blob = taum.at(num_rows - 1);
-				dt_max_blob_type = "inertial";
-			}
-			if(taum.at(0) < dt_min_blob) {
-				dt_min_blob = taum.at(0);
-				dt_min_blob_type = "inertial";
-			}
-		}
-
-		//cout << "\r\t\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << (1.0 / smallest_val) * mesoDimensions::time << "s" << endl;
-		//cout << "\t\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << (1.0 / largest_val) * mesoDimensions::time << "s" << endl << endl;
-		cout << "\r\t\tFastest Mode: tau (" << dt_min_blob_type << ") = " << dt_min_blob * mesoDimensions::time << "s" << endl;
-		cout << "\t\tSlowest Mode: tau (" << dt_max_blob_type << ") = " << dt_max_blob * mesoDimensions::time << "s" << endl << endl;
-
-		// Global stuff
-		if(dt_max_blob > dt_max_world) {
-			dt_max_world = dt_max_blob;
-			dt_max_world_type = dt_max_blob_type;
-			dt_max_bin = i;
-		}
-
-		if(dt_min_blob < dt_min_world) {
-			dt_min_world = dt_min_blob;
-			dt_min_world_type = dt_min_blob_type;
-			dt_min_bin = i;
-		}
-		
-		
-	}
-
-	cout << endl << "Global Time Constant Details:" << endl << endl;
-	cout << "\t\tFastest Mode: Blob " << dt_min_bin << ", tau (" << dt_min_world_type << ") = " << dt_min_world * mesoDimensions::time << "s" << endl;
-	cout << "\t\tSlowest Mode: Blob " << dt_max_bin << ", tau (" << dt_max_world_type << ") = " << dt_max_world * mesoDimensions::time << "s" << endl << endl;
-	cout << "\t\tPlease make sure your simulation timestep is less than " << dt_min_world * mesoDimensions::time << "s, for a stable simulation." << endl;
-	cout << "\t\tTake note than the energies will become inaccurate before this, so check your energy equilibrates correctly. If unsure, set dt << " << dt_min_world * mesoDimensions::time << "s" << endl << endl;
-	cout << "\t\tFor dynamical convergence, your simulation must run for longer than " << dt_max_world * mesoDimensions::time << "s." << endl << endl;
-
-	cout << "\t\tFINAL NOTE - If, after taking into account the above time constants, your simulation still fails (due to element inversion) it is not due to numerical instability from the integration, ";
-	cout << "but because a single timestep, with the average size of the noise, causes a step size larger than your smallest element. You must therefore coarsen your mesh further for the ";
-	cout << "continuum approximation to be valid. Thanks :)" << endl << endl;
-	return FFEA_OK;
-}
-
-/*int World::get_smallest_time_constants() {
 	
 	int blob_index;
 	int num_nodes, num_rows;
@@ -1143,7 +638,7 @@ int World::get_smallest_time_constants() {
 		Eigen_MatrixX I(num_rows, num_rows);
 		Eigen_MatrixX tau_inv(num_rows, num_rows);
 
-		// Build K
+		/* Build K */
 		cout << "\tCalculating the Global Viscosity Matrix, K...";
 		if(active_blob_array[blob_index]->build_linear_node_viscosity_matrix(&K) == FFEA_ERROR) {
 			cout << endl;
@@ -1153,7 +648,7 @@ int World::get_smallest_time_constants() {
 		}
 		cout << "done!" << endl;
 
-		// Build A
+		/* Build A */
 		cout << "\tCalculating the Global Linearised Elasticity Matrix, A...";
 		if(active_blob_array[blob_index]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
 			cout << endl;
@@ -1163,7 +658,7 @@ int World::get_smallest_time_constants() {
 		}
 		cout << "done!" << endl;
 
-		// Invert K (it's symmetric! Will not work if stokes_visc == 0)
+		/* Invert K (it's symmetric! Will not work if stokes_visc == 0) */
 		cout << "\tAttempting to invert K to form K_inv...";
 		Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(K); // performs a Cholesky factorization of K
 		I.setIdentity();
@@ -1178,15 +673,31 @@ int World::get_smallest_time_constants() {
 			return FFEA_OK;
 		}
 
-		// Apply to A
+		/* Apply to A */
 		cout << "\tCalculating inverse time constant matrix, tau_inv = K_inv * A...";
 		tau_inv = K_inv * A;
 		cout << "done!" << endl;
 
-		// Diagonalise
+		/* Diagonalise */
 		cout << "\tDiagonalising tau_inv..." << flush;
 		Eigen::EigenSolver<Eigen_MatrixX> es(tau_inv);
+		//cout << es.eigenvalues() << endl;
+		/*double smallest_val = INFINITY;
+		double largest_val = -1 * INFINITY;
+		for(int i = 0; i < num_rows; ++i) {
 
+			// Quick fix for weird eigenvalues. Will look into this later
+			if(es.eigenvalues()[i].imag() != 0) {
+				continue;
+			} else {
+				if(es.eigenvalues()[i].real() < smallest_val && es.eigenvalues()[i].real() > 0) {
+					smallest_val = es.eigenvalues()[i].real();
+				} 
+				if (es.eigenvalues()[i].real() > largest_val) {
+					largest_val = es.eigenvalues()[i].real();
+				}
+			}	
+		}*/
 
 		cout << "done!" << endl;
 
@@ -1194,8 +705,8 @@ int World::get_smallest_time_constants() {
 		scalar smallest_val = fabs(es.eigenvalues()[6].real());
 		scalar largest_val = fabs(es.eigenvalues()[0].real());
 
-		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << (1.0 / smallest_val) * mesoDimensions::time << "s" << endl;
-		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << (1.0 / largest_val) * mesoDimensions::time << "s" << endl << endl;
+		cout << "\tThe time-constant of the slowest mode in Blob " << blob_index << ", tau_max = " << 1.0 / smallest_val << "s" << endl;
+		cout << "\tThe time-constant of the fastest mode in Blob " << blob_index << ", tau_min = " << 1.0 / largest_val << "s" << endl << endl;
 
 		// Global stuff
 		if(1.0 / smallest_val > dt_max) {
@@ -1209,11 +720,11 @@ int World::get_smallest_time_constants() {
 		}
 
 	}
-	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max * mesoDimensions::time << "s, from Blob " << dt_max_bin << endl;
-	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min * mesoDimensions::time << "s, from Blob " << dt_min_bin << endl << endl;
+	cout << "The time-constant of the slowest mode in all blobs, tau_max = " << dt_max << "s, from Blob " << dt_max_bin << endl;
+	cout << "The time-constant of the fastest mode in all blobs, tau_min = " << dt_min << "s, from Blob " << dt_min_bin << endl << endl;
 	cout << "Remember, the energies in your system will begin to be incorrect long before the dt = tau_min. I'd have dt << tau_min if I were you." << endl;
 	return FFEA_OK;
-}*/
+}
 
 
 /**
@@ -1224,6 +735,7 @@ int World::get_smallest_time_constants() {
  * this function performs matrix algebra using the Eigen libraries to diagonalise 
  * elasticity matrix and output pseudo-trajectories based upon these eigenvectors
  * */
+
 int World::enm(set<int> blob_indices, int num_modes) {
 
 	int i, j;
@@ -1641,20 +1153,29 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 	return FFEA_OK;
 }
 
-/**
+/*
  * Update entire World for num_steps time steps
  * */
 int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
-    long long timestep = 1;
-#ifdef USE_MPI
-    double st, st1, st2, time1, time2, time3;
-    st =MPI::Wtime();
-#endif 
+    double st1, st2, st3, time1, time2, time3;
+	double st4, time4, st5, time5, st6, time6, st7, time7, st8, time8, st9, time9;
+	time1 = 0.0;
+	time2 = 0.0;
+	time3 = 0.0;
+	time4 = 0.0;
+	time5 = 0.0;
+	time6 = 0.0;
+	time7 = 0.0;
+	time8 = 0.0;
+	time9 = 0.0;
+    st1 =MPI::Wtime();
+	int ffea_errors=0;
     for (long long step = step_initial; step < params.num_steps; step++) {
 
         // Zero the force across all blobs
+		st2 = MPI::Wtime();
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) schedule(runtime)
 #endif
@@ -1666,56 +1187,56 @@ int World::run() {
             if (params.sticky_wall_xz == 1) {
                 active_blob_array[i]->zero_vdw_xz_measurement_data();
             }
-        }
-
+ //       }
+ //       time2 = MPI::Wtime() - st2 + time2;
+//		st3 =MPI::Wtime();
 #ifdef FFEA_PARALLEL_PER_BLOB
-#pragma omp parallel for default(none) schedule(guided) shared(stderr)
+//#pragma omp parallel for default(none) schedule(guided) shared(stderr)
 #endif
-        for (int i = 0; i < params.num_blobs; i++) {
+//        for (int i = 0; i < params.num_blobs; i++) {
 	
             // If blob centre of mass moves outside simulation box, apply PBC to it
             vector3 com;
             active_blob_array[i]->get_centroid(&com);
-   
-	    scalar dx = 0, dy = 0, dz = 0;
+            scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
 
             if (com.x < 0) {
                 if (params.wall_x_1 == WALL_TYPE_PBC) {
                     dx += box_dim.x;
-                    //					printf("frog\n");
+                    //					printf("fuck\n");
                     check_move = 1;
                 }
             } else if (com.x > box_dim.x) {
                 if (params.wall_x_2 == WALL_TYPE_PBC) {
                     dx -= box_dim.x;
-                    //					printf("frog\n");
+                    //					printf("fuck\n");
                     check_move = 1;
                 }
             }
             if (com.y < 0) {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
-                    //					printf("frog\n");
+                    //					printf("fuck\n");
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
-                    //					printf("frog\n");
+                    //					printf("fuck\n");
                     check_move = 1;
                 }
             }
             if (com.z < 0) {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
-                    //					printf("frog\n");
+                    //					printf("fuck\n");
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
-                    //					printf("frog\n");
+                    //					printf("fuck\n");
                     check_move = 1;
                 }
             }
@@ -1726,12 +1247,12 @@ int World::run() {
             // If Blob is near a hard wall, prevent it from moving further into it
             active_blob_array[i]->enforce_box_boundaries(&box_dim);
         }
-
-
+ //       time3 = MPI::Wtime() - st3 + time3;
+		time2 = MPI::Wtime() -st2 +time2;
 
         if (params.calc_es == 1 || params.calc_vdw == 1 || params.sticky_wall_xz == 1) {
             if (es_count == params.es_update) {
-
+			    st4 =MPI::Wtime();
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) schedule(guided)
 #endif
@@ -1739,7 +1260,7 @@ int World::run() {
                     active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
                     active_blob_array[i]->reset_all_faces();
                 }
-
+				time4 = MPI::Wtime() - st4 + time4;
 
                 // Attempt to place all faces in the nearest neighbour lookup table
                 if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
@@ -1767,23 +1288,23 @@ int World::run() {
                 es_count++;
         }
         // timing solve() function
-#ifdef USE_MPI
-          st1 = MPI::Wtime();
-#endif
+        st5 = MPI::Wtime();
 
-        if (params.calc_vdw == 1) vdw_solver->solve(params.num_blobs);
+        if (params.calc_vdw == 1) vdw_solver->solve();
 
-#ifdef USE_MPI
-        time2 = MPI::Wtime() -st1 + time2;
-#endif
+        time5 = MPI::Wtime() -st5 + time5;
         
         // Update all Blobs in the World
-
+		st6 = MPI::Wtime();
+#ifdef FFEA_PARALLEL_PER_BLOB
+//#pragma omp for schedule(guided)
+#endif
         // Set node forces to zero
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->set_forces_to_zero();
         }
-
+		time6 = MPI::Wtime() -st6 + time6;
+		
         // Apply springs directly to nodes
         apply_springs();
 
@@ -1796,12 +1317,9 @@ int World::run() {
         int fatal_errors = 0;
         
         // timing update() function
-#ifdef USE_MPI
-        st2 = MPI::Wtime();
-#endif
-
+        st7 = MPI::Wtime();
 #ifdef FFEA_PARALLEL_PER_BLOB
-#pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
+#pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(dynamic, 1)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
         	if (active_blob_array[i]->update() == FFEA_ERROR) {
@@ -1811,12 +1329,8 @@ int World::run() {
                 	//return FFEA_ERROR;
                 	fatal_errors++;
             	}
-        }
-        
-#ifdef USE_MPI
-        time3 = MPI::Wtime()-st2 + time3;
-#endif
-        timestep = timestep + 10;
+        }      
+        time7 = MPI::Wtime()-st7 + time7;
 
         if (fatal_errors > 0) {
             FFEA_error_text();
@@ -1831,10 +1345,9 @@ int World::run() {
         }
 
 	// Output traj data to files
-        if ((step + 1) % params.check == 0) {
+        if (step % params.check == 0) {
             print_trajectory_and_measurement_files(step + 1, wtime);
         }
-
 	/* Kinetic Part of each step */
 	if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
 		
@@ -1848,39 +1361,54 @@ int World::run() {
 
 		// Now we can treat each blob separately
 		int target;
+		st8 = MPI::Wtime();	
+#ifdef FFEA_PARALLEL_PER_BLOB
+//#pragma omp parallel for default(none) private(target) schedule(runtime)
+#endif
 		for(int i = 0; i < params.num_blobs; ++i) {
 
 			// Find out what the state change should be based on the rates
 			target = active_blob_array[i]->get_state_index();
 			if(choose_new_kinetic_state(i, &target) != FFEA_OK) {
-				FFEA_ERROR_MESSG("'calculate_kinetic_rates()' failed.\n")
+				//FFEA_ERROR_MESSG("'calculate_kinetic_rates()' failed.\n")
+				FFEA_error_text();
+				printf("'calculate_kinetic_rates()' failed.\n");
+				ffea_errors=-1;
+				continue;
 			}
 
 			if(change_kinetic_state(i, target) != FFEA_OK) {
-				FFEA_ERROR_MESSG("'change_kinetic_state()' failed.\n")
+				//FFEA_ERROR_MESSG("'change_kinetic_state()' failed.\n")
+				FFEA_error_text();
+				printf("'change_kinetic_state()' failed.\n");
+				ffea_errors=-1;
+				continue;
 			}
 		}
+		time8 = MPI::Wtime()-st8 + time8;
 	}
 
 	// Output kinetic data to files
-        if ((step + 1) % params.check == 0) {
+        if (step % params.check == 0) {
             print_kinetic_files(step + 1);
         }
     }
     // Total mpi timing, compare with openmp timing
-#ifdef USE_MPI
-    time1 = MPI::Wtime() -st;
+    time1 = MPI::Wtime() -st1;
     cout<<"total steps:"<< params.num_steps <<endl;
-    cout<< "benchmarking--------calculate vdw for \t"<< time2 << "seconds"<< endl;
-    cout<< "benchmarking--------update blobs for \t"<< time3 << "seconds"<< endl;
+    cout<< "benchmarking--------calculate vdw for \t"<< time5 << "seconds"<< endl;
+    cout<< "benchmarking--------update blobs for \t"<< time7 << "seconds"<< endl;
     cout<< "benchmarking--------Total MPI time in World::run():" << time1 << "seconds"<< endl;
-#endif
-    
-    printf("\n\nTime taken: %2f seconds\n", (omp_get_wtime() - wtime));
+	
+	cout<< "benchmarking--------zero force across all blobs for \t"<< time2<< "seconds"<<endl;
+    //cout<< "benchmarking--------limit the blob movement \t"<< time3 << "seconds"<< endl;
+	cout<< "benchmarking--------%%%%centroid all blobs and reset all faces \t"<< time4 << "seconds"<< endl;
+	cout<< "benchmarking--------set node forces to zero for \t"<< time6 << "seconds"<< endl;
+	cout<< "benchmarking--------%%%%blob state change for \t"<< time8 << "seconds"<< endl;
+    printf("Time taken: %2f seconds\n", (omp_get_wtime() - wtime));
 
     return FFEA_OK;
 }
-
 
 /**
  * @brief Changes the active kinetic state for a given blob.
@@ -1907,9 +1435,8 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 	if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
 		// Conformation change!
-		RngStream arng;
-		cout << "New RngStream created with initial state:" << endl;       
-		arng.WriteState(); 
+		MTRand arng;
+		arng.seed(params.rng_seed);
 
 		// Get current nodes
 		vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
@@ -1925,7 +1452,7 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 		kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
 
 		// Move the old one to random space so as not to interfere with calculations, and deactivate all faces 
-		blob_array[blob_index][current_conformation].position(arng.RandU01() * 1e10, arng.RandU01() * 1e10, arng.RandU01() * 1e10);
+		blob_array[blob_index][current_conformation].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
 		blob_array[blob_index][current_conformation].kinetically_set_faces(false);
 
 		// Reactivate springs
@@ -2016,8 +1543,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                  } else if (lrvalue[0] == "approach") {
                    pc_params.approach = lrvalue[1];
                  } else if (lrvalue[0] == "folder") {
-                   b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
-                   pc_params.folder = auxpath.string(); //   lrvalue[1];
+                   pc_params.folder = lrvalue[1];
                  } else if (lrvalue[0] == "dist_to_m") {
                    pc_params.dist_to_m = stod(lrvalue[1]);
                  } else if (lrvalue[0] == "E_to_J") {
@@ -2027,7 +1553,8 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 
 	// Read in each blob one at a time
-	RngStream arng;
+	MTRand arng;
+       	arng.seed(params.rng_seed);
 	for(i = 0; i < params.num_blobs; ++i) {
 
 		// Get blob data
@@ -2062,42 +1589,33 @@ int World::read_and_build_system(vector<string> script_vector) {
 					}
 					set_motion_state = 1;
 				} else if (lrvalue[0] == "nodes") {
-					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-					nodes.push_back(auxpath.string()); 
+					nodes.push_back(lrvalue[1]);
 					set_nodes = 1;
 				} else if (lrvalue[0] == "topology") {
-					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-					topology.push_back(auxpath.string()); 
+					topology.push_back(lrvalue[1]);
 					set_top = 1;
 				} else if (lrvalue[0] == "surface") {
-					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-					surface.push_back(auxpath.string()); 
+					surface.push_back(lrvalue[1]);
 					set_surf = 1;
 				} else if (lrvalue[0] == "material") {
-					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-					material.push_back(auxpath.string()); 
+					material.push_back(lrvalue[1]);
 					set_mat = 1;
 				} else if (lrvalue[0] == "stokes") {
-					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-					stokes.push_back(auxpath.string()); 
+					stokes.push_back(lrvalue[1]);
 					set_stokes = 1;
 				} else if (lrvalue[0] == "vdw") {
-					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-					vdw.push_back(auxpath.string()); 
+					vdw.push_back(lrvalue[1]);
 					set_vdw = 1;
 				} else if (lrvalue[0] == "binding_sites") {
 					if(params.calc_kinetics == 1) {
-						b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-						binding.push_back(auxpath.string()); 
+						binding.push_back(lrvalue[1]);
 						set_binding = 1;
 					}
 				} else if (lrvalue[0] == "pin") {
-					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-					pin.push_back(auxpath.string()); 
+					pin.push_back(lrvalue[1]);
 					set_pin = 1;
 				} else if (lrvalue[0] == "beads") {
-					b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
-					beads.push_back(auxpath.string()); 
+					beads.push_back(lrvalue[1]);
 					set_preComp = 1;
 				} else {
 					FFEA_error_text();
@@ -2229,15 +1747,12 @@ int World::read_and_build_system(vector<string> script_vector) {
 			} else if(lrvalue[0] == "solver") {
 				if(lrvalue[1] == "CG") {
 					solver = FFEA_ITERATIVE_SOLVER;
-					    mass_in_system = true;
 				} else if (lrvalue[1] == "CG_nomass") {
 					solver = FFEA_NOMASS_CG_SOLVER;
 				} else if (lrvalue[1] == "direct") {
 					solver = FFEA_DIRECT_SOLVER;
-					    mass_in_system = true;
 				} else if (lrvalue[1] == "masslumped") {
 					solver = FFEA_MASSLUMPED_SOLVER;
-					    mass_in_system = true;
 				} else {
 					FFEA_error_text();
 					cout << "In blob " << i << ", unrecognised solver type.\nRecognised solvers:CG, CG_nomass, direct, masslumped." << endl;
@@ -2305,7 +1820,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 			// If not an active conforamtion, move to random area in infinity so vdw and stuff are not active (face linked list is not set up for deleting elements)
 			if (j > 0) {
-				blob_array[i][j].position(arng.RandU01() * 1e10, arng.RandU01() * 1e10, arng.RandU01() * 1e10);
+				blob_array[i][j].position(arng.rand() * 1e10, arng.rand() * 1e10, arng.rand() * 1e10);
 				//blob_array[i][0].get_centroid(cent);
 				//cout << "Blob " << i << ", Conformation " << "0" << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
 				//blob_array[i][j].get_centroid(cent);
@@ -2349,7 +1864,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		            		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
 
 				// Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
-				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "stericII" || params.vdw_type == "ljsteric")) {
+				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
 					blob_array[i][j].add_steric_nodes();
 				}
 
@@ -2749,7 +2264,7 @@ int World::choose_new_kinetic_state(int blob_index, int *target) {
 	bin[params.num_states[blob_index] - 1][1] = 1.0;
 
 	// Get a random number
-	switch_check = kinetic_rng->RandU01();
+	switch_check = kinetic_rng.rand();
 
 	// See which bin this falls into
 	for(i = 0; i < params.num_states[blob_index]; ++i) {
@@ -2804,7 +2319,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	num_states = atoi(sline.at(1).c_str());
 
 	if(num_states != params.num_states[blob_index]) {
-		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", states_fname.c_str(), num_states, params.num_states[blob_index])
+		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", states_fname.c_str(), num_states, params.num_states[i])
 	}
 
 	// Get 'states:'
@@ -2882,7 +2397,6 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	
 	int i, j, num_states;
-   char *crap;
 	char buf[255];
 	string buf_string;
 	vector<string> sline;
@@ -2909,7 +2423,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 	fin = fopen(rates_fname.c_str(), "r");
 	
 	// Get header stuff and check for errors
-	crap = fgets(buf, 255, fin);
+	fgets(buf, 255, fin);
 	if(strcmp(buf, "ffea kinetic rates file\n") != 0) {
 		FFEA_ERROR_MESSG("\nExpected 'ffea kinetic rates file' as first line. This may not be an FFEA kinetic rates file\n")
 	}
@@ -2918,9 +2432,9 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		FFEA_ERROR_MESSG("\nExpected 'num_states %%d' as second line. Unable to read further.\n")
 	}
 	if(num_states != params.num_states[blob_index]) {
-		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", rates_fname.c_str(), num_states, params.num_states[blob_index])
+		FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", rates_fname.c_str(), num_states, params.num_states[i])
 	}
-	crap = fgets(buf, 255, fin);
+	fgets(buf, 255, fin);
 
 	// Create rates matrix
 	kinetic_rate[blob_index] = new scalar*[num_states];
@@ -2937,7 +2451,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 		total_prob = 0.0;
 		
 		// Get a line and split it
-		crap = fgets(buf, 255, fin);
+		fgets(buf, 255, fin);
 		boost::split(sline, buf, boost::is_any_of(" "));
 		if(sline.size() > num_states) {
 			FFEA_ERROR_MESSG("\nState %d contains %zd rate values, instead of 'num_states', %d.\n", i, sline.size(), num_states)
@@ -3023,7 +2537,7 @@ void World::get_system_centroid(vector3 *centroid) {
     centroid->x = 0;
     centroid->y = 0;
     centroid->z = 0;
-    int total_num_nodes = 0;
+    scalar total_num_nodes = 0;
     for (int i = 0; i < params.num_blobs; i++) {
         vector3 cen;
         active_blob_array[i]->get_centroid(&cen);
@@ -3089,7 +2603,7 @@ int World::get_num_blobs() {
 
 int World::load_springs(const char *fname) {
 
-    int i, crap;
+    int i;
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
@@ -3121,7 +2635,7 @@ int World::load_springs(const char *fname) {
     spring_array = new Spring[num_springs];
 
     // Read in next line
-    crap = fscanf(in,"springs:\n");
+    fscanf(in,"springs:\n");
     for (i = 0; i < num_springs; ++i) {
        if (fscanf(in, "%lf %lf %d %d %d %d %d %d\n", &spring_array[i].k, &spring_array[i].l, &spring_array[i].blob_index[0], &spring_array[i].blob_index[1], &spring_array[i].conformation_index[0], &spring_array[i].conformation_index[1], &spring_array[i].node_index[0], &spring_array[i].node_index[1]) != 8) {
             FFEA_error_text();
@@ -3132,10 +2646,6 @@ int World::load_springs(const char *fname) {
         }
         spring_array[i].k *= mesoDimensions::area / mesoDimensions::Energy;
         spring_array[i].l /= mesoDimensions::length;
-
-	// Flag on blob to say springs are present
-	active_blob_array[spring_array[i].blob_index[0]]->set_springs_on_blob(true);
-	active_blob_array[spring_array[i].blob_index[1]]->set_springs_on_blob(true);
 
 	// Error checking
 	for(int j = 0; j < 2; ++j) {
@@ -3178,13 +2688,7 @@ int World::load_springs(const char *fname) {
     }
 
     fclose(in);
-
-    // Inititalise the energy array (move to a solver in the future, like the VdW)
-    springfieldenergy = new scalar*[params.num_blobs];
-    for(i = 0; i < params.num_blobs; ++i) {
-      springfieldenergy[i] = new scalar[params.num_blobs];
-    }
-    printf("\t\tRead %d springs from %s\n", num_springs, fname);
+    printf("\t\tRead %d springs from %s\n", i, fname);
     activate_springs();
     return 0;
 }
@@ -3225,28 +2729,6 @@ void World::apply_springs() {
         }
     }
     return;
-}
-
-scalar World::get_spring_field_energy(int index0, int index1) {
-
-	// Sum over all field
-	if(index0 == -1 || index1 == -1) {
-		scalar energy = 0.0;
-		for(int i = 0; i < params.num_blobs; ++i) {
-			for(int j = 0; j < params.num_blobs; ++j) {
-				energy += springfieldenergy[i][j];
-			}
-		}
-
-		return energy;
-
-	} else if (index0 == index1) {
-		return springfieldenergy[index0][index1];
-	} else {
-
-		// Order of blob indices is unknown in the calculations, so must add
-		return springfieldenergy[index0][index1] + springfieldenergy[index1][index0];
-	}
 }
 
 int World::get_next_script_tag(FILE *in, char *buf) {
@@ -3454,100 +2936,41 @@ void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes) {
 	fclose(fout);
 }
 
-void World::write_output_header(FILE *fout, string fname) {
-
-	// Write all header data. script fname, time and date etc
-	fprintf(fout, "FFEA Global Measurement File\n\nSimulation Details:\n");
-	time_t now = time(0);
-	tm *ltm = localtime(&now);
-	fprintf(fout, "\tSimulation Began on %d/%d/%d at %d:%d:%d\n", ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
-	fprintf(fout, "\tScript Filename = %s\n", fname.c_str());
-	fprintf(fout, "\tSimulation Type = %s\n\n", "Full");
-}
-
 void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
-    if (step % (params.check * 10) != 0) {
-        printf("\rstep = %d", step);
-	fflush(stdout);
+    if ((step - 1) % (params.check * 10) != 0) {
+        printf("step = %d\n", step);
     } else {
-        printf("\rstep = %d (simulation time = %.2fns, wall clock time = %.3f hrs)\n", step, step * params.dt * (mesoDimensions::time / 1e-9), (omp_get_wtime() - wtime) / 3600.0);
+        printf("step = %d (simulation time = %.2es, wall clock time = %.2e hrs)\n", step, (scalar) step * params.dt, (omp_get_wtime() - wtime) / 3600.0);
     }
 
+    vector3 system_CoM;
+    get_system_CoM(&system_CoM);
 
-    // Stuff needed on each blob, and in global energy files
-    if(detailed_meas_out != NULL) {
-        fprintf(detailed_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
+    // Write traj and meas data
+    if (measurement_out[params.num_blobs] != NULL) {
+        fprintf(measurement_out[params.num_blobs], "%d\t", step);
     }
 
-    // Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used)
     for (int i = 0; i < params.num_blobs; i++) {
 
         // Write the node data for this blob
         fprintf(trajectory_out, "Blob %d, Conformation %d, step %d\n", i, active_blob_array[i]->get_conformation_index(), step);
         active_blob_array[i]->write_nodes_to_file(trajectory_out);
 
-        // Calculate properties for this blob
-        active_blob_array[i]->make_measurements();
+        // Write the measurement data for this blob
+        active_blob_array[i]->make_measurements(measurement_out[i], step, &system_CoM);
 
-	// If necessary, write this stuff to a separate file
-	if(detailed_meas_out != NULL) {
-		active_blob_array[i]->write_measurements_to_file(detailed_meas_out);
-	}        
+        // Output interblob_vdw info
+	for (int j = i + 1; j < params.num_blobs; ++j) {
+            active_blob_array[i]->calculate_vdw_bb_interaction_with_another_blob(measurement_out[params.num_blobs], j);
+        }
     }
 
-    
-    // CHECKPOINT - Write the state of the RNGs:
-    // REWIND! 
-    rewind(checkpoint_out);
-    // Header for the thermal stresses: 
-    fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", num_threads);
-    unsigned long state[6];
-    // First save the state of the running threads: 
-    for (int i=0; i<num_threads; i++) { 
-      rng[i].GetState(state); 
-      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
-                                                           state[3], state[4], state[5]);
-     // for(int j = 0; j < 6; ++j) {
-	//    cout << state[j] << " ";
-//      }
-    //  cout << endl;
-    }
-    // If there were more threads running on the previous run, we'll save them too:
-    int oldThreads = num_seeds - num_threads;
-    if (params.calc_kinetics) oldThreads -=1 ; 
-    for (int i=0; i<oldThreads; i++) {
-      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0], 
-              Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
-              Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
-      //for(int j = 0; j < 6; ++j) {
-///	    cout << Seeds[i+num_threads][j] << " ";
-   //   }
-     // cout << endl;
-    }
-    // If we're doing kinetics, we're saving the state of the extra RNG: 
-    if (params.calc_kinetics) {
-      fprintf(checkpoint_out, "RNGStream dedicated to the kinetics:\n");
-      kinetic_rng->GetState(state); 
-      fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
-                                                           state[3], state[4], state[5]);
-
-    }
-    fflush(checkpoint_out);
-    // Done with the checkpoint!
-
+    fprintf(measurement_out[params.num_blobs], "\n");
 
     // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
     fprintf(trajectory_out, "*\n");
-    fflush(trajectory_out);
 
-    // Global Measurement Stuff
-    make_measurements();
-    write_measurements_to_file(measurement_out, step);
-
-    if(detailed_meas_out != NULL) {
-	write_detailed_measurements_to_file(detailed_meas_out);
-    }
-    fflush(measurement_out);
 /*   // And now the kinetics, if necessary
 
     // Inform whoever is watching of changes (print to screen)
@@ -3583,114 +3006,11 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 	fflush(kinetics_out);
     }*/
 
-}
-
-void World::make_measurements() {
-
-	int i, j, total_num_nodes = 0;
-
-	// Set stuff to zero
-	kineticenergy = 0.0;
-	strainenergy = 0.0;
-	springenergy = 0.0;
-	vdwenergy = 0.0;
-	preCompenergy = 0.0;
-	rmsd = 0.0;
-	vector3_set_zero(&CoG);
-	
-	vector3 bCoG;
-
-	// Sum stuff from blobs
-	for(i = 0; i < params.num_blobs; ++i) {
-		kineticenergy += active_blob_array[i]->get_kinetic_energy();
-		strainenergy += active_blob_array[i]->get_strain_energy();
-		rmsd += (active_blob_array[i]->get_rmsd() * active_blob_array[i]->get_rmsd()) * active_blob_array[i]->get_num_nodes();
-		bCoG = active_blob_array[i]->get_CoG();
-		CoG.x += bCoG.x * active_blob_array[i]->get_num_nodes();
-		CoG.y += bCoG.y * active_blob_array[i]->get_num_nodes();
-		CoG.z += bCoG.z * active_blob_array[i]->get_num_nodes();
-
-		total_num_nodes += active_blob_array[i]->get_num_nodes();
-	}
-
-	// And divide by num_nodes
-	rmsd = sqrt(rmsd / total_num_nodes);
-	vec3_scale(&CoG, 1.0 / total_num_nodes);
-
-	// Now global stuff
-	vector3 a, b, c;
-	if(num_springs != 0) {
-		for(i = 0; i < params.num_blobs; ++i) {
-			for(j = 0; j < params.num_blobs; ++j) {
-				springfieldenergy[i][j] = 0.0;
-			}
-		}
-	}	
-	for(i = 0; i < num_springs; ++i) {
-		a = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
-		b = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
-		vec3_vec3_subs(&a, &b, &c);
-		springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag(&c) - spring_array[i].l) * (mag(&c) - spring_array[i].l);
-	}
-
-	if(num_springs != 0) {
-		springenergy = get_spring_field_energy(-1, -1);
-	}
-
-	if(params.calc_vdw == 1) {
-		vdwenergy = vdw_solver->get_field_energy(-1, -1);
-	}
-
-	if(params.calc_preComp == 1) {
-		preCompenergy = pc_solver.get_field_energy(-1, -1);
-	}
-}
-
-void World::write_measurements_to_file(FILE *fout, int step) {
-
-	// In same order as initialisation
-	fprintf(fout, "%-14.6e", step * params.dt * mesoDimensions::time);
-	if(mass_in_system) {
-		fprintf(fout, "%-14.6e", kineticenergy * mesoDimensions::Energy);
-	}
-	fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
-	fprintf(fout, "%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length);
-	fprintf(fout, "%-14.6e ", rmsd * mesoDimensions::length);
-	if(num_springs != 0) {
-		fprintf(fout, "%-14.6e", springenergy * mesoDimensions::Energy);	
-	}
-	if(params.calc_vdw != 0) {
-		fprintf(fout, "%-14.6e", vdwenergy * mesoDimensions::Energy);	
-	}
-	if(params.calc_preComp != 0) {
-		fprintf(fout, "%-14.6e", preCompenergy * mesoDimensions::Energy);
-	}
-
-	fprintf(fout, "\n");
-	fflush(fout);
-}
-
-void World::write_detailed_measurements_to_file(FILE *fout) {
-	
-	// In same order as initialisation
-	int i, j;
-	for(i = 0; i < params.num_blobs; ++i) {
-		for(j = i; j < params.num_blobs; ++j) {
-			// White space for blob index bit
-			fprintf(fout, "       ");
-			if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
-				fprintf(detailed_meas_out, "%-14.6e", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
-			}
-			if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs() * mesoDimensions::Energy) {
-				fprintf(detailed_meas_out, "%-14.6e", get_spring_field_energy(i, j) * mesoDimensions::Energy);
-			}
-			if(active_blob_array[i]->there_are_beads() && active_blob_array[j]->there_are_beads() * mesoDimensions::Energy) {
-				fprintf(detailed_meas_out, "%-14.6e", pc_solver.get_field_energy(i, j) * mesoDimensions::Energy);
-			}
-		}
-	}
-	fprintf(fout, "\n");
-	fflush(fout);
+    // Force all output in buffers to be written to the output files now
+    fflush(trajectory_out);
+    for (int i = 0; i < params.num_blobs + 1; ++i) {
+        fflush(measurement_out[i]);
+    }
 }
 
 void World::print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index) {

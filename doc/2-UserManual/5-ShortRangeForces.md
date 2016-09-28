@@ -30,7 +30,7 @@ where "my-system" is whatever the file you have, and this field is
 
 where "Number-Of-Active-Faces" is the number of faces that your system has 
  pointing outwards, and every line can have values ranging from -1, 
- corresponding to **inactive**, up to 7 for the rest of faces types. 
+ corresponding to inactive, up to 7 for the rest of faces types. 
  This file should have been automatically generated when
   [configuring the system](\ref makeffeablob), 
  with all the faces set up to "inactive", 
@@ -111,8 +111,7 @@ Steric potential {#sPotential}
  a steric repulsion that is proportional to the overlapping of the tetrahedra 
   of the interacting faces will be calculated. More specifically, the repulsive 
   energy will be proportional to the volume of the overlapping tetrahedra, and 
-  the repulsive force proportional to the gradient of this volume in the direction
-  of the line joining the node in every tetrahedra that is not part of the interacting face.
+  the repulsive force proportional to the area enclosing the ovelapping volume. 
  The magnitude of this interaction can be modulated through a single parameter, 
   
       < vdw_steric_factor = F >

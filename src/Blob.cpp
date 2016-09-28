@@ -1,5 +1,5 @@
 #include "Blob.h"
-
+#include "mpi.h"
 Blob::Blob() {
     /* Initialise everything to zero */
     blob_index = 0;
@@ -25,10 +25,6 @@ Blob::Blob() {
     binding_site = NULL;
     solver = NULL;
     linear_solver = 0;
-    mass_in_blob = false;
-    vdw_on_blob = false;
-    springs_on_blob = false;
-    beads_on_blob = false;
     force = NULL;
     rng = NULL;
     poisson_solver = NULL;
@@ -64,10 +60,6 @@ Blob::~Blob() {
     delete solver;
     solver = NULL;
     linear_solver = 0;
-    mass_in_blob = false;
-    vdw_on_blob = false;
-    springs_on_blob = false;
-    beads_on_blob = false;
 
     /* Release the Poisson Solver */
     delete poisson_solver;
@@ -117,7 +109,7 @@ Blob::~Blob() {
 
 int Blob::init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
             const char *stokes_filename, const char *vdw_filename, const char *pin_filename, const char *binding_filename, const char *beads_filename, scalar scale, int linear_solver,
-            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, RngStream rng[], int num_threads) {
+            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, MTRand rng[], int num_threads) {
 
     // Which blob and conformation am i?
     this->blob_index = blob_index;
@@ -150,18 +142,15 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
     this->lj_matrix = lj_matrix;
 
-    if (params->calc_vdw == 1) {
-    	if (load_vdw(vdw_filename, lj_matrix->get_num_types()) == FFEA_ERROR) {
-        	FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
-    	}
+    if (load_vdw(vdw_filename, lj_matrix->get_num_types()) == FFEA_ERROR) {
+        FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
     }
 
     if (params->calc_preComp == 1) {
       if (strcmp(beads_filename, "") == 0) {
-         /*char buffer [50];
+         char buffer [50];
          sprintf(buffer, "No beads file was assigned to Blob %d\n", blob_index);
-         FFEA_CAUTION_MESSG(buffer);*/
-			FFEA_CAUTION_MESSG("No beads file was assigned to Blob %d\n", blob_index);
+         FFEA_CAUTION_MESSG(buffer);
       } else if (load_beads(beads_filename, pc_params, scale) == FFEA_ERROR) {
         	FFEA_ERROR_MESSG("Error when loading beads file.\n")
     	}
@@ -212,13 +201,10 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         // Create the chosen linear equation Solver for this Blob
         if (linear_solver == FFEA_DIRECT_SOLVER) {
             solver = new SparseSubstitutionSolver();
-	    mass_in_blob = true;
         } else if (linear_solver == FFEA_ITERATIVE_SOLVER) {
             solver = new ConjugateGradientSolver();
-	    mass_in_blob = true;
         } else if (linear_solver == FFEA_MASSLUMPED_SOLVER) {
             solver = new MassLumpedSolver();
-	    mass_in_blob = true;
         } else if (linear_solver == FFEA_NOMASS_CG_SOLVER) {
             solver = new NoMassCGSolver();
         } else {
@@ -446,7 +432,9 @@ int Blob::update() {
     int tid; // Holds the current thread id (in parallel regions)
     int num_inversions = 0; // Counts the number of elements that have inverted (if > 0 then simulation has failed)
 
+	//double t1,t2;
     // Element loop
+	//t1=MPI::Wtime();
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel default(none) private(J, stress, du, tid, n) reduction(+:num_inversions)
     {
@@ -510,8 +498,10 @@ int Blob::update() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     }
 #endif
-
+	//t1=MPI::Wtime()-t1;
+	//cout<<"update loop:"<< t1<<"senconds"<<endl;
     // Check if any elements have inverted
+	//t2=MPI::Wtime();
     if (num_inversions != 0) {
         if (num_inversions == 1) {
             FFEA_ERROR_MESSG("1 element has inverted since the last step. Aborting simulation.\n");
@@ -532,7 +522,9 @@ int Blob::update() {
     for (n = 0; n < num_elements; n++) {
         elem[n].linearise_element();
     }
-
+	
+	//t2=MPI::Wtime()-t2;
+	//cout<<"update remaining:"<< t2<<"senconds"<<endl;
     return FFEA_OK;
 }
 
@@ -694,7 +686,7 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
 
 vector3 Blob::position(scalar x, scalar y, scalar z) {
     int i;
-    scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
+    scalar centroid_x = 0, centroid_y = 0, centroid_z = 0;
     vector3 v;
     // scalar dx, dy, dz;
 
@@ -702,15 +694,15 @@ vector3 Blob::position(scalar x, scalar y, scalar z) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(shared) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
 #endif
-    for (i = 0; i < num_nodes; i++) {
+    for (i = 0; i < num_surface_nodes; i++) {
         centroid_x += node[i].pos.x;
         centroid_y += node[i].pos.y;
         centroid_z += node[i].pos.z;
     }
 
-    centroid_x *= (1.0 / num_nodes);
-    centroid_y *= (1.0 / num_nodes);
-    centroid_z *= (1.0 / num_nodes);
+    centroid_x *= (1.0 / num_surface_nodes);
+    centroid_y *= (1.0 / num_surface_nodes);
+    centroid_z *= (1.0 / num_surface_nodes);
 
     // Calculate displacement vector required to move centroid to requested position
     v.x = x - centroid_x;
@@ -986,27 +978,28 @@ scalar Blob::calculate_strain_energy() {
 	return 0.5 * strain_energy;
 }
 
-void Blob::make_measurements() {
+void Blob::make_measurements(FILE *measurement_out, int step, vector3 *system_CoM) {
+    // Only calculate and write out measurements if there is an open measurement output file
+    if (measurement_out != NULL) {
+        int n, i, j;
+        scalar ke, pe, com_x, com_y, com_z, L_x, L_y, L_z;
+        scalar rmsd;
+        vector3 total_vdw_xz_force;
+        scalar total_vdw_xz_energy = 0.0, total_vdw_xz_area = 0.0;
+        scalar temp1, temp2, temp3;
+        scalar r[4][3];
+        vector12 vec;
 
-    int n, i, j;
-    scalar kenergy, senergy;
-    vector3 total_vdw_xz_force;
-    scalar total_vdw_xz_energy = 0.0, total_vdw_xz_area = 0.0;
-    scalar temp1, temp2, temp3;
-    scalar cogx = 0.0, cogy = 0.0, cogz = 0.0, lx = 0.0, ly = 0.0, lz = 0.0, brmsd = 0.0;
-    scalar r[4][3];
-    vector12 vec;
-
-    kenergy = 0.0;
-    senergy = 0.0;
-    
-    // OpenMP can't reduce members of classes :(
-    //vector3_set_zero(&L);
-    //vector3_set_zero(&CoG);
-    vector3_set_zero(&CoM);
-
+        ke = 0;
+        pe = 0;
+        com_x = 0;
+        com_y = 0;
+        com_z = 0;
+        L_x = 0;
+        L_y = 0;
+        L_z = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:kenergy, senergy) private(n, vec, temp1, temp2, temp3)
+#pragma omp parallel for default(none) reduction(+:ke, pe, com_x, com_y, com_z) private(n, vec, temp1, temp2)
 #endif
         for (n = 0; n < num_elements; n++) {
 
@@ -1023,7 +1016,7 @@ void Blob::make_measurements() {
                 elem[n].apply_element_mass_matrix(vec);
 
                 // Dot u with M.u to get the contribution to the kinetic energy
-                kenergy += elem[n].n[0]->vel.x * vec[0] +
+                ke += elem[n].n[0]->vel.x * vec[0] +
                         elem[n].n[1]->vel.x * vec[1] +
                         elem[n].n[2]->vel.x * vec[2] +
                         elem[n].n[3]->vel.x * vec[3] +
@@ -1039,44 +1032,48 @@ void Blob::make_measurements() {
                 /*
                  * Centre of Mass contribution:
                  */
-                //com_x += elem[n].mass * (elem[n].n[0]->pos.x + elem[n].n[1]->pos.x + elem[n].n[2]->pos.x + elem[n].n[3]->pos.x) / 4;
-                //com_y += elem[n].mass * (elem[n].n[0]->pos.y + elem[n].n[1]->pos.y + elem[n].n[2]->pos.y + elem[n].n[3]->pos.y) / 4;
-                //com_z += elem[n].mass * (elem[n].n[0]->pos.z + elem[n].n[1]->pos.z + elem[n].n[2]->pos.z + elem[n].n[3]->pos.z) / 4;
+                com_x += elem[n].mass * (elem[n].n[0]->pos.x + elem[n].n[1]->pos.x + elem[n].n[2]->pos.x + elem[n].n[3]->pos.x) / 4;
+                com_y += elem[n].mass * (elem[n].n[0]->pos.y + elem[n].n[1]->pos.y + elem[n].n[2]->pos.y + elem[n].n[3]->pos.y) / 4;
+                com_z += elem[n].mass * (elem[n].n[0]->pos.z + elem[n].n[1]->pos.z + elem[n].n[2]->pos.z + elem[n].n[3]->pos.z) / 4;
             }
 
             /*
-             * Strain energy contribution:
+             * Potential energy contribution:
              */
 
-	    // Old
-            //temp1 = elem[n].E + elem[n].G / 3.0;
-	    //temp2 = elem[n].G / temp1;
-	    //temp3 = (elem[n].vol / elem[n].vol_0) - (1 + temp2);
+            // Old
+            /*temp2 = elem[n].G/elem[n].E;
+            temp1 = (elem[n].vol/elem[n].vol_0) - (1 + temp2);
+            pe += elem[n].vol_0 * (
+                    elem[n].G * ( mat3_double_contraction_symmetric(elem[n].F_ij) - 3 )
+                    + elem[n].E * ( temp1 * temp1 - temp2 * temp2 ));*/
 
-	    //senergy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + temp1 * (temp3 * temp3 - temp2 * temp2));
-
-            // New
-            scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
-	    temp1 = elem[n].vol / elem[n].vol_0;
-	    senergy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1));
+            // New 
+            scalar C = elem[n].E - elem[n].G * 2.0 / 3.0;
+            temp1 = elem[n].vol / elem[n].vol_0;
+            pe += elem[n].vol_0 * (
+                    elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3)
+                    + 0.5 * C * (temp1 * temp1 - 1)
+                    - ((2 * elem[n].G) + C) * log(temp1));       
 	}
 
         // And don't forget to multiply by a half
-        kineticenergy = kenergy * 0.5;
-        strainenergy = senergy * 0.5;
-	get_CoM(&CoM);
+        ke *= .5;
+        pe *= .5;
+
         if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
 
             // Get the centre of mass from the calculated totals
-            //if (mass <= 0.0) {
-             //   com_x = 0.0;
-              //  com_y = 0.0;
-                //com_z = 0.0;
-            //} else {
-            //    com_x *= 1.0 / mass;
-            //    com_y *= 1.0 / mass;
-            //    com_z *= 1.0 / mass;
-            //}
+            if (mass <= 0.0) {
+                com_x = 0.0;
+                com_y = 0.0;
+                com_z = 0.0;
+            } else {
+                com_x *= 1.0 / mass;
+                com_y *= 1.0 / mass;
+                com_z *= 1.0 / mass;
+            }
+
 
             /* Calculate angular momentum */
             // mass matrix
@@ -1087,15 +1084,15 @@ void Blob::make_measurements() {
                     {.05, .05, .05, .1}};
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:lx, ly, lz) shared(MM) private(n, r, temp1, temp2, temp3, i, j)
+#pragma omp parallel for default(none) reduction(+:L_x,L_y,L_z) shared(MM, system_CoM) private(n, r, temp1, temp2, temp3, i, j)
 #endif
             for (n = 0; n < num_elements; n++) {
 
                 // Find the separation vectors for this element
                 for (i = 0; i < 4; i++) {
-                    r[i][0] = elem[n].n[i]->pos.x - CoM.x;
-                    r[i][1] = elem[n].n[i]->pos.y - CoM.y;
-                    r[i][2] = elem[n].n[i]->pos.z - CoM.z;
+                    r[i][0] = elem[n].n[i]->pos.x - system_CoM->x;
+                    r[i][1] = elem[n].n[i]->pos.y - system_CoM->y;
+                    r[i][2] = elem[n].n[i]->pos.z - system_CoM->z;
                 }
 
                 // Calculate contribution to angular momentum from this element
@@ -1111,49 +1108,54 @@ void Blob::make_measurements() {
                 }
 
                 // Add this contribution to the sum
-                lx += elem[n].mass * temp1;
-                ly += elem[n].mass * temp2;
-                lz += elem[n].mass * temp3;
+                L_x += elem[n].mass * temp1;
+                L_y += elem[n].mass * temp2;
+                L_z += elem[n].mass * temp3;
             }
         }
 
         /* Calculate RMSD value for this configuration */
+        rmsd = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:brmsd, cogx, cogy, cogz) private(i, temp1, temp2, temp3)
+#pragma omp parallel for default(none) reduction(+:rmsd) private(i, temp1, temp2, temp3)
 #endif
         for (i = 0; i < num_nodes; i++) {
-
-	    /*
-	     * Center of geometry contribution (geometry better on nodes than elements)
-	     */
-	    cogx += node[i].pos.x;
-	    cogy += node[i].pos.y;
-	    cogz += node[i].pos.z;
-
             temp1 = node[i].pos.x - node[i].pos_0.x;
             temp2 = node[i].pos.y - node[i].pos_0.y;
             temp3 = node[i].pos.z - node[i].pos_0.z;
-            brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
+            rmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
         }
-	rmsd = sqrt(brmsd / num_nodes);
-	CoG.x = cogx / num_nodes;
-	CoG.y = cogy / num_nodes;
-	CoG.z = cogz / num_nodes;
-	L.x = lx;
-	L.y = ly;
-	L.z = lz;
-}
+        rmsd = sqrt(rmsd / num_nodes);
 
-void Blob::write_measurements_to_file(FILE *fout) {
 
-	// White space for blob index bit
-	fprintf(fout, "     ");
-	if(there_is_mass()) {
-		fprintf(fout, "%-14.6e", kineticenergy * mesoDimensions::Energy);
-	}
-	fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
-	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length, rmsd * mesoDimensions::length);
-	fflush(fout);
+        /* VdW measurements */
+        vector3_set_zero(&total_vdw_xz_force);
+        if (this->params->calc_vdw == 1) {
+          for (i = 0; i < num_surface_faces; i++) {
+            if (surface[i].vdw_xz_interaction_flag == true) {
+                total_vdw_xz_force.x += surface[i].vdw_xz_force->x;
+                total_vdw_xz_force.y += surface[i].vdw_xz_force->y;
+                total_vdw_xz_force.z += surface[i].vdw_xz_force->z;
+
+                total_vdw_xz_area += surface[i].area;
+                total_vdw_xz_energy += surface[i].vdw_xz_energy;
+
+            }
+          }
+        }
+
+
+        // print out all measurements to file
+        fprintf(measurement_out, 
+         "%d\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\t%+e\n", 
+         step, ke*mesoDimensions::Energy, pe*mesoDimensions::Energy, 
+         com_x*mesoDimensions::length, com_y*mesoDimensions::length, com_z*mesoDimensions::length, 
+         L_x*mesoDimensions::length, L_y*mesoDimensions::length, L_z*mesoDimensions::length, 
+         rmsd*mesoDimensions::length, 
+         mag(&total_vdw_xz_force)*mesoDimensions::force,
+         total_vdw_xz_energy*mesoDimensions::Energy,
+         total_vdw_xz_area*mesoDimensions::area);
+    }
 }
 
 void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
@@ -1219,27 +1221,6 @@ int Blob::get_num_faces() {
  */
 int Blob::get_num_beads() {
     return num_beads;
-}
-
-/*
- *
- */
-scalar Blob::get_rmsd() {
-	return rmsd;
-}
-
-/*
- *
- */
-int Blob::get_linear_solver() {
-	return linear_solver;
-};
-
-/*
- *
- */
-vector3 Blob::get_CoG() {
-	return CoG;
 }
 
 /*
@@ -1374,7 +1355,7 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 					for(j = 0; j < 3; ++j) {
 						val = (1.0 / (2 * dx)) * (elastic_force[1][4 * j + b] - elastic_force[0][4 * j + b]);
 						
-						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,y0,z0,x1,y1,z1...xn,yn,zn
+						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,x1,x2...xn,y0,y1.....yn....zn
 						//row = num_linear_nodes * i + global_a;
 						//column = num_linear_nodes * j + global_b;
 						row = 3 * global_a_lin + i;
@@ -1473,75 +1454,6 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 	}
 	K->setFromTriplets(components.begin(), components.end());
 	return FFEA_OK;
-}
-
-int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
-	
-
-	int i, j, a, b, global_a, global_b, row, column;
-	int elem_index, num_linear_nodes;
-	scalar val;
-	MassMatrixQuadratic M_el;
-	vector<Eigen::Triplet<scalar> > components;
-
-	// Firstly, get a mapping from all node indices to just linear node indices
-	int map[num_nodes];
-	int offset = 0;
-	for(int i = 0; i < num_nodes; ++i) {
-		if(node[i].am_I_linear()) {
-			map[i] = i - offset;
-		} else {
-			offset += 1;
-			map[i] = -1;
-		}
-	}
-
-	num_linear_nodes = get_num_linear_nodes();
-
-	// For each element
-	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
-
-		// Build mass matrix
-		elem[elem_index].construct_element_mass_matrix(&M_el);
-
-		// Add each component of the local matrix to the global matrix
-
-		// For each node
-		for(a = 0; a < 4; ++a) {
-			global_a = map[elem[elem_index].n[a]->index];
-
-			for(b = 0; b < 4; ++b) {
-				global_b = map[elem[elem_index].n[b]->index];
-		
-				// From another function that get's actual memory location. Dereference for value
-				// Val same for each direction
-				val = *(M_el.get_M_alpha_mem_loc(a, b));
-				//cout << "val = " << val << endl;
-
-
-				// And each direction
-				for(i = 0; i < 3; ++i) {
-
-					row = 3 * global_a + i;
-					column = 3 * global_b + i;
-					components.push_back(Eigen::Triplet<scalar>(row, column, val));
-				}
-			}
-		}
-	}
-
-	// Now build the matrix and get the symmetric part (just in case)
-	M->setFromTriplets(components.begin(), components.end());
-	components.clear();
-	for(j = 0; j < M->outerSize(); ++j) {
-		for(Eigen::SparseMatrix<scalar>::InnerIterator it(*M,j); it; ++it) {
-			components.push_back(Eigen::Triplet<scalar>(it.row(), it.col(), 0.5 * it.value()));
-			components.push_back(Eigen::Triplet<scalar>(it.col(), it.row(), 0.5 * it.value()));
-		}
-	}
-	M->setFromTriplets(components.begin(), components.end());
-	return FFEA_OK;
-
 }
 
 int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
@@ -1876,14 +1788,6 @@ int Blob::get_num_linear_nodes() {
 	}
 
 	return node_indices.size();
-}
-
-scalar Blob::get_kinetic_energy() {
-	return kineticenergy;
-}
-
-scalar Blob::get_strain_energy() {
-	return strainenergy;
 }
 
 void Blob::get_min_max(vector3 *blob_min, vector3 *blob_max) {
@@ -2418,7 +2322,7 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
 
     // Set the stokes radius for each node in the Blob
     scalar stokes_radius = 0.0;
-    int crap, i, check = 0;
+    int i, check = 0;
     for (i = 0; i < num_nodes; i++) {
         if (fscanf(in, "%le\n", &stokes_radius) != 1) {
             fclose(in);
@@ -2431,7 +2335,7 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
             printf("WARNING. Stokes Radius on node %d in this Blob is very small, %e.\nStokes Radius is scaled by same factor as node positions, so specify in same units.\n", i, node[i].stokes_radius);
             printf("Would you like to continue (y or n)?:");
             while (done == 0) {
-                crap = scanf("%s", finish);
+                scanf("%s", finish);
                 if (strcmp(finish, "y") == 0) {
                     done = 1;
                     check = 1;
@@ -2576,7 +2480,6 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
 
     // 2.3 - num_beads:
     num_beads = stypes.size();
-    beads_on_blob = true;
 
     return FFEA_OK; 
 
@@ -2686,13 +2589,6 @@ int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types) {
         }
     }
 
-    // Set whether vdw is active on blob
-    for(i = 0; i < num_surface_faces; ++i) {
-	if(surface[i].vdw_interaction_type != -1) {
-            vdw_on_blob = true;
-	    break;
-	}
-    }
     fclose(in);
 
     printf("\t\t\tRead %d vdw faces from %s\n", i, vdw_filename);
@@ -2774,7 +2670,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 		}
 
 		if(bind_type >= num_binding_site_types) {
-			FFEA_ERROR_MESSG("Binding site %d specifies site type %d, which is outside range of types allowed by the 'bsite_in_fname' matrix (%d types allowed)\n", i, bind_type, num_binding_site_types)
+			FFEA_ERROR_MESSG("Binding site %d specifies site type %d, which is outside range of types allowed by the 'binding_site_params' matrix (%d types allowed)\n", i, bind_type, num_binding_site_types)
 			return FFEA_ERROR;
 		}
 
@@ -2966,9 +2862,9 @@ int Blob::aggregate_forces_and_solve() {
 #endif
             for (int i = 0; i < num_nodes; i++) {
 #ifdef USE_OPENMP                
-                int thread_id = omp_get_thread_num();
+//                int thread_id = omp_get_thread_num();
 #else
-                int thread_id = 0;
+//                int thread_id = 0;
 #endif
                 force[i].x -= node[i].vel.x * node[i].stokes_drag;
                 force[i].y -= node[i].vel.y * node[i].stokes_drag;
@@ -2983,16 +2879,16 @@ int Blob::aggregate_forces_and_solve() {
             if (params->calc_noise == 1) {
 
 		// Noise depends on the number of dimensions available
-		//int prefactor = 3 * (2 ^ params->num_dimensions);
-		int prefactor = 24;
+		int prefactor = 3 * (2 ^ params->num_dimensions);
+
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none) schedule(guided) shared(prefactor)
 #endif
                 for (int i = 0; i < num_nodes; i++) {
 #ifdef USE_OPENMP
-                    int thread_id = omp_get_thread_num();
+//                    int thread_id = omp_get_thread_num();
 #else
-                    int thread_id = 0;
+//                    int thread_id = 0;
 #endif
                     force[i].x -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
                     force[i].y -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
@@ -3015,6 +2911,31 @@ int Blob::aggregate_forces_and_solve() {
 	force[*it].x = 0;
 	force[*it].y = 0;
 	force[*it].z = 0;
+    }
+
+    // Set to zero any forces in directions that are restricted
+    for(int i = 0; i < 3; ++i) {
+	if(params->restrict_motion[i] == 1) {
+	    switch(i) {
+		case(0):
+		    for(n = 0; n < num_nodes; ++n) {
+			force[n].x = 0;
+		    }
+		    break;
+
+		case(1):
+		    for(n = 0; n < num_nodes; ++n) {
+			force[n].y = 0;
+		    }
+		    break;
+
+		case(2):
+		    for(n = 0; n < num_nodes; ++n) {
+			force[n].z = 0;
+		    }
+		    break;
+	    }
+	}
     }
 
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix, 
@@ -3218,24 +3139,3 @@ void Blob::build_mass_matrix() {
     // Build the mass matrix
     M->build();
 }
-
-bool Blob::there_is_mass() {
-	return mass_in_blob;
-}
-
-void Blob::set_springs_on_blob(bool state) {
-	springs_on_blob = state;
-}
-
-bool Blob::there_are_springs() {
-	return springs_on_blob;
-}
-
-bool Blob::there_is_vdw() {
-	return vdw_on_blob;
-}
-
-bool Blob::there_are_beads() {
-	return beads_on_blob;
-}
-

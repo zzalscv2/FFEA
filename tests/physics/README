@@ -1,7 +1,0 @@
-These are some simple tests that are designed to test the ffea code at an intermediate level - between that of a benchmark and unit test. These tests are designed to check that a mesh has been read in correclty and that it is handled correctly by the computational functions within the ffea codes.
-
-All the tests are run by the run_tests.sh script. 
-
-These tests are available in the installed software and the paths set within the script assume that they are relative to the folder where the scripts itself reside.
-
-Currently these tests are not used and so probably do not work as the file formats have changed.
