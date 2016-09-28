@@ -284,13 +284,13 @@ class FFEA_pdb:
 		# Fill up the blobs
 
 		# Build a pseudo-structure
+		plates = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 		for i in range(self.num_blobs):
-			# res_index = -1
-			# if i % 10 == 0:
-			#	res_index += 1
+			r_index = -1
 			for j in range(self.blob[i].num_atoms):
+				if j % 10 == 0: r_index += 1 
 				anatom = FFEA_pdb_atom()
-				anatom.set_structure(atom_index = j, atom_type = "CA", res_type = "ARG", chain = "A", res_index = j, occupancy = 0, temp_factor = 1.0, segment = "", elem = "C", charge = "1.0")
+				anatom.set_structure(atom_index = j, atom_type = "CA", res_type = "ARG", chain = plates[i], res_index = r_index, occupancy = 0, temp_factor = 1.0, segment = "", elem = "C", charge = "1.0")
 				self.blob[i].atom.append(anatom)
 
 		for i in range(self.num_frames):
