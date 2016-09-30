@@ -17,25 +17,29 @@ If you encounter frequent PyMOL crashes or ominous warnings on the console such 
 
 ## Loading your system
 
-When PyMOL loads, open the 'plugin' menu, and you should see a new option called 'FFEA loader'. This has a file menu that will allow you to select an FFEA script and load the FFEA script file, but before doing that, review the options. The model needs to be reloaded every time these settings are changed.
+When PyMOL loads, open the 'plugin' menu, and you should see a new option called 'FFEA loader'. This has a file menu that will allow you to select an FFEA script and load the FFEA script file, but before doing that, review the options. Currently, the model needs to be reloaded every time these settings are changed.
 
 ![FFEA Viewer settings](viewer_2_settings.png "FFEA Viewer settings")
 
 The FFEA viewer settings are:
 * System name: abtitrary, used to identify the system in the PyMOL sidebar.
-* Springs: displays spring objects if checked.
-* Pinned nodes: shows which nodes are pinned if checked.
-* Solid Type:
+* Display: displays spring objects and pinned nodes if checked.
+* Show solid:
   * Plain solid renders the mesh in flat colours.
   * Material colours the mesh different depending on a user-selectable material parameter.
   * No solid does not display a solid mesh.
+* Show Mesh:
+  * Surface mesh renders a wireframe of the surface
+  * Whole mesh renders a wireframe that includes the internal elements
+  * No mesh does not display a wireframe mesh.
 * Indices:
   * Node Indices displays the indices of all the nodes, including the 2nd-order elements.
   * Node Indices (Linear) only displays the indices of the linear elements. In most cases, this is more useful, as displaying second-order nodes can make the image hard to read.
   * Element indices displays the indices of the elements.
   * Face indices displays the indices of the faces (surface elements) only.
   * No indices does not display indices.
-* Simulation Box:
+  * Clicking the 'add node psuedoatoms' button after the simulation is loaded will cause PyMOL to load a psuedoatom at the location of each node. Psuedoatoms can be targeted by all of PyMOL's regular analysis tools. For example, you can type `label all, name` into the PyMOL console.
+* Show Box:
   * Simulation box outline draws an outline of the simulation box - the simulation box is the volume which objects in the simulation can occupy.
   * Simulation box (whole) draws the entire box.
 * Loading type:
@@ -46,6 +50,9 @@ The FFEA viewer settings are:
   this may be the best way to visualise the models before starting the simulation. This is specially useful when 
   checking that the model has been set up correctly, as one can load the FFEA system alongside a (number of) PDB file(s),
   thus checking that both share origin and scale.
+  * CGO will load the trajectory and cache the calls to PyMOL's API directly to the hard drive. This results in a slower initial load, but faster subsequent loads.
+* Highlight Nodes:
+  * Provide a list of nodes, e.g. '1, 2, 3' (no quotes) and the a separate blob will be created using only those nodes. Useful for tracking down element inversions. Warning: right now, this only works with CGO trajectories.
   
 
 ## Viewing models
