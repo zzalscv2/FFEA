@@ -7,9 +7,10 @@ class FFEA_vdw:
 	
 		self.reset()
 
-		try:
+		if fname != "":
 			self.load(fname)
-		except:
+		else:
+			print("No filename specified. Empty object created.")
 			return
 
 	def load(self, fname):
@@ -18,8 +19,7 @@ class FFEA_vdw:
 
 		# Test file exists
 		if not path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
-			return
+			raise IOError("\tFile '" + fname + "' not found.")
 	
 		# File format?
 		base, ext = path.splitext(fname)
@@ -28,10 +28,11 @@ class FFEA_vdw:
 				self.load_vdw(fname)
 				self.valid = True
 			except:
-				print("\tUnable to load FFEA_vdw from " + fname + ". Returning empty object...")
+				print("\tUnable to load FFEA_vdw from " + fname + ".")
+				raise
 
 		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+			raise IOError("\tUnrecognised file extension '" + ext + "'.")
 
 	def load_vdw(self, fname):
 
@@ -40,13 +41,12 @@ class FFEA_vdw:
 			fin = open(fname, "r")
 		except(IOError):
 			print("\tFile '" + fname + "' not found. Returning empty object...")
-			self.reset()
+			raise
 
 		# Test format
 		line = fin.readline().strip()
 		if line != "ffea vdw file" and line != "walrus vdw file":
-			print("\tExpected 'ffea vdw file' but found " + line)
-			raise TypeError
+			raise TypeError("\tExpected 'ffea vdw file' but found " + line)
 
 		num_faces = int(fin.readline().split()[1])
 
@@ -70,7 +70,14 @@ class FFEA_vdw:
 
 		self.index.append(int(anint))
 		self.num_faces += 1
+	
+	def set_index(self, findex, vdwindex):
 		
+		try:
+			self.index[findex] = int(vdwindex)
+		except:
+			raise
+	
 	def print_details(self):
 
 		print "num_faces = %d" % (self.num_faces)

@@ -14,12 +14,41 @@ import sys
 import re as _re
 
 class FFEA_turbotrajectory:
+    """
+    The FFEA_turbotrajectory class is an alternative to the FFEA_trajectory
+    class. It can only be generated from an FFEA trajectory, and the process
+    is one-way. It is not intended for general use, but may be handy for
+    applications in which the performance matters more than the semantics.
+    In addition to being very fast, it's also very small, as it stores
+    no second-order nodes, and stores trajectories as binary blobs, not as
+    text files.
+    For this reason, the read speed is only limited by your hard drive speed, 
+    unlike FFEA_trajectory, which is limited by how fast the individual lines
+    from the file can be read in.
+    FFEA_turbotrajectory is only really userful in situations when a trajectory
+    object has to be read in more than once - it still reads from the .ftj file,
+    so ultimately, you're adding a bit of overhead.
+    It can also directly precalculate the calls to CGL that are needed for the
+    PyMOL plugin to draw triangles on the screen. The major overhead in loading
+    trajectories into the viewer is actually looking up the triangle indices
+    and calculating the surface normals, and the cgo objects have that
+    pre-generated.
+    In the future, the FFEA runner may be able to write directly to turbotraj-
+    compatible binary blobs.
+    """
 
     def __init__(self):
-        self.dimensions = 3
+        self.dimensions = 3 # well ya never know
         return
     
     def load_traj(self, path): # convert trajectory object to turbotraj
+        """
+        Convert a trajectory into a turbotrajectory.
+        Note: this is kinda slow, you're better off using the
+        populate_turbotraj_from_ftj function.
+        In: self, path to trajectory file.
+        Out: writes to the self.turbotraj object.
+        """
         self.path = path.split(".")[0]
         if path.endswith("out"):
             traj = FFEA_trajectory.FFEA_trajectory(path)
@@ -63,6 +92,11 @@ class FFEA_turbotrajectory:
         return
         
     def get_normal(self, node0, node1, node2):
+        """
+        Get the normal to a plane, specified by three nodes.
+        In: node1, node2, node3.
+        Out: Plane normal vector as a python list.
+        """
         ax = node1[0] - node0[0]
         ay = node1[1] - node0[1]
         az = node1[2] - node0[2]
@@ -72,12 +106,15 @@ class FFEA_turbotrajectory:
 
         return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
 
-    def create_cgo(self, script, highlight_nodes=[]):
+    def create_cgo(self, script, display_params):
         """
         This sript creates a cgo object that can be fed into pymol for each frame
         and blob. The cgo object contains the vertices of each triangle in the mesh,
         a normal vector, and some control codes. This method also creates an index
         file listing the name of each cgo object and which frame it belongs to.
+        In: self, script (an FFEA script object) and display_params, which is
+        a dictionary created by the pymol viewer gui.
+        Out: populates the self.cgo and self.cgo.blob_index objects.
         """
         def setup(self):
             frames = range(len(self.turbotraj[0][0]))
@@ -111,6 +148,45 @@ class FFEA_turbotrajectory:
             # save it for later
             self.cgo_blob_index.append(["blob_"+str(blob_num), frame])
 
+        # optional params
+        if display_params['highlight'] != '':
+            print("Highlighted nodes "+display_params['highlight']+" detected")
+            highlighted = np.fromstring(display_params['highlight'], sep=",", dtype=int) 
+            self.write_cgo_for_elements(highlighted, script, self.turbotraj)
+
+    def write_cgo_for_elements(self, element_list, script, turbotraj):
+        """
+        This writes to the CGO object using a list of elements supplied by the
+        user. It outputs a separate pymol object containing only the elements
+        that the user specifies. IN order to do this, it has to look up the
+        nodes in each element, and then create four triangles for each.
+        In: self, element_list (a python list object containing element indices),
+        a script object, and a turbotraj object.
+        Out: Appends to the cgo.
+        """
+        frames = xrange(len(self.turbotraj[0][0]))
+        tops = []
+        for i in xrange(len(turbotraj)):
+            tops.append(script.load_topology(i)) 
+        for frame in frames:
+            print("Highlighting nodes in frame "+str(frame))
+            sol = [ _cgo.BEGIN, _cgo.TRIANGLES ]
+            for blob_num in xrange(len(tops)):
+                for element in element_list:
+                    nodes = tops[blob_num].element[element].n[:4]
+                    face1 = [nodes[0], nodes[1], nodes[2]]
+                    face2 = [nodes[1], nodes[2], nodes[3]]
+                    face3 = [nodes[0], nodes[2], nodes[3]]
+                    face4 = [nodes[0], nodes[1], nodes[3]]
+                    faces = [face1, face2, face3, face4]
+                    for face in faces:
+                        nodexyz = [turbotraj[blob_num][0][frame][face[0]], turbotraj[blob_num][0][frame][face[1]], turbotraj[blob_num][0][frame][face[2]]]
+                        norm = self.get_normal(nodexyz[0], nodexyz[1], nodexyz[2])
+                        sol.extend( [ _cgo.NORMAL, -norm[0], -norm[1], -norm[2], _cgo.VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, _cgo.VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, _cgo.VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+            sol.append(_cgo.END)
+            self.cgo.append(sol)
+            self.cgo_blob_index.append(["highlight", frame])
+
     def dump_cgo(self):
         cgo_array = np.array(self.cgo)
         cgo_blob_index_array = np.array(self.cgo_blob_index)
@@ -118,6 +194,12 @@ class FFEA_turbotrajectory:
         np.save(self.path+"_cgoindex", cgo_blob_index_array)
 
     def load_ftj_header(self, fname): # load header data from ftj file and create empty turbotraj
+        """            If we had to do this for every node, it would probably be a pain
+        Load header info. This works in almost the exact same way as the regular
+        FFEA trajectory method.
+        """
+    
+        self.path = fname.split(".")[0]
             
         # Get a file object and store it
         try:
@@ -178,38 +260,66 @@ class FFEA_turbotrajectory:
         self.ftj.seek(0)
         asterisks = self.ftj.read().count("*")
         self.num_frames = (asterisks-1)/2 # 1 frame for every 2 asterisks, plus an extra one at the end
+        self.num_nodes = self.num_nodes[0][0] # not sure why it's trapped in those lists
+        self.num_conformations = max(self.num_conformations) # get max number of conformations
         
         # Finally, build the objects
-        self.turbotraj = np.empty([self.num_blobs, self.num_conformations[0], self.num_frames, self.num_nodes[0][0], self.dimensions])
+        self.turbotraj = np.empty([self.num_blobs, self.num_conformations, self.num_frames, self.num_nodes, self.dimensions])
         
     def populate_turbotraj_from_ftj(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0): # load the contents of a .ftj trajectory into a turbotraj object
-    
+        """
+        Create a turbotraj object straight from a ,ftj file. As far as I know,
+        this is the fastest way to do it, but if you have a better idea, go
+        ahead! We load in the file, grab the header, use the first 3 frames
+        to get the number of steps (it only starts stepping properly between
+        frame 2 and 3) in each frame (why that's not in the header I have no
+        idea). 
+        From there, we start reading the file sequentially. Every frame of every
+        blob has what is essentially header information above it, and let me
+        tell ya, it's a lot more human readable than it is machine-readable.
+        Regex is used to work out which part of the header we're in, and
+        extract the data from the header. We populate the turbotraj object
+        only with the first-order nodes.
+        In: self, fname...
+        Out: populates turbotraj attribute.
+        """
         def skip_line(ftj, n):
             for i in range(n):
                 ftj.readline()
                 
         def match_line(line):
+            """
+            Match a line according to the highly sophisticated regex query:
+            "[0-9]". Uses python's built in regex library. We have to do a bit
+            of string fiddling beforehand, because the library takes input and
+            gives output in an odd way.
+            In: a line (string
+            Out: the contents of the line (we use it for blob, conf and step)
+            """
             line_contents = line.split(',')
             line_contents_formatted = []
             for thing in line_contents:
                 chars = _re.findall("[0-9]", thing)
-                num = ""
-                for char in chars:
-                    num = num+char
+                num = "".join(chars)
                 line_contents_formatted.append(int(num))
             try:
                 return line_contents_formatted[0], line_contents_formatted[1], line_contents_formatted[2] # blob, conf, step
             except IndexError:
                 raise IndexError("Expected line contents to contain 3 items, got "+str(line_contents_formatted)+" of length "+str(len(line_contents_formatted)))
             
-        def convert_step_to_frame(self, step):
+        def convert_step_to_frame(steps_per_frame, step):
+            """
+            Because the .trj file format doesn't have any way of telling you
+            what frame you're on, you have to either keep track of it in a
+            variable (which gets a bit ungainly because then you also have to
+            keep track of which blob you're in) OR just infer it from the steps.
+            If you know how many steps there are in each frame (which we do)
+            then we can work out which frame we're on.
+            """
             if step > 1:
-                step += -1
-                step = step/self.step
-                return step + 1
+                return ((step-1)/steps_per_frame)+1
             else:
                 return step
-                    
 
         print("Loading FFEA trajectory file...")
 
@@ -221,7 +331,7 @@ class FFEA_turbotrajectory:
         self.load_ftj_header(fname)
 
         try:
-            self.ftj = open(fname, "r")
+            ftj = open(fname, "r")
         except(IOError):
             raise IOError("\tFailed to open '" + fname + "' for reading.")
             
@@ -230,7 +340,7 @@ class FFEA_turbotrajectory:
         seek = True
         steps = []
         while seek:
-            line = self.ftj.readline()
+            line = ftj.readline()
             if line.startswith('Blob') and "->" not in line and "Nodes" not in line: # Only lines with blob, conf, step
                 blob, conf, step = match_line(line) # regex the line to get the values
                 steps.append(step)
@@ -238,25 +348,34 @@ class FFEA_turbotrajectory:
                 break
             
         self.step = steps[2] - steps[1]
+        steps_per_frame = self.step
         
         print("Steps calculated successfully...")
         print("Loading trajectory...")
+        
+        turbotraj = self.turbotraj #faster to access a local object
             
-        self.ftj.seek(0)
+        ftj.seek(0)
         
         seek = True
         while seek:
-            line = self.ftj.readline()
+            line = ftj.readline()
             if line.startswith('Blob') and "->" not in line and "Nodes" not in line: #Only lines with blob, conf, step
                 blob, conf, step = match_line(line) # regex the line to get the values
-                self.ftj.readline() # skip the word 'DYNAMIC'
-                for node in range(self.num_nodes[0][0]): # num_nodes[0][0] is the number of nodes, where each node occupies one line
-                    line_node = self.ftj.readline()
-                    frame = convert_step_to_frame(self, step)
-                    self.turbotraj[blob][conf][frame][node][:] = np.fromstring(line_node, dtype=float, sep=' ')[0:3]
+                frame = convert_step_to_frame(steps_per_frame, step)
+                ftj.readline() # skip the word 'DYNAMIC'
+                nodes_range = xrange(self.num_nodes)
+                for node in nodes_range: #  each node occupies one line
+                    #self.turbotraj[blob][conf][frame][node] = np.fromstring(self.ftj.readline(), dtype=float, sep=' ')[0:3]
+                    node_line = ftj.readline().split()
+                    for i in [0,1,2]: # 3 points
+                        turbotraj[blob][conf][frame][node][i] = float(node_line[i])
                     # fill the contents of the node with the first 3 numbers in the line, converted from a string. first 3 numbers = ignore second order elements
             if line == "": #empty string (no /n) at eof
                 break
+
+        self.ftj =  ftj
+        self.turbotraj = turbotraj
                     
         print("Trajectory loaded.")
                 
@@ -264,6 +383,11 @@ class FFEA_turbotrajectory:
             
     
 class _cgo:
+    """
+    These are the builtin constants for the PyMOL library's cgo, stolen from
+    the source code from that library itself. Reason being, if you're not in
+    a pymol extension, you can't actually import PyMOL.
+    """
     POINTS             = 0.0
     LINES              = 1.0
     LINE_LOOP          = 2.0
