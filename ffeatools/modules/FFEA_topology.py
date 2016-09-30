@@ -696,8 +696,7 @@ class FFEA_element:
 		
 		# Test for correct number of nodes
 		if len(alist) != len(self.n):
-			print "Incorrect number of nodes for assignment to this element type."
-			return
+			raise IndexError("Incorrect number of nodes for assignment to this element type.")
 
 		for i in range(len(alist)):
 			self.n[i] = int(alist[i])
