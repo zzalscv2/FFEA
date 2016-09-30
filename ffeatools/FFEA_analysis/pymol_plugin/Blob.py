@@ -15,7 +15,25 @@ from pymol.vfont import plain
 
 # from pymol.callback import Callback
 
-
+def get_vdw_colour(index):
+	if index == -1:
+		return [0.5,0.5,0.5]
+	elif index == 0:
+		return [0.0,1.0,0.0]
+	elif index == 1:
+		return [1.0,0.0,0.0]
+	elif index == 2:
+		return [0.0,0.0,1.0]
+	elif index == 3:
+		return [1.0,1.0,0.0]
+	elif index == 4:
+		return [0.0,1.0,1.0]
+	elif index == 5:
+		return [1.0,0.0,1.0]
+	elif index == 6:
+		return [1.0,0.0,1.0]
+	elif index == 7:
+		return [0.5,0.0,0.0]
 class Blob:
 	
 	def __init__(self, energy_thresh=1.06e6):
@@ -685,6 +703,11 @@ class Blob:
 				
 		                        norm = self.calc_normal_2(n1, n2, n3)
 
+					if display_flags['show_vdw'] == 1:
+						if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
+							bc = get_vdw_colour(self.vdw.index[f])
+							sol.extend([ COLOR, bc[0], bc[1], bc[2] ])
+
 		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
 		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
@@ -692,6 +715,8 @@ class Blob:
 
 			elif display_flags['show_solid'] == 2:
 
+				if display_flags['show_vdw'] == 1:
+					print "Sorry, can't draw material properties and vdw at same time. Defaulting to material."
 				# material drawing
 				
 				# Get param
@@ -834,7 +859,7 @@ class Blob:
 		#  Numbers       (again, can't always do elements)
 		#
 
-		if display_flags['show_numbers'] != 0:
+		if display_flags['show_numbers'] != "No Indices":
 
 			# Only first frame
 			if frameLabel == 1:
@@ -843,17 +868,17 @@ class Blob:
 				scale = 0.1	 # * self.scale * self.global_scale	# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
                          # No, the clever function should be a function of the shortest edge.
 	
-				if display_flags['show_numbers'] == 1:
+				if display_flags['show_numbers'] == 'Node Indices':
 					for n in range(self.node.num_nodes):
 						nn = (self.frames[i].pos[n])[0:3]
 						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
 	
-				elif display_flags['show_numbers'] == 2:
+				elif display_flags['show_numbers'] == 'Node Indices (Linear)':
 					for n in self.linear_node_list:
 						nn = (self.frames[i].pos[n])[0:3]
 						cyl_text(numtxt,plain,nn,str(n),0.10 * scale, axes=axes * scale)
 	
-				elif display_flags['show_numbers'] == 3:
+				elif display_flags['show_numbers'] == "Element Indicies":
 						
 					# Catch elements (but don't mislead i.e. no numbers
 					if self.top == None:
@@ -863,7 +888,7 @@ class Blob:
 							en = self.top.element[e].calc_centroid(self.frames[i])
 							cyl_text(numtxt, plain, en, str(e), 0.10 * scale, axes=axes * scale)
 						
-				elif display_flags['show_numbers'] == 4:
+				elif display_flags['show_numbers'] == "Face Indices":
 					for f in range(self.surf.num_faces):
 						fn = self.surf.face[f].calc_centroid(self.frames[i])
 						cyl_text(numtxt, plain, fn, str(f), 0.10 * scale, axes=axes * scale)
