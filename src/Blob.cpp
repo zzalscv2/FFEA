@@ -151,7 +151,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     this->lj_matrix = lj_matrix;
 
     if (params->calc_vdw == 1) {
-    	if (load_vdw(vdw_filename, lj_matrix->get_num_types()) == FFEA_ERROR) {
+    	if (load_vdw(vdw_filename, lj_matrix->get_num_types(), params->vdw_type) == FFEA_ERROR) {
         	FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
     	}
     }
@@ -1374,7 +1374,7 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 					for(j = 0; j < 3; ++j) {
 						val = (1.0 / (2 * dx)) * (elastic_force[1][4 * j + b] - elastic_force[0][4 * j + b]);
 						
-						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,x1,x2...xn,y0,y1.....yn....zn
+						// Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,y0,z0,x1,y1,z1...xn,yn,zn
 						//row = num_linear_nodes * i + global_a;
 						//column = num_linear_nodes * j + global_b;
 						row = 3 * global_a_lin + i;
@@ -2629,7 +2629,7 @@ void Blob::print_bead_positions() {
 
 /*
  */
-int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types) {
+int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types, string vdw_method) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
@@ -2673,16 +2673,32 @@ int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types) {
 
     // Read in all the vdw parameters from the file, assigning them to the appropriate faces
     int i;
-    int vdw_type = 0.0;
-    for (i = 0; i < num_surface_faces; i++) {
-        if (fscanf(in, "%d\n", &vdw_type) != 1) {
-            fclose(in);
-            FFEA_ERROR_MESSG("Error reading from vdw file at face %d. There should be 1 integer denoting vdw face species (-1 - unreactive). \n", i);
-        } else {
-            if (vdw_type > num_vdw_face_types - 1) {
-                FFEA_ERROR_MESSG("Error reading from vdw file at face %d. The given vdw face type (%d) is higher than that allowed by the vdw forcefield params file (%d). \n", i, vdw_type, num_vdw_face_types - 1);
-            }
-            surface[i].set_vdw_interaction_type(vdw_type);
+    int vdw_type = 0;
+
+    // If steric only, set all to type 0
+    if (vdw_method == "steric" || vdw_method == "stericII") {
+	for(i = 0; i < num_surface_faces; ++i) {
+	    if (fscanf(in, "%d\n", &vdw_type) != 1) {
+                fclose(in);
+                FFEA_ERROR_MESSG("Error reading from vdw file at face %d. There should be 1 integer denoting vdw face species (-1 - unreactive). \n", i);
+            } else {
+                if (vdw_type > num_vdw_face_types - 1) {
+		    vdw_type = 0;
+                }
+                surface[i].set_vdw_interaction_type(vdw_type);
+	    }
+	}
+    } else {
+	for (i = 0; i < num_surface_faces; i++) {
+	    if (fscanf(in, "%d\n", &vdw_type) != 1) {
+                fclose(in);
+                FFEA_ERROR_MESSG("Error reading from vdw file at face %d. There should be 1 integer denoting vdw face species (-1 - unreactive). \n", i);
+            } else {
+                if (vdw_type > num_vdw_face_types - 1) {
+                    FFEA_ERROR_MESSG("Error reading from vdw file at face %d. The given vdw face type (%d) is higher than that allowed by the vdw forcefield params file (%d). \n", i, vdw_type, num_vdw_face_types - 1);
+                }
+                surface[i].set_vdw_interaction_type(vdw_type);
+	    }
         }
     }
 

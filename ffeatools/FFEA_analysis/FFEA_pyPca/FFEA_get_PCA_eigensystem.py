@@ -1,16 +1,24 @@
 import sys, os
 import numpy as np
+import FFEA_topology
 
-if len(sys.argv) != 3:
-	sys.exit("Usage: python FFEA_get_eigensystem.py [INPUT .pcz file] [num_modes]")
+if len(sys.argv) < 4:
+	sys.exit("Usage: python FFEA_get_eigensystem.py [INPUT .pcz file] [INPUT .top file] [num_modes] OPTIONAL {[OUTPUT fname]}")
 
 # Get args
 infile = sys.argv[1]
-base, ext = os.path.splitext(os.path.abspath(infile))
-num_modes = int(sys.argv[2])
+if len(sys.argv) == 5:
+	base, ext = os.path.splitext(os.path.abspath(sys.argv[4]))
+else:
+	base, ext = os.path.splitext(os.path.abspath(infile))
+
+top = FFEA_topology.FFEA_topology(sys.argv[2])
+num_modes = int(sys.argv[3])
 eigvalfname = base + ".evals"
-tempeigvecfname = "temp.evecs"
+tempeigvecfname = base + "_temp.evecs"
 eigvecfname = base + ".evecs"
+
+lin = top.get_linear_nodes()
 
 # Send eigenvalues to file (easy)
 print("Calculating Eigenvalues: Writing to " + os.path.basename(eigvalfname) + "...")
@@ -30,8 +38,8 @@ for i in range(num_modes):
 	num_nodes = len(lines) / 3
 	for j in range(num_nodes):
 		for k in range(3):
-	#		if j in lin:
-			eigvec.append(float(lines[3 * j + k]))			
+			if j in lin:
+				eigvec.append(float(lines[3 * j + k]))			
 
 	eigvec = np.array(eigvec)
 	eigvec /= np.linalg.norm(eigvec)
