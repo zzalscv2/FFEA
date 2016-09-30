@@ -3,6 +3,7 @@ import numpy as np
 
 from pymol import cmd
 from pymol.callback import Callback
+import warnings
 
 import warnings
 
