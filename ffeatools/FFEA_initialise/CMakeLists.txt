@@ -6,7 +6,7 @@ add_subdirectory("FFEA_volume_tools")
 
 install(DIRECTORY FFEA_convert_from_volume
         FFEA_material_tools FFEA_pdb_tools FFEA_pin_tools
-        Kinetic_FFEA_convert_from_FFEA
+        Kinetic_FFEA_convert_from_FFEA FFEA_vdw_tools
         DESTINATION "${PYTHONSTUFF}/FFEA_initialise")
 
 install (FILES FFEA_build_simulation_environment.py

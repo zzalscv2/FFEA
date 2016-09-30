@@ -542,7 +542,7 @@ private:
     /**
      * Opens and reads the given 'ffea vdw file', extracting all the van der waals species for each face of this Blob.
      */
-    int load_vdw(const char *vdw_filename, int num_vdw_face_types);
+    int load_vdw(const char *vdw_filename, int num_vdw_face_types, string vdw_method);
 
     /**
      * Opens and reads the given 'ffea beads file', extracting all the beads types and positions and for this Blob.
