@@ -3,6 +3,7 @@ import numpy as np
 
 from pymol import cmd
 from pymol.callback import Callback
+import warnings
 
 import warnings
 
@@ -533,7 +534,7 @@ class FFEA_viewer_control_window:
           for conformation in node_object_list[node_object]:
               for node in range(len(conformation.frame[0].pos)):
                   if conformation.frame[0].pos[node] !=None:
-                      cmd.pseudoatom(pos = (conformation.frame[0].pos[node]*10000000000).tolist(), name = str(node), color="black")
+                      cmd.pseudoatom(pos = (conformation.frame[0].pos[node]*1000000000).tolist(), name = str(node), color="black")
                           
   def add_node_psuedoatoms_from_nodes(self):
       node_object_list = []
