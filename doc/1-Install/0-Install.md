@@ -6,12 +6,12 @@ Installation {#install}
 Install instructions for the FFEA package, conisting of the FFEA_runner 
  and the ffeatools can be found in [quickstart](\ref quickstart).
  In addition to that, [troubleshooting](\ref troubleshooting) provides 
-  more detailed notes on how to install dependencies, as well as some extra help. 
+  detailed notes on how to install dependencies, as well as some extra help. 
 
 - @subpage quickstart
 - @subpage troubleshooting
 
-Finally, users may want to provide themselves with some 
+Once FFEA has been installed, users may want to provide themselves with some 
  extra packages that have proven to be useful at setting up the system
  to simulate, as well as at analysing the results: 
 
