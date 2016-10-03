@@ -144,7 +144,12 @@ class FFEA_trajectory:
 
 			except(IndexError):
 				self.traj.seek(self.fpos)
-				return 1 #why
+				return 1
+    
+    	# ye who enter here: do not 'fix' this! The script is not handling an
+	# exception poorly, it is asking for forgiveness, not permission.
+	# Because it's faster.
+	# Signed, someone who tried to 'fix' this.
 
 			except(ValueError):
 
@@ -217,7 +222,7 @@ class FFEA_trajectory:
 				try:
 					self.blob[b][c].frame[frame_index].scale(factor)
 				except:
-					continue	
+					continue
 
 	def translate(self, trans):
 		for b in range(self.num_blobs):
@@ -385,14 +390,28 @@ class FFEA_traj_blob:
 		self.frame.append(frame)
 	
 	def set_subblob(self, pin):
+     		"""
+     		Create a subblob from a pin object.
+     		In: self, the pin object
+     		Out: the ID of the generated subblob.
+     		"""
 
 		if max(pin.index) >= self.num_nodes:
 			raise IndexError("Error. Pinned node index %d is larger than num_nodes, %d." % (max(pin.index), self.num_nodes))
 			
 		self.subblob.append(pin.index)
 		self.num_subblobs += 1
+		return self.num_subblobs # let the user assign a nice friendly name to their subblob
 	
 	def calc_centroid_trajectory(self, subblob_index = -1):
+     		"""
+		Calculate the centroid (average position of all the nodes) of a
+		given blob. You can also specify the index of a sub-blob, and get
+		the centroid of that sub-blob.
+		In: self, subblob index
+		Out: a 2-d array, which is [x,y,z] wide and as tall as the number
+		of nodes in your blob\sub-blob.
+		"""
 		
 		if subblob_index == -1:
 			indices = [i for i in range(self.num_nodes)]
