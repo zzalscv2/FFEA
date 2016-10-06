@@ -2978,14 +2978,18 @@ int Blob::aggregate_forces_and_solve() {
     if (params->calc_stokes == 1) {
         if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) schedule(guided)
+#pragma omp parallel default(none) 
+{
+#endif
+#ifdef USE_OPENMP                
+            int thread_id = omp_get_thread_num();
+#else
+            int thread_id = 0;
+#endif
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+            #pragma omp for schedule(guided)
 #endif
             for (int i = 0; i < num_nodes; i++) {
-#ifdef USE_OPENMP                
-                int thread_id = omp_get_thread_num();
-#else
-                int thread_id = 0;
-#endif
                 force[i].x -= node[i].vel.x * node[i].stokes_drag;
                 force[i].y -= node[i].vel.y * node[i].stokes_drag;
                 force[i].z -= node[i].vel.z * node[i].stokes_drag;
@@ -2995,6 +2999,9 @@ int Blob::aggregate_forces_and_solve() {
                     force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                 }
             }
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+}
+#endif
         } else {
             if (params->calc_noise == 1) {
 
@@ -3002,18 +3009,25 @@ int Blob::aggregate_forces_and_solve() {
 		//int prefactor = 3 * (2 ^ params->num_dimensions);
 		int prefactor = 24;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) schedule(guided) shared(prefactor)
+#pragma omp parallel default(none) shared(prefactor)
+{
+#endif
+#ifdef USE_OPENMP
+                int thread_id = omp_get_thread_num();
+#else
+                int thread_id = 0;
+#endif
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+                #pragma omp for schedule(guided)
 #endif
                 for (int i = 0; i < num_nodes; i++) {
-#ifdef USE_OPENMP
-                    int thread_id = omp_get_thread_num();
-#else
-                    int thread_id = 0;
-#endif
                     force[i].x -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
                     force[i].y -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
                     force[i].z -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
                 }
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+}
+#endif
             }
         }
     }
