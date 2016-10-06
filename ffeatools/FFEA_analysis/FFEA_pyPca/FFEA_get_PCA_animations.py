@@ -16,9 +16,9 @@ ffea_scale = float(sys.argv[4])
 print("Calculating Eigenvector Animations...")
 for i in range(num_anim):
 	anim_outfname = anim_basename + "_anim" + str(i) + ".pdb"
-	anim_outfname_ffea = anim_basename + "_anim" + str(i) + ".out"
-	print("\tEigenvector " + str(i) + ": Writing to " + os.path.splitext(os.path.basename(anim_outfname))[0] + ".pdb/.out ...")
+	anim_outfname_ffea = anim_basename + "_anim" + str(i) + ".ftj"
+	print("\tEigenvector " + str(i) + ": Writing to " + os.path.splitext(os.path.basename(anim_outfname))[0] + ".pdb/.ftj ...")
 	os.system("pyPczdump -i " + inpcz + " -m " + str(i) + " --pdb " + inref + " -o " + anim_outfname)
-	os.system("python " + script_dir + "/../../FFEA_initialise/PDB_tools/PDB_convert_to_FFEA_trajectory/PDB_convert_to_FFEA_trajectory.py " + anim_outfname + " " + anim_outfname_ffea + " " + str(ffea_scale))
+	os.system("python " + script_dir + "/../../FFEA_analysis/FFEA_traj_tools/PDB_convert_to_FFEA_trajectory.py " + anim_outfname + " " + anim_outfname_ffea + " " + str(ffea_scale))
 	print("\tdone!")
 print("done!")

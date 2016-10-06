@@ -65,7 +65,7 @@ if num_modes <= 20:
 		column_labels.append(str(i))
 else:
 	count = 0
-	for i in range(num_modes):
+	for i in range(num_modes + 1):
 		
 		if i % int(num_modes / 10.0) == 0:
 			row_labels.append(int((count / 10.0) * num_modes))
