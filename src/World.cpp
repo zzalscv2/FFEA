@@ -3390,7 +3390,7 @@ void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_ind
 	fprintf(fout, "FFEA_trajectory_file\n\nInitialisation:\nNumber of Blobs 1\nNumber of Conformations 1\nBlob 0:	Conformation 0 Nodes %d\n\n*\n", active_blob_array[blob_index]->get_num_nodes());
 	
 	// Initial centroid, to move around
-	active_blob_array[blob_index]->position(0,0,0);
+	//active_blob_array[blob_index]->position(0,0,0);
 	for(i = 0; i < 21; ++i) {
 		
 		/* Build a frame */
