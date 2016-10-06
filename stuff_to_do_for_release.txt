@@ -14,6 +14,7 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
 
  * [Comments] - finish translating comments into Doxygen comments.
 
+ * [VdW] - are we releasing a version with the VdW interacting with itself?
 
 
 
