@@ -12,6 +12,7 @@ from pymol import cmd
 from pymol.cgo import *
 from pymol.vfont import plain
 
+import copy
 
 # from pymol.callback import Callback
 
@@ -73,6 +74,8 @@ class Blob:
 		self.frames = []
 		self.num_frames = 0
 		
+		self.display_flags = None
+
 	def load(self, idnum, bindex, cindex, script):
 	
 		self.idnum = idnum
@@ -562,7 +565,7 @@ class Blob:
 	def set_dead_frame(self):
 		self.frames.append(None)
 		self.num_frames += 1
-		
+	
 	def set_nodes_as_frame(self):
 	
 		print "Setting nodes as initial frame..."
@@ -656,6 +659,8 @@ class Blob:
 
 	def draw_frame(self, i, frameLabel, display_flags):
 
+		# Make a copy of the display flags so the user input one doesn't change!
+		
 		# Ideally these checks shouldn't ned to be here, but whatever
 		if self.motion_state == "STATIC":
 			i = 0
@@ -684,14 +689,22 @@ class Blob:
 
 		print "loading frame ", frameLabel, " for blob ", self.idnum
 		frameLabel += 1
+
 		#
-		#  Solid    (always doable)
+		#  Solid
 		#
+
 		if display_flags['show_solid'] != 0:
 		        sol.extend( [ BEGIN, TRIANGLES ] )
 
+			# Can we draw material properties?
+			default = False
+			if display_flags["show_solid"] == 2 and self.mat == None:
+				print "Cannnot draw material params for blob " + str(self.bindex) + ". Defaulting..."
+				default = True
+			
 			# If solid, draw all triangles
-			if display_flags['show_solid'] == 1:
+			if default or display_flags['show_solid'] == 1:
 		                # sol.extend( [ COLOR, bc[0], bc[1], bc[2] ] )
 				for f in range(self.surf.num_faces):
 					if self.hidden_face[f] == 1:
@@ -703,11 +716,6 @@ class Blob:
 				
 		                        norm = self.calc_normal_2(n1, n2, n3)
 
-					if display_flags['show_vdw'] == 1:
-						if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
-							bc = get_vdw_colour(self.vdw.index[f])
-							sol.extend([ COLOR, bc[0], bc[1], bc[2] ])
-
 		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
 		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
@@ -715,8 +723,6 @@ class Blob:
 
 			elif display_flags['show_solid'] == 2:
 
-				if display_flags['show_vdw'] == 1:
-					print "Sorry, can't draw material properties and vdw at same time. Defaulting to material."
 				# material drawing
 				
 				# Get param
@@ -735,6 +741,7 @@ class Blob:
 				colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
 				num_cols = len(colgrad)
 				param = []
+
 				for e in self.mat.element:
 					param.append(e[paramval])
 		
@@ -768,6 +775,26 @@ class Blob:
 					col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * paramfrac + colgrad[colpair[0]]
 					#print col[0], col[1], col[2]
 					sol.extend([COLOR, col[0], col[1], col[2]])
+		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
+		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+		                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+
+			elif display_flags['show_solid'] == 3:
+				for f in range(self.surf.num_faces):
+					if self.hidden_face[f] == 1:
+						continue
+
+					n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
+					n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
+					n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
+				
+		                        norm = self.calc_normal_2(n1, n2, n3)
+
+					if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
+						bc = get_vdw_colour(self.vdw.index[f])
+						sol.extend([ COLOR, bc[0], bc[1], bc[2] ])
+
 		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
 		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
@@ -912,548 +939,6 @@ class Blob:
 			# Only load if there are pinned nodes (dur!)
 			if len(pinsphere) != 0:
 				cmd.load_cgo(pinsphere, display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_load_" + str(self.num_loads), frameLabel) 
-
-#		if display_flags['vdw_edit_mode'] == 1 and self.idnum == display_flags['selected_index']:
-#			glBegin(GL_TRIANGLES)
-#			for f in range(self.surf.num_faces):
-#
-#				n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-#				n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-#				n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-#
-#				norm1 = self.frames[i].normal_list[self.surf.face[f].n[0]]
-#				norm2 = self.frames[i].normal_list[self.surf.face[f].n[1]]
-#				norm3 = self.frames[i].normal_list[self.surf.face[f].n[2]]
-#
-#				if self.vdw[f] == -1:
-#					glColor3d(0.0,0.0,0.0)
-#				elif self.vdw[f] == 0:
-#					glColor3d(1.0,0.0,0.0)
-#				elif self.vdw[f] == 1:
-#					glColor3d(0.0,1.0,0.0)
-#				elif self.vdw[f] == 2:
-#					glColor3d(0.0,0.0,1.0)
-#				elif self.vdw[f] == 3:
-#					glColor3d(1.0,1.0,0.0)
-#				elif self.vdw[f] == 4:
-#					glColor3d(0.0,1.0,1.0)
-#				elif self.vdw[f] == 5:
-#					glColor3d(1.0,0.0,1.0)
-#				elif self.vdw[f] == 6:
-#					glColor3d(1.0,1.0,1.0)
-#				elif self.vdw[f] == 7:
-#					glColor3d(0.5,0.5,0.5)
-#
-#
-#				glNormal3d(norm1[0], norm1[1], norm1[2])
-#				glVertex3d(n1[0], n1[1], n1[2])
-#				glNormal3d(norm2[0], norm2[1], norm2[2])
-#				glVertex3d(n2[0], n2[1], n2[2])
-#				glNormal3d(norm3[0], norm3[1], norm3[2])
-#				glVertex3d(n3[0], n3[1], n3[2])
-#			glEnd()
-#
-#			return
-
-#		if display_flags['show_material'] == 1 and self.idnum == display_flags['selected_index']:
-#
-#			if self.state == "STATIC":
-#				return
-#
-#			# Scan materials quickly to determine range of values (maybe not just shear modulus in future!)
-#			relevent_param = []
-#			fcolor = []
-#
-#			max_val = 0
-#			min_val = 0
-#			for f in self.surf.face:
-#				relevent_param.append(self.mat.element[f.elindex].shear_modulus)
-#			
-#			max_val = max(relevent_param)
-#			min_val = min(relevent_param)
-#
-#			for j in range(self.surf.num_faces):
-#				try:
-#					frac = (relevent_param[j] - min_val) / (max_val - min_val)
-#				except(ZeroDivisionError):
-#					frac = 1.0
-#
-#				# Green colour map
-#				#fcolor.append([(50 / 255.0) * (2 - frac), 1.0, 50 * (3 - frac) / 255.0])
-#				fcolor.append([(50 / 255.0) * (2 - frac),0,0])
-#
-#			# Now draw some triangles
-#			glBegin(GL_TRIANGLES)
-#	
-#			for f in self.surf.face:
-#
-#				n1 = self.frames[i].pos[f.n[0]][0:3]
-#				n2 = self.frames[i].pos[f.n[1]][0:3]
-#				n3 = self.frames[i].pos[f.n[2]][0:3]
-#
-#				norm1 = self.frames[i].normal_list[f.n[0]]
-#				norm2 = self.frames[i].normal_list[f.n[1]]
-#				norm3 = self.frames[i].normal_list[f.n[2]]
-#
-#				findex = self.surf.face.index(f)
-#
-#				glColor3d(fcolor[findex][0], fcolor[findex][1], fcolor[findex][2])
-#				glNormal3d(norm1[0], norm1[1], norm1[2])
-#				glVertex3d(n1[0], n1[1], n1[2])
-#				glNormal3d(norm2[0], norm2[1], norm2[2])
-#				glVertex3d(n2[0], n2[1], n2[2])
-#				glNormal3d(norm3[0], norm3[1], norm3[2])
-#				glVertex3d(n3[0], n3[1], n3[2])
-#			glEnd()
-#			return
-#
-#		if display_flags['binding_site_edit_mode'] == 1 and self.idnum == display_flags['selected_index']:
-#			glBegin(GL_TRIANGLES)
-#
-#			faces_dealt_with = []
-#			for j in range(self.num_binding_sites):
-#	
-#				# Get type
-#				site_type = self.binding_site_type[j][0]
-#
-#				# All faces on site
-#				for k in range(len(self.binding_site[j])):
-#					
-#					f = self.binding_site[j][k]
-#					faces_dealt_with.append(f)
-#
-#					n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-#					n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-#					n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-#
-#					norm1 = self.frames[i].normal_list[self.surf.face[f].n[0]]
-#					norm2 = self.frames[i].normal_list[self.surf.face[f].n[1]]
-#					norm3 = self.frames[i].normal_list[self.surf.face[f].n[2]]
-#
-#					if site_type == 0:
-#						glColor3d(1.0,0.0,0.0)
-#					elif site_type == 1:
-#						glColor3d(0.0,1.0,0.0)
-#					elif site_type == 2:
-#						glColor3d(0.0,0.0,1.0)
-#					elif site_type == 3:
-#						glColor3d(1.0,1.0,0.0)
-#					elif site_type == 4:
-#						glColor3d(0.0,1.0,1.0)
-#					elif site_type == 5:
-#						glColor3d(1.0,0.0,1.0)
-#					elif site_type == 6:
-#						glColor3d(1.0,1.0,1.0)
-#					elif site_type == 7:
-#						glColor3d(0.5,0.5,0.5)
-#
-#
-#					glNormal3d(norm1[0], norm1[1], norm1[2])
-#					glVertex3d(n1[0], n1[1], n1[2])
-#					glNormal3d(norm2[0], norm2[1], norm2[2])
-#					glVertex3d(n2[0], n2[1], n2[2])
-#					glNormal3d(norm3[0], norm3[1], norm3[2])
-#					glVertex3d(n3[0], n3[1], n3[2])
-#			
-#			# Now remainder of faces		
-#			for f in range(self.surf.num_faces):
-#
-#				if f in faces_dealt_with:
-#					continue
-#				else:
-#	
-#					n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-#					n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-#					n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-#
-#					norm1 = self.frames[i].normal_list[self.surf.face[f].n[0]]
-#					norm2 = self.frames[i].normal_list[self.surf.face[f].n[1]]
-#					norm3 = self.frames[i].normal_list[self.surf.face[f].n[2]]
-#					
-#					glColor3d(0.0, 0.0, 0.0)
-#					glNormal3d(norm1[0], norm1[1], norm1[2])
-#					glVertex3d(n1[0], n1[1], n1[2])
-#					glNormal3d(norm2[0], norm2[1], norm2[2])
-#					glVertex3d(n2[0], n2[1], n2[2])
-#					glNormal3d(norm3[0], norm3[1], norm3[2])
-#					glVertex3d(n3[0], n3[1], n3[2])
-#			glEnd()
-#
-#			return
-#
-#		if display_flags['show_vdw_only'] == 1:
-#			glBegin(GL_TRIANGLES)
-#			for f in range(self.surf.num_faces):
-#				if self.vdw[f] == -1:
-#					continue
-#				else:
-#					glColor3d(1.0,1.0,0.5)
-#
-#				n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-#				n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-#				n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-#
-#				norm1 = self.frames[i].normal_list[self.surf.face[f].n[0]]
-#				norm2 = self.frames[i].normal_list[self.surf.face[f].n[1]]
-#				norm3 = self.frames[i].normal_list[self.surf.face[f].n[2]]
-#
-#				glNormal3d(norm1[0], norm1[1], norm1[2])
-#				glVertex3d(n1[0], n1[1], n1[2])
-#				glNormal3d(norm2[0], norm2[1], norm2[2])
-#				glVertex3d(n2[0], n2[1], n2[2])
-#				glNormal3d(norm3[0], norm3[1], norm3[2])
-#				glVertex3d(n3[0], n3[1], n3[2])
-#			glEnd()
-#
-#			return
-#
-#		bc = display_flags['blob_colour']
-#		if self.bindex == display_flags['selected_blob']:
-#			bc = [0,0,204/255.0]
-#		else:
-#			bc = self.normalcolor
-#
-#		if display_flags['show_mesh_surf'] == 1:
-#			for f in xrange(self.surf.num_faces):
-#				n1a = self.frames[i].pos[self.surf.face[f].n[0]]
-#				n2a = self.frames[i].pos[self.surf.face[f].n[1]]
-#				n3a = self.frames[i].pos[self.surf.face[f].n[2]]
-#
-#				n1 = n1a[0:3]
-#				n2 = n2a[0:3]
-#				n3 = n3a[0:3]
-#
-#				# norm1 = self.frames[i].normal_list[self.surf.face[f].n[0]]
-#				# norm2 = self.frames[i].normal_list[self.surf.face[f].n[1]]
-#				# norm3 = self.frames[i].normal_list[self.surf.face[f].n[2]]
-#
-#                                obj.extend( [BEGIN, LINE_STRIP] )
- #                               # obj.extend( [ LINEWIDTH, 2.0 ] )
- #                               # obj.extend( [ COLOR, 0.3, 0.3, 1.0 ] )
- #                               # obj.extend( [ NORMAL, norm1[0], norm1[1], norm1[2] ] )
- #                               obj.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
- #                               # obj.extend( [ NORMAL, norm2[0], norm2[1], norm2[2] ] )
- #                               obj.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
- #                               # obj.extend( [ NORMAL, norm3[0], norm3[1], norm3[2] ] )
- #                               obj.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
- #                               obj.append(END)
-#
-#                        # cmd.load_cgo(obj, "blob_" + str(self.idnum), i)
-#
-#		if display_flags['show_mesh_surf'] == 1:
-#			if self.no_topology == False:
-#				if self.do_Fij == False:
-#					for el in xrange(self.elem.num_elements):
-#						# Get the indices of the 4 nodes of this tetrahedron
-#						i1 = self.topology[el][0]
-#						i2 = self.topology[el][1]
-#						i3 = self.topology[el][2]
-#						i4 = self.topology[el][3]
-#	
-#						# Get the nodes
-#						n1a = self.frames[i].pos[i1]
-#						n2a = self.frames[i].pos[i2]
-#						n3a = self.frames[i].pos[i3]
-#						n4a = self.frames[i].pos[i4]
-#						n1 = n1a[0:3]
-#						n2 = n2a[0:3]
-#						n3 = n3a[0:3]
-#						n4 = n4a[0:3]
-#		
-#						# Get the surface normals at each node
-#						# norm1 = self.frames[i].normal_list[i1]
-#						# norm2 = self.frames[i].normal_list[i2]
-#						# norm3 = self.frames[i].normal_list[i3]
-#						# norm4 = self.frames[i].normal_list[i4]
-#	
-#                                                obj.extend( [ BEGIN, LINE_STRIP ] )
-#                                                # obj.extend( [ COLOR, 0.15, 0.15, 1.0 ] )
-#                                                obj.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-#                                                obj.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-#                                                obj.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-#                                                obj.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-#                                                obj.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
-#                                                obj.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-#                                                obj.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-#                                                obj.append(END)
-#						# glBegin(GL_LINE_STRIP);
-#						# glColor3d(0.0,0.0,0.0)
-#						# glNormal3d(norm1[0], norm1[1], norm1[2])
-#						# glVertex3d(n1[0], n1[1], n1[2]);
-#						# glNormal3d(norm2[0], norm2[1], norm2[2])
-#						# glVertex3d(n2[0], n2[1], n2[2]);
-#						# glNormal3d(norm3[0], norm3[1], norm3[2])
-#						# glVertex3d(n3[0], n3[1], n3[2]);
-#						# glNormal3d(norm1[0], norm1[1], norm1[2])
-#						# glVertex3d(n1[0], n1[1], n1[2]);
-#						# glNormal3d(norm4[0], norm4[1], norm4[2])
-#						# glVertex3d(n4[0], n4[1], n4[2]);
-#						# glNormal3d(norm3[0], norm3[1], norm3[2])
-#						# glVertex3d(n3[0], n3[1], n3[2]);
-#						# glNormal3d(norm1[0], norm1[1], norm1[2])
-#						# glVertex3d(n1[0], n1[1], n1[2]);
-#						# glEnd();
-#				
-#                                                obj.extend( [ BEGIN, LINES ] )
-#                                                # obj.extend( [ COLOR, 0.15, 0.15, 1.0 ] )
-#                                                obj.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-#                                                obj.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
-#                                                obj.append( END )
-#						# glBegin(GL_LINES);
-#						# glNormal3d(norm2[0], norm2[1], norm2[2])
-#						# glVertex3d(n2[0], n2[1], n2[2]);
-#						# glNormal3d(norm4[0], norm4[1], norm4[2])
-#						# glVertex3d(n4[0], n4[1], n4[2]);
-#						# glEnd();
-#
-#                                        # cmd.load_cgo(obj, "blob_" + str(self.idnum), i)
-#				else:
-#					for el in xrange(self.elem.num_elements):
-#						# Get the indices of the 4 nodes of this tetrahedron
-#						i1 = self.topology[el][0]
-#						i2 = self.topology[el][1]
-#						i3 = self.topology[el][2]
-#						i4 = self.topology[el][3]
-#	
-#						# Get the nodes
-#						n1a = self.frames[i].pos[i1]
-#						n2a = self.frames[i].pos[i2]
-#						n3a = self.frames[i].pos[i3]
-#						n4a = self.frames[i].pos[i4]
-#						n1 = n1a[0:3]
-#						n2 = n2a[0:3]
-#						n3 = n3a[0:3]
-#						n4 = n4a[0:3]
-#		
-#						# Get the surface normals at each node
-#						norm1 = self.frames[i].normal_list[i1]
-#						norm2 = self.frames[i].normal_list[i2]
-#						norm3 = self.frames[i].normal_list[i3]
-#						norm4 = self.frames[i].normal_list[i4]
-#	
-#						# get J
-#						J = self.get_J(n1, n2, n3, n4)
-#
-#						# get Fij and related bs
-#						J_inv_0 = self.first_frame_J_inv[el]
-#						Fij = self.mat_mult(J, J_inv_0)
-#						detF = self.get_det(Fij)
-#						FijFij = self.get_double_contraction(Fij, Fij)
-#						
-#						# get strain energy
-#						G = 120.0e6
-#						K = 640.0e6
-#						B = K + G/3.0
-#						alpha = 1.0 + G/B
-#						W = 1.0/(2.0 * detF) * (G * FijFij + B * (detF - alpha) * (detF - alpha) - 3 * G - B * (G/B) * (G/B))
-#
-#
-##						c = W / self.energy_thresh
-#
-#
-##						glBegin(GL_LINE_STRIP);
-##						glColor3d(1.0,1.0,0.0)
-##						glNormal3d(norm1[0], norm1[1], norm1[2])
-##						glVertex3d(n1[0], n1[1], n1[2]);
-##						glNormal3d(norm2[0], norm2[1], norm2[2])
-##						glVertex3d(n2[0], n2[1], n2[2]);
-##						glNormal3d(norm3[0], norm3[1], norm3[2])
-##						glVertex3d(n3[0], n3[1], n3[2]);
-##						glNormal3d(norm1[0], norm1[1], norm1[2])
-##						glVertex3d(n1[0], n1[1], n1[2]);
-##						glNormal3d(norm4[0], norm4[1], norm4[2])
-##						glVertex3d(n4[0], n4[1], n4[2]);
-##						glNormal3d(norm3[0], norm3[1], norm3[2])
-##						glVertex3d(n3[0], n3[1], n3[2]);
-##						glNormal3d(norm1[0], norm1[1], norm1[2])
-##						glVertex3d(n1[0], n1[1], n1[2]);
-##						glEnd();
-##				
-##						glBegin(GL_LINES);
-##						glNormal3d(norm2[0], norm2[1], norm2[2])
-##						glVertex3d(n2[0], n2[1], n2[2]);
-##						glNormal3d(norm4[0], norm4[1], norm4[2])
-##						glVertex3d(n4[0], n4[1], n4[2]);
-##						glEnd();
-#
-#						if W > self.energy_thresh:
-#							c = 1.0
-#						else:
-	#						continue
-#
-
-#						if display_flags['show_solid'] == 0:
-	#						glDisable(GL_CULL_FACE)
-		#					glDisable(GL_LIGHTING)
-#
-#							glBegin(GL_TRIANGLES);
-#							glColor3d(c,0.3,0.3)
-#
-#							glNormal3d(norm1[0], norm1[1], norm1[2])
-#							glVertex3d(n1[0], n1[1], n1[2]);
-#							glNormal3d(norm2[0], norm2[1], norm2[2])
-#							glVertex3d(n2[0], n2[1], n2[2]);
-#							glNormal3d(norm3[0], norm3[1], norm3[2])
-#							glVertex3d(n3[0], n3[1], n3[2]);
-#
-#							glNormal3d(norm1[0], norm1[1], norm1[2])
-#							glVertex3d(n1[0], n1[1], n1[2]);
-#							glNormal3d(norm3[0], norm3[1], norm3[2])
-#							glVertex3d(n3[0], n3[1], n3[2]);
-#							glNormal3d(norm4[0], norm4[1], norm4[2])
-#							glVertex3d(n4[0], n4[1], n4[2]);
-#
-#							glNormal3d(norm3[0], norm3[1], norm3[2])
-#							glVertex3d(n3[0], n3[1], n3[2]);
-#							glNormal3d(norm2[0], norm2[1], norm2[2])
-#							glVertex3d(n2[0], n2[1], n2[2]);
-#							glNormal3d(norm4[0], norm4[1], norm4[2])
-#							glVertex3d(n4[0], n4[1], n4[2]);
-#
-#							glNormal3d(norm1[0], norm1[1], norm1[2])
-#							glVertex3d(n1[0], n1[1], n1[2]);
-#							glNormal3d(norm2[0], norm2[1], norm2[2])
-#							glVertex3d(n2[0], n2[1], n2[2]);
-#							glNormal3d(norm4[0], norm4[1], norm4[2])
-#							glVertex3d(n4[0], n4[1], n4[2]);
-#
-#							glEnd();
-#							glEnable(GL_CULL_FACE)
-#							glEnable(GL_LIGHTING)
-#
-#			else:	
-#				for f in xrange(self.surf.num_faces):
-#					n1a = self.frames[i].pos[self.surf.face[f].n[0]]
-#					n2a = self.frames[i].pos[self.surf.face[f].n[1]]
-#					n3a = self.frames[i].pos[self.surf.face[f].n[2]]
-#
-#					n1 = n1a[0:3]
-#					n2 = n2a[0:3]
-#					n3 = n3a[0:3]
-#
-#					norm1 = self.frames[i].normal_list[self.surf.face[f].n[0]]
-#					norm2 = self.frames[i].normal_list[self.surf.face[f].n[1]]
-#					norm3 = self.frames[i].normal_list[self.surf.face[f].n[2]]
-#
-#					glBegin(GL_LINE_STRIP)	
-##					glColor3d(1.0,1.0,0.0)
-##					glNormal3d(norm1[0], norm1[1], norm1[2])
-##					glVertex3d(n1[0], n1[1], n1[2])
-##					glNormal3d(norm2[0], norm2[1], norm2[2])
-##					glVertex3d(n2[0], n2[1], n2[2])
-##					glNormal3d(norm3[0], norm3[1], norm3[2])
-##					glVertex3d(n3[0], n3[1], n3[2])
-#					glEnd()
-#
-#		if display_flags['show_node_numbers'] == 1:
-#			# glFogfv(GL_FOG_COLOR, [1.0, 0.0, 0.0])
-#			# glFogf(GL_FOG_DENSITY, 0.02)
-#                        TXT = []
-#			if display_flags['show_linear_node_list'] == 0:
-#				for n in xrange(self.num_nodes):
-#					nn = (self.frames[i].pos[n])[0:3]
-#                                        cyl_text(TXT,plain,nn,str(n),0.10) # ,axes=axes)
-#			# else:
-#			# 	for n in xrange(len(self.linear_node_list)):
-#			# 		nn = (self.frames[i].pos[self.linear_node_list[n]])[0:3]
-#			# 		glColor3f(1.0, 1.0, 1.0)
-#			# 		glRasterPos3f(nn[0], nn[1], nn[2])
-#			# 		glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.linear_node_list[n]));
-#                        cmd.set("cgo_line_radius",0.03)
-#                        cmd.load_cgo(TXT,'Node numbers', frameLabel)
-#
-#
-#		if display_flags['show_pinned_nodes'] == 1:
-#			for n in self.pinned_nodes:
-#				nn = (self.frames[i].pos[n])[0:3]
-#				glPointSize(10.0);
-#				glBegin(GL_POINTS)
-#				glColor3f(1.0, 0.0, 0.0)
-#				glVertex3f(nn[0], nn[1], nn[2])
-#				glEnd()
-#
-#		if display_flags['show_shortest_edge'] == 1:
-#			if self.min_length == None:
-#				self.find_shortest_edge(i)
-#			n1 = (self.frames[i].pos[self.shortest_edge_n1])[0:3]
-#			n2 = (self.frames[i].pos[self.shortest_edge_n2])[0:3]
-#			glBegin(GL_LINES)
-#			glColor3f(1.0, 0.0, 0.0)
-#			glVertex3f(n1[0], n1[1], n1[2])
-#			glVertex3f(n2[0], n2[1], n2[2])
-#			glEnd()
-#			
-#			ave = [.5 * (n1[0] + n2[0]), .5 * (n1[1] + n2[1]), .5 * (n1[2] + n2[2])]
-#			glRasterPos3f(ave[0], ave[1], ave[2])
-#			glutBitmapString(GLUT_BITMAP_HELVETICA_18, str(self.min_length));
-#
-#		if display_flags['show_inverted'] == 1:
-#			if self.no_topology == False:
-#				inv_str = ""
-#				involved_nodes = []
-#				for el in xrange(self.elem.num_elements):
-#					# Get the indices of the 4 nodes of this tetrahedron
-#					i1 = self.topology[el][0]
-#					i2 = self.topology[el][1]
-#					i3 = self.topology[el][2]
-#					i4 = self.topology[el][3]
-#
-#					# Get the nodes
-#					n1a = self.frames[i].pos[i1]
-#					n2a = self.frames[i].pos[i2]
-#					n3a = self.frames[i].pos[i3]
-#					n4a = self.frames[i].pos[i4]
-#					n1 = n1a[0:3]
-#					n2 = n2a[0:3]
-#					n3 = n3a[0:3]
-#					n4 = n4a[0:3]
-#	
-#					# Get the surface normals at each node
-#					norm1 = self.frames[i].normal_list[i1]
-#					norm2 = self.frames[i].normal_list[i2]
-#					norm3 = self.frames[i].normal_list[i3]
-#					norm4 = self.frames[i].normal_list[i4]
-#
-#					# get the volume of the elements
-#					vol = self.get_element_volume(n1, n2, n3, n4)
-#					if vol * self.first_frame_vol_list[el] < 0:
-#						inv_str += str(el) + ","
-#						involved_nodes += [i1, i2, i3, i4]
-#						glBegin(GL_LINE_STRIP);
-#						glColor3d(1.0,1.0,0.0)
-#						glNormal3d(norm1[0], norm1[1], norm1[2])
-#						glVertex3d(n1[0], n1[1], n1[2]);
-#						glNormal3d(norm2[0], norm2[1], norm2[2])
-#						glVertex3d(n2[0], n2[1], n2[2]);
-#						glNormal3d(norm3[0], norm3[1], norm3[2])
-#						glVertex3d(n3[0], n3[1], n3[2]);
-#						glNormal3d(norm1[0], norm1[1], norm1[2])
-#						glVertex3d(n1[0], n1[1], n1[2]);
-#						glNormal3d(norm4[0], norm4[1], norm4[2])
-#						glVertex3d(n4[0], n4[1], n4[2]);
-#						glNormal3d(norm3[0], norm3[1], norm3[2])
-#						glVertex3d(n3[0], n3[1], n3[2]);
-#						glNormal3d(norm1[0], norm1[1], norm1[2])
-#						glVertex3d(n1[0], n1[1], n1[2]);
-#						glEnd();
-#			
-#						glBegin(GL_LINES);
-#						glNormal3d(norm2[0], norm2[1], norm2[2])
-#						glVertex3d(n2[0], n2[1], n2[2]);
-#						glNormal3d(norm4[0], norm4[1], norm4[2])
-#						glVertex3d(n4[0], n4[1], n4[2]);
-#						glEnd();
-
-#				involved_nodes = list(set(involved_nodes))
-#				involved_nodes = ",".join(map(str, involved_nodes))
-#				print "Inverted elements:"
-#				print inv_str
-#				print "Involved nodes:"
-#				print involved_nodes
-#				print "---"
-#
-#                if len(obj) > 0:
-#                  cmd.load_cgo(obj, "blob_" + str(self.idnum), frameLabel)
 
 
 	def draw_pick_frame(self, i):

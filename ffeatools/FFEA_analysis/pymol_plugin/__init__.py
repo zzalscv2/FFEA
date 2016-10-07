@@ -63,7 +63,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("680x200")
+     self.root.geometry("740x200")
 
      self.root.title("FFEA")
 
@@ -87,7 +87,6 @@ class FFEA_viewer_control_window:
      self.show_box = IntVar(self.root, value=self.display_flags['show_box'])
      self.show_numbers = IntVar(self.root, value=self.display_flags['show_numbers'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
-     self.show_vdw = IntVar(self.root, value=self.display_flags['show_vdw'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
      self.show_solid = IntVar(self.root, value=self.display_flags['show_solid'])
      self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
@@ -123,8 +122,8 @@ class FFEA_viewer_control_window:
      check_button_show_pinned.grid(row=1, column=2, sticky=W)
  
     # # show vdw
-     check_button_show_vdw = Checkbutton(display_flags_frame, text="VdW Faces", variable=self.show_vdw, command=lambda:self.update_display_flags("show_vdw"))
-     check_button_show_vdw.grid(row=1, column=3, sticky=W)
+     #check_button_show_vdw = Checkbutton(display_flags_frame, text="VdW Faces", variable=self.show_vdw, command=lambda:self.update_display_flags("show_vdw"))
+    # check_button_show_vdw.grid(row=1, column=3, sticky=W)
 
      # # show solid:
 
@@ -133,7 +132,9 @@ class FFEA_viewer_control_window:
 
      SolidModes = [(0, "Plain Solid", 1),\
                    (1, "Material", 2),\
-                   (3, "No Solid", 0)] 
+                   (3, "VdW", 3),\
+                   (4, "No Solid", 0)]
+
      for col, text, mode in SolidModes:
         check_button_show_solid = Radiobutton(display_flags_frame, text=text, variable=self.show_solid, value=mode, command=lambda:self.update_display_flags("show_solid", val=self.show_solid.get()))
         check_button_show_solid.grid(row=2, column=col+1, sticky=W) # first col is label
@@ -435,7 +436,8 @@ class FFEA_viewer_control_window:
 
     	# Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
 	# Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
-    		       
+    	
+       
 	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
 	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
 	traj_fname = self.script.params.trajectory_out_fname
@@ -689,7 +691,7 @@ class FFEA_viewer_control_window:
   		for j in range(self.script.params.num_conformations[i]):
   			self.blob_list[i][j].frames.append(traj.blob[i][j].frame[index])
   			self.blob_list[i][j].num_frames += 1
-  			
+
   def remove_frame_from_blobs(self, index = -1):
   	
   	for i in range(self.script.params.num_blobs):
