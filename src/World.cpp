@@ -2440,7 +2440,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 		return FFEA_ERROR; 
 	} else if (spring_vector.size() == 1) {
 		systemreader->parse_tag(spring_vector.at(0), lrvalue);
-		if(load_springs(lrvalue[1].c_str()) != 0) {
+		b_fs::path auxpath = params.FFEA_script_path / lrvalue[1]; 
+		if(load_springs(auxpath.string().c_str()) != 0) {		
+		//if(load_springs(lrvalue[1].c_str()) != 0) {
 			FFEA_error_text();
 			cout << "Problem loading springs from " << lrvalue[1] << "." << endl;
 			return FFEA_ERROR; 
