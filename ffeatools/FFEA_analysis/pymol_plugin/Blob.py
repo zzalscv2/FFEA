@@ -736,69 +736,76 @@ class Blob:
 					paramval = 3
 				elif display_flags['matparam'] == "Bulk Modulus":
 					paramval = 4
+				elif display_flags['matparam'] == "VdW":
+					paramval = 5
 
-				# Get range of colours
-				colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
-				num_cols = len(colgrad)
-				param = []
+				if (paramval != 5): ## that means we do proper material parameters
 
-				for e in self.mat.element:
-					param.append(e[paramval])
-		
-				maxval = max(param)
-				minval = min(param)
-				rangeval = maxval - minval
+					# Get range of colours
+					colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
+					num_cols = len(colgrad)
+					param = []
+	
+					for e in self.mat.element:
+						param.append(e[paramval])
+			
+					maxval = max(param)
+					minval = min(param)
+					rangeval = maxval - minval
+	
+					# Now, draw each face
+					for f in self.surf.face:
+						
+						n1 = self.frames[i].pos[f.n[0]][0:3]
+						n2 = self.frames[i].pos[f.n[1]][0:3]
+						n3 = self.frames[i].pos[f.n[2]][0:3]
+			                        norm = self.calc_normal_2(n1, n2, n3)
+	
+						# Calc and add colour first
+						if rangeval == 0.0:
+							paramfrac = 0
+						else:
+							paramfrac = (param[f.elindex] - minval) / rangeval
+			
+						# Which interval?
+						if paramfrac <= 0:
+							colpair = [0, 0]
+						elif paramfrac >= 1:
+							colpair = [num_cols - 1, num_cols - 1]
+						else:
+							colpair = [int(np.floor(paramfrac * num_cols)), int(np.floor(paramfrac * num_cols)) + 1]
+	
+						# Where in interval
+						col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * paramfrac + colgrad[colpair[0]]
+						#print col[0], col[1], col[2]
+						sol.extend([COLOR, col[0], col[1], col[2]])
+			                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
+			                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+			                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+			                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
-				# Now, draw each face
-				for f in self.surf.face:
+
+				else: ## in that case, plot VdW! 
+					for f in range(self.surf.num_faces):
+						if self.hidden_face[f] == 1:
+							continue
+	
+						n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
+						n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
+						n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
 					
-					n1 = self.frames[i].pos[f.n[0]][0:3]
-					n2 = self.frames[i].pos[f.n[1]][0:3]
-					n3 = self.frames[i].pos[f.n[2]][0:3]
-		                        norm = self.calc_normal_2(n1, n2, n3)
+			                        norm = self.calc_normal_2(n1, n2, n3)
+	
+						if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
+							bc = get_vdw_colour(self.vdw.index[f])
+							sol.extend([ COLOR, bc[0], bc[1], bc[2] ])
+	
+			                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
+			                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+			                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+			                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
-					# Calc and add colour first
-					if rangeval == 0.0:
-						paramfrac = 0
-					else:
-						paramfrac = (param[f.elindex] - minval) / rangeval
-		
-					# Which interval?
-					if paramfrac <= 0:
-						colpair = [0, 0]
-					elif paramfrac >= 1:
-						colpair = [num_cols - 1, num_cols - 1]
-					else:
-						colpair = [int(np.floor(paramfrac * num_cols)), int(np.floor(paramfrac * num_cols)) + 1]
 
-					# Where in interval
-					col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * paramfrac + colgrad[colpair[0]]
-					#print col[0], col[1], col[2]
-					sol.extend([COLOR, col[0], col[1], col[2]])
-		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
-		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-		                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-
-			elif display_flags['show_solid'] == 3:
-				for f in range(self.surf.num_faces):
-					if self.hidden_face[f] == 1:
-						continue
-
-					n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-					n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-					n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-				
-		                        norm = self.calc_normal_2(n1, n2, n3)
-
-					if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
-						bc = get_vdw_colour(self.vdw.index[f])
-						sol.extend([ COLOR, bc[0], bc[1], bc[2] ])
-
-		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
-		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-		                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
 			sol.append(END)
 			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid_load_" + str(self.num_loads), frameLabel)
