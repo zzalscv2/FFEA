@@ -88,7 +88,6 @@ class FFEA_viewer_control_window:
      self.show_box = IntVar(self.root, value=self.display_flags['show_box'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
-     self.show_solid = IntVar(self.root, value=self.display_flags['show_solid'])
      self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
      self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
      self.show_mesh = IntVar(self.root, value=self.display_flags['show_mesh'])
@@ -127,18 +126,9 @@ class FFEA_viewer_control_window:
      # # show solid:
      label_solid = Label(display_flags_frame, text="Show Solid:")
      label_solid.grid(row=2, column=0, sticky=E)
-
-     SolidModes = [(0, "Plain Solid", 1),\
-                   (1, "Material -->", 2),\
-                   (3, "No Solid", 0)]
-
-     for col, text, mode in SolidModes:
-        check_button_show_solid = Radiobutton(display_flags_frame, text=text, variable=self.show_solid, value=mode, command=lambda:self.update_display_flags("show_solid", val=self.show_solid.get()))
-        check_button_show_solid.grid(row=2, column=col+1, sticky=W) # first col is label
-
-     # Selectable box for material param
-     spinbox_material_param = OptionMenu(display_flags_frame, self.matparam, "Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW", command=lambda x:self.update_display_flags("matparam", val=self.matparam.get()) )
-     spinbox_material_param.grid(row=2, column=3, sticky=W)
+     # Selectable box for material param, i. e., show solid:
+     spinbox_material_param = OptionMenu(display_flags_frame, self.matparam, "Plain Solid", "Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW", "No Solid", command=lambda x:self.update_display_flags("matparam", val=self.matparam.get()) )
+     spinbox_material_param.grid(row=2, column=1, sticky=W)
 
 
      # # show mesh:
@@ -733,8 +723,7 @@ class FFEA_viewer_control_window:
 			self.system_names.append(line.strip())
 
 	self.display_flags = {
-		'show_solid': 1, ## PYMOL OK
-		'matparam': "Density",
+		'matparam': "Plain Solid",
 		'show_mesh': 0,
 		'show_numbers': "No Indices", ## PYMOL OK
 		'show_pinned': 1,
