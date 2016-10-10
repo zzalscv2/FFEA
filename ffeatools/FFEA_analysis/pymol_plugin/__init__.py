@@ -81,17 +81,19 @@ class FFEA_viewer_control_window:
 
 
 
+     ## devs, please use init_vars to centralise the initialisation of values
      self.init_vars()
      self.system_name = StringVar(self.root, value=self.display_flags['system_name'])
      self.do_load_trajectory = IntVar(self.root, value=self.display_flags['load_trajectory'])
      self.show_box = IntVar(self.root, value=self.display_flags['show_box'])
-     self.show_numbers = IntVar(self.root, value=self.display_flags['show_numbers'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
      self.show_solid = IntVar(self.root, value=self.display_flags['show_solid'])
+     self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
      self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
      self.show_mesh = IntVar(self.root, value=self.display_flags['show_mesh'])
      self.show_shortest_edge = IntVar(self.root, value=self.display_flags['show_shortest_edge'])
+     self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
 
 
  
@@ -121,30 +123,25 @@ class FFEA_viewer_control_window:
      check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
      check_button_show_pinned.grid(row=1, column=2, sticky=W)
  
-    # # show vdw
-     #check_button_show_vdw = Checkbutton(display_flags_frame, text="VdW Faces", variable=self.show_vdw, command=lambda:self.update_display_flags("show_vdw"))
-    # check_button_show_vdw.grid(row=1, column=3, sticky=W)
 
      # # show solid:
-
      label_solid = Label(display_flags_frame, text="Show Solid:")
      label_solid.grid(row=2, column=0, sticky=E)
 
      SolidModes = [(0, "Plain Solid", 1),\
-                   (1, "Material", 2),\
-                   (3, "VdW", 3),\
-                   (4, "No Solid", 0)]
+                   (1, "Material -->", 2),\
+                   (3, "No Solid", 0)]
 
      for col, text, mode in SolidModes:
         check_button_show_solid = Radiobutton(display_flags_frame, text=text, variable=self.show_solid, value=mode, command=lambda:self.update_display_flags("show_solid", val=self.show_solid.get()))
         check_button_show_solid.grid(row=2, column=col+1, sticky=W) # first col is label
 
      # Selectable box for material param
-     spinbox_material_param = Spinbox(display_flags_frame, textvariable=self.matparam, values=("Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus"), validate="focus", validatecommand=lambda:self.update_display_flags("matparam", val=-2, text=self.matparam.get()))
+     spinbox_material_param = OptionMenu(display_flags_frame, self.matparam, "Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW", command=lambda x:self.update_display_flags("matparam", val=self.matparam.get()) )
      spinbox_material_param.grid(row=2, column=3, sticky=W)
 
-     # # show mesh:
 
+     # # show mesh:
      label_mesh = Label(display_flags_frame, text="Show Mesh:")
      label_mesh.grid(row=3, column=0, sticky=E)
 
@@ -157,11 +154,9 @@ class FFEA_viewer_control_window:
 
      label_mesh= Label(display_flags_frame, text="Show Indices:")
      label_mesh.grid(row=4, column=0, sticky=E)
+
      
      # # show Numbers:
-
-     self.show_numbers = StringVar(display_flags_frame)
-     self.show_numbers.set("No Indices")
      index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
      index_option.grid(row=4, column=1, sticky=W)
      
@@ -171,6 +166,7 @@ class FFEA_viewer_control_window:
      label_box= Label(display_flags_frame, text="Show Box:")
      label_box.grid(row=5, column=0, sticky=E)
  
+
      # Outer simulation box
      BoxModes = [(0, "Simulation Box (outline)", 1),\
                  (1, "Simulation Box (whole)", 2),\
@@ -181,6 +177,7 @@ class FFEA_viewer_control_window:
 
      label_traj= Label(display_flags_frame, text="Load:")
      label_traj.grid(row=6, column=0, sticky=E)
+
 
      ## # Trajectory Radiobutton # #
      TrjModes = [("Trajectory", 1), \
@@ -194,9 +191,11 @@ class FFEA_viewer_control_window:
      label_traj= Label(display_flags_frame, text="Highlight element(s):")
      label_traj.grid(row=7, column=0, sticky=E)
      
-     self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
+
+     # # Element highlighting 
      highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
      highlight_entry_box.grid(row=7, column=1, sticky=W)
+
 
      # flags
      self.animate = False
@@ -737,7 +736,7 @@ class FFEA_viewer_control_window:
 		'show_solid': 1, ## PYMOL OK
 		'matparam': "Density",
 		'show_mesh': 0,
-		'show_numbers': 0, ## PYMOL OK
+		'show_numbers': "No Indices", ## PYMOL OK
 		'show_pinned': 1,
 		'show_vdw': 0,
 		'show_shortest_edge': 0,
