@@ -694,17 +694,18 @@ class Blob:
 		#  Solid
 		#
 
-		if display_flags['show_solid'] != 0:
+		MatOpt = ["Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW"]
+		if display_flags['matparam'] != "No Solid":
 		        sol.extend( [ BEGIN, TRIANGLES ] )
 
 			# Can we draw material properties?
 			default = False
-			if display_flags["show_solid"] == 2 and self.mat == None:
+			if MatOpt.count(display_flags['matparam']) and self.mat == None: 
 				print "Cannnot draw material params for blob " + str(self.bindex) + ". Defaulting..."
 				default = True
 			
 			# If solid, draw all triangles
-			if default or display_flags['show_solid'] == 1:
+			if default or display_flags['matparam'] == "Plain Solid":
 		                # sol.extend( [ COLOR, bc[0], bc[1], bc[2] ] )
 				for f in range(self.surf.num_faces):
 					if self.hidden_face[f] == 1:
@@ -721,7 +722,7 @@ class Blob:
 		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 		                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
-			elif display_flags['show_solid'] == 2:
+			elif MatOpt.count(display_flags['matparam']) == 1:
 
 				# material drawing
 				
