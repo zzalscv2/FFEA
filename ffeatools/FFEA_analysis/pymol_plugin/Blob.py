@@ -815,18 +815,18 @@ class Blob:
 		#  Mesh      (doable usually. catch if there's no topology i.e. STATIC blob)
 		#
 
-		if display_flags['show_mesh'] != 0:
+		if display_flags['show_mesh'] != "No Mesh":
 	
 			# Check for topology
 			if self.top == None:
-				 display_flags['show_mesh'] = 2
+				 display_flags['show_mesh'] = "Surface Mesh"
 
 			mes.extend( [BEGIN, LINES] )
 			#mes.extend([COLOR, 1.0, 1.0, 1.0])
 			#mes.extend([COLOR, 0.0, 0.0, 1.0])
 
 			# If surface mesh, draw lines for surface only, else for entire element structure
-			if display_flags['show_mesh'] == 1:
+			if display_flags['show_mesh'] == "Whole Mesh":
 			
 				# Loop through elements
 				for e in xrange(self.top.num_elements):
@@ -858,7 +858,7 @@ class Blob:
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 		                        mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
-			elif display_flags['show_mesh'] == 2:
+			elif display_flags['show_mesh'] == "Surface Mesh":
 
 				# Loop over surface
 				for f in xrange(self.surf.num_faces):
