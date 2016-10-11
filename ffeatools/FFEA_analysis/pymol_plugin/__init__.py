@@ -63,7 +63,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("740x200")
+     self.root.geometry("500x225")
 
      self.root.title("FFEA")
 
@@ -84,13 +84,13 @@ class FFEA_viewer_control_window:
      ## devs, please use init_vars to centralise the initialisation of values
      self.init_vars()
      self.system_name = StringVar(self.root, value=self.display_flags['system_name'])
-     self.do_load_trajectory = IntVar(self.root, value=self.display_flags['load_trajectory'])
-     self.show_box = IntVar(self.root, value=self.display_flags['show_box'])
+     self.do_load_trajectory = StringVar(self.root, value=self.display_flags['load_trajectory'])
+     self.show_box = StringVar(self.root, value=self.display_flags['show_box'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
      self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
      self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
-     self.show_mesh = IntVar(self.root, value=self.display_flags['show_mesh'])
+     self.show_mesh = StringVar(self.root, value=self.display_flags['show_mesh'])
      self.show_shortest_edge = IntVar(self.root, value=self.display_flags['show_shortest_edge'])
      self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
 
@@ -134,55 +134,42 @@ class FFEA_viewer_control_window:
      # # show mesh:
      label_mesh = Label(display_flags_frame, text="Show Mesh:")
      label_mesh.grid(row=3, column=0, sticky=E)
+     om_show_mesh = OptionMenu(display_flags_frame, self.show_mesh, "Surface Mesh", "Whole Mesh", "No Mesh", command=lambda x:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
+     om_show_mesh.grid(row=3, column=1, sticky=W)
 
-     MeshModes = [(0, "Surface Mesh", 2),\
-                  (1, "Whole Mesh", 1),\
-                  (2, "No Mesh", 0)]
-     for col, text, mode in MeshModes:
-        check_button_show_mesh = Radiobutton(display_flags_frame, text=text, variable=self.show_mesh, value=mode, command=lambda:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
-        check_button_show_mesh.grid(row=3, column=col+1, sticky=W) # first col is label
 
+     # # show Numbers:
      label_mesh= Label(display_flags_frame, text="Show Indices:")
      label_mesh.grid(row=4, column=0, sticky=E)
-
-     
-     # # show Numbers:
      index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
      index_option.grid(row=4, column=1, sticky=W)
      
-     button_node_indices_psuedoatoms = Button(display_flags_frame, text="Add node psuedoatoms", command=lambda:self.add_node_psuedoatoms())
+    
+     # # Pseudoatoms onto nodes
+     button_node_indices_psuedoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.add_node_psuedoatoms())
      button_node_indices_psuedoatoms.grid(row=4, column=2, sticky=W)
 
-     label_box= Label(display_flags_frame, text="Show Box:")
-     label_box.grid(row=5, column=0, sticky=E)
  
 
      # Outer simulation box
-     BoxModes = [(0, "Simulation Box (outline)", 1),\
-                 (1, "Simulation Box (whole)", 2),\
-                 (2, "No Box", 0)]
-     for col, text, mode in BoxModes:
-       check_button_show_box = Radiobutton(display_flags_frame, text=text, variable=self.show_box, value=mode, command=lambda:self.update_display_flags("show_box", val=self.show_box.get()))
-       check_button_show_box.grid(row=5, column=col+1, sticky=W) # first col is label
-
-     label_traj= Label(display_flags_frame, text="Load:")
-     label_traj.grid(row=6, column=0, sticky=E)
+     label_box= Label(display_flags_frame, text="Show Box:")
+     label_box.grid(row=5, column=0, sticky=E)
+     om_show_box = OptionMenu(display_flags_frame, self.show_box, "Simulation Box (outline)", "Simulation Box (whole)", "No Box", command=lambda x:self.update_display_flags("show_box", val=self.show_box.get()))
+     om_show_box.grid(row=5, column=1, sticky=W)
 
 
      ## # Trajectory Radiobutton # #
-     TrjModes = [("Trajectory", 1), \
-                 ("System (Into box)", 2), \
-                 ("System (Plainly)",3), \
-                 ("CGO", 4)]
-     for text, mode in TrjModes:
-       check_button_do_load_trajectory = Radiobutton(display_flags_frame, text=text, variable=self.do_load_trajectory, value=mode, command=lambda:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get()))
-       check_button_do_load_trajectory.grid(row=6, column=mode, sticky=W)
-  
-     label_traj= Label(display_flags_frame, text="Highlight element(s):")
-     label_traj.grid(row=7, column=0, sticky=E)
+     label_traj= Label(display_flags_frame, text="Load:")
+     label_traj.grid(row=6, column=0, sticky=E)
+     om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
+     om_do_load_trajectory.grid(row=6, column=1, sticky=W)
+
      
 
      # # Element highlighting 
+     label_traj= Label(display_flags_frame, text="Highlight element(s):")
+     label_traj.grid(row=7, column=0, sticky=E)
+
      highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
      highlight_entry_box.grid(row=7, column=1, sticky=W)
 
@@ -278,10 +265,10 @@ class FFEA_viewer_control_window:
 	bl = self.script.blob
 	
 	# See whether or not to remove traj file (make this better later i.e. rolling loading by storing file pointers)
-	if self.display_flags['load_trajectory'] == 2 or 3:
+	if self.display_flags['load_trajectory'] == "System (Into box)" or "System (Plainly)":
 		print "Requested not to load the trajectory"
 		#p.trajectory_out_fname = None
-	if self.display_flags['load_trajectory'] == 3:
+	if self.display_flags['load_trajectory'] == "System (Plainly)":
 		print "Requested to show the coordinates as they are in the .node(s) file(s)"
 		print "... equivalently, setting < move_into_box = 0 >"
 		p.move_into_box = 0
@@ -432,7 +419,7 @@ class FFEA_viewer_control_window:
 	traj_fname = self.script.params.trajectory_out_fname
 	cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
 	cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
-	if self.display_flags['load_trajectory'] == 4:
+	if self.display_flags['load_trajectory'] == "CGO":
 		if os.path.isfile(cgo_fname) == False:
 			print("No cached traj found at "+cgo_fname+", generating one...")
 			turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
@@ -558,7 +545,7 @@ class FFEA_viewer_control_window:
 	self.draw_frame(self.num_frames - 1)
 
 	# If necessary, stop now (broken traj or user asked for)
-	if failure == 1 or self.display_flags['load_trajectory'] != 1 or traj.num_blobs == 0:		
+	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or traj.num_blobs == 0:		
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
@@ -717,21 +704,22 @@ class FFEA_viewer_control_window:
 	self.system_names = []
 	
 	# Change to any file of names you like
-	fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_dbzcharacters.txt"
+	# fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_dbzcharacters.txt"
+	fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_greekletters.txt"
 	with open(fname, "r") as f:
 		for line in f:
 			self.system_names.append(line.strip())
 
 	self.display_flags = {
 		'matparam': "Plain Solid",
-		'show_mesh': 0,
+		'show_mesh': "No Mesh",
 		'show_numbers': "No Indices", ## PYMOL OK
 		'show_pinned': 1,
 		'show_vdw': 0,
 		'show_shortest_edge': 0,
 		'show_springs': 1,
-		'show_box': 0,
-		'load_trajectory': 1, ## PYMOL OK
+		'show_box': "No Box",
+		'load_trajectory': "Trajectory", ## PYMOL OK
 		'show_inverted': 0,
 		'highlight': '',
       'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
@@ -788,8 +776,11 @@ class FFEA_viewer_control_window:
 		frame_stored_index = 0
 		
 	# World first
-	if self.display_flags['show_box'] != 0 and self.box_exists == True:
-		self.draw_box(frame_real_index)
+	if self.display_flags['show_box'] != "No Box":
+		if self.box_exists == True:
+			self.draw_box(frame_real_index)
+		else:
+			print "Box does not exist"
 
 	if self.display_flags['show_springs'] == 1:
 		self.draw_springs(frame_real_index)
@@ -804,7 +795,8 @@ class FFEA_viewer_control_window:
 	obj = [BEGIN, LINES]
 	
 	# If only outline, no need to loop over entire plane
-	if self.display_flags['show_box'] == 1:
+	if self.display_flags['show_box'] == "Simulation Box (outline)":
+		print "outline"
 		
 		step = self.box
 
@@ -836,7 +828,8 @@ class FFEA_viewer_control_window:
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 			
-	elif self.display_flags['show_box'] == 2:
+	elif self.display_flags['show_box'] == "Simulation Box (whole)":
+		print "whole"
 
 		for i in range(3):
 			step[i] = self.box[i] / self.script.params.es_N[i]
@@ -902,7 +895,7 @@ class FFEA_viewer_control_window:
          zax = zax / l
 
          # Radius of helix (let original radius be 5A, poisson ration = 0.01)
-         r = 5 - 0.01 * (l - s.l)
+         r = 2 - 0.01 * (l - s.l)
 
          # We want 5 spins, say, so pitch:
          c = l / (10 * np.pi)
