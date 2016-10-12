@@ -700,9 +700,10 @@ class Blob:
 
 			# Can we draw material properties?
 			default = False
-			if MatOpt.count(display_flags['matparam']) and self.mat == None: 
-				print "Cannnot draw material params for blob " + str(self.bindex) + ". Defaulting..."
-				default = True
+			if MatOpt.count(display_flags['matparam']) and self.mat == None:
+				if display_flags['matparam'] != "VdW":
+					print "Cannnot draw material params for blob " + str(self.bindex) + ". Defaulting..."
+					default = True
 			
 			# If solid, draw all triangles
 			if default or display_flags['matparam'] == "Plain Solid":
