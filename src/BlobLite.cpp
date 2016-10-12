@@ -1,5 +1,21 @@
 #include "BlobLite.h"
 
+BlobLite::BlobLite() {
+  // initialise everything to zero 
+  num_nodes = 0;
+  num_surface_nodes = 0;
+  num_interior_nodes = 0;
+  num_elements = 0;
+  num_surface_elements = 0;
+  num_interior_elements = 0; 
+  blob_state = FFEA_BLOB_IS_DYNAMIC; 
+} 
+
+BlobLite::~BlobLite() { 
+  delete coord; 
+  delete elem; 
+} 
+
 int BlobLite::load_topology(const char *topology_filename){
     FILE *in = NULL;
     int i, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10;
