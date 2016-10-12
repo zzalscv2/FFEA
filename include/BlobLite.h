@@ -11,18 +11,28 @@ using namespace std;
 
 class BlobLite {
 public:  
+  /**
+   * BlobLite constructor:
+   * Initialises all variables and pointers to 0 (or NULL). 
+   * Does not perform any memory allocation. */
+  BlobLite();  
+  /**
+   * BlobLite destructor:
+   * Deallocates memory held by arrays, */
+  ~BlobLite();
+ 
   int load_nodes(const char *node_filename, scalar scale); 
   int load_topology(const char *topology_filename);
   int read_nodes_from_file(FILE *trj); 
   int store_index_to_elemnode(int node_index, int elem_number, int node_number); 
   int icoord_for_elem_node(int elemi, int nodei);
-  int num_nodes = 0;
-  int num_surface_nodes = 0;
-  int num_interior_nodes = 0;
-  int num_elements = 0;
-  int num_surface_elements = 0;
-  int num_interior_elements = 0;
-  int blob_state = FFEA_BLOB_IS_DYNAMIC; 
+  int num_nodes; 
+  int num_surface_nodes; 
+  int num_interior_nodes; 
+  int num_elements; 
+  int num_surface_elements; 
+  int num_interior_elements; 
+  int blob_state; 
   int center_of_coord(arr3 &cm);
 
   scalar *coord; // xyzxyzxyz
