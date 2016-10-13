@@ -8,7 +8,7 @@ except:
 
 class FFEA_measurement:
 
-	def __init__(self, fname = ""):
+	def __init__(self, fname = "", num_frames_to_read = 1000000):
 
 		self.reset()
 
@@ -22,7 +22,7 @@ class FFEA_measurement:
 		fin.close()
 		try:
 			if line == "FFEA Global Measurement File":
-				self.load_global(fname)
+				self.load_global(fname, num_frames_to_read = num_frames_to_read)
 			else:		
 				print("\tPlease supply us with the global measurement file, not the '-d' .fdm file")				
 				return
@@ -32,13 +32,13 @@ class FFEA_measurement:
 
 			dfname = path.splitext(fname)[0] + ".fdm"
 			if path.exists(dfname):
-				self.load_detailed(dfname)
+				self.load_detailed(dfname, num_frames_to_read = self.num_frames)
 			
 		except:
 			self.reset()
 			return
 	
-	def load_global(self, fname):
+	def load_global(self, fname, num_frames_to_read = 1000000):
 
 		print("Loading FFEA Global Measurement file...")
 	
@@ -95,15 +95,19 @@ class FFEA_measurement:
 
 		# Read measurements
 		line = fin.readline()
-		while(line != ""):
+		frames_read = 0
+		while(line != "" and frames_read < num_frames_to_read):
 			if line.strip() == "#==RESTART==":
 				line = fin.readline()
+				frames_read += 1
 				continue
 
 			sline = line.split()
 			for i in range(len(sline)):
 				self.global_meas[measmap[i]].append(float(sline[i]))
+			
 			line = fin.readline()
+			frames_read += 1
 			
 		# Move centroid into more useful format
 		self.global_meas["Centroid"] = []
@@ -118,7 +122,7 @@ class FFEA_measurement:
 			if self.global_meas[key] != None:
 				self.global_meas[key] = np.array(self.global_meas[key])
 
-	def load_detailed(self, fname):
+	def load_detailed(self, fname, num_frames_to_read = 1000000):
 
 		print("Loading FFEA Detailed Measurement file...")
 	
@@ -175,10 +179,11 @@ class FFEA_measurement:
 
 		# Now, read measurements and fill the relevent arrays
 		line = fin.readline()
-		
-		while(line != ""):
+		frames_read = 0
+		while(line != "" and frames_read < num_frames_to_read):
 			if line.strip() == "#==RESTART==":
 				line = fin.readline()
+				frames_read += 1
 				continue
 
 			sline = line.split()[1:]
@@ -195,7 +200,7 @@ class FFEA_measurement:
 				self.interblob_meas[iindexmap[i][0]][iindexmap[i][1]][imeasmap[i]].append(float(globalsline[i]))
 
 			line = fin.readline()
-		
+			frames_read += 1		
 
 		# Move centroid into more useful format, make interblob array symmetric and turn stuff to numpy
 		for i in range(self.num_blobs):

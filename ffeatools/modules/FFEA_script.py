@@ -445,8 +445,8 @@ class FFEA_script:
 	def load_trajectory(self, num_frames=100000000):
 		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname, num_frames_to_read = num_frames)
 
-	def load_measurement(self):
-		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_fname)
+	def load_measurement(self, num_frames=100000000):
+		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_fname, num_frames_to_read = num_frames)
 
 class FFEA_script_params():
 	
