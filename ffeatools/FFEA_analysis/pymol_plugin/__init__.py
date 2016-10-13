@@ -270,7 +270,7 @@ class FFEA_viewer_control_window:
 		#p.trajectory_out_fname = None
 	if self.display_flags['load_trajectory'] == "System (Plainly)":
 		print "Requested to show the coordinates as they are in the .node(s) file(s)"
-		print "... equivalently, setting < move_into_box = 0 >"
+		# print "... equivalently, setting < move_into_box = 0 >"  and no PBC:
 		p.move_into_box = 0
         
     # Rebuild the script object depending on whether or not there is a trajectory (keep only first conformation)
@@ -395,7 +395,7 @@ class FFEA_viewer_control_window:
     		
 
 	# Now, apply PBC if necessary
-	if p.calc_vdw == 1:
+	if p.calc_vdw == 1 and self.display_flags['load_trajectory'] != "System (Plainly)":
 		for b in self.blob_list:
 			trans = np.array([0.0,0.0,0.0])
 			cent = b[0].frames[0].calc_centroid()
