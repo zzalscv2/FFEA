@@ -25,19 +25,21 @@ class FFEA_script:
 
 		# Get rid of all of the comments, if there are any
 		fin = self.remove_all_comments(fin)
-		lines = fin.readlines()
+		script_lines = fin.readlines()
 		fin.close()
 
 		# Check for params block		
-		if "<param>\n" not in lines:
+		if "<param>\n" not in script_lines:
 			print "Error. File " + fname  + " not an FFEA script file."
 			self.reset()
 			return
 
+		# Get scriptdir
+		scriptdir = os.path.dirname(fname)
 
 		# Get params
 		try:
-			self.params = self.read_params_from_script(fname)
+		  self.params = self.read_params_from_script_lines(script_lines, scriptdir)
 		except:
 			print "Error. Couldn't load <params>...</params>"
 			self.reset()
@@ -45,7 +47,7 @@ class FFEA_script:
 
 		for i in range(self.params.num_blobs):
 			try:
-				self.blob.append(self.read_blob_from_file(fname, i, self.params.num_conformations[i]))
+				self.blob.append(self.read_blob_from_script_lines(script_lines, scriptdir, i, self.params.num_conformations[i]))
 			except:
 				print "Error. Couldn't load <blob>...</blob> " + str(i)
 				self.reset()
@@ -53,7 +55,7 @@ class FFEA_script:
 
 		# Get springs
 		try:
-			self.read_springs_from_file(fname)
+			self.read_springs_from_script_lines(script_lines, scriptdir)
 		except:
 			print "Error. Failed to load <spring>...</spring> "
 			self.reset()
@@ -142,28 +144,13 @@ class FFEA_script:
 		self.params.num_blobs += 1
 		self.params.num_conformations.append(1)
 
-	def read_params_from_script(self, fname):
-
-		# Get scriptdir
-		scriptdir = os.path.dirname(fname)
-
-		# Open script file
-		try:
-			fin = open(fname, "r")
-		except(IOError):
-			print "Error. File " + fname  + " not found."
-			return
-			
-		param_lines = fin.readlines()
-
-		# Close file
-		fin.close()
+	def read_params_from_script_lines(self, script_lines, scriptdir):
 
 		# Get params block
 		try:
-			param_lines = extract_block_from_lines('param', 0, param_lines)
+			param_lines = extract_block_from_lines('param', 0, script_lines)
 		except:
-			param_lines = extract_block_from_lines('params', 0, param_lines)
+			param_lines = extract_block_from_lines('params', 0, script_lines)
 
 		# Get some parameters
 		params = FFEA_script_params()
@@ -185,26 +172,11 @@ class FFEA_script:
 		return params
 
 
-	def read_blob_from_file(self, fname, index, num_conformations):
+	def read_blob_from_script_lines(self, script_lines, scriptdir, index, num_conformations):
 
-
-		# Get scriptdir
-		scriptdir = os.path.dirname(fname)
-
-		# Open script file
-		try:
-			fin = open(fname, "r")
-		except(IOError):
-			print "Error. File " + fname  + " not found."
-			return
-
-		blob_lines = fin.readlines()
-
-		# Close file
-		fin.close()
 
 		# Get relevent blob block
-		blob_lines = extract_block_from_lines('blob', index, blob_lines)
+		blob_lines = extract_block_from_lines('blob', index, script_lines)
 
 		# Get some parameters
 		blob = FFEA_script_blob()
@@ -338,19 +310,12 @@ class FFEA_script:
 
 		return blob
 
-	def read_springs_from_file(self, fname):
+	def read_springs_from_script_lines(self, script_lines, scriptdir):
 
-		# Get scriptdir
-		scriptdir = os.path.dirname(fname)
-
-		fin = open(fname, "r")
-		lines = fin.readlines()
-		fin.close()
-		
-		spring_lines = extract_block_from_lines("springs", 0, lines)
+		spring_lines = extract_block_from_lines("springs", 0, script_lines)
 
 		if len(spring_lines) == 0:
-			spring_lines = extract_block_from_lines("spring", 0, lines)
+			spring_lines = extract_block_from_lines("spring", 0, script_lines)
 			if len(spring_lines) == 0:
 				return
 
