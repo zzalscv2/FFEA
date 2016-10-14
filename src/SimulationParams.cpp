@@ -150,7 +150,7 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 	vector<string>::iterator it;
 	string lrvalue[2];
 	for(it = param_vector.begin(); it != param_vector.end(); ++it) {
-		paramreader->parse_tag(*it, lrvalue);
+		if (paramreader->parse_tag(*it, lrvalue) == FFEA_ERROR) return FFEA_ERROR;
 
 		// Assign if possible
 		if(assign(lrvalue[0], lrvalue[1]) != 0) {
