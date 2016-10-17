@@ -17,8 +17,8 @@ Content:
 - @subpage surftocgsurftut
 - @subpage surftovoltut
 - @subpage voltoffeatut
-- @subpage FFEAviewertut
 - @subpage ffeasimulationtut
+- @subpage FFEAviewertut
 - @subpage FFEAanalysistut
 - @subpage FFEAPDBMapper
 
