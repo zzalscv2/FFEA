@@ -16,9 +16,7 @@ For demonstrating purposes, we need to change a few global parameters.
 
 Before starting the FFEA runner, you may want to consider setting your OMP_NUM_THREADS environment variable. The recommended number of threads is between 4 and 16. 16 will produce the best results, but will only be around 30-40% faster than running on 4 threads. For now, we will set
 
-```sh
-export OMP_NUM_THREADS=4
-```
+	export OMP_NUM_THREADS=4
 
 Now, let's run ffea!
 

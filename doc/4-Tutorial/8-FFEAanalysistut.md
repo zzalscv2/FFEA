@@ -7,15 +7,11 @@ In previous parts of this tutorial, we have employed several python scripts by i
 
 In addition to a few basic analysis tools that can be run from the terminal, these core Python modules are provided as part of a Python package, which allows them to be imported into a Python interpreter. To install this package, open the FFEA source folder (containing ``setup.py``) in the terminal, and type
 
-```sh
-python setup.py install
-```
+	python setup.py install
 
 This will install the FFEA tools into your Python site-packages folder. For this tutorial, you may want to consider installing the [Anaconda Python distribution](https://www.continuum.io/downloads), which comes with a set of common scientific Python packages, and allows for packages to be installed and removed easily. An interactive Python shell (such as IPython) or a Python IDE with an object inspector and auto-complete is recommended. Anaconda comes with one called Spyder, which can be launched using the terminal
 
-```sh
-spyder
-```
+	spyder
 
 In our interactive session we first
 ```python
