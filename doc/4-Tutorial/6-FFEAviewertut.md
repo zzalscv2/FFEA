@@ -70,9 +70,9 @@ PyMOL does not export videos by default, although installing the FreeMOL addons 
 To get higher-quality videos in a more modern format, select File>Save Movie As>PNG Images. This will save each frame as a still image, organized by filename. For example, saving with the filename 'test' for a 100-frame trajectory will produce 100 PNG files, called `test0001.png` to `test0100.png`.
 
 To stitch these together into a video, you can use ffmpeg, a command-line tool. Install ffmpeg and call it using the following arguments:
-```sh
-ffmpeg -r 60 -i name%04d.png -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" out.mp4
-```
+
+	ffmpeg -r 60 -i name%04d.png -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" out.mp4
+
 The arguments are
 * `-r`, the framerate
 * `-i`, the input. The `%04d` means that FFMpeg will compile together any frames matching that format (e.g. `name0001.png`, `name0002.png`).
@@ -98,20 +98,20 @@ The new PDB can be saved by opening the file menu and selecting 'save PDB'. For 
 
 The next step is to create the map between the PDB structure and FFEA structure. To do this, run the following command from the terminal:
 
-```sh
-ffeatools makestructuremap -i emd_5043_10ang.node -t emd_5043_10ang.top -o 4hel_fit.pdb -m GroELFFEAtoPDB.map -scale 1.0
-```
+
+	ffeatools makestructuremap -i emd_5043_10ang.node -t emd_5043_10ang.top -o 4hel_fit.pdb -m GroELFFEAtoPDB.map -scale 1.0
+
 
 This will use the .node and .top files from before, and the .pdb file you just made, to create a .map file. We then run
 
-```sh
-ffeatools maptosparse GroELFFEAtoPDB.map  GroELFFEAtoPDB_sparse.map
-```
+
+	ffeatools maptosparse GroELFFEAtoPDB.map  GroELFFEAtoPDB_sparse.map
+
 
 This conversts our map into a sparse matrix. Finally, we apply the map by running
 
-```sh
-ffeatools maptraj emd_5043_10ang_trajectory.ftj emd_5043_10ang_trajectory.pdb GroELFFEAtoPDB_sparse.map 4hel_fit.pdb
-```
+
+	ffeatools maptraj emd_5043_10ang_trajectory.ftj emd_5043_10ang_trajectory.pdb GroELFFEAtoPDB_sparse.map 4hel_fit.pdb
+
 
 This script will create the file specified by the second positional argument, in this case `emd_5043_10ang_trajectory.pdb`. This file can be opened in a visualisation program such as PyMOL or VMD.
