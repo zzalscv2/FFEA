@@ -135,7 +135,7 @@ In order to use it, one would need to run PyMOL (>=1.8), and then click on
 
 
 
-Working environment
+Working environment {#workingEnvironment}
 ===================
 
 Executing ` ffea ` and ` ffeatools ` is probably what most users will wish, so 
@@ -143,9 +143,9 @@ Executing ` ffea ` and ` ffeatools ` is probably what most users will wish, so
 
       export PATH=$FFEA_HOME/bin:$PATH
 
-In addition, those users willing to write new measure tools may find useful to 
- use the provided python modules. In order to be able to do so, these should be 
- found in the ` PYTHONPATH `:
+In addition, in order to have access to the python modules that integrate 
+ the FFEA tools, and specially to those users willing to write new measure tools,
+ the ` PYTHONPATH ` environment variable should be also updated: 
 
      export PYTHONPATH=$FFEA_HOME/lib/python<version>/FFEA_python_modules
 

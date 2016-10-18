@@ -1,11 +1,11 @@
-EM Density to Surface Profile {#emmaptosurftut}
+EDM to Surface Profile {#emmaptosurftut}
 =============================
 
 Once we have a piece of volumetric data such as an em density map, we can create a surface profile of it. However, we first need to make sure that the density map is completely filled, and doesn't contain random offshoots that we don't want (artifacts of the experimental data for example). Our EM density map, as viewed from the top down, contains density corresponding to the GroEl molecule being filled when, atomistically, we know that this is not the case. We can account for this by firstly slightly raising the recommended countour level, to separate this mass:
 
 ![The electron density structure of EMDB ID:EMD-5043 (countour level 1.15).](emd5043_2.png "GroEL Electron Microscopy Structure")
 
-ffeatools contains a program which is a modified version of the flood fill algorithm used in graphics software, to fill internal cavities and get rid of separated section:
+`ffeatools` contains a program which is a modified version of the flood fill algorithm used in graphics software, to fill internal cavities and get rid of separated section:
 
 	ffeatools emmaptosurf -map [INPUT .map fname] -out [OUTPUT fname] -format [OUTPUT format (map/obj/surf)] -level [isolevel] -cull_floaters [Voxel threshold] 
 			          -fill_cavities [Voxel threshold] -pdb [OPTIONAL INPUT original .pdb fname]
