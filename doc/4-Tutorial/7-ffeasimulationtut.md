@@ -1,4 +1,4 @@
-FFEA Simulation {#ffeasimulationtut}
+Running a Simulation {#ffeasimulationtut}
 =============================
 
 Before starting the simulation, let's have a look inside the script first.  

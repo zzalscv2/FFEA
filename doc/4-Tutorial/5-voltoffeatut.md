@@ -31,5 +31,5 @@ Once the script has run its course, you will see a whole group of new files have
   * <b>emd_5043_8ang.lj</b>		The file containing the various parameter sets for Van der Waals interactions between active faces (again, more on this later) 
   * <b>emd_5043_8ang.ffea</b>		The script file used by FFEA which points to all of the above files!
 
-Now, emd_5043_8ang.ffea is ready to run immediately!
+Full description of these files can be found [here](\ref ioFiles). Now, emd_5043_8ang.ffea is ready to run immediately!
 

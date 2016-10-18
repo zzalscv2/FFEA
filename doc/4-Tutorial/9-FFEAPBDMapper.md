@@ -61,7 +61,7 @@ If they are not aligned, select ` Tools ` on the volume viewer menu bar, and sel
  
 The new atomic structure can be saved by opening the file menu and seleting ` save PDB `. For this example, we will save it as ` Atomicstructure.pdb `.
 
-Begin ` Atomicstructure.pdb `, an atomic structure aligned with the FFEA mesh,
+Once an atomic structure is aligned with the FFEA mesh,
  the next step is to create the map between them. This is done through 
  a number of scripts within the FFEAtools package, 
  can be called from a front end command:
