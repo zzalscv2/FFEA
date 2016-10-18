@@ -444,9 +444,6 @@ class FFEA_viewer_control_window:
 	#	else:
 	#		pass
 
-	# Choose new system name for next run
-	self.system_index += 1
-	self.system_name = self.system_names[self.system_index]
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]
