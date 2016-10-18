@@ -1,15 +1,15 @@
 
 
-FFEA to PDB Mapping {#FFEAPDBMapper}
+Recovering Atomic Resolution  {#FFEAPDBMapper}
 ===============================
 
-With `multiscale' being somewhat of a buzzword at the moment in the molecular modelling community, albeit a valid one,
-we have always had the underlying atomic structure of our continuum models in mind as we develop our simulations. As scuh,
-we have developed a procedure to transform from the continuum structure back to the underlying atomic structure so that following
-an FFEA simulation, further atomistic simulations can be performed.
+In some cases, after calculating an FFEA trajectory,
+  it is interesting to recover the atomic resolution thus leading to 
+  a multi-scale approach. Even the simplest case, where a number of FFEA conformations 
+  can be characterised at the atomic level, can be of great bio-medical relevance.
+As scuh, we have developed a procedure to map the continuum structure 
+  back to the underlying atomic structure, provided that such structure is available. 
 
-We emphaisise that this is only possible if the atomic structure of your model has been experimentally calculated in the first place.
-We are not magic...
 
 Mapping Theory {#FFEApdbmappertheory}
 ===============================
@@ -30,19 +30,52 @@ where \f$m_{\alpha \gamma}\f$ is a smaller, \f$4 \times 4\f$ sub-matrix of \f$\m
 Mapping Practicality {#FFEApdbmapperpractical}
 ===============================  
 
-The FFEAtools package contains a number of scripts to allow the creation and application of this map. For an initialised FFEA system and its associated atomistic PDB, we use the front end of the toolkit to access the script:
+Mapping the FFEA trajectory back onto the atomic coordinates, **requires 
+ that structures in our original PDB file and our initial FFEA mesh file
+ to be aligned** correctly.
+ In this tutorial, the FFEA mesh obtained from our EM density map
+  have not been misaligned,
+ but, there is no guarantee that our EM density map is aligned with our PDB file.
+ Thus, we need to do this alignment ourselves.
+
+One can follow two strategies. The first one consists of aligning
+ the PDB to the EM map that was used to generate the mesh. 
+ It will work in this case because the mesh has not been reorientated or translated, and 
+ we will show how to do that using UCSF Chimera. However, some meshing programs 
+ translate and rotate the original frame, and in that case one would need to 
+ align the PDB with the initial mesh using our PyMOL plugin. This can be done 
+ opening PDB and mesh in PyMOL and manually alligning the former onto the later
+ using ` Mouse ` -> ` 3 Button Editing `. 
+
+Having said so, in order to align the PDB to the EM map, 
+ the first thing to do is to open both the PDB and EM density map in UCSF Chimera.
+
+![The PDB and EM density map are misalgined](structuremap1.png "The PDB and EM density map are misalgined")
+
+If they are not aligned, select ` Tools ` on the volume viewer menu bar, and select
+ ` Volume Data `, then  ` Fit in map`  and push ` Fit `. If nothing happens (as it didn't, in our example) you may need to give the algorithm some help. 
+ Without closing this window, go to the main UCSF Chimera window,
+  under  ` Tools `, select ` Movement ` and ` Movement Mouse Mode`. Select ` Move molecule` from the dropdown menu, and use the middle mouse button to drag the PDB object over the electron density map. Then, use the left mouse button to rotate the PDB into the approximate correct position. Push ` Fit ` on the ` Fit in Map ` window to finish the job.
+
+![Aligned PDB and EM density map](structuremap2.png "Aligned PDB and EM density map")
+ 
+The new atomic structure can be saved by opening the file menu and seleting ` save PDB `. For this example, we will save it as ` Atomicstructure.pdb `.
+
+Begin ` Atomicstructure.pdb `, an atomic structure aligned with the FFEA mesh,
+ the next step is to create the map between them. This is done through 
+ a number of scripts within the FFEAtools package, 
+ can be called from a front end command:
 
 	
-	python /path/to/ffea/lib/pythonX.Y/ffeatools.py makestructuremap -i FFEAstructure.node -t FFEAstructure.top -o Atomisticstructure.pdb -m FFEAtoatoms.map
+	ffeatools makestructuremap -i FFEAstructure.node -t FFEAstructure.top -o Atomisticstructure.pdb -m FFEAtoatoms.map
 
-This will use the [above method](\ref #FFEApdbmappertheory) to generate your mapping script. This is a highly sparse matrix, so we also require a conversion to the Yale sparse matrix format to save space. This is currently implemented as another script (sorry!):
+This will use the [above method](\ref #FFEApdbmappertheory) to generate your mapping script. This is a highly sparse matrix, so we also require a conversion to the Yale sparse matrix format to save space:
 
-	
-	python /path/to/ffea/lib/pythonX.Y/ffeatools.py maptosparse FFEAtoatoms.map FFEAtoatoms_sparse.map
+	ffeatools.py maptosparse FFEAtoatoms.map FFEAtoatoms_sparse.map
 
-And there we go, we have the map. This matrix can be applied to any simulation frame calculated by FFEA in order to generate an atomistic structure. FFEA tools again provides a script for this procedure:
+This matrix can be applied to any simulation frame calculated by FFEA in order to generate a series of atomistic structure. FFEA tools again provides a script for this procedure:
 
-	python /path/to/ffea/lib/pythonX.Y/ffeatools.py maptraj FFEAtrajectory.ftj FFEAtoatomstrajectory.pdb FFEAtoatoms_sparse.map Atomisticstructure.pdb
+	ffeatools.py maptraj FFEAtrajectory.ftj FFEAtoatomstrajectory.pdb FFEAtoatoms_sparse.map Atomisticstructure.pdb
 
 The above script converts the entire FFEA trajectory into an atomistic one. This is done by applying the map to the FFEA trajectory (which has the same node order as the original .node file), then importing the original .pdb topology onto the new atomic positions (again, same order as the original) and writing the whole thing to a file.
 
