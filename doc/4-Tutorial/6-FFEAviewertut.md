@@ -1,4 +1,4 @@
-FFEA Viewer {#FFEAviewertut}
+Visualising FFEA {#FFEAviewertut}
 =============================
 
 ## Installation
