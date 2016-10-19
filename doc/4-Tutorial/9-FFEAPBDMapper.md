@@ -4,11 +4,11 @@ Recovering Atomic Resolution  {#FFEAPDBMapper}
 ===============================
 
 In some cases, after calculating an FFEA trajectory,
-  it is interesting to recover the atomic resolution thus leading to 
+  it would be interesting to recover the atomic resolution thus leading to 
   a multi-scale approach. Even the simplest case, where a number of FFEA conformations 
   can be characterised at the atomic level, can be of great bio-medical relevance.
-As scuh, we have developed a procedure to map the continuum structure 
-  back to the underlying atomic structure, provided that such structure is available. 
+As such, we have developed a procedure to map the continuum structure 
+  back to the underlying atomic structure, provided that such a structure is available. 
 
 
 Mapping Theory {#FFEApdbmappertheory}
@@ -79,6 +79,6 @@ This matrix can be applied to any simulation frame calculated by FFEA in order t
 
 The above script converts the entire FFEA trajectory into an atomistic one. This is done by applying the map to the FFEA trajectory (which has the same node order as the original .node file), then importing the original .pdb topology onto the new atomic positions (again, same order as the original) and writing the whole thing to a file.
 
-Visualisation in Pymol of both this new atomistic trajectory and the FFEA trajectory will show clearly how the mapping procedure work, but it must be emphasised that this is an entirely non-physical tranformation. If atomic positions are extrapolated by the process, then bond lengths may be much greater than they should be. Interpolation of atomic positions based on the FFEA simulation can cause errors in the dihedral angles and other angular properties. If you wish to perform atomistic simulations on the back of this mapping procedure, we advise that you minimise and equilibrate the resulting atomistic structure as best you can first. 
+Visualisation in Pymol of both this new atomistic trajectory and the FFEA trajectory will show clearly how the mapping procedure works, but it must be emphasised that this is an entirely non-physical tranformation. If atomic positions are extrapolated by the process, then bond lengths may be much greater than they should be. Interpolation of atomic positions based on the FFEA simulation can cause errors in the dihedral angles and other angular properties. If you wish to perform atomistic simulations on the back of this mapping procedure, we advise that you minimise and equilibrate the resulting atomistic structure as best you can first. 
 
 
