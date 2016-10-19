@@ -2676,7 +2676,7 @@ int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types, string vdw_
     int vdw_type = 0;
 
     // If steric only, set all to type 0
-    if (vdw_method == "steric" || vdw_method == "stericII") {
+    if (vdw_method == "steric" || vdw_method == "stericX") {
 	for(i = 0; i < num_surface_faces; ++i) {
 	    if (fscanf(in, "%d\n", &vdw_type) != 1) {
                 fclose(in);
