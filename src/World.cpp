@@ -1998,6 +1998,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 	       // Get precomputed data first
 	       pc_params.dist_to_m = 1;
 	       pc_params.E_to_J = 1;
+	       if (params.calc_preComp == 1) {
                vector<string> precomp_vector;
                systemreader->extract_block("precomp", 0, interactions_vector, &precomp_vector);
 	
@@ -2022,6 +2023,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                    pc_params.E_to_J = stod(lrvalue[1]);
                  }
                }
+          } 
 
 
 	// Read in each blob one at a time
