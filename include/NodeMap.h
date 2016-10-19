@@ -15,10 +15,8 @@ class NodeMap {
 
 	// Variables
 
-	// conformation mapped from index
-	int from_conformation;
+	int from_conformation; ///< conformation mapped from index
 
-	// conformation mapping to index
-	int to_conformation;
+	int to_conformation; ///< conformation mapping to index
 };
 #endif

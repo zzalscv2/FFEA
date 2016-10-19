@@ -125,10 +125,10 @@ public:
     /** Returns maximum number of states on any blob */
     int get_max_num_states();
 
-    // These set parameters are not private because the World needs them!!
+    /** These set parameters are not private because the World needs them!! */
     int kinetics_out_fname_set;
 
-    // Writes all params to params_out_fname for user's info
+    /** Writes all params to params_out_fname for user's info */
     void write_to_file(FILE *fout);
 
 private:
@@ -139,10 +139,9 @@ private:
     int vdw_in_fname_set;
     int bsite_in_fname_set;
 
-/**
-  * @brief Check if the file oFile exists, and if so 
-           rename it to "__"+oFile+"__bckp.N", 
-  *        where N is an integer so that the resulting file is new.
+/** Check if the file oFile exists, and if so 
+  *     rename it to "__"+oFile+"__bckp.N", 
+  *     where N is an integer so that the resulting file is new.
   */       
     int checkFileName(string oFile);
 

@@ -3,13 +3,7 @@ Write stuff in here that needs to be done for release. Delete when completed. Wh
  * [PyMOL] Make the plugin able to deal with default parameters 
            in same way as the core code
 
- * [Doc] - visualisation and other tools
-         - finish the tutorial
-         - document the python tools and the modules 
-
- * [Comments] - finish translating comments into Doxygen comments.
-
- * [VdW] - are we releasing a version with the VdW interacting with itself?
+ * [Doc] - document the python tools and the modules 
 
 
 
