@@ -807,7 +807,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL) 
               FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
-	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor, params.num_blobs);
+	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw);
 
 	    // Calculate the total number of vdw interacting faces in the entire system
 	    total_num_surface_faces = 0;

@@ -24,7 +24,7 @@ VdW_solver::~VdW_solver() {
     fieldenergy = NULL;
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
@@ -32,6 +32,7 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 
     this->lj_matrix = lj_matrix;
 
+    this->inc_self_vdw = inc_self_vdw; 
     this->steric_factor = vdw_steric_factor;
 
     // And some measurement stuff it should know about
@@ -117,7 +118,7 @@ int VdW_solver::solve(int num_blobs) {
             while (l_j != NULL) {
                 if (l_i->index != l_j->index) {
                     f_j = l_j->obj;
-                    if (f_i->daddy_blob != f_j->daddy_blob) {
+                    if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
                         f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
                         f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
 			//fprintf(stderr, "%d %d\n", f_i->index, f_j->index);
