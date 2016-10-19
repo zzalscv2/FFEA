@@ -1771,7 +1771,7 @@ int World::run() {
           st1 = MPI::Wtime();
 #endif
 
-        if (params.calc_vdw == 1) vdw_solver->solve(params.num_blobs);
+        if (params.calc_vdw == 1) vdw_solver->solve();
 
 #ifdef USE_MPI
         time2 = MPI::Wtime() -st1 + time2;
