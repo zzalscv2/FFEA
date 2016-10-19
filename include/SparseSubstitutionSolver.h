@@ -17,16 +17,16 @@
 
 class SparseSubstitutionSolver : public Solver {
 public:
-    /* Constructor */
+    /** Constructor */
     SparseSubstitutionSolver();
 
-    /* Destructor */
+    /** Destructor */
     ~SparseSubstitutionSolver();
 
-    /* Builds the lower triangular Cholesky decomposed mass matrix */
+    /** Builds the lower triangular Cholesky decomposed mass matrix */
     int init(int num_nodes, int num_elements, mesh_node *node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list);
 
-    /*
+    /**
      * Solves the equation Ax = b for the unknown vector x, for
      * 3 right-hand-sides (b vectors) at once, using forward and backward substitution. This function
      * considers the case where A is sparse symmetric positive-definite and therefore the solver must
@@ -41,24 +41,27 @@ public:
 
 private:
 
-    /* Number of rows in this cholesky variable band matrix */
+    /** Number of rows in this cholesky variable band matrix */
     int num_rows;
 
-    /*
+    //@{
+    /**
      * Array of size num_rows. Each element contains the index of the last non-zero
      * entry in the corresponding column. This is the end of the "band" of entries stored
      * in that column, that starts from the diagonal (travelling downwards or upwards for
      * the L and U matrices respectively).
      */
     int *L_key, *U_key;
+    //@}
 
-    /* Stores the number of entries stored in the upper triangle */
+    /** Stores the number of entries stored in the upper triangle */
     int total_entries_in_U;
 
-    /* Stores the inverse of the diagonal elements (need for LU solving) */
+    /** Stores the inverse of the diagonal elements (need for LU solving) */
     scalar *inverse_diag;
 
-    /*
+    //@{
+    /**
      * Stores all the data from the bands of the band matrix (note that this may contain
      * some zeroes, but if it is a proper sparse band matrix there should be very few of these)
      * NOT INCLUDING THE DIAGONAL: only the inverse of the diagonal.
@@ -66,6 +69,7 @@ private:
      * The off-diagonal data for the lower and upper triangles are stored in L and U respectively.
      */
     scalar *L, *U;
+    //@}
 };
 
 #endif

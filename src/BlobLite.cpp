@@ -283,8 +283,6 @@ int BlobLite::read_nodes_from_file(FILE *trj) {
     return FFEA_OK;
 }
 
-/// it returns the coord index for a node nodei in element elemi.
-///   to be used in coord[ ] 
 int BlobLite::icoord_for_elem_node(int elemi, int nodei){
 
    return 3*elem[elemi * NUM_NODES_QUADRATIC_TET + nodei ];

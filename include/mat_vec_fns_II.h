@@ -17,7 +17,7 @@ template <class t_scalar> bool sameSign(t_scalar a, t_scalar b);
 int getMissingNode(int n0, int n1, int n2);
 
 ///////////////// SECTION 1 ////////////////////
-///  Basic operations for arr3, i. e., scalar v[3]// 
+////  Basic operations for arr3, i. e., scalar v[3]// 
 ////////////////////////////////////////////////////
 
 /** Add vectors vecA and vecB into res. */
@@ -106,10 +106,10 @@ template <class t_scalar, class brr3> bool sameSideLine(brr3 &e, brr3 &p1, brr3 
 // bool nodeInTet(arr3 &vec, arr3 (tet)[4]);
 template <class t_scalar, class brr3> bool nodeInTet(brr3 &vec, brr3 (tet)[4]);
 
-/** find the intersection point of the line that passes through the points e1 and e2, 
+/** Find the intersection point of the line that passes through the points e1 and e2, 
  *   and the plane defined by points p1, p2 and p3.
- *  \warning {this function should be called ONLY in the case 
- *            that intersection is known to occur.} 
+ *  \warning This function should be called ONLY in the case 
+ *            that intersection is known to occur. 
  */
 // void linePlaneIntersectionPoint(arr3 &ip, arr3 &e1, arr3 &e2, arr3 &p1, arr3 &p2, arr3 &p3);
 template <class t_scalar, class brr3> void linePlaneIntersectionPoint(brr3 &ip, brr3 &e1, brr3 &e2, brr3 &p1, brr3 &p2, brr3 &p3);
@@ -122,7 +122,7 @@ template <class t_scalar, class brr3> bool isPointInFace(brr3 &ip, brr3 &p1, brr
 
 /** Check whether an edge and a plane intersect, 
  *    and return the intersection point ip and true if found, false otherwise.
- * more specifically check that both:
+ * More specifically check that both:
  *    - both ends of the edge (e1 and e2) are on different sides
  *           of the plane defined by the vectors (tet[f2] - tet[f1]) and (tet[f3] - tet[f1]).
  *    - the intersection of a line is a point in the plane 
@@ -138,7 +138,7 @@ template <class brr3> void faceCentroid(brr3 &p1, brr3 &p2, brr3 &p3, brr3 &c);
 template <class t_scalar, class brr3> bool samePlane(brr3 &p1, brr3 &p2, brr3 &p3, brr3 &p4);
 
 ///////////////// SECTION 3 ////////////////////
-/// Transition functions from vector3 to arr3 // 
+//// Transition functions from vector3 to arr3 // 
 ////////////////////////////////////////////////
 void vec3Vec3SubsToArr3(vector3 &u, vector3 &v, arr3 (&w));
 void vec3Arr3SubsToArr3(vector3 &u, arr3 &v, arr3 &w);
