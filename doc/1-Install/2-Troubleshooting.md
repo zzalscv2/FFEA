@@ -145,7 +145,7 @@ The ` ffeatools ` are a number of Python modules that are provided as part of a 
  as a standalone package, without the FFEA runner. In order to do that,
  open the FFEA source folder (containing ``setup.py``) in the terminal, and type
 
-   python setup.py install
+     python setup.py install
 
 This will install the FFEA tools into your Python site-packages folder. Alternatively, a path
  can be specified through ` --prefix= `. 
