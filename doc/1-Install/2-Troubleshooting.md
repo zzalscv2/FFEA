@@ -1,8 +1,7 @@
 Troubleshooting {#troubleshooting}
 =======
-Before using this guide, you should already be familiar with the [basics of the linux terminal](https://www.cheatography.com/davechild/cheat-sheets/linux-command-line/). You should also understand the [principles behind compiling, linking and building executables](https://www3.ntu.edu.sg/home/ehchua/programming/cpp/gcc_make.html)
-
 This tutorial will assume that the user does not have root access and must install packages locally. It's also assumed that the user will compile all of those packages from source. In the examples that follow, the software will be installed into $HOME/Software/LocalInstall, but any install folder can be used.
+Before using this guide, you should already be familiar with the [basics of the linux terminal](https://www.cheatography.com/davechild/cheat-sheets/linux-command-line/). You should also understand the [principles behind compiling, linking and building executables](https://www3.ntu.edu.sg/home/ehchua/programming/cpp/gcc_make.html)
 
 ## Installing the FFEA runner dependencies
 
@@ -88,6 +87,7 @@ However, Doxygen depends on Flex, which depends on GNU Bison. Building Flex is a
 export BISON_PKGDATADIR=$HOME/Software/LocalInstall/share/bison
 ```
 Flex and Doxygen should both now be able to build. Compiling the docs is one of the last steps, so for now, let's try and get FFEA itself to run.
+
 ## Installing FFEA
 Finally, it's time to compile and install FFEA. Download and extract the FFEA source code. Make a new folder, separate from the source code, where you want the build files to live, and execute these commands:
 ```sh
@@ -136,25 +136,30 @@ Now that you have installed FFEA, and assuming that the install folder is alread
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/Software/LocalInstall/lib
 ```
 and restart the terminal.
-<!-- 
-While you're at it, you might also want to add:
-'''sh
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/localhome/yourusername/Software/LocalInstall/usr/local/lib"
-'''
-As some packages (such as GTS, which we will need later) prefer their libraries to be in /usr when compiled from source.
--->
 
 
 ## ffeatools
-` ffeatools ` have been tested on Python versions after 2.6x and 2.7x. If you do not already have Python, the easiest way to install it is probably through Anaconda, available at continuum.io/downloads. The Anaconda distribution will install a selection of common Python packages, a package manager (conda) and a basic Python IDE (spyder). Even if you do already have Python, it is recommended, and it will not overwrite the default python (although it will launch as 'Python' from the terminal).
+The ` ffeatools ` are a number of Python modules that are provided as part of a Python package. While 
+ installing FFEA following the previous [notes](\ref installing-ffea) should have installed this package 
+ under ` $HOME/Software/LocalInstall/lib/pythonX.Y/FFEA_python_modules `, this can be installed 
+ as a standalone package, without the FFEA runner. In order to do that,
+ open the FFEA source folder (containing ``setup.py``) in the terminal, and type
 
-Anaconda's website provides a shell script, which can be executed using the following command
+     python setup.py install
+
+This will install the FFEA tools into your Python site-packages folder. Alternatively, a path
+ can be specified through ` --prefix= `. 
+
+FFEA tools use
+ [NumPy](http://www.numpy.org/), so if you do not have root access onto your machine,
+ or you do not have a package manager providing it, you may want to consider installing the [Anaconda Python distribution](https://www.continuum.io/downloads), which comes with a set of common scientific Python packages, and allows for packages to be installed and removed easily through a package manager (conda). Anaconda comes with a Python IDE called Spyder, which can be launched using the terminal
+
+     spyder
+
+In order to install, visit Anaconda's website to get a shell script, 
+ which can be executed using the following command
 ```sh
 bash Anaconda2-4.1.1-Linux-x86_64.sh
 ```
 After some red tape, this will automatically install Anaconda.
 
-The FFEA tools are installed alongisde the runner, and can be accessed using the following command:
-```sh
-ffeatools
-```

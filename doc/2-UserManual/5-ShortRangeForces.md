@@ -36,6 +36,9 @@ where "Number-Of-Active-Faces" is the number of faces that your system has
  with all the faces set up to "inactive", 
  and it can be easily configured using the [FFEA viewer](\ref FFEAviewer).
 
+Another keyword ` inc_self_vdw ` will determine whether interactions due 
+ to interacting faces within the same blob are taken into account (default, 1) or not (0). 
+
 The next thing you need is to put a box in your system. This means giving values for
  ` es_h `, ` es_N_x `, ` es_N_y ` and ` es_N_z `, as well as for ` kappa `. See the
  [keyword reference](\ref paramBlock) to get information on the values that these

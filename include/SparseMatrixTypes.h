@@ -5,11 +5,9 @@
 #include "FFEA_return_codes.h"
 
 typedef struct {
-    /* The column index of this entry in the original matrix */
-    int column_index;
+    int column_index; ///< The column index of this entry in the original matrix
 
-    /* The value of this entry */
-    scalar val;
+    scalar val; ///< The value of this entry
 } sparse_entry;
 
 class sparse_entry_sources {

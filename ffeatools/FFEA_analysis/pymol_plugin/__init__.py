@@ -10,7 +10,7 @@ import warnings
 try:
     from mtTkinter import *
 except ImportError:
-    warnings.warn("HORRIBLE DANGER: Tkinter is not thread-safe. Viewer will now crash. Please install mtTKinter.", RuntimeWarning)
+    warnings.warn("DANGER: Tkinter is not thread-safe. PyMOL will eventually crash while loading an FFEA trajectory. Please install mtTKinter.", RuntimeWarning)
     from Tkinter import *
 
 import tkFileDialog
@@ -65,7 +65,7 @@ class FFEA_viewer_control_window:
 
      self.root.geometry("500x225")
 
-     self.root.title("FFEA")
+     self.root.title("FFEA Loader")
 
      top_frame = Frame(self.root)
      top_frame.pack()
@@ -265,7 +265,7 @@ class FFEA_viewer_control_window:
 	bl = self.script.blob
 	
 	# See whether or not to remove traj file (make this better later i.e. rolling loading by storing file pointers)
-	if self.display_flags['load_trajectory'] == "System (Into box)" or "System (Plainly)":
+	if self.display_flags['load_trajectory'] == "System (Into box)" or self.display_flags['load_trajectory'] == "System (Plainly)":
 		print "Requested not to load the trajectory"
 		#p.trajectory_out_fname = None
 	if self.display_flags['load_trajectory'] == "System (Plainly)":
@@ -444,9 +444,6 @@ class FFEA_viewer_control_window:
 	#	else:
 	#		pass
 
-	# Choose new system name for next run
-	self.system_index += 1
-	self.system_name = self.system_names[self.system_index]
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]

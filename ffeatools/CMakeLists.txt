@@ -21,6 +21,7 @@ set ( FFEA_TAR_DIR "${PROJECT_BINARY_DIR}/ffeatools")
 file (MAKE_DIRECTORY "${FFEA_TAR_DIR}/FFEAplugin")
 set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 FFEA_analysis/pymol_plugin/__init__.py
+                FFEA_analysis/pymol_plugin/mtTkinter.py
 		FFEA_analysis/pymol_plugin/system_names_pokemon.txt
 		FFEA_analysis/pymol_plugin/system_names_dbzcharacters.txt
 		FFEA_analysis/pymol_plugin/system_names_greekletters.txt

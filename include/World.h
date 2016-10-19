@@ -117,10 +117,12 @@ private:
     SparseMatrixFixedPattern ***kinetic_map;
     SparseMatrixFixedPattern ****kinetic_return_map;
 
+    //@{
     /** @brief Kinetic State and Rate objects */
     KineticState **kinetic_state;
     scalar ***kinetic_rate;
     scalar ***kinetic_base_rate;
+    //@}
 
     /** @brief An array of springs which connect nodes if necessary */
     Spring *spring_array;
@@ -170,15 +172,19 @@ private:
     /** @brief * Output detailed measurements file. May be unneccesary */
     FILE *detailed_meas_out;
 
+    //@{
     /** Energies */
     scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, vdwenergy, preCompenergy;
+    //@}
 
     /** Momenta */
     vector3 L;
 
+    //@{
     /** Geometries */
     vector3 CoM, CoG;
     scalar rmsd;
+    //@}
 
     /** @brief * Output Checkpoint file */
     FILE *checkpoint_out;
@@ -206,7 +212,7 @@ private:
      */
     BiCGSTAB_solver nonsymmetric_solver;
 
-    /* Van der Waals solver */
+    /** Van der Waals solver */
     VdW_solver *vdw_solver;
 
     /** @brief LJ parameters matrix */

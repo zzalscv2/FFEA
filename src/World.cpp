@@ -807,7 +807,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL) 
               FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
-	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor, params.num_blobs);
+	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw);
 
 	    // Calculate the total number of vdw interacting faces in the entire system
 	    total_num_surface_faces = 0;
@@ -1771,7 +1771,7 @@ int World::run() {
           st1 = MPI::Wtime();
 #endif
 
-        if (params.calc_vdw == 1) vdw_solver->solve(params.num_blobs);
+        if (params.calc_vdw == 1) vdw_solver->solve();
 
 #ifdef USE_MPI
         time2 = MPI::Wtime() -st1 + time2;
@@ -2013,8 +2013,6 @@ int World::read_and_build_system(vector<string> script_vector) {
                    systemreader->split_string(lrvalue[1], pc_params.types, ",");
                  } else if (lrvalue[0] == "inputData") {
                    pc_params.inputData = stoi(lrvalue[1]);
-                 } else if (lrvalue[0] == "approach") {
-                   pc_params.approach = lrvalue[1];
                  } else if (lrvalue[0] == "folder") {
                    b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
                    pc_params.folder = auxpath.string(); //   lrvalue[1];

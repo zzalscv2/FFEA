@@ -1,10 +1,8 @@
 
-PDB to EM Density  {#pdbtoemmaptut}
+Obtaining an EDM {#pdbtoemmaptut}
 =============================
 
-This part of the manual provides a tutorial. We will use a publicly available structure which can be freely downloaded, and move through the entire FFEA process, until we arrive at a trajectory that can be visualised and analysed via the FFEAanalysis toolkit. For this example, we will be using the [GroEL protein chaperone](http://www.rcsb.org/pdb/explore.do?structureId=4HEL) from the RSCP PDB.
-
-One of the benefits of FFEA is that we can build a system starting from low resolution em density data. However, if a higher resolution structure is available then we may wish to begin there instead. From a .pdb file, the Visual Molecular Dynamics (VMD) (http://www.ks.uiuc.edu/Research/vmd/) program contains a number of tools for conversion straight to the surface profile that we need. However, these are often quite tricky to use and so FFEAtools provides it's own set of tools for this purpose. In order to generate a pseudo-electron density map, we use the following program:
+One of the benefits of FFEA is that we can build a system starting from an Electron Density Map, i. e., low resolution EM density data. However, if a higher resolution structure is available then we may wish to begin there instead. From a .pdb file, there are many molecular modelling programs such as VMD, PyMOL and UCSF Chimera with a number of tools for conversion straight to the surface profile that we need. While they are perfectly valid and can be used as input files for the next section of this tutorial, FFEAtools provides it's own set of tools for this purpose guaranteeing that no rotation or translation will affect the resulting map. Thus, in order to generate a pseudo-electron density map, using the FFEAtools type: 
 
 	ffeatools pdbtoemmap [INPUT .pdb fname] [OUTPUT .map fname] [num voxels in x] [num voxels in y] [num voxels in z] [effective atomic radius (angstroms)]
 

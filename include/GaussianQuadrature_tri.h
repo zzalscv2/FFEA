@@ -9,11 +9,13 @@ typedef struct {
 } precision_lookup;
 
 typedef struct {
-    /* Weight */
+    /** Weight */
     scalar W;
 
-    /* Barycentric coords of point on triangle */
+    //@{
+    /** Barycentric coords of point on triangle */
     scalar zeta_0, zeta_1, zeta_2;
+    //@} 
 } barycentric_gq_point;
 
 
@@ -105,10 +107,10 @@ public:
     virtual ~GaussianQuadrature_tri() {
     }
 
-    /* Integrates function f(p,q), for fixed point p and face coordinate q, at the given precision */
+    /** Integrates function f(p,q), for fixed point p and face coordinate q, at the given precision */
     scalar integrate_point_to_face(scalar(*f)(vector3*, vector3*), vector3 *p, Face *face, int precision);
 
-    /* Integrates function f(p, q) between two faces, at the given precision */
+    /** Integrates function f(p, q) between two faces, at the given precision */
     scalar integrate_face_to_face(scalar(*f)(vector3*, vector3*), Face *f1, Face *f2, int precision);
 
 protected:
