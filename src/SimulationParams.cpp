@@ -13,6 +13,7 @@ SimulationParams::SimulationParams() {
     epsilon2 = 0.01;
     rng_seed = time(NULL);
     calc_vdw = 1;
+    inc_self_vdw = 1;
     sticky_wall_xz = 0;
     vdw_type = "steric";
     vdw_steric_factor = 1e-2;
@@ -95,6 +96,7 @@ SimulationParams::~SimulationParams() {
     epsilon_0 = 0;
     restart = 0;
     calc_vdw = -1;
+    inc_self_vdw = 0; 
     vdw_type = "";
     calc_es = 0;
     calc_noise = 0;
@@ -298,6 +300,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     	} else if (lvalue == "calc_vdw") {
         	calc_vdw = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_vdw << endl;
+
+    	} else if (lvalue == "inc_self_vdw") {
+        	inc_self_vdw = atoi(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << inc_self_vdw << endl;
 
     	} else if (lvalue == "vdw_type") {
         	vdw_type = rvalue;
@@ -540,13 +546,21 @@ int SimulationParams::validate() {
         FFEA_ERROR_MESSG("Required: 'calc_vdw', must be 0 (no) or 1 (yes).\n");
     }
 
+    if (inc_self_vdw != 0 && inc_self_vdw != 1) {
+        FFEA_ERROR_MESSG("Required: 'inc_self_vdw', must be 0 (no) or 1 (yes).\n");
+    }
+
     if (calc_vdw == 1) {
       if (vdw_type != "steric" && vdw_type != "stericII") { 
         if (vdw_in_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
       }
-    }
+    } else {
+      if (inc_self_vdw == 1) {
+        printf("\tFRIENDLY WARNING: No face-face interactions will be computed if calc_vdw = 0.\n");
+      } 
+    } 
  
     if (vdw_type != "lennard-jones" && vdw_type != "steric" &&
         vdw_type != "stericII" && vdw_type != "ljsteric") {
