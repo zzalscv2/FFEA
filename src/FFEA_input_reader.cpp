@@ -159,11 +159,17 @@ int FFEA_input_reader::parse_tag(string input, string *output) {
 
 	string tag;
 	vector<string> lrvalvec;
+   if (std::count(input.begin(), input.end(), '<') == 0)
+     FFEA_ERROR_MESSG("Line '%s' is missing '<'\n", input.c_str())
+   if (std::count(input.begin(), input.end(), '>') == 0)
+     FFEA_ERROR_MESSG("Line '%s' is missing '>'\n", input.c_str())
+     
 	tag = boost::erase_last_copy(boost::erase_first_copy(input, "<"), ">");
 	boost::trim(tag);
 
 	// Split around "=", trim and return
 	boost::split(lrvalvec, tag, boost::is_any_of("="));
+     
 	for(unsigned int i = 0; i < lrvalvec.size(); ++i) {
 		output[i] = lrvalvec.at(i);
 		boost::trim(output[i]);

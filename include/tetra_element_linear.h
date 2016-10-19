@@ -105,7 +105,7 @@ class Blob;
 #define DPSI3_DZ 10
 #define DPSI4_DZ 11
 
-/*
+/**
  * A 10-point "quadratic" tetrahedron
  */
 class tetra_element_linear {

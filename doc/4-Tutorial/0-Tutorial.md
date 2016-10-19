@@ -1,14 +1,16 @@
-FFEA Tools {#Tutorial}
+Tutorial {#Tutorial}
 =========================
 
 Overview 
 ----------------
 
-In this tutorial, we will first show how to generate a `.vol` mesh for each object in the simulation, and then to generate files for the FFEA runner that specify the parameters of the simulation and the objects themselves. 
+In this tutorial, we will show how to set up a system for a FFEA simulation,
+ and how to visualise and analise the resulting trajectory via the FFEA analysis toolkit.
+ For this example, we will be using the [GroEL protein chaperone](http://www.rcsb.org/pdb/explore.do?structureId=4HEL) from the RSCP PDB.
 
-Once you have generated a .ffea script file, please refer to the [next chapter](\ref userManual) of this manual, for more information about the FFEA runner.
+For further details on setting up a simulation, please refer to the [next chapter](\ref userManual) of this manual. 
 
-Once we have a trajectory, the it can be analysed using a set of [ffeatools](\ref FFEAanalysistut).
+
 
 Content:
 
@@ -17,8 +19,8 @@ Content:
 - @subpage surftocgsurftut
 - @subpage surftovoltut
 - @subpage voltoffeatut
-- @subpage FFEAviewertut
 - @subpage ffeasimulationtut
+- @subpage FFEAviewertut
 - @subpage FFEAanalysistut
 - @subpage FFEAPDBMapper
 
