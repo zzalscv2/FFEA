@@ -1,26 +1,18 @@
-FFEA Analysis {#FFEAanalysistut}
+Analysis, and FFEA tools {#FFEAanalysistut}
 =============================
 
 ## Setting up
 
-In previous parts of this tutorial, we have employed several python scripts by invoking 'ffeatools' at the terminal. These scripts all make use of a set of core FFEA python modules. Each module corresponds to a different FFEA data file - the trajectory (``.out``), pin files (``.pin``), the stokes file (``.stokes``), et cetera. These are all unified and linked by the FFEA script file (``.ffea``).
+In previous parts of this tutorial, we have employed several python scripts by invoking `ffeatools` at the terminal. These scripts all make use of a set of core FFEA python modules. Each module corresponds to a different FFEA data file - the trajectory (``.ftj``), pin files (``.pin``), the stokes file (``.stokes``), et cetera. These are all unified and linked by the FFEA script file (``.ffea``).
 
-In addition to a few basic analysis tools that can be run from the terminal, these core Python modules are provided as part of a Python package, which allows them to be imported into a Python interpreter. To install this package, open the FFEA source folder (containing ``setup.py``) in the terminal, and type
+In addition to a few basic analysis tools that can be run from the terminal, these core Python modules are provided as part of a Python package, which allows them to be imported into a Python interpreter. Full description of the API has been generated automatically 
+ using Doxygen and can be read [here](file:../../ffeamodules/html/index.html). 
 
-```sh
-python setup.py install
-```
-
-This will install the FFEA tools into your Python site-packages folder. For this tutorial, you may want to consider installing the [Anaconda Python distribution](https://www.continuum.io/downloads), which comes with a set of common scientific Python packages, and allows for packages to be installed and removed easily. An interactive Python shell (such as IPython) or a Python IDE with an object inspector and auto-complete is recommended. Anaconda comes with one called Spyder, which can be launched using the terminal
-
-```sh
-spyder
-```
-
-In our interactive session we first
+In our interactive python session we first
 ```python
 import ffeatools
 ```
+In the case of receiving an `ImportError`, close this python session, and adjust your ` PYTHONPATH ` [properly](\ref workingEnvironment). 
 The FFEA tools can now be accessed in the ffeatools namespace. To start, we create a new script object.
 
 ```python

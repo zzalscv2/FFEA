@@ -21,9 +21,7 @@ public:
     BEM_Poisson_Boltzmann();
     ~BEM_Poisson_Boltzmann();
     int init(NearestNeighbourLinkedListCube *lookup);
-    /*
-     * Sets the inverse debye screening length for the system
-     */
+    /** Sets the inverse debye screening length for the system */
     void set_kappa(scalar kappa);
     void build_BEM_matrices();
     void perform_integrals_for_lookup_cell_self(LinkedListNode<Face> *l_i, vector3 gqp[4]);
@@ -34,22 +32,24 @@ public:
 
 private:
 
-    /* Nearest neighbour lookup data structure containing all faces in the system */
+    /** Nearest neighbour lookup data structure containing all faces in the system */
     NearestNeighbourLinkedListCube *lookup;
 
-    /* Number of faces in system */
+    /** Number of faces in system */
     int num_faces;
 
-    /* BEM matrices */
+    //@{
+    /** BEM matrices */
     SparseMatrixUnknownPattern *mat_C, *mat_D;
+    //@}
 
-    /* The inverse Debye-screening length, kappa */
+    /** The inverse Debye-screening length, kappa */
     scalar kappa;
 
-    /* Returns the value of the fundamental solution u multiplied by 4*pi */
+    /** Returns the value of the fundamental solution u multiplied by 4*pi */
     scalar u_4pi(scalar r);
 
-    /* Returns the radial component of grad of u multiplied by 4*pi (all other components are zero) */
+    /** Returns the radial component of grad of u multiplied by 4*pi (all other components are zero) */
     scalar grad_u_4pi(scalar r, scalar r2);
 
     /*

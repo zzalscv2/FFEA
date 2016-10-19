@@ -30,21 +30,19 @@ public:
 
     bool check_for_contribution(int i, int j);
 
-    /* Factory function for making empty fixed sparsity pattern matrices from this sparsity pattern */
+    /** Factory function for making empty fixed sparsity pattern matrices from this sparsity pattern */
     SparseMatrixFixedPattern * create_sparse_matrix();
 
     void print();
 
 private:
 
-    /* Number of rows in matrix */
-    int num_rows;
+    int num_rows; ///< Number of rows in matrix 
 
-    /* An array of vectors containing the indices of the occupied sites */
+    /** An array of vectors containing the indices of the occupied sites */
     list<sparse_contribution_location*> *row;
 
-    /* Total number of nonzero elements in the sparsity pattern */
-    int num_nonzero_elements;
+    int num_nonzero_elements; ///< Total number of nonzero elements in the sparsity pattern */
 };
 
 #endif
