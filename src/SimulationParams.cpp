@@ -31,6 +31,7 @@ SimulationParams::SimulationParams() {
     calc_kinetics = 0;
     kinetics_update = 0;
     calc_preComp = 0;
+    calc_springs = 0; 
 
 
     wall_x_1 = WALL_TYPE_PBC;
@@ -101,6 +102,7 @@ SimulationParams::~SimulationParams() {
     calc_es = 0;
     calc_noise = 0;
     calc_preComp = 0;
+    calc_springs = 0; 
     calc_kinetics = 0;
 
     wall_x_1 = -1;
@@ -320,6 +322,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "calc_preComp") {
         	calc_preComp = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_preComp << endl;
+
+	} else if (lvalue == "calc_springs") {
+        	calc_springs = atoi(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << calc_springs << endl;
 
 	} else if (lvalue == "calc_kinetics") {
         	calc_kinetics = atoi(rvalue.c_str());
@@ -571,6 +577,10 @@ int SimulationParams::validate() {
         FFEA_ERROR_MESSG("Required: 'calc_preComp', must be 0 (no) or 1 (yes).\n");
     }
 
+    if (calc_springs != 0 && calc_springs != 1) {
+        FFEA_ERROR_MESSG("Required: 'calc_springs', must be 0 (no) or 1 (yes).\n");
+    }
+
     if (calc_es != 0 && calc_es != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_es', must be 0 (no) or 1 (yes).\n");
     }
@@ -707,10 +717,12 @@ int SimulationParams::validate() {
     printf("\tdielec_ext = %e\n", dielec_ext);
     printf("\tcalc_vdw = %d\n", calc_vdw);
     printf("\tvdw_type = %s\n", vdw_type.c_str());
+    printf("\tinc_self_vdw = %d\n", inc_self_vdw);
     printf("\tcalc_es = %d\n", calc_es);
     printf("\tcalc_noise = %d\n", calc_noise);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
     printf("\tcalc_preComp = %d\n", calc_preComp);
+    printf("\tcalc_springs = %d\n", calc_springs);
     printf("\tcalc_stokes = %d\n", calc_stokes);
     printf("\tstokes_visc = %f\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
@@ -750,10 +762,12 @@ void SimulationParams::write_to_file(FILE *fout) {
 
     	fprintf(fout, "\tcalc_vdw = %d\n", calc_vdw);
     	fprintf(fout, "\tvdw_type = %s\n", vdw_type.c_str());
+      fprintf(fout, "\tinc_self_vdw = %d\n", inc_self_vdw); 
     	fprintf(fout, "\tcalc_es = %d\n", calc_es);
     	fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
     	fprintf(fout, "\tcalc_kinetics = %d\n", calc_kinetics);
     	fprintf(fout, "\tcalc_preComp = %d\n", calc_preComp);
+      fprintf(fout, "\tcalc_springs = %d\n", calc_springs); 
     	fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
     	fprintf(fout, "\tstokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
 
