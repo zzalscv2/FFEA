@@ -87,9 +87,8 @@ FFEA is maintained by a small but dedicated team at the University of Leeds. If 
    * Ben Hanson
    * Albert Solernou
  * Thanks
-   * Lorem Ipsum
-   * Dolor Sit
-   * Amet
+   * Stan Burgess
+   * Stephan Muench
 
 
 
