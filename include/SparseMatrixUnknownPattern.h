@@ -25,7 +25,7 @@ public:
 
     void zero();
 
-    /* Applies this matrix to the given vector 'in', writing the result to 'result' */
+    /** Applies this matrix to the given vector 'in', writing the result to 'result' */
     void apply(scalar *in, scalar *result);
 
     void print();

@@ -341,7 +341,7 @@ public:
 
     void get_min_max(vector3 *blob_min, vector3 *blob_max);
 
-    /** Blob, conformation and state indices */
+    /* Blob, conformation and state indices */
     int blob_index;
     int conformation_index, previous_conformation_index;
     int state_index, previous_state_index;
@@ -476,15 +476,19 @@ private:
     /** The array of random number generators (needed for parallel runs) */
     RngStream *rng;
 
+    //@{
     /** Energies */
     scalar kineticenergy, strainenergy;
+    //@}
 
     /** Momenta */
     vector3 L;
 
+    //@{
     /** Geometries */
     vector3 CoM, CoG;
     scalar rmsd;
+    //@}
 
     CG_solver *poisson_solver;
     SparseMatrixFixedPattern *poisson_surface_matrix;

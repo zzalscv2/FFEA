@@ -35,7 +35,7 @@ namespace ffea_const {
    const scalar sphereFactor = 4.0 * 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148 / 3.0;
 }
 
-/*
+/**
  * A simple 3 dimensional vector (x, y, z)
  */
 typedef struct {
@@ -46,27 +46,27 @@ typedef struct {
 typedef scalar arr3[3]; 
 typedef geoscalar grr3[3]; 
 
-/*
+/**
  * Defines a 12 vector (just for ease of use, clarity and compiler type checking)
  */
 typedef scalar vector12[12];
 
-/*
+/**
  * Defines a 12x12 matrix
  */
 typedef scalar matrix12[12][12];
 
-/*
+/**
  * Defines a 3x3 matrix
  */
 typedef scalar matrix3[3][3];
 
-/*
+/**
  * Defines a 4x4 matrix
  */
 typedef scalar matrix4[4][4];
 
-/*
+/**
  * A useful type for holding the upper triangular part of symmetric 4x4 matrices
  */
 typedef struct {
