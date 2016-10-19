@@ -2,7 +2,7 @@ Surface Profile to Volumetric Mesh {#surftovoltut}
 =============================
 
 Once we have our structure, it is a "simple" matter of filling the surface with tetrahedra. There are many programs designed to mesh a surface, but the FFEA tools will accept 
- ouptut files from NETGEN or TETGEN.  TETGEN is strongly recommended.
+ ouptut files from NETGEN or TETGEN.  We recommend TETGEN, as NETGEN can sometimes segfault when trying to deal with the complex geometries and occasional errors produced during the FFEA initialisation procedure.
 
 TETGEN Meshing
 =============
