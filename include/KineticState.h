@@ -45,7 +45,9 @@ class KineticState {
 		/** @brief Is the base site type bound in this state? */
 		bool bound;
 
+      //@{
 		/** @brief Pointers to the actual binding sites (after state change has occured) */
 		BindingSite *base_site, *target_site;
+      //@}
 };
 #endif
