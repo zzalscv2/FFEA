@@ -2013,8 +2013,6 @@ int World::read_and_build_system(vector<string> script_vector) {
                    systemreader->split_string(lrvalue[1], pc_params.types, ",");
                  } else if (lrvalue[0] == "inputData") {
                    pc_params.inputData = stoi(lrvalue[1]);
-                 } else if (lrvalue[0] == "approach") {
-                   pc_params.approach = lrvalue[1];
                  } else if (lrvalue[0] == "folder") {
                    b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
                    pc_params.folder = auxpath.string(); //   lrvalue[1];
