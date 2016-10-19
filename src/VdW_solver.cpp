@@ -39,12 +39,12 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     this->num_blobs = num_blobs;
     fieldenergy = new scalar*[num_blobs];
     for(int i = 0; i < num_blobs; ++i) {
-	fieldenergy[i] = new scalar[num_blobs];
+      fieldenergy[i] = new scalar[num_blobs];
     }
     return FFEA_OK;
 }
 
-int VdW_solver::solve(int num_blobs) {
+int VdW_solver::solve() {
     // double st, time1, time2, time3;
     const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
         {-1, -1, -1},
@@ -85,9 +85,9 @@ int VdW_solver::solve(int num_blobs) {
 
     // Zero some measurement_ stuff
     for(int i = 0; i < num_blobs; ++i) {
-	for(int j = 0; j < num_blobs; ++j) {
-		fieldenergy[i][j] = 0.0;
-	}
+      for(int j = 0; j < num_blobs; ++j) {
+        fieldenergy[i][j] = 0.0;
+      }
     }
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/ 
