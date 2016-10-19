@@ -24,7 +24,7 @@ VdW_solver::~VdW_solver() {
     fieldenergy = NULL;
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
@@ -32,18 +32,19 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 
     this->lj_matrix = lj_matrix;
 
+    this->inc_self_vdw = inc_self_vdw; 
     this->steric_factor = vdw_steric_factor;
 
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;
     fieldenergy = new scalar*[num_blobs];
     for(int i = 0; i < num_blobs; ++i) {
-	fieldenergy[i] = new scalar[num_blobs];
+      fieldenergy[i] = new scalar[num_blobs];
     }
     return FFEA_OK;
 }
 
-int VdW_solver::solve(int num_blobs) {
+int VdW_solver::solve() {
     // double st, time1, time2, time3;
     const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
         {-1, -1, -1},
@@ -84,9 +85,9 @@ int VdW_solver::solve(int num_blobs) {
 
     // Zero some measurement_ stuff
     for(int i = 0; i < num_blobs; ++i) {
-	for(int j = 0; j < num_blobs; ++j) {
-		fieldenergy[i][j] = 0.0;
-	}
+      for(int j = 0; j < num_blobs; ++j) {
+        fieldenergy[i][j] = 0.0;
+      }
     }
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/ 
@@ -117,7 +118,7 @@ int VdW_solver::solve(int num_blobs) {
             while (l_j != NULL) {
                 if (l_i->index != l_j->index) {
                     f_j = l_j->obj;
-                    if (f_i->daddy_blob != f_j->daddy_blob) {
+                    if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
                         f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
                         f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
 			//fprintf(stderr, "%d %d\n", f_i->index, f_j->index);

@@ -22,11 +22,10 @@ public:
       * while the last one belongs to the opposite node of the linear tetrahedron **/
     mesh_node *n[4];
 
-    /* Index of this face */
+    /** Index of this face */
     int index;
 
-    /* Pointer to the element this is a face of */
-
+    /** Pointer to the element this is a face of */
     tetra_element_linear *e;
 
     /** Van der Waals interaction type **/
@@ -55,12 +54,14 @@ public:
     bool *vdw_bb_interaction_flag;
     bool kinetically_active;
 
+    //@{
     /** vdw measurement info **/
     int num_blobs;
     vector3 *vdw_bb_force;
     scalar *vdw_bb_energy;
     vector3 *vdw_xz_force;
     scalar vdw_xz_energy;
+    //@}
 
     /** Check whether the tetrahedron formed by this face an the opposite 
       *   linear node does intersect with the corresponding tetrahedron in f2

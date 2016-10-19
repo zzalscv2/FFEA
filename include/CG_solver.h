@@ -21,20 +21,18 @@ public:
 
 private:
 
-    // The number of unknowns
-    int N;
+    int N; ///< The number of unknowns
 
-    // The convergence tolerance threshold
-    scalar tol;
+    scalar tol; ///< The convergence tolerance threshold
 
-    // Maximum number of iterations before giving up
-    int max_num_iterations;
+    int max_num_iterations; ///< Maximum number of iterations before giving up 
 
-    // The preconditioner matrix (inverse of the diagonal)
-    scalar *inv_M;
+    scalar *inv_M; ///< The preconditioner matrix (inverse of the diagonal)
 
-    // Vectors needed for use by conjugate gradient solver
-    scalar *d, *r, *q, *s;
+    scalar *d; ///< Vector needed for use by conjugate gradient solver
+    scalar *r; ///< Vector needed for use by conjugate gradient solver
+    scalar *q; ///< Vector needed for use by conjugate gradient solver
+    scalar *s; ///< Vector needed for use by conjugate gradient solver
 
     scalar conjugate_gradient_residual(SparseMatrixFixedPattern *A, scalar *x, scalar *b);
 
@@ -48,7 +46,7 @@ private:
 
     void zero(scalar *v);
 
-    /* Returns the dot product of vectors a and b, of length N */
+    /** Returns the dot product of vectors a and b, of length N */
     scalar dot(scalar *a, scalar *b);
 };
 

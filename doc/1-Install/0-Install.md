@@ -1,7 +1,7 @@
 Installation {#install}
 ============
 
-> **Warning!** FFEA is still a work in progress, and may have some rough edges. If you find one of these edges, please get in touch with us using our [issue tracker](https://bitbucket.org/sohpc-ffea/ffea/issues) so that we can round it down.
+<!-- > **Warning!** FFEA is still a work in progress, and may have some rough edges. If you find one of these edges, please get in touch with us using our [issue tracker](https://bitbucket.org/sohpc-ffea/ffea/issues) so that we can round it down. -->
 
 Install instructions for the FFEA package, conisting of the FFEA_runner 
  and the ffeatools can be found in [quickstart](\ref quickstart).

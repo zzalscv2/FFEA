@@ -34,7 +34,7 @@ ffea_tools = 	{
 if len(sys.argv) == 1:
 	usage_string = "\nUsage: ./ffeatools ACTION ARGS\n"
 	usage_string += "With ACTION as one of:\n\n"
-	for script in ffea_tools.keys():
+	for script in sorted(ffea_tools.keys()):
 		usage_string += script+"\n"
 	sys.exit(usage_string)
 

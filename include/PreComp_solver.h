@@ -24,14 +24,11 @@ using namespace std;
  * string folder: folder containing the tables. It can be either absolute or relative.\n
  * int inputData: 1 means read .force and .pot files,
  *                 while 2 means read .pot and calculate the forces \n
- * string approach: if vdw -> use .vdw files and solve faces;
- *                  if solid -> use .solid files and solve volumes.
  */
 struct PreComp_params {
-  vector<string> types;
-  string folder;
-  int inputData;
-  string approach;
+  vector<string> types; ///< types of beads present 
+  string folder; ///< folder containing the tables. It can be either absolute or relative to the folder containing the ffea input file .
+  int inputData; ///< 1 means read .force and .pot files, while 2 means read .pot and calculate the forces
   scalar dist_to_m;
   scalar E_to_J;
 };
