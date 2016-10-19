@@ -1,5 +1,5 @@
 import sys, os
-import FFEA_script, FFEA_spring, FFEA_trajectory
+import FFEA_script, FFEA_springs, FFEA_trajectory
 import numpy as np
 from subprocess import Popen
 
@@ -55,8 +55,10 @@ for i in range(2):
 # And add some springs
 spring_fname = os.path.dirname(os.path.abspath(inffea)) + "/lol.spring"
 script2.spring = spring_fname
-print script2.spring
 
+# Sort checkpoint files
+script2.params.checkpoint_out = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp"
+script2.params.checkpoint_in = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp"
 script2.write_to_file(outffea)	
 logfile = os.path.dirname(os.path.abspath(inffea)) + "/lol.log"
 fout = open(logfile, "w")
@@ -67,7 +69,7 @@ spring_array = []
 run = 0
 while True:
 
-	viewer_process = Popen(["python",os.path.expandvars("$FFEAVIEWER") + "/FFEA_viewer.py", "-s", outffea], stdout=fout)
+	#viewer_process = Popen(["python",os.path.expandvars("$FFEAVIEWER") + "/FFEA_viewer.py", "-s", outffea], stdout=fout)
 	run += 1
 	print("Minimisation Run %d\n\n" % (run))
 	line = raw_input("\tPlease enter:\n\t\tPairs of 2 nodes between which you would like to be added as springs\n\t\tPairs of 2 nodes making up a springs you want to delete\n\t\tReturn to continue\n\t\t'q' to finish: ")
@@ -81,6 +83,10 @@ while True:
 		else:
 			script2.params.restart = 1
 
+		# Sort checkpoint files
+		os.system("mv " + os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp " + os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp")
+		#script2.params.checkpoint_out = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp"
+		#script2.params.checkpoint_in = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp"
 		script2.write_to_file(outffea)
 		os.system("ffea " + outffea)
 		continue
@@ -129,9 +135,11 @@ while True:
 		else:
 			l = 0
 
-		springs = FFEA_spring.FFEA_springs("")
+		springs = FFEA_springs.FFEA_springs("")
 		for node_pair in spring_array:
-			springs.add_spring(k,l,[0,1],[0,0], node_pair)
+			spring = FFEA_springs.FFEA_spring()
+			spring.set_properties(k,l,[0,1],[0,0], node_pair)
+			springs.add_spring(spring)
 
 		springs.write_to_file(spring_fname)
 
@@ -142,6 +150,8 @@ while True:
 		else:
 			script2.params.restart = 1
 
+		# Sort checkpoint files
+		os.system("mv " + os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp " + os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp")
 		script2.write_to_file(outffea)
 
 		# End the viewer
