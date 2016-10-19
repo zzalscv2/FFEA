@@ -496,7 +496,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			fprintf(measurement_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
 
 			// Are these field enabled?
-			if(num_springs != 0) {
+			if(params.calc_springs != 0) {
 				fprintf(measurement_out, "%-14s", "SpringEnergy");	
 			}
 			if(params.calc_vdw != 0) {
@@ -522,7 +522,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 					fprintf(detailed_meas_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
 				}
 
-				if(params.calc_vdw == 1 || params.calc_preComp == 1 || num_springs != 0) {
+				if(params.calc_vdw == 1 || params.calc_preComp == 1 || params.calc_springs == 1) {
 					for(i = 0; i < params.num_blobs; ++i) {
 						for(j = i; j < params.num_blobs; ++j) {
 							fprintf(detailed_meas_out, "| B%dB%d ", i, j);
@@ -1993,7 +1993,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 	scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
 
 	// Get interactions vector first, for later use
-        systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);        
+	     if ((params.calc_preComp == 1) or (params.calc_springs == 1)) { 
+           systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);        
+        } 
 
 	       // Get precomputed data first
 	       pc_params.dist_to_m = 1;
@@ -2432,7 +2434,8 @@ int World::read_and_build_system(vector<string> script_vector) {
 	}
 
 	// Finally, get springs
-	systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
+	if (params.calc_springs == 1) 
+     systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
 
 	if (spring_vector.size() > 1) {
 		FFEA_error_text();
@@ -3371,7 +3374,7 @@ void World::write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, in
 }
 
 /**
- * @brief Calculaates a pseudo-trajectory by varying an eigenvector by a constant factor
+ * @brief Calculates a pseudo-trajectory by varying an eigenvector by a constant factor
  * @details This function takes an Eigen::VectorXd and applies it as a series of translations
  * to the given blob.
  * */
@@ -3621,21 +3624,20 @@ void World::make_measurements() {
 
 	// Now global stuff
 	vector3 a, b, c;
-	if(num_springs != 0) {
+	if(params.calc_springs != 0) {
 		for(i = 0; i < params.num_blobs; ++i) {
 			for(j = 0; j < params.num_blobs; ++j) {
 				springfieldenergy[i][j] = 0.0;
 			}
 		}
-	}	
-	for(i = 0; i < num_springs; ++i) {
-		a = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
-		b = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
-		vec3_vec3_subs(&a, &b, &c);
-		springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag(&c) - spring_array[i].l) * (mag(&c) - spring_array[i].l);
-	}
 
-	if(num_springs != 0) {
+		for(i = 0; i < num_springs; ++i) {
+			a = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
+			b = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
+			vec3_vec3_subs(&a, &b, &c);
+			springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag(&c) - spring_array[i].l) * (mag(&c) - spring_array[i].l);
+		}
+	
 		springenergy = get_spring_field_energy(-1, -1);
 	}
 
@@ -3658,7 +3660,7 @@ void World::write_measurements_to_file(FILE *fout, int step) {
 	fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
 	fprintf(fout, "%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length);
 	fprintf(fout, "%-14.6e ", rmsd * mesoDimensions::length);
-	if(num_springs != 0) {
+	if(params.calc_springs != 0) {
 		fprintf(fout, "%-14.6e", springenergy * mesoDimensions::Energy);	
 	}
 	if(params.calc_vdw != 0) {
