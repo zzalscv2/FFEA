@@ -36,7 +36,7 @@
 #include "World.h"
 #include "VdW_solver.h"
 #include "Steric_solver.h"
-#include "Steric_solverII.h"
+#include "Steric_solverX.h"
 #include "LJSteric_solver.h"
 #include "PreComp_solver.h"
 #include "LJ_matrix.h"
