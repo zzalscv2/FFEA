@@ -29,27 +29,28 @@ This technique has the potential to model large, complex systems, made of many m
 ## Publications
 
    * Methodology
-       * Oliver R., Read D. J., Harlen O. G. & Harris S. A. "[A Stochastic finite element model for the dynamics of globular macromolecules](http://www.sciencedirect.com/science/article/pii/S0021999112007589)" (2013) J. Comp. Phys. 239, 147-165.
-       * Patargias G. N., Harris S. A. & Harding J. "[A demonstration of the inhomogeneity of the local dielectric response of proteins by molecular dynamics simulations.](https://www.ncbi.nlm.nih.gov/pubmed/20572740)" (2010) J. Chem. Phys. 132, 235103.
+       * Oliver R., Read D. J., Harlen O. G. & Harris S. A. ["A Stochastic finite element model for the dynamics of globular macromolecules"](http://www.sciencedirect.com/science/article/pii/S0021999112007589) (2013) J. Comp. Phys. 239, 147-165.
+       * Patargias G. N., Harris S. A. & Harding J. ["A demonstration of the inhomogeneity of the local dielectric response of proteins by molecular dynamics simulations."](https://www.ncbi.nlm.nih.gov/pubmed/20572740) (2010) J. Chem. Phys. 132, 235103.
    * Applications
-       * Richardson R., Papachristos K., Read D. J., Harlen O. G., Harrison M. A., Paci E., Muench S. P. & Harris S. A "[Understanding the apparent stator-rotor connections in the rotary ATPase family using coarse-grained computer modelling](https://www.ncbi.nlm.nih.gov/pubmed/25174610)" (2014), Proteins: Structure, Function, Bioinformatics, 82, 3298-3311.
+       * Richardson R., Papachristos K., Read D. J., Harlen O. G., Harrison M. A., Paci E., Muench S. P. & Harris S. A ["Understanding the apparent stator-rotor connections in the rotary ATPase family using coarse-grained computer modelling"](https://www.ncbi.nlm.nih.gov/pubmed/25174610) (2014), Proteins: Struct., Funct., Bioinf., 82, 3298-3311.
    * Reviews
-       * Gray A., Harlen O. G., Harris S. A., Khalid S., Leung Y. M., Lonsdale R., Mulholland A. J., Pearson A. R., Read D. J. & Richardson R. A. "[In pursuit of an accurate spatial and temporal model of biomolecules at the atomistic level: a perspective on computer simulation](https://www.ncbi.nlm.nih.gov/pubmed/25615870)", Acta Cryst. (2015) D71, 162-172.
-       * Oliver R. , Richardson R. A., Hanson B., Kendrick K., Read D. J., Harlen O. G. &Harris S. A. "[Modelling the Dynamic Architecture of Biomaterials Using Continuum Mechanics](http://link.springer.com/chapter/10.1007%2F978-3-319-09976-7_8)", in Protein Modelling, G. Náray-Szabó, Editor. (2014) Springer International Publishing. p. 175-197.
-       * Hanson B., Richardson R., Oliver R., Read D. J., Harlen O. & Harris S. "[Modelling biomacromolecular assemblies with continuum mechanics](https://www.ncbi.nlm.nih.gov/pubmed/25849915)" Biochem. Soc. Trans. (2015), 43, 186-192.
+       * Gray A., Harlen O. G., Harris S. A., Khalid S., Leung Y. M., Lonsdale R., Mulholland A. J., Pearson A. R., Read D. J. & Richardson R. A. ["In pursuit of an accurate spatial and temporal model of biomolecules at the atomistic level: a perspective on computer simulation"](https://www.ncbi.nlm.nih.gov/pubmed/25615870), Acta Cryst. (2015) D71, 162-172.
+       * Oliver R. , Richardson R. A., Hanson B., Kendrick K., Read D. J., Harlen O. G. & Harris S. A. ["Modelling the Dynamic Architecture of Biomaterials Using Continuum Mechanics"](http://link.springer.com/chapter/10.1007%2F978-3-319-09976-7_8), Protein Modelling, G. Náray-Szabó, Editor. (2014) Springer International Publishing. p. 175-197.
+       * Hanson B., Richardson R., Oliver R., Read D. J., Harlen O. & Harris S. ["Modelling biomacromolecular assemblies with continuum mechanics"](https://www.ncbi.nlm.nih.gov/pubmed/25849915) Biochem. Soc. Trans. (2015), 43, 186-192.
 
 ## Technology
-   * [Boost](http://www.boost.org)
+   * [Boost](http://www.boost.org) (>=1.54.0).
    * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1).   
      FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
    * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL]   
-   * [PyMOL](https://www.pymol.org) (>=1.8) can 
+   * [PyMOL](https://www.pymol.org) (>=1.8) [OPTIONAL] can 
         be used to visualise FFEA systems and trajectories
         as well as molecular and EM systems. Alternatives 
         to visualise molecular systems and create FFEA continuum models
         include [Chimera](https://www.cgl.ucsf.edu/chimera/)
         and [VMD](http://www.ks.uiuc.edu/Research/vmd/).
-        * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter)
+   * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) v. 0.4 is shipped 
+        with FFEA and used in the PyMOL plugin, allowing safe threading. 
    * [GTS](http://gts.sourceforge.net) (>=0.7.6)[OPTIONAL]. The
      GNU Triangulated Surface Libraries
      allowing the manipulation and coarsening of surface profiles.
