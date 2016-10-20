@@ -72,6 +72,9 @@ In between it can take the following parameters:
    * ` measurement_out_fname ` <string> <BR>
         The name of the file where energy measurements will be recorded.
 
+	* ` det_measurement_out_fname ` <string> <BR> (Defaulting to ` measurement_out_fname ` with extension replaced with ` .fdm `).
+        The name of the file where detailed measurements will be recorded. 
+
    * ` kinetics_out_fname ` <string> <BR>
         The name of the file where kinetic trajectory will be recorded.
 
