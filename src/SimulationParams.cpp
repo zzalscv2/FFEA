@@ -13,6 +13,7 @@ SimulationParams::SimulationParams() {
     epsilon2 = 0.01;
     rng_seed = time(NULL);
     calc_vdw = 1;
+    inc_self_vdw = 1;
     sticky_wall_xz = 0;
     vdw_type = "steric";
     vdw_steric_factor = 1e-2;
@@ -30,6 +31,7 @@ SimulationParams::SimulationParams() {
     calc_kinetics = 0;
     kinetics_update = 0;
     calc_preComp = 0;
+    calc_springs = 0; 
 
 
     wall_x_1 = WALL_TYPE_PBC;
@@ -95,10 +97,12 @@ SimulationParams::~SimulationParams() {
     epsilon_0 = 0;
     restart = 0;
     calc_vdw = -1;
+    inc_self_vdw = 0; 
     vdw_type = "";
     calc_es = 0;
     calc_noise = 0;
     calc_preComp = 0;
+    calc_springs = 0; 
     calc_kinetics = 0;
 
     wall_x_1 = -1;
@@ -299,6 +303,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	calc_vdw = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_vdw << endl;
 
+    	} else if (lvalue == "inc_self_vdw") {
+        	inc_self_vdw = atoi(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << inc_self_vdw << endl;
+
     	} else if (lvalue == "vdw_type") {
         	vdw_type = rvalue;
         	cout << "\tSetting " << lvalue << " = " << vdw_type << endl;
@@ -314,6 +322,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "calc_preComp") {
         	calc_preComp = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_preComp << endl;
+
+	} else if (lvalue == "calc_springs") {
+        	calc_springs = atoi(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << calc_springs << endl;
 
 	} else if (lvalue == "calc_kinetics") {
         	calc_kinetics = atoi(rvalue.c_str());
@@ -540,21 +552,33 @@ int SimulationParams::validate() {
         FFEA_ERROR_MESSG("Required: 'calc_vdw', must be 0 (no) or 1 (yes).\n");
     }
 
+    if (inc_self_vdw != 0 && inc_self_vdw != 1) {
+        FFEA_ERROR_MESSG("Required: 'inc_self_vdw', must be 0 (no) or 1 (yes).\n");
+    }
+
     if (calc_vdw == 1) {
-      if (vdw_type != "steric" && vdw_type != "stericII") { 
+      if (vdw_type != "steric" && vdw_type != "stericX") { 
         if (vdw_in_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
       }
-    }
+    } else {
+      if (inc_self_vdw == 1) {
+        printf("\tFRIENDLY WARNING: No face-face interactions will be computed if calc_vdw = 0.\n");
+      } 
+    } 
  
     if (vdw_type != "lennard-jones" && vdw_type != "steric" &&
-        vdw_type != "stericII" && vdw_type != "ljsteric") {
+        vdw_type != "stericX" && vdw_type != "ljsteric") {
         FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'steric' (default), 'lennard-jones' or 'ljsteric' (both methods combined).\n");
     }
 
     if (calc_preComp != 0 && calc_preComp != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_preComp', must be 0 (no) or 1 (yes).\n");
+    }
+
+    if (calc_springs != 0 && calc_springs != 1) {
+        FFEA_ERROR_MESSG("Required: 'calc_springs', must be 0 (no) or 1 (yes).\n");
     }
 
     if (calc_es != 0 && calc_es != 1) {
@@ -623,6 +647,7 @@ int SimulationParams::validate() {
     // check if the output files exists, and if so, rename it. 
     if (restart == 0) {
       checkFileName(boost::lexical_cast<string>(measurement_out_fname)); 
+      checkFileName(boost::lexical_cast<string>(detailed_meas_out_fname)); 
       checkFileName(boost::lexical_cast<string>(trajectory_out_fname));
       checkFileName(boost::lexical_cast<string>(kinetics_out_fname));
     } 
@@ -693,10 +718,12 @@ int SimulationParams::validate() {
     printf("\tdielec_ext = %e\n", dielec_ext);
     printf("\tcalc_vdw = %d\n", calc_vdw);
     printf("\tvdw_type = %s\n", vdw_type.c_str());
+    printf("\tinc_self_vdw = %d\n", inc_self_vdw);
     printf("\tcalc_es = %d\n", calc_es);
     printf("\tcalc_noise = %d\n", calc_noise);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
     printf("\tcalc_preComp = %d\n", calc_preComp);
+    printf("\tcalc_springs = %d\n", calc_springs);
     printf("\tcalc_stokes = %d\n", calc_stokes);
     printf("\tstokes_visc = %f\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
@@ -704,7 +731,7 @@ int SimulationParams::validate() {
     if(calc_kinetics == 1 && bsite_in_fname_set == 1) {
 	printf("\tbsite_in_fname = %s\n", bsite_in_fname);
     }
-    if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "stericII" || vdw_type == "ljsteric")) {
+    if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "stericX" || vdw_type == "ljsteric")) {
         printf("\tvdw_steric_factor = %e\n", vdw_steric_factor);
     }
     return FFEA_OK;
@@ -736,10 +763,12 @@ void SimulationParams::write_to_file(FILE *fout) {
 
     	fprintf(fout, "\tcalc_vdw = %d\n", calc_vdw);
     	fprintf(fout, "\tvdw_type = %s\n", vdw_type.c_str());
+      fprintf(fout, "\tinc_self_vdw = %d\n", inc_self_vdw); 
     	fprintf(fout, "\tcalc_es = %d\n", calc_es);
     	fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
     	fprintf(fout, "\tcalc_kinetics = %d\n", calc_kinetics);
     	fprintf(fout, "\tcalc_preComp = %d\n", calc_preComp);
+      fprintf(fout, "\tcalc_springs = %d\n", calc_springs); 
     	fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
     	fprintf(fout, "\tstokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
 

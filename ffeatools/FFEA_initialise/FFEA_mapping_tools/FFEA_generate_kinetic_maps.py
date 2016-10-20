@@ -30,15 +30,16 @@ targettobasemap = infname.split(".")[0] + "_b" + str(bindex[1]) + "c" + str(cind
 basetotargetsparsemap = basetotargetmap.split(".")[0] + "_sparse.map"
 targettobasesparsemap = targettobasemap.split(".")[0] + "_sparse.map"
 
-os.system(scriptdir + "/make_structure_map " + basenode + " " + basetop + " " + targetnode + " " + basetotargetmap)
-os.system(scriptdir + "/make_structure_map " + targetnode + " " + targettop + " " + basenode + " " + targettobasemap)
+os.system(scriptdir + "/make_structure_map -i " + basenode + " -t " + basetop + " -o " + targetnode + " -m " + basetotargetmap)
+os.system(scriptdir + "/make_structure_map -i " + targetnode + " -t " + targettop + " -o " + basenode + " -m " + targettobasemap)
 
 # Make them sparse
 os.system("python " + scriptdir + "/FFEA_convert_kinetic_map_to_sparse.py " + basetotargetmap + " " + basetotargetsparsemap)
 os.system("python " + scriptdir + "/FFEA_convert_kinetic_map_to_sparse.py " + targettobasemap + " " + targettobasesparsemap)
 
 # Remove the unneeded stuff
-os.system("rm " + basenode + " " + targetnode + " " + basetotargetmap + " " + targettobasemap)
+#os.system("rm " + basenode + " " + targetnode + " " + basetotargetmap + " " + targettobasemap)
+os.system("rm " + basetotargetmap + " " + targettobasemap)
 
 # Finalise
 print("Maps created:")
