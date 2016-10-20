@@ -132,16 +132,6 @@ int main(int argc, char *argv[])
 	script_fname = fs_script_fname.string(); 
 	cout << "Input FFEA script - " << script_fname << "\n";
 
-	// Use it to name the logfile
-	b_fs::path fs_log_fname = fs_script_fname;
-	fs_log_fname.replace_extension(".log");
-	set_log_fname(fs_log_fname.string()); 
-
-	/* Open and begin the logfile
-	SimulationParams::checkFileName(userInfo::log_out_fname);
-	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
-	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", script_fname.c_str()); */
-
 	//The system of all proteins, electrostatics and water
 	World *world;
 
