@@ -157,6 +157,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		return FFEA_ERROR;
 	}
 
+   if ((params.num_blobs) == 1) { 
+      writeDetailed = false;
+      printf("\n\tA single blob is simulated, and thus the detailed measurements are not needed\n"); 
+   } 
+
 	// Build kinetic maps if necessary (and rates and binding site matrix). These are at the World level in case global kinetic calculations are ever included
 	if(params.calc_kinetics == 1) {
 
