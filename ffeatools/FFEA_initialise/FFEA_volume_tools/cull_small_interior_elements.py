@@ -3,6 +3,7 @@ from FFEA_universe import *
 import FFEA_script
 import numpy as np
 import argparse as _argparse
+import __builtin__
 
 parser = _argparse.ArgumentParser(description="Cull small interior elements")
 parser.add_argument("input_file", action="store", help="Input file (.vol or .ffea)")
@@ -112,7 +113,7 @@ def cull_small_interior_elements(input_file, smallest_length, load_file=False):
         node.add_node(new_node_pos, nodetype = 1)
     #return whatever the result was
     
-if sys.stdin.isatty():
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     # Get args and build objects
 
