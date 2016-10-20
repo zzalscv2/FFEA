@@ -1,6 +1,7 @@
 import argparse as _argparse
 import FFEA_node as _FFEA_node, FFEA_topology as _FFEA_topology, FFEA_surface as _FFEA_surface
 import sys
+import __builtin__
 
 # Set up argparse
 parser = _argparse.ArgumentParser(description="Convert tetgen files (.ele, .face, .node) to a .vol file (FFEA, netgen)")
@@ -57,7 +58,7 @@ def convert_tet_to_net(input_fnames, output_fname):
     fout.close()
 
 # Run argparse if we detect a tty
-if sys.stdin.isatty():
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     try:
 	convert_tet_to_net(args.i, args.o)
