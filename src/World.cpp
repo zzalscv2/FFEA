@@ -124,7 +124,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	// Set some constants and variables
 	int i, j, k;
 
-	// const int MAX_BUF_SIZE = 255;
 	string buf_string;
 	FFEA_input_reader *ffeareader;
 	ffeareader = new FFEA_input_reader();
