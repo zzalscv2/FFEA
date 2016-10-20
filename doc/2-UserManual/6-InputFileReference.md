@@ -72,13 +72,13 @@ In between it can take the following parameters:
    * ` measurement_out_fname ` <string> <BR>
         The name of the file where energy measurements will be recorded.
 
-	* ` det_measurement_out_fname ` <string> <BR> (Defaulting to ` measurement_out_fname ` with extension replaced with ` .fdm `).
+   * ` det_measurement_out_fname ` <string> (Defaulting to ` measurement_out_fname ` with extension replaced with ` .fdm `). <BR>
         The name of the file where detailed measurements will be recorded. 
 
    * ` kinetics_out_fname ` <string> <BR>
         The name of the file where kinetic trajectory will be recorded.
 
-   * ` checkpoint_out ` <string> <BR>
+   * ` checkpoint_out ` <string> (Defaulting to ` ffea-file-name ` with extension replaced with `.fcp`) <BR> 
         The name of the checkpoint file where the details of the state 
           of the last recorded frame will be saved in order to be able to use restarts.
 
@@ -163,14 +163,13 @@ In between it can take the following parameters:
          Either 0 or 1, depending on whether the ` xz ` wall, at \f$y=0\f$ is 
          a sticky wall or not. 
 
-   * ` wall_x_1 ` <enum string> (PBC) <BR>
-   * ` wall_x_2 ` <enum string> (PBC) <BR>
-   * ` wall_y_1 ` <enum string> (PBC) <BR>
-   * ` wall_y_2 ` <enum string> (PBC) <BR>
-   * ` wall_z_1 ` <enum string> (PBC) <BR>
-   * ` wall_z_2 ` <enum string> (PBC) <BR>
-
-     The boundary condition type of each wall
+   * ` wall_x_1 ` <string> (PBC) <BR>
+   * ` wall_x_2 ` <string> (PBC) <BR>
+   * ` wall_y_1 ` <string> (PBC) <BR>
+   * ` wall_y_2 ` <string> (PBC) <BR>
+   * ` wall_z_1 ` <string> (PBC) <BR>
+   * ` wall_z_2 ` <string> (PBC) <BR>
+     The boundary condition type of each wall.
         
 
 
@@ -187,7 +186,7 @@ Blob Block {#blobBlock}
 It has both it's own parameters and a set of subblocks:
 
 
-   * ` solver ` <enum string> (CG_nomass) <BR>
+   * ` solver ` <string> (CG_nomass) <BR>
      Specifies the mechanical solver used for all conformations within this block:
 	 - **CG**: A solver which builds and inverts the mass matrix of the system, leading to second order Euler integration to update positions (small timestep required)
 	 - **CG_nomass**: A solver which builds and inverts the viscosity matrix for a massless system, leading to first order Euler integration to update positions (bigger timestep 		    	     allowed)
@@ -270,9 +269,8 @@ It contains information detailing how the different structural conformations kin
 It contains a list of files detailing how the different structural conformations mathematically relate to one another:
 
    * ` map (i,j) ` <string> <BR>
-
      A filename specifying the linear map (non-square matrix) from conformation i to conformation j. The map is highly sparse, and so is 
-     stored and applied using the Yale Format for sparse matrices (https://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_.28CSR.2C_CRS_or_Yale_format.29)
+     stored and applied using the Yale Format for sparse matrices (see [here](https://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_.28CSR.2C_CRS_or_Yale_format.29)).
 
 As a side note, if you have N conforamtions within your blob, then this section should contain N(N-1) maps (each structure mapping to each other structure, not including itself)
 
@@ -299,11 +297,15 @@ It only contains other blocks, each of which define a different way blobs can in
       - 1 will read .force and .pot files
       - 2 will read .pot files and compute the forces.
 
-     The expected format for these files is explained [here](\ref potfile)
-
+ The expected format for these files is explained [here](\ref potfile)
  * ` folder ` - path (either absolute or relative to the folder where the .ffea file resides)
                  pointing to the folder storing the .pot (and optionally .force)
                  interaction files.
+
+
+
+
+
 
 If the value given for ` types ` were ` (B1, B2, B3) `, FFEA would try to read files:
 
