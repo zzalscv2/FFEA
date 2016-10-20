@@ -1,6 +1,7 @@
 import sys, os
 import FFEA_script
 import argparse as _argparse
+import __builtin__
 
 try:
     from matplotlib import pyplot as plt
@@ -149,7 +150,7 @@ def test_equilibration(script):
             ax.legend([ysh, ysEXPh], ['Blob %d Strain Energy - Sim' % (i), 'Blob %d Strain Energy - Theory' % (i)], loc = 4)
     plt.show()
 
-if sys.stdin.isatty():
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     # Get args and build objects
     script = FFEA_script.FFEA_script(args.script)
