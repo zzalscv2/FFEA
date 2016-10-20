@@ -647,6 +647,7 @@ int SimulationParams::validate() {
     // check if the output files exists, and if so, rename it. 
     if (restart == 0) {
       checkFileName(boost::lexical_cast<string>(measurement_out_fname)); 
+      checkFileName(boost::lexical_cast<string>(detailed_meas_out_fname)); 
       checkFileName(boost::lexical_cast<string>(trajectory_out_fname));
       checkFileName(boost::lexical_cast<string>(kinetics_out_fname));
     } 
