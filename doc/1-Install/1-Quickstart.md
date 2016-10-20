@@ -14,21 +14,18 @@ To install FFEA you need:
    * [CMake](https://cmake.org) (>=2.8.11).   
      Required for building FFEA.
 
-and some third-party libraries:
-
    * [Boost](http://www.boost.org) (>=1.54.0).   
      Required compiled Boost library: program_options, filesystem and system.
 
-   * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1).   
-     FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
+   * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1). FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
 
-      - Warning - All of the Eigen releases to date (<= 3.3~beta1-2) prove to 
-          be incompatible with GCC >= 5 and the C++11 standard. Thus, to compile FFEA,
-          you need to stick to either GCC 4, or use the latest development commit 
-          from Eigen (3ba633e). 
+   > Warning - version 3.2.10 will be needed if using GCC >= 5. Earlier versions did prove to be incompatible with GCC >= 5 and the C++11 standard. 
      
    * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL]   
      It will be used to build the documentation.
+
+   * [Python](https://www.python.org/) (>= 2.6), is used to run some tests to verify that the FFEA runner was correctly built, as well as in the FFEA tools.
+		  * [NumPy](http://www.numpy.org/) is needed at run time on some FFEA tools.
 
 
 Configure
