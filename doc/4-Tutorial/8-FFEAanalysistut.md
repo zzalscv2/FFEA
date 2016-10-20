@@ -12,7 +12,7 @@ In our interactive python session we first
 ```python
 import ffeatools
 ```
-In the case of receiving an `ImportError`, close this python session, and set up your working environment [properly](\ref workingEnvironment). 
+In the case of receiving an `ImportError`, close this python session, and adjust your ` PYTHONPATH ` [properly](\ref workingEnvironment). 
 The FFEA tools can now be accessed in the ffeatools namespace. To start, we create a new script object.
 
 ```python

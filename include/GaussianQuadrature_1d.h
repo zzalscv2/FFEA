@@ -5,10 +5,10 @@
 #include "mat_vec_types.h"
 
 typedef struct {
-    /* Weight */
+    /** Weight */
     scalar W;
 
-    /* Abscissa */
+    /** Abscissa */
     scalar zeta;
 } gauss_point_1d;
 

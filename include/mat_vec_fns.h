@@ -6,7 +6,7 @@
 
 #include "mat_vec_types.h"
 
-/*
+/**
  * Applies matrix A to vector v, storing result in v
  */
 void mat12_apply(matrix12 A, vector12 v);
@@ -33,7 +33,7 @@ scalar mat3_double_contraction_symmetric(matrix3 A);
 
 scalar mat3_double_contraction(matrix3 A);
 
-/* Inverts the given 3x3 matrix, storing the result in m_inv and the determinant in det_m */
+/** Inverts the given 3x3 matrix, storing the result in m_inv and the determinant in det_m */
 void mat3_invert(matrix3 m, matrix3 m_inv, scalar *det_m);
 
 void mat12_set_zero(matrix12 A);
@@ -54,16 +54,16 @@ void vec3_scale(vector3 *v, scalar scale);
 
 void vec12_set_zero(vector12 v);
 
-/* * Prints out the given 3x3 matrix */
+/** Prints out the given 3x3 matrix */
 void print_matrix3(matrix3 m);
 
-/* * Prints out the given 4x4 matrix */
+/** Prints out the given 4x4 matrix */
 void print_matrix4(matrix4 m);
 
-/* * Prints out the given 12x12 matrix */
+/** Prints out the given 12x12 matrix */
 void print_matrix12(matrix12 m);
 
-/* * Prints out the given 12-vector */
+/** Prints out the given 12-vector */
 void print_vector12(vector12 v);
 
 void print_vector3(vector3 *v);

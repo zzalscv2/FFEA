@@ -10,21 +10,15 @@ public:
 
     /* *  Variables */
 
-    // Spring constant
-    scalar k;
+    scalar k; ///< Spring constant
 
-    // Equilibrium length
-    scalar l;
+    scalar l; ///< Equilibrium length
 
-    // Blobs connected to
-    int *blob_index;
+    int *blob_index; ///< Blobs connected to
 
-    // Conformations connected to
-    int *conformation_index;
+    int *conformation_index; ///< Conformations connected to
 
-    // Nodes connected to
-    int *node_index;
+    int *node_index; ///< Nodes connected to
 
-    // Check if spring is active
-    bool am_i_active;
+    bool am_i_active; ///< Check if spring is active
 };
