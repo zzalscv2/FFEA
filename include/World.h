@@ -105,6 +105,7 @@ public:
     /* */
     int get_num_blobs();
 
+
 private:
 
     /** @brief 2-D Array of Blob objects (blob i, conformation j) */
@@ -160,16 +161,16 @@ private:
      */
     NearestNeighbourLinkedListCube lookup;
 
-    /** @brief * Output trajectory file */
+    /** @brief Output trajectory file */
     FILE *trajectory_out;
 
-    /** @brief * Output kinetics file */
+    /** @brief Output kinetics file */
     FILE *kinetics_out;
 
-    /** @brief * Output measurement file */
+    /** @brief Output measurement file */
     FILE *measurement_out;
 
-    /** @brief * Output detailed measurements file. May be unneccesary */
+    /** @brief Output detailed measurements file. May be unneccesary */
     FILE *detailed_meas_out;
 
     //@{
