@@ -52,8 +52,6 @@ int PreComp_solver::msg(string whatever){
  * @param[in] vector<string> types: types of beads present.
  * @param[in] int inputData: 1 means read .force and .pot files,
  *                 while 2 means read .pot and calculate the forces
- * @param[in] int approach: if .vdw -> use .vdw files and solve faces;
- *                          if .solid -> use .solid files and solve volumes.
  * @details read <type_i>-<type_j>.force and <type_i>-<type_j>.pot files
  *         for all the possible pairs, setting up the potential functions.
  *         All the .pot and .force files need to have the same x_range

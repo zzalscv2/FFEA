@@ -96,7 +96,7 @@ In between it can take the following parameters:
       [pre-computed interactions](\ref fmApproach) between beads.
  
 
-#### Short range parameters #### 
+#### Short range forces parameters #### 
 
    * ` vdw_type ` <string> (lennard-jones) <BR>
         Either "lennard-jones", "steric" or "ljsteric" depending on the type of calculations
@@ -110,6 +110,10 @@ In between it can take the following parameters:
    * ` vdw_steric_factor ` <float> <BR>
         Proportionality factor for the steric repulsion approach. More details 
          can be found [here](\ref sPotential).
+
+   * ` inc_self_vdw ` <int> <BR>
+        Enter either 1 or 0 to enable or disable short range interactions 
+         between faces within the same blob.
 
 #### Hydrodynamics parameters ####
 

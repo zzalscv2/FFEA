@@ -115,7 +115,7 @@ int BiCGSTAB_solver::solve(SparseMatrixUnknownPattern *A, scalar *x, scalar *b) 
         beta = (rho / rho_last) * (alpha / omega);
 
         // p = r + beta * (p - omega * q);
-        complicated_bastard_machine(p, r, beta, p, -omega, q, N);
+        complicated_machine(p, r, beta, p, -omega, q, N);
 
         // apply preconditioner to p (p_hat = inv_M p_i)
         apply_diagonal_matrix(p_hat, inv_M, p, N);
@@ -189,7 +189,7 @@ int BiCGSTAB_solver::solve(SparseMatrixUnknownPattern *A, scalar *x, scalar *b, 
         beta = (rho / rho_last) * (alpha / omega);
 
         // p = r + beta * (p - omega * q);
-        complicated_bastard_machine(p, r, beta, p, -omega, q, N);
+        complicated_machine(p, r, beta, p, -omega, q, N);
 
         // apply preconditioner to p (p_hat = inv_M p_i)
         apply_diagonal_matrix(p_hat, inv_M, p, N);
@@ -278,7 +278,7 @@ void BiCGSTAB_solver::scalar_vector_add(scalar *x, scalar *y, scalar c, scalar *
 /* Carries out the operation w = x + a * (y + b * z) */
 // p = r + beta(p - omega * v)
 
-void BiCGSTAB_solver::complicated_bastard_machine(scalar *w, scalar *x, scalar a, scalar *y, scalar b, scalar *z, int N) {
+void BiCGSTAB_solver::complicated_machine(scalar *w, scalar *x, scalar a, scalar *y, scalar b, scalar *z, int N) {
     int i;
     for (i = 0; i < N; i++)
         w[i] = x[i] + a * (y[i] + b * z[i]);
