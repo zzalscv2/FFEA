@@ -259,7 +259,7 @@ Measurement files: .fm / .fdm
 ------------------------
  
 Contains a list of the relevant system properties of each outputted timestep.
-Two seperate types of file for internal and external measurements.
+Two separate types of file for internal and external measurements.
 
 
 ### Global measurements: .fm ### 
@@ -293,7 +293,8 @@ Additionally, system details and a copy of the total input parameter set are wri
 
 A small thing to note; if mass is not included, momenta and kinetic energies are not written. If VdW is not active, it is not written. Anything optional may not be written,
 as seen here with KineticEnergy, SpringEnergy, VdWEnergy and PreCompEnergy.
-This is to avoid writing out many zeroes and to save memory. The FFEA toolkit is equipped to read in these files in general.
+This is to avoid writing out many zeroes, gain some performance and save disk space.
+The [FFEA toolkit](\ref FFEAanalysistut) is equipped to read in these files in general.
 
 ### Detailed measurements: .fdm ### 
 
