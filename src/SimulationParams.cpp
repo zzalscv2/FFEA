@@ -407,6 +407,13 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	trajectory_out_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << trajectory_out_fname << endl;
 
+		} else if (lvalue == "det_measurement_out_fname") {
+			if (rvalue.length() >= MAX_FNAME_SIZE) {
+				FFEA_ERROR_MESSG("det_measurement_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
+			}
+			b_fs::path auxpath = FFEA_script_path / rvalue;
+			detailed_meas_out_fname = auxpath.string(); 
+
     	} else if (lvalue == "measurement_out_fname") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
 			FFEA_ERROR_MESSG("measurement_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
@@ -416,10 +423,12 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	        measurement_out_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
 
-		// Break up the meas fname for optional files based on measurements
-		string meas_basename(measurement_out_fname);
-		meas_basename = RemoveFileExtension(meas_basename);
-		detailed_meas_out_fname = meas_basename + ".fdm";
+		// Break up the meas fname to get default names for optional detailed measurements.
+		if (detailed_meas_out_fname == "\n") {
+			string meas_basename(measurement_out_fname);
+			meas_basename = RemoveFileExtension(meas_basename);
+			detailed_meas_out_fname = meas_basename + ".fdm";
+		}
 
     	} else if (lvalue == "kinetics_out_fname") {
 		if (rvalue.length() >= MAX_FNAME_SIZE) {
