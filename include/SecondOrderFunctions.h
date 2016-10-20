@@ -120,8 +120,7 @@ namespace SecondOrderFunctions {
         //		}
     } 
 
-    // Construct jacobian column coefficients
-
+  /** Construct jacobian column coefficients */ 
   static void calc_jacobian_column_coefficients(mesh_node *n[10], abcd J_coeff[3][3]) {
         // dx/ds
         J_coeff[0][0].a = 4 * (n[0]->pos.x + n[1]->pos.x - 2 * n[4]->pos.x);

@@ -14,9 +14,9 @@ public:
 
     ~VdW_solver();
 
-    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs);
+    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw);
 
-    int solve(int num_blobs);
+    int solve();
 
     /** Allow protein VdW interactions along the top and bottom x-z planes */
     int solve_sticky_wall(scalar h);
@@ -32,6 +32,7 @@ protected:
 
     scalar **fieldenergy;
     int num_blobs;
+    int inc_self_vdw;  ///< whether to include interactions between faces within the same blob, or not. 
     struct adjacent_cell_lookup_table_entry {
         int ix, iy, iz;
     };

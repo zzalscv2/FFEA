@@ -69,12 +69,14 @@ public:
     int restart; ///< Whether or not to restart the simulation from the last available time step   
 
     int calc_vdw; ///< Whether or not to simulate van der waals interactions between surfaces   
+    int inc_self_vdw; ///< Whether or not to include van der Waals interactions derived from faces in the same blob.
     string vdw_type;  ///<Possible values: "lennard-jones" (default) or "steric".
     int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins   
     int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique   
     int calc_stokes; ///< Whether or not to include local action of the external fluid
     int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites  
     int calc_preComp; ///< Whether or not use preComputed potentials and forces   
+    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
     int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
     int wall_x_1;
     int wall_x_2;
@@ -124,10 +126,10 @@ public:
     /** Returns maximum number of states on any blob */
     int get_max_num_states();
 
-    // These set parameters are not private because the World needs them!!
+    /** These set parameters are not private because the World needs them!! */
     int kinetics_out_fname_set;
 
-    // Writes all params to params_out_fname for user's info
+    /** Writes all params to params_out_fname for user's info */
     void write_to_file(FILE *fout);
 
 private:
@@ -138,10 +140,9 @@ private:
     int vdw_in_fname_set;
     int bsite_in_fname_set;
 
-/**
-  * @brief Check if the file oFile exists, and if so 
-           rename it to "__"+oFile+"__bckp.N", 
-  *        where N is an integer so that the resulting file is new.
+/** Check if the file oFile exists, and if so 
+  *     rename it to "__"+oFile+"__bckp.N", 
+  *     where N is an integer so that the resulting file is new.
   */       
     int checkFileName(string oFile);
 

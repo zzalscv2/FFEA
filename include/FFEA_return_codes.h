@@ -31,7 +31,8 @@
 
 #include <stdio.h>
 
-/* Prints "ERROR: " to stderr in red text and "CAUTION: " in yellow */
+/** Prints "ERROR: " to stderr in red text */ 
 void FFEA_error_text();
+/** Prints "CAUTION: " to stderr in yellow text */
 void FFEA_caution_text();
 #endif
