@@ -3,8 +3,8 @@ Installation {#install}
 
 <!-- > **Warning!** FFEA is still a work in progress, and may have some rough edges. If you find one of these edges, please get in touch with us using our [issue tracker](https://bitbucket.org/sohpc-ffea/ffea/issues) so that we can round it down. -->
 
-Install instructions for the FFEA package, conisting of the FFEA_runner 
- and the ffeatools can be found in [quickstart](\ref quickstart).
+Install instructions for the FFEA package, conisting of the FFEA runner 
+ and the FFEA tools can be found in [quickstart](\ref quickstart).
  In addition to that, [troubleshooting](\ref troubleshooting) provides 
   detailed notes on how to install dependencies, as well as some extra help. 
 
@@ -18,7 +18,7 @@ Once FFEA has been installed, users may want to provide themselves with some
    * [PyMOL](https://www.pymol.org) (>=1.8) can 
         be used to visualise FFEA systems and trajectories
         as well as molecular and EM systems. Alternatives 
-        to visualise molecular systems and create FFEA continuum models
+        to visualise and workd with molecular systems
         include [Chimera](https://www.cgl.ucsf.edu/chimera/)
         and [VMD](http://www.ks.uiuc.edu/Research/vmd/).
 
