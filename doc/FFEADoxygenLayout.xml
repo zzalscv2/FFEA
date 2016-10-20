@@ -24,7 +24,7 @@
       </tab>
       <tab type="examples" visible="yes" title="" intro=""/>  
   </tab>
-  <tab type="user" title="FFEA Tools API" url="../../ffeamodules/html/index.html"/>
+  <tab type="user" title="FFEA Tools" url="../../ffeamodules/html/index.html"/>
   <!-- <tab type="usergroup" title="FFEA Tools API">
       <tab type="usergroup" visible="yes" title="Namespaces">
         <tab type="user" url="file:../../ffeamodules/html/namespaces.html" title="Namespace List"/>
