@@ -1,4 +1,4 @@
-from setuptools import setup#, Extension
+from setuptools import setup, find_packages#, Extension
 import subprocess
 
 def subprocess_cmd(command):
@@ -20,19 +20,18 @@ subprocess_cmd('cd ffeatools_build; cmake ../ffeatools/FFEA_initialise/Surface_t
 subprocess_cmd('cd ffeatools_build; cmake ../ffeatools/FFEA_initialise/Surface_tools/surface_coarse_grainer; make; make install; rm Makefile CMakeCache.txt cmake_install.cmake')
                
 setup(name='ffeatools',
-      version='0.9',
+      version='1.0',
       description='FFEA file generation and analysis tools',
       url='http://ffea.bitbucket.com',
       author='FFEA Team',
       author_email='???',
       license='???',
-      packages=['ffeatools'],
+      packages=find_packages(),
       install_requires=[
           'numpy',
 #          'pymol',
           'matplotlib',
           'argparse',
-#          'math'
       ],
       zip_safe=False,
 #      ext_modules = [
@@ -40,4 +39,4 @@ setup(name='ffeatools',
 #          Extension( )
 #          ],
     )
-# When we start converting the C++ into boost.python stuff, I will uncomment this.
+# Todo: start converting C++ into boost.python stuff!
