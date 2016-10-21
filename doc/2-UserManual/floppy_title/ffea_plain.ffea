@@ -1,0 +1,84 @@
+<param>
+	<restart = 0>
+	<dt = 1e-16>
+	<check = 100>
+	<trajectory_out_fname = ffea_plain_trajectory.ftj>
+	<measurement_out_fname = ffea_plain_measurement.fm>
+	<vdw_forcefield_params = f_plain_fine.lj>
+	<calc_vdw = 1>
+	<calc_noise = 0>
+	<vdw_type = steric>
+	<num_blobs = 4>
+	<num_conformations = (1,1,1,1)>
+</param>
+
+<system>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = f_plain_fine.top>
+			<material = f_plain_fine.mat>
+			<stokes = f_plain_fine.stokes>
+			<pin = f_plain_fine.pin>
+			<nodes = f_plain_fine.node>
+			<surface = f_plain_fine.surf>
+			<vdw = f_plain_fine.vdw>
+		</conformation>
+		<solver = CG>
+		<scale = 1e-8>
+		<centroid  = (0.0, 0.0, 0.0)>
+		<rotation = (90,0,0)>
+		<velocity = (10,0,0)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = f_plain_fine.top>
+			<material = f_plain_fine.mat>
+			<stokes = f_plain_fine.stokes>
+			<pin = f_plain_fine.pin>
+			<nodes = f_plain_fine.node>
+			<surface = f_plain_fine.surf>
+			<vdw = f_plain_fine.vdw>
+		</conformation>
+		<solver = CG>
+		<scale = 1e-8>
+		<centroid  = (0.5, 0.0, 0.0)>
+		<rotation = (90,0,0)>
+		<velocity = (-10,0,0)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = e_plain_fine.top>
+			<material = e_plain_fine.mat>
+			<stokes = e_plain_fine.stokes>
+			<pin = e_plain_fine.pin>
+			<nodes = e_plain_fine.node>
+			<surface = e_plain_fine.surf>
+			<vdw = e_plain_fine.vdw>
+		</conformation>
+		<solver = CG>
+		<scale = 1e-8>
+		<centroid  = (1.0, -0.05, 0.0)>
+		<rotation = (90,0,0)>
+		<velocity = (0,0,0)>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = a_plain_fine.top>
+			<material = a_plain_fine.mat>
+			<stokes = a_plain_fine.stokes>
+			<pin = a_plain_fine.pin>
+			<nodes = a_plain_fine.node>
+			<surface = a_plain_fine.surf>
+			<vdw = a_plain_fine.vdw>
+		</conformation>
+		<solver = CG>
+		<scale = 1e-8>
+		<centroid  = (1.5, -0.1, 0.0)>
+		<rotation = (90,0,0)>
+		<velocity = (0,0,0)>
+	</blob>
+</system>
