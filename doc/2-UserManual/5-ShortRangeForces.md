@@ -130,7 +130,7 @@ Combination potential {#cPotential}
       < vdw_type = ljsteric >
 
  a piecewise combination of the steric potential and the lennard-jones potentials is used.
-  Because hard-core surface - surface lennard-jones repulsion is much less stable than the softer volume - volume
+  Because hard-core surface - surface Lennard-Jones repulsion is much less stable than the softer volume - volume
   steric repulsion, we use the following protocol:
 
 \f[  U_{i,j}(r) = \left\{
@@ -142,8 +142,8 @@ Combination potential {#cPotential}
 \right. \f]
 
  Very short range interactions are dealt with using the volume-volume steric interactions, and `long range' using standard 
-  lennard-jones interactions. The intermediate region uses an interpolated funtion, for which the function itself and it's first derivative
-  are both continuous at the boundaries, and for \f$r = \sigma_{i,j}\f$, we still find a minumum in the energy, giving us zero force
+  Lennard-Jones interactions. The intermediate region uses an interpolated function, for which the function itself and it's first derivative
+  are both continuous at the boundaries, and for \f$r = \sigma_{i,j}\f$, we still find a minimum in the energy, giving us zero force
   at that point.
   
 

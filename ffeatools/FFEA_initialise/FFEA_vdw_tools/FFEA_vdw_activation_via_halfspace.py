@@ -1,6 +1,7 @@
 import sys, os
 import FFEA_vdw, FFEA_node, FFEA_surface
 import numpy as np
+import __builtin__
 
 import argparse as _argparse
 
@@ -51,7 +52,7 @@ def activate_via_halfspace(vdw_fname, node_fname, surf_fname, output_fname, vn, 
 	# Output
 	vdw.write_to_file(output_fname)
 
-if sys.stdin.isatty():
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     try:
 	activate_via_halfspace(args.i[0], args.n[0], args.s[0], args.o[0], args.vn, args.vp, args.ind)

@@ -1,7 +1,7 @@
 Troubleshooting {#troubleshooting}
 =======
 This tutorial will assume that the user does not have root access and must install packages locally. It's also assumed that the user will compile all of those packages from source. In the examples that follow, the software will be installed into $HOME/Software/LocalInstall, but any install folder can be used.
-Before using this guide, you should already be familiar with the [basics of the linux terminal](https://www.cheatography.com/davechild/cheat-sheets/linux-command-line/). You should also understand the [principles behind compiling, linking and building executables](https://www3.ntu.edu.sg/home/ehchua/programming/cpp/gcc_make.html)
+Before using this guide, you should already be familiar with the [basics of the Linux terminal](https://www.cheatography.com/davechild/cheat-sheets/linux-command-line/). You should also understand the [principles behind compiling, linking and building executables](https://www3.ntu.edu.sg/home/ehchua/programming/cpp/gcc_make.html)
 
 ## Installing the FFEA runner dependencies
 
@@ -23,7 +23,7 @@ Now that our software is in a non-standard location, we need to be able to tell 
 ```sh
 export PATH=$PATH:$HOME/Software/LocalInstall/bin
 ```
-in a Bash shell. These environment variables will reset every time you open a new terminal window. To preserve them, we can add them to our .bashrc file, which should be located in the home directory (if it's not, create a file called '.bashrc'). If you still can't see the file, remember to uncheck 'show hidden files' in your file manager, as by default, any filename beginning with a . is hidden.
+in a Bash shell. These environment variables will reset every time you open a new terminal window. To preserve them, we can add them to our .bashrc file, which should be located in the home directory (if it's not, create a file called '.bashrc'). If you still can't see the file, remember to uncheck 'show hidden files' in your file manager, as by default, any file name beginning with a . is hidden.
 
 The .bashrc file will execute all the commands listed in it when a new terminal is opened. For this reason, adding a line to the .bashrc file won't have any effect until the terminal is restarted.
 ### Download and install Boost
@@ -59,7 +59,7 @@ Grab Eigen from eigen.tuxfamily.org.
 
 Eigen's website and documentation state that Eigen doesn't need to be compiled, but for FFEA, it does. The easiest way to do so is to make a new folder in the Eigen folder called build_dir, switch to that folder, and inside it, run
 ```sh
-cmake /path/to/seigen/source -DCMAKE_INSTALL_PREFIX=$HOME/Software/LocalInstall
+cmake /path/to/Eigen/source -DCMAKE_INSTALL_PREFIX=$HOME/Software/LocalInstall
 make install
 ```
 You should then add Eigen's install folder to your CPATH environment variable. This will allow C and C++ compilers to find the Eigen header files.
@@ -101,7 +101,7 @@ cmake /path/to/ffea/source -DEIGEN3_HOME=$HOME/Software/LocalInstall -DBOOST_ROO
 make
 ```
 where ` EIGEN3_HOME ` and ` BOOST_ROOT ` point to the folders where Eigen3 and Boost 
- were installed respecitively.
+ were installed respectively.
 
 If you encounter an internal compiler error, then you may try to get 
  around it by reducing the number of compiler optimisations. This will be achieved by 
@@ -112,7 +112,7 @@ cmake /path/to/ffea/source -DUSE_FAST=OFF
 USE_FAST tries to find the best compiler flags for performance, however it could fail
  for some platforms.
 
-If you installed doxygen, you can build the documentation from the same folder, using
+If you installed Doxygen, you can build the documentation from the same folder, using
 ```sh
 make doc
 ```
@@ -130,7 +130,7 @@ will place the software in the desired location.
 Now that you have installed FFEA, and assuming that the install folder is already 
  in your path, you should be able to run it just by typing ` ffea ` into the terminal. 
  If you get an error that says 
- ` error while loading shared libraties: libboost ... no such file or directory `, 
+ ` error while loading shared libraries: libboost ... no such file or directory `, 
  then add the following line to your .bashrc file:
 ```sh
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/Software/LocalInstall/lib
