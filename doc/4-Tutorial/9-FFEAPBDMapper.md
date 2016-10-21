@@ -44,22 +44,22 @@ One can follow two strategies. The first one consists of aligning
  we will show how to do that using UCSF Chimera. However, some meshing programs 
  translate and rotate the original frame, and in that case one would need to 
  align the PDB with the initial mesh using our PyMOL plugin. This can be done 
- opening PDB and mesh in PyMOL and manually alligning the former onto the later
+ opening PDB and mesh in PyMOL and manually aligning the former onto the later
  using ` Mouse ` -> ` 3 Button Editing `. 
 
 Having said so, in order to align the PDB to the EM map, 
  the first thing to do is to open both the PDB and EM density map in UCSF Chimera.
 
-![The PDB and EM density map are misalgined](structuremap1.png "The PDB and EM density map are misalgined")
+![The PDB and EM density map are misaligned](structuremap1.png "The PDB and EM density map are misaligned")
 
 If they are not aligned, select ` Tools ` on the volume viewer menu bar, and select
  ` Volume Data `, then  ` Fit in map`  and push ` Fit `. If nothing happens (as it didn't, in our example) you may need to give the algorithm some help. 
  Without closing this window, go to the main UCSF Chimera window,
-  under  ` Tools `, select ` Movement ` and ` Movement Mouse Mode`. Select ` Move molecule` from the dropdown menu, and use the middle mouse button to drag the PDB object over the electron density map. Then, use the left mouse button to rotate the PDB into the approximate correct position. Push ` Fit ` on the ` Fit in Map ` window to finish the job.
+  under  ` Tools `, select ` Movement ` and ` Movement Mouse Mode`. Select ` Move molecule` from the drop-down menu, and use the middle mouse button to drag the PDB object over the electron density map. Then, use the left mouse button to rotate the PDB into the approximate correct position. Push ` Fit ` on the ` Fit in Map ` window to finish the job.
 
 ![Aligned PDB and EM density map](structuremap2.png "Aligned PDB and EM density map")
  
-The new atomic structure can be saved by opening the file menu and seleting ` save PDB `. For this example, we will save it as ` Atomicstructure.pdb `.
+The new atomic structure can be saved by opening the file menu and selecting ` save PDB `. For this example, we will save it as ` Atomicstructure.pdb `.
 
 Once an atomic structure is aligned with the FFEA mesh,
  the next step is to create the map between them. This is done through 
@@ -79,6 +79,6 @@ This matrix can be applied to any simulation frame calculated by FFEA in order t
 
 The above script converts the entire FFEA trajectory into an atomistic one. This is done by applying the map to the FFEA trajectory (which has the same node order as the original .node file), then importing the original .pdb topology onto the new atomic positions (again, same order as the original) and writing the whole thing to a file.
 
-Visualisation in Pymol of both this new atomistic trajectory and the FFEA trajectory will show clearly how the mapping procedure works, but it must be emphasised that this is an entirely non-physical tranformation. If atomic positions are extrapolated by the process, then bond lengths may be much greater than they should be. Interpolation of atomic positions based on the FFEA simulation can cause errors in the dihedral angles and other angular properties. If you wish to perform atomistic simulations on the back of this mapping procedure, we advise that you minimise and equilibrate the resulting atomistic structure as best you can first. 
+Visualisation in PyMOL of both this new atomistic trajectory and the FFEA trajectory will show clearly how the mapping procedure works, but it must be emphasised that this is an entirely non-physical transformation. If atomic positions are extrapolated by the process, then bond lengths may be much greater than they should be. Interpolation of atomic positions based on the FFEA simulation can cause errors in the dihedral angles and other angular properties. If you wish to perform atomistic simulations on the back of this mapping procedure, we advise that you minimise and equilibrate the resulting atomistic structure as best you can first. 
 
 

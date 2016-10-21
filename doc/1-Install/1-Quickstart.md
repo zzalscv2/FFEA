@@ -50,7 +50,7 @@ CMake will look for the required Boost and Eigen libraries. In the case they are
  installed in a standard place, you can help CMake either through: 
 
   * configuring with ` -DCMAKE_PREFIX_PATH="Path-to-Eigen;Path-to-Boost" `,
-  * exporting enviroment variables ` EIGEN_HOME `  and ` BOOST_ROOT ` to the corresponding 
+  * exporting environment variables ` EIGEN_HOME `  and ` BOOST_ROOT ` to the corresponding 
       software folders
   * or configuring with ` -DEIGEN_HOME="Path-to-Eigen" ` and  ` -DBOOST_ROOT="Path-to-Boost" `
 
@@ -110,7 +110,7 @@ either to the folder specified through ` -DCMAKE_INSTALL_PREFIX `
 
 If you built the documentation you will be able to read it wit a browser, 
   and so if firefox was the browser available to you, and you installed 
-  FFEA in ` $FFEA_HOME `, the comand would be:
+  FFEA in ` $FFEA_HOME `, the command would be:
 
       firefox $FFEA_HOME/share/ffea/doc/html/index.html &
 
