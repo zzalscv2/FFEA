@@ -3,7 +3,7 @@
 configure_file("ffeatools.in"
                "${PROJECT_BINARY_DIR}/ffeatools/ffeatools" @ONLY)
 install(PROGRAMS "${PROJECT_BINARY_DIR}/ffeatools/ffeatools" 
-        DESTINATION  "${CMAKE_INSTALL_PREFIX}/bin")
+        DESTINATION bin)
 
 # 2 - Install python files here:
 install(FILES "ffeatools.py"
@@ -63,6 +63,6 @@ if ( COMPRESSING )
   message(STATUS "PyMOL plugin will be compressed")
   add_custom_target(create_tar ALL COMMAND
                   ${CMAKE_COMMAND} -E tar "cfz" ${FFEA_TAR_BALL} "${FFEA_TAR_DIR}/FFEAplugin/")
-  install (FILES ${FFEA_TAR_BALL} DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ffea/plugins/pymol")
+  install (FILES ${FFEA_TAR_BALL} DESTINATION share/ffea/plugins/pymol/)
 endif ( COMPRESSING )
 
