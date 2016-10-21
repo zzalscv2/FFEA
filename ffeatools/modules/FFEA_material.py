@@ -2,6 +2,7 @@ from os import path
 from time import sleep
 import numpy as np
 from FFEA_topology import FFEA_topology
+from FFEA_exceptions import *
 
 class FFEA_material:
 
@@ -9,10 +10,29 @@ class FFEA_material:
 	
 		self.reset()
 
+		# Empty fname give an empty object
+		if fname == "":
+			return
+
 		try:
 			self.load(fname)
-		except:
-			return
+
+		except FFEAFormatError as e:
+			self.reset()
+			print_error()
+			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			raise
+
+		except FFEAIOError as e:
+			self.reset()
+			print_error()
+			print "Input error for file " + e.fname
+			if e.fext != [""]:
+				print "       Acceptable file types:"
+				for ext in e.fext:
+					print "       " + ext
+		except IOError:
+			raise
 
 	def load(self, fname):
 
@@ -20,8 +40,8 @@ class FFEA_material:
 
 		# Test file exists
 		if not path.exists(fname):
-			print("\tFile '" + fname + "' not found. Returning empty object...")
-			return
+			print fname + " not found."
+			raise IOError
 	
 		# File format?
 		base, ext = path.splitext(fname)
@@ -30,10 +50,10 @@ class FFEA_material:
 				self.load_mat(fname)
 				self.valid = True
 			except:
-				print("\tUnable to load FFEA_material from " + fname + ". Returning empty object...")
+				raise IOError
 
 		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+			raise FFEAIOError(fname=fname, fext=[".mat"])
 
 	def load_mat(self, fname):
 
@@ -41,29 +61,34 @@ class FFEA_material:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Test format
 		line = fin.readline().strip()
 		if line != "ffea material params file" and line != "walrus material params file":
-			print("\tExpected 'ffea material params file' but found " + line)
-			raise TypeError
+			raise FFEAFormatError(lin=1, lstr="ffea material params file")
 
-		num_elements = int(fin.readline().split()[1])
+		try:
+			num_elements = int(fin.readline().split()[1])
+		except:
+			raise FFEAFormatError(lin="2", lstr="num_elements %d\n")
 
-		# Read elements now	
-		while(True):
-			sline = fin.readline().split()
-			if len(sline) != 6:
-				break
-			# Get an element (we want a matrix of values for slicing)
-			el = []
+		# Read elements now
+		try:
+			for i in range(num_elements):
+				sline = fin.readline().split()
+	
+				# Get an element (we want a matrix of values for slicing)
+				el = []
 
-			for s in sline:
-				el.append(float(s))
-			self.add_element(el)
+				for s in sline:
+					el.append(float(s))
+				self.add_element(el)
+
+		except (IndexError, ValueError):
+			raise FFEAFormatError(lin=i+3, lstr="%f %f %f %f %f %f")
+		except:
+			raise
 
 		fin.close()
 
