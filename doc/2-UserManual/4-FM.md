@@ -33,7 +33,7 @@ where the only fields that are taken into account are
 
      <beads = beadsForBlobXConfY.pdb> 
 
-At the begining of the simulation, each bead is assigned onto a tetrahedron, and 
+At the beginning of the simulation, each bead is assigned onto a tetrahedron, and 
  during the simulation, the forces that these beads experiment will be linearly
  interpolated onto the nodes of the corresponding tetrahedra. The initial assignment
  is done to the nearest tetrahedra centroid. However, this can be altered individually

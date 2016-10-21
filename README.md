@@ -1,7 +1,7 @@
 Overview {#overview}
 =========
 
-Fluctuating Finite Element Analysis is a new molecular modelling technique, built from the ground-up to support systems that are larger and more complex than those modelled by atomistic molecular dynamics. Instead of modelling biological systems as a collection of connected atoms, it models them as 3D volumes comprised of tetrahedrons. Unlike previous coarse-grained models, the models FFEA generates are viso-elastic continuum solids. Unlike other applications of Finite Element Analysis, these systems are subject to thermal fluctuations.
+Fluctuating Finite Element Analysis is a new molecular modelling technique, built from the ground-up to support systems that are larger and more complex than those modelled by atomistic molecular dynamics. Instead of modelling biological systems as a collection of connected atoms, it models them as 3D volumes comprised of tetrahedrons. Unlike previous coarse-grained models, the models FFEA generates are visco-elastic continuum solids. Unlike other applications of Finite Element Analysis, these systems are subject to thermal fluctuations.
 
 This technique has the potential to model large, complex systems, made of many molecules, and complex processes at the frontiers of molecular biology. As it does not not require an atomistic level of detail, it can also be used to simulate biological molecules that cannot be imaged using X-ray crystallography.
 
@@ -20,7 +20,7 @@ Features  {#whatever}
     account for conformational changes and binding events.
  * Conversion of EM density data and atomistic structures into FFEA simulations
  * PyMOL visualisation plugin
- * Analysis tools (equilibration, euler characteristic, principal component analysis, gemoetric measurements) and Python API
+ * Analysis tools (equilibration, Euler characteristic, principal component analysis, geometric measurements) and Python API
  * Extensive test suite that checks FFEA's simulation output against analytical results
 
 
