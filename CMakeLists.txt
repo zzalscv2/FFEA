@@ -155,9 +155,9 @@ if(DOXYGEN_FOUND)
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
   install(DIRECTORY "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/share/ffea/doc" OPTIONAL)
+                share/ffea/doc OPTIONAL)
   install(DIRECTORY "${PROJECT_BINARY_DIR}/src/ffeamodules/html" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/share/ffea/ffeamodules" OPTIONAL)
+                share/ffea/ffeamodules OPTIONAL)
 endif(DOXYGEN_FOUND)
 
 # 9 ### DEBUG FLAGS ####
@@ -191,7 +191,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 ######## INSTALL THE FFEA TOOLS  ######
 # 1 - Set up the install python path
 include(${CMAKE_ROOT}/Modules/FindPythonInterp.cmake)
-set(PYTHONSTUFF "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
+set(PYTHONSTUFF "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
 
 # 2 - and go through the folders:
 # PENDING # Unify or rename make_structure_map.cpp Matrices.hpp and Vectors.hpp in
@@ -217,19 +217,31 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
 ########### # # # CPACK STUFF # # # #################
 set(CPACK_PACKAGE_NAME ${PACKAGE_NAME})
 set(CPACK_PACKAGE_VERSION ${PACKAGE_VERSION})
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
+set(CPACK_PACKAGE_ARCHITECTURE "x86_64")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_PACKAGE_ARCHITECTURE}")
 set(CPACK_PACKAGE_VENDOR "University of Leeds, UK.")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "FFEA - a toolkit for molecular simulation using Fluctuating Finite Element Method")
-# set(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_SOURCE_DIR}/admin/InstallWelcome.txt")
+
+set(CPACK_GENERATOR "TBZ2" "DEB" "RPM")
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+# the problem is that FFEA links to specific versions of boost,
+#  so if packagising for different platforms, we would need to know their boost version.
+#  Ubuntu 14.04 - 1.55
+#  Mint 17 -  1.55
+#  Ubuntu 16.04 - 1.58
+#  CentOS 6 - 1.48 - TOO OLD
+#  CentOS 7 - 1.53... 
+# set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-filesystem-dev (>=1.54), libboost-system-dev (>=1.54), libboost-program-options-dev (>=1.54)")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-filesystem1.55.0, libboost-system1.55.0, libboost-program-options1.55.0")
+set(CPACK_DEBIAN_PACKAGE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pymol (>=1.8)")
+
+set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
+set(CPACK_RPM_PACKAGE_REQUIRES "boost-filesystem >= 1.54, boost-system >= 1.54, boost-program-options >= 1.54")
+
 # Its GPL/LGPL, so they do not have to agree to a license for mere usage, but some installers require this...
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
-# set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/admin/InstallInfo.txt")
-set(CPACK_SOURCE_IGNORE_FILES "\\\\.isreposource$;\\\\.git/;\\\\.gitignore$;\\\\.gitattributes;")
-# CPack source archives include only the directories we list here.
-# This variable is a list of pairs of names of source and destination
-# directories. Most of these are used for content GROMACS generates as
-# part of the configuration or build.
-set(CPACK_INSTALLED_DIRECTORIES "${CMAKE_BINARY_DIR}/src/doc;share/ffea/doc/;${PROJECT_BINARY_DIR}/src/ffeamodules/html;share/ffea/ffeamodules")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 set(CPACK_PACKAGE_CONTACT "contact-us@leeds.ac.uk")
 
 #must come after all cpack settings!
