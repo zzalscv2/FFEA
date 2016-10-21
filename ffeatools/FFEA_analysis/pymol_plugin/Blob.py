@@ -745,14 +745,18 @@ class Blob:
 
 					# Get range of colours
 					colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
+					#colgrad = [np.array([1.0,0.0,0.0]), np.array([1.0,1.0,0.0]), np.array([0.0,1.0,0.0]), np.array([0.0,0.0,1.0])]	# Red yellow green blue
 					num_cols = len(colgrad)
 					param = []
 	
 					for e in self.mat.element:
 						param.append(e[paramval])
 			
+					# Relative or absolute max / min here
 					maxval = max(param)
 					minval = min(param)
+					#maxval = 100e9
+					#minval = 100e7
 					rangeval = maxval - minval
 	
 					# Now, draw each face
@@ -765,10 +769,10 @@ class Blob:
 	
 						# Calc and add colour first
 						if rangeval == 0.0:
-							paramfrac = 0
+							paramfrac = 1.0
 						else:
 							paramfrac = (param[f.elindex] - minval) / rangeval
-			
+
 						# Which interval?
 						if paramfrac <= 0:
 							colpair = [0, 0]
@@ -776,7 +780,7 @@ class Blob:
 							colpair = [num_cols - 1, num_cols - 1]
 						else:
 							colpair = [int(np.floor(paramfrac * num_cols)), int(np.floor(paramfrac * num_cols)) + 1]
-	
+
 						# Where in interval
 						col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * paramfrac + colgrad[colpair[0]]
 						#print col[0], col[1], col[2]
