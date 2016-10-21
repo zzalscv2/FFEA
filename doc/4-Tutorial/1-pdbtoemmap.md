@@ -18,6 +18,6 @@ Gives the following structure when visualised in Chimera (http://www.cgl.ucsf.ed
 
 If we compare this to [EMDB ID:EMD-5043](http://www.ebi.ac.uk/pdbe/entry/emdb/EMD-5043), a similar structure, we can see that experimentally obtained electron microscopy data is smoother, easier to work with and therefore more appropriate when just the volumetric data is required and so if low resolution data is available for your protein, use it! 
 
-![The actual electron density structure of EMDB ID:EMD-5043 (recommended countour level 0.42).](emd5043_both.png "GroEL Electron Microscopy Structure")
+![The actual electron density structure of EMDB ID:EMD-5043 (recommended contour level 0.42).](emd5043_both.png "GroEL Electron Microscopy Structure")
 
 However, we also see that a small amount of density is contained within the molecule that we will need to get rid of. This is dealt with in the next section.
