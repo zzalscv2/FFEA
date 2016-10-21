@@ -15,7 +15,7 @@ Main runner input file: .ffea
 Nodes file: .node
 -----------------
 
-Contains a list of whitespace separated coordinates specifiying the position
+Contains a list of white-space separated coordinates specifying the position
  of each node in the blob. The file starts with a header of four lines, and 
  is followed by two separated lists with the interior and exterior nodes:
 
@@ -40,7 +40,7 @@ Contains a list of whitespace separated coordinates specifiying the position
 Topology file: .top
 -------------------
 
-Contains a list a whitespace separated indices specifiying the node indices
+Contains a list a white-space separated indices specifying the node indices
 contained within each element. There are ten indices per element as they are second
 order elements (every tetrahedron has a node at each corner 
  and at the midpoint of each edge). Separated into internal (no surface faces) 
@@ -64,7 +64,7 @@ order elements (every tetrahedron has a node at each corner
 Surface file: .surf
 -------------------
 
-Contains a list of whitespace separated indices specifying the indices of the
+Contains a list of white-space separated indices specifying the indices of the
 nodes on each surface face and the index of the containing element.
 
 
@@ -81,7 +81,7 @@ nodes on each surface face and the index of the containing element.
 Material file: .mat
 -------------------
 
-Contains a list of whitespace separated material parameters for each element.
+Contains a list of white-space separated material parameters for each element.
 
 
     ffea material params file
@@ -107,7 +107,7 @@ for the calculation of external drag.
     radius 304
 
 
-van der Waals file: .vdw
+Van der Waals file: .vdw
 -------------------------
 Contains a list of integers, ranging from -1 to 6, describing the type of vdw interaction
  this face will undergo, as described by the Lennard-Jones files, where:
@@ -217,12 +217,12 @@ Output files {#oFiles}
 Trajectory file: .ftj
 ---------------------
 Contains a list of `*` separated frames specifying the structure of the blob at
-each outputted timestep. The frames contain a list of blobs which themselves
+each outputted time-step. The frames contain a list of blobs which themselves
 contain a list of node positions, velocities and forces. If the motion state is
-STATIC, blob doesn’t move, so frame is not outputted to save space, and improve 
+STATIC, blob does not move, so frame is not outputted to save space, and improve 
 the performance. Only the positions are used in the viewer.
  In between each frame is a small segment showing whether any conformational 
- changes have occured. As such,
+ changes have occurred. As such,
 each frame can be a different length, which is why the blob and conformation
 sizes are specified at the beginning of the file.
 
@@ -258,8 +258,8 @@ sizes are specified at the beginning of the file.
 Measurement files: .fm / .fdm
 ------------------------
  
-Contains a list of the relevant system properties of each outputted timestep.
-Two seperate types of file for internal and external measurements.
+Contains a list of the relevant system properties of each outputted time-step.
+Two separate types of file for internal and external measurements.
 
 
 ### Global measurements: .fm ### 
@@ -293,11 +293,12 @@ Additionally, system details and a copy of the total input parameter set are wri
 
 A small thing to note; if mass is not included, momenta and kinetic energies are not written. If VdW is not active, it is not written. Anything optional may not be written,
 as seen here with KineticEnergy, SpringEnergy, VdWEnergy and PreCompEnergy.
-This is to avoid writing out many zeroes and to save memory. The FFEA toolkit is equipped to read in these files in general.
+This is to avoid writing out many zeroes, gain some performance and save disk space.
+The [FFEA toolkit](\ref FFEAanalysistut) is equipped to read in these files in general.
 
 ### Detailed measurements: .fdm ### 
 
-This file records the measurements on individual blobs, and between each specific pair of blobs. It is created by default but can be supressed with '-d' and the command line.
+This file records the measurements on individual blobs, and between each specific pair of blobs. It is created by default but can be suppressed with '-d' and the command line.
 and allows one to know specific details about individual molecules / pairs of molecules in a multi-blob simulation. Measurements specific to each blob are printed first, followed by each interacting pair.
  The format is:
 
@@ -318,7 +319,7 @@ hence the zeroes. No blobs were interacting with themselves.
 Checkpoint file .fcp {#ffeaCheckpointFileOut}
 ------------------------------------------------
 The checkpoint file stores the state of the Random Number Generator(s) RNG(s) at the 
- last saved step. The format of this file, that should be automatically writen,
+ last saved step. The format of this file, that should be automatically written,
  starts with a single header line specifying the number of RNGStreams dedicated to 
  the thermal stress:
 

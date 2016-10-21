@@ -14,7 +14,7 @@ In between it can take the following parameters:
 
    * ` restart ` <int> (0) <BR>
         If set up to 1, it will continue from the last snapshot found in 
-        ` trajectory_out_fname `. Otherwise, FFEA will start from timestep 0.
+        ` trajectory_out_fname `. Otherwise, FFEA will start from time-step 0.
 
    * ` checkpoint_in ` <string> <BR>
         The name of the checkpoint file to be read in case of setting ` <restart = 1> `.
@@ -31,7 +31,7 @@ In between it can take the following parameters:
         Number of time steps to be simulated. 
  
    * ` kT ` <float> <BR>
-        The product of the Boltzmann constant k and the temprature T, in ` J `. 
+        The product of the Boltzmann constant k and the temperature T, in ` J `. 
 
    * ` rng_seed ` <int> <BR>
         The initial seed for the pseudo random number generator. If instead of 
@@ -72,10 +72,13 @@ In between it can take the following parameters:
    * ` measurement_out_fname ` <string> <BR>
         The name of the file where energy measurements will be recorded.
 
+   * ` det_measurement_out_fname ` <string> (Defaulting to ` measurement_out_fname ` with extension replaced with ` .fdm `). <BR>
+        The name of the file where detailed measurements will be recorded. 
+
    * ` kinetics_out_fname ` <string> <BR>
         The name of the file where kinetic trajectory will be recorded.
 
-   * ` checkpoint_out ` <string> <BR>
+   * ` checkpoint_out ` <string> (Defaulting to ` ffea-file-name ` with extension replaced with `.fcp`) <BR> 
         The name of the checkpoint file where the details of the state 
           of the last recorded frame will be saved in order to be able to use restarts.
 
@@ -98,16 +101,17 @@ In between it can take the following parameters:
 
 #### Short range forces parameters #### 
 
-   * ` vdw_type ` <string> (lennard-jones) <BR>
+   * ` vdw_type ` <string> (steric) <BR>
         Either "lennard-jones", "steric" or "ljsteric" depending on the type of calculations
         to be performed.
 
    * ` vdw_forcefield_params ` <string>  <BR>
         The name of the ` .lj ` file that contains the interaction parameters for 
-          the Lennard-Jones potential. More details can be found 
+          the Lennard-Jones potential. Required only if ` vdw_type ` is set to 
+          either ` lennard-jones ` or ` ljsteric `. More details can be found 
           [here](\ref ljPotential).
 
-   * ` vdw_steric_factor ` <float> <BR>
+   * ` vdw_steric_factor ` <float> (1e-2) <BR>
         Proportionality factor for the steric repulsion approach. More details 
          can be found [here](\ref sPotential).
 
@@ -154,20 +158,19 @@ In between it can take the following parameters:
         Number of cells or voxels that the simulation box has in the z direction. 
 
    * ` es_h ` <int> (3) <BR> 
-         The size of a voxel, calculated as ` es_h / kappa` i.e. number of debye lengths.
+         The size of a voxel, calculated as ` es_h / kappa` i.e. number of Debye lengths.
 
    * ` sticky_wall_xz ` <int> (0) <BR>
          Either 0 or 1, depending on whether the ` xz ` wall, at \f$y=0\f$ is 
          a sticky wall or not. 
 
-   * ` wall_x_1 ` <enum string> (PBC) <BR>
-   * ` wall_x_2 ` <enum string> (PBC) <BR>
-   * ` wall_y_1 ` <enum string> (PBC) <BR>
-   * ` wall_y_2 ` <enum string> (PBC) <BR>
-   * ` wall_z_1 ` <enum string> (PBC) <BR>
-   * ` wall_z_2 ` <enum string> (PBC) <BR>
-
-     The boundary condition type of each wall
+   * ` wall_x_1 ` <string> (PBC) <BR>
+   * ` wall_x_2 ` <string> (PBC) <BR>
+   * ` wall_y_1 ` <string> (PBC) <BR>
+   * ` wall_y_2 ` <string> (PBC) <BR>
+   * ` wall_z_1 ` <string> (PBC) <BR>
+   * ` wall_z_2 ` <string> (PBC) <BR>
+     The boundary condition type of each wall.
         
 
 
@@ -181,18 +184,18 @@ Blob Block {#blobBlock}
 -----------------------
 
   The blob block starts with the line ` <blob> ` and ends with the line ` </blob> `. 
-It has both it's own parameters and a set of subblocks:
+It has both it's own parameters and a set of sub-blocks:
 
 
-   * ` solver ` <enum string> (CG_nomass) <BR>
+   * ` solver ` <string> (CG_nomass) <BR>
      Specifies the mechanical solver used for all conformations within this block:
 	 - **CG**: A solver which builds and inverts the mass matrix of the system, leading to second order Euler integration to update positions (small timestep required)
-	 - **CG_nomass**: A solver which builds and inverts the viscosity matrix for a massless system, leading to first order Euler integration to update positions (bigger timestep 		    	     allowed)
-	 - **masslumped**: A solver which builds and inverts a purely diagonal mass matrix (hence masslumped) of the system, leading to second order Euler integration to update 			     positions (small timestep required)
+	 - **CG_nomass**: A solver which builds and inverts the viscosity matrix for a massless system, leading to first order Euler integration to update positions (bigger time-step 		    	     allowed)
+	 - **masslumped**: A solver which builds and inverts a purely diagonal mass matrix (hence masslumped) of the system, leading to second order Euler integration to update 			     positions (small time-step required)
 
    * ` scale ` <float> (1e-10) <BR>
      How much the node positions should be scaled before a simulation begins i.e. if the ` nodes ` file positions are in angstroms, the our ` scale `
-     must be 1e-10 to convert everthing into meters, the SI units required by FFEA
+     must be 1e-10 to convert everything into meters, the SI units required by FFEA
 
    * ` centroid ` <list of 3 floats> <BR>
       List of comma separated floats enclosed in parenthesis 
@@ -223,31 +226,31 @@ It contains mostly structural information:
 	FROZEN  - Same as STATIC but all positional data will be printed to trajectories anyway
 
    * ` nodes ` <string> <BR>
-     The filename specifying the node positions
+     The file name specifying the node positions
 
    * ` topology ` <string> <BR>
-     The filename specifying the node connectivities (how they form elements)
+     The file name specifying the node connectivities (how they form elements)
 
    * ` surface ` <string> <BR>
-     The filename specifying the surface node connectivities (how they form faces)
+     The file name specifying the surface node connectivities (how they form faces)
 
    * ` material ` <string> <BR>
-     The filename specifying the material properties of each element
+     The file name specifying the material properties of each element
 
    * ` vdw ` <string> <BR>
-     The filename specifying the type of vdw interaction for each surface face
+     The file name specifying the type of vdw interaction for each surface face
 
    * ` stokes ` <string> <BR>
-     The filename specifying the 'radius' of each node, to calculate local hydrodynamics
+     The file name specifying the 'radius' of each node, to calculate local hydrodynamics
 
    * ` pin ` <string> <BR>
-     The filename specifying which, if any, nodes are pinned in place (to simulate permanent binding, for example)
+     The file name specifying which, if any, nodes are pinned in place (to simulate permanent binding, for example)
 
    * ` binding_sites ` <string> <BR>
-     The filename specifying the sets of faces which constitute kinetic binding sites, and the type of site
+     The file name specifying the sets of faces which constitute kinetic binding sites, and the type of site
 
    * ` beads ` <string> <BR>
-     The filename specifying the position of every bead in the system. The formatting 
+     The file name specifying the position of every bead in the system. The formatting 
  of this file can be found [here](\ref fm_inputfile).
 
 #### Kinetics Block {#kineticsBlock} ####
@@ -256,10 +259,10 @@ It contains mostly structural information:
 It contains information detailing how the different structural conformations kinetically switch between one another: 
  
    * ` states ` <string> <BR>
-     The filename specifying the set of states available to the molecule
+     The file name specifying the set of states available to the molecule
 
    * ` rates ` <string> <BR>
-     The filename specifying the set of rates at which the molecules will kinetically switch between the defined states
+     The file name specifying the set of rates at which the molecules will kinetically switch between the defined states
 
 ### Maps Block {#mapsBlock} ### 
 
@@ -267,11 +270,10 @@ It contains information detailing how the different structural conformations kin
 It contains a list of files detailing how the different structural conformations mathematically relate to one another:
 
    * ` map (i,j) ` <string> <BR>
+     A file name specifying the linear map (non-square matrix) from conformation i to conformation j. The map is highly sparse, and so is 
+     stored and applied using the Yale Format for sparse matrices (see [here](https://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_.28CSR.2C_CRS_or_Yale_format.29)).
 
-     A filename specifying the linear map (non-square matrix) from conformation i to conformation j. The map is highly sparse, and so is 
-     stored and applied using the Yale Format for sparse matrices (https://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_.28CSR.2C_CRS_or_Yale_format.29)
-
-As a side note, if you have N conforamtions within your blob, then this section should contain N(N-1) maps (each structure mapping to each other structure, not including itself)
+As a side note, if you have N conformations within your blob, then this section should contain N(N-1) maps (each structure mapping to each other structure, not including itself)
 
 Interactions Block {#interactionsBlock}
 ---------------------------------------
@@ -296,11 +298,15 @@ It only contains other blocks, each of which define a different way blobs can in
       - 1 will read .force and .pot files
       - 2 will read .pot files and compute the forces.
 
-     The expected format for these files is explained [here](\ref potfile)
-
+ The expected format for these files is explained [here](\ref potfile)
  * ` folder ` - path (either absolute or relative to the folder where the .ffea file resides)
                  pointing to the folder storing the .pot (and optionally .force)
                  interaction files.
+
+
+
+
+
 
 If the value given for ` types ` were ` (B1, B2, B3) `, FFEA would try to read files:
 
@@ -323,7 +329,7 @@ from the given ` folder `. If a file were not found, the corresponding pair
 
   The springs block starts with the line ` <springs> ` and ends with the line ` </springs> `.
    * ` springs_fname ` <string> <BR>
-      The filename containing details of simple linear spring objects between individual nodes in your system.
+      The file name containing details of simple linear spring objects between individual nodes in your system.
 
 
 

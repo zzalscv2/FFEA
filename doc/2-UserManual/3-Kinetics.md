@@ -11,7 +11,7 @@ One of the main advantages of FFEA compared with more common techniques such as 
  processes are themselves atomic in nature, triggered by nanoscale processes such as ATP hydrolysis, yet 
  the net result occurs at the mesoscale and so are out of range of MD. We have enabled the simulation of these
  events by integrating FFEA with a kinetic model, enabling switching between different conformational
- states and bound / unbound states whilst simulataneously continuing the stochastic dynamic simulation.
+ states and bound / unbound states whilst simultaneously continuing the stochastic dynamic simulation.
 
 Relevant fields at the input file {#kffea_inputfile}
 =================================

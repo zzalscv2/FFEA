@@ -132,29 +132,15 @@ int main(int argc, char *argv[])
 	script_fname = fs_script_fname.string(); 
 	cout << "Input FFEA script - " << script_fname << "\n";
 
-	// Use it to name the logfile
-	b_fs::path fs_log_fname = fs_script_fname;
-	fs_log_fname.replace_extension(".log");
-	set_log_fname(fs_log_fname.string()); 
-
-	/* Open and begin the logfile
-	SimulationParams::checkFileName(userInfo::log_out_fname);
-	userInfo::log_out = fopen(userInfo::log_out_fname.c_str(), "w");
-	fprintf(userInfo::log_out, "FFEA Log File\n\nScript - %s\n\n", script_fname.c_str()); */
-
 	//The system of all proteins, electrostatics and water
 	World *world;
 
 	// Allocate the world
 	world = new World();
-	//print_normal("lolnormal");
-	//print_mid("lolmid");
-	//print_high("lolhigh");
-	//print_mania("lolmania");
-	
+
 	// Initialise the world, loading all blobs, parameters, electrostatics, kinetics etc.
 	cout << "Initialising the world:\n" << endl;
-	if(world->init(script_fname, frames_to_delete, mode, !var_map.count("detailed")) == FFEA_ERROR) {
+	if(world->init(script_fname, frames_to_delete, mode, !var_map.count("no-detail")) == FFEA_ERROR) {
 		FFEA_error_text();
 		cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 

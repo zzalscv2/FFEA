@@ -18,7 +18,7 @@ A number of optional arguments are available:
  
 FFEA can run in parallel using multiple threads through OpenMP. By default, 
  it will try to use as many threads as cores found. One can control the 
- number this benaviour adjusting the environment varible ` OMP_NUM_THREADS`.
+ number this behaviour adjusting the environment variable ` OMP_NUM_THREADS`.
 
 
 The following pages describe the gory details to run FFEA simulations:

@@ -3,7 +3,7 @@ Visualising FFEA {#FFEAviewertut}
 
 ## Installation
 
-The FFEA viewer is available as a plugin for the [PyMOL molecular graphics system](https://www.pymol.org/). It requires Pymol 1.8.x or above, and Python 2.7.x or above.
+The FFEA viewer is available as a plugin for the [PyMOL molecular graphics system](https://www.pymol.org/). It requires PyMOL 1.8.x or above, and Python 2.7.x or above.
 
 After installing FFEA, the plugin ` FFEAplugin.tar.gz ` will be found in ` $FFEA_HOME/share/ffea/plugins/pymol `.
  (If that were not the case, the files can be found under the build folder in `/ffeatools/analysis/pymol_plugin`. 
@@ -25,7 +25,7 @@ When PyMOL loads, open the ` Plugin ` menu, and you should see a new option call
 ![FFEA Viewer settings](viewer_2_settings_II.png "FFEA Viewer settings")
 
 The FFEA viewer settings are:
-* ` System name `: abtitrary, used to identify the system in the PyMOL sidebar.
+* ` System name `: arbitrary, used to identify the system in the PyMOL sidebar.
 * ` Display `: displays spring objects and pinned nodes if checked.
 * ` Show solid `:
   * ` Plain solid ` renders the mesh in flat colours.
@@ -34,19 +34,19 @@ The FFEA viewer settings are:
   * ` Bulk Viscosity ` colours the mesh different depending its bulk viscosity, as read in the material file. 
   * ` Shear Modulus ` colours the mesh different depending its shear modulus, as read in the material file. 
   * ` Bulk Modulus ` colours the mesh different depending its bulk modulus, as read in the material file. 
-  * ` VdW ` colours the mesh different depending the Van der Waals face type of the faces, as read in the vdw file. 
+  * ` VdW ` colours the mesh different depending the van der Waals face type of the faces, as read in the vdw file. 
   * ` No Solid ` does not display a solid mesh.
 * ` Show Mesh `:
-  * ` Surface Mesh ` renders a wireframe of the surface
-  * ` Whole Mesh ` renders a wireframe that includes the internal elements
-  * ` No mesh ` does not display a wireframe mesh.
+  * ` Surface Mesh ` renders a wire-frame of the surface
+  * ` Whole Mesh ` renders a wire frame that includes the internal elements
+  * ` No mesh ` does not display a wire frame mesh.
 * ` Indices `:
   * ` Node Indices ` displays the indices of all the nodes, including the 2nd-order nodes.
   * ` Node Indices (Linear)` only displays the indices of the linear elements. In most cases, this is more useful, as displaying second-order nodes can make the image hard to read.
   * ` Element Indices ` displays the indices of the elements.
   * ` Face Indices ` displays the indices of the faces (surface elements) only.
   * ` No indices ` does not display indices.
-* Clicking the ` Add node pseudoatoms ` button after the simulation is loaded will cause PyMOL to load a pseudoatom at the location of each node. Pseudoatmos can be targeted by all of PyMOL's regular analysis tools. For example, you can type `label all, name` into the PyMOL console.
+* Clicking the ` Add node pseudoatoms ` button after the simulation is loaded will cause PyMOL to load a pseudoatom at the location of each node. Pseudoatoms can be targeted by all of PyMOL's regular analysis tools. For example, you can type `label all, name` into the PyMOL console.
 * ` Show Box `:
   * ` Simulation Box (outline) ` draws an outline of the simulation box - the simulation box is the volume which objects in the simulation can occupy.
   * ` Simulation Box (whole)`  draws the entire box.
@@ -68,15 +68,15 @@ The FFEA viewer settings are:
 
 ![FFEA viewer interface](viewer_3_interface_II.png "FFEA viewer interface")
 
-The PyMOL viewer interface is relatively straightforward. A list of loaded objects appears on the right-hand side. The 'action' menu (A) allows you to rename, center and delete objects. The S, H and L menus let you show, hide and label elements that only appear on other formats. The C button allows you to recolour the object. Clicking on the objects name shows and hides that object. At the bottom-right, there are camera controls, and playback controls.
+The PyMOL viewer interface is relatively straightforward. A list of loaded objects appears on the right-hand side. The 'action' menu (A) allows you to rename, centre and delete objects. The S, H and L menus let you show, hide and label elements that only appear on other formats. The C button allows you to recolour the object. Clicking on the objects name shows and hides that object. At the bottom-right, there are camera controls, and playback controls.
 
 ## Exporting images and videos
 
-To export a still image, click the file menu, and click ` Save Image As `. For higher-quality images, you may wish to resize the viewport, as images are exported at the same resolution they are displayed  Also consider right-clicking the viewing area and clicking ` ray `, which will generate a (higher-quality) raytraced frame.
+To export a still image, click the file menu, and click ` Save Image As `. For higher-quality images, you may wish to resize the viewport, as images are exported at the same resolution they are displayed  Also consider right-clicking the viewing area and clicking ` ray `, which will generate a (higher-quality) ray-traced frame.
 
 PyMOL does not export videos by default, although installing the FreeMOL addons and an MPEG encoder will all you to do so.
 
-To get higher-quality videos in a more modern format, select `File`->`Save Movie As `->`PNG Images`. This will save each frame as a still image, organized by filename. For example, saving with the filename 'test' for a 100-frame trajectory will produce 100 PNG files, called `test0001.png` to `test0100.png`.
+To get higher-quality videos in a more modern format, select `File`->`Save Movie As `->`PNG Images`. This will save each frame as a still image, organised by file name. For example, saving with the file name 'test' for a 100-frame trajectory will produce 100 PNG files, called `test0001.png` to `test0100.png`.
 
 To stitch these together into a video, you can use ffmpeg, a command-line tool. Install ffmpeg and call it using the following arguments:
 
@@ -89,5 +89,5 @@ The arguments are
 * `-pix_fmt`, the pixel format
 * -`vf`, user-configurable filter. PyMOL can often output files with very awkward dimensions, which are hard to encode - this filter fixes that.
 
-Finally, the output filename is a positional argument.
+Finally, the output file name is a positional argument.
 

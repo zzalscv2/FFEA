@@ -1,6 +1,7 @@
 import sys, os
 import FFEA_script
 from FFEA_universe import *
+import __builtin__
 
 import argparse as _argparse
 
@@ -108,6 +109,6 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     if make_script:
 	script.write_to_file(basename + ".ffea")
 		
-if sys.stdin.isatty():
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     convert_from_volumetric_mesh(args.mesh, args.stokes_radius, args.cull, args.density, args.shear_visc, args.bulk_visc, args.shear_mod, args.bulk_mod, args.dielec, args.make_script, args.out)
