@@ -3,9 +3,9 @@ project(FFEA CXX C)
 cmake_policy(VERSION 2.8)
 
 # set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
-set(PACKAGE_NAME "emppack")
-set(VERSION "0")
-set(MINOR   "9")
+set(PACKAGE_NAME "ffea")
+set(VERSION "1")
+set(MINOR   "0")
 set(PACKAGE_VERSION "${VERSION}.${MINOR}")
 
 
@@ -143,12 +143,12 @@ if(DOXYGEN_FOUND)
                  "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
   configure_file("${PROJECT_SOURCE_DIR}/DoxygenPyM.in"
                  "${PROJECT_BINARY_DIR}/DoxyfilePyM" @ONLY)
-  add_custom_target(docpy ${DOXYGEN_EXECUTABLE}
+  add_custom_target(docpy ALL ${DOXYGEN_EXECUTABLE}
                         ${PROJECT_BINARY_DIR}/DoxyfilePyM
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
-  add_custom_target(doc ${DOXYGEN_EXECUTABLE}
+  add_custom_target(doc ALL ${DOXYGEN_EXECUTABLE}
                         ${PROJECT_BINARY_DIR}/Doxyfile
                         DEPENDS docpy
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
@@ -211,3 +211,27 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/io")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
+
+
+#####################################################
+########### # # # CPACK STUFF # # # #################
+set(CPACK_PACKAGE_NAME ${PACKAGE_NAME})
+set(CPACK_PACKAGE_VERSION ${PACKAGE_VERSION})
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
+set(CPACK_PACKAGE_VENDOR "University of Leeds, UK.")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "FFEA - a toolkit for molecular simulation using Fluctuating Finite Element Method")
+# set(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_SOURCE_DIR}/admin/InstallWelcome.txt")
+# Its GPL/LGPL, so they do not have to agree to a license for mere usage, but some installers require this...
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
+# set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/admin/InstallInfo.txt")
+set(CPACK_SOURCE_IGNORE_FILES "\\\\.isreposource$;\\\\.git/;\\\\.gitignore$;\\\\.gitattributes;")
+# CPack source archives include only the directories we list here.
+# This variable is a list of pairs of names of source and destination
+# directories. Most of these are used for content GROMACS generates as
+# part of the configuration or build.
+set(CPACK_INSTALLED_DIRECTORIES "${CMAKE_BINARY_DIR}/src/doc;share/ffea/doc/;${PROJECT_BINARY_DIR}/src/ffeamodules/html;share/ffea/ffeamodules")
+set(CPACK_PACKAGE_CONTACT "contact-us@leeds.ac.uk")
+
+#must come after all cpack settings!
+include(CPack)
+
