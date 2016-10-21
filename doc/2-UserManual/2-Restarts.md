@@ -7,7 +7,7 @@ Restarts and Backups {#ffea_RB}
 
 Restarts {#ffea_restarts}
 =========================
-The FFEA runner has the possiblity to continue or extend a simulation that 
+The FFEA runner has the possibility to continue or extend a simulation that 
  was completed or even crashed. In the case of ` calc_noise ` being enabled
  we take care that random number generator we use, [RngStreams](\ref technology), 
  recovers the state of the last time step calculated, ensuring that unwanted 
@@ -44,7 +44,7 @@ while keeping ` trajectory_out_fname ` and ` measurement_out_fname ` unchanged.
 
 There is a last rule that applies. Values for files ` checkpoint_out `
  and ` checkpoint_in ` must differ. Therefore, if in the previous run 
- ` checkpoint_out ` was not specified we recommed to 
+ ` checkpoint_out ` was not specified we recommend to 
  rename the old ` checkpoint_out ` file with its default name 
  to something else and then use it as ` checkpoint_in `.
 
