@@ -2,6 +2,7 @@ import sys, os
 from math import ceil
 import FFEA_trajectory
 import argparse as _argparse
+import __builtin__
 
 parser = _argparse.ArgumentParser(description="FFEA Thin Trajectory")
 parser.add_argument("traj_fname", action="store", help="Input trajectory file (.ftj)")
@@ -33,7 +34,7 @@ def thin_trajectory(traj_fname, frames_to_read, thin_percent):
     traj = FFEA_trajectory.FFEA_trajectory(traj_fname, frame_rate = frame_rate, num_frames_to_read = frames_to_read)
     return traj
     
-if sys.stdin.isatty():
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     # Get args and build objects
     print args.traj_fname

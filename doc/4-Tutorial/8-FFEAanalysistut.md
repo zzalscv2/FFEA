@@ -6,7 +6,7 @@ Analysis, and FFEA tools {#FFEAanalysistut}
 In previous parts of this tutorial, we have employed several python scripts by invoking `ffeatools` at the terminal. These scripts all make use of a set of core FFEA python modules. Each module corresponds to a different FFEA data file - the trajectory (``.ftj``), pin files (``.pin``), the stokes file (``.stokes``), et cetera. These are all unified and linked by the FFEA script file (``.ffea``).
 
 In addition to a few basic analysis tools that can be run from the terminal, these core Python modules are provided as part of a Python package, which allows them to be imported into a Python interpreter. Full description of the API has been generated automatically 
- using Doxygen and can be read [here](file:../../ffeamodules/html/index.html). 
+ using Doxygen and can be read [here](../../ffeamodules/html/index.html). 
 
 In our interactive python session we first
 ```python
@@ -149,7 +149,7 @@ To save a pin for later, use
 
 ## Material and Vdw Files
 
-In performing analysis on trajectories, you may want to extract the data from other FFEA files. Most of these files are structured in a very similar way. For example, the .mat files contain information about the material parameters of each element, and can be acccessed like this:
+In performing analysis on trajectories, you may want to extract the data from other FFEA files. Most of these files are structured in a very similar way. For example, the .mat files contain information about the material parameters of each element, and can be accessed like this:
 
 ```python
 >>> our_material = our_script.load_material # create an instance
@@ -159,7 +159,7 @@ array([  1.50000000e+03,   1.00000000e-03,   1.00000000e-03,
 ```
 The elements in the array, from first to last, are: the density of the material, in \f$kg/m^3\f$, the shear viscosity, in \f$Pa \cdot s\f$, the bulk viscosity, in \f$Pa \cdot s\f$, the shear modulus, in \f$Pa\f$, the bulk modulus, in \f$Pa\f$, and the dielectric constant, which is unitless.
 
-Similarly, to get the Van Der Waals type for each face:
+Similarly, to get the van der Waals type for each face:
 
 ```python
 >>> our_vdw = our_script.load_vdw(0,0) # (blob 0, conformation 0)
@@ -170,7 +170,7 @@ Loading FFEA vdw file...
 
 ## Topographies and Surfaces
 
-At this point, you may be wondering what the use for the Van Der Waals type for a particular face is if we don't know which nodes and which elements are associated with that face. As a reminder:
+At this point, you may be wondering what the use for the van der Waals type for a particular face is if we don't know which nodes and which elements are associated with that face. As a reminder:
 
 * The .node file tells us the positions, in 3-D space, of each node (a point)
 * The .top file tells us the connectivity of these nodes, how they are arranged into elements (tetrahedrons)
@@ -201,7 +201,7 @@ The topology is made up of elements, and the elements can be accessed like this:
 
 > Another aside: why are there 10 values? Isn't this element supposed to comprise a tetrahedron? The first four elements are indeed the elements that make up the tetrahedron, but the next six actually make up points on the same tetrahedron.
 
-> If we think about just one face of the tetrahedron, that face is described by three points, connected by straight (linear) lines. But some calculationas in FFEA (such as electrostatics) can make use of second-order elements - the lines connecting the sides of the triangle are no longer linear, they can bend inward or outward. This second set of values are at the midpoint between two 'first-order' nodes, and thus describe the second-order behaviour of the element. In most simualtions (and most analyses) they can be safely ignored.
+> If we think about just one face of the tetrahedron, that face is described by three points, connected by straight (linear) lines. But some calculations in FFEA (such as electrostatics) can make use of second-order elements - the lines connecting the sides of the triangle are no longer linear, they can bend inward or outward. This second set of values are at the midpoint between two 'first-order' nodes, and thus describe the second-order behaviour of the element. In most simulations (and most analyses) they can be safely ignored.
 
 In the FFEA_topography module, we can also calculate the volume of a given element. As the topology module only contains information about the connectivity of the nodes, we need to supply our node object in order to retrieve the volume:
 

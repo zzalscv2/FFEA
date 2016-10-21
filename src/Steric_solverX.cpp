@@ -1,8 +1,8 @@
-#include "Steric_solverII.h"
+#include "Steric_solverX.h"
 
 
 /** do_volumeExclusion calculates the force (and not the energy, yet) of two tetrahedra */
-void Steric_solverII::do_interaction(Face *f1, Face *f2){ 
+void Steric_solverX::do_interaction(Face *f1, Face *f2){ 
 
     // First check two things (either of which results in not having to calculate anything):
     // Check that faces are facing each other, if not then they are not interacting
@@ -76,9 +76,9 @@ void Steric_solverII::do_interaction(Face *f1, Face *f2){
   //  exit(0);
     //   and get the direction of the force for f1:
     /* TRIAL 2 */
-    grr3 force1, force2; //, n1_b; 
-    vec3Vec3SubsToArr3(f2->n[3]->pos, f1->n[3]->pos, force2);
-    arr3Normalise<geoscalar,grr3>(force2); // that is the direction of the force for f2 (backwards). 
+    arr3 force1, force2; //, n1_b; 
+    vec3Vec3SubsToArr3(f1->n[3]->pos, f2->n[3]->pos, force1);
+    arr3Normalise<scalar,arr3>(force1); // that is the direction of the force for f1 (backwards). 
 
     /* TRIAL 1
     arr3 force1, force2, n1_b; 
@@ -101,13 +101,12 @@ void Steric_solverII::do_interaction(Face *f1, Face *f2){
     // scalar vol_f = 1
     // Finally, get the intersection volume:
     // scalar vol = f1->getTetraIntersectionVolume(f2); 
-    // f1->getTetraIntersectionVolumeAndArea(f2,vol,area);
-    geoscalar vol, dVdr; 
-    f1->getTetraIntersectionVolumeAndGradient(f2,force2,vol,dVdr);
-    // printf("vol: %e, dVdr: %e\n", vol, dVdr);
-
+    geoscalar vol, area; 
+    f1->getTetraIntersectionVolumeAndArea(f2,vol,area);
+    //fprintf(stderr, "Vol = %f\nArea = %f\n", vol, area);
+    //exit(0);
+    area *= steric_factor;
     vol *= steric_factor; 
-    dVdr *= steric_factor; 
 
     // Energy is proportional to the volume of interaction: 
 //    f1->add_bb_vdw_energy_to_record(vol, f2->daddy_blob->blob_index);
@@ -118,8 +117,8 @@ void Steric_solverII::do_interaction(Face *f1, Face *f2){
 
     // arr3Resize(vol, force1);  // the provious volume force 
     // Force is proportional to the surface area of this volume: 
-    arr3Resize(scalar(-dVdr), force2); 
-    arr3Resize2(ffea_const::mOne, force2, force1);
+    arr3Resize(scalar(area), force1); 
+    arr3Resize2(ffea_const::mOne, force1, force2);
     
     for (int j = 0; j < 3; j++) {
       f1->add_force_to_node(j, force1); 

@@ -76,6 +76,7 @@ public:
     int calc_stokes; ///< Whether or not to include local action of the external fluid
     int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites  
     int calc_preComp; ///< Whether or not use preComputed potentials and forces   
+    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
     int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
     int wall_x_1;
     int wall_x_2;

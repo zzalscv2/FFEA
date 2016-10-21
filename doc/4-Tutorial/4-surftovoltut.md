@@ -2,23 +2,27 @@ Surface Profile to Volumetric Mesh {#surftovoltut}
 =============================
 
 Once we have our structure, it is a "simple" matter of filling the surface with tetrahedra. There are many programs designed to mesh a surface, but the FFEA tools will accept 
- ouptut files from NETGEN or TETGEN.  We recommend TETGEN, as NETGEN can sometimes segfault when trying to deal with the complex geometries and occasional errors produced during the FFEA initialisation procedure.
+ output files from NETGEN or TETGEN.  In our experience, we found TETGEN to be more 
+ stable than NETGEN when dealing with complex geometries. Still, a NETGEN experienced 
+ user should be able to sort these issues, specially since NETGEN use TETGEN in its
+ background.
 
 TETGEN Meshing
 =============
 
-Meshing with TETGEN is by default a simple command line interface. However, in this developers opinion, the optional flags allow for a much better control over the final meshed structure. Therefore, we also provide a conversion script to transform the TETGEN output files into a NETGEN .vol format for visualisation purposes (this was much easier than I'm making it out to be...). The process is as follows:
+Meshing with TETGEN is by default a simple command line interface. Its optional flags allow for a good control over the final meshed structure. Still the following will do:
 
 
 	tetgen -Y emd_5043_8ang.stl
 
-As simple as that. The -Y flags keeps the surface structure exactly as it was, ensuring elements are optimised without compromising their lower size limit as much as possible. We now have a series of files; emd_5043_10ang.1.* that contain the volumetric data. Let's convert this into the NETGEN .vol format for completeness:
+As simple as that. The -Y flags keeps the surface structure exactly as it was, ensuring elements are optimised without compromising their lower size limit as much as possible. We now have a series of files; ` emd_5043_10ang.1.* ` that contain the volumetric data. Let's convert this into the NETGEN .vol format:
 
 	ffeatools tettonet -i emd_5043_8ang.1.ele emd_5043_8ang.1.face emd_5043_8ang.1.node -o emd_5043_8ang.vol
 
-![Coasened surface profiles of EMDB ID:5043 built using TETGEN. From the top, moving clockwise: 1A, 3A, 5A, 8A, 10A](tetgencoarsening.png "TETGEN - Coarsening Process")
+so that it can be passed to FFEA, and visualised with NETGEN. 
 
-Now we have all of the relevent structural data, all that is left is to convert it into the formats required for an FFEA simulation! Whether you prefer NETGEN or TETGEN is completely up to the you, so long as we are left with a .vol file at the end, FFEA will run perfectly well!
+![Coarsened surface profiles of EMDB ID:5043 built using TETGEN. From the top, moving clockwise: 1A, 3A, 5A, 8A, 10A](tetgencoarsening.png "TETGEN - Coarsening Process")
+
 
 NETGEN Meshing
 =============
@@ -40,5 +44,7 @@ Meshing with NETGEN allows for a direct visualisation of the structure as it is 
 ![Saving a .vol file using NETGEN](netgensavemeshprintscreen.png "NETGEN - Saving a Volume")
 <BR>
 The .vol file contains all of the structural information we need to build an FFEA system.
-![Coasened volume profiles of EMDB ID:5043 built using NETGEN. From the top, moving clockwise: 1A, 3A, 5A, 8A, 10A](netgencoarsening.png "NETGEN - Coarsening Process")
+![Coarsened volume profiles of EMDB ID:5043 built using NETGEN. From the top, moving clockwise: 1A, 3A, 5A, 8A, 10A](netgencoarsening.png "NETGEN - Coarsening Process")
 
+
+Now we have all of the relevant structural data, all that is left is to convert it into the formats required for an FFEA simulation! Whether you prefer NETGEN or TETGEN is completely up to the you, so long as we are left with a .vol file at the end, FFEA will run perfectly well!

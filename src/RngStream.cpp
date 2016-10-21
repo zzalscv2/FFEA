@@ -8,6 +8,18 @@
  *                 please contact P. L'Ecuyer at: lecuyer@iro.umontreal.ca
  * Date:           14 August 2001
  *
+ *
+ * If you use this software for work leading to publications, 
+ * please cite the following relevant articles in which MRG32k3a 
+ * and the package with multiple streams were proposed:
+
+ * P. L'Ecuyer, ``Good Parameter Sets for Combined Multiple Recursive Random Number Generators'', 
+ * Operations Research, 47, 1 (1999), 159--164.
+
+ * P. L'Ecuyer, R. Simard, E. J. Chen, and W. D. Kelton, 
+ * ``An Objected-Oriented Random-Number Package with Many Long Streams and Substreams'', 
+ * Operations Research, 50, 6 (2002), 1073--1075
+ *
 \***********************************************************************/
 
 
