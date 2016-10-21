@@ -295,7 +295,12 @@ class FFEA_viewer_control_window:
 			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
 			new_blob = Blob.Blob()
 			#new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_mat[i], blob_binding[i], blob_centroid_pos, blob_rotation, ffea_path)
-			new_blob.load(idnum, bindex, cindex, self.script)
+			try:
+				new_blob.load(idnum, bindex, cindex, self.script)
+			except:
+				"Error loading Blob %d, conforamtion %d. Please try again." % (bindex, cindex)
+				return
+
 			new_blob.set_num_loads(self.num_loads)
      
 			self.blob_list[bindex][cindex] = new_blob
