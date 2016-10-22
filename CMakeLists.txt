@@ -98,6 +98,7 @@ endif(UNIX)
 # 5 ### BOOST #####
 # set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_NO_BOOST_CMAKE ON)
+set (Boost_USE_STATIC_LIBS ON)
 # Check version:
 find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
 if (Boost_FOUND)
@@ -225,19 +226,17 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "FFEA - a toolkit for molecular simulation
 set(CPACK_GENERATOR "TBZ2" "DEB" "RPM")
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 # the problem is that FFEA links to specific versions of boost,
-#  so if packagising for different platforms, we would need to know their boost version.
-#  Ubuntu 14.04 - 1.55
-#  Mint 17 -  1.55
-#  Ubuntu 16.04 - 1.58
-#  CentOS 6 - 1.48 - TOO OLD
-#  CentOS 7 - 1.53... 
-# set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-filesystem-dev (>=1.54), libboost-system-dev (>=1.54), libboost-program-options-dev (>=1.54)")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-filesystem1.55.0, libboost-system1.55.0, libboost-program-options1.55.0")
+#  so if packagising for different platforms, we only need their gcc version, as we statically link to Boost.
+#  Ubuntu 14.04 - gcc 4.8
+#  Mint 17 -  4.8
+#  Ubuntu 16.04 - 5.4 - needs Eigen 3.2.10
+#  CentOS 6 - 4.4
+#  CentOS 7 - 4.8
 set(CPACK_DEBIAN_PACKAGE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
 set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pymol (>=1.8)")
 
 set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
-set(CPACK_RPM_PACKAGE_REQUIRES "boost-filesystem >= 1.54, boost-system >= 1.54, boost-program-options >= 1.54")
+# set(CPACK_RPM_PACKAGE_REQUIRES "boost-filesystem >= 1.54, boost-system >= 1.54, boost-program-options >= 1.54")
 
 # Its GPL/LGPL, so they do not have to agree to a license for mere usage, but some installers require this...
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
