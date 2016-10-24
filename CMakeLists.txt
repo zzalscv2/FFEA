@@ -15,6 +15,8 @@ option(USE_MPI "Use MPI parallelisation: EXPERIMENTAL!" OFF)
 mark_as_advanced(USE_MPI)
 option(USE_FAST "Add automatic compiler flags" ON)
 mark_as_advanced(USE_FAST)
+option(USE_PACK "Add genereic automatic compiler flags" OFF)
+mark_as_advanced(USE_PACK)
 option(USE_DOUBLE "Use double precision" ON)
 mark_as_advanced(USE_DOUBLE)
 
@@ -178,6 +180,18 @@ if (USE_FAST)
   endif()
   message(STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}")
 endif(USE_FAST)
+if (USE_PACK)
+  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -ffast-math -fipa-pta -mtune=generic")
+  else()
+      message(FATAL_ERROR "No packaging without GNU compilers")
+  endif()
+  if (USE_FAST)
+      message(STATUS "USE_FAST changed to USE_PACK!")
+  endif(USE_FAST)
+endif(USE_PACK)
+  
+
 
 ######## END OF LIBRARIES #######
 #################################
@@ -233,6 +247,7 @@ set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 #  CentOS 6 - 4.4
 #  CentOS 7 - 4.8
 set(CPACK_DEBIAN_PACKAGE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+# set deb package depends libgomp1 (5.4.0) & python2.7 python-minimal python-numpy
 set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pymol (>=1.8)")
 
 set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
