@@ -261,7 +261,7 @@ int BlobLite::read_nodes_from_file(FILE *trj) {
 
     scalar x, y, z, u;
     for (int i = 0; i < num_nodes; i++) {
-        if (fscanf(trj, "%e %e %e %e %e %e %e %e %e %e\n", &x, &y, &z, &u, &u, &u, &u, &u, &u, &u) != 10) {
+        if (fscanf(trj, "%le %le %le %le %le %le %le %le %le %le\n", &x, &y, &z, &u, &u, &u, &u, &u, &u, &u) != 10) {
             FFEA_ERROR_MESSG("(When restarting) Error reading from trajectory file, for node %d\n", i)
         } else {
           coord[3*i] = (scalar) x / mesoDimensions::length;
