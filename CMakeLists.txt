@@ -243,11 +243,11 @@ set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 #  so if packagising for different platforms, we only need their gcc version, as we statically link to Boost.
 #  Ubuntu 14.04 - gcc 4.8
 #  Mint 17 -  4.8
-#  Ubuntu 16.04 - 5.4 - needs Eigen 3.2.10
+#  Ubuntu 16.04 - gcc 5.4 - needs Eigen 3.2.10 - but the ffeatools package has to be installed somewhere else.
 #  CentOS 6 - 4.4
 #  CentOS 7 - 4.8
 set(CPACK_DEBIAN_PACKAGE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
-# set deb package depends libgomp1 (5.4.0) & python2.7 python-minimal python-numpy
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgomp1 (>=5.4.0), python2.7, python-numpy")
 set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pymol (>=1.8)")
 
 set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
