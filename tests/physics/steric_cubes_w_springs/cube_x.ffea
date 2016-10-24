@@ -19,6 +19,7 @@
 	<inc_self_vdw = 0>
 	<vdw_type = steric>
 	<vdw_steric_factor = 1.e2>
+	<calc_springs=1>
 	<calc_noise = 0>
 	<calc_es = 0>
 	<es_update = 1>
