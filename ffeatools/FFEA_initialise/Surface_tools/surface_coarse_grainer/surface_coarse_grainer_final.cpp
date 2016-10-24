@@ -433,6 +433,7 @@ class Surface
 				vector3 v;
 				int n[3];
 				long int loc;
+				int ignore;
 
 				line_t = getc (surf_file);
 				while(line_t != EOF) {
@@ -443,10 +444,10 @@ class Surface
 						loc = ftell(surf_file);
 						line_t = getc (surf_file);
 						if(line_t == 'n' || line_t == 'N') {
-							getline(&line2, &len, surf_file);
+							ignore = getline(&line2, &len, surf_file);
 						} else {
 							fseek(surf_file, loc, SEEK_SET);
-							fscanf(surf_file, "%lf %lf %lf\n", &v.x, &v.y, &v.z);
+							ignore = fscanf(surf_file, "%lf %lf %lf\n", &v.x, &v.y, &v.z);
 							verts.push_back(v);
 							num_nodes++;
 						}
@@ -458,7 +459,7 @@ class Surface
 						loc = ftell(surf_file);
 						if(fscanf(surf_file, "%d %d %d\n", &n[0], &n[1], &n[2]) != 3) {
 							fseek(surf_file, loc, SEEK_SET);
-							fscanf(surf_file, " %d//%*d %d//%*d %d//%*d\n", &n[0], &n[1], &n[2]);
+							ignore = fscanf(surf_file, " %d//%*d %d//%*d %d//%*d\n", &n[0], &n[1], &n[2]);
 						}
 
 						// Add to list
@@ -467,7 +468,7 @@ class Surface
 						fs.push_back(n[2]);
 						num_faces++;
 					} else {
-						getline(&line2, &len, surf_file);
+						ignore = getline(&line2, &len, surf_file);
 					}
 					line_t = getc (surf_file);
 				}
@@ -1079,6 +1080,8 @@ class Surface
 
 // Main program begins
 int main(int argc, char **argv) {
+   int ignore; 
+
 	if(argc != 6 && argc != 12) {
 		cout << "Input Error" << endl << "USAGE: " << argv[0] << " [Input .surf fname] [Output .surf fname] [Coarseness level] [Volume conserve (y/n)] [Find smallest edge? (y/n)] OPTIONAL[Coarsening range (xmin, xmax, ymin,ymax, zmin,zmax)]" << endl;
 		return -1;
@@ -1092,7 +1095,7 @@ int main(int argc, char **argv) {
 			printf("This method can also result in instabilities when conserving volume\n");
 		}
 		printf("Would you like to continue (y/n)?:");
-		fscanf(stdin, "%s", achar);
+		ignore = fscanf(stdin, "%s", achar);
 		if(strcmp(achar, "n") == 0 || strcmp(achar, "N") == 0) {
 			printf("Bye!");
 			return 0;
