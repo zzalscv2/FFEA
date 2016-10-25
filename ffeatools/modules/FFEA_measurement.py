@@ -8,7 +8,7 @@ except:
 
 class FFEA_measurement:
 
-	def __init__(self, fname = "", num_frames_to_read = 1000000):
+	def __init__(self, fname = "", frame_rate = 1, num_frames_to_read = 1000000):
 
 		self.reset()
 
@@ -22,7 +22,7 @@ class FFEA_measurement:
 		fin.close()
 		try:
 			if line == "FFEA Global Measurement File":
-				self.load_global(fname, num_frames_to_read = num_frames_to_read)
+				self.load_global(fname, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read)
 			else:		
 				print("\tPlease supply us with the global measurement file, not the '-d' .fdm file")				
 				return
@@ -32,13 +32,13 @@ class FFEA_measurement:
 
 			dfname = path.splitext(fname)[0] + ".fdm"
 			if path.exists(dfname):
-				self.load_detailed(dfname, num_frames_to_read = self.num_frames)
+				self.load_detailed(dfname, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read)
 			
 		except:
 			self.reset()
 			return
 	
-	def load_global(self, fname, num_frames_to_read = 1000000):
+	def load_global(self, fname, frame_rate = 1, num_frames_to_read = 1000000):
 
 		print("Loading FFEA Global Measurement file...")
 	
@@ -96,19 +96,26 @@ class FFEA_measurement:
 		# Read measurements
 		line = fin.readline()
 		frames_read = 0
+		all_frames = 0
 		while(line != "" and frames_read < num_frames_to_read):
 			if line.strip() == "#==RESTART==":
 				line = fin.readline()
-				frames_read += 1
 				continue
 
-			sline = line.split()
-			for i in range(len(sline)):
-				self.global_meas[measmap[i]].append(float(sline[i]))
-			
+			if all_frames % frame_rate == 0:
+				sline = line.split()
+				for i in range(len(sline)):
+					self.global_meas[measmap[i]].append(float(sline[i]))
+				frames_read += 1
+
 			line = fin.readline()
-			frames_read += 1
-			
+			all_frames += 1
+
+			sys.stdout.write("\rFrames read = %d, Frames skipped = %d" % (frames_read, all_frames - frames_read))
+			sys.stdout.flush()
+
+		print("\ndone! Successfully read " + str(frames_read) + " frame/s from '" + fname + "'.")
+
 		# Move centroid into more useful format
 		self.global_meas["Centroid"] = []
 		for i in range(len(self.global_meas['Time'])):
@@ -122,7 +129,7 @@ class FFEA_measurement:
 			if self.global_meas[key] != None:
 				self.global_meas[key] = np.array(self.global_meas[key])
 
-	def load_detailed(self, fname, num_frames_to_read = 1000000):
+	def load_detailed(self, fname, frame_rate = 1, num_frames_to_read = 1000000):
 
 		print("Loading FFEA Detailed Measurement file...")
 	
@@ -180,27 +187,35 @@ class FFEA_measurement:
 		# Now, read measurements and fill the relevent arrays
 		line = fin.readline()
 		frames_read = 0
+		all_frames = 0
 		while(line != "" and frames_read < num_frames_to_read):
 			if line.strip() == "#==RESTART==":
 				line = fin.readline()
-				frames_read += 1
 				continue
 
-			sline = line.split()[1:]
+			if all_frames % frame_rate == 0:
 
-			localsline = sline[:len(indexmap)]
-			globalsline = sline[len(indexmap):]
+				sline = line.split()[1:]
 
-			# Local to blobs first!
-			for i in range(len(localsline)):
-				self.blob_meas[indexmap[i]][measmap[i]].append(float(localsline[i]))
+				localsline = sline[:len(indexmap)]
+				globalsline = sline[len(indexmap):]
 
-			# Now global
-			for i in range(len(globalsline)):
-				self.interblob_meas[iindexmap[i][0]][iindexmap[i][1]][imeasmap[i]].append(float(globalsline[i]))
+				# Local to blobs first!
+				for i in range(len(localsline)):
+					self.blob_meas[indexmap[i]][measmap[i]].append(float(localsline[i]))
+
+				# Now global
+				for i in range(len(globalsline)):
+					self.interblob_meas[iindexmap[i][0]][iindexmap[i][1]][imeasmap[i]].append(float(globalsline[i]))
+				frames_read += 1
 
 			line = fin.readline()
-			frames_read += 1		
+			all_frames += 1
+
+			sys.stdout.write("\rFrames read = %d, Frames skipped = %d" % (frames_read, all_frames - frames_read))
+			sys.stdout.flush()
+
+		print("\ndone! Successfully read " + str(frames_read) + " frame/s from '" + fname + "'.")
 
 		# Move centroid into more useful format, make interblob array symmetric and turn stuff to numpy
 		for i in range(self.num_blobs):
@@ -252,7 +267,7 @@ class FFEA_measurement:
 		fout = open(globalfname, "w")
 		fout.write("FFEA Global Measurement File\n\nSimulation Details:\n")
 		fout.write("Simulation Began on %d/%d/%d at %d:%d:%d\n" % (self.date[0],self.date[1], self.date[2], self.time[0], self.time[1], self.time[2]))
-		fout.write("Script Filename = %s" % (self.script_fname))
+		fout.write("Script Filename = %s\n" % (self.script_fname))
 		fout.write("Simulation Type = %s\n\n" % (self.simtype))
 
 		# Params, maybe		
