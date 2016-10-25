@@ -33,10 +33,11 @@ FILE *set_up_trajfile(const char *traj_filename){
 int skipnlines(FILE *iFile, int n) {
 
    int i=0;
+   char *ignore;
    int len_crap = 256;
    char crap[len_crap];
    for (i=0; i<n; i++){
-     fgets(crap, len_crap, iFile);
+     ignore = fgets(crap, len_crap, iFile);
      //printf("crap: %s", crap); 
    }
    return 0;
