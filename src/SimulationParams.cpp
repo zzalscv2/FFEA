@@ -560,6 +560,12 @@ int SimulationParams::validate() {
     }
 
     if (calc_vdw == 1) {
+ 
+      if (vdw_type != "lennard-jones" && vdw_type != "steric" &&
+          vdw_type != "stericX" && vdw_type != "ljsteric") {
+          FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'steric' (default), 'lennard-jones' or 'ljsteric' (both methods combined).\n");
+      }
+
       if (vdw_type != "steric" && vdw_type != "stericX") { 
         if (vdw_in_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
@@ -570,11 +576,6 @@ int SimulationParams::validate() {
         printf("\tFRIENDLY WARNING: No face-face interactions will be computed if calc_vdw = 0.\n");
       } 
     } 
- 
-    if (vdw_type != "lennard-jones" && vdw_type != "steric" &&
-        vdw_type != "stericX" && vdw_type != "ljsteric") {
-        FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'steric' (default), 'lennard-jones' or 'ljsteric' (both methods combined).\n");
-    }
 
     if (calc_preComp != 0 && calc_preComp != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_preComp', must be 0 (no) or 1 (yes).\n");

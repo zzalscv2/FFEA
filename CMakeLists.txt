@@ -15,6 +15,8 @@ option(USE_MPI "Use MPI parallelisation: EXPERIMENTAL!" OFF)
 mark_as_advanced(USE_MPI)
 option(USE_FAST "Add automatic compiler flags" ON)
 mark_as_advanced(USE_FAST)
+option(USE_PACK "Add genereic automatic compiler flags" OFF)
+mark_as_advanced(USE_PACK)
 option(USE_DOUBLE "Use double precision" ON)
 mark_as_advanced(USE_DOUBLE)
 
@@ -98,6 +100,7 @@ endif(UNIX)
 # 5 ### BOOST #####
 # set (Boost_NO_SYSTEM_PATHS ON)
 set (Boost_NO_BOOST_CMAKE ON)
+set (Boost_USE_STATIC_LIBS ON)
 # Check version:
 find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
 if (Boost_FOUND)
@@ -155,9 +158,9 @@ if(DOXYGEN_FOUND)
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
   install(DIRECTORY "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/share/ffea/doc" OPTIONAL)
+                share/ffea/doc OPTIONAL)
   install(DIRECTORY "${PROJECT_BINARY_DIR}/src/ffeamodules/html" DESTINATION
-                "${CMAKE_INSTALL_PREFIX}/share/ffea/ffeamodules" OPTIONAL)
+                share/ffea/ffeamodules OPTIONAL)
 endif(DOXYGEN_FOUND)
 
 # 9 ### DEBUG FLAGS ####
@@ -177,6 +180,16 @@ if (USE_FAST)
   endif()
   message(STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}")
 endif(USE_FAST)
+if (USE_PACK)
+  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -ffast-math -fipa-pta -mtune=generic")
+  else()
+      message(FATAL_ERROR "No packaging without GNU compilers")
+  endif()
+  if (USE_FAST)
+      message(STATUS "USE_FAST changed to USE_PACK!")
+  endif(USE_FAST)
+endif(USE_PACK)
 
 ######## END OF LIBRARIES #######
 #################################
@@ -186,12 +199,13 @@ endif(USE_FAST)
 #############################################
 ###### SOURCES TO BUILD AND INSTALL  ########
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
+#############################################
 
 #######################################
 ######## INSTALL THE FFEA TOOLS  ######
 # 1 - Set up the install python path
 include(${CMAKE_ROOT}/Modules/FindPythonInterp.cmake)
-set(PYTHONSTUFF "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
+set(PYTHONSTUFF "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
 
 # 2 - and go through the folders:
 # PENDING # Unify or rename make_structure_map.cpp Matrices.hpp and Vectors.hpp in
@@ -199,6 +213,7 @@ set(PYTHONSTUFF "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYT
 # PENDING # FFEA_initialise/PDB_tools # deprecate FFEA_convert_traj_to_pdb.c (?)
 # EVEN WORSE: make_structure_map2 in FFEA_initialise/FFEA_node_tools
 add_subdirectory("${PROJECT_SOURCE_DIR}/ffeatools")
+#######################################
 
 
 
@@ -211,25 +226,40 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/io")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
+#####################################################
 
+###############################
+##### INSTALL THE LICENSE #####
+install(FILES COPYING DESTINATION share/ffea COMPONENT data)
 
 #####################################################
 ########### # # # CPACK STUFF # # # #################
 set(CPACK_PACKAGE_NAME ${PACKAGE_NAME})
 set(CPACK_PACKAGE_VERSION ${PACKAGE_VERSION})
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
+set(CPACK_PACKAGE_ARCHITECTURE "x86_64")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_PACKAGE_ARCHITECTURE}")
 set(CPACK_PACKAGE_VENDOR "University of Leeds, UK.")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "FFEA - a toolkit for molecular simulation using Fluctuating Finite Element Method")
-# set(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_SOURCE_DIR}/admin/InstallWelcome.txt")
+
+set(CPACK_GENERATOR "TBZ2" "DEB" "RPM")
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+# the problem is that FFEA links to specific versions of boost,
+#  so if packagising for different platforms, we only need their gcc version, as we statically link to Boost.
+#  Ubuntu 14.04 - gcc 4.8
+#  Mint 17 -  4.8
+#  Ubuntu 16.04 - gcc 5.4 - needs Eigen 3.2.10 - but the ffeatools package has to be installed somewhere else.
+#  CentOS 6 - 4.4
+#  CentOS 7 - 4.8
+set(CPACK_DEBIAN_PACKAGE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgomp1 (>=5.4.0), python2.7, python-numpy")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "pymol (>=1.8)")
+
+set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
+# set(CPACK_RPM_PACKAGE_REQUIRES "boost-filesystem >= 1.54, boost-system >= 1.54, boost-program-options >= 1.54")
+
 # Its GPL/LGPL, so they do not have to agree to a license for mere usage, but some installers require this...
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
-# set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/admin/InstallInfo.txt")
-set(CPACK_SOURCE_IGNORE_FILES "\\\\.isreposource$;\\\\.git/;\\\\.gitignore$;\\\\.gitattributes;")
-# CPack source archives include only the directories we list here.
-# This variable is a list of pairs of names of source and destination
-# directories. Most of these are used for content GROMACS generates as
-# part of the configuration or build.
-set(CPACK_INSTALLED_DIRECTORIES "${CMAKE_BINARY_DIR}/src/doc;share/ffea/doc/;${PROJECT_BINARY_DIR}/src/ffeamodules/html;share/ffea/ffeamodules")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 set(CPACK_PACKAGE_CONTACT "contact-us@leeds.ac.uk")
 
 #must come after all cpack settings!
