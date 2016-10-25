@@ -190,8 +190,6 @@ if (USE_PACK)
       message(STATUS "USE_FAST changed to USE_PACK!")
   endif(USE_FAST)
 endif(USE_PACK)
-  
-
 
 ######## END OF LIBRARIES #######
 #################################
@@ -201,6 +199,7 @@ endif(USE_PACK)
 #############################################
 ###### SOURCES TO BUILD AND INSTALL  ########
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
+#############################################
 
 #######################################
 ######## INSTALL THE FFEA TOOLS  ######
@@ -214,6 +213,7 @@ set(PYTHONSTUFF "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-
 # PENDING # FFEA_initialise/PDB_tools # deprecate FFEA_convert_traj_to_pdb.c (?)
 # EVEN WORSE: make_structure_map2 in FFEA_initialise/FFEA_node_tools
 add_subdirectory("${PROJECT_SOURCE_DIR}/ffeatools")
+#######################################
 
 
 
@@ -226,7 +226,11 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/io")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
+#####################################################
 
+###############################
+##### INSTALL THE LICENSE #####
+install(FILES COPYING DESTINATION share/ffea COMPONENT data)
 
 #####################################################
 ########### # # # CPACK STUFF # # # #################
