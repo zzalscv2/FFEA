@@ -48,7 +48,10 @@ Publications  {#publications}
 Technology  {#technology}
 ============
  
-   * [Boost](http://www.boost.org) (>=1.54.0).
+   * [Boost](http://www.boost.org) (>=1.54.0) is used 
+     for ease of programming 
+     at the initialisation phase. Modules "system", "filesystem" and 
+     "program-options" are required.
    * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1).   
      FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
    * [RngStreams](http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/)<sup>[1](#RngStreams1)</sup><sup>,[2](#RngStreams2)</sup>
@@ -56,7 +59,10 @@ Technology  {#technology}
         allows the FFEA to **safely** generate random numbers when running 
         on a number of threads, as well as safe restarts, recovering the state 
         of the RNGs in the last saved time step.
-   * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL]   
+   * [Tet_a_tet](https://github.com/erich666/jgt-code/blob/master/Volume_07/Number_2/Ganovelli2002/tet_a_tet.h)<sup>[3](#tetatetpaper)</sup>
+        is shipped with FFEA and used to detect element overlapping 
+        in the [steric](\ref sPotential) module. 
+   * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL] is used to generate the documentation. 
    * [PyMOL](https://www.pymol.org) (>=1.8) [OPTIONAL] can 
         be used, using the plugin we provide,
         to visualise FFEA systems and trajectories
@@ -80,8 +86,10 @@ Technology  {#technology}
      obtained from standard from equivalent MD simulations.
 
 
-<a name="RngStreams1">1</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators", (1999) Oper Res, 47, 1, 159-164 <br> 
-<a name="RngStreams2">2</a>: P L'Ecuyer et al. "An Objected-Oriented Random-Number Package with Many Long Streams and Substreams", (2002) Oper Res, 50, 6, 1073-1075.
+<a name="RngStreams1">1</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators", (1999) Oper Res, 47(1):159-164. <br> 
+<a name="RngStreams2">2</a>: P L'Ecuyer et al. "An Objected-Oriented Random-Number Package with Many Long Streams and Substreams", (2002) Oper Res, 50(6):1073-1075. <br>
+<a name="tetatetpaper">3</a>:  F Ganovelli, et al. "Fast tetrahedron-tetrahedron overlap algorithm", (2002) J.Graphics Tools. 7(2):17-25.
+
 
 
 Contribute
