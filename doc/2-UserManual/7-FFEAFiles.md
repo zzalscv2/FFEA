@@ -5,14 +5,14 @@ Input and Output files {#ioFiles}
 Input files {#iFiles}
 =====================
 
-Main runner input file: .ffea  
+Main runner input file: .ffea   {#iffea}
 ------------------------------
  Corresponding to the main input file for the FFEA runner, this file is widely described 
   [here](\ref ffea_iFile), and [here](\ref keywordReference)
 
 
 
-Nodes file: .node
+Nodes file: .node   {#ifnode}
 -----------------
 
 Contains a list of white-space separated coordinates specifying the position
@@ -37,7 +37,7 @@ Contains a list of white-space separated coordinates specifying the position
 
 
 
-Topology file: .top
+Topology file: .top   {#iftop}
 -------------------
 
 Contains a list a white-space separated indices specifying the node indices
@@ -61,7 +61,7 @@ order elements (every tetrahedron has a node at each corner
 
 
 
-Surface file: .surf
+Surface file: .surf   {#ifsurf}
 -------------------
 
 Contains a list of white-space separated indices specifying the indices of the
@@ -78,7 +78,7 @@ nodes on each surface face and the index of the containing element.
 
 
 
-Material file: .mat
+Material file: .mat   {#ifmat} 
 -------------------
 
 Contains a list of white-space separated material parameters for each element.
@@ -93,7 +93,7 @@ Contains a list of white-space separated material parameters for each element.
     
 
 
-Stokes radii file: .stokes
+Stokes radii file: .stokes   {#ifstokes}
 --------------------------
 
 Contains a list of effective hydrodynamic radii for each node in the system
@@ -107,7 +107,7 @@ for the calculation of external drag.
     radius 304
 
 
-Van der Waals file: .vdw
+Van der Waals file: .vdw    {#ifvdw}
 -------------------------
 Contains a list of integers, ranging from -1 to 6, describing the type of vdw interaction
  this face will undergo, as described by the Lennard-Jones files, where:
@@ -125,7 +125,7 @@ Contains a list of integers, ranging from -1 to 6, describing the type of vdw in
     type479
 
 
-Lennard-Jones file: .lj
+Lennard-Jones file: .lj    {#iflj}
 -----------------------
 
 Contains a matrix of parameter pairs for the Lennard-Jones interactions 
@@ -173,7 +173,7 @@ where the first column give positions and the second column has energies and for
  for more details). 
 
 
-Springs file: .springs
+Springs file: .springs   {#ifsprings}
 ----------------------
 
 This file contains a set of Hookean springs joining pairs of nodes to allow the addition of arbitrary interactions, if necessary.
@@ -214,7 +214,7 @@ Map file: .map
 Output files {#oFiles}
 ======================
 
-Trajectory file: .ftj
+Trajectory file: .ftj    {#oftrajectory}
 ---------------------
 Contains a list of `*` separated frames specifying the structure of the blob at
 each outputted time-step. The frames contain a list of blobs which themselves
@@ -255,7 +255,7 @@ sizes are specified at the beginning of the file.
 
 
 
-Measurement files: .fm / .fdm
+Measurement files: .fm / .fdm   {#ofmeasurement}
 ------------------------
  
 Contains a list of the relevant system properties of each outputted time-step.

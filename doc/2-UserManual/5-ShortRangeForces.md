@@ -40,10 +40,12 @@ Another keyword ` inc_self_vdw ` will determine whether interactions due
  to interacting faces within the same blob are taken into account (default, 1) or not (0). 
 
 The next thing you need is to put a box in your system. This means giving values for
- ` es_h `, ` es_N_x `, ` es_N_y ` and ` es_N_z `, as well as for ` kappa `. See the
- [keyword reference](\ref paramBlock) to get information on the values that these
- fields should have. 
-
+ ` es_h `, ` es_N_x `, ` es_N_y ` and ` es_N_z `, as well as for ` kappa `. 
+ Even if [keyword reference](\ref paramBlock) define these keywords, we introduce 
+ them here, because FFEA will only compute face-face interactions that fall into 
+ the same or adjacent cells. The number of voxels that the simulation box has in each 
+ direction is defined through ` es_N_x `, ` es_N_y ` and ` es_N_z `, and the size of each voxel 
+ is ` es_h ` / ` kappa `, where ` kappa ` is the inverse Debye length.
 
     
 
@@ -88,20 +90,10 @@ and has the format:
      (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10) (1e+13, 5e-10)
 
 where the matrix provides the values (\f$\epsilon_{i,j}\f$, \f$\sigma_{i,j}\f$) in 
-  \f$J/m^2\f$ and \f$m\f$, respectively. 
+  \f$J/m^2\f$ and \f$m\f$, respectively. Because of being a surface-surface interaction, 
+ the larger the faces interacting the stronger the interaction. 
 
- 
 
-```python 
- "Is there any cutoff? Probably just the size of the cells..."
- 
- "Has the surface-surface interaction been described in any paper, so far?"
-
- "Otherwise we should describe it here..."
- ```
-
-Because of being a surface-surface interaction, the larger the faces interacting 
- the stronger the interaction. 
 
 
 
@@ -144,7 +136,8 @@ Combination potential {#cPotential}
  Very short range interactions are dealt with using the volume-volume steric interactions, and `long range' using standard 
   Lennard-Jones interactions. The intermediate region uses an interpolated function, for which the function itself and it's first derivative
   are both continuous at the boundaries, and for \f$r = \sigma_{i,j}\f$, we still find a minimum in the energy, giving us zero force
-  at that point.
+  at that point. Therefore, this interaction needs also a valid ` lj ` file, specified in the input .ffea 
+ file through the keyword ` vdw_forcefield_params ` as was explained [earlier](\ref ljPotential).
   
 
   
