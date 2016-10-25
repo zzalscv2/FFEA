@@ -1826,11 +1826,12 @@ int World::run() {
             FFEA_error_text();
             printf("Detected %d fatal errors in this system update. Exiting now...\n", fatal_errors);
 
-            // attempt to print out the final (bad) time step
-            printf("Dumping final step:\n");
-            print_trajectory_and_measurement_files(step, wtime);
-	    print_kinetic_files(step);
-
+            // attempt to print out the final (bad) time step if necessary
+	    if (step != step_initial) {
+	            printf("Dumping final step:\n");
+	            print_trajectory_and_measurement_files(step, wtime);
+		    print_kinetic_files(step);
+	    }
             return FFEA_ERROR;
         }
 
