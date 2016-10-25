@@ -25,7 +25,8 @@ To install FFEA you need:
      It will be used to build the documentation.
 
    * [Python](https://www.python.org/) (>= 2.6), is used to run some tests to verify that the FFEA runner was correctly built, as well as in the FFEA tools.
-		  * [NumPy](http://www.numpy.org/) is needed at run time on some FFEA tools.
+
+   * [NumPy](http://www.numpy.org/) is needed at run time in some FFEA tools.
 
 
 Configure
