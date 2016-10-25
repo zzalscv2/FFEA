@@ -146,8 +146,8 @@ class FFEA_viewer_control_window:
      
     
      # # Pseudoatoms onto nodes
-     button_node_indices_psuedoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.add_node_psuedoatoms())
-     button_node_indices_psuedoatoms.grid(row=4, column=2, sticky=W)
+     button_node_indices_pseudoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.call_add_node_pseudoatoms())
+     button_node_indices_pseudoatoms.grid(row=4, column=2, sticky=W)
 
  
 
@@ -504,8 +504,17 @@ class FFEA_viewer_control_window:
     # in each blob->conformation, consult the surface file
     # for each surf.face.n, grab the points at that index and draw a trinagle with them
     return
+
+  def call_add_node_pseudoatoms(self):
+     if self.display_flags['load_trajectory'] == "System (Plainly)" or self.display_flags['load_trajectory'] == "CGO" or self.wontLoadTraj == 1:
+        self.add_node_pseudoatoms_from_nodes()
+     elif self.display_flags['load_trajectory'] == "Trajectory":
+        self.add_node_pseudoatoms()
+     else:
+        print "Cannot add pseudoatoms if selecting System (Into box)" 
+
     
-  def add_node_psuedoatoms(self):
+  def add_node_pseudoatoms(self):
       node_object_list = []
       for blob_num in range(len(self.blob_list)):
           traj = self.script.load_trajectory(1)
@@ -516,7 +525,7 @@ class FFEA_viewer_control_window:
                   if conformation.frame[0].pos[node] !=None:
                       cmd.pseudoatom(pos = (conformation.frame[0].pos[node]*1000000000).tolist(), name = str(node), color="black")
                           
-  def add_node_psuedoatoms_from_nodes(self):
+  def add_node_pseudoatoms_from_nodes(self):
       node_object_list = []
       for blob_num in range(len(self.blob_list)):
           node_object_list.append(self.script.load_node(blob_num))
@@ -548,6 +557,7 @@ class FFEA_viewer_control_window:
 
 	# If necessary, stop now (broken traj or user asked for)
 	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or traj.num_blobs == 0:		
+		self.wontLoadTraj = 1
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
@@ -733,6 +743,8 @@ class FFEA_viewer_control_window:
 	self.offset_x = 0
 	self.offset_y = 0
 	self.offset_z = 0
+  
+	self.wontLoadTraj = 0 # if traj was not found or there was an error, we'll remember
 
 	# Assume box exists
 	self.box_exists = True
