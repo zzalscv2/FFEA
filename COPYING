@@ -9,7 +9,7 @@ are also noted here.
 This file contains the licenses for the following bodies of code:
 1. FFEA 
 2. RngStreams
-3. Tetratetra
+3. Tet_a_tet
 4. mtTkinter
 
 Our chosen method for packaging distributions (CPack) only permits a 
@@ -732,7 +732,7 @@ Public License instead of this License.  But first, please read
 ==========================================================================
 
 
-3. Tetratetra
+3. Tet_a_tet
 ============
 
    Files: src/CheckTetrahedraOverlap.cpp
