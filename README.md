@@ -120,7 +120,7 @@ FFEA Team  {#FFEAteam}
    * Albert Solernou
  * Thanks
    * Stan Burgess
-   * Stephan Muench
+   * Stephen Muench
 
 
 
