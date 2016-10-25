@@ -70,7 +70,7 @@ Technology  {#technology}
         to visualise and work with molecular systems 
         include [Chimera](https://www.cgl.ucsf.edu/chimera/)
         and [VMD](http://www.ks.uiuc.edu/Research/vmd/).
-   * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) v. 0.4 is shipped 
+   * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) (0.4) is shipped 
         with FFEA and used in the PyMOL plugin, allowing safe threading. 
    * [GTS](http://gts.sourceforge.net) (>=0.7.6)[OPTIONAL]. The
      GNU Triangulated Surface Libraries
