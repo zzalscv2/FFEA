@@ -263,5 +263,7 @@ set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 set(CPACK_PACKAGE_CONTACT "contact-us@leeds.ac.uk")
 
 #must come after all cpack settings!
-include(CPack)
+if (USE_PACK)
+  include(CPack)
+endif(USE_PACK)
 
