@@ -63,7 +63,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("500x225")
+     self.root.geometry("450x250")
 
      self.root.title("FFEA Loader")
 
@@ -92,6 +92,7 @@ class FFEA_viewer_control_window:
      self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
      self.show_mesh = StringVar(self.root, value=self.display_flags['show_mesh'])
      self.show_shortest_edge = IntVar(self.root, value=self.display_flags['show_shortest_edge'])
+     self.load_sfa = StringVar(self.root, value=self.display_flags['load_sfa'])
      self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
 
 
@@ -146,8 +147,8 @@ class FFEA_viewer_control_window:
      
     
      # # Pseudoatoms onto nodes
-     button_node_indices_pseudoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.call_add_node_pseudoatoms())
-     button_node_indices_pseudoatoms.grid(row=4, column=2, sticky=W)
+     # button_node_indices_pseudoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.call_add_node_pseudoatoms())
+     # button_node_indices_pseudoatoms.grid(row=4, column=2, sticky=W)
 
  
 
@@ -164,14 +165,20 @@ class FFEA_viewer_control_window:
      om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
      om_do_load_trajectory.grid(row=6, column=1, sticky=W)
 
-     
+
+     ## # Add Supportive Fake Atoms (SFA) box # #
+     label_sfa = Label(display_flags_frame, text="Add Atoms:")
+     label_sfa.grid(row=7, column=0, sticky=E)
+     om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Nodes", "Onto Faces", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
+     om_load_sfa.grid(row=7, column=1, sticky=W)
+
 
      # # Element highlighting 
-     label_traj= Label(display_flags_frame, text="Highlight element(s):")
-     label_traj.grid(row=7, column=0, sticky=E)
+     label_elem= Label(display_flags_frame, text="Highlight element(s):")
+     label_elem.grid(row=8, column=0, sticky=E)
 
      highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
-     highlight_entry_box.grid(row=7, column=1, sticky=W)
+     highlight_entry_box.grid(row=8, column=1, sticky=W)
 
 
      # flags
@@ -734,6 +741,7 @@ class FFEA_viewer_control_window:
 		'load_trajectory': "Trajectory", ## PYMOL OK
 		'show_inverted': 0,
 		'highlight': '',
+		'load_sfa': 'None',
       'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
 
 	self.selected_index = 0
