@@ -22,7 +22,7 @@ When PyMOL loads, open the ` Plugin ` menu, and you should see a new option call
   and load the FFEA script file, but before doing that, review the options.
   Currently, the model needs to be reloaded every time these settings are changed.
 
-![FFEA Viewer settings](viewer_2_settings_II.png "FFEA Viewer settings")
+![FFEA Viewer settings](viewer_2_settings_III.png "FFEA Viewer settings")
 
 The FFEA viewer settings are:
 * ` System name `: arbitrary, used to identify the system in the PyMOL sidebar.
@@ -37,16 +37,15 @@ The FFEA viewer settings are:
   * ` VdW ` colours the mesh different depending the van der Waals face type of the faces, as read in the vdw file. 
   * ` No Solid ` does not display a solid mesh.
 * ` Show Mesh `:
-  * ` Surface Mesh ` renders a wire-frame of the surface
-  * ` Whole Mesh ` renders a wire frame that includes the internal elements
+  * ` Surface Mesh ` renders a wire-frame of the surface.
+  * ` Whole Mesh ` renders a wire frame that includes the internal elements.
   * ` No mesh ` does not display a wire frame mesh.
-* ` Indices `:
+* ` Show Indices `: displays the indices as labels. Alternatively, one could use ` Add Atoms `.
   * ` Node Indices ` displays the indices of all the nodes, including the 2nd-order nodes.
   * ` Node Indices (Linear)` only displays the indices of the linear elements. In most cases, this is more useful, as displaying second-order nodes can make the image hard to read.
   * ` Element Indices ` displays the indices of the elements.
   * ` Face Indices ` displays the indices of the faces (surface elements) only.
   * ` No indices ` does not display indices.
-* Clicking the ` Add node pseudoatoms ` button after the simulation is loaded will cause PyMOL to load a pseudoatom at the location of each node. Pseudoatoms can be targeted by all of PyMOL's regular analysis tools. For example, you can type `label all, name` into the PyMOL console.
 * ` Show Box `:
   * ` Simulation Box (outline) ` draws an outline of the simulation box - the simulation box is the volume which objects in the simulation can occupy.
   * ` Simulation Box (whole)`  draws the entire box.
@@ -60,6 +59,14 @@ The FFEA viewer settings are:
   checking that the model has been set up correctly, as one can load the FFEA system alongside a (number of) PDB file(s),
   thus checking that both share origin and scale.
   * ` CGO  ` will load the trajectory and cache the calls to PyMOL's API directly to the hard drive. This results in a slower initial load, but faster subsequent loads.
+<!-- * Clicking the ` Add node pseudoatoms ` button after the simulation is loaded will cause PyMOL to load a pseudoatom at the location of each node. Pseudoatoms can be targeted by all of PyMOL's regular analysis tools. For example, you can type `label all, name` into the PyMOL console. -->
+* ` Add Atoms `: will add create a PyMOL object, or molecule, with a number of CA atoms.
+  * ` None ` does not load anything
+  * ` Onto Nodes ` will add atoms on every node, where PyMOL attribute ` resi ` will match the corresponding FFEA node number. 
+  * ` Onto Faces ` will add atoms on every face, where PyMOL attributes ` resi ` will match the corresponding FFEA face number.
+      Notice that FFEA uses second order faces in 
+  [short range forces](\ref shortRange), and so one will find 4 nodes on every 
+    triangle if loads ` Whole Mesh ` (but only one if loading ` Surface Mesh `). 
 * ` Highlight Nodes` :
   * Provide a list of nodes, e.g. '1, 2, 3' (no quotes) and the a separate blob will be created using only those nodes. Useful for tracking down element inversions. Warning: right now, this only works with CGO trajectories.
   
