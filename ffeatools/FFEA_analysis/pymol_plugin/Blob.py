@@ -4,6 +4,7 @@
 # from OpenGL.GLU import *
 import math, os, sys
 import numpy as np
+import StringIO, tempfile
 import FFEA_node, FFEA_surface, FFEA_topology, FFEA_material
 import FFEA_stokes, FFEA_vdw, FFEA_pin, FFEA_binding_sites
 import FFEA_frame
@@ -953,6 +954,33 @@ class Blob:
 			if len(pinsphere) != 0:
 				cmd.load_cgo(pinsphere, display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_load_" + str(self.num_loads), frameLabel) 
 
+		#
+		#  Load SFA: Supportive Fake Atoms #
+		#		# uses read_pdbstr instead of pseudoatoms, as it is much faster!
+		#
+		if display_flags['load_sfa'] != None:
+			sfa_name = display_flags['system_name'] + "_" + str(self.idnum)
+			psa_name = "CA"
+			psa_b = 20
+			psa_vdw = 1
+			text = ""
+			if display_flags['load_sfa'] == "Onto Nodes":
+				sfa_name += "_nfa"
+				for n in range(self.node.num_nodes):
+					pos = (self.frames[i].pos[n].tolist())[0:3]
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+
+			if display_flags['load_sfa'] == "Onto Faces":
+				sfa_name += "_ffa"
+				for f in range(self.surf.num_faces):
+					fn = self.surf.face[f].calc_centroid(self.frames[i])
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (f, psa_name, "FEA", "A", f, fn[0], fn[1], fn[2]))
+					# cmd.pseudoatom(object=sfa_name, pos = fn.tolist(), state = frameLabel, name = psa_name, resn=f, b=psa_b, vdw=psa_vdw)
+
+			# in both cases:
+			cmd.read_pdbstr(text, sfa_name, frameLabel)
+			cmd.show("spheres", sfa_name)
+	
 
 	def draw_pick_frame(self, i):
 		if self.num_frames == 0:
