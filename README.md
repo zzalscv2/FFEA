@@ -6,7 +6,7 @@ Fluctuating Finite Element Analysis is a new molecular modelling technique, buil
 This technique has the potential to model large, complex systems, made of many molecules, and complex processes at the frontiers of molecular biology. As it does not not require an atomistic level of detail, it can also be used to simulate biological molecules that cannot be imaged using X-ray crystallography.
 
 
-Features  {#whatever}
+Features  {#features}
 ========
 
  * Protein Interactions:
@@ -18,10 +18,10 @@ Features  {#whatever}
   * Coulombic interactions [EXPERIMENTAL].
  * [Kinetic state changes](\ref kineticApproach) can be simulated together with the continuum model to
     account for conformational changes and binding events.
- * Conversion of EM density data and atomistic structures into FFEA simulations
- * PyMOL visualisation plugin
- * Analysis tools (equilibration, Euler characteristic, principal component analysis, geometric measurements) and Python API
- * Extensive test suite that checks FFEA's simulation output against analytical results
+ * Conversion tools for EM density data and atomistic structures into FFEA simulations.
+ * A plugin for PyMOL, allowing the visualisation of FFEA systems and trajectories.
+ * Analysis tools (equilibration, Euler characteristic, principal component analysis, geometric measurements) available on the command line and under a Python API.
+ * Extensive test suite including checks of FFEA's simulation output against analytical results.
 
 
 
@@ -119,8 +119,20 @@ FFEA Team  {#FFEAteam}
    * Ben Hanson
    * Albert Solernou
  * Thanks
-   * Stan Burgess
-   * Stephen Muench
+	* Stan Burgess
+	* Stephen Muench
+	* Kerrie Smith
+	* Joanna Leng
+	* Thijs 
+	* Kees Storm
+	* Paul van der Schoot 
+	* Toni Collis
+	* Neelofer Banglawala
+	* Jana Boltersdorf
+	* Ondřej Vysocký
+	* Guanhao Lu
+	* Jonathan Boyle
+	* Mike Croucher
 
 
 
