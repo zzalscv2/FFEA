@@ -575,7 +575,7 @@ class map_flood_filler
 				}
 			}
 			printf("Culled %d 'floaters' (size < %d voxels)\nKept %d.\n", num_culled, cull_threshold, num_kept);
-			delete workspace;
+			delete[] workspace;
 			return 0;
 		}
 
@@ -611,7 +611,7 @@ class map_flood_filler
 				}
 			}
 			printf("Filled %d holes (size < %d voxels)\nKept %d.\n", num_filled, fill_threshold, num_left_empty);
-			delete workspace;
+			delete[] workspace;
 			return 0;
 		}
 
