@@ -9,6 +9,6 @@ install(DIRECTORY FFEA_convert_from_volume
         Kinetic_FFEA_convert_from_FFEA FFEA_vdw_tools
         DESTINATION "${PYTHONSTUFF}/FFEA_initialise")
 
-install (FILES FFEA_build_simulation_environment.py
+install (FILES FFEA_build_simulation_environment.py __init__.py
          DESTINATION "${PYTHONSTUFF}/FFEA_initialise")
 
