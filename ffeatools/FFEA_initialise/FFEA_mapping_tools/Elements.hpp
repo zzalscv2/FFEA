@@ -79,7 +79,9 @@ class tetra_element
 				return (*node[2] + *node[3] + *node[0]) * (1.0/3.0);
 			} else if (index == 3) {
 				return (*node[3] + *node[1] + *node[0]) * (1.0/3.0);
-			}
+			} else {
+				return (*node[0]) * 0.0;
+			} 
 		}
 		
 		
