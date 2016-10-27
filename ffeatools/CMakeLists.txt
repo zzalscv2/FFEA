@@ -6,7 +6,7 @@ install(PROGRAMS "${PROJECT_BINARY_DIR}/ffeatools/ffeatools"
         DESTINATION bin)
 
 # 2 - Install python files here:
-install(FILES "ffeatools.py"
+install(FILES ffeatoolsScript.py __init__.py enthusiasm.py
         DESTINATION ${PYTHONSTUFF})
 
 # 3 - and go through the subdirectories:
