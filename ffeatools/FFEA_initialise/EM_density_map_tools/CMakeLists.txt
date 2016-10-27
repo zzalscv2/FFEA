@@ -4,4 +4,6 @@ add_executable(convert_pdb_to_emdb_map convert_pdb_to_emdb_map.cpp)
 install (TARGETS add_maps convert_pdb_to_emdb_map RUNTIME 
          DESTINATION "${PYTHONSTUFF}/FFEA_initialise/EM_density_map_tools")
 
+install (FILES __init__.py convert_pdb_to_emdb_map.py
+         DESTINATION "${PYTHONSTUFF}/FFEA_initialise/EM_density_map_tools")
 

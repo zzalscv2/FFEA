@@ -205,7 +205,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 ######## INSTALL THE FFEA TOOLS  ######
 # 1 - Set up the install python path
 include(${CMAKE_ROOT}/Modules/FindPythonInterp.cmake)
-set(PYTHONSTUFF "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
+set(PYTHONSTUFF "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/ffeatools")
 
 # 2 - and go through the folders:
 # PENDING # Unify or rename make_structure_map.cpp Matrices.hpp and Vectors.hpp in
