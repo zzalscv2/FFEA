@@ -145,5 +145,5 @@ In addition, in order to have access to the python modules that integrate
  the FFEA tools, and specially to those users willing to write new measure tools,
  the ` PYTHONPATH ` environment variable should be also updated: 
 
-     export PYTHONPATH=$FFEA_HOME/lib/python<version>/FFEA_python_modules
+     export PYTHONPATH=$FFEA_HOME/lib/python<version>/site-packages
 
