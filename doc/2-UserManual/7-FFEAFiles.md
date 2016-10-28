@@ -191,6 +191,20 @@ Specifically, a springs file with 3 springs could look like:
     1e-2 3e-9 0 1 0 0 66 83
 
 
+Springs file: .pin   {#ifpin}
+----------------------
+
+This file provides a list of nodes for the corresponding blob that will remain fixed 
+ in its initial position. The format for a valid ` .pin ` file with three nodes pinned would be:
+
+
+    ffea pinned nodes file
+    num_pinned_nodes 0
+    pinned nodes:
+    56
+    59
+    445
+
 
 Checkpoint file .fcp {#ffeaCheckpointFileIn}
 ----------------------------------------------
