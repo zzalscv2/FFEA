@@ -123,7 +123,7 @@ FFEA Team  {#FFEAteam}
 	* Stephen Muench
 	* Kerrie Smith
 	* Joanna Leng
-	* Thijs 
+	* Thijs van der Heijden
 	* Kees Storm
 	* Paul van der Schoot 
 	* Toni Collis
