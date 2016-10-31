@@ -105,12 +105,13 @@ FFEA is maintained by a small but dedicated team at the University of Leeds. If 
 FFEA Team  {#FFEAteam}
 ==========
 
- * Code:
+### Code: ###
    * Albert Solernou
    * Ben Hanson
    * Robin Richardson
    * [Rob Welch](http://robwel.ch/)
- * Theory
+
+### Theory: ###
    * [Oliver Harlen](https://www.maths.leeds.ac.uk/index.php?id=263&uid=1025)
    * [Sarah Harris](http://www.comp-bio.physics.leeds.ac.uk/)
    * Robin Oliver
@@ -118,21 +119,22 @@ FFEA Team  {#FFEAteam}
    * Robin Richardson
    * Ben Hanson
    * Albert Solernou
- * Thanks
-	* Stan Burgess
-	* Stephen Muench
-	* Kerrie Smith
-	* Joanna Leng
-	* Thijs van der Heijden
-	* Kees Storm
-	* Paul van der Schoot 
-	* Toni Collis
-	* Neelofer Banglawala
-	* Jana Boltersdorf
-	* Ondřej Vysocký
-	* Guanhao Lu
-	* Jonathan Boyle
-	* Mike Croucher
+
+### Thanks: ###
+   * Stan Burgess
+   * Stephen Muench
+   * Kerrie Smith
+   * Joanna Leng
+   * Thijs van der Heijden
+   * Kees Storm
+   * Paul van der Schoot 
+   * Toni Collis
+   * Neelofer Banglawala
+   * Jana Boltersdorf
+   * Ondřej Vysocký
+   * Guanhao Lu
+   * Jonathan Boyle
+   * Mike Croucher
 
 
 
@@ -145,4 +147,4 @@ Because the software is split between the FFEA runner (written in C++)
    [FFEA runner](\ref userManual) and [ffeatools](../../ffeamodules/html/index.html)
   to be used as reference pages.
 However, the new user may want start reading the [tutorial](\ref Tutorial),
-  and consult the reference pages later. 
+  and consult the reference pages later.
