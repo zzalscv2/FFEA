@@ -1,10 +1,17 @@
 import sys
 from os import path
 import numpy as np
-try:
-  import matplotlib.pyplot as plt
-except:
-  plt = False
+
+# MatPlotLib conflicts with PyMOL horribly:
+plt = False
+modules = sys.modules.keys()
+if modules.count("pymol") == 0:
+  try:
+    import matplotlib.pyplot as plt
+  except:
+    pass
+else:
+  print "FFEA_measurement will not load matplotlib, as it conflicts with PyMOL"
 
 class FFEA_measurement:
 
