@@ -953,12 +953,24 @@ class Blob:
 					pos = (self.frames[i].pos[n].tolist())[0:3]
 					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
 
-			if display_flags['load_sfa'] == "Onto Faces":
+			elif display_flags['load_sfa'] == "Onto Faces":
 				sfa_name += "_ffa"
 				for f in range(self.surf.num_faces):
 					fn = self.surf.face[f].calc_centroid(self.frames[i])
 					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (f, psa_name, "FEA", "A", f, fn[0], fn[1], fn[2]))
 
+
+			
+			elif display_flags['load_sfa'] == "Onto Elements":
+				sfa_name += "_efa"
+				# Catch elements (but don't mislead i.e. no numbers
+				if self.top == None:
+					print "No topology! Can't add atoms on elements for Blob ", self.bindex
+				else:
+					for e in range(self.top.num_elements):
+						en = self.top.element[e].calc_centroid(self.frames[i])
+						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e, psa_name, "FEA", "A", e, en[0], en[1], en[2]))
+						
 			# in both cases:
 			cmd.read_pdbstr(text, sfa_name, frameLabel)
 			cmd.show("spheres", sfa_name)
