@@ -902,7 +902,18 @@ class FFEA_viewer_control_window:
          # print "correct_frame: ", correct_frame
 
          # Draw, because this spring exists
-         springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
+         try:
+           springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
+         except(AttributeError):
+           continue
+         except:
+           print "Something went wrong with this spring"
+		#	except(IndexError):
+			#	if s.blob_index[i] >= self.num_blobs:
+			#		print "fuck"
+			#	if s.conformation_index[i] >= self.num_conformations[i]:
+			#		print "fuck2"
+			#	if s.node_index[i] >= self.blob_list[i].
 
          # Axes for helix
          zax = springjoints[1] - springjoints[0]
