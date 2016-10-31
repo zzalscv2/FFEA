@@ -212,9 +212,9 @@ include(${CMAKE_ROOT}/Modules/FindPythonInterp.cmake)
 option(USE_PACK_DIST "accepted values are RPM and DEB" "RPM")
 set(PYTHONSTUFF "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/ffeatools")
 # Debian and derivatives use dist-packages instead of site-packages. 
-if (USE_PACK_DIST STREQUAL DEB)
+if (USE_PACK_DIST STREQUAL "DEB")
   set(PYTHONSTUFF "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/dist-packages/ffeatools")
-endif(USE_PACK_DIST STREQUAL DEB)
+endif(USE_PACK_DIST STREQUAL "DEB")
 
 # 2 - and go through the folders:
 add_subdirectory("${PROJECT_SOURCE_DIR}/ffeatools")
@@ -257,7 +257,6 @@ set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
 set(CPACK_PACKAGE_CONTACT "contact-us@leeds.ac.uk")
 
 # # # CPACK: DEB or RPM # # # 
-message(STATUS "Got DIST ${USE_PACK_DIST}")
 if (USE_PACK_DIST STREQUAL "DEB") 
   set(CPACK_GENERATOR "TBZ2" "DEB")
   set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_amd64")
@@ -288,5 +287,6 @@ set(CPACK_RPM_PACKAGE_REQUIRES "numpy, python-matplotlib")
 #must come after all cpack settings!
 if (USE_PACK)
   include(CPack)
+  message(STATUS "Ready for a ${USE_PACK_DIST} package")
 endif(USE_PACK)
 
