@@ -63,7 +63,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("500x225")
+     self.root.geometry("450x250")
 
      self.root.title("FFEA Loader")
 
@@ -92,6 +92,7 @@ class FFEA_viewer_control_window:
      self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
      self.show_mesh = StringVar(self.root, value=self.display_flags['show_mesh'])
      self.show_shortest_edge = IntVar(self.root, value=self.display_flags['show_shortest_edge'])
+     self.load_sfa = StringVar(self.root, value=self.display_flags['load_sfa'])
      self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
 
 
@@ -146,8 +147,8 @@ class FFEA_viewer_control_window:
      
     
      # # Pseudoatoms onto nodes
-     button_node_indices_psuedoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.add_node_psuedoatoms())
-     button_node_indices_psuedoatoms.grid(row=4, column=2, sticky=W)
+     # button_node_indices_pseudoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.call_add_node_pseudoatoms())
+     # button_node_indices_pseudoatoms.grid(row=4, column=2, sticky=W)
 
  
 
@@ -164,14 +165,20 @@ class FFEA_viewer_control_window:
      om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
      om_do_load_trajectory.grid(row=6, column=1, sticky=W)
 
-     
+
+     ## # Add Supportive Fake Atoms (SFA) box # #
+     label_sfa = Label(display_flags_frame, text="Add Atoms:")
+     label_sfa.grid(row=7, column=0, sticky=E)
+     om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
+     om_load_sfa.grid(row=7, column=1, sticky=W)
+
 
      # # Element highlighting 
-     label_traj= Label(display_flags_frame, text="Highlight element(s):")
-     label_traj.grid(row=7, column=0, sticky=E)
+     label_elem= Label(display_flags_frame, text="Highlight element(s):")
+     label_elem.grid(row=8, column=0, sticky=E)
 
      highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
-     highlight_entry_box.grid(row=7, column=1, sticky=W)
+     highlight_entry_box.grid(row=8, column=1, sticky=W)
 
 
      # flags
@@ -504,8 +511,17 @@ class FFEA_viewer_control_window:
     # in each blob->conformation, consult the surface file
     # for each surf.face.n, grab the points at that index and draw a trinagle with them
     return
+
+  def call_add_node_pseudoatoms(self):
+     if self.display_flags['load_trajectory'] == "System (Plainly)" or self.display_flags['load_trajectory'] == "CGO" or self.wontLoadTraj == 1:
+        self.add_node_pseudoatoms_from_nodes()
+     elif self.display_flags['load_trajectory'] == "Trajectory":
+        self.add_node_pseudoatoms()
+     else:
+        print "Cannot add pseudoatoms if selecting System (Into box)" 
+
     
-  def add_node_psuedoatoms(self):
+  def add_node_pseudoatoms(self):
       node_object_list = []
       for blob_num in range(len(self.blob_list)):
           traj = self.script.load_trajectory(1)
@@ -516,7 +532,7 @@ class FFEA_viewer_control_window:
                   if conformation.frame[0].pos[node] !=None:
                       cmd.pseudoatom(pos = (conformation.frame[0].pos[node]*1000000000).tolist(), name = str(node), color="black")
                           
-  def add_node_psuedoatoms_from_nodes(self):
+  def add_node_pseudoatoms_from_nodes(self):
       node_object_list = []
       for blob_num in range(len(self.blob_list)):
           node_object_list.append(self.script.load_node(blob_num))
@@ -548,6 +564,7 @@ class FFEA_viewer_control_window:
 
 	# If necessary, stop now (broken traj or user asked for)
 	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or traj.num_blobs == 0:		
+		self.wontLoadTraj = 1
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
@@ -724,6 +741,7 @@ class FFEA_viewer_control_window:
 		'load_trajectory': "Trajectory", ## PYMOL OK
 		'show_inverted': 0,
 		'highlight': '',
+		'load_sfa': 'None',
       'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
 
 	self.selected_index = 0
@@ -733,6 +751,8 @@ class FFEA_viewer_control_window:
 	self.offset_x = 0
 	self.offset_y = 0
 	self.offset_z = 0
+  
+	self.wontLoadTraj = 0 # if traj was not found or there was an error, we'll remember
 
 	# Assume box exists
 	self.box_exists = True

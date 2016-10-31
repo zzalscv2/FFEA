@@ -33,8 +33,22 @@ where "Number-Of-Active-Faces" is the number of faces that your system has
  corresponding to **inactive**, up to 7 for the rest of faces types. 
  This file should have been automatically generated when
   [configuring the system](\ref makeffeablob), 
- with all the faces set up to "inactive", 
- and it can be easily configured using the [FFEA viewer](\ref FFEAviewer).
+ with all the faces set up to "inactive". There are a number of ways of
+ configuring this file with different values for different files, either 
+ geometrically or through direct visualisation.
+ The most obvious approach may be to use the [FFEA viewer](\ref FFEAviewertut)
+ showing the ` Face Indices ` in ` Show Indices `. However, reading the 
+ interesting nodes from the PyMOL viewer window may be quite tricky. Thus,
+ one may prefer 
+ to ` Add Atoms ` ` Onto Nodes `, and then select the nodes of interest by
+ clicking on the screen. The selection may be printed typing:
+
+     print cmd.get_pdbstr("sele")
+
+ being "sele" the selected atoms. The residue number printed out will 
+ correspond to the internal face index (starting with 0), which corresponds
+ to the order of the faces in the ` vdw ` file. 
+
 
 Another keyword ` inc_self_vdw ` will determine whether interactions due 
  to interacting faces within the same blob are taken into account (default, 1) or not (0). 

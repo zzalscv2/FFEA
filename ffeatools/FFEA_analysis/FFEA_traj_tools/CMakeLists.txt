@@ -7,7 +7,7 @@ install(TARGETS FFEA_extract_positions FFEA_extract_specific_nodes
 # install(TARGETS FFEA_extract_positions FFEA_extract_specific_nodes
 #         DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
 
-install(FILES 
+install(FILES __init__.py
         convert_old_traj_to_new.py Dx_convert_from_xyz_position_trajectory.py
         Dx_smooth_convert_from_xyz_position_trajectory.py FFEA_convert_old_traj_to_new.py
         FFEA_map_trajectory_to_PDB.py FFEA_thin_trajectory.py FFEA_traj_to_nodes.py
