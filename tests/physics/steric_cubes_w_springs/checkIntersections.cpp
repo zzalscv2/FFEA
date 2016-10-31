@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
      b1.center_of_coord(cm1);
      b2.center_of_coord(cm2);
      d = arr3arr3Distance<scalar,arr3>(cm2, cm1);
-     if (d > d0) {
+     if (d >= d0) {
        cout << " CMs separating... something went wrong! t: " << t << endl; 
        cout << " cm1: " << cm1[0] << endl;
        cout << " cm2: " << cm2[0] << endl; 
