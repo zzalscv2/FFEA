@@ -439,6 +439,8 @@ class FFEA_script_params():
 		self.stokes_visc = 1e-3
 		self.calc_vdw = 1
 		self.calc_noise = 1
+		self.calc_springs = 0
+		self.inc_self_vdw = 1
 		self.calc_preComp = 0
 		self.calc_es = 0
 		self.calc_kinetics = 0
@@ -510,8 +512,12 @@ class FFEA_script_params():
 			self.calc_vdw = int(rvalue)
 		elif lvalue == "calc_preComp":
 			self.calc_preComp = int(rvalue)
+		elif lvalue == "calc_springs":
+			self.calc_springs = int(rvalue)
 		elif lvalue == "vdw_type":
 			self.vdw_type = rvalue
+		elif lvalue == "inc_self_vdw":
+			self.inc_self_vdw = float(rvalue)
 		elif lvalue == "vdw_steric_factor":
 			self.vdw_steric_factor = float(rvalue)
 		elif lvalue == "calc_noise":
