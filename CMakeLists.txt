@@ -227,9 +227,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/ffeatools")
 enable_testing()
 # set_tests_properties(ENVIRONMENT OMP_NUM_THREADS=1)
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
-# add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency/volume")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
-add_subdirectory("${PROJECT_SOURCE_DIR}/tests/io")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
 #####################################################
 
