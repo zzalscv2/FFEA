@@ -705,6 +705,8 @@ Public License instead of this License.  But first, please read
 
    Files: src/RngStream.cpp
           include/RngStream.cpp 
+          tests/consistency/rngstream/testRngStream.cpp
+
 
 
  File:           RngStream.cpp for multiple streams of Random Numbers

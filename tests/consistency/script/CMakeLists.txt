@@ -1,6 +1,6 @@
 FIND_PACKAGE(Boost REQUIRED)
 
-set (TESTSCRIPT "${PROJECT_BINARY_DIR}/tests/io/script")
+set (TESTSCRIPT "${PROJECT_BINARY_DIR}/tests/consistency/script")
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 

@@ -6,7 +6,7 @@ Fluctuating Finite Element Analysis is a new molecular modelling technique, buil
 This technique has the potential to model large, complex systems, made of many molecules, and complex processes at the frontiers of molecular biology. As it does not not require an atomistic level of detail, it can also be used to simulate biological molecules that cannot be imaged using X-ray crystallography.
 
 
-Features  {#whatever}
+Features  {#features}
 ========
 
  * Protein Interactions:
@@ -18,10 +18,10 @@ Features  {#whatever}
   * Coulombic interactions [EXPERIMENTAL].
  * [Kinetic state changes](\ref kineticApproach) can be simulated together with the continuum model to
     account for conformational changes and binding events.
- * Conversion of EM density data and atomistic structures into FFEA simulations
- * PyMOL visualisation plugin
- * Analysis tools (equilibration, Euler characteristic, principal component analysis, geometric measurements) and Python API
- * Extensive test suite that checks FFEA's simulation output against analytical results
+ * Conversion tools for EM density data and atomistic structures into FFEA simulations.
+ * A plugin for PyMOL, allowing the visualisation of FFEA systems and trajectories.
+ * Analysis tools (equilibration, Euler characteristic, principal component analysis, geometric measurements) available on the command line and under a Python API.
+ * Extensive test suite including checks of FFEA's simulation output against analytical results.
 
 
 
@@ -70,7 +70,7 @@ Technology  {#technology}
         to visualise and work with molecular systems 
         include [Chimera](https://www.cgl.ucsf.edu/chimera/)
         and [VMD](http://www.ks.uiuc.edu/Research/vmd/).
-   * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) v. 0.4 is shipped 
+   * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) (0.4) is shipped 
         with FFEA and used in the PyMOL plugin, allowing safe threading. 
    * [GTS](http://gts.sourceforge.net) (>=0.7.6)[OPTIONAL]. The
      GNU Triangulated Surface Libraries
@@ -105,12 +105,13 @@ FFEA is maintained by a small but dedicated team at the University of Leeds. If 
 FFEA Team  {#FFEAteam}
 ==========
 
- * Code:
+### Code: ###
    * Albert Solernou
    * Ben Hanson
    * Robin Richardson
    * [Rob Welch](http://robwel.ch/)
- * Theory
+
+### Theory: ###
    * [Oliver Harlen](https://www.maths.leeds.ac.uk/index.php?id=263&uid=1025)
    * [Sarah Harris](http://www.comp-bio.physics.leeds.ac.uk/)
    * Robin Oliver
@@ -118,9 +119,22 @@ FFEA Team  {#FFEAteam}
    * Robin Richardson
    * Ben Hanson
    * Albert Solernou
- * Thanks
+
+### Thanks: ###
    * Stan Burgess
-   * Stephan Muench
+   * Stephen Muench
+   * Kerrie Smith
+   * Joanna Leng
+   * Thijs van der Heijden
+   * Kees Storm
+   * Paul van der Schoot 
+   * Toni Collis
+   * Neelofer Banglawala
+   * Jana Boltersdorf
+   * Ondřej Vysocký
+   * Guanhao Lu
+   * Jonathan Boyle
+   * Mike Croucher
 
 
 
@@ -133,4 +147,4 @@ Because the software is split between the FFEA runner (written in C++)
    [FFEA runner](\ref userManual) and [ffeatools](../../ffeamodules/html/index.html)
   to be used as reference pages.
 However, the new user may want start reading the [tutorial](\ref Tutorial),
-  and consult the reference pages later. 
+  and consult the reference pages later.

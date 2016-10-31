@@ -4,6 +4,7 @@
 # from OpenGL.GLU import *
 import math, os, sys
 import numpy as np
+import StringIO, tempfile
 import FFEA_node, FFEA_surface, FFEA_topology, FFEA_material
 import FFEA_stokes, FFEA_vdw, FFEA_pin, FFEA_binding_sites
 import FFEA_frame
@@ -835,15 +836,10 @@ class Blob:
 			
 				# Loop through elements
 				for e in xrange(self.top.num_elements):
-					n1a = self.frames[i].pos[self.top.element[e].n[0]]
-					n2a = self.frames[i].pos[self.top.element[e].n[1]]
-					n3a = self.frames[i].pos[self.top.element[e].n[2]]
-					n4a = self.frames[i].pos[self.top.element[e].n[3]]
-
-					n1 = n1a[0:4]
-					n2 = n2a[0:4]
-					n3 = n3a[0:4]
-					n4 = n4a[0:4]
+					n1 = self.frames[i].pos[self.top.element[e].n[0]]
+					n2 = self.frames[i].pos[self.top.element[e].n[1]]
+					n3 = self.frames[i].pos[self.top.element[e].n[2]]
+					n4 = self.frames[i].pos[self.top.element[e].n[3]]
 
 		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
@@ -867,28 +863,16 @@ class Blob:
 
 				# Loop over surface
 				for f in xrange(self.surf.num_faces):
-					n1a = self.frames[i].pos[self.surf.face[f].n[0]]
-					n2a = self.frames[i].pos[self.surf.face[f].n[1]]
-					n3a = self.frames[i].pos[self.surf.face[f].n[2]]
+					n1 = self.frames[i].pos[self.surf.face[f].n[0]]
+					n2 = self.frames[i].pos[self.surf.face[f].n[1]]
+					n3 = self.frames[i].pos[self.surf.face[f].n[2]]
 
-					n1 = n1a[0:3]
-					n2 = n2a[0:3]
-					n3 = n3a[0:3]
-
-
-					# norm1 = self.frames[i].normal_list[self.surf.face[f].n[0]]
-					# norm2 = self.frames[i].normal_list[self.surf.face[f].n[1]]
-					# norm3 = self.frames[i].normal_list[self.surf.face[f].n[2]]
-
-		                        # mes.extend( [ LINEWIDTH, 2.0 ] )
-		                        # mes.extend( [ COLOR, 0.3, 0.3, 1.0 ] )
-		                        # mes.extend( [ NORMAL, norm1[0], norm1[1], norm1[2] ] )
 		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-		                        # mes.extend( [ NORMAL, norm2[0], norm2[1], norm2[2] ] )
+		                        
 		                        mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-		                        # mes.extend( [ NORMAL, norm3[0], norm3[1], norm3[2] ] )
+		                       
 		                        mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
@@ -953,6 +937,44 @@ class Blob:
 			if len(pinsphere) != 0:
 				cmd.load_cgo(pinsphere, display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_load_" + str(self.num_loads), frameLabel) 
 
+		#
+		#  Load SFA: Supportive Fake Atoms #
+		#		# uses read_pdbstr instead of pseudoatoms, as it is much faster!
+		#
+		if display_flags['load_sfa'] != "None":
+			sfa_name = display_flags['system_name'] + "_" + str(self.idnum)
+			psa_name = "CA"
+			psa_b = 20
+			psa_vdw = 1
+			text = ""
+			if display_flags['load_sfa'] == "Onto Nodes":
+				sfa_name += "_nfa"
+				for n in range(self.node.num_nodes):
+					pos = (self.frames[i].pos[n].tolist())[0:3]
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+
+			elif display_flags['load_sfa'] == "Onto Faces":
+				sfa_name += "_ffa"
+				for f in range(self.surf.num_faces):
+					fn = self.surf.face[f].calc_centroid(self.frames[i])
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (f, psa_name, "FEA", "A", f, fn[0], fn[1], fn[2]))
+
+
+			
+			elif display_flags['load_sfa'] == "Onto Elements":
+				sfa_name += "_efa"
+				# Catch elements (but don't mislead i.e. no numbers
+				if self.top == None:
+					print "No topology! Can't add atoms on elements for Blob ", self.bindex
+				else:
+					for e in range(self.top.num_elements):
+						en = self.top.element[e].calc_centroid(self.frames[i])
+						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e, psa_name, "FEA", "A", e, en[0], en[1], en[2]))
+						
+			# in both cases:
+			cmd.read_pdbstr(text, sfa_name, frameLabel)
+			cmd.show("spheres", sfa_name)
+	
 
 	def draw_pick_frame(self, i):
 		if self.num_frames == 0:
