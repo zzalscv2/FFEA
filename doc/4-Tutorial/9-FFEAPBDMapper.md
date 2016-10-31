@@ -69,13 +69,11 @@ Once an atomic structure is aligned with the FFEA mesh,
 	
 	ffeatools makestructuremap -i FFEAstructure.node -t FFEAstructure.top -o Atomisticstructure.pdb -m FFEAtoatoms.map
 
-This will use the [above method](\ref #FFEApdbmappertheory) to generate your mapping script. This is a highly sparse matrix, so we also require a conversion to the Yale sparse matrix format to save space:
-
-	ffeatools.py maptosparse FFEAtoatoms.map FFEAtoatoms_sparse.map
+This will use the [above method](\ref #FFEApdbmappertheory) to generate your mapping script. This is a highly sparse matrix, so is converted to the Yale sparse matrix format to save space before being written.
 
 This matrix can be applied to any simulation frame calculated by FFEA in order to generate a series of atomistic structure. FFEA tools again provides a script for this procedure:
 
-	ffeatools.py maptraj FFEAtrajectory.ftj FFEAtoatomstrajectory.pdb FFEAtoatoms_sparse.map Atomisticstructure.pdb
+	ffeatools.py maptraj FFEAtrajectory.ftj FFEAtoatomstrajectory.pdb FFEAtoatoms.map Atomisticstructure.pdb
 
 The above script converts the entire FFEA trajectory into an atomistic one. This is done by applying the map to the FFEA trajectory (which has the same node order as the original .node file), then importing the original .pdb topology onto the new atomic positions (again, same order as the original) and writing the whole thing to a file.
 
