@@ -411,7 +411,7 @@ vector<int> get_nodes_within_range(vector3 tnode, vector3 *bnode, string *btop, 
 	return within_range;
 }
 
-void write_map_to_file(string map_fname, double **map, int num_bnodes, int num_tnodes) {
+void write_map_to_file(string map_fname, double **map, int num_bnodes, int num_tnodes, double limit, bool sparse) {
 
 	int i, j;
 
@@ -421,7 +421,11 @@ void write_map_to_file(string map_fname, double **map, int num_bnodes, int num_t
 
 	// Write initial stuff (always dense. external script will sparse it up)
 	map_file << "FFEA Kinetic Conformation Mapping File ";
-	map_file << "(Dense)" << endl;
+	if(sparse) {
+		map_file << "(Sparse)" << endl;
+	} else {
+		map_file << "(Dense)" << endl;
+	}
 
 	// Get num entries
 	int num_entries = 0;
@@ -434,26 +438,68 @@ void write_map_to_file(string map_fname, double **map, int num_bnodes, int num_t
 			}
 		}
 	}
-	map_file << "num_nodes_from " << num_bnodes << endl;
-	map_file << "num_nodes_to " << num_tnodes << endl;
+	map_file << "num_nodes_from " << num_bnodes << endl; // num_columns
+	map_file << "num_nodes_to " << num_tnodes << endl;   // num_rows
 	map_file << "num_entries " << num_entries << endl;
 	map_file << "map:" << endl;
 	
-	for(i = 0; i < num_tnodes; ++i) {
-		cout << "\r" << ((100 * i) / num_tnodes) << "% of map written...";
-		for(j = 0; j < num_bnodes; ++j) {
-
-			// If irrelevant, don't include
-			if (fabs(map[i][j]) < 1e-5) {
-				map_file << 0 << " ";
-			} else {
-				map_file << map[i][j] << " ";
+	if(sparse) {
+		// Make containers first
+		cout << "\tBuilding sparse format:" << endl;
+		vector<double> A;
+		vector<int> JA, IA;
+		IA.push_back(0);
+		for(i = 0; i < num_tnodes; ++i) {		
+			cout << "\r\t\t" << ((100 * i) / num_tnodes) << "% of sparse format built...";			
+			for(j = 0; j < num_bnodes; ++j) {
+				if (fabs(map[i][j]) > limit) {
+					A.push_back(map[i][j]);
+					JA.push_back(j);
+				}
 			}
+			IA.push_back(A.size());
+		}
+		cout << "\r\t\t" << 100 << "% of sparse format built...done!" << endl;
+
+		// Now write
+		map_file << "entries - ";
+		for(vector<double>::iterator it = A.begin(); it != A.end(); it++) {
+			cout << "\r\t" << ((100 * i) / num_tnodes) << "% of sparse entries written...";
+			map_file << *it << " ";
 		}
 		map_file << endl;
+		cout << "\r\t" << 100 << "% of sparse entries written...done!" << endl;
+		map_file << "key - ";
+		for(vector<int>::iterator it = IA.begin(); it != IA.end(); it++) {
+			cout << "\r\t" << ((100 * i) / num_tnodes) << "% of sparse key written...";
+			map_file << *it << " ";
+		}
+		map_file << endl;
+		cout << "\r\t" << 100 << "% of sparse key written...done!";
+		map_file << "columns - ";
+		for(vector<int>::iterator it = JA.begin(); it != JA.end(); it++) {
+			cout << "\r\t" << ((100 * i) / num_tnodes) << "% of sparse columns written...";
+			map_file << *it << " ";
+		}
+		map_file << endl;
+		cout << "\r\t" << 100 << "% of sparse columns written...done!" << endl;
+		
+	} else {
+		for(i = 0; i < num_tnodes; ++i) {
+			cout << "\r\t" << ((100 * i) / num_tnodes) << "% of map written...";
+			for(j = 0; j < num_bnodes; ++j) {
+
+				// If irrelevant, don't include
+				if (fabs(map[i][j]) < limit) {
+					map_file << 0 << " ";
+				} else {
+					map_file << map[i][j] << " ";
+				}
+			}
+			map_file << endl;
+		}
+		cout << "\r\t" << 100 << "% of map written...done!" << endl;
 	}
-	cout << "\r" << 100 << "% of map written...";
-	cout << "done!" << endl;
 }
 
 int main(int argc, char **argv) {
@@ -549,14 +595,13 @@ int main(int argc, char **argv) {
 	map = new double*[num_tnodes];
 	cout << "Building map object..." << endl << flush;
 	for(i = 0; i < num_tnodes; ++i) {
-		cout << "\r" << ((100 * i) / num_tnodes) << "% of map initialised...";
+		cout << "\r\t" << ((100 * i) / num_tnodes) << "% of map initialised...";
 		map[i] = new double[num_bnodes];
 		for(j = 0; j < num_bnodes; ++j) {
 			map[i][j] = 0.0;
 		}
 	}
-	cout << "\r" << 100 << "% of map initialised...";
-	cout << "done!" << endl;
+	cout << "\r\t" << 100 << "% of map initialised...done!";
 	
 	//
 	// Mapping algorithm
@@ -573,7 +618,7 @@ int main(int argc, char **argv) {
 		double node_map[4]; 
 		for(i = 0; i < num_tnodes; ++i) {
 		
-			cout << "\r" << ((100 * i) / num_tnodes) << "% of map calculated..." << flush;
+			cout << "\r\t" << ((100 * i) / num_tnodes) << "% of map calculated..." << flush;
 			
 			// Find which element it is in, if any
 			celem = get_containing_element(tnode[i], belem, num_belements);
@@ -603,7 +648,7 @@ int main(int argc, char **argv) {
 		for(i = 0; i < num_tnodes; ++i) {
 			
 			node_list.clear();
-			cout << "\r" << ((100 * i) / num_tnodes) << "% of map calculated...";
+			cout << "\r\t" << ((100 * i) / num_tnodes) << "% of map calculated...";
 			
 			tries = 0;
 			while (node_list.size() < 3) {
@@ -629,12 +674,11 @@ int main(int argc, char **argv) {
 	}
 	
 	// Now, write to file
-	cout << "\r" << 100 << "% of map calculated...";
-	cout << "done!" << endl;
+	cout << "\r\t" << 100 << "% of map calculated...done!";
 
 	// Print out the whole map
 	cout << "Writing map to " << mapfname << "..." << endl;
-	write_map_to_file(mapfname, map, num_bnodes, num_tnodes);
-	cout << "done! " << endl;
+	write_map_to_file(mapfname, map, num_bnodes, num_tnodes, 1e-5, true);
+	cout << "done!" << endl;
 	return 0;
 }
