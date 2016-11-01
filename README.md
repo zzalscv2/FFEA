@@ -120,7 +120,11 @@ FFEA Team  {#FFEAteam}
    * Ben Hanson
    * Albert Solernou
 
-### Thanks: ###
+
+Thanks {#thanks}
+=======
+We want to thank everybody who has helped in making FFEA possible, from 
+ summer students, to experimental professors, we would not be here without you:
    * Stan Burgess
    * Stephen Muench
    * Kerrie Smith
