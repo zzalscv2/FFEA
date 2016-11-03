@@ -20,7 +20,7 @@ class tetra_element
 			}
 		}
 		
-		void set_structure(int n0, int n1, int n2, int n3, vector3 *node_list) {
+		void set_structure(int n0, int n1, int n2, int n3, vector3 *node_list, int ind) {
 		
 			// Store indices and also pointers to actual node vectors too!
 			n[0] = n0;
@@ -32,6 +32,7 @@ class tetra_element
 				node[i] = &node_list[n[i]];
 			}
 			calc_centroid();
+			index = ind;
 		}
 		
 		void calc_centroid() {
@@ -84,9 +85,25 @@ class tetra_element
 			} 
 		}
 		
-		
+		static bool connected(tetra_element a, tetra_element b) {
+			int check = 0;
+			for(int i = 0; i < 4; ++i) {
+				for(int j = 0; j < 4; ++j) {
+					if(a.n[i] == b.n[j]) {
+						check++;
+						continue;
+					}
+				}
+			}
+			if(check == 3) {
+				return true;
+			}
+			return false;
+		}
+
 		// Data members
 		int n[4];
+		int index;
 		vector3 *node[4];
 		vector3 centroid;
 };
