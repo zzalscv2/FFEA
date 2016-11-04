@@ -180,7 +180,7 @@ int extract_nodes_and_topology_from_pdb(string fname, vector3 *&node, string *&t
 
 int extract_topology_from_top(string fname, vector3 *node, tetra_element *&elem) {
 
-	int i, num_elements, num_surface_elements, num_interior_elements;
+	int i, j, k, num_elements, num_surface_elements, num_interior_elements;
 	int n[10];
 	
 	string line;
@@ -210,7 +210,7 @@ int extract_topology_from_top(string fname, vector3 *node, tetra_element *&elem)
 	getline(tfile, line);
 	for(i = 0; i < num_surface_elements; ++i) {
 		tfile >> n[0] >> n[1] >> n[2] >> n[3] >> n[4] >> n[5] >> n[6] >> n[7] >> n[8] >> n[9];
-		elem[i].set_structure(n[0], n[1], n[2], n[3], node);
+		elem[i].set_structure(n[0], n[1], n[2], n[3], node, i);
 	}
 
 	// Read in interior elements
@@ -218,12 +218,45 @@ int extract_topology_from_top(string fname, vector3 *node, tetra_element *&elem)
 	getline(tfile, line);
 	for(i = 0; i < num_interior_elements; ++i) {
 		tfile >> n[0] >> n[1] >> n[2] >> n[3] >> n[4] >> n[5] >> n[6] >> n[7] >> n[8] >> n[9];
-		elem[i + num_surface_elements].set_structure(n[0], n[1], n[2], n[3], node);
+		elem[i + num_surface_elements].set_structure(n[0], n[1], n[2], n[3], node, i + num_surface_elements);
 	}
 
-	// Close and return pointer
+	// Close file
 	tfile.close();
+
 	return num_elements;
+}
+
+int ** build_connectiviy_map(tetra_element *elem, int num_elements) {
+
+	// Now, build a connectivity map
+	int i, j, k;
+	int **conn = new int*[num_elements];
+	for(i = 0; i < num_elements; ++i) {
+		conn[i] = new int[4];
+		for(j = 0; j < 4; ++j) {
+			conn[i][j] = -1;
+		} 
+	}
+	for(i = 0; i < num_elements; ++i) {
+		for(j = i + 1; j < num_elements; ++j) {
+			if(tetra_element::connected(elem[i], elem[j])) {
+				for(k = 0; k < 4; ++k) {
+					if(conn[i][k] == -1) {
+						conn[i][k] = j;
+						break;
+					}
+				}
+				for(k = 0; k < 4; ++k) {
+					if(conn[j][k] == -1) {
+						conn[j][k] = i;
+						break;
+					}
+				}
+			}
+		}
+	}
+	return conn;
 }
 
 tetra_element * get_containing_element(vector3 tnode, tetra_element * belem, int num_elements) {
@@ -259,20 +292,55 @@ tetra_element * get_containing_element(vector3 tnode, tetra_element * belem, int
 
 tetra_element * get_nearest_element(vector3 tnode, tetra_element * belem, int num_elements) {
 
-	// Ok, so we're just going for the closest element now. Use element centroid - tnode magnitude
+	// Ok, so we're just going for the closest element now. Use element centroid - tnode magnitude to get list of nearest 10
 	int i;
-	double distance = INFINITY;
+	double distlim = INFINITY;
 	vector3 test;
 	tetra_element *celem;
+
+	// Get closest element
 	for(i = 0; i < num_elements; ++i) {
-		test = belem[i].centroid - tnode;
-		if(test.r < distance) {
-			distance = test.r;
-			celem = &belem[i];
+		test = belem[i].centroid - tnode;		
+		if(test.r < distlim) {
+			distlim = test.r;
+			celem = &belem[i];			
 		}
 	}
+
 	return celem;
-	 
+}
+
+tetra_element * get_nearest_connected_element(vector3 tnode, tetra_element * belem, int num_elements, tetra_element * lcelem, int **bconn) {
+
+	// Ok, so we're just going for the closest element now that is connected to the previous one. Use element centroid - tnode magnitude to get list of nearest 10
+	int i, j;
+	double distlim = INFINITY, distlimconn = INFINITY;
+	vector3 test;
+	tetra_element *celem, *celemconn = NULL;
+
+	// Get closest element
+	for(i = 0; i < num_elements; ++i) {
+		test = belem[i].centroid - tnode;		
+		if(test.r < distlim) {
+			distlim = test.r;
+			celem = &belem[i];			
+		}
+		//cout << i << endl;
+		// If connected
+		if(lcelem != NULL) {
+			for(j = 0; j < 4; ++j) {
+				if(lcelem->index == bconn[i][j]) {
+					distlimconn = test.r;
+					celemconn = &belem[i];
+					break;
+				}
+			}
+		}	
+	}
+	if(celemconn == NULL) {
+		return celem;
+	}
+	return celemconn;
 }
 
 void map_node_using_element(vector3 node, tetra_element *elem, double *map) {
@@ -580,11 +648,13 @@ int main(int argc, char **argv) {
 	vector3 *bnode = NULL;
 	string *btop = NULL;
 	tetra_element *belem = NULL;
-	
+	int **bconn = NULL;
+
 	cout << "Building base structure..." << endl;
 	if(prog == fromNode) {
 		num_bnodes = extract_nodes_from_node(infname, bnode);
 		num_belements = extract_topology_from_top(topfname, bnode, belem);
+		bconn = build_connectiviy_map(belem, num_belements);
 	} else {
 		num_bnodes = extract_nodes_and_topology_from_pdb(infname, bnode, btop);
 		
@@ -601,7 +671,7 @@ int main(int argc, char **argv) {
 			map[i][j] = 0.0;
 		}
 	}
-	cout << "\r\t" << 100 << "% of map initialised...done!";
+	cout << "\r\t" << 100 << "% of map initialised...done!" << endl;
 	
 	//
 	// Mapping algorithm
@@ -614,20 +684,28 @@ int main(int argc, char **argv) {
 		// Use existing topology to build the map
 		
 		// For every target node
-		tetra_element *celem;
+		tetra_element *celem, *lcelem;
 		double node_map[4]; 
+		
+		celem = NULL;
+		lcelem = NULL;
+
 		for(i = 0; i < num_tnodes; ++i) {
 		
 			cout << "\r\t" << ((100 * i) / num_tnodes) << "% of map calculated..." << flush;
 			
+			// Set last element
+			lcelem = celem;
+
 			// Find which element it is in, if any
 			celem = get_containing_element(tnode[i], belem, num_belements);
 			if(celem == NULL) {
 
 				// Find closest element if outside of structure
-				celem = get_nearest_element(tnode[i], belem, num_belements);
+				//celem = get_nearest_element(tnode[i], belem, num_belements);
+				celem = get_nearest_connected_element(tnode[i], belem, num_belements, lcelem, bconn);
 			}
-				
+
 			// We have an element! Work out how node is positioned wrt this element
 			map_node_using_element(tnode[i], celem, node_map);
 			node_list.clear();
