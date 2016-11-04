@@ -15,7 +15,7 @@ Once FFEA has been installed, users may want to provide themselves with some
  extra packages that have proved to be useful at setting up the system
  to simulate, as well as at analysing the results: 
 
-   * [PyMOL](https://www.pymol.org) (>=1.8) can 
+   * [PyMOL](https://www.pymol.org) (>=1.6) can 
         be used to visualise FFEA systems and trajectories
         as well as molecular and EM systems. Alternatives 
         to visualise and worked with molecular systems
