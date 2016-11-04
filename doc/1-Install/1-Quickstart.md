@@ -126,10 +126,14 @@ In addition, a plugin to visualise systems and trajectories in
      $FFEA_HOME/share/ffea/plugins/pymol/ffea.tar.gz
 
 
-In order to use it, one would need to run PyMOL (>=1.8), and then click on
+In order to use it, one would need to run PyMOL (>=1.6), and then click on
   ` Plugin ` -> ` Plugin Manager `, and on the new window, go to tab 
   ` Install New Plugin `, click ` Choose file... ` and finally find and 
-  select ` ffea.tar.gz ` from your disk.
+  select ` ffea.tar.gz ` from your disk. You will be asked to install the 
+  plugin either into a local folder or a global folder. If the 
+  folder does not exist, PyMOL will ask your permission on creating the folder, 
+  and will install the plugin properly but will bump ` Plugin FFEAplugin has
+  been installed but initialization failed `. You'll need to restart PyMOL.
 
 
 

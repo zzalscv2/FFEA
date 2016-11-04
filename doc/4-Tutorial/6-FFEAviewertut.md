@@ -3,7 +3,7 @@ Visualising FFEA {#FFEAviewertut}
 
 ## Installation
 
-The FFEA viewer is available as a plugin for the [PyMOL molecular graphics system](https://www.pymol.org/). It requires PyMOL 1.8.x or above, and Python 2.7.x or above.
+The FFEA viewer is available as a plugin for the [PyMOL molecular graphics system](https://www.pymol.org/). It requires PyMOL 1.6.x or above, and Python 2.6.x or above.
 
 After installing FFEA, the plugin ` FFEAplugin.tar.gz ` will be found in ` $FFEA_HOME/share/ffea/plugins/pymol `.
  (If that were not the case, the files can be found under the build folder in `/ffeatools/analysis/pymol_plugin`. 
