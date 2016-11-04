@@ -5,7 +5,6 @@
 <!--  <tab type="user" url="http://ffea.bitbucket.org/" title="Home"/> -->
   <tab type="pages" visible="yes" title="Contents" intro=""/>
   <tab type="usergroup" title="API Reference">
-      <tab type="modules" visible="yes" title="" intro=""/>
       <tab type="namespaces" visible="yes" title="">
         <tab type="namespacelist" visible="yes" title="" intro=""/>
         <tab type="namespacemembers" visible="yes" title="" intro=""/>
@@ -20,7 +19,6 @@
         <tab type="filelist" visible="yes" title="" intro=""/>
         <tab type="globals" visible="yes" title="" intro=""/>
       </tab>
-      <tab type="examples" visible="yes" title="" intro=""/>  
   </tab>
   <tab type="user" title="FFEA main page" url="../../doc/html/index.html"/>
   <tab type="user" url="http://ffea.bitbucket.org" title="Download"/>
