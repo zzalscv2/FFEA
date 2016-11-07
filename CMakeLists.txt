@@ -17,7 +17,7 @@ option(USE_FAST "Add automatic compiler flags" ON)
 mark_as_advanced(USE_FAST)
 option(USE_PACK "Add genereic automatic compiler flags" OFF)
 mark_as_advanced(USE_PACK)
-option(USE_PACK_DIST "accepted values are RPM and DEB" "RPM")
+set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
 option(USE_DOUBLE "Use double precision" ON)
 mark_as_advanced(USE_DOUBLE)
@@ -209,7 +209,6 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 ######## INSTALL THE FFEA TOOLS  ######
 # 1 - Set up the install python path
 include(${CMAKE_ROOT}/Modules/FindPythonInterp.cmake)
-option(USE_PACK_DIST "accepted values are RPM and DEB" "RPM")
 set(PYTHONSTUFF "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/ffeatools")
 # Debian and derivatives use dist-packages instead of site-packages. 
 if (USE_PACK_DIST STREQUAL "DEB")
