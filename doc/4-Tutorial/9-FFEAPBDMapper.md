@@ -27,6 +27,7 @@ Where \f$\mathbf{M}\f$ is a non-square matrix. We can constuct this matrix by ma
 
 where \f$m_{\alpha \gamma}\f$ is a smaller, \f$4 \times 4\f$ sub-matrix of \f$\mathbf{M}\f$. Using the shape functions of the element formed by the nodes \f$\gamma \f$, we can find the components of \f$m_{\alpha \gamma}\f$ and use it to populate \f$\mathbf{M}\f$. This matrix, which is based on the equilibrium structures of both the FFEA and PDB models, can be used to convert from a non-equilibrium FFEA structure (following a simulation) to the approximately equivalent atomistic structure.
 
+
 Mapping Practicality {#FFEApdbmapperpractical}
 ===============================  
 

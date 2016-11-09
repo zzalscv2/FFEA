@@ -24,7 +24,7 @@ In between it can take the following parameters:
         value depends on the shortest edge of the mesh and on the forces 
         acting on it. The higher the forces and the smaller the shortest edge,
         the smaller the time step. There is an 
-        [FFEA_tool to calculate the maximum time step](\ref timeStepCalculator)
+        [FFEA_tool to calculate the maximum time step](\ref userManual)
         that an mesh can handle. 
    
    * ` num_steps ` <int> <BR>

@@ -148,14 +148,14 @@ if(DOXYGEN_FOUND)
                  "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
   configure_file("${PROJECT_SOURCE_DIR}/DoxygenPyM.in"
                  "${PROJECT_BINARY_DIR}/DoxyfilePyM" @ONLY)
-  add_custom_target(docpy ALL ${DOXYGEN_EXECUTABLE}
+  add_custom_target(doc ALL ${DOXYGEN_EXECUTABLE}
                         ${PROJECT_BINARY_DIR}/DoxyfilePyM
+                        DEPENDS docrunner
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
-  add_custom_target(doc ALL ${DOXYGEN_EXECUTABLE}
+  add_custom_target(docrunner ALL ${DOXYGEN_EXECUTABLE}
                         ${PROJECT_BINARY_DIR}/Doxyfile
-                        DEPENDS docpy
                         WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
