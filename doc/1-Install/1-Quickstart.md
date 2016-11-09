@@ -118,7 +118,7 @@ If you built the documentation you will be able to read it wit a browser,
 
 The FFEA_runner, ` ffea `, as well as the ffeatools, ` ffeatools ` will be found 
  in ` $FFEA_HOME/bin `. Instructions on how to use them can be read 
- [here](\ref userManual) and [here](\ref FFEAtools) respectively. 
+ [here](\ref userManual) and [here](../../ffeamodules/html/index.html) respectively. 
 
 In addition, a plugin to visualise systems and trajectories in 
  [PyMOL](https://www.pymol.org) should be found in:

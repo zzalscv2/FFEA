@@ -1,11 +1,15 @@
 Troubleshooting {#troubleshooting}
-=======
+===============
+
 This tutorial will assume that the user does not have root access and must install packages locally. It's also assumed that the user will compile all of those packages from source. In the examples that follow, the software will be installed into $HOME/Software/LocalInstall, but any install folder can be used.
 Before using this guide, you should already be familiar with the [basics of the Linux terminal](https://www.cheatography.com/davechild/cheat-sheets/linux-command-line/). You should also understand the [principles behind compiling, linking and building executables](https://www3.ntu.edu.sg/home/ehchua/programming/cpp/gcc_make.html)
 
-## Installing the FFEA runner dependencies
+Installing dependencies {#buildingdependencies}
+=======================
 
-### Download and install cmake
+Download and install cmake
+--------------------------
+
 FFEA depends on cmake for building and testing. Download the latest cmake from cmake.org and extract it into a folder of your choosing. Open a terminal in that folder, or navigate to that folder in the terminal. There should be a file called 'bootstrap'. To execute it, type
 ```sh
 ./configure --prefix=$HOME/Software/LocalInstall
@@ -26,7 +30,9 @@ export PATH=$PATH:$HOME/Software/LocalInstall/bin
 in a Bash shell. These environment variables will reset every time you open a new terminal window. To preserve them, we can add them to our .bashrc file, which should be located in the home directory (if it's not, create a file called '.bashrc'). If you still can't see the file, remember to uncheck 'show hidden files' in your file manager, as by default, any file name beginning with a . is hidden.
 
 The .bashrc file will execute all the commands listed in it when a new terminal is opened. For this reason, adding a line to the .bashrc file won't have any effect until the terminal is restarted.
-### Download and install Boost
+
+Download and install Boost
+--------------------------
 Boost is a general purpose C++ library with many useful features. Download the boost library from boost.org and extract the contents. Open a terminal window in the Boost folder. Boost comes with a bash script called bootstrap.sh. After extracting Boost, run
 ```sh
 ./bootstrap.sh --prefix=$HOME/Software/LocalInstall
@@ -53,7 +59,9 @@ and then
 make install PREFIX=$HOME/Software/LocalInstall
 ```
 to install it. Then, try installing Boost again from the very beginning. 
-### Download and install Eigen
+
+Download and install Eigen
+--------------------------
 Eigen is a C++ template library for linear algebra.
 Grab Eigen from eigen.tuxfamily.org.
 
@@ -73,10 +81,11 @@ export EIGEN3_HOME="~/Software/LocalInstall/usr/local/include/eigen3"
 ```
 Adding these commands to the .bashrc file is strongly recommended during the installation process of FFEA.
 
-### Download and install Doxygen
-Unless you are an FFEA developer, you can skip this step, as there is probably no reason to build the docs manually when they can be viewed at ffea.bitbucket.com.
-
-Still, compiling and installing Doxygen in our local folder is as easy as:
+Download and install Doxygen
+-----------------------------
+Even if one should be able to read the documentation at ffea.bitbucket.com, 
+you may be interested in building the documentation yourself. You'll need Doxygen (>=1.8) to do that.
+Compiling and installing Doxygen in our local folder is as easy as:
 ```sh
 ./configure --prefix=$HOME/Software/LocalInstall
 make
@@ -88,7 +97,9 @@ export BISON_PKGDATADIR=$HOME/Software/LocalInstall/share/bison
 ```
 Flex and Doxygen should both now be able to build. Compiling the docs is one of the last steps, so for now, let's try and get FFEA itself to run.
 
-## Installing FFEA
+Installing FFEA {#installing-ffea}
+===============
+
 Finally, it's time to compile and install FFEA. Download and extract the FFEA source code. Make a new folder, separate from the source code, where you want the build files to live, and execute these commands:
 ```sh
 cmake /path/to/ffea/source -DCMAKE_INSTALL_PREFIX=$HOME/Software/LocalInstall
@@ -138,7 +149,9 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/Software/LocalInstall/lib
 and restart the terminal.
 
 
-## ffeatools
+ffeatools
+=========
+
 The ` ffeatools ` are a number of Python modules that are provided as part of a Python package. While 
  installing FFEA following the previous [notes](\ref installing-ffea) should have installed this package 
  under ` $HOME/Software/LocalInstall/lib/pythonX.Y/FFEA_python_modules `, this can be installed 

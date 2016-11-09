@@ -32,7 +32,7 @@ where "Number-Of-Active-Faces" is the number of faces that your system has
  pointing outwards, and every line can have values ranging from -1, 
  corresponding to **inactive**, up to 7 for the rest of faces types. 
  This file should have been automatically generated when
-  [configuring the system](\ref makeffeablob), 
+  [configuring the system](\ref voltoffeatut), 
  with all the faces set up to "inactive". There are a number of ways of
  configuring this file with different values for different files, either 
  geometrically or through direct visualisation.
