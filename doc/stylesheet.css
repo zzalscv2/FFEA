@@ -898,7 +898,7 @@ a h1:hover, a p:hover, .doxygen-header a:hover{
 	margin-left:25px !important;
 }
 
-.tablist li, #main-menu li{
+.tablist li, #main-menu li:not(:last-child){
 	background-color:#0E83A4; !important;
 	color:white !important;
 	border:none !important;
