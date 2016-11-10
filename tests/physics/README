@@ -1,7 +1,7 @@
-These are some simple tests that are designed to test the ffea code at an intermediate level - between that of a benchmark and unit test. These tests are designed to check that a mesh has been read in correclty and that it is handled correctly by the computational functions within the ffea codes.
+These are some simple tests that are designed to test the ffea code at an high level - as opposed to unit tests.
+  Description of the tests can be found in the FFEA software paper.
 
-All the tests are run by the run_tests.sh script. 
+Tests can be run from the build folder sequentially typing "make test" or using a number of threads through "ctest -j <nthreads>".
 
-These tests are available in the installed software and the paths set within the script assume that they are relative to the folder where the scripts itself reside.
+These tests are not currently made available in the installed software.
 
-Currently these tests are not used and so probably do not work as the file formats have changed.
