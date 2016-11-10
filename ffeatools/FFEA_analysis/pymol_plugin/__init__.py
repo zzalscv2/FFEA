@@ -2,9 +2,10 @@ import sys, os, time
 import numpy as np
 
 from pymol import cmd
-from pymol.callback import Callback
-import warnings
+# if (cmd.get_version()[1] < 1.7):
+#   print "you need a newer version!!"
 
+from pymol.callback import Callback
 import warnings
 
 try:
