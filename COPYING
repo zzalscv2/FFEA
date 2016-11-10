@@ -704,7 +704,7 @@ Public License instead of this License.  But first, please read
 =============
 
    Files: src/RngStream.cpp
-          include/RngStream.cpp 
+          include/RngStream.h 
           tests/consistency/rngstream/testRngStream.cpp
 
 
