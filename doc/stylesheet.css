@@ -888,17 +888,17 @@ a h1:hover, a p:hover, .doxygen-header a:hover{
 	color:white;
 }
 
-.tabs{
+.tabs, #main-menu{
 	background-color:white !important;
 	background-image:none !important;
 	margin-top:25px !important;
 }
 
-.tablist{
+.tablist, #main-menu{
 	margin-left:25px !important;
 }
 
-.tablist li{
+.tablist li, #main-menu li{
 	background-color:#0E83A4; !important;
 	color:white !important;
 	border:none !important;
@@ -906,24 +906,28 @@ a h1:hover, a p:hover, .doxygen-header a:hover{
 	background-image:none !important;
 }
 
-.tablist a{
+.tablist a, #main-menu a{
 	color:white !important;
 	text-shadow:none !important;
 	background-image:none !important;
 }
 
-.tablist .current a{
+.tablist .current a, #main-menu .current a{
 	background-color:#002633 !important;
 }
 
-.tablist li:hover, .tablist a:hover{
+.tablist li:hover, .tablist a:hover, #main-menu li:hover, .tablist a:hover{
 	background-color:#12A3CC; !important;
 	background-image:none !important;
 }
 
-.tabs2, .tablist, #navrow2, .tabs3, .tabs4, .tabs5, .tabs6{
+.tabs2, .tablist, #navrow2, .tabs3, .tabs4, .tabs5, .tabs6, #main-menu{
 	background-image:none !important;
 	background-color:white !important;
+}
+
+#main-menu{
+        margin-bottom:15px;
 }
 
 .tabs2{background-image:none !important;background-color:white !important;}
@@ -936,6 +940,10 @@ a h1:hover, a p:hover, .doxygen-header a:hover{
 
 #doc-content>*{
 	font-family: "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+}
+
+#main-menu ul a{
+        color:black !important;
 }
 
 .title{ font-size:250% !important; }
