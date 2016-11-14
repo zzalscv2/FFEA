@@ -271,13 +271,13 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		} 
 	} else if (params.restart == 1) {
 		// RNG - We'll now recover the state of the RNGs.
-		printf("Getting state information from %s\n", params.icheckpoint_fname);
+		printf("Getting state information from %s\n", params.icheckpoint_fname.c_str());
 		// RNG.1 - READ Seeds FROM i.fcp into Seeds:
 		// RNG.1.1 - open checkpoint file and check:
 		ifstream checkpoint_in;
 		checkpoint_in.open(params.icheckpoint_fname, ifstream::in);
 		if (checkpoint_in.fail()){
-			FFEA_FILE_ERROR_MESSG(params.icheckpoint_fname)
+			FFEA_FILE_ERROR_MESSG(params.icheckpoint_fname.c_str())
 		}
 		// RNG.1.2 - readlines, and num_seeds:
 		vector<string> checkpoint_v;
@@ -443,17 +443,16 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	// If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
 	if(mode == 0) {
 		// In any case, open the output checkpoint file for writing
-		if ((checkpoint_out = fopen(params.ocheckpoint_fname, "w")) == NULL) {
-			// FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname)
-			FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname);
+		if ((checkpoint_out = fopen(params.ocheckpoint_fname.c_str(), "w")) == NULL) {
+			FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname.c_str());
 		}
 
 		if (params.restart == 0) {
 
 		
 			// Open the trajectory output file for writing
-			if ((trajectory_out = fopen(params.trajectory_out_fname, "w")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+			if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "w")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
 			}
 
 			// Open the measurement output file for writing
@@ -549,8 +548,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 			// Open the kinetics output file for writing (if neccessary) and write initial stuff
 			if (params.kinetics_out_fname_set == 1) {
-				if ((kinetics_out = fopen(params.kinetics_out_fname, "w")) == NULL) {
-				    FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname)
+				if ((kinetics_out = fopen(params.kinetics_out_fname.c_str(), "w")) == NULL) {
+				    FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname.c_str())
 				}
 				fprintf(kinetics_out, "FFEA_kinetic_trajectory_file\n\nNumber of Blobs %d\n\n", params.num_blobs);
 				for(i = 0; i < params.num_blobs; ++i) {
@@ -575,9 +574,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			char c;
 
 
-			printf("Restarting from trajectory file %s\n", params.trajectory_out_fname);
-			if ((trajectory_out = fopen(params.trajectory_out_fname, "r")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+			printf("Restarting from trajectory file %s\n", params.trajectory_out_fname.c_str());
+			if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "r")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
 			}
 
 			printf("Reverse searching for 3 asterisks ");
@@ -678,8 +677,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 			// Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
 			printf("Truncating the trajectory file to the last asterisk...\n");
-			if (truncate(params.trajectory_out_fname, last_asterisk_pos) != 0) {
-			    FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname)
+			if (truncate(params.trajectory_out_fname.c_str(), last_asterisk_pos) != 0) {
+			    FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname.c_str())
 			}
 
 			/*
@@ -764,8 +763,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 			// Open trajectory and measurment files for appending
 			printf("Opening trajectory and measurement files for appending.\n");
-			if ((trajectory_out = fopen(params.trajectory_out_fname, "a")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
+			if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "a")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
 			}
 			if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "a")) == NULL) {
 			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
@@ -780,8 +779,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 			// And kinetic file
 			if(params.kinetics_out_fname_set == 1) {
-			    if ((kinetics_out = fopen(params.kinetics_out_fname, "a")) == NULL) {
-				FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname)
+			    if ((kinetics_out = fopen(params.kinetics_out_fname.c_str(), "a")) == NULL) {
+				FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname.c_str())
 			    }
 			    //fprintf(kinetics_out, "#==RESTART==\n");
 			}
@@ -1292,7 +1291,7 @@ int World::enm(set<int> blob_indices, int num_modes) {
 		bi << i;
 		boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
 		ext = "." + all.at(all.size() - 1);
-		base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
+		base = boost::erase_last_copy(params.trajectory_out_fname, ext);
 		for(j = 6; j < 6 + num_modes; ++j) {
 			cout << "\t\t\tEigenvector " << j << " / Mode " << j - 6 << "...";
 
@@ -1437,7 +1436,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 		bi << i;
 		boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
 		ext = "." + all.at(all.size() - 1);
-		base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
+		base = boost::erase_last_copy(params.trajectory_out_fname, ext);
 
 		for(j = 6; j < 6 + num_modes; ++j) {
 
@@ -1617,7 +1616,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 		bi << i;
 		boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
 		ext = "." + all.at(all.size() - 1);
-		base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
+		base = boost::erase_last_copy(params.trajectory_out_fname, ext);
 
 		for(j = 6; j < 6 + num_modes; ++j) {
 
@@ -3348,7 +3347,7 @@ void World::write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, in
 	string val_out_fname, vec_out_fname, base, ext;
 	boost::split(all, params.trajectory_out_fname, boost::is_any_of("."));
 	ext = "." + all.at(all.size() - 1);
-	base = boost::erase_last_copy(string(params.trajectory_out_fname), ext);
+	base = boost::erase_last_copy(params.trajectory_out_fname, ext);
 	val_out_fname = base + ".evals";
 	vec_out_fname = base + ".evecs";
 

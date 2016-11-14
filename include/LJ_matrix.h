@@ -22,14 +22,14 @@ class LJ_matrix {
 public:
     LJ_matrix();
 
-    int init(const char *vdw_params_fname, std::string vdw_type);
+    int init(string vdw_params_fname, string vdw_type);
 
     void get_LJ_params(int type1, int type2, scalar *vdw_eps, scalar *vdw_r_eq);
 
     int get_num_types();
 
 private:
-    int init_lj(const char *vdw_params_fname);
+    int init_lj(string vdw_params_fname);
     int init_steric(); 
     LJ_pair *params;
     int num_vdw_face_types;

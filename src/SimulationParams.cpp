@@ -60,13 +60,13 @@ SimulationParams::SimulationParams() {
     bsite_in_fname_set = 0;
     vdw_in_fname_set = 0;
 
-    sprintf(trajectory_out_fname, "\n");
-    sprintf(kinetics_out_fname, "\n");
+    trajectory_out_fname = "\n";
+    kinetics_out_fname = "\n";
     measurement_out_fname = "\n";
-    sprintf(vdw_in_fname, "\n");
-    sprintf(bsite_in_fname, "\n");
-    sprintf(icheckpoint_fname, "\n");
-    sprintf(ocheckpoint_fname, "\n");
+    vdw_in_fname = "\n";
+    bsite_in_fname = "\n";
+    icheckpoint_fname = "\n";
+    ocheckpoint_fname = "\n";
     detailed_meas_out_fname = "\n";
 }
 
@@ -127,13 +127,13 @@ SimulationParams::~SimulationParams() {
     bsite_in_fname_set = 0;
     vdw_in_fname_set = 0;
 
-    sprintf(trajectory_out_fname, "\n");
+    trajectory_out_fname = "\n";
     measurement_out_fname = "\n";
-    sprintf(kinetics_out_fname, "\n");
-    sprintf(icheckpoint_fname, "\n");
-    sprintf(ocheckpoint_fname, "\n");
-    sprintf(bsite_in_fname, "\n");
-    sprintf(vdw_in_fname, "\n");
+    kinetics_out_fname, "\n";
+    icheckpoint_fname = "\n";
+    ocheckpoint_fname = "\n";
+    bsite_in_fname = "\n";
+    vdw_in_fname = "\n";
     detailed_meas_out_fname = "\n";
 }
 
@@ -399,13 +399,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		cout << "\tSetting " << lvalue << " = " << wall_z_2 << endl;
 
     	} else if (lvalue == "trajectory_out_fname") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("trajectory_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-		b_fs::path auxpath = FFEA_script_path / rvalue;
-		sprintf(trajectory_out_fname, "%s", auxpath.string().c_str());
-        	trajectory_out_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << trajectory_out_fname << endl;
+			b_fs::path auxpath = FFEA_script_path / rvalue;
+			trajectory_out_fname = auxpath.string();
+			trajectory_out_fname_set = 1;
+			cout << "\tSetting " << lvalue << " = " << trajectory_out_fname << endl;
 
 		} else if (lvalue == "det_measurement_out_fname") {
 			b_fs::path auxpath = FFEA_script_path / rvalue;
@@ -425,51 +422,36 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		}
 
     	} else if (lvalue == "kinetics_out_fname") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("kinetics_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(kinetics_out_fname, "%s", auxpath.string().c_str());
-	        kinetics_out_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
+			b_fs::path auxpath = FFEA_script_path / rvalue;
+			kinetics_out_fname = auxpath.string();
+			kinetics_out_fname_set = 1;
+			cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
    
 	} else if (lvalue == "vdw_in_fname" || lvalue == "vdw_forcefield_params") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("vdw_forcefield_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(vdw_in_fname, "%s", auxpath.string().c_str());
-        	vdw_in_fname_set = 1;
+		b_fs::path auxpath = FFEA_script_path / rvalue;
+		vdw_in_fname = auxpath.string(); 
+		vdw_in_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << vdw_in_fname << endl;
 
 	} else if (lvalue == "checkpoint_in") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("checkpoint input file name is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(icheckpoint_fname, "%s", auxpath.string().c_str());
-        	icheckpoint_fname_set = 1;
+		b_fs::path auxpath = FFEA_script_path / rvalue;
+		icheckpoint_fname = auxpath.string();
+		icheckpoint_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << icheckpoint_fname << endl;
 
 	} else if (lvalue == "checkpoint_out") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("checkpoint output file name is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(ocheckpoint_fname, "%s", auxpath.string().c_str());
-        	ocheckpoint_fname_set = 1;
+		b_fs::path auxpath = FFEA_script_path / rvalue;
+		ocheckpoint_fname = auxpath.string();
+		ocheckpoint_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << ocheckpoint_fname << endl;
 
 	} else if (lvalue == "bsite_in_fname") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("binding_site_params is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-                b_fs::path auxpath = FFEA_script_path / rvalue;
-                sprintf(bsite_in_fname, "%s", auxpath.string().c_str());
-        	bsite_in_fname_set = 1;
+		b_fs::path auxpath = FFEA_script_path / rvalue;
+		bsite_in_fname = auxpath.string();
+		bsite_in_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << bsite_in_fname << endl;
 
-    	} else if (lvalue == "stress_out_fname") {
+	} else if (lvalue == "stress_out_fname") {
 		cout << lvalue << " no longer recognised" << endl;
 	} else {
         	FFEA_error_text();
@@ -616,8 +598,8 @@ int SimulationParams::validate() {
     }
 
     if (trajectory_out_fname_set == 0) {
-	b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".ftj";
-        sprintf(trajectory_out_fname, "%s", auxpath.string().c_str());
+        b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".ftj";
+        trajectory_out_fname = auxpath.string();
     }
 
     if (measurement_out_fname_set == 0) {
@@ -631,23 +613,23 @@ int SimulationParams::validate() {
       b_fs::path fs_ocpt_fname = FFEA_script_filename;
       fs_ocpt_fname.replace_extension(".fcp");
       ocheckpoint_fname_set = 1;
-      strcpy(ocheckpoint_fname, fs_ocpt_fname.string().c_str());
-      printf("\tFRIENDLY WARNING: Checkpoint output file name was not specified, so it will be set to %s\n", ocheckpoint_fname ); 
+      ocheckpoint_fname = fs_ocpt_fname.string();
+      printf("\tFRIENDLY WARNING: Checkpoint output file name was not specified, so it will be set to %s\n", ocheckpoint_fname.c_str() ); 
     } 
     // CPT.2 - checkpoint_out must differ from checkpoint_in
-    if (strcmp(ocheckpoint_fname,icheckpoint_fname) == 0) {
+    if (ocheckpoint_fname.compare(icheckpoint_fname) == 0) {
         FFEA_ERROR_MESSG("it is not allowed to set up checkpoint_in and checkpoint_out with the same file names\n");
     } 
     // CPT.3 - checkpoint_out will be backed up if it exists 
-    checkFileName(boost::lexical_cast<string>(ocheckpoint_fname));
+    checkFileName(ocheckpoint_fname);
     
 
     // check if the output files exists, and if so, rename it. 
     if (restart == 0) {
-      checkFileName(boost::lexical_cast<string>(measurement_out_fname)); 
-      checkFileName(boost::lexical_cast<string>(detailed_meas_out_fname)); 
-      checkFileName(boost::lexical_cast<string>(trajectory_out_fname));
-      checkFileName(boost::lexical_cast<string>(kinetics_out_fname));
+      checkFileName(measurement_out_fname); 
+      checkFileName(detailed_meas_out_fname); 
+      checkFileName(trajectory_out_fname);
+      checkFileName(kinetics_out_fname);
     } 
 
     if (calc_stokes == 1 && stokes_visc <= 0) {
@@ -696,14 +678,14 @@ int SimulationParams::validate() {
     }
     printf("\trng_seed = %d\n", rng_seed);
     printf("\tkT = %e\n", kT*mesoDimensions::Energy);
-    printf("\ttrajectory_out_fname = %s\n", trajectory_out_fname);
+    printf("\ttrajectory_out_fname = %s\n", trajectory_out_fname.c_str());
     printf("\tmeasurement_out_fname = %s\n", measurement_out_fname.c_str());
-    printf("\tkinetics_out_fname = %s\n", kinetics_out_fname);
+    printf("\tkinetics_out_fname = %s\n", kinetics_out_fname.c_str());
     if (icheckpoint_fname_set == 1) {
-      printf("\tcheckpoint_in = %s\n", icheckpoint_fname);
+      printf("\tcheckpoint_in = %s\n", icheckpoint_fname.c_str());
     } 
-    printf("\tcheckpoint_out = %s\n", ocheckpoint_fname);
-    printf("\tvdw_forcefield_params = %s\n", vdw_in_fname);
+    printf("\tcheckpoint_out = %s\n", ocheckpoint_fname.c_str());
+    printf("\tvdw_forcefield_params = %s\n", vdw_in_fname.c_str());
     printf("\tmax_iterations_cg = %d\n", max_iterations_cg);
     printf("\tepsilon2 = %e\n", epsilon2);
     printf("\tes_update = %d\n", es_update);
@@ -727,7 +709,7 @@ int SimulationParams::validate() {
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
 
     if(calc_kinetics == 1 && bsite_in_fname_set == 1) {
-	printf("\tbsite_in_fname = %s\n", bsite_in_fname);
+	printf("\tbsite_in_fname = %s\n", bsite_in_fname.c_str());
     }
     if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "stericX" || vdw_type == "ljsteric")) {
         printf("\tvdw_steric_factor = %e\n", vdw_steric_factor);

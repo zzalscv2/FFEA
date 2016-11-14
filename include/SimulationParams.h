@@ -22,8 +22,6 @@
 #define WALL_TYPE_HARD 1
 #define WALL_TYPE_STOP 2
 
-#define MAX_FNAME_SIZE 2048
-
 #define UNSET 0
 #define SET 1
 #define DEFAULT 2
@@ -93,15 +91,14 @@ public:
 
     string FFEA_script_filename; 
     b_fs::path FFEA_script_path, FFEA_script_basename;
-    char trajectory_out_fname[MAX_FNAME_SIZE];
-    char kinetics_out_fname[MAX_FNAME_SIZE];
-    // char measurement_out_fname[MAX_FNAME_SIZE];
+    string trajectory_out_fname;
+    string kinetics_out_fname;
     string measurement_out_fname;
     string detailed_meas_out_fname;
-    char vdw_in_fname[MAX_FNAME_SIZE];
-    char bsite_in_fname[MAX_FNAME_SIZE];
-    char icheckpoint_fname[MAX_FNAME_SIZE];  ///< Input Checkpoint file name
-    char ocheckpoint_fname[MAX_FNAME_SIZE];  ///< Output Checkpoint file name
+    string vdw_in_fname;
+    string bsite_in_fname;
+    string icheckpoint_fname;  ///< Input Checkpoint file name
+    string ocheckpoint_fname;  ///< Output Checkpoint file name
 
     SimulationParams();
 
