@@ -1,16 +1,11 @@
 #include "FFEA_input_reader.h"
 
 FFEA_input_reader::FFEA_input_reader() {
-	max_buf_size = 255;
-	buf = new char[max_buf_size];
 	buf_string = "";
 	copying = 0;
 }
 
 FFEA_input_reader::~FFEA_input_reader() {
-	max_buf_size = 0;
-	delete[] buf;
-	buf = NULL;
 	buf_string = "";
 	copying = 0;
 }
@@ -29,18 +24,17 @@ int FFEA_input_reader::file_to_lines(string script_fname, vector<string> *script
 	// Copy entire script into string
 	script_vector->clear();
 
-        // The following variable declarations belong to 
-        //   to the comment removal functionality
-        size_t found, ini, end;
-        int comment = 0;
-        int count, count_0;
-        string m_ini = "<!--";
-        string m_end = "-->";
-        string buf2_string;
+	// The following variable declarations belong to 
+	//   to the comment removal functionality
+	size_t found, ini, end;
+	int comment = 0;
+	int count, count_0;
+	string m_ini = "<!--";
+	string m_end = "-->";
+	string buf2_string;
 
 	while(!fin.eof()) {
-		fin.getline(buf, max_buf_size);
-		buf_string = string(buf);
+      getline(fin, buf_string);
 
                 // start removing comments enclosed in <!-- --> 
                 buf2_string.clear();
@@ -48,7 +42,7 @@ int FFEA_input_reader::file_to_lines(string script_fname, vector<string> *script
                 count = 0;
                 count_0 = 0;
                 ini = 0;
-                end = max_buf_size + 1;
+                end = buf_string.length(); 
                 // essentially parse the line until no more 
                 while (found != string::npos) {
                   if (comment == 0) {

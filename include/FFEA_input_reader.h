@@ -45,8 +45,6 @@ class FFEA_input_reader {
 
 	private:
 
-		int max_buf_size;
-		char *buf;
 		string buf_string;
 		int copying;
 		vector<string>::iterator string_it;
