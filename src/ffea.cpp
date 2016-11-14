@@ -21,8 +21,6 @@
 #include "mpi.h"
 #endif
 
-#define MAX_FNAME_LENGTH 255
-
 using namespace std;
 namespace b_po = boost::program_options;
 namespace b_fs = boost::filesystem; 
