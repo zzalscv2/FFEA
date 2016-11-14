@@ -5,7 +5,7 @@ LJ_matrix::LJ_matrix() {
     num_vdw_face_types = 0;
 }
 
-int LJ_matrix::init(const char *vdw_params_fname, string vdw_type) {
+int LJ_matrix::init(string vdw_params_fname, string vdw_type) {
 
     int err;
     // In that case we do not need an input parameter file, 
@@ -32,15 +32,15 @@ int LJ_matrix::init_steric() {
     return FFEA_OK; 
 }
 
-int LJ_matrix::init_lj(const char *vdw_params_fname) {
+int LJ_matrix::init_lj(string vdw_params_fname) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(vdw_params_fname, "r")) == NULL) {
-        FFEA_FILE_ERROR_MESSG(vdw_params_fname)
+    if ((in = fopen(vdw_params_fname.c_str(), "r")) == NULL) {
+        FFEA_FILE_ERROR_MESSG(vdw_params_fname.c_str())
     }
-    printf("\tReading in vdw forcefield parameters file: %s\n", vdw_params_fname);
+    printf("\tReading in vdw forcefield parameters file: %s\n", vdw_params_fname.c_str());
 
     // first line should be the file type "ffea vdw forcefield params file"
     if (fgets(line, max_line_size, in) == NULL) {
@@ -89,7 +89,7 @@ int LJ_matrix::init_lj(const char *vdw_params_fname) {
 
     fclose(in);
 
-    printf("\t\tRead %d vdw forcefield parameter entries from %s\n", num_vdw_face_types * num_vdw_face_types, vdw_params_fname);
+    printf("\t\tRead %d vdw forcefield parameter entries from %s\n", num_vdw_face_types * num_vdw_face_types, vdw_params_fname.c_str());
 
     return FFEA_OK;
 }
