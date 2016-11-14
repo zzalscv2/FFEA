@@ -457,8 +457,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 
 			// Open the measurement output file for writing
-			if ((measurement_out = fopen(params.measurement_out_fname, "w")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
+			if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "w")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
 			}
 
 			// HEADER FOR TRAJECTORY
@@ -688,8 +688,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 			// Global
 
-			if ((measurement_out = fopen(params.measurement_out_fname, "r")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
+			if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "r")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
 			}
 
 			if (fseek(measurement_out, 0, SEEK_END) != 0) {
@@ -703,7 +703,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			int num_newlines_to_find = frames_to_delete + 1; // 1 for every frame, plus the first one, assuming all were written correctly
 			while (num_newlines != num_newlines_to_find) {
 			    if (fseek(measurement_out, -2, SEEK_CUR) != 0) {
-				FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.measurement_out_fname)
+				FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.measurement_out_fname.c_str())
 			    }
 			    c = fgetc(measurement_out);
 			    if (c == '\n') {
@@ -716,8 +716,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 			// Truncate the measurement file up to the point of the last newline
 			printf("Truncating the measurement file to the appropriate line...\n");
-			if (truncate(params.measurement_out_fname, last_asterisk_pos) != 0) {
-			    FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.measurement_out_fname)
+			if (truncate(params.measurement_out_fname.c_str(), last_asterisk_pos) != 0) {
+			    FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.measurement_out_fname.c_str())
 			}
 
 			// Append a newline to the end of this truncated measurement file (to replace the one that may or may not have been there)
@@ -767,8 +767,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			if ((trajectory_out = fopen(params.trajectory_out_fname, "a")) == NULL) {
 			    FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname)
 			}
-			if ((measurement_out = fopen(params.measurement_out_fname, "a")) == NULL) {
-			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname)
+			if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "a")) == NULL) {
+			    FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
 			}
 
 			// And the detailed meas file, maybe

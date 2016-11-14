@@ -62,7 +62,7 @@ SimulationParams::SimulationParams() {
 
     sprintf(trajectory_out_fname, "\n");
     sprintf(kinetics_out_fname, "\n");
-    sprintf(measurement_out_fname, "\n");
+    measurement_out_fname = "\n";
     sprintf(vdw_in_fname, "\n");
     sprintf(bsite_in_fname, "\n");
     sprintf(icheckpoint_fname, "\n");
@@ -128,7 +128,7 @@ SimulationParams::~SimulationParams() {
     vdw_in_fname_set = 0;
 
     sprintf(trajectory_out_fname, "\n");
-    sprintf(measurement_out_fname, "\n");
+    measurement_out_fname = "\n";
     sprintf(kinetics_out_fname, "\n");
     sprintf(icheckpoint_fname, "\n");
     sprintf(ocheckpoint_fname, "\n");
@@ -408,24 +408,18 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		cout << "\tSetting " << lvalue << " = " << trajectory_out_fname << endl;
 
 		} else if (lvalue == "det_measurement_out_fname") {
-			if (rvalue.length() >= MAX_FNAME_SIZE) {
-				FFEA_ERROR_MESSG("det_measurement_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-			}
 			b_fs::path auxpath = FFEA_script_path / rvalue;
 			detailed_meas_out_fname = auxpath.string(); 
 
     	} else if (lvalue == "measurement_out_fname") {
-		if (rvalue.length() >= MAX_FNAME_SIZE) {
-			FFEA_ERROR_MESSG("measurement_out_fname is too long. Maximum filename length is %d characters.\n", MAX_FNAME_SIZE - 1)
-		}
-		b_fs::path auxpath = FFEA_script_path / rvalue;
-		sprintf(measurement_out_fname, "%s", auxpath.string().c_str());
-	        measurement_out_fname_set = 1;
-		cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
+			b_fs::path auxpath = FFEA_script_path / rvalue;
+			measurement_out_fname = auxpath.string(); 
+			measurement_out_fname_set = 1;
+			cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
 
 		// Break up the meas fname to get default names for optional detailed measurements.
 		if (detailed_meas_out_fname == "\n") {
-			string meas_basename(measurement_out_fname);
+			string meas_basename = measurement_out_fname;
 			meas_basename = RemoveFileExtension(meas_basename);
 			detailed_meas_out_fname = meas_basename + ".fdm";
 		}
@@ -627,8 +621,8 @@ int SimulationParams::validate() {
     }
 
     if (measurement_out_fname_set == 0) {
-	b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".fm";
-        sprintf(measurement_out_fname, "%s", auxpath.string().c_str());
+		b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".fm";
+		measurement_out_fname = auxpath.string(); 
     }
   
     // Three checkings for checkpoint files:
@@ -703,7 +697,7 @@ int SimulationParams::validate() {
     printf("\trng_seed = %d\n", rng_seed);
     printf("\tkT = %e\n", kT*mesoDimensions::Energy);
     printf("\ttrajectory_out_fname = %s\n", trajectory_out_fname);
-    printf("\tmeasurement_out_fname = %s\n", measurement_out_fname);
+    printf("\tmeasurement_out_fname = %s\n", measurement_out_fname.c_str());
     printf("\tkinetics_out_fname = %s\n", kinetics_out_fname);
     if (icheckpoint_fname_set == 1) {
       printf("\tcheckpoint_in = %s\n", icheckpoint_fname);
