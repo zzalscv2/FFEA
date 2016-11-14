@@ -2472,8 +2472,6 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, vector<int> map_to, int blob_index) {
 	
-	int MAX_BUF_SIZE = 255;
-	char buf[MAX_BUF_SIZE];
 	unsigned int i, j, num_rows, num_cols, num_entries;
 	string buf_string;
 	vector<string> string_vec;
@@ -2488,8 +2486,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 		}
 
 		// Check if sparse or dense
-		fin.getline(buf, MAX_BUF_SIZE);
-		buf_string = string(buf);
+		getline(fin, buf_string); 
 		if(buf_string != "FFEA Kinetic Conformation Mapping File (Sparse)") {
 			FFEA_error_text();
 			cout << "In " << map_fnames.at(i) << ", expected 'FFEA Kinetic Conformation Mapping File (Sparse)'" << endl;
@@ -2498,8 +2495,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 		}
 
 		// Get nodes to and from and check against the structures
-		fin.getline(buf, MAX_BUF_SIZE);
-		buf_string = string(buf);
+		getline(fin, buf_string); 
 		boost::split(string_vec, buf_string, boost::is_space());
 		num_cols = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
@@ -2509,8 +2505,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 			return FFEA_ERROR;
 		}
 
-		fin.getline(buf, MAX_BUF_SIZE);
-		buf_string = string(buf);
+      getline(fin, buf_string);
 		boost::split(string_vec, buf_string, boost::is_space());
 		num_rows = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
@@ -2521,8 +2516,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 		}
 		
 		// Get num_entries
-		fin.getline(buf, MAX_BUF_SIZE);
-		buf_string = string(buf);
+		getline(fin, buf_string); 
 		boost::split(string_vec, buf_string, boost::is_space());
 		num_entries = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
@@ -2532,7 +2526,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 		int *col_index = new int[num_entries];
 
 		// Get 'map:'
-		fin.getline(buf, MAX_BUF_SIZE);
+		getline(fin, buf_string);
 		
 		// Read matrix
 		// 'entries -'
@@ -2807,8 +2801,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	}
 
 	// Get num_states
-	fin.getline(buf, MAX_BUF_SIZE);
-	buf_string = string(buf);
+	getline(fin, buf_string);
 	boost::trim(buf_string);
 	boost::split(sline, buf_string, boost::is_space());;
 	num_states = atoi(sline.at(1).c_str());
@@ -2818,7 +2811,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	}
 
 	// Get 'states:'
-	fin.getline(buf, MAX_BUF_SIZE);
+	getline(fin, buf_string);
 
 	// Create state objects
 	kinetic_state[blob_index] = new KineticState[num_states];
@@ -2827,8 +2820,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	for(i = 0; i < num_states; ++i) {
 
 		// Get conformation_index first
-		fin.getline(buf, MAX_BUF_SIZE);
-		buf_string = string(buf);
+		getline(fin, buf_string);
 		boost::trim(buf_string);
 		boost::split(sline, buf_string, boost::is_space());
 
@@ -2840,8 +2832,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 
 		// Now get bound binding sites
 		sline.clear();
-		fin.getline(buf, MAX_BUF_SIZE);
-		buf_string = string(buf);
+		getline(fin, buf_string);
 		boost::trim(buf_string);
 		boost::split(sline, buf_string, boost::is_space());
 		

@@ -22,11 +22,9 @@ int BindingSite_matrix::init(string fname) {
 	}
 
 	// Check if correct file
-	int MAX_BUF_SIZE = 255, inter;
-	char buf[MAX_BUF_SIZE];
+	int inter;
 	string buf_string;
-	fin.getline(buf, MAX_BUF_SIZE);
-	buf_string = string(buf);
+   getline(fin, buf_string); 
 	boost::trim(buf_string);
 	if(buf_string != "ffea binding site params file") {
 		FFEA_ERROR_MESSG("Expected 'ffea binding site params file', got '%s'\n", buf_string.c_str())
