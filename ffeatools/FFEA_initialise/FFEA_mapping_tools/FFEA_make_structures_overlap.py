@@ -59,6 +59,7 @@ script2.spring = spring_fname
 # Sort checkpoint files
 script2.params.checkpoint_out = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp"
 script2.params.checkpoint_in = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp"
+script2.params.calc_vdw = 0
 script2.write_to_file(outffea)	
 logfile = os.path.dirname(os.path.abspath(inffea)) + "/lol.log"
 fout = open(logfile, "w")
