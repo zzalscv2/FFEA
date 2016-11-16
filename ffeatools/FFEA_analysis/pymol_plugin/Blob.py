@@ -756,8 +756,6 @@ class Blob:
 					# Relative or absolute max / min here
 					maxval = max(param)
 					minval = min(param)
-					#maxval = 100e9
-					#minval = 100e7
 					rangeval = maxval - minval
 	
 					# Now, draw each face
@@ -766,7 +764,7 @@ class Blob:
 						n1 = self.frames[i].pos[f.n[0]][0:3]
 						n2 = self.frames[i].pos[f.n[1]][0:3]
 						n3 = self.frames[i].pos[f.n[2]][0:3]
-			                        norm = self.calc_normal_2(n1, n2, n3)
+						norm = self.calc_normal_2(n1, n2, n3)
 	
 						# Calc and add colour first
 						if rangeval == 0.0:
@@ -780,11 +778,10 @@ class Blob:
 						elif paramfrac >= 1:
 							colpair = [num_cols - 1, num_cols - 1]
 						else:
-							colpair = [int(np.floor(paramfrac * num_cols)), int(np.floor(paramfrac * num_cols)) + 1]
+							colpair = [int(np.floor(paramfrac * num_cols)), int(np.floor(paramfrac * num_cols))]
 
 						# Where in interval
 						col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * paramfrac + colgrad[colpair[0]]
-						#print col[0], col[1], col[2]
 						sol.extend([COLOR, col[0], col[1], col[2]])
 			                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
 			                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
