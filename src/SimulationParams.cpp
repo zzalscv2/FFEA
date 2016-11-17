@@ -795,7 +795,6 @@ void SimulationParams::write_to_file(FILE *fout) {
 
 string SimulationParams::RemoveFileExtension(const string& FileName)
 {
-    cout << FileName.find_last_of(".") << endl;
     if(FileName.find_last_of(".") != std::string::npos)
         return FileName.substr(0, FileName.find_last_of("."));
     return "";
