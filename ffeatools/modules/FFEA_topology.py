@@ -91,7 +91,7 @@ class FFEA_topology:
 				break
 
 			el.set_indices(sline)
-			self.add_element(el)
+			self.add_element(el, eltype=eltype)
 
 		fin.close()
 
@@ -217,7 +217,8 @@ class FFEA_topology:
 		return self.CoM
 
 	def get_CoM(self):
-		return self.CoM	
+		return self.CoM
+	
 	def extract_surface(self):
 		
 		faces = []
@@ -277,9 +278,15 @@ class FFEA_topology:
 			return
 
 		# Don't continue if we're already done
+		num_done = 0
 		for e in self.element:
-			if e.interior != None:
-				return
+			if e.interior == None:
+				break
+			else:
+				num_done += 1
+
+		if num_done == self.num_elements:
+			return
 
 		# Set all elements as default to interior elements
 		self.num_interior_elements = self.num_elements
@@ -288,9 +295,6 @@ class FFEA_topology:
 		for i in range(self.num_elements):
 			self.element[i].interior = True
 
-		# Get a map, so we know what element wil go where
-		amap = [-1 for i in range(self.num_elements)]
-		index = 0
 
 		# Now, use surface to work out which are surface elements
 		for i in range(surf.num_faces):
