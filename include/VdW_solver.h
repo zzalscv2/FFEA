@@ -18,6 +18,8 @@ public:
 
     int solve();
 
+    int solve(scalar * blob_corr);
+
     /** Allow protein VdW interactions along the top and bottom x-z planes */
     int solve_sticky_wall(scalar h);
 
@@ -32,7 +34,7 @@ protected:
 
     scalar **fieldenergy;
     int num_blobs;
-    int inc_self_vdw;  ///< whether to include interactions between faces within the same blob, or not. 
+    int inc_self_vdw;  ///< whether to include interactions between faces within the same blob, or not.
     struct adjacent_cell_lookup_table_entry {
         int ix, iy, iz;
     };
@@ -43,6 +45,8 @@ protected:
     };
 
     virtual void do_interaction(Face *f1, Face *f2);
+
+    virtual void do_interaction(Face *f1, Face *f2, scalar * blob_corr);
 
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
 

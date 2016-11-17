@@ -35,47 +35,48 @@ namespace b_fs = boost::filesystem;
 
 class SimulationParams {
 public:
-    scalar dt; ///< time step   
-    long long num_steps; ///< Number of time steps to run simulation for   
-    int check; ///< Every how many steps should the program 'check' the system i.e calculate energies, print snapshots etc.   
-    int num_blobs; ///< Number of blobs in the system   
-    int *num_conformations; ///< Number of conformations for each blob   
-    int *num_states; ///< Number of states for each blob   
+    scalar dt; ///< time step
+    long long num_steps; ///< Number of time steps to run simulation for
+    int check; ///< Every how many steps should the program 'check' the system i.e calculate energies, print snapshots etc.
+    int num_blobs; ///< Number of blobs in the system
+    int *num_conformations; ///< Number of conformations for each blob
+    int *num_states; ///< Number of states for each blob
     int state_array_size;
     int conformation_array_size;
-    int rng_seed; ///< Seed for random number generator   
+    int rng_seed; ///< Seed for random number generator
 
-    scalar kT; ///< boltzmann's const times temperature   
+    scalar kT; ///< boltzmann's const times temperature
 
-    int max_iterations_cg; ///< Max number of iterations when using conjugate gradient solver   
-    scalar epsilon2; ///< The tolerance threshold for CG solver (squared)   
+    int max_iterations_cg; ///< Max number of iterations when using conjugate gradient solver
+    scalar epsilon2; ///< The tolerance threshold for CG solver (squared)
 
-    int es_update; ///< Every how many steps should the electrostatic potential be recalculated   
-    int es_N_x; ///< X dimension of the 3D lookup grid (in number of cells)   
-    int es_N_y; ///< Y dimension of the 3D lookup grid (in number of cells)   
+    int es_update; ///< Every how many steps should the electrostatic potential be recalculated
+    int es_N_x; ///< X dimension of the 3D lookup grid (in number of cells)
+    int es_N_y; ///< Y dimension of the 3D lookup grid (in number of cells)
     int es_N_z; ///< Z dimension of the 3D lookup grid (in number of cells)
     int move_into_box;  ///< If box is set, do we move the world to it's center at the start of a simulation? Default is yes!
     int restrict_motion[3]; ///< [x,y,z] array defining whether motion in the given direction should be nullified
     int num_dimensions;  /// Number of active dimensions after restricted_motion is applied
-    scalar es_h; ///< Dimension of each cell in the lookup grid (in multiples of inverse kappa)   
+    scalar es_h; ///< Dimension of each cell in the lookup grid (in multiples of inverse kappa)
 
-    scalar kappa; ///< Inverse Debye Screening length   
+    scalar kappa; ///< Inverse Debye Screening length
 
-    scalar epsilon_0; ///< Permittivity of free space   
-    scalar dielec_ext; ///< Exterior dielectric constant   
+    scalar epsilon_0; ///< Permittivity of free space
+    scalar dielec_ext; ///< Exterior dielectric constant
 
-    int restart; ///< Whether or not to restart the simulation from the last available time step   
+    int restart; ///< Whether or not to restart the simulation from the last available time step
 
-    int calc_vdw; ///< Whether or not to simulate van der waals interactions between surfaces   
+    int calc_vdw; ///< Whether or not to simulate van der waals interactions between surfaces
     int inc_self_vdw; ///< Whether or not to include van der Waals interactions derived from faces in the same blob.
     string vdw_type;  ///<Possible values: "lennard-jones" (default) or "steric".
-    int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins   
-    int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique   
+    int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins
+    int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique
     int calc_stokes; ///< Whether or not to include local action of the external fluid
-    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites  
-    int calc_preComp; ///< Whether or not use preComputed potentials and forces   
-    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
-    int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
+    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites
+    int calc_preComp; ///< Whether or not use preComputed potentials and forces
+    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block
+    int force_pbc; ///< Whether or not to apply pbc to surface insteractions
+    int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high
     int wall_x_1;
     int wall_x_2;
     int wall_y_1;
@@ -89,7 +90,7 @@ public:
 
     scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
 
-    string FFEA_script_filename; 
+    string FFEA_script_filename;
     b_fs::path FFEA_script_path, FFEA_script_basename;
     string trajectory_out_fname;
     string kinetics_out_fname;
@@ -133,15 +134,15 @@ public:
 private:
     int trajectory_out_fname_set;
     int measurement_out_fname_set;
-    int icheckpoint_fname_set; 
-    int ocheckpoint_fname_set; 
+    int icheckpoint_fname_set;
+    int ocheckpoint_fname_set;
     int vdw_in_fname_set;
     int bsite_in_fname_set;
 
-/** Check if the file oFile exists, and if so 
-  *     rename it to "__"+oFile+"__bckp.N", 
+/** Check if the file oFile exists, and if so
+  *     rename it to "__"+oFile+"__bckp.N",
   *     where N is an integer so that the resulting file is new.
-  */       
+  */
     int checkFileName(string oFile);
 
     string RemoveFileExtension(const string& FileName);

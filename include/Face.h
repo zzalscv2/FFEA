@@ -63,36 +63,72 @@ public:
     scalar vdw_xz_energy;
     //@}
 
-    /** Check whether the tetrahedron formed by this face an the opposite 
+    /** Check whether the tetrahedron formed by this face an the opposite
       *   linear node does intersect with the corresponding tetrahedron in f2
-      * Returns true if there is intersection. 
+      * Returns true if there is intersection.
       * Uses the "Fast Tetrahedron-Tetrahedron Overlap Algorithm".
       * It calls some private functions.
       **/
-    bool checkTetraIntersection(Face *f2); 
- 
-    /** Get the volume that the enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite 
-      *   linear node with the corresponding tetrahedron in f2. 
-      * It calls volumeIntersection, at volumeIntersection.h 
+    bool checkTetraIntersection(Face *f2);
+
+
+    /** Check whether the tetrahedron formed by this face an the opposite
+      *   linear node does intersect with the corresponding tetrahedron in f2
+      * Returns true if there is intersection.
+      * Uses the "Fast Tetrahedron-Tetrahedron Overlap Algorithm".
+      * It calls some private functions.
+      * Altered to act periodically around box boundaries.
       **/
-    scalar getTetraIntersectionVolume(Face *f2); 
+    bool checkTetraIntersection(Face *f2, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
+
+    /** Get the volume that the enclose the intersection
+      *   of the tetrahedron formed by this face an the opposite
+      *   linear node with the corresponding tetrahedron in f2.
+      * It calls volumeIntersection, at volumeIntersection.h
+      **/
+    scalar getTetraIntersectionVolume(Face *f2);
+
+        /** Get the volume that the enclose the intersection
+      *   of the tetrahedron formed by this face an the opposite
+      *   linear node with the corresponding tetrahedron in f2.
+      * It calls volumeIntersection, at volumeIntersection.h
+      **/
+    scalar getTetraIntersectionVolume(Face *f2, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     /** Get the volume and area that the enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite 
-      *   linear node with the corresponding tetrahedron in f2. 
-      * It calls volumeIntersection, at volumeIntersection.h 
+      *   of the tetrahedron formed by this face an the opposite
+      *   linear node with the corresponding tetrahedron in f2.
+      * It calls volumeIntersection, at volumeIntersection.h
       **/
-    void getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area); 
+    void getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area);
+
+        /** Get the volume and area that the enclose the intersection
+      *   of the tetrahedron formed by this face an the opposite
+      *   linear node with the corresponding tetrahedron in f2.
+      * It calls volumeIntersection, at volumeIntersection.h
+      * Altered to act periodically around box boundaries.
+      **/
+    void getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
+
 
     /** Get the volume that enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite 
+      *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.
       *   In addition, return the gradient of this volume,
       *     with respect to the unit vector r.
-      * It calls volumeIntersection, at volumeIntersection.h 
+      * It calls volumeIntersection, at volumeIntersection.h
       **/
     void getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &vol, geoscalar &dVdr);
+
+     /** Get the volume that enclose the intersection
+      *   of the tetrahedron formed by this face an the opposite
+      *   linear node with the corresponding tetrahedron in f2.
+      *   In addition, return the gradient of this volume,
+      *     with respect to the unit vector r.
+      * It calls volumeIntersection, at volumeIntersection.h
+    * Altered to act periodically around box boundaries.
+      **/
+    void getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &vol, geoscalar &dVdr, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     Blob *daddy_blob;
 
@@ -112,8 +148,9 @@ public:
     void print_nodes();
     scalar get_area();
 
-    /** Calculate the point p on this triangle given the barycentric coordinates b1, b2, b3 **/
+    /** Calculate the point p on this triangle given the barycentric coordinates b1, b2, b3. Altered to act periodically around box boundaries. **/
     void barycentric_calc_point(scalar b1, scalar b2, scalar b3, vector3 *p);
+    void barycentric_calc_point_f2(scalar b1, scalar b2, scalar b3, vector3 *p,scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     /** Returns the average electrostatic potential of this face **/
     scalar average_phi();
@@ -143,6 +180,8 @@ public:
     void set_vdw_xz_interaction_flag(bool state);
 
     void set_vdw_bb_interaction_flag(bool state, int other_blob_index);
+
+    void vec3Vec3SubsToArr3Mod(Face *f2, arr3 (&w), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     bool is_vdw_active();
     bool is_kinetic_active();
