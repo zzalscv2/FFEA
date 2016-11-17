@@ -211,19 +211,59 @@ Checkpoint file .fcp {#ffeaCheckpointFileIn}
 This is the same type of file than the output [checkpoint file](\ref ffeaCheckpointFileOut). 
 
 
-States file
+States file .states {#ffeaStatesFileIn}
 -----------
 
+This file contains data regarding the kinetic states that can be activated within this blob.
+ Each state is defined through two consecutive lines. Line 1 defines the conformation index
+ active in this state. Line 2 defines any binding site couplings:
 
-Rates file
+
+    ffea kinetic states file
+    num_states 2
+    states:
+    conformation_index 0
+    binding
+    conformation_index 1
+    binding
+
+
+Rates file .rates {#ffeaRatesFileIn}
 ----------
 
+This file defines the rates (units - Hz) of kinetic switching between states. It is formatted as a matrix,
+ num_states X num_states where rows are the base state, and columns are the target state:
 
-Map file: .map
+
+    ffea kinetic rates file
+    num_states 2
+    rates:
+    0 1e10
+    1e9 0
+
+These rates are converted into switching probability / timestep within the code, 
+ so if your rate asks for a higher than 100% probability of
+ switching at each timestep, FFEArunner will return an error. The identity rates (leading diagonal) are actually not used
+ by the FFEArunner; because the sum of probabilities in each row must equal 1, the code calculates this value using all of the others.
+
+Map file: .map {#ffeaMapFileIn}
 --------------
 
+This file defines the linear map (matrix) between nodes of different conformations. Due to the size and sparsity, this matrix
+ is written in the Yale Sparse matrix format. Below is the matrix defining the transformation of a cube onto itself (identity matrix):
 
 
+    FFEA Kinetic Conformation Mapping File (Sparse)
+    num_nodes_from 8
+    num_nodes_to 8
+    num_entries 8
+    map:
+    entries - 1 1 1 1 1 1 1 1
+    key - 0 1 2 3 4 5 6 7 8
+    columns - 0 1 2 3 4 5 6 7
+
+Note: This map should not be calculated manually! FFEAtools provides a [tool](\ref kffea_implementation) to help with the
+ automation of this process.
 
 Output files {#oFiles}
 ======================
