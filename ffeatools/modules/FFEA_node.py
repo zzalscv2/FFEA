@@ -231,7 +231,7 @@ class FFEA_node:
 		self.num_nodes += 1
 		
 		if nodetype == -1:
-			self.num_interior_nodes += 1
+			self.num_surface_nodes += 1
 		elif nodetype == 0:
 			self.num_surface_nodes += 1
 		else:
@@ -245,20 +245,26 @@ class FFEA_node:
 			return
 		
 		# Don't continue if we're already done
-		if self.num_nodes == self.num_surface_nodes:
-			print "HAHAHAAHAHAHA"
-			return
+		#if self.num_nodes == self.num_interior_nodes:
+		#	print "HAHAHAAHAHAHA"
+		#	return
 
 		# Use surface to determine which nodes are interior and build a map
-		amap = [-1 for i in range(self.num_nodes)]
-		index = 0
+		surfBool = [False for i in range(self.num_nodes)]
 
 		# Surface
 		for f in surf.face:
 			for n in f.n:
-				if amap[n] == -1:
-					amap[n] = index
-					index += 1
+				surfBool[n] = True
+
+		amap = [-1 for i in range(self.num_nodes)]
+		index = 0
+
+		for n in range(self.num_nodes):
+
+			if surfBool[n]:
+				amap[n] = index
+				index += 1
 
 		self.num_surface_nodes = index
 		self.num_interior_nodes = self.num_nodes - self.num_surface_nodes
@@ -271,7 +277,7 @@ class FFEA_node:
 
 		# Alter order of nodes
 		oldpos = self.pos
- 		self.pos = [np.array([0.0,0.0,0.0]) for i in range(self.num_nodes)]
+ 		self.pos = [None for i in range(self.num_nodes)]
 
 		for n in range(len(amap)):
 			self.pos[amap[n]] = oldpos[n]
