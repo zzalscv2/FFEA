@@ -55,7 +55,7 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     # Let each surface face know which element it is connected to (if this is slow, just load surface from topology instead)
     if surf.get_element_indices(top) == -1:
         surf = top.extract_surface()
-    
+
     # Now, build necessary things that only have linear properties
     mat = FFEA_material.FFEA_material()
     mat.build(top.num_elements, d=density, sv=shear_visc, bv=bulk_visc, sm=shear_mod, bm=bulk_mod, di=dielectric)
