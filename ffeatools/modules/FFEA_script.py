@@ -625,7 +625,7 @@ class FFEA_script_params():
 				astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
 				if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
 					astr += "\t<vdw_steric_factor = %f>\n" % (self.vdw_steric_factor)
-
+			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
 			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
 			astr += "\t<calc_es = %d>\n" % (self.calc_es)
 			astr += "\t<es_update = %d>\n" % (self.es_update)

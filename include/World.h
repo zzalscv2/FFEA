@@ -241,7 +241,7 @@ private:
 
     void activate_springs();
 
-    void apply_springs();
+    int apply_springs();
 
     scalar get_spring_field_energy(int index0, int index1);
 

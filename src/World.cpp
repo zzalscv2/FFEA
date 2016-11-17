@@ -3201,7 +3201,7 @@ void World::activate_springs() {
     }
 }
 
-void World::apply_springs() {
+int World::apply_springs() {
     scalar force_mag;
     vector3 n1, n0, force0, force1, sep, sep_norm;
     for (int i = 0; i < num_springs; ++i) {
@@ -3211,7 +3211,21 @@ void World::apply_springs() {
             sep.x = n1.x - n0.x;
             sep.y = n1.y - n0.y;
             sep.z = n1.z - n0.z;
-            sep_norm = normalise(&sep);
+	
+	    try {
+	        sep_norm = normalise(&sep);
+	    } catch (int e){
+
+		// If zero magnitude, we're ok
+		if(e == -1) {
+			sep_norm.x = 0.0;
+			sep_norm.y = 0.0;
+			sep_norm.z = 0.0;
+	    	} else {
+			return FFEA_ERROR;
+		}
+	    }
+	    
             force_mag = spring_array[i].k * (mag(&sep) - spring_array[i].l);
             force0.x = force_mag * sep_norm.x;
             force0.y = force_mag * sep_norm.y;
@@ -3224,7 +3238,7 @@ void World::apply_springs() {
             active_blob_array[spring_array[i].blob_index[1]]->add_force_to_node(force1, spring_array[i].node_index[1]);
         }
     }
-    return;
+    return FFEA_OK;
 }
 
 scalar World::get_spring_field_energy(int index0, int index1) {
