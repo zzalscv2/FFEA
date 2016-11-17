@@ -31,8 +31,8 @@ SimulationParams::SimulationParams() {
     calc_kinetics = 0;
     kinetics_update = 0;
     calc_preComp = 0;
-    calc_springs = 0;
     force_pbc = 0;
+    calc_springs = 0; 
 
 
     wall_x_1 = WALL_TYPE_PBC;
