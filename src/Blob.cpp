@@ -11,6 +11,7 @@ Blob::Blob() {
     num_elements = 0;
     num_surface_faces = 0;
     num_beads = 0;
+    num_ctf = 0; 
     num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
@@ -94,6 +95,15 @@ Blob::~Blob() {
       bead_type = NULL;
     } 
 
+    /* delete ctforces stuff */
+    if (num_ctf > 0) {
+      num_ctf = 0;
+      delete[] ctf_nodes;
+      ctf_nodes = NULL;
+      delete[] ctf_forces;
+      ctf_forces = NULL;
+    } 
+
     /* Set relevant data to zero */
     conformation_index = 0;
     previous_conformation_index = 0;
@@ -166,6 +176,12 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         	FFEA_ERROR_MESSG("Error when loading beads file.\n")
     	}
     }
+
+    if (params->calc_ctforces == 1) {
+      if (load_ctforces(params->ctforces_fname) == FFEA_ERROR) {
+         FFEA_ERROR_MESSG("Error when loading constant forces\n"); 
+      } 
+    } 
 
     // Kinetic binding sites are still a structural property
     if (load_binding_sites(binding_filename, binding_matrix->get_num_interaction_types()) == FFEA_ERROR) {
@@ -2582,6 +2598,93 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
 
 }
 
+int Blob::load_ctforces(string ctforces_fname){
+
+   FFEA_input_reader reader; 
+   vector<string> ctforces_lines, line_split;
+	int n_ctforces = 0;
+   // read the input file, taking out comments as <!-- --> 
+   //  and put it into the ctforces_lines vector of strings:
+   reader.file_to_lines(ctforces_fname, &ctforces_lines);
+
+
+   // Check the header:
+   //   Check 1:
+   if (ctforces_lines.size() < 3) {
+     FFEA_ERROR_MESSG("ctforces_fname '%s' is too short, something is wrong\n", ctforces_fname.c_str());
+     return FFEA_ERROR;
+   } 
+   //   Check 2:
+   boost::split(line_split, ctforces_lines[1], boost::is_any_of(" \t"));
+   if (line_split[0] != "num_ctforces") {
+     cout << " read: " << line_split[0] << endl; 
+     FFEA_ERROR_MESSG("ctforces_fname '%s' header is wrong, aborting\n", ctforces_fname.c_str());
+     return FFEA_ERROR;
+   } 
+   // And get the number of ctforces, safely:
+   try {
+      n_ctforces = boost::lexical_cast<int>(line_split[1]);
+   } catch (boost::bad_lexical_cast) {
+      FFEA_ERROR_MESSG("Invalid number of ctforces read: %s\n", line_split[1].c_str());
+      return FFEA_ERROR;
+   }
+   
+   // Now put the lines referring to this blob/conf into a vector,
+   //   and calculate the number of constant forces we're adding:
+   vector<string> my_lines; 
+   for (int i=3; i<3+n_ctforces; i++) {
+     boost::split(line_split, ctforces_lines[i], boost::is_any_of(" \t"));
+     // at least check the length of the line:
+     if (line_split.size() != 7) {
+       FFEA_ERROR_MESSG("Invalid line in the ctforces file:\n \t %s\n", ctforces_lines[i].c_str());
+       return FFEA_ERROR;
+     } 
+     int b_i = boost::lexical_cast<int>(line_split[4]); // read the blob index
+     if (b_i != blob_index) continue;
+     int c_i = boost::lexical_cast<int>(line_split[5]); // read the conformation index
+     if (c_i != conformation_index) continue;
+     if (line_split[6].compare("all") == 0) {
+       num_ctf += num_nodes;
+     } else {
+       num_ctf += 1; 
+     } 
+     my_lines.push_back(ctforces_lines[i]); 
+   }
+
+   // And finally store the stuff properly:
+   ctf_nodes = new int[num_ctf];       // allocate nodes
+   ctf_forces = new scalar[3*num_ctf]; // allocate forces
+   int cnt = 0;
+   for (int i=0; i<my_lines.size(); i++) {
+     boost::split(line_split, my_lines[i], boost::is_any_of(" \t"));
+     scalar F = boost::lexical_cast<scalar>(line_split[0]);
+     scalar x = boost::lexical_cast<scalar>(line_split[1]);
+	  scalar y = boost::lexical_cast<scalar>(line_split[2]);
+     scalar z = boost::lexical_cast<scalar>(line_split[3]);
+     scalar Fx = F * x / mesoDimensions::force;
+     scalar Fy = F * y / mesoDimensions::force;
+     scalar Fz = F * z / mesoDimensions::force;
+     if (line_split[6].compare("all") != 0) {
+       ctf_nodes[cnt] = boost::lexical_cast<int>(line_split[6]);
+       ctf_forces[3*cnt   ]  = Fx;
+       ctf_forces[3*cnt +1]  = Fy;
+       ctf_forces[3*cnt +2]  = Fz;
+       cnt += 1;
+     } else {
+       for (int j=0; j<num_nodes; j++) {
+         ctf_nodes[cnt] = j;
+         ctf_forces[3*cnt   ]  = Fx;
+         ctf_forces[3*cnt +1]  = Fy;
+         ctf_forces[3*cnt +2]  = Fz;
+         cnt += 1;
+       }
+     } 
+   } 
+   
+   return FFEA_OK;
+} 
+
+
 void Blob::add_steric_nodes() {
 
 	int i;
@@ -2961,6 +3064,14 @@ int Blob::aggregate_forces_and_solve() {
             force[n].z += node[n].force_contributions[m]->z;
         }
     }
+
+    // Add also the constant forces, stored in ctf_force.
+    // If there are no forces, num_ctf will be zero. 
+    for (int i=0; i<num_ctf; i++) {
+      force[ctf_nodes[i]].x += ctf_forces[3*i  ];
+      force[ctf_nodes[i]].y += ctf_forces[3*i+1];
+      force[ctf_nodes[i]].z += ctf_forces[3*i+2];
+    } 
 
     // Aggregate surface forces onto nodes
     for (n = 0; n < num_surface_faces; n++) {

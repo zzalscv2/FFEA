@@ -403,6 +403,9 @@ private:
       *   will be zero after info is loaded into PreComp_solver */
     int num_beads;
 
+    /** Number of ctforces to be applied to this Blob */
+    int num_ctf;
+
     /** Whether this Blob is DYNAMIC (movable; dynamics simulated) or STATIC (fixed; no simulation of dynamics; Blob is a perfectly solid object fixed in space)*/
     int blob_state;
 
@@ -442,6 +445,15 @@ private:
       *   will be NULL after info is loaded into PreComp_solver */
 
     int *bead_type;
+
+    /** Array with the nodes having ctforces assigned */
+    int *ctf_nodes;
+
+    /** Array with the ctforces: FxFyFzFxFyFz..., 
+      * being Fx, Fy, Fz the components of the force */
+    scalar *ctf_forces; 
+    
+    
 
     /** A pointer to a class containing simulation parameters, such as the time step, dt */
     SimulationParams *params;
@@ -553,6 +565,11 @@ private:
      */
     int load_beads(const char *beads_filename, PreComp_params *pc_params, scalar scale);
 
+
+    /**
+     * Opens and reads the given 'ffea ctforces file', and assigns the constant forces onto nodes for this Blob.
+     */
+    int load_ctforces(string ctforces_fname);
 
 
     /**
