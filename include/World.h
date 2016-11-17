@@ -144,10 +144,10 @@ private:
     RngStream *rng;
 
     /** @brief A pointer to an array of arrays, containing the seeds of the different RNGStreams */
-    unsigned long **Seeds; 
+    unsigned long **Seeds;
 
     /** @brief The number of seeds stored in Seeds. */
-    int num_seeds; 
+    int num_seeds;
 
     /** @brief An array of pointers to random number generators for use in kinetics */
     RngStream *kinetic_rng;
@@ -226,7 +226,7 @@ private:
     /**
       * @brief stores info within the <precomp> block at the .ffea file.
       */
-    PreComp_params pc_params; 
+    PreComp_params pc_params;
     /**
       * @brief PreComputed potentials solver
       */
@@ -283,6 +283,11 @@ private:
     void print_kinetic_files(int step);
 
     void print_static_trajectory(int step, scalar wtime, int blob_index);
+
+    /** @brief calculates the blob to blob corrections due to periodic boundary conditions*/
+    void calc_blob_corr_matrix(int num_blobs,scalar *blob_corr);
+
+    scalar *blob_corr;
 };
 
 #endif
