@@ -28,8 +28,8 @@ script2.params.calc_noise = 0
 #script2.params.calc_vdw = 1
 #script2.params.vdw_type = "lennard-jones"
 #script2.params.vdw_steric_factor = 1e-2
-script2.params.trajectory_out_fname = os.path.dirname(os.path.abspath(inffea)) + "/lol_traj.out"
-script2.params.measurement_out_basefname = os.path.dirname(os.path.abspath(inffea)) + "/lol_meas.out"
+script2.params.trajectory_out_fname = os.path.dirname(os.path.abspath(inffea)) + "/lol_traj.ftj"
+script2.params.measurement_out_fname = os.path.dirname(os.path.abspath(inffea)) + "/lol_meas.fm"
 
 # Now get blobs
 for i in range(2):
@@ -59,6 +59,8 @@ script2.spring = spring_fname
 # Sort checkpoint files
 script2.params.checkpoint_out = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp"
 script2.params.checkpoint_in = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp"
+script2.params.calc_vdw = 0
+script2.params.calc_springs = 1
 script2.write_to_file(outffea)	
 logfile = os.path.dirname(os.path.abspath(inffea)) + "/lol.log"
 fout = open(logfile, "w")

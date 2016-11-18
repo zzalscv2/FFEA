@@ -918,15 +918,18 @@ class FFEA_viewer_control_window:
 
          # Axes for helix
          zax = springjoints[1] - springjoints[0]
-         xax = np.cross(zax, np.array([1.0,0]))
-         yax = np.cross(zax, xax)
+         l = np.linalg.norm(zax)
+         zax = zax / l
+
+	 if np.fabs(np.dot(zax, np.array([1.0,0.0,0.0]))) < 1.0:
+                 xax = np.cross(zax, np.array([1.0,0.0,0.0]))
+                 yax = np.cross(zax, xax)
+	 else:
+	         xax = np.cross(zax, np.array([0.0,1.0,0.0]))
+	         yax = np.cross(zax, xax)
 
          xax = xax / np.linalg.norm(xax)
          yax = yax / np.linalg.norm(yax)
-
-         l = np.linalg.norm(zax)
-
-         zax = zax / l
 
          # Radius of helix (let original radius be 5A, poisson ration = 0.01)
          r = 2 - 0.01 * (l - s.l)

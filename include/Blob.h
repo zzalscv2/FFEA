@@ -73,7 +73,7 @@ public:
      * Also takes the simulation parameters and the array of RNGs (for multiprocessor runs).
      */
     int init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
-            const char *stokes_filename, const char *vdw_filename, const char *pin_filename, const char *binding_filename, const char *beads_filename, scalar scale, int linear_solver,
+            const char *stokes_filename, const char *vdw_filename, const char *pin_filename, const char *binding_filename, const char *beads_filename, scalar scale, scalar calc_compress, scalar compress, int linear_solver,
             int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, RngStream rng[], int num_threads);
     //int init(const int blob_index, const int conformation_index, const string node_filename, const string topology_filename, const string surface_filename, const string material_params_filename,
       //  const string stokes_filename, const string vdw_filename, const string pin_filename, scalar scale, int linear_solver,
@@ -90,14 +90,14 @@ public:
     int reset_solver();
 
     /**
-      * Translates the linear nodes, then linearises the secondary nodes 
+      * Translates the linear nodes, then linearises the secondary nodes
       */
     void translate_linear(vector3 *vec);
 
     /**
-     * Calculates the centroid of this Blob, then brings the Blob to the origin, 
+     * Calculates the centroid of this Blob, then brings the Blob to the origin,
      * rotates all nodes in the Blob, and brings back the Blob to the initial position.
-     * If beads = 1, then it rotates its own "bead_positions" too. 
+     * If beads = 1, then it rotates its own "bead_positions" too.
      */
     void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, int beads=0);
 
@@ -114,7 +114,7 @@ public:
     vector3 position(scalar x, scalar y, scalar z);
 
     /**
-     * Moves the beads according to (dx, dy, dz). 
+     * Moves the beads according to (dx, dy, dz).
      * The name is to be related to "vector3 position(scalar x, scalar y, scalar z).
      */
     void position_beads(scalar x, scalar y, scalar z);
@@ -130,7 +130,7 @@ public:
      *
      */
      void add_steric_nodes();
-    
+
     /**
      * Translate the Blob by the given vector
      */
@@ -212,19 +212,19 @@ public:
      */
     tetra_element_linear *get_element(int i);
 
-    /** get_bead_position [precomp] */ 
-    vector3 get_bead_position(int i); 
+    /** get_bead_position [precomp] */
+    vector3 get_bead_position(int i);
 
     /** get the pointer to "bead_type"  [precomp] */
-    int *get_bead_type_ptr(); 
+    int *get_bead_type_ptr();
 
-    /** 
-     * @brief returns the list of nodes where bead i should be assigned to. 
+    /**
+     * @brief returns the list of nodes where bead i should be assigned to.
      *
      * @ingroup FMM
      **/
     vector<int> get_bead_assignment(int i);
-  
+
 
     scalar get_vdw_area();
 
@@ -312,6 +312,10 @@ public:
 
     void linearise_elements();
 
+
+    /**compresses blob by compression factor specified in input script*/
+    void compress_blob(scalar compress);
+
     int get_num_nodes();
 
     int get_num_elements();
@@ -369,7 +373,7 @@ public:
     bool there_are_springs();
     bool there_are_beads();
     bool there_is_vdw();
-    
+
     scalar get_kinetic_energy();
     scalar get_strain_energy();
 
@@ -399,7 +403,7 @@ private:
     /** Number of 'pinned' nodes (nodes which are not able to move, removing degrees of freedom from system) */
     int num_pinned_nodes;
 
-    /** Amount of interacting beads within this Blob 
+    /** Amount of interacting beads within this Blob
       *   will be zero after info is loaded into PreComp_solver */
     int num_beads;
 
@@ -437,10 +441,10 @@ private:
       *   will be NULL after info is loaded into PreComp_solver */
     scalar *bead_position;
 
-    /** 2D vector with the set of nodes where every bead should be assigned to. 
+    /** 2D vector with the set of nodes where every bead should be assigned to.
       *   It will be removed after PreComp_solver is initialised [precomp] */
-    vector <vector<int>> bead_assignment; 
-  
+    vector <vector<int>> bead_assignment;
+
     /** Array with bead types [precomp]
       *   will be NULL after info is loaded into PreComp_solver */
 
@@ -586,7 +590,7 @@ private:
      * Creates a new pinned nodes list from a given set
      */
     void create_pinned_nodes(set<int> list);
-    
+
     /**
      * Calculate some quantities such as the rest jacobian, rest volume etc.
      */
