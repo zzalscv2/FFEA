@@ -304,6 +304,9 @@ vector3 normalise(vector3 *v) {
     scalar magnitude;
     vector3 norm;
     magnitude = mag(v);
+    if(magnitude == 0.0) {
+	throw -1;
+    }
     norm.x = v->x / magnitude;
     norm.y = v->y / magnitude;
     norm.z = v->z / magnitude;

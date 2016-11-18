@@ -31,6 +31,7 @@ SimulationParams::SimulationParams() {
     calc_kinetics = 0;
     kinetics_update = 0;
     calc_preComp = 0;
+    force_pbc = 0;
     calc_springs = 0; 
     calc_ctforces = 0;
 
@@ -99,7 +100,7 @@ SimulationParams::~SimulationParams() {
     epsilon_0 = 0;
     restart = 0;
     calc_vdw = -1;
-    inc_self_vdw = 0; 
+    inc_self_vdw = 0;
     vdw_type = "";
     calc_es = 0;
     calc_noise = 0;
@@ -146,7 +147,7 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 	// Extract param string from script string
 	vector<string> param_vector;
 	FFEA_input_reader *paramreader = new FFEA_input_reader();
-	paramreader->extract_block("param", 0, script_vector, &param_vector);	
+	paramreader->extract_block("param", 0, script_vector, &param_vector);
 
 	// Parse the section
 	vector<string>::iterator it;
@@ -165,7 +166,7 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 }
 
 int SimulationParams::assign(string lvalue, string rvalue) {
-	
+
 	b_fs::path ffea_script = FFEA_script_filename;
 	FFEA_script_path = ffea_script.parent_path();
 	FFEA_script_basename = ffea_script.stem();
@@ -266,11 +267,11 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "sticky_wall_xz") {
         	sticky_wall_xz = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << sticky_wall_xz << endl;
-    
+
 	} else if (lvalue == "es_h") {
         	es_h = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << es_h << endl;
-    
+
 	} else if (lvalue == "rng_seed") {
 		if(rvalue == "time") {
 			rng_seed = time(NULL);
@@ -324,6 +325,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "calc_springs") {
         	calc_springs = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_springs << endl;
+
+	} else if (lvalue == "force_pbc") {
+        	force_pbc = atoi(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << force_pbc << endl;
 
 	} else if (lvalue == "calc_kinetics") {
         	calc_kinetics = atoi(rvalue.c_str());
@@ -414,11 +419,11 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 
 		} else if (lvalue == "det_measurement_out_fname") {
 			b_fs::path auxpath = FFEA_script_path / rvalue;
-			detailed_meas_out_fname = auxpath.string(); 
+			detailed_meas_out_fname = auxpath.string();
 
     	} else if (lvalue == "measurement_out_fname") {
 			b_fs::path auxpath = FFEA_script_path / rvalue;
-			measurement_out_fname = auxpath.string(); 
+			measurement_out_fname = auxpath.string();
 			measurement_out_fname_set = 1;
 			cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
 
@@ -434,10 +439,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 			kinetics_out_fname = auxpath.string();
 			kinetics_out_fname_set = 1;
 			cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
-   
+
 	} else if (lvalue == "vdw_in_fname" || lvalue == "vdw_forcefield_params") {
 		b_fs::path auxpath = FFEA_script_path / rvalue;
-		vdw_in_fname = auxpath.string(); 
+		vdw_in_fname = auxpath.string();
 		vdw_in_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << vdw_in_fname << endl;
 
@@ -472,7 +477,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	return FFEA_OK;
 }
 
-// rename oFile to something else. 
+// rename oFile to something else.
 int SimulationParams::checkFileName(string oFile){
 
 
@@ -483,7 +488,7 @@ int SimulationParams::checkFileName(string oFile){
         string base = "__" + fs_oFile.filename().string() + "__bckp.";
         if (fs_oFile.parent_path().string().size() != 0) {
           b_fs::path fs_base = fs_oFile.parent_path() / base;
-          base = fs_base.string(); 
+          base = fs_base.string();
         }
 
         string bckp = base + boost::lexical_cast<string>(cnt);
@@ -492,13 +497,13 @@ int SimulationParams::checkFileName(string oFile){
           string s_cnt = boost::lexical_cast<string>(cnt);
           bckp = base + s_cnt;
         }
-        FFEA_CAUTION_MESSG("Moving %s to %s\n", oFile.c_str(), bckp.c_str()); 
+        FFEA_CAUTION_MESSG("Moving %s to %s\n", oFile.c_str(), bckp.c_str());
         // cout << "FFEA: moving " << oFile << " to " << bckp << "\n";
         b_fs::rename(oFile, bckp.c_str());
-    } 
-      
+    }
 
-    return FFEA_OK; 
+
+    return FFEA_OK;
 }
 
 int SimulationParams::validate() {
@@ -510,7 +515,7 @@ int SimulationParams::validate() {
         if (icheckpoint_fname_set == 0) {
             FFEA_ERROR_MESSG("Checkpoint input file required if restart is required.\n");
         }
-    } 
+    }
 
     if (num_steps < 0) {
         FFEA_ERROR_MESSG("Required: Number of time steps, 'num_steps', must be greater than or equal to 0.\n");
@@ -544,13 +549,13 @@ int SimulationParams::validate() {
     }
 
     if (calc_vdw == 1) {
- 
+
       if (vdw_type != "lennard-jones" && vdw_type != "steric" &&
           vdw_type != "stericX" && vdw_type != "ljsteric") {
           FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'steric' (default), 'lennard-jones' or 'ljsteric' (both methods combined).\n");
       }
 
-      if (vdw_type != "steric" && vdw_type != "stericX") { 
+      if (vdw_type != "steric" && vdw_type != "stericX") {
         if (vdw_in_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
@@ -558,8 +563,8 @@ int SimulationParams::validate() {
     } else {
       if (inc_self_vdw == 1) {
         printf("\tFRIENDLY WARNING: No face-face interactions will be computed if calc_vdw = 0.\n");
-      } 
-    } 
+      }
+    }
 
     if (calc_preComp != 0 && calc_preComp != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_preComp', must be 0 (no) or 1 (yes).\n");
@@ -580,7 +585,7 @@ int SimulationParams::validate() {
     if (calc_kinetics != 0 && calc_kinetics != 1) {
         FFEA_ERROR_MESSG("Required: 'calc_kinetics', must be 0 (no) or 1 (yes).\n");
     }
-    
+
     if (calc_vdw == 1 or calc_es == 1) {
     	if (es_N_x < 1) {
         	printf("\tFRIENDLY WARNING: Length of the nearest neighbour lookup grid, 'es_N_x', is less than 1. Will assign default value to encompass whole system.\n");
@@ -616,9 +621,9 @@ int SimulationParams::validate() {
 
     if (measurement_out_fname_set == 0) {
 		b_fs::path auxpath = FFEA_script_path / FFEA_script_basename / ".fm";
-		measurement_out_fname = auxpath.string(); 
+		measurement_out_fname = auxpath.string();
     }
-  
+
     // Three checkings for checkpoint files:
     // CPT.1 - If we don't have a name for checkpoint_out we're assigning one.
     if (ocheckpoint_fname_set == 0) {
@@ -626,23 +631,23 @@ int SimulationParams::validate() {
       fs_ocpt_fname.replace_extension(".fcp");
       ocheckpoint_fname_set = 1;
       ocheckpoint_fname = fs_ocpt_fname.string();
-      printf("\tFRIENDLY WARNING: Checkpoint output file name was not specified, so it will be set to %s\n", ocheckpoint_fname.c_str() ); 
-    } 
+      printf("\tFRIENDLY WARNING: Checkpoint output file name was not specified, so it will be set to %s\n", ocheckpoint_fname.c_str() );
+    }
     // CPT.2 - checkpoint_out must differ from checkpoint_in
     if (ocheckpoint_fname.compare(icheckpoint_fname) == 0) {
         FFEA_ERROR_MESSG("it is not allowed to set up checkpoint_in and checkpoint_out with the same file names\n");
-    } 
-    // CPT.3 - checkpoint_out will be backed up if it exists 
+    }
+    // CPT.3 - checkpoint_out will be backed up if it exists
     checkFileName(ocheckpoint_fname);
-    
 
-    // check if the output files exists, and if so, rename it. 
+
+    // check if the output files exists, and if so, rename it.
     if (restart == 0) {
-      checkFileName(measurement_out_fname); 
-      checkFileName(detailed_meas_out_fname); 
+      checkFileName(measurement_out_fname);
+      checkFileName(detailed_meas_out_fname);
       checkFileName(trajectory_out_fname);
       checkFileName(kinetics_out_fname);
-    } 
+    }
 
     if (calc_stokes == 1 && stokes_visc <= 0) {
         FFEA_ERROR_MESSG("calc_stokes flag is set, so stokes_visc must be set to a value greater than 0.\n");
@@ -650,7 +655,7 @@ int SimulationParams::validate() {
 
     if (vdw_steric_factor < 0) {
        printf("\tFRIENDLY WARNING: Beware, vdw_steric_factor is negative.\n");
-    } 
+    }
 
     if (calc_kinetics == 1) {
 	if(kinetics_update <= 0) {
@@ -695,7 +700,7 @@ int SimulationParams::validate() {
     printf("\tkinetics_out_fname = %s\n", kinetics_out_fname.c_str());
     if (icheckpoint_fname_set == 1) {
       printf("\tcheckpoint_in = %s\n", icheckpoint_fname.c_str());
-    } 
+    }
     printf("\tcheckpoint_out = %s\n", ocheckpoint_fname.c_str());
     printf("\tvdw_forcefield_params = %s\n", vdw_in_fname.c_str());
     printf("\tmax_iterations_cg = %d\n", max_iterations_cg);
@@ -716,6 +721,7 @@ int SimulationParams::validate() {
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
     printf("\tcalc_preComp = %d\n", calc_preComp);
     printf("\tcalc_springs = %d\n", calc_springs);
+    printf("\tforce_pbc = %d\n", force_pbc);
     printf("\tcalc_stokes = %d\n", calc_stokes);
     printf("\tstokes_visc = %f\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
     printf("\tcalc_kinetics = %d\n", calc_kinetics);
@@ -730,12 +736,12 @@ int SimulationParams::validate() {
 }
 
 int SimulationParams::get_max_num_states() {
-	
+
     int i, max_num_states = 0;
     for(i = 0; i < num_blobs; ++i) {
 	if(num_states[i] > max_num_states) {
 	    max_num_states = num_states[i];
-	} 
+	}
     }
     return max_num_states;
 }
@@ -755,12 +761,13 @@ void SimulationParams::write_to_file(FILE *fout) {
 
     	fprintf(fout, "\tcalc_vdw = %d\n", calc_vdw);
     	fprintf(fout, "\tvdw_type = %s\n", vdw_type.c_str());
-      fprintf(fout, "\tinc_self_vdw = %d\n", inc_self_vdw); 
+      fprintf(fout, "\tinc_self_vdw = %d\n", inc_self_vdw);
     	fprintf(fout, "\tcalc_es = %d\n", calc_es);
     	fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
     	fprintf(fout, "\tcalc_kinetics = %d\n", calc_kinetics);
     	fprintf(fout, "\tcalc_preComp = %d\n", calc_preComp);
-      fprintf(fout, "\tcalc_springs = %d\n", calc_springs); 
+      fprintf(fout, "\tcalc_springs = %d\n", calc_springs);
+      fprintf(fout, "\tforce_pbc = %d\n", force_pbc);
     	fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
     	fprintf(fout, "\tstokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
 
@@ -807,7 +814,6 @@ void SimulationParams::write_to_file(FILE *fout) {
 
 string SimulationParams::RemoveFileExtension(const string& FileName)
 {
-    cout << FileName.find_last_of(".") << endl;
     if(FileName.find_last_of(".") != std::string::npos)
         return FileName.substr(0, FileName.find_last_of("."));
     return "";

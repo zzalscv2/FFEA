@@ -29,7 +29,6 @@ Blocks open with: ` <block> ` and closed with ` </block> `. Therefore a valid in
             <conformation>
              ...
             </conformation>
-
 	    <kinetics>
 	     ...
 	    </kinetics>
