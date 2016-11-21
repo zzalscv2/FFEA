@@ -304,11 +304,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		int nlines = checkpoint_v.size();
 		cout << nlines << endl;
 
-		Seeds = new unsigned long *[max(num_active_rng,num_seeds_read)];
+      num_seeds = max(num_active_rng,num_seeds_read);
+		Seeds = new unsigned long *[num_seeds]; 
 		// RNG.1.4 - get Seeds :
 		// BEN CHANGE - stream was printing out stuff if ctrl-c was pressed, so I'm looping more accurately
 		int cnt_seeds = 0;
-		for(int i = 1; i < num_threads + 1; ++i) {
+		for(int i = 1; i < num_stress_seeds_read + 1; ++i) {
 			vector <string> vline;
 			boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
 			Seeds[cnt_seeds] = new unsigned long [6];
@@ -3541,7 +3542,9 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // REWIND!
     rewind(checkpoint_out);
     // Header for the thermal stresses:
-    fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", num_threads);
+    int thermal_seeds = num_seeds;
+	 if(params.calc_kinetics == 1) thermal_seeds += 1; 
+    fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", thermal_seeds);
     unsigned long state[6];
     // First save the state of the running threads:
     for (int i=0; i<num_threads; i++) {
@@ -3554,14 +3557,13 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     //  cout << endl;
     }
     // If there were more threads running on the previous run, we'll save them too:
-    int oldThreads = num_seeds - num_threads;
-    if (params.calc_kinetics) oldThreads -=1 ;
+    int oldThreads = thermal_seeds - num_threads;
     for (int i=0; i<oldThreads; i++) {
       fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0],
               Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
               Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
       //for(int j = 0; j < 6; ++j) {
-///	    cout << Seeds[i+num_threads][j] << " ";
+//	    cout << Seeds[i+num_threads][j] << " ";
    //   }
      // cout << endl;
     }
