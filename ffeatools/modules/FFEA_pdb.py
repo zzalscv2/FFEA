@@ -215,7 +215,6 @@ class FFEA_pdb:
 			sys.stdout.flush()
 			fout.write("MODEL      %d\n" % (modindex + 1))
 			for j in range(self.num_blobs):
-				
 				index = 0
 				chain = chr(ord("A") + j) 
 				for a in self.blob[j].atom:
