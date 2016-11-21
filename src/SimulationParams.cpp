@@ -33,6 +33,7 @@ SimulationParams::SimulationParams() {
     calc_preComp = 0;
     force_pbc = 0;
     calc_springs = 0; 
+    calc_ctforces = 0;
 
 
     wall_x_1 = WALL_TYPE_PBC;
@@ -69,6 +70,7 @@ SimulationParams::SimulationParams() {
     icheckpoint_fname = "\n";
     ocheckpoint_fname = "\n";
     detailed_meas_out_fname = "\n";
+    ctforces_fname = "\n";
 }
 
 SimulationParams::~SimulationParams() {
@@ -103,7 +105,8 @@ SimulationParams::~SimulationParams() {
     calc_es = 0;
     calc_noise = 0;
     calc_preComp = 0;
-    calc_springs = 0;
+    calc_springs = 0; 
+    calc_ctforces = 0;
     calc_kinetics = 0;
 
     wall_x_1 = -1;
@@ -136,6 +139,7 @@ SimulationParams::~SimulationParams() {
     bsite_in_fname = "\n";
     vdw_in_fname = "\n";
     detailed_meas_out_fname = "\n";
+    ctforces_fname = "\n";
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
@@ -329,6 +333,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 	} else if (lvalue == "calc_kinetics") {
         	calc_kinetics = atoi(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << calc_kinetics << endl;
+
+   } else if (lvalue == "calc_ctforces") {
+        	calc_ctforces = atoi(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << calc_ctforces << endl;
 
 	} else if (lvalue == "calc_stokes" || lvalue == "do_stokes") {
         	calc_stokes = atoi(rvalue.c_str());
@@ -566,8 +574,8 @@ int SimulationParams::validate() {
         FFEA_ERROR_MESSG("Required: 'calc_springs', must be 0 (no) or 1 (yes).\n");
     }
 
-        if (calc_springs != 0 && calc_springs != 1) {
-        FFEA_ERROR_MESSG("Required: 'force_pbc', must be 0 (no) or 1 (yes).\n");
+    if (calc_ctforces != 0 && calc_ctforces != 1) {
+        FFEA_ERROR_MESSG("Required: 'calc_ctforces', must be 0 (no) or 1 (yes).\n");
     }
 
     if (calc_es != 0 && calc_es != 1) {

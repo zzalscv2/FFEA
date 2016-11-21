@@ -72,11 +72,12 @@ public:
     int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins
     int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique
     int calc_stokes; ///< Whether or not to include local action of the external fluid
-    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites
-    int calc_preComp; ///< Whether or not use preComputed potentials and forces
-    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block
+    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites  
+    int calc_preComp; ///< Whether or not use preComputed potentials and forces   
+    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
+    int calc_ctforces; ///< Whether or not to include constant forces onto nodes defined in the ctforces block
     int force_pbc; ///< Whether or not to apply pbc to surface insteractions
-    int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high
+    int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
     int wall_x_1;
     int wall_x_2;
     int wall_y_1;
@@ -100,6 +101,7 @@ public:
     string bsite_in_fname;
     string icheckpoint_fname;  ///< Input Checkpoint file name
     string ocheckpoint_fname;  ///< Output Checkpoint file name
+    string ctforces_fname; ///< Input file containing constant forces onto a list of nodes.
 
     SimulationParams();
 
