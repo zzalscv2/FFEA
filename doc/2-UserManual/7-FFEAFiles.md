@@ -206,6 +206,30 @@ This file provides a list of nodes for the corresponding blob that will remain f
     445
 
 
+
+Constant forces file: .ctforces {#ifctforces}
+---------------------------------------------
+
+This file provides a list of nodes where a certain force is to be applied. 
+ Besides the header, specifying the number of constant forces to take from 
+ the input file, each line writes Force module (in ` N `), a unit vector
+ with the direction of the force, blob index, conformation index, and node 
+ number ` or ` string all so that the same force is applied onto every on this 
+ blob. Thus, a valid ` ctforces ` file with force 1e-9 applied onto 
+ every node on blob 1 towards the z axis, and 3 nodes on blob 2 pushed 
+ towards x would look like:
+
+
+    ffea ctforces file
+    num_ctforces 4
+    ctforces:
+    1e-9 0 0 1 1 0 all
+    1e-9 1 0 0 2 0 104
+    1e-9 1 0 0 2 0 134
+    1e-9 1 0 0 2 0 152
+
+
+
 Checkpoint file .fcp {#ffeaCheckpointFileIn}
 ----------------------------------------------
 This is the same type of file than the output [checkpoint file](\ref ffeaCheckpointFileOut). 

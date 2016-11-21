@@ -344,27 +344,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 		}
 
-		/* OLD */
-		/*
-		for (int i=1; i<nlines; i++){
-			if (i == num_threads + 1) continue; // skip the header of the kinetics rng
-			vector <string> vline;
-			boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
-			Seeds[cnt_seeds] = new unsigned long [6];
-			// there must be 6 integers per line:
-			if (vline.size() != 6) {
-				FFEA_ERROR_MESSG("ERROR reading seeds\n")
-			}
-			for (int j=0; j<6; j++){
-				try {
-					Seeds[cnt_seeds][j] = stol(vline[j]);
-				} catch (invalid_argument& ia) {
-					FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
-				}
-			}
-			cnt_seeds += 1;
-		} */
-
 		// RNG.2 - AND initialise rng:
 		// RNG.2.1 - first the package and, and rng[0],
 		cout << "To be initialised by: " << Seeds[0][0] << " " << Seeds[0][1] << " " <<
@@ -2009,17 +1988,19 @@ int World::read_and_build_system(vector<string> script_vector) {
 	scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
 
 	// Get interactions vector first, for later use
-	     if ((params.calc_preComp == 1) or (params.calc_springs == 1)) {
-           systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
-        }
+	     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) { 
+           systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);        
+        } 
 
 	       // Get precomputed data first
 	       pc_params.dist_to_m = 1;
 	       pc_params.E_to_J = 1;
 	       if (params.calc_preComp == 1) {
                vector<string> precomp_vector;
-               systemreader->extract_block("precomp", 0, interactions_vector, &precomp_vector);
-
+               if (systemreader->extract_block("precomp", 0, interactions_vector, &precomp_vector) == FFEA_ERROR) {
+						return FFEA_ERROR;
+					}
+	
                for (i=0; i<precomp_vector.size(); i++){
                  systemreader->parse_tag(precomp_vector[i], lrvalue);
 		 if (lrvalue[0] == "types") {
@@ -2042,6 +2023,30 @@ int World::read_and_build_system(vector<string> script_vector) {
                  }
                }
           }
+
+          if (params.calc_ctforces == 1) {
+               vector<string> ctforces_vector;
+               if (systemreader->extract_block("ctforces", 0, interactions_vector, &ctforces_vector) == FFEA_ERROR) {
+						return FFEA_ERROR;
+					}
+               if (ctforces_vector.size() != 1) {
+                  FFEA_ERROR_MESSG("only a single field is allowed in <ctforces> block\n");
+                  return FFEA_ERROR;
+               }
+               systemreader->parse_tag(ctforces_vector[0], lrvalue);
+               if (lrvalue[0] == "ctforces_fname") {
+                 b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
+                 params.ctforces_fname = auxpath.string();
+               } else {
+                 FFEA_ERROR_MESSG("ctforces_fname not provided in <ctforces> block, while calc_ctforces set to 1\n");
+                 return FFEA_ERROR;
+               }
+					// try to open this file:
+					if (! b_fs::exists(params.ctforces_fname) ){
+						FFEA_ERROR_MESSG("ctforces_fname: %s could not be open\n", params.ctforces_fname.c_str());
+					}
+          }
+               
 
 
 	// Read in each blob one at a time
