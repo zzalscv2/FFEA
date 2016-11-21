@@ -3,7 +3,7 @@ import numpy as np
 import FFEA_trajectory, FFEA_kinetic_map, FFEA_pdb
 
 if len(sys.argv) < 4:
-	sys.exit("Usage: python " + os.path.basename(os.path.abspath(sys.argv[0])) + " [INPUT traj fname (.out)] [OUTPUT traj fname (.out/.pdb)] [INPUT ffea .map fname] [INPUT topology .pdb]\n")
+	sys.exit("Usage: python " + os.path.basename(os.path.abspath(sys.argv[0])) + " [INPUT traj fname (.ftj)] [OUTPUT traj fname (.ftj/.pdb)] [INPUT ffea .map fname] [INPUT topology .pdb]\n")
 
 # Get args
 intraj = sys.argv[1]
@@ -23,7 +23,6 @@ if ext == ".pdb":
 		sys.exit("Error. If mapping to a pdb, we need a pdb topology file as a template")
 		
 	pdbtop = FFEA_pdb.FFEA_pdb(intop)
-
 	
 # Get nodes
 traj = FFEA_trajectory.FFEA_trajectory(intraj)
@@ -53,31 +52,59 @@ for b in traj.blob:
 			
 # Print to file
 
+#if ext == ".pdb":
+#
+#	# We'll have to use the original pdb as a template. Make as many pdb blobs as necessary
+#	outpdb = FFEA_pdb.FFEA_pdb("")
+#	
+#	bindex = -1
+#	for bnodes in output_nodes:
+#	
+#		bindex += 1
+#
+#		# Add new blob
+#		outpdb.add_empty_blob()
+#		
+#		# Populate with atoms
+#		#for blob in pdbtop.blob:
+#			#outpdb.blob[-1].atom = outpdb.blob[-1].atom + blob.atom #smush any sub-regions of PDBs together
+#		outpdb.blob[bindex].atom = pdbtop.blob[bindex].atom
+#		#print blob.atom.chain, outpdb.blob[-1].atom.chain
+#
+#		outpdb.blob[bindex].num_atoms = len(outpdb.blob[bindex].atom)
+#
+#		# Now add frames
+#		for f in bnodes:
+#			outpdb.blob[bindex].frame.append(FFEA_pdb.FFEA_pdb_frame())
+#			outpdb.blob[bindex].frame[-1].pos = f * 1e10
+#			#print outpdb.blob[-1].frame[-1].pos
+#			outpdb.blob[bindex].num_frames += 1
+#	
+#	outpdb.num_frames = outpdb.blob[-1].num_frames
+#	outpdb.write_to_file(outtraj)
+
 if ext == ".pdb":
-
+	
 	# We'll have to use the original pdb as a template. Make as many pdb blobs as necessary
-	outpdb = FFEA_pdb.FFEA_pdb("")
-	
-	for bnodes in output_nodes:
-	
-		# Add new blob
-		outpdb.add_empty_blob()
-		
-		# Populate with atoms
-		for blob in pdbtop.blob:
-			outpdb.blob[-1].atom = outpdb.blob[-1].atom + blob.atom #smush any sub-regions of PDBs together
-		outpdb.blob[-1].num_atoms = len(outpdb.blob[-1].atom)
+	outpdb = FFEA_pdb.FFEA_pdb(intop)
+	outpdb.clear_position_data()
 
-		# Now add frames
+	# Now simply change the positions using the new mapped ones
+	bindex = -1
+	for bnodes in output_nodes:
+		bindex += 1
 		for f in bnodes:
-			outpdb.blob[-1].frame.append(FFEA_pdb.FFEA_pdb_frame())
-			outpdb.blob[-1].frame[-1].pos = f * 1e10
-			#print outpdb.blob[-1].frame[-1].pos
-			outpdb.blob[-1].num_frames += 1
+
+			end = 0
+			for pdbb in outpdb.blob:
+				start = end
+				end = start + pdbb.num_atoms
+				pdbb.frame.append(FFEA_pdb.FFEA_pdb_frame())
+				pdbb.frame[-1].pos = f[start:end] * 1e10
 	
-	outpdb.num_frames = outpdb.blob[-1].num_frames
+	outpdb.num_frames = len(bnodes[0])
 	outpdb.write_to_file(outtraj)
-			
+		
 elif ext == ".out":
 		
 	print "Currently unavailable. Sorry about that. Fix me if you're a developer!"
