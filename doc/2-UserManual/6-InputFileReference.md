@@ -119,6 +119,15 @@ In between it can take the following parameters:
         Enter either 1 or 0 to enable or disable short range interactions 
          between faces within the same blob.
 
+   * ` force_pbc ` <int> (0) <BR>
+        Enter either 1 or 0 to enable or disable full periodic boundary conditions specifically for steric, 
+        lennard-jones and ljsteric interactions between blobs. Set to 0, wall types set to
+        "PBC" will enforce that blobs are translated by a box length in the appropriate direction should 
+        their centroid stray out of the box, but does not calculate forces with images of corresponding blobs at 
+        the opposite boundary. Set to 1, forces will be correctly calculated with an image of the corresponding 
+        blob at the boundaries. Should not be used if blob size greater than half box size in any dimension. Not 
+        tested with springs, boundary types other than PBC or electrostatics.
+
 #### Hydrodynamics parameters ####
 
    * ` calc_stokes ` <int>  <BR>
@@ -170,7 +179,9 @@ In between it can take the following parameters:
    * ` wall_y_2 ` <string> (PBC) <BR>
    * ` wall_z_1 ` <string> (PBC) <BR>
    * ` wall_z_2 ` <string> (PBC) <BR>
-     The boundary condition type of each wall.
+     The boundary condition type of each wall. If set to PBC, blobs are translated by a box length in the 
+     appropriate direction should their centroid stray out of the box, but does not calculate force interactions 
+     with an image of the corresponding blob at the boundary.
         
 
 
@@ -213,6 +224,15 @@ It has both it's own parameters and a set of sub-blocks:
       List of comma separated floats enclosed in parenthesis
       defining the initial velocity of your blob. 
       This has no effect for a system using the CG_nomass ` solver `.
+
+   * ` calc_compress ` <int> (0) <BR>
+      Indicates whether to multiply node postions by "compress" variable in all x,y,z during
+      initialisation. Does not alter equilibrium dimensions of blob. Not tested with irregularly shaped 
+      objects, developed and tested for use with spheres.
+
+   * ` compress ` <float>  <BR>
+      Set factor to compress (or expand) blob by. Multiplies all node postions in this blob by this value in all 
+      x,y,z during initialisation without changing equilibrium form of blob. Required if calc_compress set to 1.
 
 ### Conformation Block {#conformationBlock} ###
 

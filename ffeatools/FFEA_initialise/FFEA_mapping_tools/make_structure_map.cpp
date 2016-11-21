@@ -574,14 +574,15 @@ int main(int argc, char **argv) {
 
 	// Get args
 	int i, j, k;
-	string flags[] = {"-i", "-t", "-o", "-m", "-s", "-r"};
+	char cs = 'N';
+	string flags[] = {"-i", "-t", "-o", "-m", "-s", "-r", "-c"};
 	string infname = "", topfname = "", targetfname = "", mapfname = "";
 	double scale = 1.0, range = 10;
 	double **map;
 	
 	// Make sure args come in pairs
 	if((argc - 1) % 2 != 0 || argc == 1) {
-		cout << "Usage: make_structure_map -i <Base .node/.pdb> -t <Base topology .top> -o <Target .node/.pdb> -m <Map fname (.map)> -s <scale>" << endl;
+		cout << "Usage: make_structure_map -i <Base .node/.pdb> -t <Base topology .top> -o <Target .node/.pdb> -m <Map fname (.map)> -s <scale> -c <Conserve sequence? (Y/N)>" << endl;
 		exit(0);
 	}
 	
@@ -598,6 +599,8 @@ int main(int argc, char **argv) {
 			scale = atof(argv[i + 1]);
 		} else if (flags[5].compare(argv[i]) == 0){
 			range = atof(argv[i + 1]);
+		} else if (flags[6].compare(argv[i]) == 0){
+			cs = *argv[i + 1];
 		} else {
 		
 			// Ignore
@@ -677,7 +680,15 @@ int main(int argc, char **argv) {
 	// Mapping algorithm
 	//
 	
-	cout << "Calculating map..." << endl;
+	cout << "Calculating map ";
+	if (ext[1].compare(getFileExt(targetfname)) == 0) {
+		if(cs == 'n' || cs == 'N') {
+			cout << "(will NOT try to conserve atomic sequence)"; 
+		} else {
+			cout << "(will try to conserve atomic sequence)"; 
+		}
+	}
+	cout << "..." << endl;
 	vector<int> node_list;
 	if(prog == fromNode) {
 	
@@ -702,8 +713,11 @@ int main(int argc, char **argv) {
 			if(celem == NULL) {
 
 				// Find closest element if outside of structure
-				//celem = get_nearest_element(tnode[i], belem, num_belements);
-				celem = get_nearest_connected_element(tnode[i], belem, num_belements, lcelem, bconn);
+				if(cs == 'n' || cs == 'N') {
+					celem = get_nearest_element(tnode[i], belem, num_belements);
+				} else {
+					celem = get_nearest_connected_element(tnode[i], belem, num_belements, lcelem, bconn);
+				}
 			}
 
 			// We have an element! Work out how node is positioned wrt this element
@@ -752,7 +766,7 @@ int main(int argc, char **argv) {
 	}
 	
 	// Now, write to file
-	cout << "\r\t" << 100 << "% of map calculated...done!";
+	cout << "\r\t" << 100 << "% of map calculated...done!" << endl;
 
 	// Print out the whole map
 	cout << "Writing map to " << mapfname << "..." << endl;
