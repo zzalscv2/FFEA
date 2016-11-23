@@ -37,7 +37,7 @@ in the input .ffea file. In addition to that, ` <system> ` has to include the
            <springs>
               <springs_fname=myspringsfile.springs>
            </springs>
-        <interactions> 
+        </interactions> 
      </system> 
  
 

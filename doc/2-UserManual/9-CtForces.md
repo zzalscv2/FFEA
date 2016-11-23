@@ -28,7 +28,7 @@ in the input .ffea file. In addition to that, ` <system> ` has to include
            <ctforces>
               <springs_fname=myspringsfile.ctforces>
            </ctforces>
-        <interactions>
+        </interactions>
      </system>
 
 Full description of the format of the input ` ctforces_fname ` file can be found 
