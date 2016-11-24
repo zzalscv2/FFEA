@@ -295,7 +295,7 @@ class FFEA_pdb:
 	
 	def clear_position_data(self):
 		
-		for j in range(num_chains):
+		for i in range(self.num_chains):
 			self.chain[i].frame = []
 			self.chain[i].num_frames = 0
 		self.num_frames = 0

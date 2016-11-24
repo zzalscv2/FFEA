@@ -11,8 +11,11 @@ outtraj = sys.argv[2]
 inmap = sys.argv[3]
 intop = ""
 
-if len(sys.argv) == 5:
+if len(sys.argv) > 4:
 	intop = sys.argv[4]
+
+if len(sys.argv) > 5:
+	num_frames_to_read = int(sys.argv[5])
 
 # Test files
 base, ext = os.path.splitext(outtraj)
@@ -25,15 +28,18 @@ if ext == ".pdb":
 	pdbtop = FFEA_pdb.FFEA_pdb(intop)
 	
 # Get nodes
-traj = FFEA_trajectory.FFEA_trajectory(intraj)
+traj = FFEA_trajectory.FFEA_trajectory(intraj, num_frames_to_read = num_frames_to_read)
 
 # Get map
 kinetic_map = FFEA_kinetic_map.FFEA_kinetic_map(inmap)
 
 # Test against target topology if necessary
 if intop != "":
-	if kinetic_map.num_rows != pdbtop.blob[0].num_atoms and kinetic_map.num_rows != sum(pdbtop.num_atoms):
+	if kinetic_map.num_rows != sum(pdbtop.num_atoms):
 		sys.exit("Error. Provided topology has %d atoms. Map expects %d target atoms." % (pdbtop.blob[0].num_atoms, kinetic_map.num_rows))
+
+	#if kinetic_map.num_rows != pdbtop.blob[0].num_atoms and kinetic_map.num_rows != sum(pdbtop.num_atoms):
+	#	sys.exit("Error. Provided topology has %d atoms. Map expects %d target atoms." % (pdbtop.blob[0].num_atoms, kinetic_map.num_rows))
 
 # Apply matrix to all possible blobs!
 output_nodes = []   # output_nodes[blob][frame][pos]
@@ -86,7 +92,7 @@ for b in traj.blob:
 if ext == ".pdb":
 	
 	# We'll have to use the original pdb as a template. Make as many pdb blobs as necessary
-	outpdb = FFEA_pdb.FFEA_pdb(intop)
+	outpdb = pdbtop
 	outpdb.clear_position_data()
 
 	for bnodes in output_nodes:
@@ -101,7 +107,7 @@ if ext == ".pdb":
 				outpdb.chain[i].add_empty_frame()
 				outpdb.chain[i].frame[findex].pos = f[start:end] * 1e10
 	outpdb.num_frames = outpdb.chain[i].num_frames
-	outpub.write_to_file(outtraj)
+	outpdb.write_to_file(outtraj)
 
 	# Now simply change the positions using the new mapped ones
 	#bindex = -1
