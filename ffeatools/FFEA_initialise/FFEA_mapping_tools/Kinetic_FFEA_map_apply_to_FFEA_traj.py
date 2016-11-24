@@ -89,21 +89,35 @@ if ext == ".pdb":
 	outpdb = FFEA_pdb.FFEA_pdb(intop)
 	outpdb.clear_position_data()
 
-	# Now simply change the positions using the new mapped ones
-	bindex = -1
 	for bnodes in output_nodes:
-		bindex += 1
-		for f in bnodes:
 
+		findex = -1
+		for f in bnodes:
+			findex += 1
 			end = 0
-			for pdbb in outpdb.blob:
+			for i in range(outpdb.num_chains):
 				start = end
-				end = start + pdbb.num_atoms
-				pdbb.frame.append(FFEA_pdb.FFEA_pdb_frame())
-				pdbb.frame[-1].pos = f[start:end] * 1e10
+				end = start + outpdb.num_atoms[i]
+				outpdb.chain[i].add_empty_frame()
+				outpdb.chain[i].frame[findex].pos = f[start:end] * 1e10
+	outpdb.num_frames = outpdb.chain[i].num_frames
+	outpub.write_to_file(outtraj)
+
+	# Now simply change the positions using the new mapped ones
+	#bindex = -1
+	#for bnodes in output_nodes:
+	#	bindex += 1
+	#	for f in bnodes:
+
+	#		end = 0
+	#		for pdbb in outpdb.blob:
+	#			start = end
+	#			end = start + pdbb.num_atoms
+	#			pdbb.frame.append(FFEA_pdb.FFEA_pdb_frame())
+	#			pdbb.frame[-1].pos = f[start:end] * 1e10
 	
-	outpdb.num_frames = len(bnodes[0])
-	outpdb.write_to_file(outtraj)
+	#outpdb.num_frames = len(bnodes[0])
+	#outpdb.write_to_file(outtraj)
 		
 elif ext == ".out":
 		
