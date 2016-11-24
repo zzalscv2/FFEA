@@ -456,6 +456,8 @@ class FFEA_node:
 
 	def reset(self):
 
+		self.valid = False
+
 		self.pos = []
 		self.centroid = None
 		self.CoM = None
