@@ -11,7 +11,7 @@ def get_path_from_script(path, scriptdir):
 
 class FFEA_script:
 
-	def __init__(self, fname = ""):
+	def __init__(self, fname = "", fix=False):
 
 		self.reset()
 
@@ -45,6 +45,11 @@ class FFEA_script:
 			self.reset()
 			return
 
+		if fix:
+			self.params.fix_params()
+		else:
+			self.params.check_params()
+			
 		for i in range(self.params.num_blobs):
 			try:
 				self.blob.append(self.read_blob_from_script_lines(script_lines, scriptdir, i, self.params.num_conformations[i]))
@@ -258,6 +263,7 @@ class FFEA_script:
 
 		# Now maps
 		map_lines = extract_block_from_lines('maps', 0, kinetic_lines)
+		print map_lines
 		blob.map_indices = []
 		blob.map = []
 		for line in map_lines:
@@ -559,6 +565,15 @@ class FFEA_script_params():
 		else:
 			print "Unrecognised parameter '" + lvalue + "'. Ignoring..."
 
+	# This simply returns an error if something is incompatible. For fixes, use fix_params
+	def check_params(self):
+		pass
+
+	# This function attempts to fix conflicting data (i.e. num_blobs = N but len(num_conformations) != N)
+	def fix_params(self):
+		if len(self.num_conformations) < self.num_blobs:
+			self.num_conformations.extend([1 for i in range(self.num_blobs - len(self.num_conformations))])
+
 	# This function tests whether or not there are enough params to form an ffea system
 	def completed(self):
 		return True
@@ -770,6 +785,7 @@ def extract_block_from_lines(title, index, lines):
 	block = []
 	block_index = 0
 	in_block = 0
+
 	for line in lines:
 		try:
 			if in_block == 0:

@@ -265,7 +265,7 @@ class FFEA_viewer_control_window:
 	print "Loading ffea file: " + self.ffea_fname
     
     # Load script (comments are now removed inside this module, by the way :) )
-	self.script = FFEA_script.FFEA_script(self.ffea_fname)
+	self.script = FFEA_script.FFEA_script(self.ffea_fname, fix=True)
 	if (self.script.params == None):
 		print "Something went wrong reading the FFEA input file", self.ffea_fname
 		return
