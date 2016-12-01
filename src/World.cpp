@@ -422,7 +422,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 		}
 	}
-
+        // Now everything has been moved into boxes etc, save all initial positions
+	for(i = 0; i < params.num_blobs; ++i) {
+		for(j = 0; j < params.num_conformations[i]; ++j) {
+			blob_array[i][j].set_pos_0();
+		}
+	}
 	// If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
 	if(mode == 0) {
 		// In any case, open the output checkpoint file for writing
@@ -1089,8 +1094,10 @@ int World::get_smallest_time_constants() {
 	cout << endl << "Global Time Constant Details:" << endl << endl;
 	cout << "\t\tFastest Mode: Blob " << dt_min_bin << ", tau (" << dt_min_world_type << ") = " << dt_min_world * mesoDimensions::time << "s" << endl;
 	cout << "\t\tSlowest Mode: Blob " << dt_max_bin << ", tau (" << dt_max_world_type << ") = " << dt_max_world * mesoDimensions::time << "s" << endl << endl;
-	cout << "\t\tPlease make sure your simulation timestep is less than " << dt_min_world * mesoDimensions::time << "s, for a stable simulation." << endl;
-	cout << "\t\tTake note than the energies will become inaccurate before this, so check your energy equilibrates correctly. If unsure, set dt << " << dt_min_world * mesoDimensions::time << "s" << endl << endl;
+	if(dt_min_world_type == "inertial") {
+		cout << "\t\tPlease make sure your simulation timestep is less than " << dt_min_world * mesoDimensions::time << "s, for a stable simulation." << endl;
+		cout << "\t\tTake note than the energies will become inaccurate before this, so check your energy equilibrates correctly. If unsure, set dt << " << dt_min_world * mesoDimensions::time << "s" << endl << endl;
+	}	
 	cout << "\t\tFor dynamical convergence, your simulation must run for longer than " << dt_max_world * mesoDimensions::time << "s." << endl << endl;
 
 	cout << "\t\tFINAL NOTE - If, after taking into account the above time constants, your simulation still fails (due to element inversion) it is not due to numerical instability from the integration, ";
@@ -2328,6 +2335,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		// vector3 *cent = new vector3;
 		for(j = 0; j < params.num_conformations[i]; ++j) {
 			cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
+
 			if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), binding.at(j).c_str(), beads.at(j).c_str(),
                        		scale,calc_compress, compress, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
                        		FFEA_error_text();
@@ -2351,10 +2359,17 @@ int World::read_and_build_system(vector<string> script_vector) {
 		        	if (centroid != NULL) {
 
 		            		// Rescale first
+					//cout << centroid[0] << " " << centroid[1] << " " << centroid[2] << endl; 
 		            		centroid[0] *= scale;
 		            		centroid[1] *= scale;
 		            		centroid[2] *= scale;
+					//vector3 lol = blob_array[i][j].calc_centroid();
+					//cout << lol.x << " " << lol.y << " " << lol.z << endl;
 		            		vector3 dv = blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
+					//lol = blob_array[i][j].calc_centroid();
+					//cout << lol.x << " " << lol.y << " " << lol.z << endl;
+					//exit(0);
+
 		                        // if Blob has a number of beads, transform them too:
 		                        if (blob_array[i][j].get_num_beads() > 0)
 		                          blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
@@ -2387,7 +2402,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 		        	// set the current node positions as pos_0 for this blob, so that all rmsd values
 		        	// are calculated relative to this conformation centred at this point in space.
-		        	blob_array[i][j].set_rmsd_pos_0();
+		        	//blob_array[i][j].set_pos_0();
 			}
 			cout << "\t...done!" << endl;
 		}
