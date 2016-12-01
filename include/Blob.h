@@ -408,7 +408,8 @@ private:
     int num_beads;
 
     /** Number of ctforces to be applied to this Blob */
-    int num_ctf;
+    int num_l_ctf;
+    int num_r_ctf;
 
     /** Whether this Blob is DYNAMIC (movable; dynamics simulated) or STATIC (fixed; no simulation of dynamics; Blob is a perfectly solid object fixed in space)*/
     int blob_state;
@@ -450,12 +451,25 @@ private:
 
     int *bead_type;
 
-    /** Array with the nodes having ctforces assigned */
-    int *ctf_nodes;
+    /** Array with the nodes having linear ctforces assigned */
+    int *ctf_l_nodes;
+    /** Array with the nodes having rotational ctforces assigned */
+    int *ctf_r_nodes;
 
-    /** Array with the ctforces: FxFyFzFxFyFz..., 
+    /** Array with the linear ctforces: FxFyFzFxFyFz..., 
       * being Fx, Fy, Fz the components of the force */
-    scalar *ctf_forces; 
+    scalar *ctf_l_forces; 
+    /** Array with the magnitude of the rotational ctforces: FFF..., */  
+    scalar *ctf_r_forces; 
+    /** Array with the rotational axis (given with point + unit vector)
+      *  for ctforces: XYZxyzXYZxyzFxFyFz..., 
+      *  or BlobConfNodeBlobConfNode,BlobConfNodeBlobConfNode,... 
+      *  if using two nodes to define the axis.  */ 
+    scalar *ctf_r_axis; 
+    /** Array with the type of rotation force, 2 chars per node: 
+      *  where the first one can be n or p, depending of the axis defined by nodes or points
+      *   and the second one can be f or t, depending on applying ctforce or cttorque.*/
+    char *ctf_r_type;
     
     
 
