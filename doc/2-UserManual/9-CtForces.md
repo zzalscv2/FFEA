@@ -2,7 +2,8 @@
 Constant forces {#ctforces}
 ===========================
 
-Constant forces can be added onto nodes or full blobs. In order to do that,
+Linear and circular constant forces can be added onto nodes or full blobs. 
+In order to do that,
  one needs to activate the calculation of the constant forces:
 
     < calc_ctforces = 1 >
@@ -14,7 +15,7 @@ in the input .ffea file. In addition to that, ` <system> ` has to include
 
      <param>
         ...
-        <calc_springs=1>
+        <calc_ctforces=1>
         ...
      </param>
      <system>
@@ -26,7 +27,7 @@ in the input .ffea file. In addition to that, ` <system> ` has to include
         </blob>
         <interactions>
            <ctforces>
-              <springs_fname=myspringsfile.ctforces>
+              <ctforces_fname=myspringsfile.ctforces>
            </ctforces>
         </interactions>
      </system>
