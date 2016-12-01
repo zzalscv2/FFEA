@@ -26,7 +26,7 @@ template <class t_scalar,class brr3> t_scalar maxVolume(int ips, brr3 (&W)[56]){
   brr3 c; 
   arr3Initialise(c); 
   for (int i=0; i<ips; i++){
-    arr3arr3Add(c, W[i], c); 
+    arr3arr3Add<t_scalar,brr3>(c, W[i], c); 
   } 
   t_scalar s = 1./ips; 
   arr3Resize<t_scalar,brr3>(s, c);
@@ -50,7 +50,7 @@ template <class t_scalar,class brr3> void maxVolumeAndArea(int ips, brr3 (&W)[56
   brr3 c; 
   arr3Initialise(c); 
   for (int i=0; i<ips; i++){
-    arr3arr3Add(c, W[i], c); 
+    arr3arr3Add<t_scalar,brr3>(c, W[i], c); 
   } 
   t_scalar s = 1./ips; 
   arr3Resize<t_scalar,brr3>(s, c);
@@ -95,7 +95,7 @@ template <class t_scalar,class brr3> void getBAndN_Order(brr3 (&tetA)[4], int n0
   //    tetA[n2] and n lay on the same side 
   //       of the line given by t = unit(tetA[n1] - tetA[n0])
   brr3 aux; 
-  arr3arr3Add(tetA[n0], n, aux); 
+  arr3arr3Add<t_scalar,brr3>(tetA[n0], n, aux); 
   if (!sameSideLine<t_scalar,brr3>(aux, tetA[n2], tetA[n1], tetA[n0])) arr3Resize<t_scalar,brr3>(ffea_const::mOne, n); 
   // if we write the function we save a call to substract 
 }
@@ -111,11 +111,11 @@ template <class t_scalar, class brr3> void getBAndN(brr3 (&tetA)[4], int n0, int
    // pl1 and pl2 are the unit vectors (tetA[n1] - tetA[n0]) and (tetA[n2] - tetA[n0]), 
    //   but t == pl1, so: 
    brr3 pl2, aux; 
-   arr3arr3Substract(tetA[n2], tetA[n0], pl2);
+   arr3arr3Substract<t_scalar,brr3>(tetA[n2], tetA[n0], pl2);
    // aux is a vector normal to the face:
-   arr3arr3VectorProduct(t, pl2, aux);
+   arr3arr3VectorProduct<t_scalar,brr3>(t, pl2, aux);
    arr3Normalise2<t_scalar,brr3>(aux, b);
-   arr3arr3Add(aux, tetA[n0], aux); 
+   arr3arr3Add<t_scalar,brr3>(aux, tetA[n0], aux); 
    // but it must be inwards, i. e., on the same side of the plane than n3. 
    int n3 = getMissingNode(n0, n1, n2); 
    t_scalar d = - arr3arr3DotProduct<t_scalar,brr3>(b, tetA[n0]);
@@ -130,7 +130,7 @@ template <class t_scalar, class brr3> void getBAndN(brr3 (&tetA)[4], int n0, int
   // or even better inline sameSide2, and check whether:
   //    tetA[n2] and n lay on the same side 
   //       of the line given by t = unit(tetA[n1] - tetA[n0])
-  arr3arr3Add(tetA[n0], n, aux);
+  arr3arr3Add<t_scalar,brr3>(tetA[n0], n, aux);
   if (!sameSideLine<t_scalar,brr3>(aux, tetA[n2], tetA[n1], tetA[n0])) arr3Resize<t_scalar,brr3>(ffea_const::mOne, n);
 
 }
@@ -162,16 +162,16 @@ template <class t_scalar, class brr3> t_scalar volumeForNode(brr3 (&tetA)[4], in
       cout << "node: " << node << " i: " << i << " j: " << j << endl; 
       cout << "ip: " << tetA[node][0] << ", " << tetA[node][1] << ", " << tetA[node][2] << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,t_i,aux); 
-      arr3arr3Add(tetA[node], aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(tetA[node], aux, aux); 
       cout << "t: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,b_j,aux); 
-      arr3arr3Add(tetA[node], aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(tetA[node], aux, aux); 
       cout << "ip: " << tetA[node][0] << ", " << tetA[node][1] << ", " << tetA[node][2] << endl; 
       cout << "b: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,n_j,aux); 
-      arr3arr3Add(tetA[node], aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(tetA[node], aux, aux); 
       cout << "ip: " << tetA[node][0] << ", " << tetA[node][1] << ", " << tetA[node][2] << endl; 
       cout << "n: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
@@ -273,7 +273,7 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
        //   T[1] has to point towards... 
        int e4 = getMissingNode(i, e1, e2);
        brr3 vaux;
-       arr3arr3Add(ip, T[cnt], vaux);
+       arr3arr3Add<t_scalar,brr3>(ip, T[cnt], vaux);
        if (!sameSidePlane<t_scalar,brr3>( vaux , tetA[i], tetA[e4], tetA[e1], tetA[e2])) 
                  arr3Resize<t_scalar,brr3>(ffea_const::mOne, T[cnt]);
      }
@@ -287,16 +287,16 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
   faceCentroid(tetB[f1], tetB[f2], tetB[f3], C[0]);
   faceCentroid(tetA[e1], tetA[e2], tetA[F[0]], C[1]);
   faceCentroid(tetA[e1], tetA[e2], tetA[F[1]], C[2]);
-  arr3arr3Add(C[0], B[0], aux); 
+  arr3arr3Add<t_scalar,brr3>(C[0], B[0], aux); 
   cout << "C: " << C[0][0] << ", " << C[0][1] << ", " << C[0][2] << endl; 
   cout << "B: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
   cout << endl << endl; 
 
-  arr3arr3Add(C[1], B[1], aux); 
+  arr3arr3Add<t_scalar,brr3>(C[1], B[1], aux); 
   cout << "C: " << C[1][0] << ", " << C[1][1] << ", " << C[1][2] << endl; 
   cout << "B: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
   cout << endl << endl; 
-  arr3arr3Add(C[2], B[2], aux); 
+  arr3arr3Add<t_scalar,brr3>(C[2], B[2], aux); 
   cout << "C: " << C[2][0] << ", " << C[2][1] << ", " << C[2][2] << endl; 
   cout << "B: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
   cout << endl << endl; 
@@ -304,7 +304,7 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
   ///////////////////////////
   /*
   for (int i=0; i<3; i++) { 
-    arr3arr3Add(ip, T[i], aux); 
+    arr3arr3Add<t_scalar,brr3>(ip, T[i], aux); 
     cout << "P: " << ip[0] << " " << ip[1] << " " << ip[2] << endl; 
     cout << "T: " << aux[0] << " " << aux[1] << " " << aux[2] << endl; 
     cout << endl << endl; 
@@ -328,23 +328,23 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
       // and we'll check whether n lays on the same side as tetA[F[i]]
       //    of the line given by T[0] = unit(tetA[e2] - tetA[e1])
       brr3 vaux;
-      arr3arr3Add(ip, n, vaux);
+      arr3arr3Add<t_scalar,brr3>(ip, n, vaux);
       if (!sameSideLine<t_scalar,brr3>(vaux, tetA[F[i]], tetA[e2], tetA[e1])) arr3Resize<t_scalar,brr3>(ffea_const::mOne, n); 
       /////////////////
       /*// CHECK ! // 
       brr3 aux; 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,T[0],aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "t: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,B[i+1],aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       cout << "b: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,n,aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       cout << "n: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
@@ -359,8 +359,8 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
    //           - or face tet[e1]->tet[e2];
    //
    brr3 V[3];
-   arr3arr3Add(ip, T[1], V[0]);
-   arr3arr3Add(ip, T[2], V[1]);
+   arr3arr3Add<t_scalar,brr3>(ip, T[1], V[0]);
+   arr3arr3Add<t_scalar,brr3>(ip, T[2], V[1]);
    for (int i=0; i<3; i++) V[2][i] = V[0][i]; 
    for (int i=0; i<2; i++) {
       // First T[i+1] with B[0];
@@ -369,7 +369,7 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
       // and we'll check whether n lays on the same side as tetA[F[i+1]] 
       //    of the line given by R(t) = ip + T[i]*t  
       brr3 v;
-      arr3arr3Add(ip, n, v);
+      arr3arr3Add<t_scalar,brr3>(ip, n, v);
       if (!sameSideLine<t_scalar,brr3>(v, V[i+1], V[i], ip)) arr3Resize<t_scalar,brr3>(ffea_const::mOne, n); 
       volume += ipT[i+1] * arr3arr3DotProduct<t_scalar,brr3>(ip, n) * ipB[0];   
 
@@ -378,16 +378,16 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
       brr3 aux; 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,T[i+1],aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "t: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,B[0],aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       cout << "b: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,n,aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       cout << "n: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
@@ -405,16 +405,16 @@ template <class t_scalar, class brr3> t_scalar volumeForIntPoint(brr3 &ip, brr3 
       brr3 aux; 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,T[i+1],aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "t: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,B[i+1],aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       cout << "b: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
       arr3Resize2<t_scalar,brr3>(ffea_const::ten,n,aux); 
-      arr3arr3Add(ip, aux, aux); 
+      arr3arr3Add<t_scalar,brr3>(ip, aux, aux); 
       cout << "ip: " << ip[0] << ", " << ip[1] << ", " << ip[2] << endl; 
       cout << "n: " << aux[0] << ", " << aux[1] << ", " << aux[2] << endl; 
       cout << endl << endl; 
@@ -486,7 +486,7 @@ template <class t_scalar, class brr3> void volumeAndAreaForIntPoint(brr3 &ip, br
        //   T[1] has to point towards... 
        int e4 = getMissingNode(i, e1, e2);
        brr3 vaux;
-       arr3arr3Add(ip, T[cnt], vaux);
+       arr3arr3Add<t_scalar,brr3>(ip, T[cnt], vaux);
        if (!sameSidePlane<t_scalar,brr3>( vaux , tetA[i], tetA[e4], tetA[e1], tetA[e2])) 
                  arr3Resize<t_scalar,brr3>(ffea_const::mOne, T[cnt]);
      }
@@ -507,7 +507,7 @@ template <class t_scalar, class brr3> void volumeAndAreaForIntPoint(brr3 &ip, br
       // and we'll check whether n lays on the same side as tetA[F[i]]
       //    of the line given by T[0] = unit(tetA[e2] - tetA[e1])
       brr3 vaux;
-      arr3arr3Add(ip, n, vaux);
+      arr3arr3Add<t_scalar,brr3>(ip, n, vaux);
       if (!sameSideLine<t_scalar,brr3>(vaux, tetA[F[i]], tetA[e2], tetA[e1])) arr3Resize<t_scalar,brr3>(ffea_const::mOne, n); 
       t_scalar ipT_ipN = ipT[0] * arr3arr3DotProduct<t_scalar,brr3>(ip, n);
       area += ipT_ipN; 
@@ -520,8 +520,8 @@ template <class t_scalar, class brr3> void volumeAndAreaForIntPoint(brr3 &ip, br
    //           - or face tet[e1]->tet[e2];
    //
    brr3 V[3];
-   arr3arr3Add(ip, T[1], V[0]);
-   arr3arr3Add(ip, T[2], V[1]);
+   arr3arr3Add<t_scalar,brr3>(ip, T[1], V[0]);
+   arr3arr3Add<t_scalar,brr3>(ip, T[2], V[1]);
    for (int i=0; i<3; i++) V[2][i] = V[0][i]; 
    for (int i=0; i<2; i++) {
       // First T[i+1] with B[0];
@@ -530,7 +530,7 @@ template <class t_scalar, class brr3> void volumeAndAreaForIntPoint(brr3 &ip, br
       // and we'll check whether n lays on the same side as tetA[F[i+1]] 
       //    of the line given by R(t) = ip + T[i]*t  
       brr3 v;
-      arr3arr3Add(ip, n, v);
+      arr3arr3Add<t_scalar,brr3>(ip, n, v);
       if (!sameSideLine<t_scalar,brr3>(v, V[i+1], V[i], ip)) arr3Resize<t_scalar,brr3>(ffea_const::mOne, n); 
       t_scalar ipT_ipN = ipT[i+1] * arr3arr3DotProduct<t_scalar,brr3>(ip, n);
       area += ipT_ipN; 
@@ -562,7 +562,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
     // if point tetA[i] is inside tetB -> account for its contribution. 
     if (!exists<t_scalar,brr3>(tetA[i], ips, W) && nodeInTet<t_scalar,brr3>(tetA[i], tetB)) { 
       // cout << "tetA-node[" << i << "] found int tetB " << endl; 
-      arr3Store(tetA[i], W[ips]);
+      arr3Store<t_scalar,brr3>(tetA[i], W[ips]);
       ips += 1; 
       vol += volumeForNode<t_scalar,brr3>(tetA, i);
     } 
@@ -570,7 +570,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
     // PENDING: what happens if a node belongs to both tetA and tetB? 
     if (!exists<t_scalar,brr3>(tetB[i], ips, W) && nodeInTet<t_scalar,brr3>(tetB[i], tetA)) { 
       // cout << "tetB-node[" << i << "] found int tetA " << endl; 
-      arr3Store(tetB[i], W[ips]);
+      arr3Store<t_scalar,brr3>(tetB[i], W[ips]);
       ips += 1;
       vol += volumeForNode<t_scalar,brr3>(tetB, i);
     } 
@@ -590,7 +590,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
              << "face tetB[0]:tetB[1]:tetB[2] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           vol += volumeForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 0, 1, 2); 
         } 
@@ -600,7 +600,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
              << "face tetB[1]:tetB[2]:tetB[3] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           vol += volumeForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 1, 2, 3); 
         } 
@@ -610,7 +610,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
              << "face tetB[2]:tetB[3]:tetB[0] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           vol += volumeForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 2, 3, 0); 
         }
@@ -620,7 +620,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
              << "face tetB[3]:tetB[0]:tetB[1] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           vol += volumeForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 3, 0, 1); 
         }
@@ -632,7 +632,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
              << "face tetA[0]:tetA[1]:tetA[2] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           vol += volumeForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 0, 1, 2); 
         }
@@ -642,7 +642,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
              << "face tetA[1]:tetA[2]:tetA[3] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           vol += volumeForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 1, 2, 3); 
         }
@@ -652,7 +652,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
              << "face tetA[2]:tetA[3]:tetA[0] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           vol += volumeForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 2, 3, 0); 
         }
@@ -662,7 +662,7 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
              << "face tetA[3]:tetA[0]:tetA[1] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           vol += volumeForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 3, 0, 1); 
         }
@@ -703,7 +703,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
     // if point tetA[i] is inside tetB -> account for its contribution. 
     if (!exists<t_scalar,brr3>(tetA[i], ips, W) && nodeInTet<t_scalar,brr3>(tetA[i], tetB)) { 
       // cout << "tetA-node[" << i << "] found int tetB " << endl; 
-      arr3Store(tetA[i], W[ips]);
+      arr3Store<t_scalar,brr3>(tetA[i], W[ips]);
       ips += 1; 
       volumeAndAreaForNode<t_scalar,brr3>(tetA, i, v_aux, a_aux); 
       vol += v_aux;
@@ -713,7 +713,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
     // PENDING: what happens if a node belongs to both tetA and tetB? 
     if (!exists<t_scalar,brr3>(tetB[i], ips, W) && nodeInTet<t_scalar,brr3>(tetB[i], tetA)) { 
       // cout << "tetB-node[" << i << "] found int tetA " << endl; 
-      arr3Store(tetB[i], W[ips]);
+      arr3Store<t_scalar,brr3>(tetB[i], W[ips]);
       ips += 1;
       volumeAndAreaForNode<t_scalar,brr3>(tetB, i, v_aux, a_aux); 
       vol += v_aux;
@@ -735,7 +735,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
              << "face tetB[0]:tetB[1]:tetB[2] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           volumeAndAreaForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 0, 1, 2, v_aux, a_aux); 
           vol += v_aux; 
@@ -747,7 +747,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
              << "face tetB[1]:tetB[2]:tetB[3] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           volumeAndAreaForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 1, 2, 3, v_aux, a_aux); 
           vol += v_aux; 
@@ -759,7 +759,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
              << "face tetB[2]:tetB[3]:tetB[0] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           volumeAndAreaForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 2, 3, 0, v_aux, a_aux); 
           vol += v_aux; 
@@ -771,7 +771,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
              << "face tetB[3]:tetB[0]:tetB[1] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           volumeAndAreaForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 3, 0, 1, v_aux, a_aux); 
           vol += v_aux; 
@@ -785,7 +785,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
              << "face tetA[0]:tetA[1]:tetA[2] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           volumeAndAreaForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 0, 1, 2, v_aux, a_aux); 
           vol += v_aux;
@@ -797,7 +797,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
              << "face tetA[1]:tetA[2]:tetA[3] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           volumeAndAreaForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 1, 2, 3, v_aux, a_aux); 
           vol += v_aux;
@@ -809,7 +809,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
              << "face tetA[2]:tetA[3]:tetA[0] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           volumeAndAreaForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 2, 3, 0, v_aux, a_aux); 
           vol += v_aux;
@@ -821,7 +821,7 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
              << "face tetA[3]:tetA[0]:tetA[1] " << endl; 
         cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
         if (!exists<t_scalar,brr3>(ip, ips, W)) {
-          arr3Store(ip, W[ips]);
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
           ips +=1;
           volumeAndAreaForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 3, 0, 1, v_aux, a_aux); 
           vol += v_aux;

@@ -118,8 +118,8 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
 
     // arr3Resize(vol, force1);  // the provious volume force
     // Force is proportional to the surface area of this volume:
-    arr3Resize(scalar(-dVdr), force2);
-    arr3Resize2(ffea_const::mOne, force2, force1);
+    arr3Resize<scalar,arr3>(scalar(-dVdr), force2);
+    arr3Resize2<scalar,arr3>(ffea_const::mOne, force2, force1);
 
     for (int j = 0; j < 3; j++) {
       f1->add_force_to_node(j, force1);
@@ -251,8 +251,8 @@ void Steric_solver::do_interaction(Face *f1, Face *f2, scalar * blob_corr){
 
     // arr3Resize(vol, force1);  // the provious volume force
     // Force is proportional to the surface area of this volume:
-    arr3Resize(scalar(-dVdr), force2);
-    arr3Resize2(ffea_const::mOne, force2, force1);
+    arr3Resize<scalar,arr3>(scalar(-dVdr), force2);
+    arr3Resize2<scalar,arr3>(ffea_const::mOne, force2, force1);
 
     for (int j = 0; j < 3; j++) {
       f1->add_force_to_node(j, force1);

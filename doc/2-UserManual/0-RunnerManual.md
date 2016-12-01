@@ -29,7 +29,7 @@ The following pages describe the gory details to run FFEA simulations:
 - @subpage restraints
 - @subpage kineticApproach
 - @subpage fmApproach
+- @subpage ctforces
 - @subpage ioFiles
 - @subpage keywordReference
-- @subpage ctforces
 
