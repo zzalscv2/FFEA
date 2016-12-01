@@ -145,8 +145,9 @@ public:
      * Calculates and returns the centroid of this Blob
      */
     void get_centroid(vector3 *com);
+    vector3 calc_centroid();
 
-    void set_rmsd_pos_0();
+    void set_pos_0();
     void kinetically_set_faces(bool state);
     /**
      * Writes a new node file for the case of an initially translated STATIC blob, so viewer doesn't read straight from node file
@@ -502,7 +503,7 @@ private:
 
     //@{
     /** Geometries */
-    vector3 CoM, CoG;
+    vector3 CoM, CoG, CoM_0, CoG_0;
     scalar rmsd;
     //@}
 

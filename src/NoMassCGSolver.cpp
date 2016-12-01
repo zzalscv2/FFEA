@@ -136,6 +136,7 @@ int NoMassCGSolver::solve(vector3* x) {
     V->build();
     V->calc_inverse_diagonal(preconditioner);
     //V->print_dense_to_file(x);
+    //exit(0);
     int i = 0;
     scalar delta_new, delta_old, pTq, alpha;
     delta_new = conjugate_gradient_residual_assume_x_zero(x);
@@ -150,9 +151,11 @@ int NoMassCGSolver::solve(vector3* x) {
 
         // Once convergence is achieved, return
         if (residual2() < epsilon2) {
+	    //cout << residual2() << " " << epsilon2 << endl;
+	    //exit(0);
             return FFEA_OK;
         }
-
+	//cout << residual2() << " " << epsilon2 << endl;
         delta_old = delta_new;
         delta_new = parallel_apply_preconditioner();
         vec3_scale_and_add(p, z, (delta_new / delta_old), num_nodes);
