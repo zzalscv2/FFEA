@@ -178,6 +178,16 @@ template <class t_scalar, class brr3> t_scalar detByRows(arr3_view<t_scalar,brr3
 
 }
 
+template <class t_scalar, class brr3> t_scalar detByCols(arr3_view<t_scalar,brr3> a, arr3_view<t_scalar,brr3> b, arr3_view<t_scalar,brr3> c){
+
+  t_scalar det = 0;
+  det  = a[0] * (b[1] * c[2] - b[2] * c[1]);
+  det += b[0] * (c[1] * a[2] - c[2] * a[1]);
+  det += c[0] * (a[1] * b[2] - a[2] * b[1]);
+  return det; 
+
+}
+
 
 
 
@@ -647,8 +657,8 @@ template void arr3Initialise<arr3>(arr3 &v);
 //template void arr3Initialise<grr3>(grr3 &v);
 
 template scalar detByRows<scalar,arr3>(arr3_view<scalar,arr3> a, arr3_view<scalar,arr3> b, arr3_view<scalar,arr3> c);
-// template scalar detByRows<scalar,arr3>(arr3 &a, arr3 &b, arr3 &c);
 
+template scalar detByCols<scalar,arr3>(arr3_view<scalar,arr3> a, arr3_view<scalar,arr3> b, arr3_view<scalar,arr3> c);
 
 
 
