@@ -239,6 +239,13 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         calculate_node_element_connectivity();
         printf("\t\tdone\n");
 
+	// Run a check on parameters that are dependent upon the solver type
+	if(params->calc_stokes == 0 && (params->calc_springs == 1 || params->calc_ctforces == 1)) {
+		if(linear_solver == FFEA_NOMASS_CG_SOLVER) {
+			FFEA_ERROR_MESSG("For Blob %d, Conformation %d:\n\tSprings / Constant forces cannot be used with the CG_nomass solver if calc_stokes == 0\n\tThis constitutes an inertial system that cannot be solved our matrix inversion algorithms.\n\tPlease set calc_stokes = 1 and re-run the system :)\n", blob_index, conformation_index)
+		}				
+	}
+
         // Create the chosen linear equation Solver for this Blob
         if (linear_solver == FFEA_DIRECT_SOLVER) {
             solver = new SparseSubstitutionSolver();
@@ -779,7 +786,7 @@ vector3 Blob::position(scalar x, scalar y, scalar z) {
     vector3 v;
     // scalar dx, dy, dz;
 
-    // Calculate centroid of [SURFACE] Blob mesh
+    // Calculate centroid of entire Blob mesh
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(shared) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
 #endif
@@ -872,6 +879,24 @@ void Blob::get_centroid(vector3 *com) {
     com->z /= num_nodes;
 }
 
+// This one returns an array rather than arsing about with pointers
+vector3 Blob::calc_centroid() {
+
+   vector3 com;
+   com.x = 0.0;	
+   com.y = 0.0;
+   com.z = 0.0;
+   for (int n = 0; n < num_nodes; n++) {
+        com.x += node[n].pos.x;
+        com.y += node[n].pos.y;
+        com.z += node[n].pos.z;
+   }
+   com.x /= num_nodes;
+   com.y /= num_nodes;
+   com.z /= num_nodes;
+   return com;
+}
+
 vector3 ** Blob::get_actual_node_positions() {
 	return node_position;
 }
@@ -894,12 +919,23 @@ void Blob::set_node_positions(vector3 *node_pos) {
     	}
 }
 
-void Blob::set_rmsd_pos_0() {
+void Blob::set_pos_0() {
+
+    CoG_0.x = 0.0;
+    CoG_0.y = 0.0;
+    CoG_0.z = 0.0;
     for (int i = 0; i < num_nodes; i++) {
         node[i].pos_0.x = node[i].pos.x;
         node[i].pos_0.y = node[i].pos.y;
         node[i].pos_0.z = node[i].pos.z;
+	CoG_0.x += node[i].pos_0.x;
+	CoG_0.y += node[i].pos_0.y;
+	CoG_0.z += node[i].pos_0.z;
     }
+    CoG_0.x /= num_nodes;
+    CoG_0.y /= num_nodes;
+    CoG_0.z /= num_nodes;
+
 }
 
 void Blob::kinetically_set_faces(bool state) {
@@ -1217,9 +1253,9 @@ void Blob::make_measurements() {
         }
 
         /* Calculate RMSD value for this configuration */
-#ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) reduction(+:brmsd, cogx, cogy, cogz) private(i, temp1, temp2, temp3)
-#endif
+//#ifdef FFEA_PARALLEL_WITHIN_BLOB
+//#pragma omp parallel for default(none) reduction(+:brmsd, cogx, cogy, cogz) private(i, temp1, temp2, temp3)
+//#endif
         for (i = 0; i < num_nodes; i++) {
 
 	    /*
@@ -1228,16 +1264,32 @@ void Blob::make_measurements() {
 	    cogx += node[i].pos.x;
 	    cogy += node[i].pos.y;
 	    cogz += node[i].pos.z;
-
-            temp1 = node[i].pos.x - node[i].pos_0.x;
-            temp2 = node[i].pos.y - node[i].pos_0.y;
-            temp3 = node[i].pos.z - node[i].pos_0.z;
-            brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
+	    
         }
-	rmsd = sqrt(brmsd / num_nodes);
 	CoG.x = cogx / num_nodes;
 	CoG.y = cogy / num_nodes;
 	CoG.z = cogz / num_nodes;
+
+	// Remove translation and rotation (maybe make optional in future)
+	bool remTrans = false;
+	bool remRot = true;
+	
+	if(remTrans) {
+		for(i = 0; i < num_nodes; ++i) {
+		    temp1 = node[i].pos.x - node[i].pos_0.x + CoG_0.x - CoG.x;
+        	    temp2 = node[i].pos.y - node[i].pos_0.y + CoG_0.y - CoG.y;
+        	    temp3 = node[i].pos.z - node[i].pos_0.z + CoG_0.z - CoG.z;
+        	    brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
+		}
+	} else {
+		for(i = 0; i < num_nodes; ++i) {
+		    temp1 = node[i].pos.x - node[i].pos_0.x;
+        	    temp2 = node[i].pos.y - node[i].pos_0.y;
+        	    temp3 = node[i].pos.z - node[i].pos_0.z;
+        	    brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
+		}
+	}
+	rmsd = sqrt(brmsd / num_nodes);
 	L.x = lx;
 	L.y = ly;
 	L.z = lz;

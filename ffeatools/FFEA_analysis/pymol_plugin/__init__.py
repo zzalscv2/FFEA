@@ -457,6 +457,15 @@ class FFEA_viewer_control_window:
 	#	else:
 	#		pass
 
+	#
+	# Print info for the user that won't be deleted from the command line by the trajectory loading
+	#
+	if self.script.params.calc_springs == 0:
+		for b in self.script.blob:
+			if b.solver == "CG_nomass":
+				print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
+				break
+				
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]

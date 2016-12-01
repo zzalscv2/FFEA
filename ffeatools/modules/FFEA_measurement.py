@@ -22,7 +22,7 @@ class FFEA_measurement:
 		# Test what type of file it is
 		if not path.exists(fname):
 			print("\tFile '" + fname + "' not found.")
-			return
+			raise IOError
 		
 		fin = open(fname, "r")
 		line = fin.readline().strip()
@@ -42,8 +42,7 @@ class FFEA_measurement:
 				self.load_detailed(dfname, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read)
 			
 		except:
-			self.reset()
-			return
+			raise
 	
 	def load_global(self, fname, frame_rate = 1, num_frames_to_read = 1000000):
 
