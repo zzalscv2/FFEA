@@ -11,7 +11,8 @@ Blob::Blob() {
     num_elements = 0;
     num_surface_faces = 0;
     num_beads = 0;
-    num_ctf = 0; 
+    num_l_ctf = 0; 
+    num_r_ctf = 0; 
     num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
@@ -96,12 +97,25 @@ Blob::~Blob() {
     }
 
     /* delete ctforces stuff */
-    if (num_ctf > 0) {
-      num_ctf = 0;
-      delete[] ctf_nodes;
-      ctf_nodes = NULL;
-      delete[] ctf_forces;
-      ctf_forces = NULL;
+    //  first linear:
+    if (num_l_ctf > 0) {
+      num_l_ctf = 0;
+      delete[] ctf_l_nodes;
+      ctf_l_nodes = NULL;
+      delete[] ctf_l_forces;
+      ctf_l_forces = NULL;
+    } 
+    // and then rotational:
+    if (num_r_ctf > 0) {
+      num_r_ctf = 0;
+      delete[] ctf_r_nodes;
+      ctf_r_nodes = NULL;
+      delete[] ctf_r_forces;
+      ctf_r_forces = NULL;
+      delete[] ctf_r_axis;
+      ctf_r_axis = NULL;
+      delete[] ctf_r_type;
+      ctf_r_type = NULL;
     } 
 
     /* Set relevant data to zero */
@@ -458,6 +472,52 @@ int Blob::update() {
     if(num_pinned_nodes == num_nodes) {
         return FFEA_OK;
     }
+
+    // // // // // START CTF // // // // // // 
+    // CTF 1 - Add the linear constant forces, stored in ctf_force.
+    // If there are no forces, num_l_ctf will be zero. 
+    for (int i=0; i<num_l_ctf; i++) {
+      force[ctf_l_nodes[i]].x += ctf_l_forces[3*i  ];
+      force[ctf_l_nodes[i]].y += ctf_l_forces[3*i+1];
+      force[ctf_l_nodes[i]].z += ctf_l_forces[3*i+2];
+    } 
+    // CTF 2 - Add the rotational forces: 
+    for (int i=0; i<num_r_ctf; i++){ 
+      // 2.1 - get the axis: 
+      arr3 r, f;
+      scalar rsize; 
+      // 2.1.1 - if it is defined by points:
+      if (ctf_r_type[2*i] == 'p') { 
+        // get r, and its length rsize
+        intersectingPointToLine<scalar,arr3>(node[ctf_r_nodes[i]].pos,// point out of the line
+                          arr3_view<scalar,arr3>(ctf_r_axis+6*i, 3), //  point
+                          arr3_view<scalar,arr3>(ctf_r_axis+(6*i+3), 3), r); // vector, axis
+        arr3Vec3SubsToArr3(r, node[ctf_r_nodes[i]].pos, r);
+      } /* else if (ctf_l_type[2*i] == 'n') {
+        // not working yet!
+        that should read:
+        axis[0] = blob[ctf_r_axis[6*i + 3]].conf[ctf_r_axis[6*i + 4]].node[ctf_r_axis[6*i + 5]]->pos.x -  
+                  blob[ctf_r_axis[6*i + 0]].conf[ctf_r_axis[6*i + 1]].node[ctf_r_axis[6*i + 2]]->pos.x
+        axis[1] =  ...
+        axis[2] =  ...
+        arr3Normalize(axis); 
+        // We do not have this information in "Blob"!!
+      } */
+      arr3arr3VectorProduct<scalar,arr3>(r, arr3_view<scalar,arr3>(ctf_r_axis+(6*i+3), 3), f);
+      // 2.2.a - apply a constant circular force:
+      if ( ctf_r_type[2*i + 1] == 'f' ) {
+         arr3Resize<scalar,arr3>(ctf_r_forces[i], f); 
+      // 2.2.b - apply a constant torque: 
+      } else if (ctf_r_type[2*i + 1] == 't') {
+         rsize = mag<scalar,arr3>(r); 
+         arr3Resize<scalar,arr3>(ctf_r_forces[i]/rsize, f); 
+      } 
+      force[ctf_r_nodes[i]].x += f[0];
+      force[ctf_r_nodes[i]].y += f[1];
+      force[ctf_r_nodes[i]].z += f[2];
+    } 
+    // // // // // END CTF // // // // // // 
+
 
     /* some "work" variables */
     matrix3 J; // Holds the Jacobian calculated for the *current* element being processed
@@ -2625,15 +2685,18 @@ int Blob::load_ctforces(string ctforces_fname){
 
    FFEA_input_reader reader; 
    vector<string> ctforces_lines, line_split;
-	int n_ctforces = 0;
+	int n_ctforces = 0;  // total number of forces in the input file.
+	int n_ct_lforces = 0; // total number of linear forces in the input file 
+	int n_ct_rforces = 0; // total number of rotational forces in the input file 
+
    // read the input file, taking out comments as <!-- --> 
    //  and put it into the ctforces_lines vector of strings:
    reader.file_to_lines(ctforces_fname, &ctforces_lines);
 
 
-   // Check the header:
+   // 1 - READ AND CHECK THE HEADER:
    //   Check 1:
-   if (ctforces_lines.size() < 3) {
+   if (ctforces_lines.size() < 4) {
      FFEA_ERROR_MESSG("ctforces_fname '%s' is too short, something is wrong\n", ctforces_fname.c_str());
      return FFEA_ERROR;
    } 
@@ -2644,18 +2707,61 @@ int Blob::load_ctforces(string ctforces_fname){
      FFEA_ERROR_MESSG("ctforces_fname '%s' header is wrong, aborting\n", ctforces_fname.c_str());
      return FFEA_ERROR;
    } 
-   // And get the number of ctforces, safely:
+   // And get the total number of ctforces, safely:
    try {
       n_ctforces = boost::lexical_cast<int>(line_split[1]);
    } catch (boost::bad_lexical_cast) {
       FFEA_ERROR_MESSG("Invalid number of ctforces read: %s\n", line_split[1].c_str());
       return FFEA_ERROR;
    }
+   //   Check 3:
+   boost::split(line_split, ctforces_lines[2], boost::is_any_of(" \t"));
+   if (line_split[0] != "num_linear_forces") {
+     cout << " read: " << line_split[0] << endl; 
+     FFEA_ERROR_MESSG("ctforces_fname '%s' header is wrong, aborting\n", ctforces_fname.c_str());
+     return FFEA_ERROR;
+   } 
+   // And get the number of linear constant forces, safely:
+   try {
+      n_ct_lforces = boost::lexical_cast<int>(line_split[1]);
+   } catch (boost::bad_lexical_cast) {
+      FFEA_ERROR_MESSG("Invalid number of constant linear forces read: %s\n", line_split[1].c_str());
+      return FFEA_ERROR;
+   }
+   //   Check 4:
+   boost::split(line_split, ctforces_lines[3], boost::is_any_of(" \t"));
+   if (line_split[0] != "num_rot_forces") {
+     cout << " read: " << line_split[0] << endl; 
+     FFEA_ERROR_MESSG("ctforces_fname '%s' header is wrong, aborting\n", ctforces_fname.c_str());
+     return FFEA_ERROR;
+   } 
+   // And get the number of rotational ``constant'' forces, safely:
+   try {
+      n_ct_rforces = boost::lexical_cast<int>(line_split[1]);
+   } catch (boost::bad_lexical_cast) {
+      FFEA_ERROR_MESSG("Invalid number of constant linear forces read: %s\n", line_split[1].c_str());
+      return FFEA_ERROR;
+   }
+
    
-   // Now put the lines referring to this blob/conf into a vector,
+   // 2 - READ AND STORE THE LINEAR PART: 
+   // 2.1 - First the header: 
+   int now_reading = 4;
+   // check that we have a line saying "linear forces:"
+   if (ctforces_lines[now_reading].compare(0, 14, "linear forces:") != 0) {
+     // if not, and needed: ABORT.
+     if (n_ct_lforces > 0) {
+        FFEA_ERROR_MESSG("Wrong header; it should announce the start of linear ctforces, but instead read: %s\n", ctforces_lines[now_reading].c_str());
+        return FFEA_ERROR;
+     } 
+   } else {
+     now_reading += 1;
+   } 
+   
+   // 2.2 - Now put the lines referring to this blob/conf into a vector,
    //   and calculate the number of constant forces we're adding:
    vector<string> my_lines; 
-   for (int i=3; i<3+n_ctforces; i++) {
+   for (int i=now_reading; i<now_reading+n_ct_lforces; i++) {
      boost::split(line_split, ctforces_lines[i], boost::is_any_of(" \t"));
      // at least check the length of the line:
      if (line_split.size() != 7) {
@@ -2667,38 +2773,144 @@ int Blob::load_ctforces(string ctforces_fname){
      int c_i = boost::lexical_cast<int>(line_split[5]); // read the conformation index
      if (c_i != conformation_index) continue;
      if (line_split[6].compare("all") == 0) {
-       num_ctf += num_nodes;
+       num_l_ctf += num_nodes;
      } else {
-       num_ctf += 1; 
+       num_l_ctf += 1; 
      } 
      my_lines.push_back(ctforces_lines[i]); 
    }
 
-   // And finally store the stuff properly:
-   ctf_nodes = new int[num_ctf];       // allocate nodes
-   ctf_forces = new scalar[3*num_ctf]; // allocate forces
+   if (num_l_ctf > 0) cout << num_l_ctf << " linear forces were loaded for blob " << blob_index << ":" << conformation_index << endl; 
+
+   // 2.3 - And finally store the stuff properly:
+   ctf_l_nodes = new int[num_l_ctf];       // allocate nodes
+   ctf_l_forces = new scalar[3*num_l_ctf]; // allocate forces
+   arr3 ctf_d; // direction of the force 
    int cnt = 0;
    for (int i=0; i<my_lines.size(); i++) {
      boost::split(line_split, my_lines[i], boost::is_any_of(" \t"));
      scalar F = boost::lexical_cast<scalar>(line_split[0]);
-     scalar x = boost::lexical_cast<scalar>(line_split[1]);
-	  scalar y = boost::lexical_cast<scalar>(line_split[2]);
-     scalar z = boost::lexical_cast<scalar>(line_split[3]);
-     scalar Fx = F * x / mesoDimensions::force;
-     scalar Fy = F * y / mesoDimensions::force;
-     scalar Fz = F * z / mesoDimensions::force;
+     ctf_d[0] = boost::lexical_cast<scalar>(line_split[1]);
+     ctf_d[1] = boost::lexical_cast<scalar>(line_split[2]);
+     ctf_d[2] = boost::lexical_cast<scalar>(line_split[3]);
+     arr3Normalise<scalar,arr3>(ctf_d);  // normalise the direction of the force.
+     scalar Fx = F * ctf_d[0] / mesoDimensions::force;
+     scalar Fy = F * ctf_d[1] / mesoDimensions::force;
+     scalar Fz = F * ctf_d[2] / mesoDimensions::force;
      if (line_split[6].compare("all") != 0) {
-       ctf_nodes[cnt] = boost::lexical_cast<int>(line_split[6]);
-       ctf_forces[3*cnt   ]  = Fx;
-       ctf_forces[3*cnt +1]  = Fy;
-       ctf_forces[3*cnt +2]  = Fz;
+       ctf_l_nodes[cnt] = boost::lexical_cast<int>(line_split[6]);
+       ctf_l_forces[3*cnt   ]  = Fx;
+       ctf_l_forces[3*cnt +1]  = Fy;
+       ctf_l_forces[3*cnt +2]  = Fz;
        cnt += 1;
      } else {
        for (int j=0; j<num_nodes; j++) {
-         ctf_nodes[cnt] = j;
-         ctf_forces[3*cnt   ]  = Fx;
-         ctf_forces[3*cnt +1]  = Fy;
-         ctf_forces[3*cnt +2]  = Fz;
+         ctf_l_nodes[cnt] = j;
+         ctf_l_forces[3*cnt   ]  = Fx;
+         ctf_l_forces[3*cnt +1]  = Fy;
+         ctf_l_forces[3*cnt +2]  = Fz;
+         cnt += 1;
+       }
+     } 
+   } 
+   
+
+
+   // 3 - READ AND STORE THE ROTATIONAL PART: 
+   //    ... or maybe not:
+   if (n_ct_rforces == 0) return FFEA_OK;
+   else if (num_r_ctf > 0) cout << num_l_ctf << " rotational forces were loaded for blob " << blob_index << ":" << conformation_index << endl; 
+   // 3.1 - First the header: 
+   now_reading = now_reading + n_ct_lforces;
+   // check that we have a line saying "rotational forces:"
+   if (ctforces_lines[now_reading].compare(0, 18, "rotational forces:") != 0) {
+     // if not, and needed: ABORT.
+     if (n_ct_rforces > 0) {
+        FFEA_ERROR_MESSG("Wrong header; it should announce the start of rotational ctforces, but instead read: %s\n", ctforces_lines[now_reading].c_str());
+        return FFEA_ERROR;
+     } 
+   } else {
+     now_reading += 1;
+   } 
+   
+   // 3.2 - Now put the lines referring to this blob/conf into a vector,
+   //   and calculate the number of rot constant forces we're adding:
+   my_lines.clear(); 
+   for (int i=now_reading; i<now_reading+n_ct_rforces; i++) {
+     boost::split(line_split, ctforces_lines[i], boost::is_any_of(" \t"));
+     // at least check the length of the line:
+     if (line_split.size() != 11) { // check length: 
+       FFEA_ERROR_MESSG("Invalid line in the ctforces file:\n \t %s\n", ctforces_lines[i].c_str());
+       return FFEA_ERROR;
+     } 
+     int b_i = boost::lexical_cast<int>(line_split[8]); // read the blob index
+     if (b_i != blob_index) continue;
+     int c_i = boost::lexical_cast<int>(line_split[9]); // read the conformation index
+     if (c_i != conformation_index) continue;
+     if (line_split[10].compare("all") == 0) {
+       num_r_ctf += num_nodes;
+     } else {
+       num_r_ctf += 1; 
+     } 
+     my_lines.push_back(ctforces_lines[i]); 
+   }
+
+   // 3.3 - And finally store the stuff properly:
+   arr3 ctf_p; // temporary point in the axis.
+   ctf_r_nodes = new int[num_r_ctf];       // allocate nodes
+   ctf_r_forces = new scalar[num_r_ctf]; // allocate forces
+   ctf_r_axis = new scalar[6*num_r_ctf]; // allocate axis
+   ctf_r_type = new char[2*num_r_ctf]; // allocate type of rotational force
+   const scalar mdfm1 = 1./mesoDimensions::force;
+   const scalar mdlm1 = 1./mesoDimensions::length;
+   cnt = 0; // reinitialise cnt
+   for (int i=0; i<my_lines.size(); i++) {
+     boost::split(line_split, my_lines[i], boost::is_any_of(" \t"));
+     scalar F = boost::lexical_cast<scalar>(line_split[0]) * mdfm1;
+     string type = line_split[1]; 
+     ctf_p[0] = boost::lexical_cast<scalar>(line_split[2]);
+	  ctf_p[1] = boost::lexical_cast<scalar>(line_split[3]);
+     ctf_p[2] = boost::lexical_cast<scalar>(line_split[4]);
+     ctf_d[0] = boost::lexical_cast<scalar>(line_split[5]);
+	  ctf_d[1] = boost::lexical_cast<scalar>(line_split[6]);
+     ctf_d[2] = boost::lexical_cast<scalar>(line_split[7]);
+     if (type.compare(0,1,"p") == 0) {    // store as point + direction:
+       arr3Normalise<scalar,arr3>(ctf_d);  //  and thus normalise.
+       cout << "read point: " << ctf_p[0] << ", " << ctf_p[1] << ", " << ctf_p[2] << endl; 
+       arr3Resize<scalar,arr3>(mdlm1, ctf_p);  // and rescale CTFPENDING: check!!! 
+       cout << "rescaled to: " << ctf_p[0] << ", " << ctf_p[1] << ", " << ctf_p[2] << endl; 
+     } else if (type.compare(0,1,"n")) { // otherwise store as pairs of nodes, or complain. 
+       FFEA_ERROR_MESSG("Invalid rotational force: %s, in line read: %s\n", type[0], my_lines[i].c_str());
+       return FFEA_ERROR;
+     }
+     if ((type.compare(1,1,"f")) and (type.compare(1,1,"t"))) { // check and store type force or torque
+       FFEA_ERROR_MESSG("Invalid rotational force type: %s, in line read: %s\n", type[1], my_lines[i].c_str());
+       return FFEA_ERROR;
+     } 
+     if (line_split[10].compare("all") != 0) {
+       ctf_r_nodes[cnt] = boost::lexical_cast<int>(line_split[10]);
+       ctf_r_forces[cnt]  = F;
+       ctf_r_axis[6*cnt    ] = ctf_p[0]; 
+       ctf_r_axis[6*cnt + 1] = ctf_p[1]; 
+       ctf_r_axis[6*cnt + 2] = ctf_p[2]; 
+       ctf_r_axis[6*cnt + 3] = ctf_d[0]; 
+       ctf_r_axis[6*cnt + 4] = ctf_d[1]; 
+       ctf_r_axis[6*cnt + 5] = ctf_d[2]; 
+       ctf_r_type[2*cnt    ] = type[0];
+       ctf_r_type[2*cnt + 1] = type[1];
+       cnt += 1;
+     } else {
+       for (int j=0; j<num_nodes; j++) {
+         ctf_r_nodes[cnt] = j;
+         ctf_r_forces[cnt]  = F;
+         ctf_r_axis[6*cnt    ] = ctf_p[0]; 
+         ctf_r_axis[6*cnt + 1] = ctf_p[1]; 
+         ctf_r_axis[6*cnt + 2] = ctf_p[2]; 
+         ctf_r_axis[6*cnt + 3] = ctf_d[0]; 
+         ctf_r_axis[6*cnt + 4] = ctf_d[1]; 
+         ctf_r_axis[6*cnt + 5] = ctf_d[2]; 
+         ctf_r_type[2*cnt    ] = type[0];
+         ctf_r_type[2*cnt + 1] = type[1];
          cnt += 1;
        }
      } 
@@ -3088,13 +3300,6 @@ int Blob::aggregate_forces_and_solve() {
         }
     }
 
-    // Add also the constant forces, stored in ctf_force.
-    // If there are no forces, num_ctf will be zero. 
-    for (int i=0; i<num_ctf; i++) {
-      force[ctf_nodes[i]].x += ctf_forces[3*i  ];
-      force[ctf_nodes[i]].y += ctf_forces[3*i+1];
-      force[ctf_nodes[i]].z += ctf_forces[3*i+2];
-    } 
 
     // Aggregate surface forces onto nodes
     for (n = 0; n < num_surface_faces; n++) {
