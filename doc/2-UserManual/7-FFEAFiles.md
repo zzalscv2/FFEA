@@ -211,22 +211,53 @@ Constant forces file: .ctforces {#ifctforces}
 ---------------------------------------------
 
 This file provides a list of nodes where a certain force is to be applied. 
- Besides the header, specifying the number of constant forces to take from 
- the input file, each line writes Force module (in ` N `), a unit vector
+ The forces can be linear or circular, and the header 
+ specifies the total number of constant forces to take from 
+ the input file, the number of linear forces and the number of circular forces.
+ Then, the file has a section on linear forces, and a file on circular forces, 
+ needed in this order but appearing only if the correspondent number of forces
+ is higher than zero. 
+
+In the linear forces section, 
+ each line writes Force module (in ` N `), a unit vector
  with the direction of the force, blob index, conformation index, and node 
  number ` or ` string all so that the same force is applied onto every on this 
- blob. Thus, a valid ` ctforces ` file with force 1e-9 applied onto 
- every node on blob 1 towards the z axis, and 3 nodes on blob 2 pushed 
- towards x would look like:
+ blob. 
+
+In the rotational forces section,
+ each line writes Force module (in ` N `), a two letter keyword 
+ (see later), a point and an axis, specifying the torque rotation axis,
+ and three integer specifying blob, conformation and node where the force 
+ is being applied. The first letter of the two-letter keyword specifies 
+ if the point given associated to the axis is given in Cartesian coordinates
+ (`p`) or as a triad ` blob `, `conf`, `node` (`n`, **NOT SUPPORTED YET**).
+ The second one 
+ specifies if the circular force is a torque (`t`) \f$\tau = r\times F\f$ or 
+ a constant force (`f`) \f$\tau = \hat{r}\times F\f$.
+
+
+Thus, a valid ` ctforces ` file with force 1e-9 `N` applied onto 
+ every node on blob 1 towards the z axis, 3 nodes on blob 2 pushed 
+ towards x would look like, and all the nodes of blob 0 suffering a 
+ torque resulting of a force with magnitude 1e-10 `N` around the 
+ axis going through point (-1.9e-9, -1.4313e-9, 8.911e-10) `m`
+ and direction (0,1,0) would look like:
 
 
     ffea ctforces file
-    num_ctforces 4
-    ctforces:
+    num_ctforces 5
+    num_linear_forces 4
+    num_rot_forces 1
+    linear forces:
     1e-9 0 0 1 1 0 all
     1e-9 1 0 0 2 0 104
     1e-9 1 0 0 2 0 134
     1e-9 1 0 0 2 0 152
+    rotational forces:
+    1e-10 pt -1.9e-9 -1.4313e-9 8.911e-10 0 1 0 0 0 all  <!-- node 1402 -->
+
+As in the main input FFEA file, XML comments are supported.
+
 
 
 
