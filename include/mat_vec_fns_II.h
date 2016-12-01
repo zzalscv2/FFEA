@@ -70,6 +70,9 @@ template <class brr3> void arr3Initialise(brr3 &v);
 /** calculate the determinant of a 3x3 matrix given by rows a, b, c */
 template <class t_scalar, class brr3> t_scalar detByRows(arr3_view<t_scalar,brr3> a, arr3_view<t_scalar,brr3> b, arr3_view<t_scalar,brr3> c); 
 
+/** calculate the determinant of a 3x3 matrix given by cols a, b, c */
+template <class t_scalar, class brr3> t_scalar detByCols(arr3_view<t_scalar,brr3> a, arr3_view<t_scalar,brr3> b, arr3_view<t_scalar,brr3> c); 
+
 
 ///////////////// SECTION 2 ////////////////////
 ///// Geometric  functions for arr3 types ////// 
