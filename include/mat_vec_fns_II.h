@@ -177,6 +177,10 @@ template <class t_scalar, class brr3> void intersectingPointToLine(vector3 &p0, 
  *    return the distance from p0, to this line. */
 template <class t_scalar, class brr3> t_scalar distanceFromPointToLine(arr3_view<t_scalar,brr3> p0, arr3_view<t_scalar,brr3> p1, arr3_view<t_scalar,brr3> p2);
 
+template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_scalar,brr3> p0, arr3_view<t_scalar,brr3> p1, arr3_view<t_scalar,brr3> p2, arr3_view<t_scalar,brr3> p3);
+
+void getLocalCoordinatesForLinTet(arr3_view<scalar,arr3> t0, arr3_view<scalar,arr3> t1, arr3_view<scalar,arr3> t2, arr3_view<scalar,arr3> t3, arr3_view<scalar,arr3> p, arr4 phi);
+
 ///////////////// SECTION 3 ////////////////////
 //// Transition functions from vector3 to arr3 // 
 ////////////////////////////////////////////////
