@@ -170,7 +170,7 @@ class FFEA_viewer_control_window:
      ## # Add Supportive Fake Atoms (SFA) box # #
      label_sfa = Label(display_flags_frame, text="Add Atoms:")
      label_sfa.grid(row=7, column=0, sticky=E)
-     om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
+     om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
      om_load_sfa.grid(row=7, column=1, sticky=W)
 
 
