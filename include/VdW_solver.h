@@ -49,6 +49,7 @@ protected:
     virtual void do_interaction(Face *f1, Face *f2, scalar * blob_corr);
 
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
+    // static const scalar phi_f[4]; ///< shape function for the center of the "element"
 
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
 
