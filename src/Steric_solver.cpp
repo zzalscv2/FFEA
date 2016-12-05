@@ -34,12 +34,13 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
       }
     }
 
-    //  Then, check whether the tetrahedra intersect.
-    if (!f1->checkTetraIntersection(f2)) return;
+    //  Then, check whether the tetrahedra intersect, 
+    //    and if so, get the volume:
+    scalar vol = f1->checkTetraIntersectionAndGetVolume(f2); 
+    if ( vol < ffea_const::threeErr ) return; 
 
-
-    /* TRIAL 3 */ // choose the force line 
-                // as the line passing through the elements CMs.
+    // Choose the force line 
+    // as the line passing through the elements CMs.
     grr3 force1, force2, cm1, cm2; //, n1_b;
     arr3Initialise<grr3>(cm1); 
     arr3Initialise<grr3>(cm2); 
@@ -70,9 +71,6 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     arr3Normalise<scalar,arr3>(force1); // that is the direction of the force for f1 (backwards).
     */
 
-
-    // Finally, get the intersection volume:
-    scalar vol = steric_factor*f1->getTetraIntersectionVolume(f2);
 
     // Store the measurement
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;

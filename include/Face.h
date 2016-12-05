@@ -88,6 +88,15 @@ public:
       **/
     scalar getTetraIntersectionVolume(Face *f2);
 
+    /** Check whether the tetrahedron formed by this face an the opposite
+      *   linear node does intersect with the corresponding tetrahedron in f2.
+      * If so, return the overlapping volume, otherwise return 0.
+      * Uses the "Fast Tetrahedron-Tetrahedron Overlap Algorithm" for checking if 
+      *  interaction occurs. 
+      **/
+    scalar checkTetraIntersectionAndGetVolume(Face *f2);
+
+
         /** Get the volume that the enclose the intersection
       *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.
