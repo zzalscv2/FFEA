@@ -40,7 +40,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
 
     /* TRIAL 3 */ // choose the force line 
                 // as the line passing through the elements CMs.
-    grr3 force1, force2, cm1, cm2, r0; //, n1_b;
+    grr3 force1, force2, cm1, cm2; //, n1_b;
     arr3Initialise<grr3>(cm1); 
     arr3Initialise<grr3>(cm2); 
     for (int i=0; i<4; i++) { 
@@ -54,8 +54,6 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     arr3Resize<geoscalar,grr3>(0.25,cm1);
     arr3Resize<geoscalar,grr3>(0.25,cm2);
     arr3arr3Substract<geoscalar,grr3>(cm2, cm1, force2); 
-    arr3Resize2<geoscalar,grr3>(0.5,force2,r0); 
-    arr3arr3Add<geoscalar,grr3>(cm1, force2, r0); // get a certain r0
     arr3Normalise<geoscalar,grr3>(force2); // that is the direction of the force for f2 (backwards).
     
 
