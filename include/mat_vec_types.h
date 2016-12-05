@@ -48,6 +48,9 @@ typedef struct {
 typedef scalar arr3[3]; 
 typedef geoscalar grr3[3]; 
 
+typedef scalar arr4[4]; 
+typedef geoscalar grr4[4]; 
+
 /* // The following class will be a temporary replacement
     //   for the current vector3 struct so that we have some
     //   time to change from Whatever.x into Whatever[0] 
