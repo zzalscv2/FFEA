@@ -550,12 +550,11 @@ int SimulationParams::validate() {
 
     if (calc_vdw == 1) {
 
-      if (vdw_type != "lennard-jones" && vdw_type != "steric" &&
-          vdw_type != "stericX" && vdw_type != "ljsteric") {
+      if (vdw_type != "lennard-jones" && vdw_type != "steric" && vdw_type != "ljsteric") {
           FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'steric' (default), 'lennard-jones' or 'ljsteric' (both methods combined).\n");
       }
 
-      if (vdw_type != "steric" && vdw_type != "stericX") {
+      if (vdw_type != "steric") {
         if (vdw_in_fname_set == 0) {
             FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
         }
@@ -729,7 +728,7 @@ int SimulationParams::validate() {
     if(calc_kinetics == 1 && bsite_in_fname_set == 1) {
 	printf("\tbsite_in_fname = %s\n", bsite_in_fname.c_str());
     }
-    if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "stericX" || vdw_type == "ljsteric")) {
+    if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "ljsteric")) {
         printf("\tvdw_steric_factor = %e\n", vdw_steric_factor);
     }
     return FFEA_OK;

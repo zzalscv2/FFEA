@@ -10,7 +10,7 @@ int LJ_matrix::init(string vdw_params_fname, string vdw_type) {
     int err;
     // In that case we do not need an input parameter file, 
     //      but just to initialise a number of values
-    if (vdw_type == "steric" || vdw_type == "stericX") {
+    if (vdw_type == "steric") {
        err = init_steric(); 
     } else {
        err = init_lj(vdw_params_fname); 

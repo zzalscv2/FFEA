@@ -792,8 +792,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
               vdw_solver = new VdW_solver();
             else if (params.vdw_type == "steric")
               vdw_solver = new Steric_solver();
-            else if (params.vdw_type == "stericX")
-              vdw_solver = new Steric_solverX();
 	    else if (params.vdw_type == "ljsteric")
 	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL)
@@ -2396,7 +2394,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		            		blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
 
 				// Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
-				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "stericX" || params.vdw_type == "ljsteric")) {
+				if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
 					blob_array[i][j].add_steric_nodes();
 				}
 
