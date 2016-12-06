@@ -446,6 +446,7 @@ class FFEA_script_params():
 		self.calc_vdw = 1
 		self.calc_noise = 1
 		self.calc_springs = 0
+		self.calc_ctforces = 0
 		self.inc_self_vdw = 1
 		self.calc_preComp = 0
 		self.calc_es = 0
@@ -520,6 +521,8 @@ class FFEA_script_params():
 			self.calc_preComp = int(rvalue)
 		elif lvalue == "calc_springs":
 			self.calc_springs = int(rvalue)
+		elif lvalue == "calc_ctforces":
+			self.calc_ctforces = int(rvalue)
 		elif lvalue == "vdw_type":
 			self.vdw_type = rvalue
 		elif lvalue == "inc_self_vdw":
