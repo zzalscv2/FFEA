@@ -2814,7 +2814,7 @@ int Blob::load_ctforces(string ctforces_fname){
    //   and calculate the number of constant forces we're adding:
    vector<string> my_lines; 
    for (int i=now_reading; i<now_reading+n_ct_lforces; i++) {
-     boost::split(line_split, ctforces_lines[i], boost::is_any_of(" \t"));
+     boost::split(line_split, ctforces_lines[i], boost::is_any_of("  \t"));
      // at least check the length of the line:
      if (line_split.size() != 7) {
        FFEA_ERROR_MESSG("Invalid line in the ctforces file:\n \t %s\n", ctforces_lines[i].c_str());
@@ -2889,7 +2889,7 @@ int Blob::load_ctforces(string ctforces_fname){
    //   and calculate the number of rot constant forces we're adding:
    my_lines.clear(); 
    for (int i=now_reading; i<now_reading+n_ct_rforces; i++) {
-     boost::split(line_split, ctforces_lines[i], boost::is_any_of(" \t"));
+     boost::split(line_split, ctforces_lines[i], boost::is_any_of("  \t"), boost::token_compress_on);
      // at least check the length of the line:
      if (line_split.size() != 11) { // check length: 
        FFEA_ERROR_MESSG("Invalid line in the ctforces file:\n \t %s\n", ctforces_lines[i].c_str());
@@ -2917,7 +2917,7 @@ int Blob::load_ctforces(string ctforces_fname){
    const scalar mdlm1 = 1./mesoDimensions::length;
    cnt = 0; // reinitialise cnt
    for (int i=0; i<my_lines.size(); i++) {
-     boost::split(line_split, my_lines[i], boost::is_any_of(" \t"));
+     boost::split(line_split, my_lines[i], boost::is_any_of(" \t"), boost::token_compress_on);
      scalar F = boost::lexical_cast<scalar>(line_split[0]) * mdfm1;
      string type = line_split[1]; 
      ctf_p[0] = boost::lexical_cast<scalar>(line_split[2]);
@@ -2928,9 +2928,7 @@ int Blob::load_ctforces(string ctforces_fname){
      ctf_d[2] = boost::lexical_cast<scalar>(line_split[7]);
      if (type.compare(0,1,"p") == 0) {    // store as point + direction:
        arr3Normalise<scalar,arr3>(ctf_d);  //  and thus normalise.
-       cout << "read point: " << ctf_p[0] << ", " << ctf_p[1] << ", " << ctf_p[2] << endl; 
        arr3Resize<scalar,arr3>(mdlm1, ctf_p);  // and rescale CTFPENDING: check!!! 
-       cout << "rescaled to: " << ctf_p[0] << ", " << ctf_p[1] << ", " << ctf_p[2] << endl; 
      } else if (type.compare(0,1,"n")) { // otherwise store as pairs of nodes, or complain. 
        FFEA_ERROR_MESSG("Invalid rotational force: %s, in line read: %s\n", type[0], my_lines[i].c_str());
        return FFEA_ERROR;
@@ -3066,7 +3064,7 @@ int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types, string vdw_
     int vdw_type = 0;
 
     // If steric only, set all to type 0
-    if (vdw_method == "steric" || vdw_method == "stericX") {
+    if (vdw_method == "steric") {
 	for(i = 0; i < num_surface_faces; ++i) {
 	    if (fscanf(in, "%d\n", &vdw_type) != 1) {
                 fclose(in);
