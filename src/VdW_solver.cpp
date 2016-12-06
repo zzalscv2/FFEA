@@ -3,6 +3,8 @@
 #include "mpi.h"
 #endif
 
+// const scalar VdW_solver::phi_f[4] = { 0.25, 0.25, 0.25, 0.25};
+
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
     surface_face_lookup = NULL;
@@ -33,7 +35,7 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     this->lj_matrix = lj_matrix;
 
     this->inc_self_vdw = inc_self_vdw;
-    this->steric_factor = vdw_steric_factor;
+    this->steric_factor = 0.25 * vdw_steric_factor; // this means spreading the force across the element. 
 
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;

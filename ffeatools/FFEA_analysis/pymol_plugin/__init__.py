@@ -64,7 +64,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("450x250")
+     self.root.geometry("400x225")
 
      self.root.title("FFEA Loader")
 
@@ -151,7 +151,6 @@ class FFEA_viewer_control_window:
      # button_node_indices_pseudoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.call_add_node_pseudoatoms())
      # button_node_indices_pseudoatoms.grid(row=4, column=2, sticky=W)
 
- 
 
      # Outer simulation box
      label_box= Label(display_flags_frame, text="Show Box:")
@@ -170,16 +169,16 @@ class FFEA_viewer_control_window:
      ## # Add Supportive Fake Atoms (SFA) box # #
      label_sfa = Label(display_flags_frame, text="Add Atoms:")
      label_sfa.grid(row=7, column=0, sticky=E)
-     om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
+     om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
      om_load_sfa.grid(row=7, column=1, sticky=W)
 
 
-     # # Element highlighting 
-     label_elem= Label(display_flags_frame, text="Highlight element(s):")
-     label_elem.grid(row=8, column=0, sticky=E)
+     # # # Element highlighting 
+     # label_elem= Label(display_flags_frame, text="Highlight element(s):")
+     # label_elem.grid(row=8, column=0, sticky=E)
 
-     highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
-     highlight_entry_box.grid(row=8, column=1, sticky=W)
+     # highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
+     # highlight_entry_box.grid(row=8, column=1, sticky=W)
 
 
      # flags

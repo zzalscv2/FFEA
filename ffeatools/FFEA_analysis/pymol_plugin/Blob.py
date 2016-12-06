@@ -950,6 +950,12 @@ class Blob:
 					pos = (self.frames[i].pos[n].tolist())[0:3]
 					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
 
+			elif display_flags['load_sfa'] == 'Onto Linear Nodes':
+				for n in self.linear_node_list:
+					nn = (self.frames[i].pos[n])[0:3]
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, nn[0], nn[1], nn[2]))
+	
+
 			elif display_flags['load_sfa'] == "Onto Faces":
 				sfa_name += "_ffa"
 				for f in range(self.surf.num_faces):
