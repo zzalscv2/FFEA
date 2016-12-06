@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <limits>
 #include <cmath> 
+#include <array>
 
 /*
  * Defines what is meant by a scalar (essentially sets the precision of
@@ -47,17 +48,21 @@ typedef struct {
 typedef scalar arr3[3]; 
 typedef geoscalar grr3[3]; 
 
-/*  // The following class will be a temporary replacement
+typedef scalar arr4[4]; 
+typedef geoscalar grr4[4]; 
+
+/* // The following class will be a temporary replacement
     //   for the current vector3 struct so that we have some
     //   time to change from Whatever.x into Whatever[0] 
     // Then vector3 will become arr3.
     // Therefore, don't ever populate this class with methods!!
 class vector3 {
 public:
-    scalar data[3]; 
+    // vector3 v(); 
+    std::array<scalar, 3> data; 
     scalar& x = data[0]; 
-    scalar& y = data[0]; 
-    scalar& z = data[0]; 
+    scalar& y = data[1]; 
+    scalar& z = data[2]; 
     scalar& operator [](std::size_t i) { return data[i]; }
 };*/
 

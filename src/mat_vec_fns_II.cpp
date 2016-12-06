@@ -178,6 +178,16 @@ template <class t_scalar, class brr3> t_scalar detByRows(arr3_view<t_scalar,brr3
 
 }
 
+template <class t_scalar, class brr3> t_scalar detByCols(arr3_view<t_scalar,brr3> a, arr3_view<t_scalar,brr3> b, arr3_view<t_scalar,brr3> c){
+
+  t_scalar det = 0;
+  det  = a[0] * (b[1] * c[2] - b[2] * c[1]);
+  det += b[0] * (c[1] * a[2] - c[2] * a[1]);
+  det += c[0] * (a[1] * b[2] - a[2] * b[1]);
+  return det; 
+
+}
+
 
 
 
@@ -537,6 +547,59 @@ template <class t_scalar, class brr3> t_scalar distanceFromPointToLine(arr3_view
 }
 
 
+template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_scalar,brr3> p0, arr3_view<t_scalar,brr3> p1, arr3_view<t_scalar,brr3> p2, arr3_view<t_scalar,brr3> p3){
+
+   scalar v = 0;   
+   v += detByCols<scalar,arr3>(p1, p2, p3);
+   v -= detByCols<scalar,arr3>(p0, p2, p3);
+   v += detByCols<scalar,arr3>(p0, p1, p3);
+   v -= detByCols<scalar,arr3>(p0, p1, p2);
+   return v/6.; 
+  
+}
+
+void getLocalCoordinatesForLinTet(arr3_view<scalar,arr3> t0, arr3_view<scalar,arr3> t1, arr3_view<scalar,arr3> t2, arr3_view<scalar,arr3> t3, arr3_view<scalar,arr3> p, arr4 phi){
+
+   phi[0] = getTetrahedraVolume(p, t1, t2, t3);
+   phi[1] = - getTetrahedraVolume(p, t0, t2, t3);
+   phi[2] = getTetrahedraVolume(p, t0, t1, t3);
+   phi[3] = - getTetrahedraVolume(p, t0, t1, t2);
+   scalar v = getTetrahedraVolume(t0, t1, t2, t3);
+   for (int i=0; i<4; i++) {
+     phi[i] /= v; 
+   } 
+
+   // CHECK!! for the time:
+   arr3 tmp, pc;
+   arr3Initialise<arr3>(pc); // WT*?
+   arr3Resize2<scalar,arr3>(phi[0], t0, tmp);
+   arr3arr3Add<scalar,arr3>(pc, tmp, pc);
+   arr3Resize2<scalar,arr3>(phi[1], t1, tmp);
+   arr3arr3Add<scalar,arr3>(pc, tmp, pc);
+   arr3Resize2<scalar,arr3>(phi[2], t2, tmp);
+   arr3arr3Add<scalar,arr3>(pc, tmp, pc);
+   arr3Resize2<scalar,arr3>(phi[3], t3, tmp);
+   arr3arr3Add<scalar,arr3>(pc, tmp, pc);
+   arr3arr3Substract<scalar,arr3>(p, pc, tmp);
+   if (mag<scalar,arr3>(tmp) > 1e-6) {
+       cout << "local coordinates were not correctly calculated!" << endl; 
+       cout << "p: " << p[0] << ", " << p[1] << ", " << p[2] << endl;
+       cout << "pc: " << pc[0] << ", " << pc[1] << ", " << pc[2] << endl;
+       cout << "diff: " << mag<scalar,arr3>(tmp) << endl; 
+   } 
+
+
+   
+}
+
+
+
+
+////////////////////////////////////////////////
+////////////// END OF SECTION 2 ////////////////
+////////////////////////////////////////////////
+
+
 ///////////////// SECTION 3 ////////////////////
 /// Transition functions from vector3 to arr3 // 
 ////////////////////////////////////////////////
@@ -591,10 +654,12 @@ scalar vec3Arr3DotProduct(vector3 &u, arr3 &v) {
 }
 
 
+////////////////////////////////////////////////
 ////////////// END OF SECTION 3 ////////////////
+////////////////////////////////////////////////
 
 
-///////////////// SECTION 3 ////////////////////
+///////////////// SECTION 4 ////////////////////
 // // // // Instantiate templates // // // // //
 ////////////////////////////////////////////////
 template bool sameSign<scalar>(scalar a, scalar b);
@@ -647,8 +712,8 @@ template void arr3Initialise<arr3>(arr3 &v);
 //template void arr3Initialise<grr3>(grr3 &v);
 
 template scalar detByRows<scalar,arr3>(arr3_view<scalar,arr3> a, arr3_view<scalar,arr3> b, arr3_view<scalar,arr3> c);
-// template scalar detByRows<scalar,arr3>(arr3 &a, arr3 &b, arr3 &c);
 
+template scalar detByCols<scalar,arr3>(arr3_view<scalar,arr3> a, arr3_view<scalar,arr3> b, arr3_view<scalar,arr3> c);
 
 
 
@@ -694,3 +759,7 @@ template void intersectingPointToLine<scalar, arr3>(vector3 &p0, arr3_view<scala
 
 
 template scalar distanceFromPointToLine<scalar,arr3>(arr3_view<scalar, arr3> p0, arr3_view<scalar, arr3> p1, arr3_view<scalar, arr3> p2);
+
+template scalar getTetrahedraVolume<scalar,arr3>(arr3_view<scalar,arr3> p0, arr3_view<scalar,arr3> p1, arr3_view<scalar,arr3> p2, arr3_view<scalar,arr3> p3);
+
+
