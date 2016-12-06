@@ -240,9 +240,9 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         printf("\t\tdone\n");
 
 	// Run a check on parameters that are dependent upon the solver type
-	if(params->calc_stokes == 0 && (params->calc_springs == 1 || params->calc_ctforces == 1)) {
+	if((params->calc_stokes == 0 && params->calc_noise == 0) && (params->calc_springs == 1 || params->calc_ctforces == 1)) {
 		if(linear_solver == FFEA_NOMASS_CG_SOLVER) {
-			FFEA_ERROR_MESSG("For Blob %d, Conformation %d:\n\tSprings / Constant forces cannot be used with the CG_nomass solver if calc_stokes == 0\n\tThis constitutes an inertial system that cannot be solved our matrix inversion algorithms.\n\tPlease set calc_stokes = 1 and re-run the system :)\n", blob_index, conformation_index)
+			FFEA_CAUTION_MESSG("For Blob %d, Conformation %d:\n\tUsing Springs / Constant forces in conjuction with the CG_nomass solver without calc_stokes or calc_noise may not converge, specially if there are very few ctforces or springs.\n\tIf you encounter this problem, consider setting either calc_stokes or calc_noise (you may try a low temperature) re-run the system :)\n", blob_index, conformation_index)
 		}				
 	}
 
