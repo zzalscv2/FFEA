@@ -2753,7 +2753,7 @@ int Blob::load_ctforces(string ctforces_fname){
      return FFEA_ERROR;
    } 
    //   Check 2:
-   boost::split(line_split, ctforces_lines[1], boost::is_any_of(" \t"));
+   boost::split(line_split, ctforces_lines[1], boost::is_any_of(" \t"), boost::token_compress_on);
    if (line_split[0] != "num_ctforces") {
      cout << " read: " << line_split[0] << endl; 
      FFEA_ERROR_MESSG("ctforces_fname '%s' header is wrong, aborting\n", ctforces_fname.c_str());
@@ -2767,7 +2767,7 @@ int Blob::load_ctforces(string ctforces_fname){
       return FFEA_ERROR;
    }
    //   Check 3:
-   boost::split(line_split, ctforces_lines[2], boost::is_any_of(" \t"));
+   boost::split(line_split, ctforces_lines[2], boost::is_any_of(" \t"), boost::token_compress_on);
    if (line_split[0] != "num_linear_forces") {
      cout << " read: " << line_split[0] << endl; 
      FFEA_ERROR_MESSG("ctforces_fname '%s' header is wrong, aborting\n", ctforces_fname.c_str());
@@ -2781,7 +2781,7 @@ int Blob::load_ctforces(string ctforces_fname){
       return FFEA_ERROR;
    }
    //   Check 4:
-   boost::split(line_split, ctforces_lines[3], boost::is_any_of(" \t"));
+   boost::split(line_split, ctforces_lines[3], boost::is_any_of(" \t"), boost::token_compress_on);
    if (line_split[0] != "num_rot_forces") {
      cout << " read: " << line_split[0] << endl; 
      FFEA_ERROR_MESSG("ctforces_fname '%s' header is wrong, aborting\n", ctforces_fname.c_str());
@@ -2814,7 +2814,7 @@ int Blob::load_ctforces(string ctforces_fname){
    //   and calculate the number of constant forces we're adding:
    vector<string> my_lines; 
    for (int i=now_reading; i<now_reading+n_ct_lforces; i++) {
-     boost::split(line_split, ctforces_lines[i], boost::is_any_of("  \t"));
+     boost::split(line_split, ctforces_lines[i], boost::is_any_of("  \t"), boost::token_compress_on);
      // at least check the length of the line:
      if (line_split.size() != 7) {
        FFEA_ERROR_MESSG("Invalid line in the ctforces file:\n \t %s\n", ctforces_lines[i].c_str());
@@ -2840,7 +2840,7 @@ int Blob::load_ctforces(string ctforces_fname){
    arr3 ctf_d; // direction of the force 
    int cnt = 0;
    for (int i=0; i<my_lines.size(); i++) {
-     boost::split(line_split, my_lines[i], boost::is_any_of(" \t"));
+     boost::split(line_split, my_lines[i], boost::is_any_of(" \t"), boost::token_compress_on);
      scalar F = boost::lexical_cast<scalar>(line_split[0]);
      ctf_d[0] = boost::lexical_cast<scalar>(line_split[1]);
      ctf_d[1] = boost::lexical_cast<scalar>(line_split[2]);
@@ -3168,7 +3168,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 		fin.getline(buf, MAX_BUF_SIZE);
 		buf_string = string(buf);
 		boost::trim(buf_string);
-		boost::split(string_vec, buf_string, boost::is_space());
+		boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
 		try {
 			bind_type = atoi(string_vec.at(1).c_str());
 			num_faces = atoi(string_vec.at(3).c_str());
@@ -3189,7 +3189,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
 		fin.getline(buf, MAX_BUF_SIZE);
 		buf_string = string(buf);
 		boost::trim(buf_string);
-		boost::split(string_vec, buf_string, boost::is_space());
+		boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
 		if(string_vec.size() != num_faces + 1) {
 			FFEA_ERROR_MESSG("In %s, num_faces specified, %d, != num_faces in following line, %zd.\n", binding_filename, num_faces, string_vec.size() - 1)
 		}
