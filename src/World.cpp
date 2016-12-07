@@ -307,7 +307,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
       num_seeds = max(num_active_rng,num_seeds_read);
 		Seeds = new unsigned long *[num_seeds]; 
 		// RNG.1.4 - get Seeds :
-		// BEN CHANGE - stream was printing out stuff if ctrl-c was pressed, so I'm looping more accurately
 		int cnt_seeds = 0;
 		for(int i = 1; i < num_stress_seeds_read + 1; ++i) {
 			vector <string> vline;
@@ -2536,7 +2535,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 
 		// Get nodes to and from and check against the structures
 		getline(fin, buf_string);
-		boost::split(string_vec, buf_string, boost::is_space());
+		boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
 		num_cols = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
 		if(num_cols != blob_array[blob_index][map_from.at(i)].get_num_nodes()) {
@@ -2546,7 +2545,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 		}
 
       getline(fin, buf_string);
-		boost::split(string_vec, buf_string, boost::is_space());
+		boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
 		num_rows = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
 		if(num_rows != blob_array[blob_index][map_to.at(i)].get_num_nodes()) {
@@ -2557,7 +2556,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 
 		// Get num_entries
 		getline(fin, buf_string);
-		boost::split(string_vec, buf_string, boost::is_space());
+		boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
 		num_entries = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
 		// Create some memory for the matrix stuff
@@ -2843,7 +2842,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 	// Get num_states
 	getline(fin, buf_string);
 	boost::trim(buf_string);
-	boost::split(sline, buf_string, boost::is_space());;
+	boost::split(sline, buf_string, boost::is_space(), boost::token_compress_on);;
 	num_states = atoi(sline.at(1).c_str());
 
 	if(num_states != params.num_states[blob_index]) {
@@ -2862,7 +2861,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 		// Get conformation_index first
 		getline(fin, buf_string);
 		boost::trim(buf_string);
-		boost::split(sline, buf_string, boost::is_space());
+		boost::split(sline, buf_string, boost::is_space(), boost::token_compress_on);
 
 		conf_index = atoi(sline.at(1).c_str());
 
@@ -2874,7 +2873,7 @@ int World::load_kinetic_states(string states_fname, int blob_index) {
 		sline.clear();
 		getline(fin, buf_string);
 		boost::trim(buf_string);
-		boost::split(sline, buf_string, boost::is_space());
+		boost::split(sline, buf_string, boost::is_space(), boost::token_compress_on);
 
 		// Check line consistency
 
@@ -2979,7 +2978,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index) {
 
 		// Get a line and split it
 		crap = fgets(buf, 255, fin);
-		boost::split(sline, buf, boost::is_any_of(" "));
+		boost::split(sline, buf, boost::is_any_of(" "), boost::token_compress_on);
 		if(sline.size() > num_states) {
 			FFEA_ERROR_MESSG("\nState %d contains %zd rate values, instead of 'num_states', %d.\n", i, sline.size(), num_states)
 		}

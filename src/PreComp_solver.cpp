@@ -152,19 +152,19 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      getline(fin, line); 
    } 
    // get x_0, i. e., parse the line:
-   boost::split( vec_line, line, boost::is_any_of(" \t"));
+   boost::split( vec_line, line, boost::is_any_of(" \t"), boost::token_compress_on);
    x_0 = stod(vec_line[0]); 
    // and store it: 
    x_range[0] = x_0;
    getline(fin, line);
-   boost::split( vec_line, line, boost::is_any_of(" \t"));
+   boost::split( vec_line, line, boost::is_any_of(" \t"), boost::token_compress_on);
    x = stod(vec_line[0]); 
    Dx = x - x_0;
    n_values = 2;
    x_0 = x;
    while ( getline(fin, line) ) {
       n_values += 1;
-      boost::split( vec_line, line, boost::is_any_of(" \t"));
+      boost::split( vec_line, line, boost::is_any_of(" \t"), boost::token_compress_on);
       x = stod(vec_line[0]); 
       if (fabs(Dx - x + x_0) > 1e-6) { 
         FFEA_error_text();
@@ -498,7 +498,7 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
          getline(fin, line); 
        }  
        // get x_0, i. e., parse the line:
-       boost::split( vec_line, line, boost::is_any_of(" \t"));
+       boost::split( vec_line, line, boost::is_any_of(" \t"), boost::token_compress_on);
        x_0 = stod(vec_line[0]); 
        // check it: 
        if (x_range[0] != x_0){
@@ -512,7 +512,7 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
        index += 1;
        // get the next line, and check Dx:
        getline(fin, line);
-       boost::split( vec_line, line, boost::is_any_of(" \t"));
+       boost::split( vec_line, line, boost::is_any_of(" \t"), boost::token_compress_on);
        x = stod(vec_line[0]); 
        if (fabs(Dx - x + x_0) > 1e-6){
           FFEA_error_text();
@@ -528,7 +528,7 @@ int PreComp_solver::read_tabulated_values(PreComp_params &pc_params, string kind
        x_0 = x;
        while ( getline(fin, line) ) {
           m_values += 1;
-          boost::split( vec_line, line, boost::is_any_of(" \t"));
+          boost::split( vec_line, line, boost::is_any_of(" \t"), boost::token_compress_on);
           x = stod(vec_line[0]); 
           // check Dx at every line:
           if (fabs(Dx - x + x_0) > 1e-6) { 
