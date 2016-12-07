@@ -170,7 +170,9 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 	// Extract param string from script string
 	vector<string> param_vector;
 	FFEA_input_reader *paramreader = new FFEA_input_reader();
-	paramreader->extract_block("param", 0, script_vector, &param_vector);
+	if ( paramreader->extract_block("param", 0, script_vector, &param_vector) == FFEA_ERROR) {
+		return FFEA_ERROR;
+	}
 
 	// Parse the section
 	vector<string>::iterator it;
