@@ -942,7 +942,6 @@ class Blob:
 			sfa_name = display_flags['system_name'] + "_" + str(self.idnum)
 			psa_name = "CA"
 			psa_b = 20
-			psa_vdw = 1
 			text = ""
 			if display_flags['load_sfa'] == "Onto Nodes":
 				sfa_name += "_nfa"
