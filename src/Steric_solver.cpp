@@ -64,9 +64,9 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
 
     // Choose the force line 
     // as the line passing through the elements CMs.
-    grr3 force1, force2, cm1, cm2; //, n1_b;
-    arr3Initialise<grr3>(cm1); 
-    arr3Initialise<grr3>(cm2); 
+    arr3 force1, force2, cm1, cm2; //, n1_b;
+    arr3Initialise<arr3>(cm1); 
+    arr3Initialise<arr3>(cm2); 
     for (int i=0; i<4; i++) { 
       cm1[0] += f1->n[i]->pos.x; 
       cm1[1] += f1->n[i]->pos.y; 
@@ -75,10 +75,10 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
       cm2[1] += f2->n[i]->pos.y; 
       cm2[2] += f2->n[i]->pos.z; 
     } 
-    arr3Resize<geoscalar,grr3>(0.25,cm1);
-    arr3Resize<geoscalar,grr3>(0.25,cm2);
-    arr3arr3Substract<geoscalar,grr3>(cm2, cm1, force2); 
-    arr3Normalise<geoscalar,grr3>(force2); // that is the direction of the force for f2 (backwards).
+    arr3Resize<scalar,arr3>(0.25,cm1);
+    arr3Resize<scalar,arr3>(0.25,cm2);
+    arr3arr3Substract<scalar,arr3>(cm2, cm1, force2); 
+    arr3Normalise<scalar,arr3>(force2); // that is the direction of the force for f2 (backwards).
     
     // Store the measurement
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;

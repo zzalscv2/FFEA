@@ -124,12 +124,16 @@ void Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_nod
     vdw_xz_force = new vector3;
 
     for(int i = 0; i < num_blobs; ++i) {
-	vector3_set_zero(&vdw_bb_force[i]);
+        vector3_set_zero(&vdw_bb_force[i]);
         vdw_bb_energy[i] = 0.0;
-	vdw_bb_interaction_flag[i] = false;
+        vdw_bb_interaction_flag[i] = false;
     }
     vector3_set_zero(vdw_xz_force);
     vdw_xz_energy = 0.0;
+
+    for (int i = 0; i < 4; ++i) { 
+       vector3_set_zero(&force[i]); 
+    } 
 
     this->daddy_blob = daddy_blob;
 }
@@ -141,10 +145,13 @@ void Face::set_vdw_interaction_type(int vdw_interaction_type) {
 void Face::build_opposite_node() {
 
     // If opposite == NULL and VdW_type == steric, we can define a node specifically for this face, to make an 'element'
-    // It will contain nothing but position data (maybe add some error checks in future)
+    // It will contain position data (maybe add some error checks in future)
+    //   and same index as node 0, n[0]. It will be harmless, because this index
+    //   is meant to add forces, but this is a static blob.
 
     if(n[3] == NULL) {
 	n[3] = new mesh_node();
+	n[3]->index = n[0]->index; 
 
 	// Calculate where to stick it
 	scalar length;
@@ -167,6 +174,10 @@ void Face::build_opposite_node() {
 	n[3]->pos.y = n[3]->pos_0.y;
 	n[3]->pos.z = n[3]->pos_0.z;
     }
+
+	for (int i = 0; i < 4; ++i) { 
+		vector3_set_zero(&force[i]); 
+	} 
 }
 
 void Face::set_kinetic_state(bool state) {

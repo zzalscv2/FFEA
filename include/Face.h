@@ -66,8 +66,10 @@ public:
     /** Last calculated centroid (by most recent call to calc_area_normal_centroid()) **/
     vector3 centroid;
 
-    /** Stores the current force applied to this face **/
-    vector3 force[3];
+    /** Stores the current force applied to this face.
+      * The first 3 "vectors" are to those surface nodes that define this face,
+      * while the last one belongs to the opposite node of the linear tetrahedron **/
+    vector3 force[4];
 
 
     /** Stores the natural (shape function) coords of the centroid of this face in the parent element **/
