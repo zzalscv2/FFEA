@@ -175,9 +175,10 @@ void Face::build_opposite_node() {
 	n[3]->pos.z = n[3]->pos_0.z;
     }
 
-	for (int i = 0; i < 4; ++i) { 
+   zero_force();
+	/*for (int i = 0; i < 4; ++i) { 
 		vector3_set_zero(&force[i]); 
-	} 
+	} */
 }
 
 void Face::set_kinetic_state(bool state) {
@@ -343,7 +344,7 @@ void Face::add_xz_vdw_energy_to_record(scalar energy) {
 }
 
 void Face::zero_force() {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         force[i].x = 0;
         force[i].y = 0;
         force[i].z = 0;
