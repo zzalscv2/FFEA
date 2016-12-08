@@ -260,7 +260,6 @@ class FFEA_viewer_control_window:
              return
 
      # load the file
-#     self.root.destroy()
      self.load_ffea(ffea_fname)
 
 
@@ -466,29 +465,26 @@ class FFEA_viewer_control_window:
 	else:
 		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
 		self.load_trajectory_thread.start()
+		waitForTrajToLoad = True
 		#self.load_trajectory(p.trajectory_out_fname)
 
-	# Make sure we have at least 1 frame sorted before continuing, so main thread doesn't overtake
-	#print self.num_frames, p.trajectory_out_fname
-	#while(self.num_frames < 1):
-	#	if p.trajectory_out_fname == None:
-	#		# increase the frames to 1, so that the structure is displayed.
-	#		self.num_frames = 1
-	#		self.draw_stuff()
-	#		break
-	#	else:
-	#		pass
 
 	#
 	# Print info for the user that won't be deleted from the command line by the trajectory loading
 	#
-	if self.display_flags['show_springs'] == 1 and self.spring != None:
+	if self.display_flags['show_springs'] == 1 and self.springs != None:
 		if self.script.params.calc_springs == 0:
 			for b in self.script.blob:
 				if b.solver == "CG_nomass":
 					print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
 					break
 				
+	if waitForTrajToLoad: 
+		self.load_trajectory_thread.join()
+	try:
+		self.root.destroy()
+	except:
+		pass
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]
@@ -625,7 +621,9 @@ class FFEA_viewer_control_window:
 	# Finally show the "progress bar":
 	if self.num_frames > 1:
 		cmd.mset("1-"+str(self.num_frames))
+
 	return
+
 
   def get_system_dimensions(self, findex):
 	maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])	
@@ -754,6 +752,8 @@ class FFEA_viewer_control_window:
 
 	self.system_index = 0
 	self.system_names = []
+
+	self.waitForTrajToLoad = False # who is closing tkinter window
 	
 	# Change to any file of names you like
 	# fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_dbzcharacters.txt"
