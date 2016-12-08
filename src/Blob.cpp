@@ -3376,7 +3376,7 @@ int Blob::aggregate_forces_and_solve() {
 
     // Aggregate surface forces onto nodes
     for (n = 0; n < num_surface_faces; n++) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             int sni = surface[n].n[i]->index;
             force[sni].x += surface[n].force[i].x;
             force[sni].y += surface[n].force[i].y;
