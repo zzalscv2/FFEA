@@ -1,1 +1,0 @@
-/usr/bin/c++      CMakeFiles/surface_coarse_grainer_final.dir/surface_coarse_grainer_final.o  -o surface_coarse_grainer_final -rdynamic 

@@ -1,1 +1,0 @@
-/usr/bin/cc     CMakeFiles/make_cuboid_mesh.dir/make_cuboid_mesh.o  -o make_cuboid_mesh -rdynamic 
