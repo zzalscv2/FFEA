@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/Surface_tools/Surface_convert_from_EM_density_map/emdb_map_to_ffea.cpp
+stdio.h
+-
+stdlib.h
+-
+stdint.h
+-
+string.h
+-
+math.h
+-
+vector
+-
+marching_cube_lookup.h
+/home/rob/software/ffea/ffeatools/FFEA_initialise/Surface_tools/Surface_convert_from_EM_density_map/marching_cube_lookup.h
+euler_characteristic.h
+/home/rob/software/ffea/ffeatools/FFEA_initialise/Surface_tools/Surface_convert_from_EM_density_map/euler_characteristic.h
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/Surface_tools/Surface_convert_from_EM_density_map/euler_characteristic.h
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/Surface_tools/Surface_convert_from_EM_density_map/marching_cube_lookup.h
+

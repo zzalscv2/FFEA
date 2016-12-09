@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Elements.hpp
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Matrices.hpp
+cmath
+-
+Vectors.hpp
+/home/rob/software/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Vectors.hpp
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Vectors.hpp
+cmath
+-
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/make_structure_map.cpp
+iostream
+-
+cstdlib
+-
+cstring
+-
+fstream
+-
+vector
+-
+Vectors.hpp
+/home/rob/software/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Vectors.hpp
+Elements.hpp
+/home/rob/software/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Elements.hpp
+Matrices.hpp
+/home/rob/software/ffea/ffeatools/FFEA_initialise/FFEA_mapping_tools/Matrices.hpp
+

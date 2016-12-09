@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/EM_density_map_tools/convert_pdb_to_emdb_map.cpp
+stdio.h
+-
+stdlib.h
+-
+stdint.h
+-
+string.h
+-
+math.h
+-
+vector
+-
+

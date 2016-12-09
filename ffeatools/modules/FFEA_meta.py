@@ -51,6 +51,5 @@ class FFEA_meta:
             _json.dump(self.log, outfile)
             print("Dumped meta info to "+out_filename)
         import os
-        os._exit(0)
         
 __builtin__.meta_info = FFEA_meta() # dirty hack for a good cause
