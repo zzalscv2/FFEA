@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/rob/software/ffea/ffeatools/FFEA_initialise/EM_density_map_tools/add_maps.cpp
+stdio.h
+-
+stdlib.h
+-
+stdint.h
+-
+string.h
+-
+math.h
+-
+vector
+-
+
