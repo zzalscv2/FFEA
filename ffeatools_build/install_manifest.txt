@@ -1,3 +1,0 @@
-/FFEA_initialise/Surface_tools/surface_coarse_grainer/surface_coarse_grainer_final
-/FFEA_initialise/Surface_tools/surface_coarse_grainer/__init__.py
-/FFEA_initialise/Surface_tools/surface_coarse_grainer/surface_coarse_grainer_final.py
