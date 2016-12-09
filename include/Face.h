@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -116,10 +116,11 @@ public:
     /** Check whether the tetrahedron formed by this face an the opposite
       *   linear node does intersect with the corresponding tetrahedron in f2.
       * If so, return the overlapping volume, otherwise return 0.
-      * Uses the "Fast Tetrahedron-Tetrahedron Overlap Algorithm" for checking if 
-      *  interaction occurs. 
+      * Uses the "Fast Tetrahedron-Tetrahedron Overlap Algorithm" for checking if
+      *  interaction occurs.
       **/
     scalar checkTetraIntersectionAndGetVolume(Face *f2);
+    scalar checkTetraIntersectionAndGetVolume(Face *f2,scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
 
         /** Get the volume that the enclose the intersection
@@ -173,6 +174,7 @@ public:
       * It calls twice volumeIntersection and lineFaceIntersectionPoint.
       **/
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2));
+    bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     Blob *daddy_blob;
 
