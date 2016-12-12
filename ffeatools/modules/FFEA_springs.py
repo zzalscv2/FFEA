@@ -33,12 +33,12 @@ class FFEA_springs:
 		try:
 			self.load(fname)
 		except:
-			return
+			raise
 
 	def load(self, fname):
 
-		sys.stdout.write("Loading FFEA node file...")
-
+		sys.stdout.write("Loading FFEA springs file...")
+		
 		# File format?
 		base, ext = os.path.splitext(fname)
 		try:
