@@ -342,7 +342,10 @@ class FFEA_viewer_control_window:
     
 	# Load some springs
 	if self.display_flags['show_springs'] == 1:
-		self.springs = FFEA_springs.FFEA_springs(self.script.spring)
+		try:
+			self.springs = FFEA_springs.FFEA_springs(self.script.spring)
+		except(IOError):
+			self.springs = None
 
 	# Send binding sites to control
 	binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]

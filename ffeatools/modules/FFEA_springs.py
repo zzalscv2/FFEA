@@ -37,22 +37,22 @@ class FFEA_springs:
 
 	def load(self, fname):
 
-		print("Loading FFEA springs file...")
+		sys.stdout.write("Loading FFEA node file...")
 
-		# Test file exists
-		if not path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
-	
 		# File format?
-		base, ext = path.splitext(fname)
-		if ext == ".springs" or ext == ".spring":
-			try:
-				self.load_springs(fname)
-			except:
-				print("\tUnable to load FFEA_springs from " + fname + ". Returning empty object...")
+		base, ext = os.path.splitext(fname)
+		try:
+			if ext == ".spring" or ext == ".springs":
 
-		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+				self.load_springs(fname)
+			else:
+				raise FFEAIOError(fname=fname, fext=[".spring", ".springs"])
+
+		except:
+			raise
+
+		sys.stdout.write("done!\n")
+
 
 	def load_springs(self, fname):
 
@@ -60,36 +60,36 @@ class FFEA_springs:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Test format
 		line = fin.readline().strip()
 		if line != "ffea springs file" and line != "walrus springs file":
-			print("\tExpected 'ffea springs file' but found " + line)
-			raise TypeError
+			raise FFEAFormatError(lin=1, lstr="ffea springs file")
 
-		num_springs = int(fin.readline().split()[1])
+		try:
+			self.num_springs = int(fin.readline().split()[1])
 
-		fin.readline()
+		except IndexError:
+			raise FFEAFormatError(lin="2", lstr="num_springs %d")
 
-		# Read springs now	
-		while(True):
-			sline = fin.readline().split()
+		if fin.readline().strip() != "springs:":
+			raise FFEAFormatError(lin="5", lstr="surface nodes:")
 
-			# Get a spring
-			spring = FFEA_spring()
-			try:
+		# Read springs now
+		try:
+			for i in range(self.num_springs):
+				sline = fin.readline().split()
+
+				# Get a spring
+				spring = FFEA_spring()
 				spring.set_properties(sline[0], sline[1], sline[2:4], sline[4:6], sline[6:8])
+				self.add_spring(spring)
 
-			except(IndexError):
-				break
-
-			except:
-				break
-
-			self.add_spring(spring)
+		except (IndexError, ValueError):
+			raise FFEAFormatError(lin=i+j+6, lstr="%f %f %d %d %d %d %d %d")
+		except:
+			raise
 
 		fin.close()
 
