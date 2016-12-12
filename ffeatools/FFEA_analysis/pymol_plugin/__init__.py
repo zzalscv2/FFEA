@@ -342,7 +342,10 @@ class FFEA_viewer_control_window:
     
 	# Load some springs
 	if self.display_flags['show_springs'] == 1:
-		self.springs = FFEA_springs.FFEA_springs(self.script.spring)
+		try:
+			self.springs = FFEA_springs.FFEA_springs(self.script.spring)
+		except:
+			self.springs = None
 
 	# Send binding sites to control
 	binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
@@ -837,7 +840,7 @@ class FFEA_viewer_control_window:
 		else:
 			print "Box does not exist"
 
-	if self.display_flags['show_springs'] == 1:
+	if self.display_flags['show_springs'] == 1 and self.springs != None:
 		self.draw_springs(frame_real_index)
 
 	for i in range(self.script.params.num_blobs):
