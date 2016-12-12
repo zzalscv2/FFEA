@@ -49,7 +49,6 @@ from .modules import FFEA_meta
 # allow metadata to persist
 def _save_meta(*argv):
     __builtin__.meta_info.dump_log()
-    _os._exit(0)
 
 # dump metadata on abrupt exit
 for _sig in (_signal.SIGABRT, _signal.SIGINT, _signal.SIGTERM, _signal.SIGQUIT):

@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -149,7 +149,7 @@ void Face::build_opposite_node() {
 
     if(n[3] == NULL) {
 	n[3] = new mesh_node();
-	n[3]->index = n[0]->index; 
+	n[3]->index = n[0]->index;
 
 	// Calculate where to stick it
 	scalar length;
@@ -438,7 +438,7 @@ scalar Face::checkTetraIntersectionAndGetVolume(Face *f2){
   if (!tet_a_tet(tetA, tetB)) return 0.0;
   return volumeIntersection<scalar,arr3>(tetA, tetB);
 
-  
+
 
 }
 
@@ -596,6 +596,26 @@ scalar Face::getTetraIntersectionVolume(Face *f2, scalar *blob_corr,int f1_daddy
 
 }
 
+scalar Face::checkTetraIntersectionAndGetVolume(Face *f2, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index){
+
+  // V1 = n
+  // V2 = f2->n
+  scalar tetA[4][3], tetB[4][3];
+  for (int i=0; i<4; i++) {
+     tetA[i][0] = n[i]->pos.x;
+     tetA[i][1] = n[i]->pos.y;
+     tetA[i][2] = n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3];
+     tetB[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1];
+     tetB[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2];
+  }
+  if (!tet_a_tet(tetA, tetB)) return 0.0;
+  return volumeIntersection<scalar,arr3>(tetA, tetB);
+
+
+
+}
+
 void Face::getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area,scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index){
 
   geoscalar tetA[4][3], tetB[4][3];
@@ -643,7 +663,6 @@ void Face::getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &v
      //printf("***\n First blob x is %f\n Volume and gradient x starts with %f\n un corr is %f\n",tetA[i][0],tetB[i][0],f2->n[i]->pos.x);
      tetB[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1];
      tetB[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2];
-
      tetB[i][0] = f2->n[i]->pos.x-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3] -dr*r[0];
      tetB[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1] -dr*r[1];
      tetB[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2] -dr*r[2];
@@ -656,6 +675,46 @@ void Face::getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &v
 
   dVdr = (vol_M - vol_m)/(2*dr);
   vol  = (vol_m + vol_M)/2;
+
+}
+
+bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index){
+
+  geoscalar tetA[4][3], tetB[4][3], tetC[4][3];
+  grr3 ap1, ap2;
+  geoscalar dr = 1e-3;
+  geoscalar vol_m, vol_M;
+
+  for (int i=0; i<4; i++) {
+     tetA[i][0] = n[i]->pos.x;
+     tetA[i][1] = n[i]->pos.y;
+     tetA[i][2] = n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3];
+     tetB[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1];
+     tetB[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2];
+     tetB[i][0] = f2->n[i]->pos.x-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3] -dr*r[0];
+     tetB[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1] -dr*r[1];
+     tetB[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2] -dr*r[2];
+     tetC[i][0] = f2->n[i]->pos.x-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3] + dr*r[0];
+     tetC[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1] + dr*r[1];
+     tetC[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2] + dr*r[2];
+  }
+  vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetB);
+  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);
+
+  dVdr = (vol_M - vol_m)/(2*dr);
+  vol  = (vol_m + vol_M)/2;
+
+  // cout << "vol: " << vol << ", dVdr: " << dVdr << endl;
+  linePlaneIntersectionPoint<geoscalar,grr3>(ap1, tetA[3], r, tetA[0], tetA[1], tetA[2]);
+  getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetA[0], tetA[1], tetA[2], tetA[3], ap1, phi1);
+  // cout << "phi1: " << phi1[0] << ", " << phi1[1] << ", " << phi1[2] << ", " << phi1[3] << endl;
+  linePlaneIntersectionPoint<geoscalar,grr3>(ap2, tetA[3], r, tetB[0], tetB[1], tetB[2]);
+  getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetB[0], tetB[1], tetB[2], tetB[3], ap2, phi2);
+  // cout << "phi2: " << phi2[0] << ", " << phi2[1] << ", " << phi2[2] << ", " << phi2[3] << endl;
+
+
+  return true;
 
 }
 

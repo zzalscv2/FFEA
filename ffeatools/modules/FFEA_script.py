@@ -286,7 +286,6 @@ class FFEA_script:
 
 		# Now maps
 		map_lines = extract_block_from_lines('maps', 0, kinetic_lines)
-		print map_lines
 		blob.map_indices = []
 		blob.map = []
 		for line in map_lines:
