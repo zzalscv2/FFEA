@@ -56,16 +56,16 @@
 #include "PreComp_solver.h"
 #include "dimensions.h"
 
-#ifdef USE_DOUBLE
-typedef Eigen::MatrixXd Eigen_MatrixX;
-typedef Eigen::VectorXd Eigen_VectorX;
-typedef Eigen::Matrix3d Eigen_Matrix3;
-typedef Eigen::Vector3d Eigen_Vector3;
-#else
+#ifdef USE_DOUBLE_LESS
 typedef Eigen::MatrixXf Eigen_MatrixX;
 typedef Eigen::VectorXf Eigen_VectorX;
 typedef Eigen::Matrix3f Eigen_Matrix3;
 typedef Eigen::Vector3f Eigen_Vector3;
+#else
+typedef Eigen::MatrixXd Eigen_MatrixX;
+typedef Eigen::VectorXd Eigen_VectorX;
+typedef Eigen::Matrix3d Eigen_Matrix3;
+typedef Eigen::Vector3d Eigen_Vector3;
 #endif
 
 
