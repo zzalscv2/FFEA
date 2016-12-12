@@ -93,8 +93,8 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
        fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
    
        // Force is proportional to the gradient, i. e.:
-       arr3Resize<scalar,arr3>(steric_factor, force2);
-       arr3Resize2<scalar,arr3>(ffea_const::mOne, force2, force1);
+       arr3Resize<geoscalar,grr3>(steric_factor, force2);
+       arr3Resize2<geoscalar,grr3>(ffea_const::mOne, force2, force1);
    
        // Finally, apply the force onto the nodes:
        for (int j = 0; j < 4; j++) {
@@ -285,7 +285,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
 	    /* TRIAL 2 */
 	    grr3 force1, force2; //, n1_b;
 	    f1->vec3Vec3SubsToArr3Mod(f2, force2, blob_corr, f1_daddy_blob_index, f2_daddy_blob_index);
-	    arr3Normalise<scalar,arr3>(force2); // that is the direction of the force for f1 (backwards).
+	    arr3Normalise<geoscalar,grr3>(force2); // that is the direction of the force for f1 (backwards).
 
 	    /* TRIAL 1
 	    arr3 force1, force2, n1_b;
@@ -323,8 +323,8 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
 
 	    // arr3Resize(vol, force1);  // the provious volume force
 	    // Force is proportional to the gradient of this volume:
-	    arr3Resize<scalar,arr3>(scalar(-dVdr), force2);
-	    arr3Resize2<scalar,arr3>(ffea_const::mOne, force2, force1);
+	    arr3Resize<geoscalar,grr3>(scalar(-dVdr), force2);
+	    arr3Resize2<geoscalar,grr3>(ffea_const::mOne, force2, force1);
 
 	    for (int j = 0; j < 3; j++) {
 	      f1->add_force_to_node(j, force1);

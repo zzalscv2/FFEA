@@ -90,6 +90,19 @@ template <class t_scalar,class brr3> void maxVolumeAndArea(int ips, brr3 (&W)[56
 }
 
 
+/**  CM for the first ips points stored in brr3 W[56] */ 
+template <class t_scalar,class brr3> void findCM(int ips, brr3 (&W)[56], brr3 &cm){
+
+  arr3Initialise(cm); 
+  for (int i=0; i<ips; i++){
+    arr3arr3Add<t_scalar,brr3>(cm, W[i], cm); 
+  } 
+  t_scalar s = 1./ips; 
+  arr3Resize<t_scalar,brr3>(s, cm);
+
+}
+
+
 /** Given the face formed by tetA[0]:tetA[1]:tetA[2] and the tangent unit vector t:
  * get b: the normal to a face pointing inwards.
  *     n: the normal to t, on the face 
@@ -573,7 +586,8 @@ template <class t_scalar, class brr3> void volumeAndAreaForIntPoint(brr3 &ip, br
 
 /** Return the volume intersection between two tetrahedra */ 
 // scalar volumeIntersection(arr3 (&tetA)[4], arr3 (&tetB)[4]){
-template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4]){
+// template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4]){
+template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4]){ 
 
 
   t_scalar vol = 0.0; 
@@ -703,6 +717,147 @@ template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4],
   if ((fabs(vol) > w) || (vol < 0)) { 
     vol = w;
   }
+
+  return vol; 
+ 
+
+} 
+
+/** Return the volume intersection between two tetrahedra */ 
+// scalar volumeIntersection(arr3 (&tetA)[4], arr3 (&tetB)[4]){
+// template <class t_scalar, class brr3> scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4]){
+template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4], brr3 &cm){
+
+
+  t_scalar vol = 0.0; 
+  brr3 W[56]; 
+
+  int ips = 0;
+  // Check for interior points. 
+  for (int i=0; i<4; i++) {
+    // if point tetA[i] is inside tetB -> account for its contribution. 
+    if (!exists<t_scalar,brr3>(tetA[i], ips, W) && nodeInTet<t_scalar,brr3>(tetA[i], tetB)) { 
+      // cout << "tetA-node[" << i << "] found int tetB " << endl; 
+      arr3Store<t_scalar,brr3>(tetA[i], W[ips]);
+      ips += 1; 
+      vol += volumeForNode<t_scalar,brr3>(tetA, i);
+    } 
+    // if point tetB[i] is inside tetA -> account for its contribution. 
+    // PENDING: what happens if a node belongs to both tetA and tetB? 
+    if (!exists<t_scalar,brr3>(tetB[i], ips, W) && nodeInTet<t_scalar,brr3>(tetB[i], tetA)) { 
+      // cout << "tetB-node[" << i << "] found int tetA " << endl; 
+      arr3Store<t_scalar,brr3>(tetB[i], W[ips]);
+      ips += 1;
+      vol += volumeForNode<t_scalar,brr3>(tetB, i);
+    } 
+  } 
+
+  
+  // Check for new points coming from intersections: 
+  //    We need to check every edge-face pair belonging to tetA and tetB. 
+  // Thus, for every edge:
+  
+  brr3 ip; 
+  for (int i=0; i<4; i++) { 
+    for (int j=i+1; j<4; j++) {
+      // check intersection for edge tetA:ij and every tetB face: 
+      if (intersectionPoint<t_scalar,brr3>(ip, tetA[i], tetA[j], tetB, 0, 1, 2)) {
+        /* cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+             << "face tetB[0]:tetB[1]:tetB[2] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+        if (!exists<t_scalar,brr3>(ip, ips, W)) {
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
+          ips +=1;
+          vol += volumeForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 0, 1, 2); 
+        } 
+      }
+      if (intersectionPoint<t_scalar,brr3>(ip, tetA[i], tetA[j], tetB, 1, 2, 3)){
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+             << "face tetB[1]:tetB[2]:tetB[3] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+        if (!exists<t_scalar,brr3>(ip, ips, W)) {
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
+          ips +=1;
+          vol += volumeForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 1, 2, 3); 
+        } 
+      }
+      if (intersectionPoint<t_scalar,brr3>(ip, tetA[i], tetA[j], tetB, 2, 3, 0)){
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+             << "face tetB[2]:tetB[3]:tetB[0] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+        if (!exists<t_scalar,brr3>(ip, ips, W)) {
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
+          ips +=1;
+          vol += volumeForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 2, 3, 0); 
+        }
+      }
+      if (intersectionPoint<t_scalar,brr3>(ip, tetA[i], tetA[j], tetB, 3, 0, 1)){
+        /*cout << "intersection between edge tetA[" << i << "]:tetA[" << j << "] and " 
+             << "face tetB[3]:tetB[0]:tetB[1] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+        if (!exists<t_scalar,brr3>(ip, ips, W)) {
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
+          ips +=1;
+          vol += volumeForIntPoint<t_scalar,brr3>(ip, tetA, i, j, tetB, 3, 0, 1); 
+        }
+      }
+
+      // check intersection for edge tetB:ij and every tetA face: 
+      if (intersectionPoint<t_scalar,brr3>(ip, tetB[i], tetB[j], tetA, 0, 1, 2)) {
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+             << "face tetA[0]:tetA[1]:tetA[2] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+        if (!exists<t_scalar,brr3>(ip, ips, W)) {
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
+          ips +=1;
+          vol += volumeForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 0, 1, 2); 
+        }
+      }
+      if (intersectionPoint<t_scalar,brr3>(ip, tetB[i], tetB[j], tetA, 1, 2, 3)){
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+             << "face tetA[1]:tetA[2]:tetA[3] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+        if (!exists<t_scalar,brr3>(ip, ips, W)) {
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
+          ips +=1;
+          vol += volumeForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 1, 2, 3); 
+        }
+      }
+      if (intersectionPoint<t_scalar,brr3>(ip, tetB[i], tetB[j], tetA, 2, 3, 0)){
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+             << "face tetA[2]:tetA[3]:tetA[0] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+        if (!exists<t_scalar,brr3>(ip, ips, W)) {
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
+          ips +=1;
+          vol += volumeForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 2, 3, 0); 
+        }
+      }
+      if (intersectionPoint<t_scalar,brr3>(ip, tetB[i], tetB[j], tetA, 3, 0, 1)){
+        /*cout << "intersection between edge tetB[" << i << "]:tetB[" << j << "] and " 
+             << "face tetA[3]:tetA[0]:tetA[1] " << endl; 
+        cout << "   happening at: " << ip[0] << ":" << ip[1] << ":" << ip[2] << endl;*/
+        if (!exists<t_scalar,brr3>(ip, ips, W)) {
+          arr3Store<t_scalar,brr3>(ip, W[ips]);
+          ips +=1;
+          vol += volumeForIntPoint<t_scalar,brr3>(ip, tetB, i, j, tetA, 3, 0, 1); 
+        }
+      }
+    } 
+  } 
+
+  vol *= - ffea_const::oneOverSix;
+  // CHECKing /// 
+  // three points cannot have a volume.
+  if (ips <= 3) 
+    return 0.; 
+  // the volume cannot be larger than the volume of the sphere with maximum radius. 
+  t_scalar w = maxVolume<t_scalar,brr3>(ips, W); 
+  if ((fabs(vol) > w) || (vol < 0)) { 
+    vol = w;
+  }
+
+  findCM<t_scalar,brr3>(ips, W, cm);
 
   return vol; 
  
@@ -874,37 +1029,44 @@ template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA
 } 
 
 
-// INSTANTIATE everything to arr3 and grr3! 
-
+// INSTANTIATE everything to arr3 and eventually to grr3: 
 template bool exists<scalar,arr3>(arr3 &p, int ips, arr3 (&W)[56]);
-//template bool exists<geoscalar,grr3>(grr3 &p, int ips, grr3 (&W)[56]);
 
 template scalar maxVolume<scalar,arr3>(int ips, arr3 (&W)[56]);
-//template geoscalar maxVolume<geoscalar,grr3>(int ips, grr3 (&W)[56]);
 
 template void maxVolumeAndArea<scalar,arr3>(int ips, arr3 (&W)[56], scalar &volume, scalar &area);
-//template void maxVolumeAndArea<geoscalar,grr3>(int ips, grr3 (&W)[56], geoscalar &volume, geoscalar &area);
+
+template void findCM<scalar,arr3>(int ips, arr3 (&W)[56], arr3 &cm);
 
 template void getBAndN_Order<scalar,arr3>(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &t, arr3 &b, arr3 &n);
-//template void getBAndN_Order<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &t, grr3 &b, grr3 &n);
 
 template void getBAndN<scalar,arr3>(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &t, arr3 &b, arr3 &n);
-//template void getBAndN<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &t, grr3 &b, grr3 &n);
 
 template scalar volumeForNode<scalar,arr3>(arr3 (&tetA)[4], int node);
-//template geoscalar volumeForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node);
 
 template void volumeAndAreaForNode<scalar,arr3>(arr3 (&tetA)[4], int node, scalar &volume, scalar &area);
-//template void volumeAndAreaForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node, geoscalar &volume, geoscalar &area);
 
 template scalar volumeForIntPoint<scalar,arr3>(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)[4], int f1, int f2, int f3);
-//template geoscalar volumeForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3);
 
 template void volumeAndAreaForIntPoint<scalar,arr3>(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)[4], int f1, int f2, int f3, scalar &volume, scalar &area);
-//template void volumeAndAreaForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3, geoscalar &volume, geoscalar &area);
 
 template scalar volumeIntersection<scalar,arr3>(arr3 (&tetA)[4], arr3 (&tetB)[4]);
-//template scalar volumeIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4]);
+template scalar volumeIntersection<scalar,arr3>(arr3 (&tetA)[4], arr3 (&tetB)[4], arr3 &cm);
 
 template void volumeAndAreaIntersection<scalar,arr3>(arr3 (&tetA)[4], arr3 (&tetB)[4], scalar &vol, scalar &area);
-//template void volumeAndAreaIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4], geoscalar &vol, geoscalar &area);
+
+#ifndef USE_DOUBLE
+template bool exists<geoscalar,grr3>(grr3 &p, int ips, grr3 (&W)[56]);
+template geoscalar maxVolume<geoscalar,grr3>(int ips, grr3 (&W)[56]);
+template void maxVolumeAndArea<geoscalar,grr3>(int ips, grr3 (&W)[56], geoscalar &volume, geoscalar &area);
+template void findCM<geoscalar,grr3>(int ips, grr3 (&W)[56], grr3 &cm);
+template void getBAndN_Order<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &t, grr3 &b, grr3 &n);
+template void getBAndN<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &t, grr3 &b, grr3 &n);
+template geoscalar volumeForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node);
+template void volumeAndAreaForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node, geoscalar &volume, geoscalar &area);
+template geoscalar volumeForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3);
+template void volumeAndAreaForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3, geoscalar &volume, geoscalar &area);
+template geoscalar volumeIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4]);
+template geoscalar volumeIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4], grr3 &cm);
+template void volumeAndAreaIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4], geoscalar &vol, geoscalar &area);
+#endif 

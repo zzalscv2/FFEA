@@ -42,8 +42,8 @@ option(USE_PACK "Add genereic automatic compiler flags" OFF)
 mark_as_advanced(USE_PACK)
 set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
-option(USE_DOUBLE "Use double precision" ON)
-mark_as_advanced(USE_DOUBLE)
+set(USE_PRECISION 2 CACHE STRING "1: Floats + Doubles; 2: Doubles; 3: Doubles + Long Doubles")
+mark_as_advanced(USE_PRECISION)
 
 
 set (LIBS_TO_LINK)
@@ -63,9 +63,20 @@ endif(USE_MPI)
 
 
 # 0 #### PRECISION ###
-if (USE_DOUBLE)
-  add_definitions(-DUSE_DOUBLE)
-endif(USE_DOUBLE)
+if (USE_PRECISION EQUAL "1")
+  add_definitions(-DUSE_DOUBLE_LESS)
+else(USE_PRECISION EQUAL "1")
+  if (USE_PRECISION EQUAL "2") 
+    add_definitions(-DUSE_DOUBLE)
+  else (USE_PRECISION EQUAL "2")
+    if (USE_PRECISION EQUAL "3") 
+      add_definitions(-DUSE_DOUBLE_PLUS)
+    else (USE_PRECISION EQUAL "3")
+      message(FATAL_ERROR "USE_PRECISION has to be set to either 1, 2 or 3.")
+    endif(USE_PRECISION EQUAL "3")
+  endif(USE_PRECISION EQUAL "2")
+endif(USE_PRECISION EQUAL "1")
+    
 
 # 1 #### OPENMP #####
 if (USE_OPENMP)

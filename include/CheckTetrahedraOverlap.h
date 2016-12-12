@@ -24,10 +24,10 @@
 #ifndef TETRAHEDRAOVERLAP_H_INCLUDED
 #define TETRAHEDRAOVERLAP_H_INCLUDED
 
-#ifdef USE_DOUBLE
-typedef double scalar;
-#else
+#ifdef USE_DOUBLE_LESS
 typedef float scalar;
+#else
+typedef double scalar;
 #endif
 
 #include <stddef.h>

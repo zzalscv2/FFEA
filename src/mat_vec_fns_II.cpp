@@ -570,7 +570,7 @@ template <class t_scalar, class brr3> t_scalar distanceFromPointToLine(arr3_view
 }
 
 
-template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_scalar,brr3> p0, arr3_view<t_scalar,brr3> p1, arr3_view<t_scalar,brr3> p2, arr3_view<t_scalar,brr3> p3){
+/* template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_scalar,brr3> p0, arr3_view<t_scalar,brr3> p1, arr3_view<t_scalar,brr3> p2, arr3_view<t_scalar,brr3> p3){
 
    scalar v = 0;   
    v += detByCols<scalar,arr3>(p1, p2, p3);
@@ -579,20 +579,29 @@ template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_s
    v -= detByCols<scalar,arr3>(p0, p1, p2);
    return v/6.; 
   
+}*/ 
+
+
+template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_scalar,brr3> p0, arr3_view<t_scalar,brr3> p1, arr3_view<t_scalar,brr3> p2, arr3_view<t_scalar,brr3> p3){
+
+  return  (p1[0] - p0[0])*( (p1[1] - p2[1])*(p2[2] - p3[2]) - (p2[1] - p3[1])*(p1[2] - p2[2]) ) +
+          (p2[0] - p1[0])*( (p2[1] - p3[1])*(p0[2] - p1[2]) - (p0[1] - p1[1])*(p2[2] - p3[2]) ) +
+          (p3[0] - p2[0])*( (p0[1] - p1[1])*(p1[2] - p2[2]) - (p1[1] - p2[1])*(p0[2] - p1[2]) );
+  
 }
 
-void getLocalCoordinatesForLinTet(arr3_view<scalar,arr3> t0, arr3_view<scalar,arr3> t1, arr3_view<scalar,arr3> t2, arr3_view<scalar,arr3> t3, arr3_view<scalar,arr3> p, arr4 phi){
+template <class t_scalar, class brr3, class brr4> void getLocalCoordinatesForLinTet(arr3_view<t_scalar,brr3> t0, arr3_view<t_scalar,brr3> t1, arr3_view<t_scalar,brr3> t2, arr3_view<t_scalar,brr3> t3, arr3_view<t_scalar,brr3> p, brr4 phi){
 
    phi[0] = getTetrahedraVolume(p, t1, t2, t3);
    phi[1] = - getTetrahedraVolume(p, t0, t2, t3);
    phi[2] = getTetrahedraVolume(p, t0, t1, t3);
    phi[3] = - getTetrahedraVolume(p, t0, t1, t2);
-   scalar v = getTetrahedraVolume(t0, t1, t2, t3);
+   t_scalar v = getTetrahedraVolume(t0, t1, t2, t3);
    for (int i=0; i<4; i++) {
      phi[i] /= v; 
    } 
 
-   // CHECK!! for the time:
+   /*  // CHECK!! for the time: 
    arr3 tmp, pc;
    arr3Initialise<arr3>(pc); // WT*?
    arr3Resize2<scalar,arr3>(phi[0], t0, tmp);
@@ -609,7 +618,7 @@ void getLocalCoordinatesForLinTet(arr3_view<scalar,arr3> t0, arr3_view<scalar,ar
        cout << "p: " << p[0] << ", " << p[1] << ", " << p[2] << endl;
        cout << "pc: " << pc[0] << ", " << pc[1] << ", " << pc[2] << endl;
        cout << "diff: " << mag<scalar,arr3>(tmp) << endl; 
-   } 
+   } */
 
 
    
@@ -626,7 +635,7 @@ void getLocalCoordinatesForLinTet(arr3_view<scalar,arr3> t0, arr3_view<scalar,ar
 ///////////////// SECTION 3 ////////////////////
 /// Transition functions from vector3 to arr3 // 
 ////////////////////////////////////////////////
-void vec3Vec3SubsToArr3(vector3 &u, vector3 &v, arr3 (&w)){
+template <class brr3> void vec3Vec3SubsToArr3(vector3 &u, vector3 &v, brr3 (&w)){
 
     w[0] = u.x - v.x;
     w[1] = u.y - v.y;
@@ -686,98 +695,82 @@ scalar vec3Arr3DotProduct(vector3 &u, arr3 &v) {
 // // // // Instantiate templates // // // // //
 ////////////////////////////////////////////////
 template bool sameSign<scalar>(scalar a, scalar b);
-//template bool sameSign<geoscalar>(geoscalar a, geoscalar b);
-
 
 template void arr3arr3Add<scalar, arr3>(arr3_view<scalar,arr3> vecA, arr3_view<scalar,arr3> vecB, arr3_view<scalar,arr3> res);
-//template void arr3arr3Add<arr3>(arr3 &vecA, arr3 &vecB, arr3 &res);
-//template void arr3arr3Add<grr3>(grr3 &vecA, grr3 &vecB, grr3 &res);
 
 template void arr3arr3Substract<scalar,arr3>(arr3_view<scalar,arr3> vecA, arr3_view<scalar,arr3> vecB, arr3_view<scalar,arr3> res);
-//template void arr3arr3Substract<arr3>(arr3 &vecA, arr3 &vecB, arr3 &res);
-//template void arr3arr3Substract<grr3>(grr3 &vecA, grr3 &vecB, grr3 &res);
 
 template void arr3arr3VectorProduct<scalar,arr3>(arr3_view<scalar,arr3> u, arr3_view<scalar,arr3> v, arr3_view<scalar,arr3> w);
-// template void arr3arr3VectorProduct<arr3>(arr3 (&u), arr3 (&v), arr3 (&w));
-//template void arr3arr3VectorProduct<grr3>(grr3 (&u), grr3 (&v), grr3 (&w));
 
 template scalar arr3arr3DotProduct<scalar,arr3>(arr3_view<scalar,arr3> vecA, arr3_view<scalar,arr3> vecB);
-//template scalar arr3arr3DotProduct<scalar,arr3>(arr3 &vecA, arr3 &vecB);
-//template geoscalar arr3arr3DotProduct<geoscalar,grr3>(grr3 &vecA, grr3 &vecB);
 
 template void arr3Normalise<scalar,arr3>(arr3_view<scalar,arr3> e);
-// template void arr3Normalise<scalar,arr3>(arr3 &e);
-//template void arr3Normalise<geoscalar,grr3>(grr3 &e);
 
 template void arr3Normalise2<scalar,arr3>(arr3_view<scalar,arr3> e, arr3_view<scalar,arr3> n);
-// template void arr3Normalise2<scalar,arr3>(arr3 &e, arr3 &n);
-//template void arr3Normalise2<geoscalar,grr3>(grr3 &e, grr3 &n);
 
 template void arr3Resize<scalar,arr3>(scalar f, arr3_view<scalar,arr3> u);
-//template void arr3Resize<geoscalar,grr3>(geoscalar f, grr3 &u);
 
 template void arr3Resize2<scalar,arr3> (scalar f, arr3_view<scalar,arr3> u, arr3_view<scalar,arr3> v);
-//template void arr3Resize2<geoscalar,grr3> (geoscalar f, grr3 &u, grr3 &v);
 
 template void arr3Store<scalar,arr3>(arr3_view<scalar,arr3> u, arr3_view<scalar,arr3> v);
-// template void arr3Store<arr3>(arr3 &u, arr3 &v);
-//template void arr3Store<grr3>(grr3 &u, grr3 &v);
 
 template scalar arr3arr3Distance<scalar,arr3>(arr3_view<scalar,arr3> vecA, arr3_view<scalar,arr3> vecB); 
-//template geoscalar arr3arr3Distance<geoscalar,grr3>(grr3 &vecA, grr3 &vecB); 
 
 template scalar mag<scalar,arr3>(arr3_view<scalar,arr3> v);
-// template scalar mag<scalar,arr3>(arr3 (&v));
-// template scalar mag<scalar>(scalar (&v)[3]);
-//template geoscalar mag<geoscalar>(geoscalar (&v)[3]);
 
 template void arr3Initialise<arr3>(arr3 &v);
-//template void arr3Initialise<grr3>(grr3 &v);
 
 template scalar detByRows<scalar,arr3>(arr3_view<scalar,arr3> a, arr3_view<scalar,arr3> b, arr3_view<scalar,arr3> c);
 
 template scalar detByCols<scalar,arr3>(arr3_view<scalar,arr3> a, arr3_view<scalar,arr3> b, arr3_view<scalar,arr3> c);
 
 
-
+#ifndef USE_DOUBLE
+template bool sameSign<geoscalar>(geoscalar a, geoscalar b);
+template void arr3arr3Add<geoscalar, grr3>(arr3_view<geoscalar,grr3> vecA, arr3_view<geoscalar,grr3> vecB, arr3_view<geoscalar,grr3> res);
+template void arr3arr3Substract<geoscalar,grr3>(arr3_view<geoscalar,grr3> vecA, arr3_view<geoscalar,grr3> vecB, arr3_view<geoscalar,grr3> res);
+template void arr3arr3VectorProduct<geoscalar,grr3>(arr3_view<geoscalar,grr3> u, arr3_view<geoscalar,grr3> v, arr3_view<geoscalar,grr3> w);
+template geoscalar arr3arr3DotProduct<geoscalar,grr3>(arr3_view<geoscalar,grr3> vecA, arr3_view<geoscalar,grr3> vecB);
+template void arr3Normalise<geoscalar,grr3>(arr3_view<geoscalar,grr3> e);
+template void arr3Normalise2<geoscalar,grr3>(arr3_view<geoscalar,grr3> e, arr3_view<geoscalar,grr3> n);
+template void arr3Resize<geoscalar,grr3>(geoscalar f, arr3_view<geoscalar,grr3> u);
+template void arr3Resize2<geoscalar,grr3> (geoscalar f, arr3_view<geoscalar,grr3> u, arr3_view<geoscalar,grr3> v);
+template void arr3Store<geoscalar,grr3>(arr3_view<geoscalar,grr3> u, arr3_view<geoscalar,grr3> v);
+template geoscalar arr3arr3Distance<geoscalar,grr3>(arr3_view<geoscalar,grr3> vecA, arr3_view<geoscalar,grr3> vecB); 
+template geoscalar mag<geoscalar,grr3>(arr3_view<geoscalar,grr3> v);
+template void arr3Initialise<grr3>(grr3 &v);
+template geoscalar detByRows<geoscalar,grr3>(arr3_view<geoscalar,grr3> a, arr3_view<geoscalar,grr3> b, arr3_view<geoscalar,grr3> c);
+template geoscalar detByCols<geoscalar,grr3>(arr3_view<geoscalar,grr3> a, arr3_view<geoscalar,grr3> b, arr3_view<geoscalar,grr3> c);
+#endif
 
 
 template void tangent<scalar,arr3>(arr3 &vecA, arr3 &vecB, arr3 &t);
-//template void tangent<geoscalar,grr3>(grr3 &vecA, grr3 &vecB, grr3 &t);
 
 template void getUnitNormal<scalar,arr3>(arr3 &u, arr3 &v, arr3 &w);
-//template void getUnitNormal<geoscalar,grr3>(grr3 &u, grr3 &v, grr3 &w);
 
 template void getNormal<scalar,arr3>(arr3 &v1, arr3 &v2, arr3 &v3, arr3 &n);
-//template void getNormal<geoscalar,grr3>(grr3 &v1, grr3 &v2, grr3 &v3, grr3 &n);
 
 template void getNormalInwards<scalar,arr3>(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &n);
-//template void getNormalInwards<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &n);
 
 template bool sameSidePlane<scalar,arr3>(arr3 &vec, arr3 &test, arr3 &p1, arr3 &p2, arr3 &p3);
-//template bool sameSidePlane<geoscalar,grr3>(grr3 &vec, grr3 &test, grr3 &p1, grr3 &p2, grr3 &p3);
 
 template bool sameSideLine<scalar,arr3>(arr3 &e, arr3 &p1, arr3 &p2, arr3 &p3);
-//template bool sameSideLine<geoscalar,grr3>(grr3 &e, grr3 &p1, grr3 &p2, grr3 &p3);
 
 template bool nodeInTet<scalar,arr3>(arr3 &vec, arr3 (tet)[4]);
-//template bool nodeInTet<geoscalar,grr3>(grr3 &vec, grr3 (tet)[4]);
 
 template void linePlaneIntersectionPoint<scalar,arr3>(arr3 &ip, arr3 &e1, arr3 &e2, arr3 &p1, arr3 &p2, arr3 &p3);
-//template void linePlaneIntersectionPoint<geoscalar,grr3>(grr3 &ip, grr3 &e1, grr3 &e2, grr3 &p1, grr3 &p2, grr3 &p3);
 
 template bool safeLinePlaneIntersectionPoint<scalar,arr3>(arr3 &ip, arr3 &e1, arr3 &e2, arr3 &p1, arr3 &p2, arr3 &p3);
 
 template bool lineFaceIntersectionPoint<scalar,arr3>(arr3 (&ip), arr3 (&e1), arr3 (&e2), arr3 (&p1), arr3 (&p2), arr3 (&p3));
 
 template bool isPointInFace<scalar,arr3>(arr3 &ip, arr3 &p1, arr3 &p2, arr3 &p3);
-//template bool isPointInFace<geoscalar,grr3>(grr3 &ip, grr3 &p1, grr3 &p2, grr3 &p3);
 
 template bool intersectionPoint<scalar,arr3>(arr3 &(ip), arr3 (&e1), arr3 (&e2), arr3 (&tet)[4], int f1, int f2, int f3);
-//template bool intersectionPoint<geoscalar,grr3>(grr3 &(ip), grr3 (&e1), grr3 (&e2), grr3 (&tet)[4], int f1, int f2, int f3);
 
 // template void intersectingPointToLine<scalar, arr3>(arr3 &p0, arr3 &p1, arr3 &p2, arr3 &p3);
 template void intersectingPointToLine<scalar, arr3>(arr3_view<scalar, arr3> p0, arr3_view<scalar,arr3> p1, arr3_view<scalar,arr3> p2p1, arr3_view<scalar,arr3> p3);
+
 template void intersectingPointToLine<scalar, arr3>(vector3 &p0, arr3_view<scalar,arr3> p1, arr3_view<scalar,arr3> p2p1, arr3_view<scalar,arr3> p3);
 
 
@@ -785,4 +778,31 @@ template scalar distanceFromPointToLine<scalar,arr3>(arr3_view<scalar, arr3> p0,
 
 template scalar getTetrahedraVolume<scalar,arr3>(arr3_view<scalar,arr3> p0, arr3_view<scalar,arr3> p1, arr3_view<scalar,arr3> p2, arr3_view<scalar,arr3> p3);
 
+template void getLocalCoordinatesForLinTet<scalar,arr3,arr4>(arr3_view<scalar,arr3> t0, arr3_view<scalar,arr3> t1, arr3_view<scalar,arr3> t2, arr3_view<scalar,arr3> t3, arr3_view<scalar,arr3> p, arr4 phi);
+
+   //////////////     
+template void vec3Vec3SubsToArr3<arr3>(vector3 &u, vector3 &v, arr3 (&w));
+
+
+
+#ifndef USE_DOUBLE
+template void tangent<geoscalar,grr3>(grr3 &vecA, grr3 &vecB, grr3 &t);
+template void getUnitNormal<geoscalar,grr3>(grr3 &u, grr3 &v, grr3 &w);
+template void getNormal<geoscalar,grr3>(grr3 &v1, grr3 &v2, grr3 &v3, grr3 &n);
+template void getNormalInwards<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &n);
+template bool sameSidePlane<geoscalar,grr3>(grr3 &vec, grr3 &test, grr3 &p1, grr3 &p2, grr3 &p3);
+template bool sameSideLine<geoscalar,grr3>(grr3 &e, grr3 &p1, grr3 &p2, grr3 &p3);
+template bool nodeInTet<geoscalar,grr3>(grr3 &vec, grr3 (tet)[4]);
+template void linePlaneIntersectionPoint<geoscalar,grr3>(grr3 &ip, grr3 &e1, grr3 &e2, grr3 &p1, grr3 &p2, grr3 &p3);
+template bool safeLinePlaneIntersectionPoint<geoscalar,grr3>(grr3 &ip, grr3 &e1, grr3 &e2, grr3 &p1, grr3 &p2, grr3 &p3);
+template bool lineFaceIntersectionPoint<geoscalar,grr3>(grr3 (&ip), grr3 (&e1), grr3 (&e2), grr3 (&p1), grr3 (&p2), grr3 (&p3));
+template bool isPointInFace<geoscalar,grr3>(grr3 &ip, grr3 &p1, grr3 &p2, grr3 &p3);
+template bool intersectionPoint<geoscalar,grr3>(grr3 &(ip), grr3 (&e1), grr3 (&e2), grr3 (&tet)[4], int f1, int f2, int f3);
+template void intersectingPointToLine<geoscalar, grr3>(arr3_view<geoscalar, grr3> p0, arr3_view<geoscalar,grr3> p1, arr3_view<geoscalar,grr3> p2p1, arr3_view<geoscalar,grr3> p3);
+template void intersectingPointToLine<geoscalar, grr3>(vector3 &p0, arr3_view<geoscalar,grr3> p1, arr3_view<geoscalar,grr3> p2p1, arr3_view<geoscalar,grr3> p3);
+template geoscalar distanceFromPointToLine<geoscalar,grr3>(arr3_view<geoscalar, grr3> p0, arr3_view<geoscalar, grr3> p1, arr3_view<geoscalar, grr3> p2);
+template geoscalar getTetrahedraVolume<geoscalar,grr3>(arr3_view<geoscalar,grr3> p0, arr3_view<geoscalar,grr3> p1, arr3_view<geoscalar,grr3> p2, arr3_view<geoscalar,grr3> p3);
+template void getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(arr3_view<geoscalar,grr3> t0, arr3_view<geoscalar,grr3> t1, arr3_view<geoscalar,grr3> t2, arr3_view<geoscalar,grr3> t3, arr3_view<geoscalar,grr3> p, grr4 phi);
+template void vec3Vec3SubsToArr3<grr3>(vector3 &u, vector3 &v, grr3 (&w));
+#endif 
 
