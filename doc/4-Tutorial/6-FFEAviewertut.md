@@ -22,7 +22,7 @@ When PyMOL loads, open the ` Plugin ` menu, and you should see a new option call
   and load the FFEA script file, but before doing that, review the options.
   Currently, the model needs to be reloaded every time these settings are changed.
 
-![FFEA Viewer settings](viewer_2_settings_III.png "FFEA Viewer settings")
+![FFEA Viewer settings](viewer_2_settings_IV.png "FFEA Viewer settings")
 
 The FFEA viewer settings are:
 * ` System name `: arbitrary, used to identify the system in the PyMOL sidebar.
@@ -62,14 +62,13 @@ The FFEA viewer settings are:
 <!-- * Clicking the ` Add node pseudoatoms ` button after the simulation is loaded will cause PyMOL to load a pseudoatom at the location of each node. Pseudoatoms can be targeted by all of PyMOL's regular analysis tools. For example, you can type `label all, name` into the PyMOL console. -->
 * ` Add Atoms `: will add create a PyMOL object, or molecule, with a number of CA atoms.
   * ` None ` does not load anything
+  * ` Onto Linear Nodes ` will add atoms on every first order node, where PyMOL attribute ` resi ` will match the corresponding FFEA node number. 
   * ` Onto Nodes ` will add atoms on every node, where PyMOL attribute ` resi ` will match the corresponding FFEA node number. 
   * ` Onto Faces ` will add atoms on every face, where PyMOL attributes ` resi ` will match the corresponding FFEA face number.
       Notice that FFEA uses second order faces in 
   [short range forces](\ref shortRange), and so one will find 4 nodes on every 
     triangle if loads ` Whole Mesh ` (but only one if loading ` Surface Mesh `). 
-* ` Highlight Nodes` :
-  * Provide a list of nodes, e.g. '1, 2, 3' (no quotes) and the a separate blob will be created using only those nodes. Useful for tracking down element inversions. Warning: right now, this only works with CGO trajectories.
-  
+  * ` Onto Elements ` will add atoms at the centre of every element, where PyMOL attribute ` resi ` will match the corresponding FFEA node number. 
 
 ## Viewing models
 
