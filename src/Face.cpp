@@ -511,43 +511,39 @@ bool Face::getTetraIntersectionVolumeAndShapeFunctions(Face *f2, grr3 (&r), grr3
 bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2)){
 
   geoscalar tetA[4][3], tetB[4][3], tetC[4][3];
-  // geoscalar tetD[4][3], tetE[4][3];
   grr3 ap1, ap2, cm1, cm2;
   geoscalar dr = 1e-3;
   geoscalar vol_m, vol_M;
-  //geoscalar vol_2m, vol_2M;
 
   for (int i=0; i<4; i++) {
      tetA[i][0] = n[i]->pos.x;
      tetA[i][1] = n[i]->pos.y;
      tetA[i][2] = n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x;
+     tetB[i][1] = f2->n[i]->pos.y;
+     tetB[i][2] = f2->n[i]->pos.z;
+  } 
+  // get the volume, the CM for the intersection, and the direction of the gradient:
+  vol = volumeIntersection<geoscalar,grr3>(tetA, tetB, cm1, r);
+  if (vol == 0) return false;
+
+  // construct the two tetrahedra B, in the direction of the gradient
+  //   // a simple 1st order derivative was not working for the cubes & springs.
+  for (int i=0; i<4; i++) {
      tetB[i][0] = f2->n[i]->pos.x -dr*r[0];
      tetB[i][1] = f2->n[i]->pos.y -dr*r[1];
      tetB[i][2] = f2->n[i]->pos.z -dr*r[2];
      tetC[i][0] = f2->n[i]->pos.x + dr*r[0];
      tetC[i][1] = f2->n[i]->pos.y + dr*r[1];
      tetC[i][2] = f2->n[i]->pos.z + dr*r[2];
-
-     /*tetD[i][0] = f2->n[i]->pos.x -2*dr*r[0];
-     tetD[i][1] = f2->n[i]->pos.y -2*dr*r[1];
-     tetD[i][2] = f2->n[i]->pos.z -2*dr*r[2];
-     tetE[i][0] = f2->n[i]->pos.x + 2*dr*r[0];
-     tetE[i][1] = f2->n[i]->pos.y + 2*dr*r[1];
-     tetE[i][2] = f2->n[i]->pos.z + 2*dr*r[2];*/
   }
 
-  vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetB, cm1);
-  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC, cm2);
-
-  /*vol_2m = volumeIntersection<geoscalar,grr3>(tetA, tetD);
-  vol_2M = volumeIntersection<geoscalar,grr3>(tetA, tetE);*/
+  vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetB);//cm1);
+  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);//cm2);
 
 
   dVdr = (vol_M - vol_m)/(2*dr);
-  // dVdr = (8*vol_M + vol_2m - 8*vol_m - vol_2M)/(12*dr); 
-  vol  = (vol_m + vol_M)/2;
-  arr3arr3Add<geoscalar,grr3>(cm1, cm2, cm1); 
-  arr3Resize<geoscalar,grr3>(0.5, cm1); 
+  // dVdr = (vol_M - vol)/dr; 
 
   getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetA[0], tetA[1], tetA[2], tetA[3], cm1, phi1);
   getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetB[0], tetB[1], tetB[2], tetB[3], cm1, phi2);

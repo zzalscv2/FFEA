@@ -155,8 +155,8 @@ int main(int argc, char** argv) {
    fclose(trj);
 
    cout << "There were vol:" << i_vol << " in " << checks << " checkings" << endl; 
-   if (( ((float) i_vol) / checks ) > 0.00030 ) {
-     cout << " There were too many intersections " << endl; 
+   if (( ((float) i_vol) / checks ) > 0.00080 ) {
+     cout << " There were too many intersections: " << (( (float) i_vol) / checks ) << endl; 
      return 1;
    } 
 
