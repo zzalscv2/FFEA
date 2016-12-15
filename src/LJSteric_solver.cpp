@@ -63,48 +63,39 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 
     //  Then, check whether the tetrahedra intersect,
     //    and if so, get the volume:
-    scalar vol = f1->checkTetraIntersectionAndGetVolume(f2);
+    bool lj = true; 
+    if (f1->checkTetraIntersection(f2)) {
+       geoscalar vol, dVdr;
+       grr3 force1, force2; //, n1_b;
+       grr4 phi1, phi2;
 
-    //  Then, check whether the tetrahedra intersect.
-    if ( vol > ffea_const::threeErr ) {
-	    // If yes, do the vol-vol steric interactions
-		 //cout << "Interacting!!" << endl;
-		 //exit(0);
-
-       // Choose the force line
-       // as the line passing through the elements CMs.
-       grr3 force1, force2, cm1, cm2; //, n1_b;
-       arr3Initialise<grr3>(cm1);
-       arr3Initialise<grr3>(cm2);
-       for (int i=0; i<4; i++) {
-         cm1[0] += f1->n[i]->pos.x;
-         cm1[1] += f1->n[i]->pos.y;
-         cm1[2] += f1->n[i]->pos.z;
-         cm2[0] += f2->n[i]->pos.x;
-         cm2[1] += f2->n[i]->pos.y;
-         cm2[2] += f2->n[i]->pos.z;
-       }
-       arr3Resize<geoscalar,grr3>(0.25,cm1);
-       arr3Resize<geoscalar,grr3>(0.25,cm2);
-       arr3arr3Substract<geoscalar,grr3>(cm2, cm1, force2);
-       arr3Normalise<geoscalar,grr3>(force2); // that is the direction of the force for f2 (backwards).
-
-       // Store the measurement
-       fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
-
-       // Force is proportional to the gradient, i. e.:
-       arr3Resize<geoscalar,grr3>(steric_factor, force2);
-       arr3Resize2<geoscalar,grr3>(ffea_const::mOne, force2, force1);
-
-       // Finally, apply the force onto the nodes:
-       for (int j = 0; j < 4; j++) {
-         f1->add_force_to_node(j, force1);
-         f1->add_bb_vdw_force_to_record(force1, f2->daddy_blob->blob_index);
-         f2->add_force_to_node(j, force2);
-         f2->add_bb_vdw_force_to_record(force2, f1->daddy_blob->blob_index);
-       }
-
-    } else {
+       if (f1->getTetraIntersectionVolumeGradientAndShapeFunctions(f2, force2, vol, dVdr, phi1, phi2)) {
+           lj = false;
+           vol *= steric_factor;
+           dVdr *= steric_factor;
+       
+           // Store the measurement
+           fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
+       
+           // Force is proportional to the gradient, i. e.:
+           arr3Resize<geoscalar,grr3>(-dVdr, force2);
+           arr3Resize2<geoscalar,grr3>(ffea_const::mOne, force2, force1);
+       
+           grr3 ftmp1, ftmp2;
+           // Finally, apply the force onto the nodes:
+           for (int j = 0; j < 4; j++) {
+             arr3Resize2<geoscalar,grr3>(phi1[j], force1, ftmp1);
+             f1->add_force_to_node(j, ftmp1);
+             f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+       
+             arr3Resize2<geoscalar,grr3>(phi2[j], force2, ftmp2);
+             f2->add_force_to_node(j, ftmp2);
+             f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+           }
+   
+        } 
+    }
+    if (lj) {
 
       // If not, do lennard-jones type interactions
 
