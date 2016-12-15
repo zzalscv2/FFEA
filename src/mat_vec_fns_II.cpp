@@ -268,7 +268,7 @@ template <class t_scalar, class brr3> void getNormal(brr3 &v1, brr3 &v2, brr3 &v
 /* Given the face formed by tetA[0]:tetA[1]:tetA[2] 
  * get n, the normal to a face pointing inwards.
  */
-template <class t_scalar, class brr3> void getNormalInwards(brr3 (&tetA)[4], int n0, int n1, int n2, brr3 &n){
+template <class t_scalar, class brr3> void getNormalInwards(brr3 (&tetA)[4], int n0, int n1, int n2, brr3 (&n)){
 
    // pl1 and pl2 are the unit vectors (tetA[n1] - tetA[n0]) and (tetA[n2] - tetA[n0]), 
    brr3 pl1, pl2, aux;
@@ -590,6 +590,15 @@ template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_s
   
 }
 
+
+template <class brr3> void getTetrahedraCM(brr3 &p1, brr3 &p2, brr3 &p3, brr3 &p4, brr3 &c){
+
+   for (int i=0; i<3; i++){
+      c[i] = 0.25 * (p1[i] + p2[i] + p3[i] + p4[i]);
+   }
+
+}
+
 template <class t_scalar, class brr3, class brr4> void getLocalCoordinatesForLinTet(arr3_view<t_scalar,brr3> t0, arr3_view<t_scalar,brr3> t1, arr3_view<t_scalar,brr3> t2, arr3_view<t_scalar,brr3> t3, arr3_view<t_scalar,brr3> p, brr4 phi){
 
    phi[0] = getTetrahedraVolume(p, t1, t2, t3);
@@ -750,7 +759,7 @@ template void getUnitNormal<scalar,arr3>(arr3 &u, arr3 &v, arr3 &w);
 
 template void getNormal<scalar,arr3>(arr3 &v1, arr3 &v2, arr3 &v3, arr3 &n);
 
-template void getNormalInwards<scalar,arr3>(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &n);
+template void getNormalInwards<scalar,arr3>(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 (&n));
 
 template bool sameSidePlane<scalar,arr3>(arr3 &vec, arr3 &test, arr3 &p1, arr3 &p2, arr3 &p3);
 
@@ -778,6 +787,8 @@ template scalar distanceFromPointToLine<scalar,arr3>(arr3_view<scalar, arr3> p0,
 
 template scalar getTetrahedraVolume<scalar,arr3>(arr3_view<scalar,arr3> p0, arr3_view<scalar,arr3> p1, arr3_view<scalar,arr3> p2, arr3_view<scalar,arr3> p3);
 
+template void getTetrahedraCM<arr3>(arr3 &p1, arr3 &p2, arr3 &p3, arr3 &p4, arr3 &c);
+
 template void getLocalCoordinatesForLinTet<scalar,arr3,arr4>(arr3_view<scalar,arr3> t0, arr3_view<scalar,arr3> t1, arr3_view<scalar,arr3> t2, arr3_view<scalar,arr3> t3, arr3_view<scalar,arr3> p, arr4 phi);
 
    //////////////     
@@ -789,7 +800,7 @@ template void vec3Vec3SubsToArr3<arr3>(vector3 &u, vector3 &v, arr3 (&w));
 template void tangent<geoscalar,grr3>(grr3 &vecA, grr3 &vecB, grr3 &t);
 template void getUnitNormal<geoscalar,grr3>(grr3 &u, grr3 &v, grr3 &w);
 template void getNormal<geoscalar,grr3>(grr3 &v1, grr3 &v2, grr3 &v3, grr3 &n);
-template void getNormalInwards<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 &n);
+template void getNormalInwards<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 (&n));
 template bool sameSidePlane<geoscalar,grr3>(grr3 &vec, grr3 &test, grr3 &p1, grr3 &p2, grr3 &p3);
 template bool sameSideLine<geoscalar,grr3>(grr3 &e, grr3 &p1, grr3 &p2, grr3 &p3);
 template bool nodeInTet<geoscalar,grr3>(grr3 &vec, grr3 (tet)[4]);
@@ -802,6 +813,7 @@ template void intersectingPointToLine<geoscalar, grr3>(arr3_view<geoscalar, grr3
 template void intersectingPointToLine<geoscalar, grr3>(vector3 &p0, arr3_view<geoscalar,grr3> p1, arr3_view<geoscalar,grr3> p2p1, arr3_view<geoscalar,grr3> p3);
 template geoscalar distanceFromPointToLine<geoscalar,grr3>(arr3_view<geoscalar, grr3> p0, arr3_view<geoscalar, grr3> p1, arr3_view<geoscalar, grr3> p2);
 template geoscalar getTetrahedraVolume<geoscalar,grr3>(arr3_view<geoscalar,grr3> p0, arr3_view<geoscalar,grr3> p1, arr3_view<geoscalar,grr3> p2, arr3_view<geoscalar,grr3> p3);
+template void getTetrahedraCM<grr3>(grr3 &p1, grr3 &p2, grr3 &p3, grr3 &p4, grr3 &c);
 template void getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(arr3_view<geoscalar,grr3> t0, arr3_view<geoscalar,grr3> t1, arr3_view<geoscalar,grr3> t2, arr3_view<geoscalar,grr3> t3, arr3_view<geoscalar,grr3> p, grr4 phi);
 template void vec3Vec3SubsToArr3<grr3>(vector3 &u, vector3 &v, grr3 (&w));
 #endif 
