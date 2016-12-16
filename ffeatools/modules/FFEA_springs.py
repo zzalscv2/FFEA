@@ -23,6 +23,7 @@
 
 from os import path
 from time import sleep
+import sys
 
 class FFEA_springs:
 
@@ -40,7 +41,7 @@ class FFEA_springs:
 		sys.stdout.write("Loading FFEA springs file...")
 		
 		# File format?
-		base, ext = os.path.splitext(fname)
+		base, ext = path.splitext(fname)
 		try:
 			if ext == ".spring" or ext == ".springs":
 
