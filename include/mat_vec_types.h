@@ -33,10 +33,13 @@
  * Defines what is meant by a scalar (essentially sets the precision of
  * the code between float or double).
  */
-#ifdef USE_DOUBLE
+#ifdef USE_DOUBLE_PLUS
+typedef double scalar;
+typedef long double geoscalar;
+#elif USE_DOUBLE
 typedef double scalar;
 typedef double geoscalar;
-#else
+#elif USE_DOUBLE_LESS
 typedef float scalar;
 typedef double geoscalar;
 #endif 

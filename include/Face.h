@@ -176,6 +176,15 @@ public:
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2));
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
+     /** Get the volume that enclose the intersection
+      *   of the tetrahedron formed by this face an the opposite
+      *   linear node with the corresponding tetrahedron in f2.
+      *   In addition, return the shape functions to be applied on the faces,
+      *     if the force were applied on a point of the surfaces, 
+      *     for a line given by axis r and point p.
+      **/
+    bool getTetraIntersectionVolumeAndShapeFunctions(Face *f2, grr3 (&r), grr3 (&p), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
+
     Blob *daddy_blob;
 
     void init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *oposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params);
@@ -204,12 +213,12 @@ public:
     scalar get_normal_flux();
 
     void add_force_to_node(int i, vector3 *f);
-    void add_force_to_node(int i, arr3 (&f));
+    template <class brr3> void add_force_to_node(int i, brr3 (&f));
 
     void add_force_to_node_atomic(int i, vector3 *f);
 
     void add_bb_vdw_force_to_record(vector3 *f, int other_blob_index);
-    void add_bb_vdw_force_to_record(arr3 &f, int other_blob_index);
+    template <class brr3> void add_bb_vdw_force_to_record(brr3 &f, int other_blob_index);
 
     void add_bb_vdw_energy_to_record(scalar energy, int other_blob_index);
 
@@ -227,7 +236,7 @@ public:
 
     void set_vdw_bb_interaction_flag(bool state, int other_blob_index);
 
-    void vec3Vec3SubsToArr3Mod(Face *f2, arr3 (&w), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
+    template <class brr3> void vec3Vec3SubsToArr3Mod(Face *f2, brr3 (&w), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     bool is_vdw_active();
     bool is_kinetic_active();

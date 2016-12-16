@@ -118,7 +118,7 @@ template <class t_scalar, class brr3> void getNormal(brr3 &v1, brr3 &v2, brr3 &v
  * get n, the normal to a face pointing inwards.
  */
 // void getNormalInwards(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &n);
-template <class t_scalar, class brr3> void getNormalInwards(brr3 (&tetA)[4], int n0, int n1, int n2, brr3 &n);
+template <class t_scalar, class brr3> void getNormalInwards(brr3 (&tetA)[4], int n0, int n1, int n2, brr3 (&n));
 
 /** check if points vec and test are at the same side
  *  of the plane formed by p1, p2 and p3 
@@ -202,12 +202,16 @@ template <class t_scalar, class brr3> t_scalar distanceFromPointToLine(arr3_view
 
 template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_scalar,brr3> p0, arr3_view<t_scalar,brr3> p1, arr3_view<t_scalar,brr3> p2, arr3_view<t_scalar,brr3> p3);
 
-void getLocalCoordinatesForLinTet(arr3_view<scalar,arr3> t0, arr3_view<scalar,arr3> t1, arr3_view<scalar,arr3> t2, arr3_view<scalar,arr3> t3, arr3_view<scalar,arr3> p, arr4 phi);
+/** Return the center of coordinates for four points p1, p2, p3, p4 in c */
+template <class brr3> void getTetrahedraCM(brr3 &p1, brr3 &p2, brr3 &p3, brr3 &p4, brr3 &c);
+
+
+template <class t_scalar, class brr3, class brr4> void getLocalCoordinatesForLinTet(arr3_view<t_scalar,brr3> t0, arr3_view<t_scalar,brr3> t1, arr3_view<t_scalar,brr3> t2, arr3_view<t_scalar,brr3> t3, arr3_view<t_scalar,brr3> p, brr4 phi);
 
 ///////////////// SECTION 3 ////////////////////
 //// Transition functions from vector3 to arr3 // 
 ////////////////////////////////////////////////
-void vec3Vec3SubsToArr3(vector3 &u, vector3 &v, arr3 (&w));
+template <class brr3> void vec3Vec3SubsToArr3(vector3 &u, vector3 &v, brr3 (&w));
 void vec3Arr3SubsToArr3(vector3 &u, arr3 &v, arr3 &w);
 void arr3Vec3SubsToArr3(arr3 (&u), vector3 &v, arr3 (&w));
 
