@@ -38,6 +38,9 @@ In between it can take the following parameters:
         an integer the string "time" is passed, current time will be used to 
         to get the initial seed.
 
+   * ` epsilon ` <float> (0.01) <BR>
+        Error tolerance threshold to determine that Conjugate Gradient has converged.
+
    * ` max_iterations_cg ` <int> (1000) <BR>
         Maximum number of iterations that the Conjugate Gradient solver will take.
         If the algorithm has not converged, the simulation will be stopped. 
@@ -143,9 +146,6 @@ In between it can take the following parameters:
 
    * ` dielect_ext ` <float> (1) <BR>
  
-   * ` epsilon ` <float> (0.01) <BR>
-        Relative permittivity of the space between ` blobs`.
-
    * ` epsilon_0 ` <float> (1) <BR>
         Relative permittivity in the interior of the `blobs`.
 

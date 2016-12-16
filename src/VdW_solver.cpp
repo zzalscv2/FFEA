@@ -58,7 +58,7 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     this->lj_matrix = lj_matrix;
 
     this->inc_self_vdw = inc_self_vdw;
-    this->steric_factor = 0.25 * vdw_steric_factor; // this means spreading the force across the element. 
+    this->steric_factor = vdw_steric_factor;
 
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;
