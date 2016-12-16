@@ -42,7 +42,7 @@ option(USE_PACK "Add genereic automatic compiler flags" OFF)
 mark_as_advanced(USE_PACK)
 set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
-set(USE_PRECISION 2 CACHE STRING "1: Floats + Doubles; 2: Doubles; 3: Doubles + Long Doubles")
+set(USE_PRECISION 3 CACHE STRING "1: Floats + Doubles; 2: Doubles; 3: Doubles + Long Doubles")
 mark_as_advanced(USE_PRECISION)
 
 
