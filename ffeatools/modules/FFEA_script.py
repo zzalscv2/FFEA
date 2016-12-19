@@ -638,7 +638,7 @@ class FFEA_script_params():
 			astr += "\t<dt = %5.2e>\n" % (self.dt)
 			astr += "\t<kT = %5.2e>\n" % (self.kT)
 			astr += "\t<check = %d>\n" % (self.check)
-			astr += "\t<num_steps = %1.0e>\n" % (self.num_steps)
+			astr += "\t<num_steps = %1.6e>\n" % (self.num_steps)
 			astr += "\t<rng_seed = time>\n"
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
