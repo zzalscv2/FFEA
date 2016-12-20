@@ -69,7 +69,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
        grr3 force1, force2; //, n1_b;
        grr4 phi1, phi2;
 
-       if (f1->getTetraIntersectionVolumeGradientAndShapeFunctions(f2, force2, vol, dVdr, phi1, phi2)) {
+       if (f1->getTetraIntersectionVolumeGradientDirAndShapeFunctions(f2, force2, vol, dVdr, phi1, phi2)) {
            lj = false;
            vol *= steric_factor;
            dVdr *= steric_factor;
@@ -276,7 +276,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
        grr3 force1, force2; //, n1_b;
        grr4 phi1, phi2;
 
-       if (f1->getTetraIntersectionVolumeGradientAndShapeFunctions(f2, force2, vol, dVdr, phi1, phi2,blob_corr,f1_daddy_blob_index, f2_daddy_blob_index)) {
+       if (f1->getTetraIntersectionVolumeGradientDirAndShapeFunctions(f2, force2, vol, dVdr, phi1, phi2,blob_corr,f1_daddy_blob_index, f2_daddy_blob_index)) {
            lj = false;
            vol *= steric_factor;
            dVdr *= steric_factor;
