@@ -336,6 +336,9 @@ public:
 
     void linearise_elements();
 
+    void linearise_force();
+
+
 
     /**compresses blob by compression factor specified in input script*/
     void compress_blob(scalar compress);
@@ -434,6 +437,11 @@ private:
     /** Number of ctforces to be applied to this Blob */
     int num_l_ctf;
     int num_r_ctf;
+    int num_sltotal_ctf; 
+    int num_slsets_ctf; ///< number of surface sets, corresponding to the length of the ctf_sl_forces, num_slsurf_ctf array
+
+    /** Number of faces in every surface set: */ 
+    int *ctf_slsurf_ndx;
 
     /** Whether this Blob is DYNAMIC (movable; dynamics simulated) or STATIC (fixed; no simulation of dynamics; Blob is a perfectly solid object fixed in space)*/
     int blob_state;
@@ -479,6 +487,10 @@ private:
     int *ctf_l_nodes;
     /** Array with the nodes having rotational ctforces assigned */
     int *ctf_r_nodes;
+    /** Array with the faces having linear ctforces assigned */
+    int *ctf_sl_faces;
+    /** array with the number of faces in every surface set. */
+    int *ctf_sl_surfsize; 
 
     /** Array with the linear ctforces: FxFyFzFxFyFz..., 
       * being Fx, Fy, Fz the components of the force */
@@ -494,6 +506,9 @@ private:
       *  where the first one can be n or p, depending of the axis defined by nodes or points
       *   and the second one can be f or t, depending on applying ctforce or cttorque.*/
     char *ctf_r_type;
+    /** Array with the linear surface ctforces: FxFyFzFxFyFz..., 
+      * being Fx, Fy, Fz the components of the force */
+    scalar *ctf_sl_forces; 
     
     
 
