@@ -1205,17 +1205,10 @@ void Blob::make_measurements() {
             /*
              * Strain energy contribution:
              */
-
-		/* // Old
-		temp1 = elem[n].E + elem[n].G / 3.0;
-		temp2 = elem[n].G / temp1;
-		temp3 = (elem[n].vol / elem[n].vol_0) - (1 + temp2);
-		senergy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + temp1 * (temp3 * temp3 - temp2 * temp2));*/
-
-		// New 
-		scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
-		temp1 = elem[n].vol / elem[n].vol_0;
-		senergy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1)); 
+ 
+	    scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
+	    temp1 = elem[n].vol / elem[n].vol_0;
+	    senergy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1)); 
 	}
 
         // And don't forget to multiply by a half
