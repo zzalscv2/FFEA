@@ -264,6 +264,12 @@ public:
     int solve_poisson(scalar *phi_gamma_IN, scalar *J_Gamma_OUT);
 
     /**
+     * Apply the constant forces onto the corresponding nodes;
+     */
+    int apply_ctforces(); 
+
+
+    /**
      * Set all forces on the blob to zero
      */
     void zero_force();
