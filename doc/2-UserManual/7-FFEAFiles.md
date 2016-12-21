@@ -210,21 +210,23 @@ This file provides a list of nodes for the corresponding blob that will remain f
 Constant forces file: .ctforces {#ifctforces}
 ---------------------------------------------
 
-This file provides a list of nodes where a certain force is to be applied. 
+This file provides a list of nodes or surfaces where a certain force is to be applied. 
  The forces can be linear or circular, and the header 
  specifies the total number of constant forces to take from 
- the input file, the number of linear forces and the number of circular forces.
+ the input file, the number of linear forces onto nodes, the number of circular forces
+ onto nodes, and the number of the linear forces onto faces. If any of these is zero, 
+ it can be ommitted. 
  Then, the file has a section on linear forces, and a file on circular forces, 
  needed in this order but appearing only if the correspondent number of forces
  is higher than zero. 
 
-In the linear forces section, 
+In the linear forces on nodes section, 
  each line writes Force module (in ` N `), a unit vector
  with the direction of the force, blob index, conformation index, and node 
  number ` or ` string all so that the same force is applied onto every on this 
  blob. 
 
-In the rotational forces section,
+In the rotational forces on nodes section,
  each line writes Force module (in ` N `), a two letter keyword 
  (see later), a point and an axis, specifying the torque rotation axis,
  and three integer specifying blob, conformation and node where the force 
@@ -234,6 +236,14 @@ In the rotational forces section,
  The second one 
  specifies if the circular force is a torque (`t`) \f$\tau = r\times F\f$ or 
  a constant force (`f`) \f$\tau = \hat{r}\times F\f$.
+
+In the linear forces on surfaces section, 
+ a force F is spread evenly on a surface composed of a number of faces. Thus,
+ every line specifies the magnitude of the force (in ` N ` ), a unit 
+ vector with the direction of the force, blob index, conformation index, 
+ followed by a list of face indices. At every time step the total area 
+ of the selected faces will be calculated \f$A = \sum_i a_i\f$, and 
+ every face will receive a force \f$ f_i = F a_i / A\f$ at its centre. 
 
 
 Thus, a valid ` ctforces ` file with force 1e-9 `N` applied onto 
@@ -248,6 +258,7 @@ Thus, a valid ` ctforces ` file with force 1e-9 `N` applied onto
     num_ctforces 5
     num_linear_forces 4
     num_rot_forces 1
+    num_linear_surface_forces 1
     linear forces:
     1e-9 0 0 1 1 0 all
     1e-9 1 0 0 2 0 104
@@ -255,6 +266,8 @@ Thus, a valid ` ctforces ` file with force 1e-9 `N` applied onto
     1e-9 1 0 0 2 0 152
     rotational forces:
     1e-10 pt -1.9e-9 -1.4313e-9 8.911e-10 0 1 0 0 0 all  <!-- node 1402 -->
+    linear surface forces:
+    1e-13 1.000 0.000 0.000 0 0 280 281 282 283 284 285
 
 As in the main input FFEA file, XML comments are supported.
 
