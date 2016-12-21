@@ -2,7 +2,8 @@
 Constant forces {#ctforces}
 ===========================
 
-Linear and circular constant forces can be added onto nodes or full blobs. 
+Linear and circular constant forces can be added onto nodes and surfaces,
+ selected either individually or collectively.
 In order to do that,
  one needs to activate the calculation of the constant forces:
 
