@@ -36,11 +36,24 @@ Blob::Blob() {
     num_beads = 0;
     num_l_ctf = 0; 
     num_r_ctf = 0; 
+    num_sltotal_ctf = 0;
+    num_slsets_ctf = 0; 
     num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
     num_surface_elements = 0;
     num_interior_elements = 0;
+    ctf_l_nodes = NULL;
+    ctf_r_nodes = NULL;
+    ctf_sl_faces = NULL; 
+    ctf_slsurf_ndx = NULL;
+    ctf_sl_faces = NULL;
+    ctf_sl_surfsize = NULL; 
+    ctf_l_forces = NULL;
+    ctf_r_forces = NULL;
+    ctf_r_axis = NULL;
+    ctf_r_type = NULL;
+    ctf_sl_forces = NULL; 
     mass = 0;
     blob_state = FFEA_BLOB_IS_STATIC;
     node = NULL;
@@ -128,7 +141,7 @@ Blob::~Blob() {
       delete[] ctf_l_forces;
       ctf_l_forces = NULL;
     } 
-    // and then rotational:
+    // then rotational:
     if (num_r_ctf > 0) {
       num_r_ctf = 0;
       delete[] ctf_r_nodes;
@@ -139,6 +152,19 @@ Blob::~Blob() {
       ctf_r_axis = NULL;
       delete[] ctf_r_type;
       ctf_r_type = NULL;
+    } 
+    // and then linear onto surfaces:
+    if (num_sltotal_ctf > 0) {
+      num_sltotal_ctf = 0;
+      num_slsets_ctf = 0;
+      delete[] ctf_slsurf_ndx;
+      ctf_slsurf_ndx = NULL;
+      delete[] ctf_sl_faces;
+      ctf_sl_faces = NULL;
+      delete[] ctf_sl_surfsize;
+      ctf_sl_surfsize = NULL;
+      delete[] ctf_sl_forces;
+      ctf_sl_forces = NULL; 
     } 
 
     /* Set relevant data to zero */
@@ -503,50 +529,8 @@ int Blob::update() {
         return FFEA_OK;
     }
 
-    // // // // // START CTF // // // // // // 
-    // CTF 1 - Add the linear constant forces, stored in ctf_force.
-    // If there are no forces, num_l_ctf will be zero. 
-    for (int i=0; i<num_l_ctf; i++) {
-      force[ctf_l_nodes[i]].x += ctf_l_forces[3*i  ];
-      force[ctf_l_nodes[i]].y += ctf_l_forces[3*i+1];
-      force[ctf_l_nodes[i]].z += ctf_l_forces[3*i+2];
-    } 
-    // CTF 2 - Add the rotational forces: 
-    for (int i=0; i<num_r_ctf; i++){ 
-      // 2.1 - get the axis: 
-      arr3 r, f;
-      scalar rsize; 
-      // 2.1.1 - if it is defined by points:
-      if (ctf_r_type[2*i] == 'p') { 
-        // get r, and its length rsize
-        intersectingPointToLine<scalar,arr3>(node[ctf_r_nodes[i]].pos,// point out of the line
-                          arr3_view<scalar,arr3>(ctf_r_axis+6*i, 3), //  point
-                          arr3_view<scalar,arr3>(ctf_r_axis+(6*i+3), 3), r); // vector, axis
-        arr3Vec3SubsToArr3(r, node[ctf_r_nodes[i]].pos, r);
-      } /* else if (ctf_l_type[2*i] == 'n') {
-        // not working yet!
-        that should read:
-        axis[0] = blob[ctf_r_axis[6*i + 3]].conf[ctf_r_axis[6*i + 4]].node[ctf_r_axis[6*i + 5]]->pos.x -  
-                  blob[ctf_r_axis[6*i + 0]].conf[ctf_r_axis[6*i + 1]].node[ctf_r_axis[6*i + 2]]->pos.x
-        axis[1] =  ...
-        axis[2] =  ...
-        arr3Normalize(axis); 
-        // We do not have this information in "Blob"!!
-      } */
-      arr3arr3VectorProduct<scalar,arr3>(r, arr3_view<scalar,arr3>(ctf_r_axis+(6*i+3), 3), f);
-      // 2.2.a - apply a constant circular force:
-      if ( ctf_r_type[2*i + 1] == 'f' ) {
-         arr3Resize<scalar,arr3>(ctf_r_forces[i], f); 
-      // 2.2.b - apply a constant torque: 
-      } else if (ctf_r_type[2*i + 1] == 't') {
-         rsize = mag<scalar,arr3>(r); 
-         arr3Resize<scalar,arr3>(ctf_r_forces[i]/rsize, f); 
-      } 
-      force[ctf_r_nodes[i]].x += f[0];
-      force[ctf_r_nodes[i]].y += f[1];
-      force[ctf_r_nodes[i]].z += f[2];
-    } 
-    // // // // // END CTF // // // // // // 
+    if (params->calc_ctforces) apply_ctforces();
+  
 
 
     /* some "work" variables */
@@ -1886,6 +1870,74 @@ int Blob::solve_poisson(scalar *phi_gamma_IN, scalar *J_Gamma_OUT) {
     return FFEA_OK;
 }
 
+
+int Blob::apply_ctforces() {
+    
+    // CTF 1 - Add the linear constant forces, stored in ctf_force.
+    // If there are no forces, num_l_ctf will be zero. 
+    for (int i=0; i<num_l_ctf; i++) {
+      force[ctf_l_nodes[i]].x += ctf_l_forces[3*i  ];
+      force[ctf_l_nodes[i]].y += ctf_l_forces[3*i+1];
+      force[ctf_l_nodes[i]].z += ctf_l_forces[3*i+2];
+    } 
+    // CTF 2 - Add the rotational forces: 
+    for (int i=0; i<num_r_ctf; i++){ 
+      // 2.1 - get the axis: 
+      arr3 r, f;
+      scalar rsize; 
+      // 2.1.1 - if it is defined by points:
+      if (ctf_r_type[2*i] == 'p') { 
+        // get r, and its length rsize
+        intersectingPointToLine<scalar,arr3>(node[ctf_r_nodes[i]].pos,// point out of the line
+                          arr3_view<scalar,arr3>(ctf_r_axis+6*i, 3), //  point
+                          arr3_view<scalar,arr3>(ctf_r_axis+(6*i+3), 3), r); // vector, axis
+        arr3Vec3SubsToArr3(r, node[ctf_r_nodes[i]].pos, r);
+      } /* else if (ctf_l_type[2*i] == 'n') {
+        // not working yet!
+        that should read:
+        axis[0] = blob[ctf_r_axis[6*i + 3]].conf[ctf_r_axis[6*i + 4]].node[ctf_r_axis[6*i + 5]]->pos.x -  
+                  blob[ctf_r_axis[6*i + 0]].conf[ctf_r_axis[6*i + 1]].node[ctf_r_axis[6*i + 2]]->pos.x
+        axis[1] =  ...
+        axis[2] =  ...
+        arr3Normalize(axis); 
+        // We do not have this information in "Blob"!!
+      } */
+      arr3arr3VectorProduct<scalar,arr3>(r, arr3_view<scalar,arr3>(ctf_r_axis+(6*i+3), 3), f);
+      // 2.2.a - apply a constant circular force:
+      if ( ctf_r_type[2*i + 1] == 'f' ) {
+         arr3Resize<scalar,arr3>(ctf_r_forces[i], f); 
+      // 2.2.b - apply a constant torque: 
+      } else if (ctf_r_type[2*i + 1] == 't') {
+         rsize = mag<scalar,arr3>(r); 
+         arr3Resize<scalar,arr3>(ctf_r_forces[i]/rsize, f); 
+      } 
+      force[ctf_r_nodes[i]].x += f[0];
+      force[ctf_r_nodes[i]].y += f[1];
+      force[ctf_r_nodes[i]].z += f[2];
+    } 
+
+    // CTF 3 - Add the linear surface forces:
+    scalar totalArea; 
+    arr3 traction;
+    int auxndx = 0; 
+    for (int i=0; i<num_slsets_ctf; i++) {
+       totalArea = 0; 
+       scalar *faceAreas = new scalar[ctf_sl_surfsize[i]];
+       for (int j=0; j<ctf_sl_surfsize[i]; j++) {
+         faceAreas[j] = surface[ctf_sl_faces[auxndx + j]].get_area();
+         totalArea += faceAreas[j]; 
+       }
+       for (int j=0; j<ctf_sl_surfsize[i]; j++) {
+         arr3Resize2<scalar,arr3>(faceAreas[j]/(3*totalArea), arr3_view<scalar,arr3>(ctf_sl_forces+3*i, 3), traction);
+         surface[ctf_sl_faces[auxndx+j]].add_force_to_node(0, traction); 
+         surface[ctf_sl_faces[auxndx+j]].add_force_to_node(1, traction); 
+         surface[ctf_sl_faces[auxndx+j]].add_force_to_node(2, traction); 
+       }
+       auxndx += ctf_sl_surfsize[i]; 
+       delete[] faceAreas;
+    } 
+}
+
 /*
  */
 void Blob::zero_force() {
@@ -3128,7 +3180,7 @@ int Blob::load_ctforces(string ctforces_fname){
      } 
    } 
 
-   /* // CHECK // 
+   /* // SELF-EXPLANATORY CHECK // 
    int auxndx = 0;
    for (int i=0; i<num_slsets_ctf; i++) {
      cout << "set " << i << ": ";
@@ -3138,7 +3190,7 @@ int Blob::load_ctforces(string ctforces_fname){
      } 
      cout << endl; 
      auxndx += ctf_sl_surfsize[i]; 
-   } */
+   } */ 
    
    return FFEA_OK;
 } 
