@@ -564,7 +564,7 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
   if (vol == 0) return false;
 
   // GET THE GRADIENT 
-  /* // 2nd Order: 
+  // 2nd Order: 
   //   // a simple 1st order derivative was not working for the cubes & springs.
   // construct the two tetrahedra B, in the direction of the gradient
   for (int i=0; i<4; i++) {
@@ -581,10 +581,8 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
 
 
   dVdr = (vol_M - vol_m)/(2*dr);
-  // dVdr = (vol_M - vol)/dr;
-  */ 
 
-  // 1st Order: 
+  /* // 1st Order: 
   //   // a simple 1st order derivative was not working for the cubes & springs.
   // construct the two tetrahedra B, in the direction of the gradient
   for (int i=0; i<4; i++) {
@@ -594,7 +592,7 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
   }
 
   vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);//cm2);
-  dVdr = (vol_M - vol)/dr;
+  dVdr = (vol_M - vol)/dr; */ 
 
 
   // GET THE LOCAL COORDINATES
