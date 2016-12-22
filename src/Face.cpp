@@ -550,6 +550,7 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
   geoscalar dr = 1e-3;
   geoscalar vol_m, vol_M;
 
+  // GET THE VOLUME AND THE DIRECTION OF THE GRADIENT:
   for (int i=0; i<4; i++) {
      tetA[i][0] = n[i]->pos.x;
      tetA[i][1] = n[i]->pos.y;
@@ -562,8 +563,10 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
   vol = volumeIntersection<geoscalar,grr3>(tetA, tetB, cm1, r);
   if (vol == 0) return false;
 
-  // construct the two tetrahedra B, in the direction of the gradient
+  // GET THE GRADIENT 
+  /* // 2nd Order: 
   //   // a simple 1st order derivative was not working for the cubes & springs.
+  // construct the two tetrahedra B, in the direction of the gradient
   for (int i=0; i<4; i++) {
      tetB[i][0] = f2->n[i]->pos.x -dr*r[0];
      tetB[i][1] = f2->n[i]->pos.y -dr*r[1];
@@ -579,7 +582,22 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
 
   dVdr = (vol_M - vol_m)/(2*dr);
   // dVdr = (vol_M - vol)/dr;
+  */ 
 
+  // 1st Order: 
+  //   // a simple 1st order derivative was not working for the cubes & springs.
+  // construct the two tetrahedra B, in the direction of the gradient
+  for (int i=0; i<4; i++) {
+     tetC[i][0] = f2->n[i]->pos.x + dr*r[0];
+     tetC[i][1] = f2->n[i]->pos.y + dr*r[1];
+     tetC[i][2] = f2->n[i]->pos.z + dr*r[2];
+  }
+
+  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);//cm2);
+  dVdr = (vol_M - vol)/dr;
+
+
+  // GET THE LOCAL COORDINATES
   getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetA[0], tetA[1], tetA[2], tetA[3], cm1, phi1);
   getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetB[0], tetB[1], tetB[2], tetB[3], cm1, phi2);
 
