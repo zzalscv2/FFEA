@@ -26,6 +26,8 @@ add_test(NAME cyl_flexrig COMMAND ${PROJECT_BINARY_DIR}/src/ffea cyl_160_fine-EI
 set_tests_properties(cyl_flexrig PROPERTIES ENVIRONMENT OMP_NUM_THREADS=1)
 
 add_test(NAME cyl_flexrig_check COMMAND ${PYTHON_EXECUTABLE} calcEI.py)
+
 set_tests_properties(cyl_flexrig_check PROPERTIES 
+                     DEPENDS cyl_flexrig
                      ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:${PYTHONPATH})
 
