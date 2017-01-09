@@ -27,7 +27,7 @@ from math import sqrt, pi
 
 ffeatoolsFound = False
 try:
-    from ffeatools.modules import * # python package
+    import ffeatools # python package
     ffeatoolsFound = True
 except:
     try:
@@ -39,7 +39,6 @@ except:
 
 # INPUT STUFF
 sfile = "cyl_160_fine-EI.ffea"
-strj = "cyl_160_fine_trajectory.ftj"
 E_t = 6e8 ## the Young's modulus we put in
 F = 1e-12 
 L = 160e-9
