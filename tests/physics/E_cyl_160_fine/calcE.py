@@ -41,7 +41,7 @@ except:
 # INPUT STUFF
 sfile = "cyl_160_fine-E.ffea"
 E_t = 6e8 ## the Young's modulus we put in
-F = 1e-12 
+F = 1e-11 
 L = 160e-9
 r = 10e-9
 
@@ -88,7 +88,7 @@ print "E_c/E_t: ", E_c/E_t
 print "abs(E_c/E_t -1): ", abs(E_c/E_t -1)
 
 err = 0
-if (abs (E_c/E_t - 1) > 0.1):
+if (abs (E_c/E_t - 1) > 0.005):
   err = 1
 
 sys.exit(err)
