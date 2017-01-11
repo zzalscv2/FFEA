@@ -1031,7 +1031,7 @@ template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4
 
     arr3Resize<t_scalar,brr3>(countBin[i], tetBin[i]);
     arr3arr3Add<t_scalar,brr3>(tetBin[i], cmB, cmB);
-    cntA += countBin[i];
+    cntB += countBin[i];
   } 
   if (cntA > 1) arr3Resize<t_scalar,brr3>(-1./cntA, cmA);
   if (cntB > 1) arr3Resize<t_scalar,brr3>(1./cntB, cmB);
