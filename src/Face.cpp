@@ -545,7 +545,7 @@ bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&
 
 bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2)){
 
-  geoscalar tetA[4][3], tetB[4][3], tetC[4][3];
+  geoscalar tetA[4][3], tetB[4][3], tetC[4][3], tetD[4][3];
   grr3 ap1, ap2, cm1, cm2;
   geoscalar dr = 1e-3;
   geoscalar vol_m, vol_M;
@@ -568,19 +568,19 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
   //   // a simple 1st order derivative was not working for the cubes & springs.
   // construct the two tetrahedra B, in the direction of the gradient
   for (int i=0; i<4; i++) {
-     tetB[i][0] = f2->n[i]->pos.x -dr*r[0];
-     tetB[i][1] = f2->n[i]->pos.y -dr*r[1];
-     tetB[i][2] = f2->n[i]->pos.z -dr*r[2];
      tetC[i][0] = f2->n[i]->pos.x + dr*r[0];
      tetC[i][1] = f2->n[i]->pos.y + dr*r[1];
      tetC[i][2] = f2->n[i]->pos.z + dr*r[2];
+     tetD[i][0] = f2->n[i]->pos.x -dr*r[0];
+     tetD[i][1] = f2->n[i]->pos.y -dr*r[1];
+     tetD[i][2] = f2->n[i]->pos.z -dr*r[2];
   }
 
-  vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetB);//cm1);
-  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);//cm2);
+  vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetD);
+  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);
 
 
-  dVdr = (vol_M - vol_m)/(2*dr);
+  dVdr = (vol_M - vol_m)/(2*dr); 
 
   /* // 1st Order: 
   //   // a simple 1st order derivative was not working for the cubes & springs.
@@ -591,7 +591,7 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
      tetC[i][2] = f2->n[i]->pos.z + dr*r[2];
   }
 
-  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);//cm2);
+  vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);
   dVdr = (vol_M - vol)/dr; */ 
 
 
