@@ -23,7 +23,17 @@
 
 import numpy as np
 import sys
-import FFEA_script, FFEA_material
+
+ffeatoolsFound = False
+try:
+    import ffeatools # python package
+    ffeatoolsFound = True
+except:
+    try:
+        import FFEA_script, FFEA_material
+    except ImportError:
+        print("Failure to import relevent FFEA modules")
+        sys.exit(1) # failure to import
 
 # Load trajectory
 start = 5000
