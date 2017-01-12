@@ -1038,10 +1038,13 @@ template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4
   // - calculate dr:
   if (cntA > 0) {
     if (cntB == 0) arr3Store<t_scalar,brr3>(cmA, dr);
-    else arr3arr3Add<t_scalar,brr3>(cmA, cmB, dr); 
+    else {
+      arr3arr3Add<t_scalar,brr3>(cmA, cmB, dr); 
+      arr3Resize<t_scalar,brr3>(0.5, dr); 
+    }
   } else {
     arr3Store<t_scalar,brr3>(cmB,dr);
-  } 
+  }
 
   return vol; 
  
