@@ -546,7 +546,7 @@ bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&
 bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2)){
 
   geoscalar tetA[4][3], tetB[4][3], tetC[4][3], tetD[4][3];
-  grr3 ap1, ap2, cm1, cm2;
+  grr3 ap1, ap2, cm1;
   geoscalar dr = 1e-3;
   geoscalar vol_m, vol_M;
 
@@ -726,8 +726,8 @@ void Face::getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &v
 
 bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index){
 
-  geoscalar tetA[4][3], tetB[4][3], tetC[4][3];
-  grr3 ap1, ap2, cm1, cm2;
+  geoscalar tetA[4][3], tetB[4][3], tetC[4][3], tetD[4][3];
+  grr3 ap1, ap2, cm1;
   geoscalar dr = 1e-3;
   geoscalar vol_m, vol_M;
 
@@ -746,20 +746,19 @@ bool Face::getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3
   // construct the two tetrahedra B, in the direction of the gradient
   //   // a simple 1st order derivative was not working for the cubes & springs.
   for (int i=0; i<4; i++) {
-     tetB[i][0] = f2->n[i]->pos.x-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3] -dr*r[0];
-     tetB[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1] -dr*r[1];
-     tetB[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2] -dr*r[2];
      tetC[i][0] = f2->n[i]->pos.x-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3] + dr*r[0];
      tetC[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1] + dr*r[1];
      tetC[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2] + dr*r[2];
+     tetD[i][0] = f2->n[i]->pos.x-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3] -dr*r[0];
+     tetD[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1] -dr*r[1];
+     tetD[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2] -dr*r[2];
   }
 
-  vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetB);//cm1);
+  vol_m = volumeIntersection<geoscalar,grr3>(tetA, tetD);//cm1);
   vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);//cm2);
 
 
   dVdr = (vol_M - vol_m)/(2*dr);
-  // dVdr = (vol_M - vol)/dr;
 
   getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetA[0], tetA[1], tetA[2], tetA[3], cm1, phi1);
   getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetB[0], tetB[1], tetB[2], tetB[3], cm1, phi2);
