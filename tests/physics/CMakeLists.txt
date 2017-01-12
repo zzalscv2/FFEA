@@ -40,9 +40,6 @@ add_subdirectory(sphere_63_120_nomass)
 add_subdirectory(sphere_63_120_nomass_restart)
 add_subdirectory(sphere_63_120_nomass_two_vdw-preComp)
 add_subdirectory(steric_cubes_w_springs)
-<<<<<<< HEAD
 add_subdirectory(sphere_diffusion)
-=======
 add_subdirectory(E_cyl_160_fine)
 add_subdirectory(EI_cyl_160_fine)
->>>>>>> 4c0f716f3621500e28265727e8519939686244e1
