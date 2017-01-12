@@ -409,20 +409,33 @@ class FFEA_node:
 		
 		self.pos *= factor
 
+	def calc_mass(self, top, mat):
+
+		mass = 0.0
+		eindex = -1
+		for e in top.element:
+			eindex += 1		
+			mass += e.calc_volume(self) * mat.element[eindex][0]
+
+		return mass
+
 	def calc_centroid(self):
-		
-		return (1.0 / self.num_nodes) * np.sum(self.pos, axis = 0)
+		self.centroid = (1.0 / self.num_nodes) * np.sum(self.pos, axis = 0)
+		return self.centroid
 	
 	def calc_CoM(self, top, mat):
 
 		CoM = np.array([0.0,0.0,0.0])
-
+		tmass = 0.0
 		eindex = -1
 		for e in top.element:
 			eindex += 1
-			elmass = e.calc_volume(self) * mat[eindex][0]
-			CoM += elmass * (np.mean([self.pos[n] for n in e.n[0:4]]))
-		self.CoM = CoM * 1.0/num_elements
+			elmass = e.calc_volume(self) * mat.element[eindex][0]
+
+			tmass += elmass
+			CoM += elmass * np.mean([self.pos[n] for n in e.n[0:4]], axis=0)
+
+		self.CoM = CoM * 1.0/tmass
 		return self.CoM
 
 	def get_CoM(self):
