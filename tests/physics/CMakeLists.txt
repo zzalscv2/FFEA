@@ -31,6 +31,7 @@ file (COPY cuboid_flat cuboid_flat_structure sphere_63_120_structure sphere_63_1
                   sphere_63_120_nomass_two_vdw-preComp 
                   cube_springs_structure steric_cubes_w_springs
 		  sphere_diffusion
+                  cyl_160_fine EI_cyl_160_fine E_cyl_160_fine
                   DESTINATION ${TPHYSICS})
 
 # and run the tests. 
@@ -39,4 +40,9 @@ add_subdirectory(sphere_63_120_nomass)
 add_subdirectory(sphere_63_120_nomass_restart)
 add_subdirectory(sphere_63_120_nomass_two_vdw-preComp)
 add_subdirectory(steric_cubes_w_springs)
+<<<<<<< HEAD
 add_subdirectory(sphere_diffusion)
+=======
+add_subdirectory(E_cyl_160_fine)
+add_subdirectory(EI_cyl_160_fine)
+>>>>>>> 4c0f716f3621500e28265727e8519939686244e1

@@ -1,0 +1,61 @@
+<param>
+	<restart = 0>
+	<dt = 1.00e-13>
+	<kT = 4.11e-21>
+	<check = 100>
+	<num_steps = 3e2>
+	<rng_seed = 753>
+	<trajectory_out_fname = cyl_160_fine_trajectory.ftj>
+	<measurement_out_fname = cyl_160_fine_measurement.fm>
+	<vdw_forcefield_params = cyl_160_fine.lj>
+	<epsilon = 1.00e-02>
+	<max_iterations_cg = 1000>
+	<kappa = 1.00e+09>
+	<epsilon_0 = 1.00e+00>
+	<dielec_ext = 1.00e+00>
+	<calc_stokes = 0>
+	<stokes_visc = 1.00e-03>
+	<calc_vdw = 0>
+	<vdw_type = steric>
+	<vdw_steric_factor = 0.010000>
+	<calc_noise = 0>
+	<calc_es = 0>
+	<calc_ctforces = 1>
+	<es_update = 1>
+	<es_N_x = -1>
+	<es_N_y = -1>
+	<es_N_z = -1>
+	<move_into_box = 1>
+	<sticky_wall_xz = 0>
+	<wall_x_1 = PBC>
+	<wall_x_2 = PBC>
+	<wall_y_1 = PBC>
+	<wall_y_2 = PBC>
+	<wall_z_1 = PBC>
+	<wall_z_2 = PBC>
+	<es_h = 3>
+	<num_blobs = 1>
+	<num_conformations = (1)>
+</param>
+
+<system>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../cyl_160_fine/cyl_160_fine.top>
+			<material = ../cyl_160_fine/cyl_160_fine.mat>
+			<stokes = ../cyl_160_fine/cyl_160_fine.stokes>
+			<pin = ../cyl_160_fine/cyl_160_fine.pin>
+			<nodes = ../cyl_160_fine/cyl_160_fine.node>
+			<surface = ../cyl_160_fine/cyl_160_fine.surf>
+			<vdw = ../cyl_160_fine/cyl_160_fine.vdw>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 1.00e-9>
+	</blob>
+	<interactions>
+      <ctforces>
+         <ctforces_fname = cyl_160_fine_surf.ctforces>
+      </ctforces>
+   </interactions>
+</system>
