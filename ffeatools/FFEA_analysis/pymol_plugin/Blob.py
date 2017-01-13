@@ -920,7 +920,7 @@ class Blob:
 				elif display_flags['show_numbers'] == 'Node Indices (Linear)':
 					for n in self.linear_node_list:
 						nn = (self.frames[i].pos[n])[0:3]
-						cyl_text(numtxt,plain,nn,str(n),0.10 * scale, axes=axes * scale)
+						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
 	
 				elif display_flags['show_numbers'] == "Element Indicies":
 						
@@ -930,12 +930,12 @@ class Blob:
 					else:
 						for e in range(self.top.num_elements):
 							en = self.top.element[e].calc_centroid(self.frames[i])
-							cyl_text(numtxt, plain, en, str(e), 0.10 * scale, axes=axes * scale)
+							cyl_text(numtxt, plain, en, str(e), scale, axes=axes * scale)
 						
 				elif display_flags['show_numbers'] == "Face Indices":
 					for f in range(self.surf.num_faces):
 						fn = self.surf.face[f].calc_centroid(self.frames[i])
-						cyl_text(numtxt, plain, fn, str(f), 0.10 * scale, axes=axes * scale)
+						cyl_text(numtxt, plain, fn, str(f), scale, axes=axes * scale)
 				
 				# Only create object if something exists to draw (some of these above routines do nothing
 				if len(numtxt) != 0:
