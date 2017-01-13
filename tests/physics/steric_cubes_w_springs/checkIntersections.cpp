@@ -101,13 +101,13 @@ int main(int argc, char** argv) {
    FILE *trj = set_up_trajfile(argv[7]);
    if (trj == NULL) return 1;
 
-   // for every time step:
    int checks = 0;
    int i_vol = 0;
    int i_cms = 0;
    arr3 cm1, cm2; 
    scalar d0 = 1000; 
    scalar d = 10*d0;
+   // for every time step:
    for (int t=0; t<num_steps; t++) {
      // load the coordinates of this time step:
      if (b1.read_nodes_from_file(trj)) break; 
@@ -129,6 +129,8 @@ int main(int argc, char** argv) {
      d0 = d;
 
      // calculate if there is any tetrahedra intersecting:
+     checks = 0;
+     i_vol = 0; 
      scalar tet1[4][3], tet2[4][3];
      for (int i=0; i<b1.num_elements; i++){ 
        // set up tetrahedron 1:
@@ -155,7 +157,7 @@ int main(int argc, char** argv) {
    fclose(trj);
 
    cout << "There were vol:" << i_vol << " in " << checks << " checkings" << endl; 
-   if (( ((float) i_vol) / checks ) > 0.00080 ) {
+   if (( ((float) i_vol) / checks ) > 0.00500 ) {
      cout << " There were too many intersections: " << (( (float) i_vol) / checks ) << endl; 
      return 1;
    } 
