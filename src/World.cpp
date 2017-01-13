@@ -709,7 +709,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 			// Looking for newlines this time, as each measurement frame is a single line
 			int num_newlines = 0;
-			int num_newlines_to_find = frames_to_delete + 1; // 1 for every frame, plus the first one, assuming all were written correctly
+			int num_newlines_to_find = frames_to_delete; // 1 for every frame only. No need to read in the last meas line
 			while (num_newlines != num_newlines_to_find) {
 			    if (fseek(measurement_out, -2, SEEK_CUR) != 0) {
 				FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.measurement_out_fname.c_str())

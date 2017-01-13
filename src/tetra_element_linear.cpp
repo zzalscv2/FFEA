@@ -389,14 +389,6 @@ void tetra_element_linear::add_bulk_elastic_stress(matrix3 stress) {
     stress[2][2] += c;
 }
 
-void tetra_element_linear::add_bulk_elastic_stress_OLD(matrix3 stress) {
-
-	scalar c = (E + G / 3.0) * ((vol - vol_0) / vol_0);
-	stress[0][0] += c;
-        stress[1][1] += c;
-        stress[2][2] += c;
-}
-
 /*
  * Given the shape function derivatives, the element volume and a random number generator, this
  * function calculates the fluctuating stress tensor, generating a stochastic change in the

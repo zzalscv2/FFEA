@@ -323,6 +323,13 @@ class FFEA_pdb:
 			self.chain[i].num_frames = 0
 		self.num_frames = 0
 	
+	def add_empty_frame(self):
+
+		for i in range(self.num_chains):
+			self.chain[i].add_empty_frame()
+
+		self.num_frames += 1
+
 	def reset(self):
 
 		self.valid = False

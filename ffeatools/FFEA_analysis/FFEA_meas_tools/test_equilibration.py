@@ -61,7 +61,7 @@ def test_equilibration(script):
     # Get x axis data (time)
     x = cmeas["Time"] * 1e9    # ns
 
-    if script.params.num_blobs > 1:
+    if script.params.num_blobs >= 1:
 	    plt.figure(0)
 	    
 	    # And y axis data (all energies)
