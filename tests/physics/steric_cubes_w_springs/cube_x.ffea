@@ -1,6 +1,6 @@
 <param>
 	<restart = 0>
-	<dt = 2.00e-15>
+	<dt = 1.00e-15>
 	<kT = 4.11e-21>
 	<check = 100>
 	<num_steps = 1e3>
@@ -18,7 +18,7 @@
 	<calc_vdw = 1>
 	<inc_self_vdw = 0>
 	<vdw_type = steric>
-	<vdw_steric_factor = 3.e2>
+	<vdw_steric_factor = 4.e0>
 	<calc_springs=1>
 	<calc_noise = 0>
 	<calc_es = 0>

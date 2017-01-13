@@ -1021,7 +1021,8 @@ template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4
   findCM<t_scalar,brr3>(ips, W, cm);
 
   // Finally, get dr: 
-  arr3Initialise<brr3>(cmA);
+  //   stablest
+  /* arr3Initialise<brr3>(cmA);
   arr3Initialise<brr3>(cmB);
   int cntA = 0, cntB = 0;
   for (int i=0; i<4; i++){
@@ -1038,13 +1039,102 @@ template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4
   // - calculate dr:
   if (cntA > 0) {
     if (cntB == 0) arr3Store<t_scalar,brr3>(cmA, dr);
-    else {
-      arr3arr3Add<t_scalar,brr3>(cmA, cmB, dr); 
-      arr3Resize<t_scalar,brr3>(0.5, dr); 
-    }
+    else arr3arr3Add<t_scalar,brr3>(cmA, cmB, dr); 
   } else {
     arr3Store<t_scalar,brr3>(cmB,dr);
   }
+  arr3Normalise<t_scalar,brr3>(dr); */ 
+  //   stablest-test
+  arr3Initialise<brr3>(cmA);
+  arr3Initialise<brr3>(cmB);
+  int cntA = 0, cntB = 0;
+  for (int i=0; i<4; i++){
+    arr3Resize<t_scalar,brr3>(countAin[i], tetAin[i]);
+    arr3arr3Substract<t_scalar,brr3>(tetAin[i], cmA, cmA);
+    cntA += countAin[i];
+
+    arr3Resize<t_scalar,brr3>(countBin[i], tetBin[i]);
+    arr3arr3Add<t_scalar,brr3>(tetBin[i], cmB, cmB);
+    cntB += countBin[i];
+  } 
+  if (cntA > 1) arr3Normalise<t_scalar,brr3>(cmA); //  arr3Resize<t_scalar,brr3>(1./cntA, cmA);
+  if (cntB > 1) arr3Normalise<t_scalar,brr3>(cmB); // arr3Resize<t_scalar,brr3>(1./cntB, cmB);
+  arr3arr3Add<t_scalar,brr3>(cmB, cmA, dr); 
+  arr3Normalise<t_scalar,brr3>(dr); 
+  /* //   simplification
+  arr3Initialise<brr3>(cmA);
+  arr3Initialise<brr3>(cmB);
+  int cntA = 0, cntB = 0; 
+  for (int i=0; i<4; i++){
+    arr3Resize<t_scalar,brr3>(countAin[i], tetAin[i]);
+    arr3arr3Add<t_scalar,brr3>(tetAin[i], cmA, cmA);
+    cntA += countAin[i]; 
+
+    arr3Resize<t_scalar,brr3>(countBin[i], tetBin[i]);
+    arr3arr3Add<t_scalar,brr3>(tetBin[i], cmB, cmB);
+    cntB += countBin[i]; 
+  } 
+  // if (cntA > 0) arr3Resize<t_scalar,brr3>(1./cntA, cmA); 
+  // if (cntB > 0) arr3Resize<t_scalar,brr3>(1./cntB, cmB); 
+  if (cntA > 0) arr3Normalise<t_scalar,brr3>(cmA);
+  if (cntB > 0) arr3Normalise<t_scalar,brr3>(cmB);
+  arr3arr3Substract<t_scalar,brr3>(cmB, cmA, dr);
+  arr3Normalise<t_scalar,brr3>(dr); */ 
+  /* //   testing-1
+  arr3Initialise<brr3>(dr);
+  int cntIn = 0; 
+  for (int i=0; i<4; i++){
+    arr3Resize<t_scalar,brr3>(-1.*countAin[i], tetAin[i]);
+    arr3arr3Add<t_scalar,brr3>(tetAin[i], dr, dr);
+
+    arr3Resize<t_scalar,brr3>(countBin[i], tetBin[i]);
+    arr3arr3Add<t_scalar,brr3>(tetBin[i], dr, dr);
+  } 
+  arr3Normalise<t_scalar,brr3>(dr); */ 
+  /* //   testing-2 // far worse than testing-1 and "stable"
+  arr3Initialise<brr3>(dr);
+  int cntIn = 0; 
+  for (int i=0; i<4; i++){
+    if (countAin[i] > 0) arr3arr3Substract<t_scalar,brr3>(tetAin[i], dr, dr);
+    if (countBin[i] > 0) arr3arr3Add<t_scalar,brr3>(tetBin[i], dr, dr);
+  } 
+  arr3Normalise<t_scalar,brr3>(dr);*/ 
+  /* //   testing-3 //  Doesn't work for the cube. // the max perfored side.
+  arr3Initialise<brr3>(dr);
+  int maxInt = 0;
+  int maxA = 0, maxB = 0; 
+  for (int i=0; i<4; i++){
+    if (countAin[i] > 0) {
+      if (countAin[i] == maxInt) arr3arr3Substract<t_scalar,brr3>(dr, tetAin[i], dr);
+      else if (countAin[i] > maxInt) {
+        arr3Store<t_scalar,brr3>(tetAin[i], dr); 
+        maxInt = countAin[i]; 
+      } 
+    } 
+    if (countBin[i] > 0) {
+      if (countBin[i] == maxInt) arr3arr3Add<t_scalar,brr3>(dr, tetBin[i], dr);
+      else if (countBin[i] > maxInt) {
+        arr3Store<t_scalar,brr3>(tetBin[i], dr); 
+        maxInt = countBin[i]; 
+      } 
+    } 
+
+  } 
+  arr3Normalise<t_scalar,brr3>(dr); */ 
+  /* // towards the furthest separated nodes. // fails deafeningly
+  t_scalar d, dM = 0;
+  brr3 aux; 
+  for (int i=0; i<4; i++) {
+    for (int j=0; j<4; j++) {
+      arr3arr3Substract<t_scalar,brr3>(tetB[j], tetA[i], aux); 
+      d = mag<t_scalar,brr3>(aux); 
+      if (d > dM) {
+        dM = d; 
+        arr3Store<t_scalar,brr3>(aux, dr); 
+      }
+    } 
+  } 
+  arr3Normalise<t_scalar,brr3>(dr); */
 
   return vol; 
  

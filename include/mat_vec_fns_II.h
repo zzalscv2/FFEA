@@ -87,6 +87,9 @@ template <class t_scalar, class brr3> t_scalar arr3arr3Distance(arr3_view<t_scal
 /** Return the length of a vector v */
 template <class t_scalar, class brr3> t_scalar mag(arr3_view<t_scalar,brr3> v);
 
+/** Return the squared length of a vector v */
+template <class t_scalar, class brr3> t_scalar mag2(arr3_view<t_scalar,brr3> v);
+
 /** Initialise the input vector with (0, 0, 0) */
 template <class brr3> void arr3Initialise(brr3 &v);
 
