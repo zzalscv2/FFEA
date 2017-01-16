@@ -65,33 +65,31 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
     //    and if so, get the volume:
     bool lj = true;
     if (f1->checkTetraIntersection(f2)) {
-       geoscalar vol, dVdr;
-       grr3 force1, force2; //, n1_b;
-       grr4 phi1, phi2;
+    geoscalar vol;
+    grr3 dVdr;
+    grr4 phi1, phi2;
 
-       if (f1->getTetraIntersectionVolumeGradientDirAndShapeFunctions(f2, force2, vol, dVdr, phi1, phi2)) {
+       if (!f1->getTetraIntersectionVolumeGradientAndShapeFunctions(f2, dVdr, vol, phi1, phi2)) {
            lj = false;
            vol *= steric_factor;
-           dVdr *= steric_factor;
 
            // Store the measurement
            fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
 
-           // Force is proportional to the gradient, i. e.:
-           arr3Resize<geoscalar,grr3>(-dVdr, force2);
-           arr3Resize2<geoscalar,grr3>(ffea_const::mOne, force2, force1);
+            // Force is proportional to the gradient, i. e.:
+            arr3Resize<geoscalar,grr3>(steric_factor, dVdr);
 
            grr3 ftmp1, ftmp2;
            // Finally, apply the force onto the nodes:
-           for (int j = 0; j < 4; j++) {
-             arr3Resize2<geoscalar,grr3>(phi1[j], force1, ftmp1);
-             f1->add_force_to_node(j, ftmp1);
-             f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+            for (int j = 0; j < 4; j++) {
+            arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
+            f1->add_force_to_node(j, ftmp1);
+            f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
 
-             arr3Resize2<geoscalar,grr3>(phi2[j], force2, ftmp2);
-             f2->add_force_to_node(j, ftmp2);
-             f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
-           }
+            arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
+            f2->add_force_to_node(j, ftmp2);
+            f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+    }
 
         }
     }
@@ -272,33 +270,31 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
 
     bool lj = true;
     if (f1->checkTetraIntersection(f2,blob_corr,f1_daddy_blob_index, f2_daddy_blob_index)) {
-       geoscalar vol, dVdr;
-       grr3 force1, force2; //, n1_b;
-       grr4 phi1, phi2;
+    geoscalar vol;
+    grr3 dVdr;
+    grr4 phi1, phi2;
 
-       if (f1->getTetraIntersectionVolumeGradientDirAndShapeFunctions(f2, force2, vol, dVdr, phi1, phi2,blob_corr,f1_daddy_blob_index, f2_daddy_blob_index)) {
+       if (!f1->getTetraIntersectionVolumeGradientAndShapeFunctions(f2, dVdr, vol, phi1, phi2,blob_corr,f1_daddy_blob_index, f2_daddy_blob_index)) {
            lj = false;
            vol *= steric_factor;
-           dVdr *= steric_factor;
 
            // Store the measurement
            fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
 
            // Force is proportional to the gradient, i. e.:
-           arr3Resize<geoscalar,grr3>(-dVdr, force2);
-           arr3Resize2<geoscalar,grr3>(ffea_const::mOne, force2, force1);
+            arr3Resize<geoscalar,grr3>(steric_factor, dVdr);
 
            grr3 ftmp1, ftmp2;
            // Finally, apply the force onto the nodes:
-           for (int j = 0; j < 4; j++) {
-             arr3Resize2<geoscalar,grr3>(phi1[j], force1, ftmp1);
-             f1->add_force_to_node(j, ftmp1);
-             f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+            for (int j = 0; j < 4; j++) {
+            arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
+            f1->add_force_to_node(j, ftmp1);
+            f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
 
-             arr3Resize2<geoscalar,grr3>(phi2[j], force2, ftmp2);
-             f2->add_force_to_node(j, ftmp2);
-             f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
-           }
+            arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
+            f2->add_force_to_node(j, ftmp2);
+            f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+            }
 
         }
     }

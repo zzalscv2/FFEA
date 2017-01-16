@@ -179,12 +179,12 @@ public:
       *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.
       *   In addition, return the gradient of this volume,
-      *     calculated as dV/dx,dV/dy,dV/dz, and the internal coordinates 
+      *     calculated as dV/dx,dV/dy,dV/dz, and the internal coordinates
       *     of the point where the force is applied.
       * It calls 4 times volumeIntersection.
       **/
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
-
+    bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
      /** Get the volume that enclose the intersection
       *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.
@@ -200,7 +200,7 @@ public:
       *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.
       *   In addition, return the shape functions to be applied on the faces,
-      *     if the force were applied on a point of the surfaces, 
+      *     if the force were applied on a point of the surfaces,
       *     for a line given by axis r and point p.
       **/
     bool getTetraIntersectionVolumeAndShapeFunctions(Face *f2, grr3 (&r), grr3 (&p), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
