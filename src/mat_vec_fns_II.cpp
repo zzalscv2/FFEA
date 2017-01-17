@@ -183,6 +183,19 @@ template <class t_scalar, class brr3> t_scalar mag(arr3_view<t_scalar,brr3> v) {
 
 }
 
+
+/** Return the squared length of a vector v */
+template <class t_scalar, class brr3> t_scalar mag2(arr3_view<t_scalar,brr3> v) {
+
+   t_scalar s=0.0;
+   for (int i=0; i<3; i++) {
+      s += v[i] * v[i];
+   }
+   return s;
+
+}
+
+
 template <class brr3> void arr3Initialise(brr3 &v){
 
     for (int i=0; i<3; i++) {
@@ -727,6 +740,8 @@ template scalar arr3arr3Distance<scalar,arr3>(arr3_view<scalar,arr3> vecA, arr3_
 
 template scalar mag<scalar,arr3>(arr3_view<scalar,arr3> v);
 
+template scalar mag2<scalar,arr3>(arr3_view<scalar,arr3> v);
+
 template void arr3Initialise<arr3>(arr3 &v);
 
 template scalar detByRows<scalar,arr3>(arr3_view<scalar,arr3> a, arr3_view<scalar,arr3> b, arr3_view<scalar,arr3> c);
@@ -747,6 +762,7 @@ template void arr3Resize2<geoscalar,grr3> (geoscalar f, arr3_view<geoscalar,grr3
 template void arr3Store<geoscalar,grr3>(arr3_view<geoscalar,grr3> u, arr3_view<geoscalar,grr3> v);
 template geoscalar arr3arr3Distance<geoscalar,grr3>(arr3_view<geoscalar,grr3> vecA, arr3_view<geoscalar,grr3> vecB); 
 template geoscalar mag<geoscalar,grr3>(arr3_view<geoscalar,grr3> v);
+template geoscalar mag2<geoscalar,grr3>(arr3_view<geoscalar,grr3> v);
 template void arr3Initialise<grr3>(grr3 &v);
 template geoscalar detByRows<geoscalar,grr3>(arr3_view<geoscalar,grr3> a, arr3_view<geoscalar,grr3> b, arr3_view<geoscalar,grr3> c);
 template geoscalar detByCols<geoscalar,grr3>(arr3_view<geoscalar,grr3> a, arr3_view<geoscalar,grr3> b, arr3_view<geoscalar,grr3> c);
