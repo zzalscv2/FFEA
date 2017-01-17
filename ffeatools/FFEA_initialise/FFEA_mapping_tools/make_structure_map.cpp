@@ -428,9 +428,9 @@ void map_node_using_closest_nodes(vector3 node, vector<int> node_list, vector3 *
 	
 	// Get coefficients
 	local_coeff = edgemat.get_inverse().apply(local_coord);
-	if(fabs(local_coeff.x) > 5 || fabs(local_coeff.y) > 5 || fabs(local_coeff.z) > 5) {
+	/*if(fabs(local_coeff.x) > 5 || fabs(local_coeff.y) > 5 || fabs(local_coeff.z) > 5) {
 		cout << local_coeff.x << " " << local_coeff.y << " " << local_coeff.z << "        " << local_coord.get_mag() << "      " << node_list.size() << endl;
-	}
+	}*/
 	
 	// Create local map
 	/*map[0] = 1;
