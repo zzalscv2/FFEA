@@ -70,4 +70,4 @@ else:
 	print "Non-Inertial Diffusion", ": failed ", np.fabs(r2mean - r2theory) / r2theory , " > ", tolerance
 	err = 1
 sys.exit(err)
-sys.exit(err)
+
