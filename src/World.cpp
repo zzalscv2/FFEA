@@ -2152,7 +2152,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 					set_preComp = 1;
 				} else {
 					FFEA_error_text();
-					cout << "Unrecognised conformation lvalue" << endl;
+					cout << "Unrecognised conformation lvalue: '" << lrvalue[0] << "'" << endl;
 					return FFEA_ERROR;
 				}
 			}
