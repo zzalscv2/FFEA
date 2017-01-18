@@ -39,8 +39,8 @@ public:
 
     ~SparseMatrixFixedPattern();
 
-    void init(int num_rows, int num_nonzero_elements, sparse_entry *entry, int *key, sparse_entry_sources *source_list);
-    void init(int num_rows, int num_entries, scalar *entries, int *key, int *col_indices);
+    int init(int num_rows, int num_nonzero_elements, sparse_entry *entry, int *key, sparse_entry_sources *source_list);
+    int init(int num_rows, int num_entries, scalar *entries, int *key, int *col_indices);
 
     /** Reconstruct the matrix by adding up all the contributions from the sources stored in the source list */
     void build();

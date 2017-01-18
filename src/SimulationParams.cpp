@@ -240,6 +240,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		vector<string>::iterator it;
 		conformation_array_size = conformation_vector.size();
 		num_conformations = new int[conformation_array_size];
+		if (num_conformations == NULL) FFEA_ERROR_MESSG("Failed to allocate meory for the number of conformations in SimulationParams\n"); 
 		int i = 0;
 		for(it = conformation_vector.begin(); it != conformation_vector.end(); ++it) {
 			num_conformations[i] = atoi((*it).c_str());
@@ -257,7 +258,8 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		// Now assign them to an array
 		vector<string>::iterator it;
 		state_array_size = state_vector.size();
-        	num_states = new int[state_array_size];
+		num_states = new int[state_array_size];
+		if (num_states == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for the number of states in SimulationParams\n"); 
 		int i = 0;
 		for(it = state_vector.begin(); it != state_vector.end(); ++it) {
 			num_states[i] = atoi((*it).c_str());

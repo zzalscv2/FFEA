@@ -215,6 +215,7 @@ int BlobLite::load_nodes(const char *node_filename, scalar scale) {
 
     // Allocate the memory for all these nodes
     coord = new scalar[3*num_nodes];
+    if (coord == NULL) FFEA_ERROR_MESSG("Failed to allocate node coordinates\n");
 
     // Check for "surface nodes:" line
     if (fgets(line, max_line_size, in) == NULL) {

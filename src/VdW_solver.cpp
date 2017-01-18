@@ -63,8 +63,10 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;
     fieldenergy = new scalar*[num_blobs];
+    if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy in VdW_solver::init\n"); 
     for(int i = 0; i < num_blobs; ++i) {
       fieldenergy[i] = new scalar[num_blobs];
+      if (fieldenergy[i] == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy[%d] in VdW_solver::init\n", i); 
     }
     return FFEA_OK;
 }
