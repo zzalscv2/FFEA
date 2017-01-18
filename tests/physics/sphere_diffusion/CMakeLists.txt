@@ -30,7 +30,9 @@
 add_test(NAME sphere_diffusion_nomass COMMAND ${PROJECT_BINARY_DIR}/src/ffea sphere_coarse_nomass_norestart.ffea)
 set_tests_properties(sphere_diffusion_nomass PROPERTIES ENVIRONMENT OMP_NUM_THREADS=1)
 add_test(NAME sphere_diffusion_nomass_check COMMAND ${PYTHON_EXECUTABLE} diffusion_nomass.py)
-set_tests_properties(sphere_diffusion_nomass_check PROPERTIES DEPENDS sphere_diffusion_nomass)
+set_tests_properties(sphere_diffusion_nomass_check PROPERTIES 
+                     DEPENDS sphere_diffusion_nomass
+                     ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:${PYTHONPATH})
 
 
 
