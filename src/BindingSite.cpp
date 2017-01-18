@@ -61,8 +61,10 @@ int BindingSite_matrix::init(string fname) {
 
 	// Get all interactions
 	interaction = new bool*[num_interaction_types];
+	if (interaction == NULL) FFEA_ERROR_MESSG("Could not allocate 2D interaction array\n"); 
 	for(int i = 0; i < num_interaction_types; ++i) {
 		interaction[i] = new bool[num_interaction_types];
+		if (interaction[i] == NULL) FFEA_ERROR_MESSG("Could not allocate memory for interaction[%d]\n", i);
 		for(int j = 0; j < num_interaction_types; ++j) {
 			if(fin.eof()) {
 				FFEA_ERROR_MESSG("EOF reached prematurely. For 'num_interaction types = %d', expected at %d x %d matrix of 0's and 1's\n", num_interaction_types, num_interaction_types, num_interaction_types)

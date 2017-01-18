@@ -116,8 +116,10 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
 
     num_blobs = params->num_blobs;
     fieldenergy = new scalar*[num_blobs];
+    if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for fieldenergy in PreCompSolver\n"); 
     for(int i = 0; i < num_blobs; ++i) {
       fieldenergy[i] = new scalar[num_blobs];
+      if (fieldenergy[i] == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for fieldenergy[%d] in PreCompSolver\n", i); 
     }
 
 
@@ -204,6 +206,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    U = new scalar[n_values * nint];    
    F = new scalar[n_values * nint];    
    isPairActive = new bool[ntypes * ntypes]; 
+   if (U == NULL || F == NULL || isPairActive == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for arrays in PreComp_solver::init\n"); 
       
    // and load potentials and forces:
    if (read_tabulated_values(*pc_params, "pot", U, pc_params->E_to_J / mesoDimensions::Energy)) return FFEA_ERROR;
@@ -249,6 +252,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    b_pos = new scalar[n_beads*3];
    // and allocate the bead types: 
    b_types = new int[n_beads]; 
+   if (b_elems == NULL || b_rel_pos == NULL || b_pos == NULL || b_types == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for array beads in PreComp_solver::init\n"); 
    
 
    /*------------ FOURTHLY --------*/
