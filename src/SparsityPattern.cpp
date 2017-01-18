@@ -48,15 +48,15 @@ int SparsityPattern::init(int num_rows) {
 }
 
 /* * */
-void SparsityPattern::register_contribution(int i, int j, scalar *contrib_memory_loc) {
+int SparsityPattern::register_contribution(int i, int j, scalar *contrib_memory_loc) {
     list<sparse_contribution_location*>::iterator it;
     for (it = row[i].begin(); it != row[i].end(); it++) {
 
         // If element already has sources, add the source to the list
         if ((*it)->column_index == j) {
             (*it)->source_list.push_back(contrib_memory_loc);
-            return;
-        }
+            return FFEA_OK;
+        } 
 
         // If we've passed the point where we'd expect our element to be,
         // create a new contribution list and insert it
@@ -67,9 +67,12 @@ void SparsityPattern::register_contribution(int i, int j, scalar *contrib_memory
 
     num_nonzero_elements++;
     sparse_contribution_location *scl = new sparse_contribution_location();
+    if (scl == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for 'scl' in SparsityPattern::register_contribution\n"); 
     scl->column_index = j;
     scl->source_list.push_back(contrib_memory_loc);
     row[i].insert(it, scl);
+    
+    return FFEA_OK;
 
 }
 

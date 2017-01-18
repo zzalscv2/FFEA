@@ -70,11 +70,10 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
 
     printf("\t\tAttempting to allocate %d scalars for mass_LU...\n", num_rows * num_rows);
     scalar *mass_LU = new scalar[num_rows * num_rows];
-    printf("\t\t...success.\n");
-
     if (mass_LU == NULL) {
         FFEA_ERROR_MESSG("Could not allocate mass_LU\n");
     }
+    printf("\t\t...success.\n");
 
     printf("\t\tZeroing...\n");
     for (i = 0; i < num_rows * num_rows; i++) {
@@ -128,6 +127,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
 
     // Allocate memory for and initialise 'key' array
     key = new int[num_rows + 1];
+    if (key == NULL) FFEA_ERROR_MESSG("Failed to allocate 'key' in ConjugateGradientSolver\n"); 
 
     for (i = 0; i < num_rows; i++) {
         key[i] = 0;
@@ -155,6 +155,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     // Allocate memory for the 'entry' array
     printf("\t\tNum non zero entries = %d.\n\t\tAllocating space...\n", total_non_zeros);
     entry = new sparse_entry[total_non_zeros];
+    if (entry == NULL) FFEA_ERROR_MESSG("Failed to allocate 'entry' in ConjugateGradientSolver\n"); 
     printf("\t\t...done.\n");
 
     // Fill the 'entry' array
@@ -173,6 +174,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
 
     // Create the jacobi preconditioner matrix (diagonal)
     preconditioner = new scalar[num_rows];
+    if (preconditioner == NULL) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in ConjugateGradientSolver\n"); 
     for (i = 0; i < num_rows; i++)
         preconditioner[i] = 1.0 / mass_LU[i * num_rows + i];
 
@@ -182,6 +184,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     q = new vector3[num_rows];
     s = new vector3[num_rows];
     f = new vector3[num_rows];
+    if (d == NULL || r == NULL || q == NULL || s == NULL || f == NULL) FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for ConjugateGradientSolver\n"); 
 
     delete[] mass_LU;
 

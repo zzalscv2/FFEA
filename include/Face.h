@@ -207,13 +207,13 @@ public:
 
     Blob *daddy_blob;
 
-    void init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *oposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params);
+    int init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *oposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params);
 
-    void init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params);
+    int init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params);
 
     void set_vdw_interaction_type(int vdw_interaction_type);
 
-    void build_opposite_node();
+    int build_opposite_node();
 
     void calc_area_normal_centroid();
     void set_kinetic_state(bool state);

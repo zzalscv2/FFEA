@@ -63,8 +63,10 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;
     fieldenergy = new scalar*[num_blobs];
+    if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy in VdW_solver::init\n"); 
     for(int i = 0; i < num_blobs; ++i) {
       fieldenergy[i] = new scalar[num_blobs];
+      if (fieldenergy[i] == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy[%d] in VdW_solver::init\n", i); 
     }
     return FFEA_OK;
 }
@@ -216,7 +218,7 @@ int VdW_solver::solve(scalar * blob_corr) {
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-#pragma omp parallel for private(c, l_i, l_j, f_i, f_j)
+#pragma omp parallel for private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
