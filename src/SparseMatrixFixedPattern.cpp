@@ -45,7 +45,7 @@ SparseMatrixFixedPattern::~SparseMatrixFixedPattern() {
     num_nonzero_elements = 0;
 }
 
-void SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, sparse_entry *entry, int *key, sparse_entry_sources *source_list) {
+int SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, sparse_entry *entry, int *key, sparse_entry_sources *source_list) {
     this->num_rows = num_rows;
     this->num_nonzero_elements = num_nonzero_elements;
     this->entry = entry;
@@ -54,6 +54,7 @@ void SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, spar
 
     // Work out which elements are on the diagonal
     diagonal = new scalar*[num_rows];
+    if (diagonal == NULL) FFEA_ERROR_MESSG("Failed to allocate 'diagonal' array in SparseMatrixFixedPattern::init\n"); 
 
     for (int i = 0; i < num_rows; i++) {
         for (int j = key[i]; j < key[i + 1]; j++) {
@@ -62,18 +63,22 @@ void SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, spar
             }
         }
     }
+
+    return FFEA_OK;
 }
 
 // Initialise matrix without a source list (doesn't need rebuilding)
-void SparseMatrixFixedPattern::init(int num_rows, int num_entries, scalar *entries, int *key, int *col_indices) {
+int SparseMatrixFixedPattern::init(int num_rows, int num_entries, scalar *entries, int *key, int *col_indices) {
 	this->num_rows = num_rows;
     	this->num_nonzero_elements = num_entries;
 	this->key = key;
 	this->entry = new sparse_entry[num_entries];
+   if (this->entry == NULL) FFEA_ERROR_MESSG("Failed to allocate 'entry' in SparseMAtrixFixedPattern::init\n"); 
 	for(int i = 0; i < num_entries; ++i) {
 		entry[i].column_index = col_indices[i];
 		entry[i].val = entries[i];
 	}
+   return FFEA_OK;
 }
 
 /* Reconstruct the matrix by adding up all the contributions from the sources stored in the source list */

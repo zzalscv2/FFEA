@@ -39,7 +39,13 @@ except:
 start = 5000
 #start = 0
 end = 10000
-script = FFEA_script.FFEA_script("sphere_coarse_nomass_norestart.ffea")
+sfile = "sphere_coarse_nomass_norestart.ffea"
+
+if (ffeatoolsFound):
+  script = ffeatools.modules.script(sfile)
+else:
+  script = FFEA_script.FFEA_script(sfile)
+
 traj = script.load_trajectory(start=start)
 
 # Analyse trajctory in sets of 1ps and test against theoretical diffusion

@@ -648,7 +648,7 @@ private:
     /**
      * Creates a new pinned nodes list from a given set
      */
-    void create_pinned_nodes(set<int> list);
+    int create_pinned_nodes(set<int> list);
 
     /**
      * Calculate some quantities such as the rest jacobian, rest volume etc.
@@ -670,7 +670,7 @@ private:
      */
     int calculate_node_element_connectivity();
 
-    void build_mass_matrix();
+    int build_mass_matrix();
 };
 
 #endif
