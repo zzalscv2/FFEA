@@ -85,6 +85,7 @@ class FFEA_pdb:
 		# Make robust against dodgy formating by the user
 		sys.stdout.write("\tReading first frame to determine structure sizes...")
 		models_exist = False
+		chains_exist = True
 		line = fin.readline()
 		while(True):
 			try:
@@ -98,6 +99,8 @@ class FFEA_pdb:
 					break
 
 				elif line[0:4] == "ATOM":
+					if line[21].strip() == "":
+						chains_exist = False
 
 					# Seek back a line
 					fin.seek(-len(line),1)
@@ -119,10 +122,9 @@ class FFEA_pdb:
 
 
 		# We are ready to read the first frame, but we will not build objects, merely store the data for fast reading
-		self.num_chains = 0
+		self.num_chains = 1
 		self.num_frames = 1
-		self.num_atoms = []
-		last_chain = ""
+		self.num_atoms = [0]
 
 		if models_exist:
 			fin.readline()
@@ -132,27 +134,33 @@ class FFEA_pdb:
 
 		sys.stdout.write("\tBuilding container objects...")
 		chainIDs = []
+		chainID = "A"
 		while(True):
 
 			line = fin.readline()
-
+			if line == "":
+				break
 			try:
 				# Different things depeinding on lines
 				if line[0:4] == "ATOM":
-					chainID = line[21]
+					
+					if chains_exist:
+						chainID = line[21]		
 
-					if chainID != last_chain:
-						if chainID in chainIDs:
-							# No models, no ters, badly formatted. But we can deal with it
-							break
+					#if chainID != last_chain:
+					#	if chainID in chainIDs:
+					#		# No models, no ters, badly formatted. But we can deal with it
+					#		break
 
-						last_chain = chainID
-						self.num_chains += 1
-						self.num_atoms.append(0)
 						
 					self.num_atoms[-1] += 1
 
 				elif line[0:3] == "TER":
+
+					chainIDs.append(chainID)
+					chainID = chr(ord(chainID) + 1)					
+					self.num_chains += 1
+					self.num_atoms.append(0)
 
 					# Register that ters exist
 					ters_exist = True
@@ -172,6 +180,10 @@ class FFEA_pdb:
 
 					# We will assume a single frame (rather than returning an error)
 					break
+
+		if self.num_atoms[-1] == 0:
+			self.num_atoms.pop()
+			self.num_chains -= 1
 
 		fin.seek(start_pos)
 		sys.stdout.write("done!\n")
@@ -361,7 +373,7 @@ class FFEA_pdb_chain:
 
 		if atom == None:
 			raise IndexError
-
+		
 		self.frame[frame].pos[atom][0] = float(x)
 		self.frame[frame].pos[atom][1] = float(y)
 		self.frame[frame].pos[atom][2] = float(z)
@@ -387,8 +399,16 @@ class FFEA_pdb_atom:
 		self.name = name
 		self.res = res
 		self.resID = int(resID)
-		self.occupancy = float(occupancy)
-		self.temperature = float(temperature)
+		try:
+			self.occupancy = float(occupancy)
+		except:
+			self.occupancy = 1.0
+
+		try:
+			self.temperature = float(temperature)
+		except:
+			self.temperature = 0.0
+	
 		self.segID = segID
 		self.element = element
 		self.charge = charge

@@ -37,6 +37,7 @@ intop = ""
 if len(sys.argv) > 4:
 	intop = sys.argv[4]
 
+num_frames_to_read = 10000
 if len(sys.argv) > 5:
 	num_frames_to_read = int(sys.argv[5])
 
@@ -59,7 +60,7 @@ kinetic_map = FFEA_kinetic_map.FFEA_kinetic_map(inmap)
 # Test against target topology if necessary
 if intop != "":
 	if kinetic_map.num_rows != sum(pdbtop.num_atoms):
-		sys.exit("Error. Provided topology has %d atoms. Map expects %d target atoms." % (pdbtop.blob[0].num_atoms, kinetic_map.num_rows))
+		sys.exit("Error. Provided topology has %d atoms. Map expects %d target atoms." % (pdbtop.chain[0].num_atoms, kinetic_map.num_rows))
 
 	#if kinetic_map.num_rows != pdbtop.blob[0].num_atoms and kinetic_map.num_rows != sum(pdbtop.num_atoms):
 	#	sys.exit("Error. Provided topology has %d atoms. Map expects %d target atoms." % (pdbtop.blob[0].num_atoms, kinetic_map.num_rows))
