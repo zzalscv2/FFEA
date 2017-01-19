@@ -141,16 +141,25 @@ class FFEA_topology:
 		num_elements = int(fin.readline())
 
 		# Get all elements
+		zeroindexing = False
 		for i in range(num_elements):
 			sline = fin.readline().split()[2:]
 			el = FFEA_element_tet_lin()
+			
+			# Test indices
+			for s in sline:
+				if s.strip() == "0":
+					zeroindexing = True
+					break
+ 
 			el.set_indices(sline)
 			self.add_element(el)
 
 		# Indexing from 0
-		for i in range(self.num_elements):
-			for j in range(4):
-				self.element[i].n[j] -= 1
+		if not zeroindexing:
+			for i in range(self.num_elements):
+				for j in range(4):
+					self.element[i].n[j] -= 1
 
 	def load_ele(self, fname):
 
