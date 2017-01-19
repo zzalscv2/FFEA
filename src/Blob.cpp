@@ -3067,11 +3067,11 @@ int Blob::load_ctforces(string ctforces_fname){
        arr3Normalise<scalar,arr3>(ctf_d);  //  and thus normalise.
        arr3Resize<scalar,arr3>(mdlm1, ctf_p);  // and rescale CTFPENDING: check!!! 
      } else if (type.compare(0,1,"n")) { // otherwise store as pairs of nodes, or complain. 
-       FFEA_ERROR_MESSG("Invalid rotational force: %s, in line read: %s\n", type[0], my_lines[i].c_str());
+       FFEA_ERROR_MESSG("Invalid rotational force: %s, in line read: %s\n", type.substr(0).c_str(), my_lines[i].c_str());
        return FFEA_ERROR;
      }
      if ((type.compare(1,1,"f")) and (type.compare(1,1,"t"))) { // check and store type force or torque
-       FFEA_ERROR_MESSG("Invalid rotational force type: %s, in line read: %s\n", type[1], my_lines[i].c_str());
+       FFEA_ERROR_MESSG("Invalid rotational force type: %s, in line read: %s\n", type.substr(1).c_str(), my_lines[i].c_str());
        return FFEA_ERROR;
      } 
      if (line_split[10].compare("all") != 0) {

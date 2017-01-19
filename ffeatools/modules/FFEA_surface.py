@@ -165,17 +165,30 @@ class FFEA_surface:
 		# Get num_faces
 		i += 1
 		num_faces = int(lines[i])
+		zeroindexing = False
 		for j in range(i + 1, i + 1 + num_faces):
 			try:
-				sline = lines[j].split()
+				sline = lines[j].split()[5:]
 				face = FFEA_face_tri_lin()
-				face.set_indices([int(sline[5]) - 1, int(sline[6]) - 1, int(sline[7]) - 1])
+				
+				# Test indices
+				for s in sline:
+					if s.strip() == "0":
+						zeroindexing = True
+						break
+ 
+				face.set_indices(sline)
 				self.add_face(face)
 
 			except:
 				self.reset()
 				raise Exception("\tCouldn't find the specified %d faces. Only found %d. File '" + fname + "' not formatted correctly." % (num_faces, i))
 
+		# Indexing from 0
+		if not zeroindexing:
+			for i in range(self.num_faces):
+				for j in range(3):
+					self.face[i].n[j] -= 1
 	def add_face(self, f):
 		self.face.append(f)
 		self.num_faces += 1
