@@ -25,6 +25,8 @@ import argparse as _argparse
 import FFEA_node as _FFEA_node, FFEA_topology as _FFEA_topology, FFEA_surface as _FFEA_surface
 import sys
 import __builtin__
+from os.path import splitext
+from os.path import exists
 
 # Set up argparse
 parser = _argparse.ArgumentParser(description="Convert tetgen files (.ele, .face, .node) to a .vol file (FFEA, netgen)")
@@ -48,9 +50,10 @@ def convert_tet_to_net(input_fnames, output_fname):
     surf = None
     node = None
     
-    if type(input_fnames) == type(None) or len(input_fnames) != 3:
-        raise IOError("Expected 3 input files! Use --help for help.")
-    
+    if type(input_fnames) == type(None) or (len(input_fnames) != 3 and len(input_fnames) != 4):
+        print("Expected 3 input files! Use --help for help.")
+        raise IOError
+
     for f in input_fnames:
         base = f.rsplit(".", 1)[0]
         ext = f.rsplit(".", 1)[1]
@@ -67,6 +70,13 @@ def convert_tet_to_net(input_fnames, output_fname):
         elif ext == "face":
             surf = _FFEA_surface.FFEA_surface(f)
     
+    if output_fname == None:
+	print("\tOutput filename not found. Creating default output filename...")
+	output_fname = splitext(input_fnames[0])[0] + ".vol"
+	if exists(output_fname):
+		print("\tDefault output filename already exists. Please supply your own filename (which will be overwritten if it exists")
+		raise IOError
+
     # Now, write them all to file
     fout = open(output_fname, "w")
     fout.write("mesh3d\ndimension\n3\ngeomtype\n11\n\n")
