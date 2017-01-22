@@ -166,6 +166,15 @@ set(CMAKE_PREFIX_PATH ${EIGEN3_HOME} $ENV{EIGEN_HOME} ${CMAKE_PREFIX_PATH})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 # 6.4 # Go for it:
 find_package(Eigen3 3.2.0 REQUIRED)
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
+     if (${EIGEN3_VERSION} VERSION_LESS "3.3") 
+       if (NOT ${EIGEN3_VERSION} VERSION_EQUAL "3.2.10")
+         message(FATAL_ERROR "\n Found Eigen3 ${EIGEN3_VERSION}, but GCC 5.0 and higher need Eigen version 3.2.10, or > 3.3. Release candidates for 3.3 (internally known as 3.2.91 and higher) are known to fail.")
+       endif (NOT ${EIGEN3_VERSION} VERSION_EQUAL "3.2.10")
+     endif (${EIGEN3_VERSION} VERSION_LESS "3.3") 
+   endif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
+endif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 
