@@ -19,7 +19,7 @@ To install FFEA you need:
 
    * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1). FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
 
-   > Warning - version 3.2.10 will be needed if using GCC >= 5. Earlier versions did prove to be incompatible with GCC >= 5 and the C++11 standard. 
+   > Warning - GCC >= 5 will require version 3.2.10 or higher for Eigen. Earlier versions (including 3.3 release candidates, marked internally as 3.2.91 and higher) did prove to be incompatible with GCC >= 5 and the C++11 standard. 
      
    * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL]   
      It will be used to build the documentation.
