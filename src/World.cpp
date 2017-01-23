@@ -1767,10 +1767,6 @@ int World::run() {
                     return FFEA_ERROR;
                 }
 
-                if (params.sticky_wall_xz == 1) {
-                    vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
-                }
-
                 if (params.calc_es == 1) {
                     do_es();
                 }
@@ -1785,6 +1781,7 @@ int World::run() {
 #endif
 
         if (params.calc_vdw == 1 && params.force_pbc == 0) vdw_solver->solve();
+        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
 
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
