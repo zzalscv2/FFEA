@@ -182,6 +182,16 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 # 7 ### PYTHON ######
 find_package(PythonInterp REQUIRED)
 # python will be used to run some tests.
+# Now look for NumPy
+execute_process(
+    COMMAND "${PYTHON_EXECUTABLE}" -c "from __future__ import print_function\ntry:\n\t import numpy\n\t print('OK',end=\"\")\nexcept:\n\t print('FAIL',end=\"\")"
+    OUTPUT_VARIABLE NUMPY_FOUND)
+if ("${NUMPY_FOUND}" STREQUAL "FAIL")
+  message(WARNING "NumPy was not found: Several tests won't be run, and the ffeatools script and API will be mostly unusable")
+endif ("${NUMPY_FOUND}" STREQUAL "FAIL")
+if  ("${NUMPY_FOUND}" STREQUAL "OK")
+  message(STATUS "Found NumPy")
+endif  ("${NUMPY_FOUND}" STREQUAL "OK")
 
 
 # 8 ### DOXYGEN ##### 
@@ -271,6 +281,14 @@ enable_testing()
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
+if (${NUMPY_FOUND} STREQUAL "FAIL")
+  set(CTEST_CUSTOM_TESTS_IGNORE ${CTEST_CUSTOM_TESTS_IGNORE} python_load_trajectory
+       sphere_diffusion_nomass sphere_diffusion_nomass_check
+       sphere_mass sphere_mass_check 
+       sphere_nomass sphere_nomass_check
+       cyl_youngs_mod cyl_youngs_mod_check
+       cyl_flexrig cyl_flexrig_check)
+endif(${NUMPY_FOUND} STREQUAL "FAIL")
 #####################################################
 
 ###############################
