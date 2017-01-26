@@ -281,14 +281,26 @@ enable_testing()
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
+set(IGNORE_NUMPY_TESTS "")
 if (${NUMPY_FOUND} STREQUAL "FAIL")
-  set(CTEST_CUSTOM_TESTS_IGNORE ${CTEST_CUSTOM_TESTS_IGNORE} python_load_trajectory
+  set(IGNORE_NUMPY_TESTS 
+       python_load_trajectory
        sphere_diffusion_nomass sphere_diffusion_nomass_check
        sphere_mass sphere_mass_check 
        sphere_nomass sphere_nomass_check
        cyl_youngs_mod cyl_youngs_mod_check
        cyl_flexrig cyl_flexrig_check)
+  message("--------------------------------------------------------")
+  message("-----------------WARNING--------------------------------")
+  message(STATUS "NumPy could not be found. This means that:")
+  message(STATUS "   'ffeatools' - the python package, will fail to import")
+  message(STATUS "   'ffeatools' - the script, will only be partially useful")
+  message(STATUS "   Several tests have been discarted and will not run.")
+  message(STATUS "Your installation will still be complete.")
+  message("--------------------------------------------------------")
 endif(${NUMPY_FOUND} STREQUAL "FAIL")
+configure_file("${PROJECT_SOURCE_DIR}/CTestCustom.in"
+                 "${PROJECT_BINARY_DIR}/CTestCustom.cmake" @ONLY)
 #####################################################
 
 ###############################
