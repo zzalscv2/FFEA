@@ -3536,6 +3536,7 @@ void Blob::calc_rest_state_info() {
     // for constructing the preliminary poisson solver matrix.
     matrix3 J;
     scalar min_vol = INFINITY, temp;
+    scalar longest_edge = 0;
     int min_vol_elem = 0;
     mass = 0;
     scalar total_vol = 0;
@@ -3559,6 +3560,9 @@ void Blob::calc_rest_state_info() {
             min_vol_elem = i;
         }
 
+        scalar longest_edge_i = elem[i].length_of_longest_edge();
+        if (longest_edge_i > longest_edge) longest_edge = longest_edge_i; 
+
         // Calc the mass of the element
         elem[i].mass = elem[i].vol_0 * elem[i].rho;
     }
@@ -3570,6 +3574,7 @@ void Blob::calc_rest_state_info() {
     } else {
         printf("\t\tTotal rest volume of Blob is %e cubic Angstroms.\n", total_vol * mesoDimensions::volume* 1e30);
         printf("\t\tSmallest element (%i) has volume %e cubic Angstroms.\n", min_vol_elem, min_vol * mesoDimensions::volume * 1e30);
+        printf("\t\tLongest edge has length %e Angstroms.\n", longest_edge * mesoDimensions::length * 1e10);
     }
 
     // Calc the total mass of this Blob
