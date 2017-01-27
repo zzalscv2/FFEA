@@ -242,6 +242,9 @@ public:
     /** get the pointer to "bead_type"  [precomp] */
     int *get_bead_type_ptr();
 
+    /** get_bead_type [precomp] */ 
+    int get_bead_type(int i); 
+
     /**
      * @brief returns the list of nodes where bead i should be assigned to.
      *
