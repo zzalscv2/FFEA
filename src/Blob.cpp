@@ -1472,6 +1472,16 @@ int *Blob::get_bead_type_ptr() {
 }
 
 /**
+ * @brief returns the bead_type of bead i.
+ *
+ * @ingroup FMM
+ **/
+int Blob::get_bead_type(int i) {
+  return bead_type[i];
+
+}
+
+/**
  * @brief returns the list of nodes where bead i should be assigned to.
  *
  * @ingroup FMM
@@ -2826,6 +2836,9 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     int index;
     for (unsigned int i=0; i<stypes.size(); i++) {
       it = std::find(pc_params->types.begin(), pc_params->types.end(), stypes[i]);
+      if (it == pc_params->types.end()) { // type in beads file not matching the types in .ffea file!!
+         FFEA_ERROR_MESSG("Type '%s' read in beads file does not match any of the bead types specified in the .ffea file\n", stypes[i].c_str()); 
+      }
       index = std::distance(pc_params->types.begin(), it);
       bead_type[i] = index;
     }
