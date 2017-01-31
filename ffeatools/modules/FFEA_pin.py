@@ -100,6 +100,16 @@ class FFEA_pin:
 		self.index.append(int(anint))
 		self.num_pinned_nodes += 1
 		
+	def remove_pinned_node(self, anint):
+		
+		try:
+			self.index.remove(anint)
+			self.num_pinned_nodes -= 1
+
+		except(ValueError):
+			print("Index " + str(anint) + " not in list.")
+			
+
 	def print_details(self):
 
 		print "num_pinned_nodes = %d" % (self.num_pinned_nodes)
