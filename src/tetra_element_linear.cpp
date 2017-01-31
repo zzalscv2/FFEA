@@ -656,3 +656,21 @@ int tetra_element_linear::get_opposite_node(int n1, int n2, int n3) {
    else return opposite[hash];
 
 }
+
+scalar tetra_element_linear::length_of_longest_edge() {
+
+   scalar d2 = 0;
+   scalar di2 = 0;
+   for (int i=0; i<NUM_NODES_LINEAR_TET; i++) { // loop over the linear nodes.
+      for (int j=i+1; j<NUM_NODES_LINEAR_TET; j++) {
+         di2 = (n[i]->pos.x - n[j]->pos.x)*(n[i]->pos.x - n[j]->pos.x); 
+         di2 += (n[i]->pos.y - n[j]->pos.y)*(n[i]->pos.y - n[j]->pos.y);
+         di2 += (n[i]->pos.z - n[j]->pos.z)*(n[i]->pos.z - n[j]->pos.z);
+         if (di2 > d2) d2 = di2;
+      }
+   }
+
+   return sqrt(d2);
+
+}
+
