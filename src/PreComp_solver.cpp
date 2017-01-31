@@ -389,6 +389,9 @@ int PreComp_solver::solve() {
     // 2 - Compute all the i-j forces:
     /*scalar e_tot = 0.0; 
     scalar f_tot = 0.0;*/
+#ifdef USE_OPENMP
+#pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij)
+#endif
     for (int i=0; i<n_beads; i++){ 
       type_i = b_types[i]; 
       phi_i[1] = b_rel_pos[3*i];
@@ -453,6 +456,9 @@ int PreComp_solver::solve() {
 int PreComp_solver::compute_bead_positions() {
 
     matrix3 J; 
+#ifdef USE_OPENMP
+#pragma omp parallel for default(none) private(J)
+#endif
     for (int i=0; i<n_beads; i++){
        b_elems[i]->calculate_jacobian(J); 
        b_pos[3*i]   = b_elems[i]->n[0]->pos.x + b_rel_pos[3*i]*J[0][0] + b_rel_pos[3*i+1]*J[1][0] + b_rel_pos[3*i+2]*J[2][0];
