@@ -1472,6 +1472,16 @@ int *Blob::get_bead_type_ptr() {
 }
 
 /**
+ * @brief returns the bead_type of bead i.
+ *
+ * @ingroup FMM
+ **/
+int Blob::get_bead_type(int i) {
+  return bead_type[i];
+
+}
+
+/**
  * @brief returns the list of nodes where bead i should be assigned to.
  *
  * @ingroup FMM
@@ -2826,6 +2836,9 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     int index;
     for (unsigned int i=0; i<stypes.size(); i++) {
       it = std::find(pc_params->types.begin(), pc_params->types.end(), stypes[i]);
+      if (it == pc_params->types.end()) { // type in beads file not matching the types in .ffea file!!
+         FFEA_ERROR_MESSG("Type '%s' read in beads file does not match any of the bead types specified in the .ffea file\n", stypes[i].c_str()); 
+      }
       index = std::distance(pc_params->types.begin(), it);
       bead_type[i] = index;
     }
@@ -3523,6 +3536,7 @@ void Blob::calc_rest_state_info() {
     // for constructing the preliminary poisson solver matrix.
     matrix3 J;
     scalar min_vol = INFINITY, temp;
+    scalar longest_edge = 0;
     int min_vol_elem = 0;
     mass = 0;
     scalar total_vol = 0;
@@ -3546,6 +3560,9 @@ void Blob::calc_rest_state_info() {
             min_vol_elem = i;
         }
 
+        scalar longest_edge_i = elem[i].length_of_longest_edge();
+        if (longest_edge_i > longest_edge) longest_edge = longest_edge_i; 
+
         // Calc the mass of the element
         elem[i].mass = elem[i].vol_0 * elem[i].rho;
     }
@@ -3557,6 +3574,7 @@ void Blob::calc_rest_state_info() {
     } else {
         printf("\t\tTotal rest volume of Blob is %e cubic Angstroms.\n", total_vol * mesoDimensions::volume* 1e30);
         printf("\t\tSmallest element (%i) has volume %e cubic Angstroms.\n", min_vol_elem, min_vol * mesoDimensions::volume * 1e30);
+        printf("\t\tLongest edge has length %e Angstroms.\n", longest_edge * mesoDimensions::length * 1e10);
     }
 
     // Calc the total mass of this Blob

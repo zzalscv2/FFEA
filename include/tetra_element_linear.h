@@ -41,6 +41,7 @@
 
 class Blob;
 
+#define NUM_NODES_LINEAR_TET 4
 #define NUM_NODES_QUADRATIC_TET 10
 
 /*
@@ -304,6 +305,8 @@ public:
 
     int get_opposite_node(int n1, int n2, int n3); 
 
+    scalar length_of_longest_edge();
+
 private:
 
     /** @brief
@@ -326,3 +329,4 @@ private:
 };
 
 #endif
+
