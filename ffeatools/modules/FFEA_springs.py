@@ -30,6 +30,8 @@ class FFEA_springs:
 	def __init__(self, fname = ""):
 	
 		self.reset()
+		if fname == "":
+			return
 
 		try:
 			self.load(fname)

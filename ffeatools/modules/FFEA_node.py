@@ -385,12 +385,12 @@ class FFEA_node:
 			# Surface nodes
 			fout.write("surface nodes:\n")
 			for i in range(self.num_surface_nodes):
-				fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
+				fout.write("%10.6f %10.6f %10.6f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
 
 			# Interior nodes
 			fout.write("interior nodes:\n")
 			for i in range(self.num_surface_nodes, self.num_nodes, 1):
-				fout.write("%6.3f %6.3f %6.3f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
+				fout.write("%10.6f %10.6f %10.6f\n" % (self.pos[i][0], self.pos[i][1], self.pos[i][2]))
 
 		elif ext == ".obj":
 			if surf == None:
