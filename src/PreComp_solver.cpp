@@ -405,6 +405,8 @@ int PreComp_solver::solve() {
         dx.y = (b_pos[3*j+1] - b_pos[3*i+1]);
         dx.z = (b_pos[3*j+2] - b_pos[3*i+2]);
         d = mag(&dx);
+        if (d > x_range[1]) continue;
+        else if (d < x_range[0]) continue;
         dx.x = dx.x / d;
         dx.y = dx.y / d;
         dx.z = dx.z / d;
@@ -655,18 +657,7 @@ scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
    } 
 
 
-   /* approach 1
-   // get the index for the closest (bottom) value:
-   for (int i=0; i<ntypes; i++){
-     for (int j=i; j<ntypes; j++) {
-       if ((typei == i) and (typej == j))
-         goto end_loop;
-       index += 1;
-     }
-   }
-   end_loop:
-   */
-   /* approach 2 */
+   // get the index to read from:
    index = typei * ntypes;
    if (typei > 1) {
      index -= (typei*typei - typei)/2;
