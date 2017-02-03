@@ -389,6 +389,9 @@ int PreComp_solver::solve() {
     // 2 - Compute all the i-j forces:
     /*scalar e_tot = 0.0; 
     scalar f_tot = 0.0;*/
+#ifdef USE_OPENMP
+#pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij)
+#endif
     for (int i=0; i<n_beads; i++){ 
       type_i = b_types[i]; 
       phi_i[1] = b_rel_pos[3*i];
@@ -402,6 +405,8 @@ int PreComp_solver::solve() {
         dx.y = (b_pos[3*j+1] - b_pos[3*i+1]);
         dx.z = (b_pos[3*j+2] - b_pos[3*i+2]);
         d = mag(&dx);
+        if (d > x_range[1]) continue;
+        else if (d < x_range[0]) continue;
         dx.x = dx.x / d;
         dx.y = dx.y / d;
         dx.z = dx.z / d;
@@ -453,6 +458,9 @@ int PreComp_solver::solve() {
 int PreComp_solver::compute_bead_positions() {
 
     matrix3 J; 
+#ifdef USE_OPENMP
+#pragma omp parallel for default(none) private(J)
+#endif
     for (int i=0; i<n_beads; i++){
        b_elems[i]->calculate_jacobian(J); 
        b_pos[3*i]   = b_elems[i]->n[0]->pos.x + b_rel_pos[3*i]*J[0][0] + b_rel_pos[3*i+1]*J[1][0] + b_rel_pos[3*i+2]*J[2][0];
@@ -649,18 +657,7 @@ scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
    } 
 
 
-   /* approach 1
-   // get the index for the closest (bottom) value:
-   for (int i=0; i<ntypes; i++){
-     for (int j=i; j<ntypes; j++) {
-       if ((typei == i) and (typej == j))
-         goto end_loop;
-       index += 1;
-     }
-   }
-   end_loop:
-   */
-   /* approach 2 */
+   // get the index to read from:
    index = typei * ntypes;
    if (typei > 1) {
      index -= (typei*typei - typei)/2;
