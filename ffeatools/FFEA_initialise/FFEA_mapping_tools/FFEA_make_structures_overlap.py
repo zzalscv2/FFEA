@@ -22,7 +22,7 @@
 #
 
 import sys, os
-import FFEA_script, FFEA_springs, FFEA_trajectory
+import FFEA_script, FFEA_springs, FFEA_trajectory, FFEA_node
 import numpy as np
 from subprocess import Popen
 
@@ -160,7 +160,7 @@ while True:
 		else:
 			l = 0
 
-		springs = FFEA_springs.FFEA_springs("")
+		springs = FFEA_springs.FFEA_springs()
 		for node_pair in spring_array:
 			spring = FFEA_springs.FFEA_spring()
 			spring.set_properties(k,l,[0,1],[0,0], node_pair)
@@ -186,14 +186,18 @@ while True:
 		os.system("ffea " + outffea)
 
 # Finished minimisation! Make node files from this trajectory
-traj = FFEA_trajectory.FFEA_trajectory(script2.params.trajectory_out_fname)
-#traj.blob[0][0].write_frame_as_nodes("blob0_overlap.node", traj.num_frames - 1, 1.0 / script2.blob[0].scale)
-#traj.blob[1][0].write_frame_as_nodes("blob1_overlap.node", traj.num_frames - 1, 1.0 / script2.blob[1].scale)
-
-traj.blob[0][0].frame[-1].scale(1.0 / script2.blob[0].scale)
-traj.blob[1][0].frame[-1].scale(1.0 / script2.blob[1].scale)
-traj.blob[0][0].frame[-1].write_to_file("blob0_overlap.node")
-traj.blob[1][0].frame[-1].write_to_file("blob1_overlap.node")
+try:
+	traj = FFEA_trajectory.FFEA_trajectory(script2.params.trajectory_out_fname)
+	traj.blob[0][0].frame[-1].scale(1.0 / script2.blob[0].scale)
+	traj.blob[1][0].frame[-1].scale(1.0 / script2.blob[1].scale)
+	traj.blob[0][0].frame[-1].write_to_file("blob0_overlap.node")
+	traj.blob[1][0].frame[-1].write_to_file("blob1_overlap.node")
+except(IOError):
+	print("No overlapping performed. Printing out original nodes")
+	node = FFEA_node.FFEA_node(script2.blob[0].conformation[0].nodes)
+	node.write_to_file("blob0_overlap.node")
+	node = FFEA_node.FFEA_node(script2.blob[1].conformation[0].nodes)
+	node.write_to_file("blob1_overlap.node")
 
 # Remove all weirdo files
 os.system("rm lol*")

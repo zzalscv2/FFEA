@@ -342,6 +342,29 @@ class FFEA_pdb:
 
 		self.num_frames += 1
 
+	def translate(self, trans):
+
+		for i in range(self.num_chains):
+			for j in range(self.num_frames):
+				try:
+					self.chain[i].frame[j].translate(trans)
+				except:
+					print("Could not translate, likely due to formatting error in the translation vector provided")
+					raise
+
+	def set_pos(self, pos, findex = 0):
+
+		# findex is which frame we move to pos
+		if findex >= self.num_frames:
+			print("Frame " + findex + " does not exist. Please specifiy a correct index")
+			raise IndexError
+		
+		cent = np.array([0.0,0.0,0.0])
+		for i in range(self.num_chains):
+			cent += self.chain[i].frame[findex].calc_centroid() * self.num_atoms[i]
+		cent *= 1.0 / sum(self.num_atoms)
+		self.translate(np.array(pos) - cent)
+
 	def reset(self):
 
 		self.valid = False
@@ -430,6 +453,22 @@ class FFEA_pdb_frame:
 	def __init__(self, num_atoms = 0):
 
 		self.pos = np.array([[0.0,0.0,0.0] for i in range(num_atoms)])
+	
+	def calc_centroid(self):
+		num_atoms = len(self.pos)
+		self.centroid = (1.0 / num_atoms) * np.sum(self.pos, axis = 0)
+		return self.centroid
+
+	def get_centroid(self):
+		return self.centroid
+	
+	def translate(self, trans):
+
+		trans = np.array(trans)
+		try:
+			self.pos += trans
+		except:
+			raise
 		
 	def reset(self):
 
