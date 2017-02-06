@@ -87,6 +87,8 @@ private:
   scalar Dx; 
   /** x_range */ 
   scalar x_range[2];
+  /** squared x_range */ 
+  scalar x_range2[2];
   /** number of pre-computed values per table */ 
   int n_values; 
   /** total number of type interactions */

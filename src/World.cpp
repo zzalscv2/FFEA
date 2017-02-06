@@ -1668,17 +1668,19 @@ int World::run() {
     for (long long step = step_initial; step < params.num_steps; step++) {
 
         // Zero the force across all blobs
-#ifdef FFEA_PARALLEL_PER_BLOB
-#pragma omp parallel for default(none) schedule(runtime)
+#ifdef USE_OPENMP
+#pragma omp parallel for default(none) schedule(runtime) shared(step)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
-            active_blob_array[i]->zero_force();
-            if (params.calc_vdw == 1) {
-                active_blob_array[i]->zero_vdw_bb_measurement_data();
-            }
-            if (params.sticky_wall_xz == 1) {
-                active_blob_array[i]->zero_vdw_xz_measurement_data();
-            }
+            active_blob_array[i]->zero_force(); 
+            if ((step+1) % params.check == 0) { // we only do measurements if we need so.
+                if (params.calc_vdw == 1) {
+                    active_blob_array[i]->zero_vdw_bb_measurement_data();
+                }
+                if (params.sticky_wall_xz == 1) {
+                    active_blob_array[i]->zero_vdw_xz_measurement_data();
+                }
+            } 
         }
 
 #ifdef FFEA_PARALLEL_PER_BLOB

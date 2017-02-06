@@ -224,6 +224,8 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    Dx = Dx * pc_params->dist_to_m / mesoDimensions::length ;
    x_range[0] /= mesoDimensions::length; 
    x_range[1] = x_range[0] + Dx * n_values;
+   x_range2[0] = x_range[0]*x_range[0]; 
+   x_range2[1] = x_range[1]*x_range[1]; 
 
 
 
@@ -404,9 +406,10 @@ int PreComp_solver::solve() {
         dx.x = (b_pos[3*j] - b_pos[3*i]);
         dx.y = (b_pos[3*j+1] - b_pos[3*i+1]);
         dx.z = (b_pos[3*j+2] - b_pos[3*i+2]);
-        d = mag(&dx);
-        if (d > x_range[1]) continue;
-        else if (d < x_range[0]) continue;
+        d = dx.x*dx.x + dx.y*dx.y + dx.z*dx.z; 
+        if (d > x_range2[1]) continue;
+        else if (d < x_range2[0]) continue;
+        d = sqrt(d);
         dx.x = dx.x / d;
         dx.y = dx.y / d;
         dx.z = dx.z / d;
@@ -655,7 +658,6 @@ scalar PreComp_solver::finterpolate(scalar *Z, scalar x, int typei, int typej){
      typei = typej;
      typej = tmp;
    } 
-
 
    // get the index to read from:
    index = typei * ntypes;
