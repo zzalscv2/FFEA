@@ -31,6 +31,7 @@
 #include "LJ_matrix.h"
 #include "Blob.h"
 
+#define VDW_TYPE_UNDEFINED 0
 #define VDW_TYPE_STERIC 1
 #define VDW_TYPE_LJSTERIC 2
 #define VDW_TYPE_LJ 3
@@ -41,7 +42,7 @@ public:
 
     ~VdW_solver();
 
-    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw);
+    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string);
 
     int solve();
 
