@@ -1058,13 +1058,30 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
         fprintf(trajectory_out, "FROZEN\n");
     }
 
-    for (int i = 0; i < num_nodes; i++) {
-        fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
-            node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
-            node[i].vel.x*mesoDimensions::velocity, node[i].vel.y*mesoDimensions::velocity, node[i].vel.z*mesoDimensions::velocity,
-            node[i].phi,
-            force[i].x*mesoDimensions::force, force[i].y*mesoDimensions::force, force[i].z*mesoDimensions::force);
-    }
+    if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
+        for (int i = 0; i < num_nodes; i++) {
+            fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
+                node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
+                node[i].vel.x*mesoDimensions::velocity, node[i].vel.y*mesoDimensions::velocity, node[i].vel.z*mesoDimensions::velocity,
+                node[i].phi,
+                force[i].x*mesoDimensions::force, force[i].y*mesoDimensions::force, force[i].z*mesoDimensions::force);
+        }
+    } else {
+        if (params->calc_es == 0) {
+            for (int i = 0; i < num_nodes; i++) {
+                fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
+                    node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
+                    0., 0., 0., 0., 0., 0., 0.); 
+            }
+        } else { 
+            for (int i = 0; i < num_nodes; i++) {
+                fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
+                    node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
+                    0., 0., 0.,
+                    node[i].phi, 0., 0., 0.);
+            } 
+        }
+    } 
 }
 
 int Blob::read_nodes_from_file(FILE *trajectory_out) {
