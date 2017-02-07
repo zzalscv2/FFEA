@@ -36,7 +36,7 @@ class FFEA_frame(FFEA_node.FFEA_node):
 			line = fo.readline().split()
 			try:
 				self.pos.append([float(line[i]) for i in range(3)])
-				
+				self.vel.append([float(line[i]) for i in range(3,6)])
 			except(IndexError):
 			
 				# EOF
@@ -56,6 +56,7 @@ class FFEA_frame(FFEA_node.FFEA_node):
 					
 		# Numpy it up for speed
 		self.pos = np.array(self.pos)
+		self.vel = np.array(self.vel)
 		self.num_nodes = len(self.pos)
 		self.num_surface_nodes = self.num_nodes
 		
@@ -96,4 +97,5 @@ class FFEA_frame(FFEA_node.FFEA_node):
 		self.num_interior_nodes = 0
 		self.step = 0
 		self.pos = []
+		self.vel = []
 		self.normal = []

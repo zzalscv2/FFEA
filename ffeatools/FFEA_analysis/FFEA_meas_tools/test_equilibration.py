@@ -22,7 +22,7 @@
 #
 
 import sys, os
-import FFEA_script
+import FFEA_script, FFEA_measurement
 import argparse as _argparse
 import __builtin__
 
@@ -38,7 +38,7 @@ parser.add_argument("script", action="store", help="Input script file (.ffea).")
 
 def test_equilibration(script):
 
-    meas = script.load_measurement()
+    meas = FFEA_measurement.FFEA_measurement(script.params.measurement_out_fname, frame_rate = 10)
     top = [script.load_topology(i) for i in range(script.params.num_blobs)]
     
     # We need to plot a global measurement graph, and a graph for every blob

@@ -1671,18 +1671,21 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 
 int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 
-
 	int i, j, a, b, global_a, global_b, row, column;
 	int elem_index, num_linear_nodes;
 	scalar val;
-	MassMatrixQuadratic M_el;
+	//MassMatrixQuadratic M_el;
+	MassMatrixLinear M_el;
 	vector<Eigen::Triplet<scalar> > components;
 
 	// Firstly, get a mapping from all node indices to just linear node indices
+	
 	int map[num_nodes];
 	int offset = 0;
-	for(int i = 0; i < num_nodes; ++i) {
+	for(i = 0; i < num_nodes; ++i) {
+		
 		if(node[i].am_I_linear()) {
+		//if(true) {
 			map[i] = i - offset;
 		} else {
 			offset += 1;
@@ -1693,6 +1696,7 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 	num_linear_nodes = get_num_linear_nodes();
 
 	// For each element
+        scalar sum = 0.0, sum2 = 0.0;
 	for(elem_index = 0; elem_index < num_elements; ++elem_index) {
 
 		// Build mass matrix
@@ -1709,10 +1713,9 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 
 				// From another function that get's actual memory location. Dereference for value
 				// Val same for each direction
-				val = *(M_el.get_M_alpha_mem_loc(a, b));
-				//cout << "val = " << val << endl;
-
-
+				val = M_el.get_M_alpha_value(a, b);
+				//sum2 += val;
+				//cout << a << " " << b << " " << val * mesoDimensions::mass << endl;
 				// And each direction
 				for(i = 0; i < 3; ++i) {
 
@@ -1731,8 +1734,10 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 		for(Eigen::SparseMatrix<scalar>::InnerIterator it(*M,j); it; ++it) {
 			components.push_back(Eigen::Triplet<scalar>(it.row(), it.col(), 0.5 * it.value()));
 			components.push_back(Eigen::Triplet<scalar>(it.col(), it.row(), 0.5 * it.value()));
+			//sum += it.value();
 		}
 	}
+	//cout << "Blob mass matrix sums: " << mesoDimensions::mass * sum2 << " " << mesoDimensions::mass * sum << endl;	
 	M->setFromTriplets(components.begin(), components.end());
 	return FFEA_OK;
 
@@ -3645,11 +3650,8 @@ int Blob::aggregate_forces_and_solve() {
         } else {
             if (params->calc_noise == 1) {
 
-		// Noise depends on the number of dimensions available
-		//int prefactor = 3 * (2 ^ params->num_dimensions);
-		int prefactor = 24;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel default(none) shared(prefactor)
+#pragma omp parallel default(none)
 {
 #endif
 #ifdef USE_OPENMP
@@ -3661,9 +3663,9 @@ int Blob::aggregate_forces_and_solve() {
                 #pragma omp for schedule(guided)
 #endif
                 for (int i = 0; i < num_nodes; i++) {
-                    force[i].x -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
-                    force[i].y -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
-                    force[i].z -= RAND(-.5, .5) * sqrt((prefactor * params->kT * node[i].stokes_drag) / (params->dt));
+                    force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                    force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                    force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                 }
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 }

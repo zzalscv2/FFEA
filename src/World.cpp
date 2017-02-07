@@ -992,15 +992,16 @@ int World::get_smallest_time_constants() {
 		cout << "\r\t\tCalculating inverse time constant matrix, tau_inv = K_inv * A (task 4/5)..." << flush;
 		tau_inv = K_inv * A;
 		cout << "done!" << flush;
+		printf("%c[2K", 27);
 
 		// Diagonalise
-		cout << "\r" << "\t\t                                                                     " << flush;
+		//cout << "\r" << "\t\t                                                                     " << flush;
 		cout << "\r\t\tDiagonalising tau_inv (task 5/5)..." << flush;
 		es_v.compute(tau_inv);
 		for(j = 0; j < num_rows; ++j) {
 			tauv.push_back(1.0 / fabs(es_v.eigenvalues()[j].real()));
 		}
-		cout << "done!" << flush;
+		cout << "done!" << endl << flush;
 
 		if(active_blob_array[i]->get_linear_solver() != FFEA_NOMASS_CG_SOLVER) {
 
@@ -1009,11 +1010,15 @@ int World::get_smallest_time_constants() {
 			// Build matrices
 			num_nodes = active_blob_array[i]->get_num_linear_nodes();
 
-			// Direction still matters here due to viscosity
+			// Direction still matters here due to viscosity (potentially)
 			num_rows = 3 * num_nodes;
-
 			Eigen::SparseMatrix<scalar> M(num_rows, num_rows);
 			Eigen_MatrixX M_inv(num_rows, num_rows);
+			Eigen::VectorXd Mev(num_rows);
+			//Mev.setZero();
+			//for(j = 0; j < num_nodes; ++j) {
+			//	Mev(3*j) = 1.0;
+			//}
 
 			// Build mass matrix, M
 			cout << "\r\t\tCalculating the Mass Matrix, M (task 1/4)..." << flush;
@@ -1024,10 +1029,15 @@ int World::get_smallest_time_constants() {
 				return FFEA_ERROR;
 			}
 			cout << "done!" << flush;
+			//cout << endl << flush << mesoDimensions::mass * (Mev.transpose() * M * Mev) << endl;
+			//cout << (4.0 / 3.0) * 3.1415926535 * 125e-27 * 1500 << endl;
+			//exit(0);
 
+			// Build eigenvector, apply and output the mass...
+			
 			// Invert M (it's symmetric!)
 			cout << "\r\t\tAttempting to invert M to form M_inv (task 2/4)..." << flush;
-			Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(M); // performs a Cholesky factorization of K
+			Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(M); // performs a Cholesky factorization of M
 			M_inv = Cholesky.solve(I);
 			if(Cholesky.info() == Eigen::Success) {
 				cout << "done!" << flush;
@@ -1043,15 +1053,15 @@ int World::get_smallest_time_constants() {
 			cout << "\r\t\tCalculating inverse time constant matrix, tau_inv = M_inv * K (task 3/4)..." << flush;
 			tau_inv = M_inv * K;
 			cout << "done!" << flush;
-
+			printf("%c[2K", 27);
 			// Diagonalise
-			cout << "\r" << "\t\t                                                                                                            " << flush;
+			//cout << "\r" << "\t\t                                                                                                            " << flush;
 			cout << "\r\t\tDiagonalising tau_inv (task 4/4)..." << flush;
 			es_m.compute(tau_inv);
 			for(j = 0; j < num_rows; ++j) {
 				taum.push_back(1.0 / fabs(es_m.eigenvalues()[j].real()));
 			}
-			cout << "done!" << flush;
+			cout << "done!" << endl << endl << flush;
 		}
 
 		// But is it a numerical instability problem, or a small elements problem? Solve 1 step to find out (at a later date)
