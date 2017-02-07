@@ -1,0 +1,16 @@
+ffea node file
+num_nodes 10
+num_surface_nodes 10
+num_interior_nodes 0
+surface nodes:
+0.0 0.0 0.0
+1.0 0.0 0.0
+0.0 1.0 0.0
+0.0 0.0 1.0
+0.5 0.0 0.5
+0.5 0.5 0.0
+0.0 0.5 0.0
+0.5 0.0 0.0
+0.0 0.5 0.5
+0.0 0.0 0.5
+interior nodes:

@@ -30,7 +30,7 @@ add_executable(ffea ffea.cpp
     SparseSubstitutionSolver.cpp Face.cpp Blob.cpp
     BiCGSTAB_solver.cpp CG_solver.cpp ConjugateGradientSolver.cpp 
     GaussianQuadrature_1d.cpp GaussianQuadrature_tri.cpp 
-    MassLumpedSolver.cpp MassMatrixQuadratic.cpp MatrixFixedSparsityPattern.cpp 
+    MassLumpedSolver.cpp MassMatrixLinear.cpp MassMatrixQuadratic.cpp MatrixFixedSparsityPattern.cpp 
     LJ_matrix.cpp BindingSite.cpp mat_vec_fns.cpp mat_vec_fns_II.cpp
     NearestNeighbourLinkedListCube.cpp NoMassCGSolver.cpp 
     PoissonMatrixQuadratic.cpp SparseMatrixFixedPattern.cpp 

@@ -154,3 +154,20 @@ void MassMatrixQuadratic::zero() {
         M_alpha[i] = 0;
     }
 }
+
+void MassMatrixQuadratic::print_details() {
+    // Printing total mass
+    int c = 0;
+    scalar tot = 0.0;
+    for(int i = 0; i < 10; ++i) {
+	for(int j = i; j < 10; ++j) {
+	    if(i != j) {
+		tot += M_alpha[c];
+	    } else {
+		tot += M_alpha[c];
+	    }
+	    c++;
+	}
+    }
+    printf("Total Mass = %e\n", tot * mesoDimensions::mass);
+}

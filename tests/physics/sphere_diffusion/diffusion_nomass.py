@@ -36,25 +36,25 @@ except:
         sys.exit(1) # failure to import
 
 # Load trajectory
-start = 5000
+start = 0
 #start = 0
-end = 10000
-sfile = "sphere_coarse_nomass_norestart.ffea"
+end = 40000
+try:
+	script = FFEA_script.FFEA_script(sys.argv[1])
+except:
+	sys.exit("Script please!")
 
-if (ffeatoolsFound):
-  script = ffeatools.modules.script(sfile)
-else:
-  script = FFEA_script.FFEA_script(sfile)
-
-traj = script.load_trajectory(start=start)
+traj = script.load_trajectory(start=start, num_frames=end-start)
+end = traj.num_frames
+stokes = script.load_stokes(0)
 
 # Analyse trajctory in sets of 1ps and test against theoretical diffusion
-r2 = [None for i in range(start, end)]
+r2 = [None for i in range(start, end-1)]
 
 for f in traj.blob[0][0].frame:
 	f.calc_centroid()
 
-for i in range((end - start)):
+for i in range((end - start)-1):
 	r2[i] = traj.blob[0][0].frame[i + 1].get_centroid() - traj.blob[0][0].frame[i].get_centroid()
 	r2[i] = np.dot(r2[i], r2[i])
 
@@ -62,7 +62,7 @@ r2mean = np.mean(r2, axis=0)
 r2stdev = np.std(r2, axis=0)
 r2err = r2stdev / np.sqrt(len(r2))
 
-drag = 6 * np.pi * script.params.stokes_visc * 5e-9
+drag = 6 * np.pi * script.params.stokes_visc * sum(stokes.radius) * script.blob[0].scale
 r2theory = 6 * (script.params.kT / drag) * script.params.dt * script.params.check
 
 #print "Calculated Diffusion: <r^2> = %6.2e +/- %6.2e" % (r2mean, r2err)

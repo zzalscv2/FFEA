@@ -1,0 +1,57 @@
+<param>
+	<restart = 0>
+	<dt = 1e-11>
+	<kT = 4.11e-21>
+	<check = 10000>
+	<num_steps = 1e11>
+	<rng_seed = time>
+	<trajectory_out_fname = single_element_trajectory_blob0mode0.out>
+	<measurement_out_fname = single_element_measurement.out>
+	<vdw_forcefield_params = single_element.lj>
+	<epsilon = 0.01>
+	<max_iterations_cg = 1000>
+	<kappa = 1e9>
+	<epsilon_0 = 1>
+	<dielec_ext = 1>
+	<calc_stokes = 0>
+	<stokes_visc = 1e-03>
+	<calc_vdw = 0>
+	<calc_noise = 1>
+	<calc_kinetics = 0>
+	<kinetics_update = 10000>
+	<calc_es = 0>
+	<es_update = 1>
+	<es_N_x = 10>
+	<es_N_y = 10>
+	<es_N_z = 10>
+	<sticky_wall_xz = 0>
+	<wall_x_1 = PBC>
+	<wall_x_2 = PBC>
+	<wall_y_1 = PBC>
+	<wall_y_2 = PBC>
+	<wall_z_1 = PBC>
+	<wall_z_2 = PBC>
+	<es_h = 3>
+	<num_blobs = 1>
+	<num_conformations = (1)>
+	<num_states = (1)>
+</param>
+
+<system>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<nodes = single_element.node>
+			<topology = single_element.top>
+			<surface = single_element.surf>
+			<material = single_element.mat>
+			<stokes = single_element.stokes>
+			<vdw = single_element.vdw>
+			<pin = single_element.pin>
+		</conformation>
+		<solver = CG_nomass>
+		<scale = 1e-9>
+		<centroid_pos = (0.0,0.0,0.0)>
+		<velocity = (0.0,0.0,0.0)>
+	</blob>
+</system>

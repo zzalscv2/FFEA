@@ -37,6 +37,7 @@
 #include "RngStream.h"
 #include "SecondOrderFunctions.h"
 #include "PoissonMatrixQuadratic.h"
+#include "MassMatrixLinear.h"
 #include "MassMatrixQuadratic.h"
 
 class Blob;
@@ -198,6 +199,7 @@ public:
     void calculate_K_alpha();
 
     void construct_element_mass_matrix(MassMatrixQuadratic *M_alpha);
+    void construct_element_mass_matrix(MassMatrixLinear *M_alpha);
 
     void add_K_alpha(scalar *K, int num_nodes);
 

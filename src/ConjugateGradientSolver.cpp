@@ -94,6 +94,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     }
 
     // build the matrix
+    scalar sum1 = 0.0, sum2 = 0.0;
     printf("\t\tBuilding the mass matrix...\n");
     for (n = 0; n < num_elements; n++) {
         // add mass matrix for this element
@@ -105,8 +106,10 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
                     if (is_pinned[ni] == 0 && is_pinned[nj] == 0) {
                         if (i == j) {
                             mass_LU[ni * num_rows + nj] += .1 * elem[n].rho * elem[n].vol_0;
+			    sum1 += .1 * elem[n].rho * elem[n].vol_0;
                         } else {
                             mass_LU[ni * num_rows + nj] += .05 * elem[n].rho * elem[n].vol_0;
+			    sum1 += .05 * elem[n].rho * elem[n].vol_0;
                         }
                     } else {
                         if (i == j) {
@@ -125,6 +128,9 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     }
     printf("\t\t...done\n");
 
+    for (n = 0; n < num_elements; n++) {
+	sum2 += elem[n].vol_0 * elem[n].rho;
+    }
     // Allocate memory for and initialise 'key' array
     key = new int[num_rows + 1];
     if (key == NULL) FFEA_ERROR_MESSG("Failed to allocate 'key' in ConjugateGradientSolver\n"); 
@@ -171,7 +177,13 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
             }
         }
     }
-
+    double sum3 = 0.0;
+    for(i = 0; i < total_non_zeros; ++i) {
+	if(entry[i].val != 1) {
+		sum3 += entry[i].val;
+	}
+    }
+    cout << "Mass Solver Sums: " << mesoDimensions::mass*sum1 << " " << mesoDimensions::mass*sum2 << " " << mesoDimensions::mass*sum3 << endl;
     // Create the jacobi preconditioner matrix (diagonal)
     preconditioner = new scalar[num_rows];
     if (preconditioner == NULL) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in ConjugateGradientSolver\n"); 
@@ -193,6 +205,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
 
 int ConjugateGradientSolver::solve(vector3 *x) {
     int i = 0;
+
     scalar delta_new, delta_old, dTq, alpha;
     delta_new = conjugate_gradient_residual_assume_x_zero(x);
     for (i = 0; i < i_max; i++) {

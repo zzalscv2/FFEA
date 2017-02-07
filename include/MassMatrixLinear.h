@@ -21,36 +21,27 @@
 //  the research papers on the package.
 //
 
-#ifndef MASSMATRIXQUADRATIC_H_INCLUDED
-#define MASSMATRIXQUADRATIC_H_INCLUDED
+#ifndef MASSMATRIXLINEAR_H_INCLUDED
+#define MASSMATRIXLINEAR_H_INCLUDED
 
-#define NUM_ELEMENTS_LOWER_TRIANGULAR_10X10 55
+#define NUM_ELEMENTS_LOWER_TRIANGULAR_4X4 10
 
-#define NUM_SHAPE_FUNCTIONS 10
+#define NUM_LINEAR_SHAPE_FUNCTIONS 4
 
-#define NUM_TET_GAUSS_QUAD_POINTS 14
-
-#include "SecondOrderFunctions.h"
+#include "mat_vec_types.h"
 #include "dimensions.h"
-class MassMatrixQuadratic {
+class MassMatrixLinear {
 public:
-    MassMatrixQuadratic();
+    MassMatrixLinear();
 
     scalar * get_M_alpha_mem_loc(int i, int j);
 
-    void build(mesh_node *n[10]);
+    void build(scalar density, scalar vol);
 
     scalar get_M_alpha_value(int i, int j);
     void print_details();
 private:
-    scalar M_alpha[NUM_ELEMENTS_LOWER_TRIANGULAR_10X10];
-
-    struct tetrahedron_gauss_point {
-        scalar W;
-        scalar eta[4];
-    };
-
-    void add_psi_dot_products(scalar psi[10], scalar det_J, scalar weight);
+    scalar M_alpha[NUM_ELEMENTS_LOWER_TRIANGULAR_4X4];
 
     void zero();
 };
