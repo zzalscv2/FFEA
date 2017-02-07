@@ -207,7 +207,10 @@ public:
 
     void make_stress_measurements(FILE *stress_out, int blob_number);
 
+    /* DEPRECATED
+     *   Will be removed.
     void calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_out, int other_blob_index);
+     */
 
     /**
      * Get the centroid of all faces on the blob surface
@@ -338,10 +341,11 @@ public:
      */
     void enforce_box_boundaries(vector3 *box_dim);
 
-    /**
+    /* DEPRECTATED
+     *   Will be removed.
      * Set the interaction flag for all faces of this Blob back to false (i.e. not interacting)
-     */
     void reset_all_faces();
+     */
 
     void linearise_elements();
 

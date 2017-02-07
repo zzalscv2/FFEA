@@ -31,6 +31,10 @@
 #include "LJ_matrix.h"
 #include "Blob.h"
 
+#define VDW_TYPE_STERIC 1
+#define VDW_TYPE_LJSTERIC 2
+#define VDW_TYPE_LJ 3
+
 class VdW_solver {
 public:
     VdW_solver();
@@ -83,6 +87,8 @@ protected:
     scalar dot_with_normal(vector3 *p, vector3 *q, vector3 *n);
 
     scalar minimum_image(scalar delta, scalar size);
+
+    int vdw_type;
 };
 
 #endif

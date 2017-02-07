@@ -34,7 +34,7 @@ Face::Face() {
     zero_force();
     num_blobs = 0;
     vdw_xz_interaction_flag = false;
-    vdw_bb_interaction_flag = NULL;
+    // vdw_bb_interaction_flag = NULL; // DEPRECATED
     kinetically_active = false;
     vdw_bb_force = NULL;
     vdw_bb_energy = NULL;
@@ -54,8 +54,8 @@ Face::~Face() {
     zero_force();
     num_blobs = 0;
     vdw_xz_interaction_flag = false;
-    delete[] vdw_bb_interaction_flag;
-    vdw_bb_interaction_flag = NULL;
+    // delete[] vdw_bb_interaction_flag; // DEPRECATED
+    // vdw_bb_interaction_flag = NULL; // DEPRECATED
     kinetically_active = false;
     delete[] vdw_bb_force;
     vdw_bb_force = NULL;
@@ -86,14 +86,15 @@ int Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1,
     this->num_blobs = params->num_blobs;
     vdw_bb_force = new vector3[num_blobs];
     vdw_bb_energy = new scalar[num_blobs];
-    vdw_bb_interaction_flag = new bool[num_blobs];
+    // vdw_bb_interaction_flag = new bool[num_blobs]; // DEPRECATED 
     vdw_xz_force = new vector3;
-    if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_bb_interaction_flag == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); 
+    // if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_bb_interaction_flag == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); // DEPRECATED
+    if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); 
 
     for(int i = 0; i < num_blobs; ++i) {
 	vector3_set_zero(&vdw_bb_force[i]);
         vdw_bb_energy[i] = 0.0;
-	vdw_bb_interaction_flag[i] = false;
+	// vdw_bb_interaction_flag[i] = false; // DEPRECATED
     }
     vector3_set_zero(vdw_xz_force);
     vdw_xz_energy = 0.0;
@@ -123,14 +124,15 @@ int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node
     this->num_blobs = params->num_blobs;
     vdw_bb_force = new vector3[num_blobs];
     vdw_bb_energy = new scalar[num_blobs];
-    vdw_bb_interaction_flag = new bool[num_blobs];
+    // vdw_bb_interaction_flag = new bool[num_blobs]; // DEPRECATED
     vdw_xz_force = new vector3;
-    if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_bb_interaction_flag == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); 
+    // if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_bb_interaction_flag == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); // DEPRECATED
+    if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); 
 
     for(int i = 0; i < num_blobs; ++i) {
         vector3_set_zero(&vdw_bb_force[i]);
         vdw_bb_energy[i] = 0.0;
-        vdw_bb_interaction_flag[i] = false;
+        // vdw_bb_interaction_flag[i] = false; // DEPRECATED
     }
     vector3_set_zero(vdw_xz_force);
     vdw_xz_energy = 0.0;
@@ -379,9 +381,11 @@ void Face::set_vdw_xz_interaction_flag(bool state) {
     vdw_xz_interaction_flag = state;
 }
 
+/* DEPRECATED
+ *  Will be removed
 void Face::set_vdw_bb_interaction_flag(bool state, int other_blob_index) {
     vdw_bb_interaction_flag[other_blob_index] = state;
-}
+}*/
 
 bool Face::is_vdw_active() {
     if (vdw_interaction_type == -1) {
