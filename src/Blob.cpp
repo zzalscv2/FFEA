@@ -1368,6 +1368,8 @@ void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
     }
 }
 
+/* DEPRECATED
+ *  Will be removed.
 void Blob::calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_out, int other_blob_index) {
     if (this->params->calc_vdw == 1) {
       vector3 total_vdw_bb_force;
@@ -1389,6 +1391,7 @@ void Blob::calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_
     }
 
 }
+*/ 
 
 void Blob::calc_centroids_and_normals_of_all_faces() {
     int i;
@@ -2120,9 +2123,8 @@ void Blob::enforce_box_boundaries(vector3 *box_dim) {
     }
 }
 
-/*
-
- */
+/* DEPRECATED
+ *   Will be removed
 void Blob::reset_all_faces() {
     for (int i = 0; i < num_surface_faces; i++) {
         surface[i].set_vdw_xz_interaction_flag(false);
@@ -2131,6 +2133,7 @@ void Blob::reset_all_faces() {
         }
     }
 }
+*/
 
 int Blob::get_num_nodes() {
     return num_nodes;

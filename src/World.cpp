@@ -1752,7 +1752,7 @@ int World::run() {
 #endif
                 for (int i = 0; i < params.num_blobs; i++) {
                     active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
-                    active_blob_array[i]->reset_all_faces();
+                    // active_blob_array[i]->reset_all_faces(); DEPRECATED.
                 }
 
 
