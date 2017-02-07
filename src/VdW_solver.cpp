@@ -36,6 +36,7 @@ VdW_solver::VdW_solver() {
     box_size.z = 0;
     num_blobs = 0;
     fieldenergy = NULL;
+    vdw_type = VDW_TYPE_UNDEFINED; 
 }
 
 VdW_solver::~VdW_solver() {
@@ -47,9 +48,10 @@ VdW_solver::~VdW_solver() {
     num_blobs = 0;
     delete[] fieldenergy;
     fieldenergy = NULL;
+    vdw_type = VDW_TYPE_UNDEFINED; 
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
@@ -59,6 +61,13 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 
     this->inc_self_vdw = inc_self_vdw;
     this->steric_factor = vdw_steric_factor;
+    if (vdw_type_string == "lennard-jones")
+      vdw_type = VDW_TYPE_LJ;
+    else if (vdw_type_string == "steric")
+      vdw_type = VDW_TYPE_STERIC;
+    else if (vdw_type_string == "ljsteric")
+      vdw_type = VDW_TYPE_LJSTERIC;
+
 
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;
