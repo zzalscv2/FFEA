@@ -1,9 +1,9 @@
 <param>
 	<restart = 0>
-	<dt = 1.00e-15>
+	<dt = 1.00e-14>
 	<kT = 4.11e-21>
 	<check = 100>
-	<num_steps = 4e6>
+	<num_steps = 1e6>
 	<rng_seed = time>
 	<trajectory_out_fname = traj/sphere_nomass_norestart_trajectory.ftj>
 	<measurement_out_fname = meas/sphere_nomass_norestart_measurement.fm>

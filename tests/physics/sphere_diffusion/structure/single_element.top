@@ -1,7 +1,0 @@
-ffea topology file
-num_elements 1
-num_surface_elements 1
-num_interior_elements 0
-surface elements:
-0 1 2 3 7 6 9 5 4 8 
-interior elements:
