@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -328,7 +328,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		cout << nlines << endl;
 
       num_seeds = max(num_active_rng,num_seeds_read);
-		Seeds = new unsigned long *[num_seeds]; 
+		Seeds = new unsigned long *[num_seeds];
 		// RNG.1.4 - get Seeds :
 		int cnt_seeds = 0;
 		for(int i = 1; i < num_stress_seeds_read + 1; ++i) {
@@ -818,7 +818,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL)
               FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
-	    vdw_solver->init(&lookup, &box_dim, &lj_matrix,  params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw);
+	    vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw, params.vdw_type);
 
 	    // Calculate the total number of vdw interacting faces in the entire system
 	    total_num_surface_faces = 0;
@@ -1127,7 +1127,7 @@ int World::get_smallest_time_constants() {
 	if(dt_min_world_type == "inertial") {
 		cout << "\t\tPlease make sure your simulation timestep is less than " << dt_min_world * mesoDimensions::time << "s, for a stable simulation." << endl;
 		cout << "\t\tTake note than the energies will become inaccurate before this, so check your energy equilibrates correctly. If unsure, set dt << " << dt_min_world * mesoDimensions::time << "s" << endl << endl;
-	}	
+	}
 	cout << "\t\tFor dynamical convergence, your simulation must run for longer than " << dt_max_world * mesoDimensions::time << "s." << endl << endl;
 
 	cout << "\t\tFINAL NOTE - If, after taking into account the above time constants, your simulation still fails (due to element inversion) it is not due to numerical instability from the integration, ";
@@ -1682,7 +1682,7 @@ int World::run() {
 #pragma omp parallel for default(none) schedule(runtime) shared(step)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
-            active_blob_array[i]->zero_force(); 
+            active_blob_array[i]->zero_force();
             if ((step+1) % params.check == 0) { // we only do measurements if we need so.
                 if (params.calc_vdw == 1) {
                     active_blob_array[i]->zero_vdw_bb_measurement_data();
@@ -1690,7 +1690,7 @@ int World::run() {
                 if (params.sticky_wall_xz == 1) {
                     active_blob_array[i]->zero_vdw_xz_measurement_data();
                 }
-            } 
+            }
         }
 
 #ifdef FFEA_PARALLEL_PER_BLOB
@@ -1709,12 +1709,14 @@ int World::run() {
                 if (params.wall_x_1 == WALL_TYPE_PBC) {
                     dx += box_dim.x;
                     //					printf("frog\n");
+                    active_blob_array[i]->pbc_count[0]-=1;
                     check_move = 1;
                 }
             } else if (com.x > box_dim.x) {
                 if (params.wall_x_2 == WALL_TYPE_PBC) {
                     dx -= box_dim.x;
                     //					printf("frog\n");
+                    active_blob_array[i]->pbc_count[0]+=1;
                     check_move = 1;
                 }
             }
@@ -1722,12 +1724,14 @@ int World::run() {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
                     //					printf("frog\n");
+                    active_blob_array[i]->pbc_count[1]-=1;
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
                     //					printf("frog\n");
+                    active_blob_array[i]->pbc_count[1]+=1;
                     check_move = 1;
                 }
             }
@@ -1735,12 +1739,14 @@ int World::run() {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
                     //					printf("frog\n");
+                    active_blob_array[i]->pbc_count[2]-=1;
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
                     //					printf("frog\n");
+                    active_blob_array[i]->pbc_count[2]+=1;
                     check_move = 1;
                 }
             }
@@ -1762,7 +1768,7 @@ int World::run() {
 #endif
                 for (int i = 0; i < params.num_blobs; i++) {
                     active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
-                    active_blob_array[i]->reset_all_faces();
+                    // active_blob_array[i]->reset_all_faces(); DEPRECATED.
                 }
 
 
@@ -2025,9 +2031,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 	scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
 
 	// Get interactions vector first, for later use
-	     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) { 
-           systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);        
-        } 
+	     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) {
+           systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
+        }
 
 	       // Get precomputed data first
 	       pc_params.dist_to_m = 1;
@@ -2037,7 +2043,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                if (systemreader->extract_block("precomp", 0, interactions_vector, &precomp_vector) == FFEA_ERROR) {
 						return FFEA_ERROR;
 					}
-	
+
                for (i=0; i<precomp_vector.size(); i++){
                  systemreader->parse_tag(precomp_vector[i], lrvalue);
 		 if (lrvalue[0] == "types") {
@@ -2083,7 +2089,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 						FFEA_ERROR_MESSG("ctforces_fname: %s could not be open\n", params.ctforces_fname.c_str());
 					}
           }
-               
+
 
 
 	// Read in each blob one at a time
@@ -2388,7 +2394,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 		        	if (centroid != NULL) {
 
 		            		// Rescale first
-					//cout << centroid[0] << " " << centroid[1] << " " << centroid[2] << endl; 
+					//cout << centroid[0] << " " << centroid[1] << " " << centroid[2] << endl;
 		            		centroid[0] *= scale;
 		            		centroid[1] *= scale;
 		            		centroid[2] *= scale;
@@ -3283,7 +3289,7 @@ int World::apply_springs() {
             sep.x = n1.x - n0.x;
             sep.y = n1.y - n0.y;
             sep.z = n1.z - n0.z;
-	
+
 	    try {
 	        sep_norm = normalise(&sep);
 	    } catch (int e){
@@ -3297,7 +3303,7 @@ int World::apply_springs() {
 			return FFEA_ERROR;
 		}
 	    }
-	    
+
             force_mag = spring_array[i].k * (mag(&sep) - spring_array[i].l);
             force0.x = force_mag * sep_norm.x;
             force0.y = force_mag * sep_norm.y;
@@ -3573,7 +3579,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         active_blob_array[i]->write_nodes_to_file(trajectory_out);
 
         // Calculate properties for this blob
-        active_blob_array[i]->make_measurements();
+        active_blob_array[i]->make_measurements(&box_dim);
 
 	// If necessary, write this stuff to a separate file
 	if(detailed_meas_out != NULL) {
@@ -3587,7 +3593,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     rewind(checkpoint_out);
     // Header for the thermal stresses:
     int thermal_seeds = num_seeds;
-	 if(params.calc_kinetics == 1) thermal_seeds += 1; 
+	 if(params.calc_kinetics == 1) thermal_seeds += 1;
     fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", thermal_seeds);
     unsigned long state[6];
     // First save the state of the running threads:
