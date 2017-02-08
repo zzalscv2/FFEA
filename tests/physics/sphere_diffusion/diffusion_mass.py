@@ -36,15 +36,15 @@ except:
         sys.exit(1) # failure to import
 
 # Load trajectory
-start = 0
+start = 5000
 #start = 0
-end = 40000
+end = 10000
 try:
 	script = FFEA_script.FFEA_script(sys.argv[1])
 except:
 	sys.exit("Script please!")
 traj = script.load_trajectory(start=start, num_frames = end-start)
-end = traj.num_frames
+end = traj.num_frames + start
 mat = script.load_material(0)
 top = script.load_topology(0)
 
@@ -68,7 +68,7 @@ r2theory = 3 * (script.params.kT / mass) * ((script.params.dt * script.params.ch
 #print "Theoretical Diffusion: <r^2> = %6.2e" % (r2theory)
 #print "Percent Error: d<r^2>/<r^2> = %6.2f%%" % (100 * np.fabs(r2mean - r2theory) / r2theory)
 err = 0
-tolerance = 0.05
+tolerance = 0.1
 if np.fabs(r2mean - r2theory) / r2theory <= tolerance:
 	print "Inertial Diffusion", ": correct ", np.fabs(r2mean - r2theory) / r2theory , " < ", tolerance
 else:

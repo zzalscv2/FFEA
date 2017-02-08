@@ -1,9 +1,9 @@
 <param>
 	<restart = 0>
-	<dt = 1e-14>
+	<dt = 5e-15>
 	<kT = 4.11e-21>
-	<check = 100>
-	<num_steps = 4e6>
+	<check = 200>
+	<num_steps = 2e6>
 	<rng_seed = time>
 	<trajectory_out_fname = traj/sphere_mass_norestart_trajectory.ftj>
 	<measurement_out_fname = meas/sphere_mass_norestart_measurement.fm>
@@ -16,7 +16,7 @@
 	<epsilon_0 = 1.00e+00>
 	<dielec_ext = 1.00e+00>
 	<calc_stokes = 1>
-	<stokes_visc = 1.00e-05>
+	<stokes_visc = 1.00e-03>
 	<calc_vdw = 0>
 	<calc_noise = 1>
 	<calc_es = 0>

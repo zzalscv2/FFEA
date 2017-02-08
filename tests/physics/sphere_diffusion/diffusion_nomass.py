@@ -36,16 +36,16 @@ except:
         sys.exit(1) # failure to import
 
 # Load trajectory
-start = 0
+start = 5000
 #start = 0
-end = 40000
+end = 10000
 try:
 	script = FFEA_script.FFEA_script(sys.argv[1])
 except:
 	sys.exit("Script please!")
 
 traj = script.load_trajectory(start=start, num_frames=end-start)
-end = traj.num_frames
+end = traj.num_frames + start
 stokes = script.load_stokes(0)
 
 # Analyse trajctory in sets of 1ps and test against theoretical diffusion
