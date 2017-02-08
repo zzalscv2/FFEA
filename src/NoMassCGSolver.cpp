@@ -197,13 +197,12 @@ void NoMassCGSolver::print_matrices(vector3* force) {
 
 /* */
 scalar NoMassCGSolver::conjugate_gradient_residual_assume_x_zero(vector3 *b) {
-    int i = 0;
-    scalar delta_new = 0;
 
+    scalar delta_new = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-// #pragma omp parallel for default(none) private(i) shared(b, stderr) reduction(+:delta_new)
+#pragma omp parallel for default(none) shared(b) reduction(+:delta_new)
 #endif
-    for (i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < num_nodes; i++) {
         r[i].x = b[i].x;
         r[i].y = b[i].y;
         r[i].z = b[i].z;
@@ -226,12 +225,11 @@ scalar NoMassCGSolver::conjugate_gradient_residual_assume_x_zero(vector3 *b) {
 
 /* */
 scalar NoMassCGSolver::residual2() {
-    int i;
     scalar r2 = 0, f2 = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-// #pragma omp parallel for default(none) private(i) shared(stderr) reduction(+:r2, f2)
+#pragma omp parallel for default(none) reduction(+:r2, f2)
 #endif
-    for (i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < num_nodes; i++) {
         r2 += r[i].x * r[i].x + r[i].y * r[i].y + r[i].z * r[i].z;
         f2 += f[i].x * f[i].x + f[i].y * f[i].y + f[i].z * f[i].z;
     }
@@ -244,12 +242,11 @@ scalar NoMassCGSolver::residual2() {
 
 /* */
 scalar NoMassCGSolver::modx(vector3 *x) {
-    int i;
     scalar r2 = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-// #pragma omp parallel for default(none) private(i) shared(x) reduction(+:r2)
+#pragma omp parallel for default(none) shared(x) reduction(+:r2)
 #endif
-    for (i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < num_nodes; i++) {
         r2 += x[i].x * x[i].x + x[i].y * x[i].y + x[i].z * x[i].z;
     }
     return r2;
@@ -258,14 +255,13 @@ scalar NoMassCGSolver::modx(vector3 *x) {
 scalar NoMassCGSolver::get_alpha_denominator() {
     // A * p
     V->apply(p, q);
-    int i;
     scalar pTq = 0;
 
     // p^T * A * p
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-// #pragma omp parallel for default(none) private(i) reduction(+:pTq)
+#pragma omp parallel for default(none) reduction(+:pTq)
 #endif
-    for (i = 0; i < num_nodes; ++i) {
+    for (int i = 0; i < num_nodes; ++i) {
         pTq += p[i].x * q[i].x + p[i].y * q[i].y + p[i].z * q[i].z;
     }
 
@@ -274,12 +270,11 @@ scalar NoMassCGSolver::get_alpha_denominator() {
 
 /* */
 scalar NoMassCGSolver::parallel_apply_preconditioner() {
-    int i;
     scalar delta_new = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-// #pragma omp parallel for default(none) private(i) reduction(+:delta_new)
+#pragma omp parallel for default(none) reduction(+:delta_new)
 #endif
-    for (i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < num_nodes; i++) {
         z[i].x = preconditioner[(3 * i)] * r[i].x;
         z[i].y = preconditioner[(3 * i) + 1] * r[i].y;
         z[i].z = preconditioner[(3 * i) + 2] * r[i].z;

@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -191,7 +191,7 @@ public:
     /**
      * Takes measurements of system properties: KE, PE, Centre of Mass and Angular momentum etc
      */
-    void make_measurements();
+    void make_measurements(vector3 *box_dim);
 
     /**
      * Writes only the detailed measurements local to this blob to file!
@@ -207,7 +207,10 @@ public:
 
     void make_stress_measurements(FILE *stress_out, int blob_number);
 
+    /* DEPRECATED
+     *   Will be removed.
     void calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_out, int other_blob_index);
+     */
 
     /**
      * Get the centroid of all faces on the blob surface
@@ -242,8 +245,8 @@ public:
     /** get the pointer to "bead_type"  [precomp] */
     int *get_bead_type_ptr();
 
-    /** get_bead_type [precomp] */ 
-    int get_bead_type(int i); 
+    /** get_bead_type [precomp] */
+    int get_bead_type(int i);
 
     /**
      * @brief returns the list of nodes where bead i should be assigned to.
@@ -269,7 +272,7 @@ public:
     /**
      * Apply the constant forces onto the corresponding nodes;
      */
-    int apply_ctforces(); 
+    int apply_ctforces();
 
 
     /**
@@ -338,10 +341,11 @@ public:
      */
     void enforce_box_boundaries(vector3 *box_dim);
 
-    /**
+    /* DEPRECTATED
+     *   Will be removed.
      * Set the interaction flag for all faces of this Blob back to false (i.e. not interacting)
-     */
     void reset_all_faces();
+     */
 
     void linearise_elements();
 
@@ -413,6 +417,8 @@ public:
     scalar get_kinetic_energy();
     scalar get_strain_energy();
 
+    int pbc_count[3];
+
 private:
 
     /** Total number of nodes in Blob */
@@ -446,10 +452,10 @@ private:
     /** Number of ctforces to be applied to this Blob */
     int num_l_ctf;
     int num_r_ctf;
-    int num_sltotal_ctf; 
+    int num_sltotal_ctf;
     int num_slsets_ctf; ///< number of surface sets, corresponding to the length of the ctf_sl_forces, num_slsurf_ctf array
 
-    /** Number of faces in every surface set: */ 
+    /** Number of faces in every surface set: */
     int *ctf_slsurf_ndx;
 
     /** Whether this Blob is DYNAMIC (movable; dynamics simulated) or STATIC (fixed; no simulation of dynamics; Blob is a perfectly solid object fixed in space)*/
@@ -499,27 +505,27 @@ private:
     /** Array with the faces having linear ctforces assigned */
     int *ctf_sl_faces;
     /** array with the number of faces in every surface set. */
-    int *ctf_sl_surfsize; 
+    int *ctf_sl_surfsize;
 
-    /** Array with the linear ctforces: FxFyFzFxFyFz..., 
+    /** Array with the linear ctforces: FxFyFzFxFyFz...,
       * being Fx, Fy, Fz the components of the force */
-    scalar *ctf_l_forces; 
-    /** Array with the magnitude of the rotational ctforces: FFF..., */  
-    scalar *ctf_r_forces; 
+    scalar *ctf_l_forces;
+    /** Array with the magnitude of the rotational ctforces: FFF..., */
+    scalar *ctf_r_forces;
     /** Array with the rotational axis (given with point + unit vector)
-      *  for ctforces: XYZxyzXYZxyzFxFyFz..., 
-      *  or BlobConfNodeBlobConfNode,BlobConfNodeBlobConfNode,... 
-      *  if using two nodes to define the axis.  */ 
-    scalar *ctf_r_axis; 
-    /** Array with the type of rotation force, 2 chars per node: 
+      *  for ctforces: XYZxyzXYZxyzFxFyFz...,
+      *  or BlobConfNodeBlobConfNode,BlobConfNodeBlobConfNode,...
+      *  if using two nodes to define the axis.  */
+    scalar *ctf_r_axis;
+    /** Array with the type of rotation force, 2 chars per node:
       *  where the first one can be n or p, depending of the axis defined by nodes or points
       *   and the second one can be f or t, depending on applying ctforce or cttorque.*/
     char *ctf_r_type;
-    /** Array with the linear surface ctforces: FxFyFzFxFyFz..., 
+    /** Array with the linear surface ctforces: FxFyFzFxFyFz...,
       * being Fx, Fy, Fz the components of the force */
-    scalar *ctf_sl_forces; 
-    
-    
+    scalar *ctf_sl_forces;
+
+
 
     /** A pointer to a class containing simulation parameters, such as the time step, dt */
     SimulationParams *params;
