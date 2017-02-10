@@ -67,16 +67,20 @@ endif ()
 
 
 ##############################
-# CHECK 3 #### Check for initalising structures: 
-# message(STATUS "Checking C++11 support for extended initialiser lists")
-# try_compile(RESULT_VAR 
-#            "${CMAKE_CURRENT_BINARY_DIR}/cxx11_fstream-string"
-#            "${PROJECT_SOURCE_DIR}/cmake/tests_compilation/initialiseStruct.cpp"
-#            COMPILE_DEFINITIONS "${CXX11_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}"
-#            OUTPUT_VARIABLE OUTPUT)
-# 
-# if (RESULT_VAR)
-#   message(STATUS "Checking C++11 support for extended initialiser lists - Success")
-# else ()
-#   message(FATAL_ERROR "Checking C++11 support for extended initialiser lists - Failed")
-# endif ()
+# CHECK 3 #### Check for future threads: 
+message(STATUS "Checking C++11 support for future threads")
+set(CHECK_REQUIRED_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+try_compile(RESULT_VAR 
+            "${CMAKE_CURRENT_BINARY_DIR}/cxx11_future"
+            "${PROJECT_SOURCE_DIR}/cmake/tests_compilation/cxx11-test-future.cpp"
+            COMPILE_DEFINITIONS "${CXX11_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}"
+            CMAKE_FLAGS "-DLINK_LIBRARIES:STRING=${CHECK_REQUIRED_LIBRARIES}"
+            OUTPUT_VARIABLE OUTPUT)
+
+if (RESULT_VAR)
+  message(STATUS "Checking C++11 support for future threads - Success")
+  set(HAS_CXX11_FUTURE TRUE)
+else ()
+  message(WARNING "Checking C++11 support for future threads - Failed")
+  set(HAS_CXX11_FUTURE FALSE)
+endif ()
