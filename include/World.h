@@ -35,11 +35,15 @@
 #include <vector>
 #include <omp.h>
 #include <ctime>
-#include <future>
+
 #include <boost/algorithm/string.hpp>
 #include <typeinfo>
 #include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
+
+#ifdef FFEA_PARALLEL_FUTURE
+#include <future>
+#endif
 
 // #include "MersenneTwister.h"
 #include "RngStream.h"
@@ -296,7 +300,9 @@ private:
 
     void print_trajectory_and_measurement_files(int step, scalar wtime);
     void write_pre_print_to_trajfile(int step);
+#ifdef FFEA_PARALLEL_FUTURE
     std::future<void> thread_writingTraj; 
+#endif
 
     void make_measurements();
 
