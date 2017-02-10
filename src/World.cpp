@@ -1667,11 +1667,25 @@ int World::run() {
 #endif
     for (long long step = step_initial; step < params.num_steps; step++) {
 
-        // Zero the force across all blobs
+
+        // check if we need to calculate electrostatics, 
+        //                     update the neighbour list,
+        //                     and calculate normals and centroids for the faces.
+        bool es_update = false;
+        if (params.calc_es == 1 || params.calc_vdw == 1 || params.sticky_wall_xz == 1) {
+            if (es_count == params.es_update) {
+                es_count = 1;
+                es_update = true;
+            } else
+                es_count++;
+        } // if (es_update), it will turn to false before the end of the iteration.
+
+        // Reinitialise stuff
 #ifdef USE_OPENMP
-#pragma omp parallel for default(none) schedule(runtime) shared(step)
+#pragma omp parallel for default(none) shared(step,es_update)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
+            // Zero the force across all blobs
             active_blob_array[i]->zero_force(); 
             if ((step+1) % params.check == 0) { // we only do measurements if we need so.
                 if (params.calc_vdw == 1) {
@@ -1681,12 +1695,6 @@ int World::run() {
                     active_blob_array[i]->zero_vdw_xz_measurement_data();
                 }
             } 
-        }
-
-#ifdef FFEA_PARALLEL_PER_BLOB
-#pragma omp parallel for default(none) schedule(guided) shared(stderr)
-#endif
-        for (int i = 0; i < params.num_blobs; i++) {
 
             // If blob centre of mass moves outside simulation box, apply PBC to it
             vector3 com;
@@ -1740,21 +1748,25 @@ int World::run() {
 
             // If Blob is near a hard wall, prevent it from moving further into it
             active_blob_array[i]->enforce_box_boundaries(&box_dim);
+
+           if (es_update) {
+               active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
+               // active_blob_array[i]->reset_all_faces(); DEPRECATED.
+           } 
+
+           // Set node forces to zero
+           for (int i = 0; i < params.num_blobs; i++) {
+               active_blob_array[i]->set_forces_to_zero();
+           }
         }
 
 
+        // Start calculating. 
+        // Apply springs directly to nodes
+        apply_springs();
 
-        if (params.calc_es == 1 || params.calc_vdw == 1 || params.sticky_wall_xz == 1) {
-            if (es_count == params.es_update) {
-
-#ifdef FFEA_PARALLEL_PER_BLOB
-#pragma omp parallel for default(none) schedule(guided)
-#endif
-                for (int i = 0; i < params.num_blobs; i++) {
-                    active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
-                    // active_blob_array[i]->reset_all_faces(); DEPRECATED.
-                }
-
+        if (es_update) {
+                es_update = false; 
 
                 // Attempt to place all faces in the nearest neighbour lookup table
                 if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
@@ -1764,7 +1776,7 @@ int World::run() {
                     // attempt to print out the final (bad) time step
                     printf("Dumping final step:\n");
                     print_trajectory_and_measurement_files(step, wtime);
-		    print_kinetic_files(0);
+                    print_kinetic_files(0);
 
                     return FFEA_ERROR;
                 }
@@ -1772,25 +1784,23 @@ int World::run() {
                 if (params.calc_es == 1) {
                     do_es();
                 }
-
-                es_count = 1;
-            } else
-                es_count++;
         }
+
         // timing solve() function
 #ifdef USE_MPI
           st1 = MPI::Wtime();
 #endif
 
-        if (params.calc_vdw == 1 && params.force_pbc == 0) vdw_solver->solve();
+        if (params.calc_vdw == 1) {
+             if (params.force_pbc == 0) vdw_solver->solve();
+            //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
+             else if (params.force_pbc == 1) {
+               calc_blob_corr_matrix(params.num_blobs, blob_corr);
+               vdw_solver->solve(blob_corr);
+             } 
+        }
         if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
 
-
-        //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
-        if (params.calc_vdw ==1 && params.force_pbc == 1) {
-        calc_blob_corr_matrix(params.num_blobs, blob_corr);
-        vdw_solver->solve(blob_corr);
-        }
 
 #ifdef USE_MPI
         time2 = MPI::Wtime() -st1 + time2;
@@ -1798,13 +1808,6 @@ int World::run() {
 
         // Update all Blobs in the World
 
-        // Set node forces to zero
-        for (int i = 0; i < params.num_blobs; i++) {
-            active_blob_array[i]->set_forces_to_zero();
-        }
-
-        // Apply springs directly to nodes
-        apply_springs();
 
         // if PreComp is required:
         if (params.calc_preComp == 1) {
