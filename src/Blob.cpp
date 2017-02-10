@@ -1336,10 +1336,10 @@ void Blob::make_measurements(vector3 *box_dim) {
 		}
 	} else {
 		for(i = 0; i < num_nodes; ++i) {
-		    temp1 = node[i].pos.x - node[i].pos_0.x + /*pbc_count[0]*box_dim->x*/;
-        	    temp2 = node[i].pos.y - node[i].pos_0.y + /*pbc_count[1]*box_dim->y*/;
-        	    temp3 = node[i].pos.z - node[i].pos_0.z + /*pbc_count[2]*box_dim->z*/;
-        	    brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
+		    temp1 = node[i].pos.x - node[i].pos_0.x + pbc_count[0]*box_dim->x;
+            temp2 = node[i].pos.y - node[i].pos_0.y + pbc_count[1]*box_dim->y;
+        	temp3 = node[i].pos.z - node[i].pos_0.z + pbc_count[2]*box_dim->z;
+        	brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
 		}
 	}
 	rmsd = sqrt(brmsd / num_nodes);
