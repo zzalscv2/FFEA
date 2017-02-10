@@ -1336,9 +1336,9 @@ void Blob::make_measurements(vector3 *box_dim) {
 		}
 	} else {
 		for(i = 0; i < num_nodes; ++i) {
-		    temp1 = node[i].pos.x - node[i].pos_0.x + pbc_count[0]*box_dim->x;
-        	    temp2 = node[i].pos.y - node[i].pos_0.y + pbc_count[1]*box_dim->y;
-        	    temp3 = node[i].pos.z - node[i].pos_0.z + pbc_count[2]*box_dim->z;
+		    temp1 = node[i].pos.x - node[i].pos_0.x + /*pbc_count[0]*box_dim->x*/;
+        	    temp2 = node[i].pos.y - node[i].pos_0.y + /*pbc_count[1]*box_dim->y*/;
+        	    temp3 = node[i].pos.z - node[i].pos_0.z + /*pbc_count[2]*box_dim->z*/;
         	    brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
 		}
 	}
@@ -1702,11 +1702,11 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 	vector<Eigen::Triplet<scalar> > components;
 
 	// Firstly, get a mapping from all node indices to just linear node indices
-	
+
 	int map[num_nodes];
 	int offset = 0;
 	for(i = 0; i < num_nodes; ++i) {
-		
+
 		if(node[i].am_I_linear()) {
 		//if(true) {
 			map[i] = i - offset;
@@ -1760,7 +1760,7 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 			//sum += it.value();
 		}
 	}
-	//cout << "Blob mass matrix sums: " << mesoDimensions::mass * sum2 << " " << mesoDimensions::mass * sum << endl;	
+	//cout << "Blob mass matrix sums: " << mesoDimensions::mass * sum2 << " " << mesoDimensions::mass * sum << endl;
 	M->setFromTriplets(components.begin(), components.end());
 	return FFEA_OK;
 
