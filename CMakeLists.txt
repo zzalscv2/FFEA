@@ -118,14 +118,33 @@ else ()
   endif()
 endif()
 
+# 2.x #### PTHREADS ####
+find_package(Threads)
+# there is a bug on GCC 4.8.1, and 4.8.2, at least with the 
+#   version packaged by Ubuntu and Mint: 
+# there was a bug on GCC 4.8.1:
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT APPLE)
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.8.0")
+    set(CMAKE_THREAD_LIBS_INIT "-Wl,--no-as-needed" ${CMAKE_THREAD_LIBS_INIT})
+  endif()
+endif()
+
+
 # 3 #### USE C++11 ############ 
 # g++: -std=c++0x / -std=c++11
 # icpc: -std=c++0x / -std=c++11 on LINUX, OS X and WINDOWS 
 # pg++: 13.2 crashes with flag -std=c++0x, besides it does not support
 #         the latest standard ("cannot open source file "future"). 
 # MSVC: does not need any flag.
+set(HAS_CXX11_FUTURE FALSE "Support for CXX11 Future")
 include(cmake/CheckForCXX11Features.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_COMPILER_FLAGS}")
+if (HAS_CXX11_FUTURE)
+  message(STATUS "Support for Future --- detected")
+  add_definitions(-DFFEA_PARALLEL_FUTURE)
+else()
+  message(STATUS "Support for Future --- not detected")
+endif()
 
 
 # 4 ### MATH ######

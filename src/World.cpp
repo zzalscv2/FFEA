@@ -1887,6 +1887,12 @@ int World::run() {
             print_kinetic_files(step + 1);
         }
     }
+
+#ifdef FFEA_PARALLEL_FUTURE
+    // Wait until the last step has correctly been written:
+    thread_writingTraj.get(); 
+#endif
+
     // Total mpi timing, compare with openmp timing
 #ifdef USE_MPI
     time1 = MPI::Wtime() -st;
@@ -3541,7 +3547,35 @@ void World::write_output_header(FILE *fout, string fname) {
 	fprintf(fout, "\tSimulation Type = %s\n\n", "Full");
 }
 
+void World::write_pre_print_to_trajfile(int step) {
+    for (int i = 0; i < params.num_blobs; i++) {
+        fprintf(trajectory_out, "Blob %d, Conformation %d, step %d\n", i, active_blob_array[i]->get_conformation_index(), step);
+        active_blob_array[i]->write_pre_print_to_file(trajectory_out);
+    }
+    // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
+    fprintf(trajectory_out, "*\n");
+
+    // And print the states.
+    fprintf(trajectory_out, "Conformation Changes:\n");
+    for(int i = 0; i < params.num_blobs; ++i) {
+    	if(params.calc_kinetics == 1 && active_blob_array[i]->toBePrinted_state[0] != active_blob_array[i]->toBePrinted_state[1]) {
+    		printf("\tBlob %d - Conformation %d -> Conformation %d\n", i, active_blob_array[i]->toBePrinted_conf[0], active_blob_array[i]->toBePrinted_conf[1]);
+       		printf("\t		State %d -> State %d\n", active_blob_array[i]->toBePrinted_state[0], active_blob_array[i]->toBePrinted_state[1]);
+    	}
+
+    	// Print to file
+    	fprintf(trajectory_out, "Blob %d: Conformation %d -> Conformation %d\n", i, active_blob_array[i]->toBePrinted_conf[0], active_blob_array[i]->toBePrinted_conf[1]);
+    }
+    fprintf(trajectory_out, "*\n");
+
+    fflush(trajectory_out);
+}
+
+
+/** Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used) */ 
 void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
+
+    // ONSCREEN progress: 
     if (step % (params.check * 10) != 0) {
         printf("\rstep = %d", step);
 	fflush(stdout);
@@ -3549,28 +3583,48 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         printf("\rstep = %d (simulation time = %.2fns, wall clock time = %.3f hrs)\n", step, step * params.dt * (mesoDimensions::time / 1e-9), (omp_get_wtime() - wtime) / 3600.0);
     }
 
-
-    // Stuff needed on each blob, and in global energy files
-    if(detailed_meas_out != NULL) {
-        fprintf(detailed_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
+    // TRAJECTORY file: can be printed serially, or in parallel:
+#ifdef FFEA_PARALLEL_FUTURE
+    // TRAJECTORY PARALLEL:
+    if (step > 0) thread_writingTraj.get(); 
+#ifdef FFEA_PARALLEL_PER_BLOB
+#pragma omp parallel for default(none) shared(step) schedule(guided)
+#endif 
+    for (int i = 0; i < params.num_blobs; i++) {
+        // store the node data for this blob
+        active_blob_array[i]->pre_print();
     }
-
-    // Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used)
+    thread_writingTraj = std::async(std::launch::async,&World::write_pre_print_to_trajfile,this,step); 
+    // write_pre_print_to_trajfile(step); // serial version 
+#else
+    // TRAJECTORY SERIAL:
     for (int i = 0; i < params.num_blobs; i++) {
 
         // Write the node data for this blob
         fprintf(trajectory_out, "Blob %d, Conformation %d, step %d\n", i, active_blob_array[i]->get_conformation_index(), step);
         active_blob_array[i]->write_nodes_to_file(trajectory_out);
+    } 
+    // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
+    fprintf(trajectory_out, "*\n");
 
-        // Calculate properties for this blob
-        active_blob_array[i]->make_measurements();
+    // And print the states.
+    fprintf(trajectory_out, "Conformation Changes:\n");
+    for(int i = 0; i < params.num_blobs; ++i) {
+    	if(params.calc_kinetics == 1 && active_blob_array[i]->get_previous_state_index() != active_blob_array[i]->get_state_index()) {
+    		printf("\tBlob %d - Conformation %d -> Conformation %d\n", i, active_blob_array[i]->get_previous_conformation_index(), active_blob_array[i]->get_conformation_index());
+        		printf("\t		State %d -> State %d\n", active_blob_array[i]->get_previous_state_index(), active_blob_array[i]->get_state_index());
+    	}
 
-	// If necessary, write this stuff to a separate file
-	if(detailed_meas_out != NULL) {
-		active_blob_array[i]->write_measurements_to_file(detailed_meas_out);
-	}
+    	// Print to file
+    	fprintf(trajectory_out, "Blob %d: Conformation %d -> Conformation %d\n", i, active_blob_array[i]->get_previous_conformation_index(), active_blob_array[i]->get_conformation_index());
     }
+    fprintf(trajectory_out, "*\n");
 
+    // Force print in case of ctrl + c stop
+    fflush(trajectory_out);
+#endif
+    // TRAJECTORY END
+    
 
     // CHECKPOINT - Write the state of the RNGs:
     // REWIND!
@@ -3613,9 +3667,22 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // Done with the checkpoint!
 
 
-    // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
-    fprintf(trajectory_out, "*\n");
-    fflush(trajectory_out);
+
+    // Detailed Measurement Stuff.
+    // Stuff needed on each blob, and in global energy files
+    if(detailed_meas_out != NULL) {
+        fprintf(detailed_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
+    }
+
+    for (int i = 0; i < params.num_blobs; i++) {
+        // Calculate properties for this blob
+        active_blob_array[i]->make_measurements();
+
+	// If necessary, write this stuff to a separate file
+	if(detailed_meas_out != NULL) {
+		active_blob_array[i]->write_measurements_to_file(detailed_meas_out);
+	}
+    }
 
     // Global Measurement Stuff
     make_measurements();
@@ -3625,40 +3692,6 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 	write_detailed_measurements_to_file(detailed_meas_out);
     }
     fflush(measurement_out);
-/*   // And now the kinetics, if necessary
-
-    // Inform whoever is watching of changes (print to screen)
-    if(params.calc_kinetics == 1) {
-	printf("Conformation Changes:\n");
-    }
-
-    fprintf(trajectory_out, "Conformation Changes:\n");
-
-    for(int i = 0; i < params.num_blobs; ++i) {
-    	if(params.calc_kinetics == 1) {
-	    printf("\tBlob %d - Conformation %d -> Conformation %d\n", i, active_blob_array[i]->get_previous_conformation_index(), active_blob_array[i]->get_conformation_index());
-	    printf("\t		State %d -> State %d\n", active_blob_array[i]->get_previous_state_index(), active_blob_array[i]->get_state_index());
-	}
-
-	// Print to file
-	fprintf(trajectory_out, "Blob %d: Conformation %d -> Conformation %d\n", i, active_blob_array[i]->get_previous_conformation_index(), active_blob_array[i]->get_conformation_index());
-
-	// And now previous state is the current state
-	active_blob_array[i]->set_previous_state_index(active_blob_array[i]->get_state_index());
-	active_blob_array[i]->set_previous_conformation_index(active_blob_array[i]->get_conformation_index());
-
-    }
-    fprintf(trajectory_out, "*\n");*/
-
-/*   // And print to specific file too
-   if(kinetics_out != NULL) {
-	fprintf(kinetics_out, "%d", step);
-	for(int i = 0; i < params.num_blobs; ++i) {
-	    fprintf(kinetics_out, " %d %d", active_blob_array[i]->get_state_index(), active_blob_array[i]->get_conformation_index());
-	}
-	fprintf(kinetics_out, "\n");
-	fflush(kinetics_out);
-    }*/
 
 }
 
@@ -3818,23 +3851,7 @@ void World::print_kinetic_files(int step) {
 //		printf("State Changes:\n");
 //	}
 
-	// And print to files
-	fprintf(trajectory_out, "Conformation Changes:\n");
-	for(int i = 0; i < params.num_blobs; ++i) {
-		if(params.calc_kinetics == 1 && active_blob_array[i]->get_previous_state_index() != active_blob_array[i]->get_state_index()) {
-			printf("\tBlob %d - Conformation %d -> Conformation %d\n", i, active_blob_array[i]->get_previous_conformation_index(), active_blob_array[i]->get_conformation_index());
-	    		printf("\t		State %d -> State %d\n", active_blob_array[i]->get_previous_state_index(), active_blob_array[i]->get_state_index());
-		}
-
-		// Print to file
-		fprintf(trajectory_out, "Blob %d: Conformation %d -> Conformation %d\n", i, active_blob_array[i]->get_previous_conformation_index(), active_blob_array[i]->get_conformation_index());
-	}
-	fprintf(trajectory_out, "*\n");
-
-	// Force print in case of ctrl + c stop
-	fflush(trajectory_out);
-
-	// And print to specific file too
+	// Print to specific file
 	if(kinetics_out != NULL) {
 	    fprintf(kinetics_out, "%d", step);
 	    for(int i = 0; i < params.num_blobs; ++i) {

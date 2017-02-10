@@ -35,6 +35,7 @@
 #include <vector>
 #include <omp.h>
 #include <ctime>
+#include <future>
 #include <boost/algorithm/string.hpp>
 #include <typeinfo>
 #include <Eigen/Sparse>
@@ -294,6 +295,8 @@ private:
     void write_output_header(FILE *fout, string fname);
 
     void print_trajectory_and_measurement_files(int step, scalar wtime);
+    void write_pre_print_to_trajfile(int step);
+    std::future<void> thread_writingTraj; 
 
     void make_measurements();
 
