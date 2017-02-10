@@ -1,13 +1,24 @@
 /***********************************************************************\
  *
+ * This file is part of the RngStreams package
+ * 
  * File:           RngStream.cpp for multiple streams of Random Numbers
  * Language:       C++ (ISO 1998)
  * Copyright:      Pierre L'Ecuyer, University of Montreal
- * Notice:         This code can be used freely for personal, academic,
- *                 or non-commercial purposes. For commercial purposes, 
- *                 please contact P. L'Ecuyer at: lecuyer@iro.umontreal.ca
  * Date:           14 August 2001
  *
+ * RngStreams is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * RngStreams is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with RngStreams.  If not, see <http://www.gnu.org/licenses/>.
  *
  * If you use this software for work leading to publications, 
  * please cite the following relevant articles in which MRG32k3a 
