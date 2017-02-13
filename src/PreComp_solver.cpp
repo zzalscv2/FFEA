@@ -69,6 +69,15 @@ int PreComp_solver::msg(string whatever){
   return 0; 
 } 
 
+/** Zero measurement stuff, AKA fieldenergy */ 
+void PreComp_solver::reset_fieldenergy() {
+    for(int i = 0; i < num_blobs; ++i) {
+      for(int j = 0; j < num_blobs; ++j) {
+        fieldenergy[i][j] = 0.0;
+      }
+    }
+}
+
 
 /** 
  * @brief Read input precomputed tables
@@ -378,13 +387,6 @@ int PreComp_solver::solve() {
     tetra_element_linear *e_i, *e_j;
     // matrix3 Ji, Jj; // these are the jacobians for the elements i and j
 
-    // Zero some measurement_ stuff
-    for(int i = 0; i < num_blobs; ++i) {
-      for(int j = 0; j < num_blobs; ++j) {
-        fieldenergy[i][j] = 0.0;
-      }
-    }
-
     // 1 - Compute the position of the beads:
     compute_bead_positions();
 
@@ -392,9 +394,10 @@ int PreComp_solver::solve() {
     /*scalar e_tot = 0.0; 
     scalar f_tot = 0.0;*/
 #ifdef USE_OPENMP
-#pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij)
+// #pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij)
+#pragma omp for 
 #endif
-    for (int i=0; i<n_beads; i++){ 
+    for (int i=0; i<n_beads; i++){
       type_i = b_types[i]; 
       phi_i[1] = b_rel_pos[3*i];
       phi_i[2] = b_rel_pos[3*i+1];
@@ -462,7 +465,8 @@ int PreComp_solver::compute_bead_positions() {
 
     matrix3 J; 
 #ifdef USE_OPENMP
-#pragma omp parallel for default(none) private(J)
+// #pragma omp parallel for default(none) private(J)
+#pragma omp for 
 #endif
     for (int i=0; i<n_beads; i++){
        b_elems[i]->calculate_jacobian(J); 
