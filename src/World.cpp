@@ -1664,13 +1664,13 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
+    int fatal_errors = 0;
     // long long timestep = 1; // DEPRECATED
 #ifdef USE_MPI
     double st, st1, st2, time1, time2, time3;
     st =MPI::Wtime();
 #endif
     for (long long step = step_initial; step < params.num_steps; step++) {
-
 
         // check if we need to calculate electrostatics, 
         //                     update the neighbour list,
@@ -1685,8 +1685,12 @@ int World::run() {
         } // if (es_update), it will turn to false at the begining of next timestep
 
         // Reinitialise stuff
+        if (params.calc_preComp == 1) pc_solver.reset_fieldenergy();
+        if (params.calc_vdw == 1) vdw_solver->reset_fieldenergy(); 
 #ifdef USE_OPENMP
-#pragma omp parallel for default(none) shared(step,es_update)
+#pragma omp parallel default(none) shared(step,es_update,wtime) reduction(+: fatal_errors)
+{
+#pragma omp for
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             // Zero the force across all blobs
@@ -1704,7 +1708,7 @@ int World::run() {
             vector3 com;
             active_blob_array[i]->get_centroid(&com);
 
-	    scalar dx = 0, dy = 0, dz = 0;
+            scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
 
             if (com.x < 0) {
@@ -1765,9 +1769,9 @@ int World::run() {
         }
 
 
-// #pragma omp sections nowait
+#pragma omp sections nowait
 {
-// #pragma omp section
+#pragma omp section
 {
         if (es_update) {
                 // Attempt to place all faces in the nearest neighbour lookup table
@@ -1781,7 +1785,8 @@ int World::run() {
                     print_trajectory_and_measurement_files(step, wtime);
                     print_kinetic_files(0);
 
-                    return FFEA_ERROR;
+                    fatal_errors += 1;
+                    // return FFEA_ERROR;
                 }
 
                 if (params.calc_es == 1) {
@@ -1789,14 +1794,13 @@ int World::run() {
                 }
         }
 }
-// #pragma omp section
+#pragma omp section
 {
         // Start calculating. 
         // Apply springs directly to nodes
         apply_springs();
 }
 }
-
         // if PreComp is required:
         if (params.calc_preComp == 1) {
           pc_solver.solve();
@@ -1807,9 +1811,9 @@ int World::run() {
           st1 = MPI::Wtime();
 #endif
 
-        /*if (es_update) {
+        if (es_update) {
            #pragma omp barrier
-        }*/ 
+        } 
 
         if (params.calc_vdw == 1) {
              if (params.force_pbc == 0) vdw_solver->solve();
@@ -1819,8 +1823,11 @@ int World::run() {
                vdw_solver->solve(blob_corr);
              } 
         }
-        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
 
+        if (params.sticky_wall_xz == 1) {
+           #pragma omp single nowait
+           vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
+        } 
 
 #ifdef USE_MPI
         time2 = MPI::Wtime() -st1 + time2;
@@ -1832,9 +1839,10 @@ int World::run() {
 #endif
         // Update all Blobs in the World
         // Sort internal forces out
-        int fatal_errors = 0;
 #ifdef FFEA_PARALLEL_PER_BLOB
-#pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
+// #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
+#pragma omp barrier
+#pragma omp for schedule(runtime)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
         	if (active_blob_array[i]->update() == FFEA_ERROR) {
@@ -1845,12 +1853,14 @@ int World::run() {
                 	fatal_errors++;
             	}
         }
+} 
 
 #ifdef USE_MPI
         time3 = MPI::Wtime()-st2 + time3;
 #endif
         // timestep = timestep + 10; DEPRECATED!
 
+        // if there were any errors... abort!
         if (fatal_errors > 0) {
             FFEA_error_text();
             printf("Detected %d fatal errors in this system update. Exiting now...\n", fatal_errors);
@@ -1864,7 +1874,7 @@ int World::run() {
             return FFEA_ERROR;
         }
 
-	// Output traj data to files
+        // Output traj data to files
         if ((step + 1) % params.check == 0) {
             print_trajectory_and_measurement_files(step + 1, wtime);
         }
