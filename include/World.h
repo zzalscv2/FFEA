@@ -300,6 +300,7 @@ private:
 
     void print_trajectory_and_measurement_files(int step, scalar wtime);
     void write_pre_print_to_trajfile(int step);
+    void do_nothing(); 
 #ifdef FFEA_PARALLEL_FUTURE
     std::future<void> thread_writingTraj; 
 #endif
