@@ -456,6 +456,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		if ((checkpoint_out = fopen(params.ocheckpoint_fname.c_str(), "w")) == NULL) {
 			FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname.c_str());
 		}
+#ifdef FFEA_PARALLEL_FUTURE
+      // And launch a first trajectory thread, that will be catched up at print_traj time
+      thread_writingTraj = std::async(std::launch::async,&World::do_nothing,this); 
+#endif
 
 		if (params.restart == 0) {
 
@@ -1660,7 +1664,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
-    long long timestep = 1;
+    // long long timestep = 1; // DEPRECATED
 #ifdef USE_MPI
     double st, st1, st2, time1, time2, time3;
     st =MPI::Wtime();
@@ -1678,7 +1682,7 @@ int World::run() {
                 es_update = true;
             } else
                 es_count++;
-        } // if (es_update), it will turn to false before the end of the iteration.
+        } // if (es_update), it will turn to false at the begining of next timestep
 
         // Reinitialise stuff
 #ifdef USE_OPENMP
@@ -1761,14 +1765,13 @@ int World::run() {
         }
 
 
-        // Start calculating. 
-        // Apply springs directly to nodes
-        apply_springs();
-
+// #pragma omp sections nowait
+{
+// #pragma omp section
+{
         if (es_update) {
-                es_update = false; 
-
                 // Attempt to place all faces in the nearest neighbour lookup table
+                // This block needs to come after calculating the centroids of the faces
                 if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
                     FFEA_error_text();
                     printf("When trying to place faces in nearest neighbour lookup table.\n");
@@ -1785,11 +1788,28 @@ int World::run() {
                     do_es();
                 }
         }
+}
+// #pragma omp section
+{
+        // Start calculating. 
+        // Apply springs directly to nodes
+        apply_springs();
+}
+}
+
+        // if PreComp is required:
+        if (params.calc_preComp == 1) {
+          pc_solver.solve();
+        }
 
         // timing solve() function
 #ifdef USE_MPI
           st1 = MPI::Wtime();
 #endif
+
+        /*if (es_update) {
+           #pragma omp barrier
+        }*/ 
 
         if (params.calc_vdw == 1) {
              if (params.force_pbc == 0) vdw_solver->solve();
@@ -1806,22 +1826,13 @@ int World::run() {
         time2 = MPI::Wtime() -st1 + time2;
 #endif
 
-        // Update all Blobs in the World
-
-
-        // if PreComp is required:
-        if (params.calc_preComp == 1) {
-          pc_solver.solve();
-        }
-
-        // Sort internal forces out
-        int fatal_errors = 0;
-
         // timing update() function
 #ifdef USE_MPI
         st2 = MPI::Wtime();
 #endif
-
+        // Update all Blobs in the World
+        // Sort internal forces out
+        int fatal_errors = 0;
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
 #endif
@@ -1838,18 +1849,18 @@ int World::run() {
 #ifdef USE_MPI
         time3 = MPI::Wtime()-st2 + time3;
 #endif
-        timestep = timestep + 10;
+        // timestep = timestep + 10; DEPRECATED!
 
         if (fatal_errors > 0) {
             FFEA_error_text();
             printf("Detected %d fatal errors in this system update. Exiting now...\n", fatal_errors);
 
             // attempt to print out the final (bad) time step if necessary
-	    if (step != step_initial) {
+            if (step != step_initial) {
 	            printf("Dumping final step:\n");
 	            print_trajectory_and_measurement_files(step, wtime);
-		    print_kinetic_files(step);
-	    }
+               print_kinetic_files(step);
+            }
             return FFEA_ERROR;
         }
 
@@ -3589,7 +3600,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // TRAJECTORY file: can be printed serially, or in parallel:
 #ifdef FFEA_PARALLEL_FUTURE
     // TRAJECTORY PARALLEL:
-    if (step > 0) thread_writingTraj.get(); 
+    thread_writingTraj.get(); 
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step) schedule(guided)
 #endif 
@@ -3904,6 +3915,10 @@ void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr){
 
 	    }
     }
+}
+
+void World::do_nothing() {
+  // that means nothing.
 }
 
 // Well done for reading this far! Hope this makes you smile.
