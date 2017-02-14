@@ -62,14 +62,18 @@ int LinkedListCube<T>::alloc(int N_x, int N_y, int N_z, int max_num_nodes_in_poo
     this->max_num_nodes_in_pool = max_num_nodes_in_pool;
     num_nodes_in_pool = 0;
     num_nodes_in_stack = 0;
-    root = new LinkedListNode<T> * [N_x * N_y * N_z];
-    pool = new LinkedListNode<T>[max_num_nodes_in_pool];
+    root1 = new LinkedListNode<T> * [N_x * N_y * N_z];
+    pool1 = new LinkedListNode<T>[max_num_nodes_in_pool];
+    /* root2 = new LinkedListNode<T> * [N_x * N_y * N_z];
+    pool2 = new LinkedListNode<T>[max_num_nodes_in_pool];*/
 
-    if (root == NULL || pool == NULL) {
+    if (root1 == NULL || pool1 == NULL ) { // || root2 == NULL || pool2 == NULL) {
         FFEA_ERROR_MESSG("Could not allocate memory (for root and pool arrays) in LinkedListCube\n");
     }
 
     // Make sure all pointers are initialised to NULL
+    pool = pool1;
+    root = root1;
     clear();
 
     // Set the current addition index to the beginning of the pool array

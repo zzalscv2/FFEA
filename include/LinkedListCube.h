@@ -99,9 +99,11 @@ protected:
     int num_nodes_in_stack;
 
     /** A cubic grid of pointers */
+    LinkedListNode<T> **root1;
     LinkedListNode<T> **root;
 
     /** A "pool" of LinkedListNodes available for stacking on the various stacks in the cube */
+    LinkedListNode<T> *pool1;
     LinkedListNode<T> *pool;
 
 private:
