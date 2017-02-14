@@ -1672,6 +1672,7 @@ int World::run() {
 #endif
     for (long long step = step_initial; step < params.num_steps; step++) {
 
+
         // check if we need to calculate electrostatics, 
         //                     update the neighbour list,
         //                     and calculate normals and centroids for the faces.
@@ -1686,11 +1687,11 @@ int World::run() {
 
         // Reinitialise stuff
         if (params.calc_preComp == 1) pc_solver.reset_fieldenergy();
-        if (params.calc_vdw == 1) vdw_solver->reset_fieldenergy(); 
+        if (params.calc_vdw == 1) vdw_solver->reset_fieldenergy();
 #ifdef USE_OPENMP
 #pragma omp parallel default(none) shared(step,es_update,wtime) reduction(+: fatal_errors)
 {
-#pragma omp for
+#pragma omp for 
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             // Zero the force across all blobs
@@ -1708,7 +1709,7 @@ int World::run() {
             vector3 com;
             active_blob_array[i]->get_centroid(&com);
 
-            scalar dx = 0, dy = 0, dz = 0;
+	    scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
 
             if (com.x < 0) {
@@ -1768,9 +1769,14 @@ int World::run() {
            }
         }
 
-
 #pragma omp sections nowait
 {
+#pragma omp section
+{
+        // Start calculating. 
+        // Apply springs directly to nodes
+        apply_springs();
+}
 #pragma omp section
 {
         if (es_update) {
@@ -1784,7 +1790,7 @@ int World::run() {
                     printf("Dumping final step:\n");
                     print_trajectory_and_measurement_files(step, wtime);
                     print_kinetic_files(0);
-
+ 
                     fatal_errors += 1;
                     // return FFEA_ERROR;
                 }
@@ -1794,13 +1800,8 @@ int World::run() {
                 }
         }
 }
-#pragma omp section
-{
-        // Start calculating. 
-        // Apply springs directly to nodes
-        apply_springs();
 }
-}
+
         // if PreComp is required:
         if (params.calc_preComp == 1) {
           pc_solver.solve();
@@ -1812,8 +1813,8 @@ int World::run() {
 #endif
 
         if (es_update) {
-           #pragma omp barrier
-        } 
+          #pragma omp barrier
+        }
 
         if (params.calc_vdw == 1) {
              if (params.force_pbc == 0) vdw_solver->solve();
@@ -1823,11 +1824,11 @@ int World::run() {
                vdw_solver->solve(blob_corr);
              } 
         }
-
         if (params.sticky_wall_xz == 1) {
-           #pragma omp single nowait
+           #pragma omp single
            vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
-        } 
+        }
+
 
 #ifdef USE_MPI
         time2 = MPI::Wtime() -st1 + time2;
@@ -1838,9 +1839,7 @@ int World::run() {
         st2 = MPI::Wtime();
 #endif
         // Update all Blobs in the World
-        // Sort internal forces out
 #ifdef FFEA_PARALLEL_PER_BLOB
-// #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
 #pragma omp barrier
 #pragma omp for schedule(runtime)
 #endif
@@ -1853,14 +1852,13 @@ int World::run() {
                 	fatal_errors++;
             	}
         }
-} 
+}
 
 #ifdef USE_MPI
         time3 = MPI::Wtime()-st2 + time3;
 #endif
         // timestep = timestep + 10; DEPRECATED!
 
-        // if there were any errors... abort!
         if (fatal_errors > 0) {
             FFEA_error_text();
             printf("Detected %d fatal errors in this system update. Exiting now...\n", fatal_errors);
@@ -1874,7 +1872,7 @@ int World::run() {
             return FFEA_ERROR;
         }
 
-        // Output traj data to files
+	// Output traj data to files
         if ((step + 1) % params.check == 0) {
             print_trajectory_and_measurement_files(step + 1, wtime);
         }
@@ -3870,10 +3868,7 @@ void World::print_trajectory_conformation_changes(FILE *fout, int step, int *fro
 
 void World::print_kinetic_files(int step) {
 
-	// Inform whoever is watching of changes
-	//if(params.calc_kinetics == 1) {
-//		printf("State Changes:\n");
-//	}
+	if(params.calc_kinetics == 0) return; 
 
 	// Print to specific file
 	if(kinetics_out != NULL) {
