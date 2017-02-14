@@ -865,6 +865,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		    }
 		}
 
+      if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
+          printf("WTF!?!\n");
+      } 
+
 		// Initialise the BEM PBE solver
 		if (params.calc_es == 1) {
 		    printf("Initialising Boundary Element Poisson Boltzmann Solver...\n");
@@ -1690,7 +1694,9 @@ int World::run() {
         if (params.calc_vdw == 1) vdw_solver->reset_fieldenergy();
 #ifdef USE_OPENMP
 #pragma omp parallel default(none) shared(step,es_update,wtime) reduction(+: fatal_errors)
+#endif
 {
+#ifdef USE_OPENMP
 #pragma omp for 
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
@@ -1782,7 +1788,7 @@ int World::run() {
         if (es_update) {
                 // Attempt to place all faces in the nearest neighbour lookup table
                 // This block needs to come after calculating the centroids of the faces
-                if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
+                if (lookup.prebuild_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
                     FFEA_error_text();
                     printf("When trying to place faces in nearest neighbour lookup table.\n");
 
@@ -1794,7 +1800,6 @@ int World::run() {
                     fatal_errors += 1;
                     // return FFEA_ERROR;
                 }
-
                 if (params.calc_es == 1) {
                     do_es();
                 }
@@ -1814,6 +1819,20 @@ int World::run() {
 
         if (es_update) {
           #pragma omp barrier
+          #pragma single
+          if (lookup.safely_swap_layers() == FFEA_ERROR) { 
+              FFEA_error_text();
+              printf("When trying to place faces in nearest neighbour lookup table.\n");
+
+              // attempt to print out the final (bad) time step
+              printf("Dumping final step:\n");
+              print_trajectory_and_measurement_files(step, wtime);
+              print_kinetic_files(0);
+
+              fatal_errors += 1;
+              // return FFEA_ERROR;
+          } 
+
         }
 
         if (params.calc_vdw == 1) {
