@@ -35,6 +35,12 @@ class NearestNeighbourLinkedListCube : public LinkedListCube<Face> {
 public:
     /** Build the nearest neighbour look up cube given the spatial cell size */
     int build_nearest_neighbour_lookup(scalar h);
+
+    /** Build the nearest neighbour look up cube given the spatial cell size */
+    int prebuild_nearest_neighbour_lookup_and_swap(scalar h);
+
+    /** Build the nearest neighbour look up cube given the spatial cell size */
+    int prebuild_nearest_neighbour_lookup(scalar h);
 };
 
 #endif
