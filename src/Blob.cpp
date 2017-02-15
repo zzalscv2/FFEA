@@ -1182,7 +1182,7 @@ scalar Blob::calculate_strain_energy() {
 	return 0.5 * strain_energy;
 }
 
-void Blob::make_measurements(vector3 *box_dim) {
+void Blob::make_measurements() {
 
     int n, i, j;
     scalar kenergy, senergy;
@@ -1329,16 +1329,16 @@ void Blob::make_measurements(vector3 *box_dim) {
 
 	if(remTrans) {
 		for(i = 0; i < num_nodes; ++i) {
-		    temp1 = node[i].pos.x - node[i].pos_0.x + CoG_0.x - CoG.x +pbc_count[0]*box_dim->x;
-        	    temp2 = node[i].pos.y - node[i].pos_0.y + CoG_0.y - CoG.y+pbc_count[1]*box_dim->y;
-        	    temp3 = node[i].pos.z - node[i].pos_0.z + CoG_0.z - CoG.z + pbc_count[2]*box_dim->z;
+		    temp1 = node[i].pos.x - node[i].pos_0.x + CoG_0.x - CoG.x;
+        	    temp2 = node[i].pos.y - node[i].pos_0.y + CoG_0.y - CoG.y;
+        	    temp3 = node[i].pos.z - node[i].pos_0.z + CoG_0.z - CoG.z;
         	    brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
 		}
 	} else {
 		for(i = 0; i < num_nodes; ++i) {
-		    temp1 = node[i].pos.x - node[i].pos_0.x + pbc_count[0]*box_dim->x;
-            temp2 = node[i].pos.y - node[i].pos_0.y + pbc_count[1]*box_dim->y;
-        	temp3 = node[i].pos.z - node[i].pos_0.z + pbc_count[2]*box_dim->z;
+		    temp1 = node[i].pos.x - node[i].pos_0.x;
+            temp2 = node[i].pos.y - node[i].pos_0.y;
+        	temp3 = node[i].pos.z - node[i].pos_0.z;
         	brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
 		}
 	}
@@ -1356,7 +1356,7 @@ void Blob::write_measurements_to_file(FILE *fout) {
 		fprintf(fout, "%-14.6e", kineticenergy * mesoDimensions::Energy);
 	}
 	fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
-	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length, rmsd * mesoDimensions::length);
+	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14.6e%-14d%-14d%-14d", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length, rmsd * mesoDimensions::length,pbc_count[0],pbc_count[1],pbc_count[2]);
 	fflush(fout);
 }
 

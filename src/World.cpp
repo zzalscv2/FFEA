@@ -532,7 +532,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 						fprintf(detailed_meas_out, "%-14s", "KineticEnergy");
 					}
 					fprintf(detailed_meas_out, "%-14s", "StrainEnergy");
-					fprintf(detailed_meas_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
+					fprintf(detailed_meas_out, "%-14s%-14s%-14s%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD","PBC_count.x","PBC_count.y","PBC_count.z");
 				}
 
 				if(params.calc_vdw == 1 || params.calc_preComp == 1 || params.calc_springs == 1) {
@@ -1034,7 +1034,7 @@ int World::get_smallest_time_constants() {
 			//exit(0);
 
 			// Build eigenvector, apply and output the mass...
-			
+
 			// Invert M (it's symmetric!)
 			cout << "\r\t\tAttempting to invert M to form M_inv (task 2/4)..." << flush;
 			Eigen::SimplicialCholesky<Eigen::SparseMatrix<scalar>> Cholesky(M); // performs a Cholesky factorization of M
@@ -3579,7 +3579,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         active_blob_array[i]->write_nodes_to_file(trajectory_out);
 
         // Calculate properties for this blob
-        active_blob_array[i]->make_measurements(&box_dim);
+        active_blob_array[i]->make_measurements();
 
 	// If necessary, write this stuff to a separate file
 	if(detailed_meas_out != NULL) {
