@@ -191,7 +191,7 @@ public:
     /**
      * Takes measurements of system properties: KE, PE, Centre of Mass and Angular momentum etc
      */
-    void make_measurements(vector3 *box_dim);
+    void make_measurements();
 
     /**
      * Writes only the detailed measurements local to this blob to file!
