@@ -64,6 +64,7 @@ World::World() {
     vector3_set_zero(&CoM);
     vector3_set_zero(&CoG);
     rmsd = 0.0;
+
 }
 
 World::~World() {
@@ -130,6 +131,7 @@ World::~World() {
     vector3_set_zero(&CoM);
     vector3_set_zero(&CoG);
     rmsd = 0.0;
+
 }
 
 /**
@@ -818,7 +820,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
               vdw_solver = new VdW_solver();
             else if (params.vdw_type == "steric")
               vdw_solver = new Steric_solver();
-	    else if (params.vdw_type == "ljsteric")
+    else if (params.vdw_type == "ljsteric")
 	      vdw_solver = new LJSteric_solver();
             if (vdw_solver == NULL)
               FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
@@ -865,9 +867,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		    }
 		}
 
-      if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
-          printf("WTF!?!\n");
-      } 
+#ifdef FFEA_PARALLEL_FUTURE
+      // And build the lookup table for the first time: 
+      thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa)); 
+#endif 
 
 		// Initialise the BEM PBE solver
 		if (params.calc_es == 1) {
@@ -1685,13 +1688,22 @@ int World::run() {
             if (es_count == params.es_update) {
                 es_count = 1;
                 es_update = true;
+                if (updatingLL() == true) {  // we will have to wait!
+                   if (catch_thread_updatingLL(step, wtime, 1)) return FFEA_ERROR; 
+                } 
             } else
                 es_count++;
-        } // if (es_update), it will turn to false at the begining of next timestep
+        } // es_update will turn to false at the begining of next timestep
 
         // Reinitialise stuff
         if (params.calc_preComp == 1) pc_solver.reset_fieldenergy();
         if (params.calc_vdw == 1) vdw_solver->reset_fieldenergy();
+
+        // Try to catch the thread updating the LinkedLists, but only if it has finished: 
+        if (updatingLL_ready_to_swap() == true) {
+           if (catch_thread_updatingLL(step, wtime, 2)) return FFEA_ERROR; 
+        } 
+
 #ifdef USE_OPENMP
 #pragma omp parallel default(none) shared(step,es_update,wtime) reduction(+: fatal_errors)
 #endif
@@ -1774,6 +1786,7 @@ int World::run() {
                active_blob_array[i]->set_forces_to_zero();
            }
         }
+// }
 
 #pragma omp sections nowait
 {
@@ -1786,20 +1799,17 @@ int World::run() {
 #pragma omp section
 {
         if (es_update) {
-                // Attempt to place all faces in the nearest neighbour lookup table
-                // This block needs to come after calculating the centroids of the faces
-                if (lookup.prebuild_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
-                    FFEA_error_text();
-                    printf("When trying to place faces in nearest neighbour lookup table.\n");
-
-                    // attempt to print out the final (bad) time step
-                    printf("Dumping final step:\n");
-                    print_trajectory_and_measurement_files(step, wtime);
-                    print_kinetic_files(0);
- 
+                // Thread out to update the LinkedLists, 
+                //   after calculating the centroids of the faces.
+                // Catching up the thread should be done through catch_thread_updatingLL,
+                //   which will to lookup.safely_swap_layers().
+                //   This should not be done while updating VdW (or anything using the lists).
+                if (updatingLL() == false) {
+                    thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.es_h*(1.0 / params.kappa)); 
+                } else {
                     fatal_errors += 1;
-                    // return FFEA_ERROR;
-                }
+                } 
+
                 if (params.calc_es == 1) {
                     do_es();
                 }
@@ -1816,24 +1826,16 @@ int World::run() {
 #ifdef USE_MPI
           st1 = MPI::Wtime();
 #endif
-
-        if (es_update) {
-          #pragma omp barrier
-          #pragma single
-          if (lookup.safely_swap_layers() == FFEA_ERROR) { 
-              FFEA_error_text();
-              printf("When trying to place faces in nearest neighbour lookup table.\n");
-
-              // attempt to print out the final (bad) time step
-              printf("Dumping final step:\n");
-              print_trajectory_and_measurement_files(step, wtime);
-              print_kinetic_files(0);
-
-              fatal_errors += 1;
-              // return FFEA_ERROR;
-          } 
-
-        }
+        
+        /*
+        #pragma omp master // Then a single thread does the catching and swapping
+        { 
+        if (updatingLL_ready_to_swap() == true) {
+            fatal_errors += catch_thread_updatingLL(step, wtime, 3); 
+        } 
+        } 
+        #pragma omp barrier // the barrier holds people off, before catching the thread
+        */ 
 
         if (params.calc_vdw == 1) {
              if (params.force_pbc == 0) vdw_solver->solve();
@@ -3943,6 +3945,60 @@ void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr){
 
 void World::do_nothing() {
   // that means nothing.
+}
+
+int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size) {
+     return lookup.prebuild_nearest_neighbour_lookup(cell_size); 
+}
+
+bool World::updatingLL() {
+     return thread_updatingLL.valid(); 
+}
+
+bool World::updatingLL_ready_to_swap(){
+         
+     bool its = false; 
+     if (thread_updatingLL.valid()) { 
+        if (thread_updatingLL.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
+          its = true;
+       } 
+     } 
+     return its;
+
+} 
+
+int World::catch_thread_updatingLL(int step, scalar wtime, int where) {
+        
+          if (updatingLL() == false) {
+              cout << "trying to catch from: " << where << 
+                      ", but updatingLL was false" << endl; 
+              return 0;
+          } 
+
+          if (thread_updatingLL.get() == FFEA_ERROR) {
+              FFEA_error_text();
+              printf("When trying to place faces in nearest neighbour lookup table.\n");
+
+              // attempt to print out the final (bad) time step
+              printf("Dumping final step:\n");
+              print_trajectory_and_measurement_files(step, wtime);
+              print_kinetic_files(0);
+
+              return 1;
+          }
+          if (lookup.safely_swap_layers() == FFEA_ERROR) { 
+              FFEA_error_text();
+              printf("When trying to place faces in nearest neighbour lookup table.\n");
+
+              // attempt to print out the final (bad) time step
+              printf("Dumping final step:\n");
+              print_trajectory_and_measurement_files(step, wtime);
+              print_kinetic_files(0);
+
+              return 1;
+          } 
+
+          return FFEA_OK; 
 }
 
 // Well done for reading this far! Hope this makes you smile.

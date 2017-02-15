@@ -43,6 +43,7 @@
 
 #ifdef FFEA_PARALLEL_FUTURE
 #include <future>
+#include <chrono>
 #endif
 
 // #include "MersenneTwister.h"
@@ -301,8 +302,13 @@ private:
     void print_trajectory_and_measurement_files(int step, scalar wtime);
     void write_pre_print_to_trajfile(int step);
     void do_nothing(); 
+    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size); 
 #ifdef FFEA_PARALLEL_FUTURE
+    int catch_thread_updatingLL(int step, scalar wtime, int where); 
     std::future<void> thread_writingTraj; 
+    std::future<int> thread_updatingLL; 
+    bool updatingLL(); 
+    bool updatingLL_ready_to_swap(); 
 #endif
 
     void make_measurements();
