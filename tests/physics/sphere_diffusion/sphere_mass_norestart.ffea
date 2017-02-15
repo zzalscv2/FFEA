@@ -5,8 +5,8 @@
 	<check = 200>
 	<num_steps = 2e6>
 	<rng_seed = time>
-	<trajectory_out_fname = traj/sphere_mass_norestart_trajectory.ftj>
-	<measurement_out_fname = meas/sphere_mass_norestart_measurement.fm>
+	<trajectory_out_fname = sphere_mass_norestart_trajectory.ftj>
+	<measurement_out_fname = sphere_mass_norestart_measurement.fm>
 	<vdw_forcefield_params = structure/sphere.lj>
 	<checkpoint_out = sphere_mass_norestart_out.fcp>
 	<checkpoint_in = sphere_mass_norestart_in.fcp>
