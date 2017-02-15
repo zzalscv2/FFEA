@@ -4,7 +4,7 @@
 	<kT = 4.11e-21>
 	<check = 100>
 	<num_steps = 1e6>
-	<rng_seed = time>
+	<rng_seed = 44>
 	<trajectory_out_fname = sphere_nomass_norestart_trajectory.ftj>
 	<measurement_out_fname = sphere_nomass_norestart_measurement.fm>
 	<vdw_forcefield_params = structure/sphere.lj>
