@@ -103,5 +103,5 @@ void MassMatrixLinear::print_details() {
 	    c++;
 	}
     }
-    printf("Total Mass = %e\n", tot * mesoDimensions::mass);
+    // printf("Total Mass = %e\n", tot * mesoDimensions::mass);
 }
