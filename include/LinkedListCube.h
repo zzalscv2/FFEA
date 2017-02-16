@@ -57,8 +57,15 @@ public:
     /** Builds a LinkedListCube of dimensions N_x x N_y x N_z, and an array of LinkedListNodes of size max_num_nodes_in_pool */
     int alloc(int N_x, int N_y, int N_z, int max_num_nodes_in_pool);
 
+    /** Builds 2 layers of LinkedListCubes of dimensions N_x x N_y x N_z, a
+      *   and an dual array of LinkedListNodes of size max_num_nodes_in_pool */ 
+    int alloc_dual(int N_x, int N_y, int N_z, int max_num_nodes_in_pool);
+
     /** Adds the specified T object to the pool (at the index given by add_index) */
     int add_to_pool(T *t);
+
+    /** Adds the specified T object to the pool (at the index given by add_index) */
+    int add_to_pool_dual(T *t);
 
     /** Returns pointer to ith object in the pool */
     LinkedListNode<T> * get_from_pool(int i);
