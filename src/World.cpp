@@ -1723,7 +1723,7 @@ int World::run() {
 #endif
 {
 #ifdef USE_OPENMP
-#pragma omp for 
+#pragma omp for schedule(guided)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             // Zero the force across all blobs
@@ -1790,15 +1790,13 @@ int World::run() {
             // If Blob is near a hard wall, prevent it from moving further into it
             active_blob_array[i]->enforce_box_boundaries(&box_dim);
 
-           if (es_update) {
+            if (es_update) {
                active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
                // active_blob_array[i]->reset_all_faces(); DEPRECATED.
-           } 
+            } 
 
-           // Set node forces to zero
-           for (int i = 0; i < params.num_blobs; i++) {
-               active_blob_array[i]->set_forces_to_zero();
-           }
+            // Set node forces to zero
+            active_blob_array[i]->set_forces_to_zero();
         }
 // }
 
