@@ -60,6 +60,30 @@ int LinkedListCube<T>::alloc(int N_x, int N_y, int N_z, int max_num_nodes_in_poo
     this->N_z = N_z;
     this->max_num_nodes_in_pool = max_num_nodes_in_pool;
     num_nodes_in_pool = 0;
+    root = new LinkedListNode<T> * [N_x * N_y * N_z];
+    pool = new LinkedListNode<T>[max_num_nodes_in_pool];
+
+    if (root == NULL || pool == NULL) {
+        FFEA_ERROR_MESSG("Could not allocate memory (for root and pool arrays) in LinkedListCube\n");
+    }
+
+    // Make sure all pointers are initialised to NULL
+    clear();
+
+    // Set the current addition index to the beginning of the pool array
+    add_index = 0;
+
+    return FFEA_OK;
+}
+
+/* */
+template <class T>
+int LinkedListCube<T>::alloc_dual(int N_x, int N_y, int N_z, int max_num_nodes_in_pool) {
+    this->N_x = N_x;
+    this->N_y = N_y;
+    this->N_z = N_z;
+    this->max_num_nodes_in_pool = max_num_nodes_in_pool;
+    num_nodes_in_pool = 0;
     root1 = new LinkedListNode<T> * [N_x * N_y * N_z];
     pool1 = new LinkedListNode<T>[max_num_nodes_in_pool];
     root2 = new LinkedListNode<T> * [N_x * N_y * N_z];
@@ -86,6 +110,24 @@ int LinkedListCube<T>::alloc(int N_x, int N_y, int N_z, int max_num_nodes_in_poo
 /* */
 template <class T>
 int LinkedListCube<T>::add_to_pool(T *t) {
+    if (add_index >= max_num_nodes_in_pool) {
+        FFEA_ERROR_MESSG("In LinkedListCube, attempt to add more nodes to the pool than space has been allocated for.\n");
+    }
+
+    // Give object its own representant LinkedListNode in the pool
+    pool[add_index].obj = t;
+    pool[add_index].index = add_index;
+    add_index++;
+
+    num_nodes_in_pool++;
+
+    return FFEA_OK;
+}
+
+
+/* */
+template <class T>
+int LinkedListCube<T>::add_to_pool_dual(T *t) {
     if (add_index >= max_num_nodes_in_pool) {
         FFEA_ERROR_MESSG("In LinkedListCube, attempt to add more nodes to the pool than space has been allocated for.\n");
     }

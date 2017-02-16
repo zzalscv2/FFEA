@@ -838,7 +838,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 		// Allocate memory for an NxNxN grid, with a 'pool' for the required number of surface faces
 		printf("Allocating memory for nearest neighbour lookup grid...\n");
-		if (lookup.alloc(params.es_N_x, params.es_N_y, params.es_N_z, total_num_surface_faces) == FFEA_ERROR) {
+#ifdef FFEA_PARALLEL_FUTURE
+      int lookup_error = lookup.alloc_dual(params.es_N_x, params.es_N_y, params.es_N_z, total_num_surface_faces);
+#else
+      int lookup_error = lookup.alloc(params.es_N_x, params.es_N_y, params.es_N_z, total_num_surface_faces);
+#endif
+		if (lookup_error == FFEA_ERROR) {
 		    FFEA_error_text();
 		    printf("When allocating memory for nearest neighbour lookup grid\n");
 		    return FFEA_ERROR;
@@ -855,7 +860,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			    for (k = 0; k < blob_array[i][j].get_num_faces(); k++) {
 				Face *b_face = blob_array[i][j].get_face(k);
 				if (b_face != NULL) {
-				    if (lookup.add_to_pool(b_face) == FFEA_ERROR) {
+#ifdef FFEA_PARALLEL_FUTURE 
+                lookup_error = lookup.add_to_pool_dual(b_face); 
+#else
+                lookup_error = lookup.add_to_pool(b_face); 
+#endif
+				    if (lookup_error == FFEA_ERROR) {
 				        FFEA_error_text();
 				        printf("When attempting to add a face to the lookup pool\n");
 				        return FFEA_ERROR;
@@ -1688,9 +1698,11 @@ int World::run() {
             if (es_count == params.es_update) {
                 es_count = 1;
                 es_update = true;
+#ifdef FFEA_PARALLEL_FUTURE
                 if (updatingLL() == true) {  // we will have to wait!
                    if (catch_thread_updatingLL(step, wtime, 1)) return FFEA_ERROR; 
                 } 
+#endif
             } else
                 es_count++;
         } // es_update will turn to false at the begining of next timestep
@@ -1700,9 +1712,11 @@ int World::run() {
         if (params.calc_vdw == 1) vdw_solver->reset_fieldenergy();
 
         // Try to catch the thread updating the LinkedLists, but only if it has finished: 
+#ifdef FFEA_PARALLEL_FUTURE
         if (updatingLL_ready_to_swap() == true) {
            if (catch_thread_updatingLL(step, wtime, 2)) return FFEA_ERROR; 
         } 
+#endif 
 
 #ifdef USE_OPENMP
 #pragma omp parallel default(none) shared(step,es_update,wtime) reduction(+: fatal_errors)
@@ -1799,14 +1813,17 @@ int World::run() {
 #pragma omp section
 {
         if (es_update) {
+#ifdef FFEA_PARALLEL_FUTURE
                 // Thread out to update the LinkedLists, 
                 //   after calculating the centroids of the faces.
                 // Catching up the thread should be done through catch_thread_updatingLL,
                 //   which will to lookup.safely_swap_layers().
-                //   This should not be done while updating VdW (or anything using the lists).
                 if (updatingLL() == false) {
                     thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.es_h*(1.0 / params.kappa)); 
                 } else {
+#else
+                if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) {
+#endif
                     fatal_errors += 1;
                 } 
 
@@ -1827,6 +1844,7 @@ int World::run() {
           st1 = MPI::Wtime();
 #endif
         
+#ifdef FFEA_PARALLEL_FUTURE
         /*
         #pragma omp master // Then a single thread does the catching and swapping
         { 
@@ -1836,6 +1854,7 @@ int World::run() {
         } 
         #pragma omp barrier // the barrier holds people off, before catching the thread
         */ 
+#endif 
 
         if (params.calc_vdw == 1) {
              if (params.force_pbc == 0) vdw_solver->solve();
@@ -3947,6 +3966,7 @@ void World::do_nothing() {
   // that means nothing.
 }
 
+#ifdef FFEA_PARALLEL_FUTURE
 int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size) {
      return lookup.prebuild_nearest_neighbour_lookup(cell_size); 
 }
@@ -4000,6 +4020,7 @@ int World::catch_thread_updatingLL(int step, scalar wtime, int where) {
 
           return FFEA_OK; 
 }
+#endif 
 
 // Well done for reading this far! Hope this makes you smile.
 
