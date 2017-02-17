@@ -53,6 +53,8 @@ public:
 
     scalar get_field_energy(int i, int j);
 
+    void reset_fieldenergy(); 
+
 protected:
     int total_num_surface_faces;
     NearestNeighbourLinkedListCube *surface_face_lookup;

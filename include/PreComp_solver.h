@@ -65,6 +65,7 @@ public:
   ~PreComp_solver();
   int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
   int solve();
+  void reset_fieldenergy(); 
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
   scalar get_field_energy(int index0, int index1);

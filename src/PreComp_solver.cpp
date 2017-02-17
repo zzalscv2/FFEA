@@ -70,6 +70,16 @@ int PreComp_solver::msg(string whatever){
 } 
 
 
+/** Zero measurement stuff, AKA fieldenergy */
+void PreComp_solver::reset_fieldenergy() {
+    for(int i = 0; i < num_blobs; ++i) {
+      for(int j = 0; j < num_blobs; ++j) {
+        fieldenergy[i][j] = 0.0;
+      }
+    }
+}
+
+
 /** 
  * @brief Read input precomputed tables
  * @param[in] vector<string> types: types of beads present.
@@ -378,12 +388,8 @@ int PreComp_solver::solve() {
     tetra_element_linear *e_i, *e_j;
     // matrix3 Ji, Jj; // these are the jacobians for the elements i and j
 
-    // Zero some measurement_ stuff
-    for(int i = 0; i < num_blobs; ++i) {
-      for(int j = 0; j < num_blobs; ++j) {
-        fieldenergy[i][j] = 0.0;
-      }
-    }
+    // 0 - clear fieldenery:
+    reset_fieldenergy(); 
 
     // 1 - Compute the position of the beads:
     compute_bead_positions();
