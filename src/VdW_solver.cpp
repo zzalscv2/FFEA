@@ -80,15 +80,14 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     return FFEA_OK;
 }
 
-/**  Zero measurement stuff, AKA fieldenergy */ 
-void VdW_solver::reset_fieldenergy() { 
+/**  Zero measurement stuff, AKA fieldenergy */
+void VdW_solver::reset_fieldenergy() {
     for(int i = 0; i < num_blobs; ++i) {
       for(int j = 0; j < num_blobs; ++j) {
         fieldenergy[i][j] = 0.0;
       }
     }
-} 
-
+}
 
 int VdW_solver::solve() {
     // double st, time1, time2, time3;
@@ -129,10 +128,11 @@ int VdW_solver::solve() {
     total_num_surface_faces = surface_face_lookup->get_pool_size();
     //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
+    reset_fieldenergy(); 
+
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-// #pragma omp parallel for private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
-#pragma omp for schedule(dynamic, 1) // OMP-GHL
+#pragma omp parallel for private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
