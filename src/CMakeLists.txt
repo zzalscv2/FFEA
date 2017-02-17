@@ -41,7 +41,7 @@ add_executable(ffea ffea.cpp
     FFEA_user_info.cpp RngStream.cpp )
     
 
-target_link_libraries(ffea ${LIBS_TO_LINK})
+target_link_libraries(ffea ${LIBS_TO_LINK} ${CMAKE_THREAD_LIBS_INIT})
 
 install (TARGETS ffea RUNTIME DESTINATION bin)
 

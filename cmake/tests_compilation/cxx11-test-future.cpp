@@ -21,26 +21,23 @@
 //  the research papers on the package.
 //
 
-#ifndef NEARESTNEIGHBOURLINKEDLISTCUBE_H_INCLUDED
-#define NEARESTNEIGHBOURLINKEDLISTCUBE_H_INCLUDED
+#include <future>
 
-#include <math.h>
-#include "mat_vec_types.h"
-#include "mesh_node.h"
-#include "tetra_element_linear.h"
-#include "LinkedListCube.h"
-#include "Face.h"
+unsigned int test(int i)
+{
 
-class NearestNeighbourLinkedListCube : public LinkedListCube<Face> {
-public:
-    /** Build the nearest neighbour look up cube given the spatial cell size */
-    int build_nearest_neighbour_lookup(scalar h);
+  return i;
 
-    /** Build the nearest neighbour look up cube given the spatial cell size */
-    int prebuild_nearest_neighbour_lookup_and_swap(scalar h);
+}
 
-    /** Build the nearest neighbour look up cube given the spatial cell size */
-    int prebuild_nearest_neighbour_lookup(scalar h);
-};
+int main() {
 
-#endif
+  std::future<unsigned int> f1;
+  f1 = std::async(std::launch::async,test,3);
+  f1.wait();
+  unsigned int j = f1.get();
+  return (j == 3) ? 0: 1;
+
+}
+  
+

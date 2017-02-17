@@ -57,8 +57,15 @@ public:
     /** Builds a LinkedListCube of dimensions N_x x N_y x N_z, and an array of LinkedListNodes of size max_num_nodes_in_pool */
     int alloc(int N_x, int N_y, int N_z, int max_num_nodes_in_pool);
 
+    /** Builds 2 layers of LinkedListCubes of dimensions N_x x N_y x N_z, a
+      *   and an dual array of LinkedListNodes of size max_num_nodes_in_pool */ 
+    int alloc_dual(int N_x, int N_y, int N_z, int max_num_nodes_in_pool);
+
     /** Adds the specified T object to the pool (at the index given by add_index) */
     int add_to_pool(T *t);
+
+    /** Adds the specified T object to the pool (at the index given by add_index) */
+    int add_to_pool_dual(T *t);
 
     /** Returns pointer to ith object in the pool */
     LinkedListNode<T> * get_from_pool(int i);
@@ -68,6 +75,7 @@ public:
      * and all 'next' pointers to NULL in the pool of LinkedListNodes.
      */
     void clear();
+    void clear_layer(int l);
 
     /**
      * Adds the specified pool node to the stack at index (x, y, z) on the grid.
@@ -75,6 +83,7 @@ public:
      * after node i, with node i becoming the new top of stack node on that cell;
      */
     int add_node_to_stack(int i, int x, int y, int z);
+    int add_node_to_stack_shadow(int i, int x, int y, int z);
 
     /** Returns whatever node is at the top of the (linked list) stack in grid cell (x, y, z) */
     LinkedListNode<T> * get_top_of_stack(int x, int y, int z);
@@ -83,6 +92,8 @@ public:
     int get_pool_size();
 
     void get_dim(int *Nx, int *Ny, int *Nz);
+
+    int safely_swap_layers(); 
 
 protected:
 
@@ -95,20 +106,30 @@ protected:
     /** The number of nodes in use */
     int num_nodes_in_pool;
 
-    /** The number of nodes in the lookup stack */
-    int num_nodes_in_stack;
-
     /** A cubic grid of pointers */
+    LinkedListNode<T> **root1;
+    LinkedListNode<T> **root2;
     LinkedListNode<T> **root;
+    LinkedListNode<T> **root_shadow;
 
     /** A "pool" of LinkedListNodes available for stacking on the various stacks in the cube */
+    LinkedListNode<T> *pool1;
+    LinkedListNode<T> *pool2;
     LinkedListNode<T> *pool;
+    LinkedListNode<T> *pool_shadow;
+
+    int active_layer = 1;
+    int shadow_layer = 2;
+
+    void swap_layers(); 
+    bool can_swap = true;
 
 private:
     /** The current index in the pool array at which nodes are to be added */
     int add_index;
 
     void pbc(int *x, int *y, int *z);
+
 };
 
 #include "../src/LinkedListCube.tpp"

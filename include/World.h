@@ -35,10 +35,16 @@
 #include <vector>
 #include <omp.h>
 #include <ctime>
+
 #include <boost/algorithm/string.hpp>
 #include <typeinfo>
 #include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
+
+#ifdef FFEA_PARALLEL_FUTURE
+#include <future>
+#include <chrono>
+#endif
 
 // #include "MersenneTwister.h"
 #include "RngStream.h"
@@ -294,6 +300,18 @@ private:
     void write_output_header(FILE *fout, string fname);
 
     void print_trajectory_and_measurement_files(int step, scalar wtime);
+    void write_pre_print_to_trajfile(int step);
+    void do_nothing(); 
+
+    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size); 
+#ifdef FFEA_PARALLEL_FUTURE
+    int catch_thread_updatingLL(int step, scalar wtime, int where); 
+    std::future<void> thread_writingTraj; 
+    std::future<int> thread_updatingLL; 
+    std::future<int> thread_applyingSprings; 
+    bool updatingLL(); 
+    bool updatingLL_ready_to_swap(); 
+#endif
 
     void make_measurements();
 
@@ -311,6 +329,8 @@ private:
     void calc_blob_corr_matrix(int num_blobs,scalar *blob_corr);
 
     scalar *blob_corr;
+
+    int die_with_dignity(int step, scalar wtime); 
 };
 
 #endif
