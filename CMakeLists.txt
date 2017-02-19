@@ -142,7 +142,7 @@ if (USE_BOOST_INTERNAL)
 
    message(STATUS "Configuring internal Boost")
    if (UNIX) 
-      include(cmake/GetBoostToolset.cmake)
+      include(cmake/GetBoost.cmake)
    else (UNIX) 
       message(FATAL_ERROR "Some day my prince will come.")
    endif(UNIX)
@@ -206,7 +206,6 @@ else (USE_EIGEN3_INTERNAL)
   
 
 endif (USE_EIGEN3_INTERNAL) 
-message(STATUS "including ... ${EIGEN3_INCLUDE_DIR}")
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 
