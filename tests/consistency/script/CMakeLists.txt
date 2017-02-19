@@ -29,6 +29,9 @@ add_executable(test_script_loader test_script_loader.cpp
                ${PROJECT_SOURCE_DIR}/src/FFEA_input_reader.cpp
                ${PROJECT_SOURCE_DIR}/src/SimulationParams.cpp
                ${PROJECT_SOURCE_DIR}/src/FFEA_return_codes.cpp)
+if (USE_BOOST_INTERNAL)
+   add_dependencies(test_script_loader ourboost)
+endif(USE_BOOST_INTERNAL)
 
 file (COPY 2r5u_8ang.ffea DESTINATION ${TESTSCRIPT})
 

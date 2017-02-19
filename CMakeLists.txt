@@ -44,6 +44,8 @@ set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
 set(USE_PRECISION 2 CACHE STRING "1: Floats + Doubles; 2: Doubles; 3: Doubles + Long Doubles")
 mark_as_advanced(USE_PRECISION)
+option(USE_BOOST_INTERNAL "Use your own boost (ON) or the sources we ship (OFF)" ON)
+mark_as_advanced(USE_BOOST_INTERNAL)
 
 
 set (LIBS_TO_LINK)
@@ -118,33 +120,14 @@ else ()
   endif()
 endif()
 
-# 2.x #### PTHREADS ####
-find_package(Threads)
-# there is a bug on GCC 4.8.1, and 4.8.2, at least with the 
-#   version packaged by Ubuntu and Mint: 
-# there was a bug on GCC 4.8.1:
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT APPLE)
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.8.0")
-    set(CMAKE_THREAD_LIBS_INIT "-Wl,--no-as-needed" ${CMAKE_THREAD_LIBS_INIT})
-  endif()
-endif()
-
-
 # 3 #### USE C++11 ############ 
 # g++: -std=c++0x / -std=c++11
 # icpc: -std=c++0x / -std=c++11 on LINUX, OS X and WINDOWS 
 # pg++: 13.2 crashes with flag -std=c++0x, besides it does not support
 #         the latest standard ("cannot open source file "future"). 
 # MSVC: does not need any flag.
-set(HAS_CXX11_FUTURE FALSE "Support for CXX11 Future")
 include(cmake/CheckForCXX11Features.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_COMPILER_FLAGS}")
-if (HAS_CXX11_FUTURE)
-  message(STATUS "Support for Future --- detected")
-  add_definitions(-DFFEA_PARALLEL_FUTURE)
-else()
-  message(STATUS "Support for Future --- not detected")
-endif()
 
 
 # 4 ### MATH ######
@@ -154,19 +137,34 @@ endif(UNIX)
 
 # 5 ### BOOST #####
 # set (Boost_NO_SYSTEM_PATHS ON)
-set (Boost_NO_BOOST_CMAKE ON)
-set (Boost_USE_STATIC_LIBS ON)
-# Check version:
-find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
-if (Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-  set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${Boost_LIBRARY_DIRS}")
-  set(LIBS_TO_LINK ${LIBS_TO_LINK} ${Boost_LIBRARIES})
-else (Boost_FOUND)
-  message(FATAL_ERROR "You could provide valid paths through either:
-   -- BOOST_ROOT or
-   -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
-endif (Boost_FOUND)
+if (USE_BOOST_INTERNAL) 
+
+   message(STATUS "Configuring internal boost")
+   if (UNIX) 
+      include(cmake/GetBoostToolset.cmake)
+   else (UNIX) 
+      message(FATAL_ERROR "Some day my prince will come.")
+   endif(UNIX)
+   message(STATUS "BOOST_INSTALL_DIR: " ${BOOST_INSTALL_DIR}) 
+
+else(USE_BOOST_INTERNAL) 
+   set (Boost_NO_BOOST_CMAKE ON)
+   set (Boost_USE_STATIC_LIBS ON)
+   # Check version:
+   find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
+   if (NOT Boost_FOUND)
+     message(FATAL_ERROR "You could provide valid paths through either:
+      -- BOOST_ROOT or
+      -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR or
+try reconfiguring with -DUSE_BOOST_INTERNAL")
+   endif (NOT Boost_FOUND)
+
+endif(USE_BOOST_INTERNAL) 
+
+# Anyway:
+include_directories(${Boost_INCLUDE_DIRS})
+set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${Boost_LIBRARY_DIRS}")
+set(LIBS_TO_LINK ${LIBS_TO_LINK} ${Boost_LIBRARIES})
 
 
 
@@ -305,7 +303,6 @@ if (${NUMPY_FOUND} STREQUAL "FAIL")
   set(IGNORE_NUMPY_TESTS 
        python_load_trajectory
        sphere_diffusion_nomass sphere_diffusion_nomass_check
-       sphere_diffusion_mass sphere_diffusion_mass_check
        sphere_mass sphere_mass_check 
        sphere_nomass sphere_nomass_check
        cyl_youngs_mod cyl_youngs_mod_check
