@@ -83,7 +83,7 @@ Blob::Blob() {
     pbc_count[1]= 0;
     pbc_count[2]= 0;
 
-    toBePrinted_nodes = NULL; 
+    toBePrinted_nodes = NULL;
 }
 
 Blob::~Blob() {
@@ -531,12 +531,12 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     }
 
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
-      toBePrinted_nodes = new scalar[10*num_nodes]; 
-    } else { 
+      toBePrinted_nodes = new scalar[10*num_nodes];
+    } else {
       if (params->calc_es == 0) {
-        toBePrinted_nodes = new scalar[3*num_nodes]; 
+        toBePrinted_nodes = new scalar[3*num_nodes];
       } else {
-        toBePrinted_nodes = new scalar[4*num_nodes]; 
+        toBePrinted_nodes = new scalar[4*num_nodes];
       }
     }
 
@@ -1121,24 +1121,24 @@ void Blob::write_pre_print_to_file(FILE *trajectory_out) {
                 toBePrinted_nodes[10*i], toBePrinted_nodes[10*i+1], toBePrinted_nodes[10*i+2],
                 toBePrinted_nodes[10*i+3], toBePrinted_nodes[10*i+4], toBePrinted_nodes[10*i+5],
                 toBePrinted_nodes[10*i+6], toBePrinted_nodes[10*i+7], toBePrinted_nodes[10*i+8],
-                toBePrinted_nodes[10*i+9]); 
+                toBePrinted_nodes[10*i+9]);
         }
     } else {
         if (params->calc_es == 0) {
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                     toBePrinted_nodes[3*i], toBePrinted_nodes[3*i+1], toBePrinted_nodes[3*i+2],
-                    0., 0., 0., 0., 0., 0., 0.); 
+                    0., 0., 0., 0., 0., 0., 0.);
             }
-        } else { 
+        } else {
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                     toBePrinted_nodes[3*i], toBePrinted_nodes[3*i+1], toBePrinted_nodes[3*i+2],
                     0., 0., 0.,
-                    toBePrinted_nodes[3*i+3], 0., 0., 0.); 
-            } 
+                    toBePrinted_nodes[3*i+3], 0., 0., 0.);
+            }
         }
-    } 
+    }
 }
 
 void Blob::pre_print() {
@@ -1147,7 +1147,7 @@ void Blob::pre_print() {
         return;
     }
 
-    toBePrinted_conf[0] = previous_conformation_index; 
+    toBePrinted_conf[0] = previous_conformation_index;
     toBePrinted_conf[1] = conformation_index;
     toBePrinted_state[0] = previous_state_index;
     toBePrinted_state[1] = state_index;
@@ -1178,7 +1178,7 @@ void Blob::pre_print() {
                 toBePrinted_nodes[3*i +1] = node[i].pos.y*mesoDimensions::length;
                 toBePrinted_nodes[3*i +2] = node[i].pos.z*mesoDimensions::length;
             }
-        } else { 
+        } else {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none)
 #endif
@@ -1187,9 +1187,9 @@ void Blob::pre_print() {
                 toBePrinted_nodes[4*i +1] = node[i].pos.y*mesoDimensions::length;
                 toBePrinted_nodes[4*i +2] = node[i].pos.z*mesoDimensions::length;
                 toBePrinted_nodes[4*i +3] = node[i].phi;
-            } 
-        } 
-    } 
+            }
+        }
+    }
 }
 
 int Blob::read_nodes_from_file(FILE *trajectory_out) {
@@ -1461,7 +1461,7 @@ void Blob::write_measurements_to_file(FILE *fout) {
 		fprintf(fout, "%-14.6e", kineticenergy * mesoDimensions::Energy);
 	}
 	fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
-	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14.6e%-14d%-14d%-14d", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length, rmsd * mesoDimensions::length,pbc_count[0],pbc_count[1],pbc_count[2]);
+	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length, rmsd * mesoDimensions::length);
 	fflush(fout);
 }
 
