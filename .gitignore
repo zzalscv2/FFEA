@@ -6,7 +6,6 @@
 *.out
 *.pdf
 *.x
-core.*
 /bin/
 *.exe
 ffeatools_build
