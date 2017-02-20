@@ -9,6 +9,5 @@
 core.*
 /bin/
 *.exe
-build
 ffeatools_build
 dist
