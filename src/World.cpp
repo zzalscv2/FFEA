@@ -536,7 +536,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 						fprintf(detailed_meas_out, "%-14s", "KineticEnergy");
 					}
 					fprintf(detailed_meas_out, "%-14s", "StrainEnergy");
-					fprintf(detailed_meas_out, "%-14s%-14s%-14s%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD","PBC_count.x","PBC_count.y","PBC_count.z");
+					fprintf(detailed_meas_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
 				}
 
 				if(params.calc_vdw == 1 || params.calc_preComp == 1 || params.calc_springs == 1) {
@@ -858,7 +858,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			    for (k = 0; k < blob_array[i][j].get_num_faces(); k++) {
 				Face *b_face = blob_array[i][j].get_face(k);
 				if (b_face != NULL) {
-#ifdef FFEA_PARALLEL_FUTURE 
+#ifdef FFEA_PARALLEL_FUTURE
                 lookup_error = lookup.add_to_pool_dual(b_face);
 #else
                 lookup_error = lookup.add_to_pool(b_face);
@@ -876,7 +876,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		}
 
 #ifdef FFEA_PARALLEL_FUTURE
-      // And build the lookup table for the first time: 
+      // And build the lookup table for the first time:
       thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa));
 #endif
 
@@ -1695,7 +1695,7 @@ int World::run() {
 #endif
     for (long long step = step_initial; step < params.num_steps; step++) {
 
-        // check if we need to calculate electrostatics, 
+        // check if we need to calculate electrostatics,
         //                     update the neighbour list,
         //                     and calculate normals and centroids for the faces.
         bool es_update = false;
@@ -1726,7 +1726,7 @@ int World::run() {
                 if (params.sticky_wall_xz == 1) {
                     active_blob_array[i]->zero_vdw_xz_measurement_data();
                 }
-            } 
+            }
 
             // If blob centre of mass moves outside simulation box, apply PBC to it
             vector3 com;
@@ -1787,7 +1787,7 @@ int World::run() {
             // If Blob is near a hard wall, prevent it from moving further into it
             active_blob_array[i]->enforce_box_boundaries(&box_dim);
 
-            // Set node forces to zero  
+            // Set node forces to zero
             active_blob_array[i]->set_forces_to_zero();
 
             if (es_update) active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
@@ -1798,25 +1798,25 @@ int World::run() {
         if (es_update) {
                 // Attempt to place all faces in the nearest neighbour lookup table
 #ifdef FFEA_PARALLEL_FUTURE
-                // Thread out to update the LinkedLists, 
+                // Thread out to update the LinkedLists,
                 //   after calculating the centroids of the faces.
                 // Catching up the thread should be done through catch_thread_updatingLL,
                 //   which will to lookup.safely_swap_layers().
                 if (updatingLL() == false) {
                     thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.es_h*(1.0 / params.kappa));
-                } else 
+                } else
 #else
-                if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR) 
-#endif 
+                if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR)
+#endif
                 {
-                    return die_with_dignity(step, wtime); 
+                    return die_with_dignity(step, wtime);
                 }
 
                 if (params.calc_es == 1) {
                     do_es();
                 }
 
-        } 
+        }
         // timing solve() function
 #ifdef USE_MPI
           st1 = MPI::Wtime();
@@ -1827,7 +1827,7 @@ int World::run() {
         thread_applyingSprings = std::async(std::launch::async,&World::apply_springs,this);
 #else
         apply_springs();
-#endif 
+#endif
 
         // if PreComp is required:
         if (params.calc_preComp == 1) {
@@ -1838,9 +1838,9 @@ int World::run() {
 #ifdef FFEA_PARALLEL_FUTURE
         // #pragma omp master // Then a single thread does the catching and swapping
         if (updatingLL_ready_to_swap() == true) {
-            if ( catch_thread_updatingLL(step, wtime, 3) ) return die_with_dignity(step,wtime); 
-            // catch_thread_updatingLL(step, wtime, 3); 
-        } 
+            if ( catch_thread_updatingLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
+            // catch_thread_updatingLL(step, wtime, 3);
+        }
         // #pragma omp barrier // the barrier holds people off, before catching the thread
 #endif
 
@@ -1861,7 +1861,7 @@ int World::run() {
 
 #ifdef FFEA_PARALLEL_FUTURE
         thread_applyingSprings.get();
-#endif 
+#endif
 
 
         // Sort internal forces out
@@ -1879,7 +1879,7 @@ int World::run() {
            if (active_blob_array[i]->update() == FFEA_ERROR) fatal_errors++;
         }
 
-        if (fatal_errors > 0) return die_with_dignity(step, wtime); 
+        if (fatal_errors > 0) return die_with_dignity(step, wtime);
 
 	// Output traj data to files
         if ((step + 1) % params.check == 0) {
@@ -1921,7 +1921,7 @@ int World::run() {
 
 #ifdef FFEA_PARALLEL_FUTURE
     // Wait until the last step has correctly been written:
-    thread_writingTraj.get(); 
+    thread_writingTraj.get();
 #endif
 
     // Total mpi timing, compare with openmp timing
@@ -3603,10 +3603,10 @@ void World::write_pre_print_to_trajfile(int step) {
 }
 
 
-/** Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used) */ 
+/** Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used) */
 void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
-    // ONSCREEN progress: 
+    // ONSCREEN progress:
     if (step % (params.check * 10) != 0) {
         printf("\rstep = %d", step);
 	fflush(stdout);
@@ -3617,16 +3617,16 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // TRAJECTORY file: can be printed serially, or in parallel:
 #ifdef FFEA_PARALLEL_FUTURE
     // TRAJECTORY PARALLEL:
-    thread_writingTraj.get(); 
+    thread_writingTraj.get();
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step) schedule(guided)
-#endif 
+#endif
     for (int i = 0; i < params.num_blobs; i++) {
         // store the node data for this blob
         active_blob_array[i]->pre_print();
     }
-    thread_writingTraj = std::async(std::launch::async,&World::write_pre_print_to_trajfile,this,step); 
-    // write_pre_print_to_trajfile(step); // serial version 
+    thread_writingTraj = std::async(std::launch::async,&World::write_pre_print_to_trajfile,this,step);
+    // write_pre_print_to_trajfile(step); // serial version
 #else
     // TRAJECTORY SERIAL:
     for (int i = 0; i < params.num_blobs; i++) {
@@ -3634,7 +3634,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         // Write the node data for this blob
         fprintf(trajectory_out, "Blob %d, Conformation %d, step %d\n", i, active_blob_array[i]->get_conformation_index(), step);
         active_blob_array[i]->write_nodes_to_file(trajectory_out);
-    } 
+    }
     // Mark completed end of step with an asterisk (so that the restart code will know if this is a fully written step or if it was cut off half way through due to interrupt)
     fprintf(trajectory_out, "*\n");
 
@@ -3655,7 +3655,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     fflush(trajectory_out);
 #endif
     // TRAJECTORY END
-    
+
 
     // CHECKPOINT - Write the state of the RNGs:
     // REWIND!
@@ -3941,11 +3941,11 @@ void World::do_nothing() {
 int World::die_with_dignity(int step, scalar wtime){
 
     FFEA_error_text();
-    printf("A problem occurred when...\n"); 
+    printf("A problem occurred when...\n");
     printf("Simulation ran for %2f seconds (wall clock time) before error ocurred\n", (omp_get_wtime() - wtime));
     printf("Detected fatal errors in this system update. Exiting now...\n");
 
-    // attempt to print out the final (bad) time step (if step != step_initial) 
+    // attempt to print out the final (bad) time step (if step != step_initial)
     if (step != step_initial) {
         printf("Dumping final step:\n");
         print_trajectory_and_measurement_files(step, wtime);
@@ -3988,10 +3988,10 @@ int World::catch_thread_updatingLL(int step, scalar wtime, int where) {
           }
 
           if (thread_updatingLL.get() == FFEA_ERROR) {
-              return die_with_dignity(step, wtime); 
+              return die_with_dignity(step, wtime);
           }
           if (lookup.safely_swap_layers() == FFEA_ERROR) {
-              return die_with_dignity(step, wtime); 
+              return die_with_dignity(step, wtime);
           }
 
           return FFEA_OK;
