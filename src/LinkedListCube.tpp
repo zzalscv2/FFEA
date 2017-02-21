@@ -34,6 +34,9 @@ LinkedListCube<T>::LinkedListCube() {
     add_index = 0;
     root = NULL;
     pool = NULL;
+    can_swap = true; 
+    active_layer = 1;
+    shadow_layer = 2;
 }
 
 /*  */
