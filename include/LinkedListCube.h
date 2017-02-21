@@ -118,11 +118,11 @@ protected:
     LinkedListNode<T> *pool;
     LinkedListNode<T> *pool_shadow;
 
-    int active_layer = 1;
-    int shadow_layer = 2;
+    int active_layer;
+    int shadow_layer;
 
     void swap_layers(); 
-    bool can_swap = true;
+    bool can_swap;
 
 private:
     /** The current index in the pool array at which nodes are to be added */
