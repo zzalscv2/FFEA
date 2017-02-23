@@ -32,7 +32,11 @@ function(get_boost_toolset BOOST_TOOLSET)
    endif()
 
    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-      set(BOOST_TOOLSET "intel" PARENT_SCOPE)
+      if (APPLE)
+        set(BOOST_TOOLSET "intel-darwin" PARENT_SCOPE)
+      else(APPLE)
+        set(BOOST_TOOLSET "intel-linux" PARENT_SCOPE)
+      endif(APPLE)
    endif()
 
    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
