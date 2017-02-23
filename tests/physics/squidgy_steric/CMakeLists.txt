@@ -27,7 +27,7 @@ set_tests_properties(squidgy_steric PROPERTIES ENVIRONMENT OMP_NUM_THREADS=1)
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${EIGEN3_INCLUDE_DIR}")
-add_executable(test_squidgy checkSquidgySpheres.cpp kabsch.cpp
+add_executable(test_squidgy checkSquidgySpheres.cpp
                ${PROJECT_SOURCE_DIR}/src/mat_vec_fns_II.cpp
                ${PROJECT_SOURCE_DIR}/src/BlobLite.cpp
                ${PROJECT_SOURCE_DIR}/src/VolumeIntersection.cpp
