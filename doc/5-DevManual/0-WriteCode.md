@@ -8,4 +8,5 @@ Content:
 
 - @subpage newKeywords
 - @subpage document
+- @subpage bundleBoost
 
