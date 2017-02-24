@@ -88,14 +88,14 @@ ExternalProject_Add(ourboost
                     BUILD_ALWAYS 0
                     DEPENDERS ffea test_script_loader
                     CONFIGURE_COMMAND ""
-                    BUILD_COMMAND ${BOOST_INSTALL_DIR}/bin/b2 link=static toolset=${BOOST_TOOLSET} --build-dir=${BOOST_BUILD_DIR} install --prefix=${BOOST_INSTALL_DIR} --user-config=${BOOST_BUILD_DIR}/build_boost/user-config.jam
+                    BUILD_COMMAND ${BOOST_INSTALL_DIR}/bin/b2 -j 3 --build-dir=${BOOST_BUILD_DIR} --user-config=${BOOST_BUILD_DIR}/build_boost/user-config.jam link=static toolset=${BOOST_TOOLSET} install --prefix=${BOOST_INSTALL_DIR}
                     INSTALL_COMMAND ""
                    )
 
 ExternalProject_Add_Step(ourboost unix_configure DEPENDERS configure
                          WORKING_DIRECTORY ${BOOST_SOURCES}/tools/build
                          COMMAND ./bootstrap.sh --with-toolset=${BOOST_TOOLSET}
-                         COMMAND ./b2 -j 4 toolset=${BOOST_TOOLSET} --build-dir=${BOOST_BUILD_DIR} install --prefix=${BOOST_INSTALL_DIR} --user-config=${BOOST_BUILD_DIR}/build_boost/user-config.jam)
+                         COMMAND ./b2 -j 4 --user-config=${BOOST_BUILD_DIR}/build_boost/user-config.jam install --prefix=${BOOST_INSTALL_DIR})
 
 set(Boost_LIBRARY_DIRS ${BOOST_INSTALL_DIR}/lib)
 set(Boost_INCLUDE_DIRS ${BOOST_INSTALL_DIR}/include)
