@@ -871,7 +871,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				    num_faces_added++;
 				}
 			    }
-			    printf("%d 'VdW active' faces, from blob %d, conformation %d, added to lookup grid.\n", num_faces_added, i, j);
+             if (userInfo::verblevel > 1) printf("%d 'VdW active' faces, from blob %d, conformation %d, added to lookup grid.\n", num_faces_added, i, j);
 		    }
 		}
 
