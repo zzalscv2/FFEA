@@ -28,7 +28,39 @@
 
 #include "PreComp_solver.h"
 
-using namespace std;
+// using namespace std;
+using std::cout;
+using std::endl; 
+
+const int PreComp_solver::adjacent_cells[27][3] = {
+        {-1, -1, -1},
+        {-1, -1, 0},
+        {-1, -1, +1},
+        {-1, 0, -1},
+        {-1, 0, 0},
+        {-1, 0, +1},
+        {-1, +1, -1},
+        {-1, +1, 0},
+        {-1, +1, +1},
+        {0, -1, -1},
+        {0, -1, 0},
+        {0, -1, +1},
+        {0, 0, -1},
+        {0, 0, 0},
+        {0, 0, +1},
+        {0, +1, -1},
+        {0, +1, 0},
+        {0, +1, +1},
+        {+1, -1, -1},
+        {+1, -1, 0},
+        {+1, -1, +1},
+        {+1, 0, -1},
+        {+1, 0, 0},
+        {+1, 0, +1},
+        {+1, +1, -1},
+        {+1, +1, 0},
+        {+1, +1, +1}
+};
 
 PreComp_solver::PreComp_solver() { 
   nint = 0;
@@ -102,7 +134,8 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
     * The functions get_U and get_F will then be ready. 
     * Thirdly and fourthly, allocate and fill the 
     * elements and relative bead position arrays.
-    * And finally, delete beads stuff from the blobs.
+    * And finally, delete beads stuff from the blobs,
+    * and prepare a linkedlist.
     */  
   
    // do two simple checks: 
@@ -373,11 +406,172 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      m += n;
    } 
    num_blobs = params->num_blobs;
+
+
+   /*------------ FIFTHLY ---:)---*/
+   // Set up the linkedlist:
+   // 5.1 - Allocate the linkedlist:
+   printf("Allocating memory for the preComp linked list grid...\n");
+   // the total size of the box is: 
+   scalar vdwVoxelSize = params->es_h / params->kappa;
+   scalar dimBox[3];
+   dimBox[0] = params->es_N_x * vdwVoxelSize;
+   dimBox[1] = params->es_N_y * vdwVoxelSize;
+   dimBox[2] = params->es_N_z * vdwVoxelSize;
+   // and our cell size is x_range[1], so we'll adjust the size of the voxel
+   //   to fit an integer number of cells in each direction:
+   if (x_range[1] > vdwVoxelSize) {
+     pcVoxelSize = ceil(x_range[1] / vdwVoxelSize) * vdwVoxelSize; 
+   } else { 
+     // int tmp = floor(vdwVoxelSize / x_range[1]);
+     pcVoxelSize = vdwVoxelSize / floor(vdwVoxelSize/x_range[1]) ;
+   } 
+   for (int i=0; i<3; i++) {
+     pcVoxelsInBox[i] = dimBox[i] / pcVoxelSize; 
+   }
+   printf("... with %d x %d x %d voxels of size %f, while vdwVoxelSize was %f and pc_range %f\n",
+                   pcVoxelsInBox[0], pcVoxelsInBox[1], pcVoxelsInBox[2], pcVoxelSize, vdwVoxelSize, x_range[1]); 
+   int lookup_error = pcLookUp.alloc(pcVoxelsInBox[0], pcVoxelsInBox[1], pcVoxelsInBox[2], n_beads);
+
+   // 5.2 - store indices in there:
+   b_ind = new int[n_beads];
+   for (int i=0; i<n_beads; i++) {
+     b_ind[i] = i; 
+     pcLookUp.add_to_pool(&b_ind[i]);
+    
+   } 
+
+
+   // 5.3 - Now try to initialise 
+   // build_pc_nearest_neighbour_lookup(); 
+   
+
+
+   
+
+
+
+
    cout << "done!" << endl;
 
    return FFEA_OK; 
 }
 
+int PreComp_solver::solve_using_neighbours(){
+
+    scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
+    vector3 dx, dtemp;
+    int type_i; 
+    scalar phi_i[4], phi_j[4];
+    tetra_element_linear *e_i, *e_j;
+
+    // 0 - clear fieldenery:
+    reset_fieldenergy(); 
+
+    // 1 - Compute the position of the beads:
+    compute_bead_positions();
+
+    // from time to time:
+    cout << " --- new time step --- "  << endl;
+    build_pc_nearest_neighbour_lookup();
+
+
+    LinkedListNode<int> *b_i = NULL; 
+    LinkedListNode<int> *b_j = NULL; 
+    int b_index_i, b_index_j; 
+  
+    // Will be removed
+    if (pcLookUp.get_pool_size() != n_beads) {
+      FFEA_ERROR_MESSG("1 - something went wrong"); 
+    }
+
+    // 
+    // 2 - Compute all the i-j forces:
+#ifdef USE_OPENMP
+// #pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j)
+#endif
+    for (int i=0; i<n_beads; i++){
+      b_i = pcLookUp.get_from_pool(i); 
+      b_index_i = *(b_i->obj); 
+      if (b_index_i != b_i->index) {
+        cout << "indices different!!" << endl; 
+        cout << " alternative approach, useless!!" << endl;
+      }
+
+      type_i = b_types[b_index_i]; 
+      phi_i[1] = b_rel_pos[3*b_index_i  ];
+      phi_i[2] = b_rel_pos[3*b_index_i+1];
+      phi_i[3] = b_rel_pos[3*b_index_i+2];
+      phi_i[0] = 1 - phi_i[1] - phi_i[2] - phi_i[3];
+      e_i = b_elems[b_index_i];  
+
+      for (int c=0; c<27; c++) {
+        b_j = pcLookUp.get_top_of_stack(b_i->x + adjacent_cells[c][0], 
+                                        b_i->y + adjacent_cells[c][1],
+                                        b_i->z + adjacent_cells[c][2]);
+  
+        while (b_j != NULL) {
+           b_index_j = *(b_j->obj); 
+           if (b_index_j <= b_index_i) {
+             b_j = b_j->next; 
+             continue; 
+           } 
+
+           if (!isPairActive[type_i*ntypes+b_types[b_index_j]]) {
+             b_j = b_j->next; 
+             continue; 
+           }
+           dx.x = (b_pos[3*b_index_j  ] - b_pos[3*b_index_i  ]);
+           dx.y = (b_pos[3*b_index_j+1] - b_pos[3*b_index_i+1]);
+           dx.z = (b_pos[3*b_index_j+2] - b_pos[3*b_index_i+2]);
+           d = dx.x*dx.x + dx.y*dx.y + dx.z*dx.z; 
+           if (d > x_range2[1]) {
+             b_j = b_j->next; 
+             continue; 
+           }
+           else if (d < x_range2[0]) {
+             b_j = b_j->next; 
+             continue; 
+           }
+           d = sqrt(d);
+           dx.x = dx.x / d;
+           dx.y = dx.y / d;
+           dx.z = dx.z / d;
+ 
+           f_ij = get_F(d, type_i, b_types[b_index_j]); 
+
+           // Add energies to record 
+           e_j = b_elems[b_index_j];
+           #pragma omp atomic
+           fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[b_index_j]);
+
+           vec3_scale(&dx, f_ij);
+           dtemp = dx; 
+
+           phi_j[1] = b_rel_pos[3*b_index_j];
+           phi_j[2] = b_rel_pos[3*b_index_j+1];
+           phi_j[3]= b_rel_pos[3*b_index_j+2];
+           phi_j[0]= 1 - phi_j[1] - phi_j[2] - phi_j[3];
+           // and apply the force to all the nodes in the elements i and j:
+           for (int k=0; k<4; k++) {
+             // forces for e_i
+             vec3_scale(&dx, -phi_i[k]);
+             e_i->add_force_to_node(k, &dx);
+             dx = dtemp; 
+             // forces for e_j
+             vec3_scale(&dx, phi_j[k]);
+             e_j->add_force_to_node(k, &dx);
+             dx = dtemp;
+           } // close k, nodes for the elements.
+
+
+           b_j = b_j->next; 
+        } // close b_j, beads in neighbour voxel loop 
+      } // close c, 27 voxels loop 
+    }  // close i, n_beads loop
+
+    return FFEA_OK;
+}
 
 int PreComp_solver::solve() {
 
@@ -386,7 +580,6 @@ int PreComp_solver::solve() {
     int type_i; 
     scalar phi_i[4], phi_j[4];
     tetra_element_linear *e_i, *e_j;
-    // matrix3 Ji, Jj; // these are the jacobians for the elements i and j
 
     // 0 - clear fieldenery:
     reset_fieldenergy(); 
@@ -705,4 +898,27 @@ scalar PreComp_solver::get_field_energy(int index0, int index1) {
 	}
 }
 
+
+int PreComp_solver::build_pc_nearest_neighbour_lookup() {
+ 
+   pcLookUp.clear(); 
+   int x, y, z; 
+   for (int i=0; i<n_beads; i++) {
+     x = (int) floor(b_pos[3*i  ] / pcVoxelSize);
+     y = (int) floor(b_pos[3*i+1] / pcVoxelSize);
+     z = (int) floor(b_pos[3*i+2] / pcVoxelSize);
+
+     cout << "bead index: " << i << " in: " << b_pos[3*i  ] << ", " << b_pos[3*i+1] << ", " << b_pos[3*i+2]
+                            << " was stored in voxel: "  << x << ", " << y << ", " << z << endl; 
+     int add_node_to_stack_error = pcLookUp.add_node_to_stack(i, x, y, z); 
+     if (add_node_to_stack_error == FFEA_ERROR) {
+     // if (pcLookUp.add_node_to_stack(i, x, y, z) == FFEA_ERROR) {
+        FFEA_ERROR_MESSG("Error when trying to add bead %d to nearest neighbour stack at (%d, %d, %d)\n", i, x,y,z);
+     }
+ 
+   }
+
+   return FFEA_OK; 
+
+}
 /**@}*/
