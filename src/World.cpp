@@ -877,7 +877,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 #ifdef FFEA_PARALLEL_FUTURE
       // And build the lookup table for the first time:
-      thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa));
+      thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa));
 #endif
 
 #ifdef FFEA_PARALLEL_FUTURE
@@ -1717,8 +1717,8 @@ int World::run() {
                 es_count = 1;
                 es_update = true;
 #ifdef FFEA_PARALLEL_FUTURE
-                if (updatingLL() == true) {  // we will have to wait!
-                   if (catch_thread_updatingLL(step, wtime, 1)) return FFEA_ERROR;
+                if (updatingVdWLL() == true) {  // we will have to wait!
+                   if (catch_thread_updatingVdWLL(step, wtime, 1)) return FFEA_ERROR;
                 }
 #endif
             } else
@@ -1813,10 +1813,10 @@ int World::run() {
 #ifdef FFEA_PARALLEL_FUTURE
                 // Thread out to update the LinkedLists,
                 //   after calculating the centroids of the faces.
-                // Catching up the thread should be done through catch_thread_updatingLL,
+                // Catching up the thread should be done through catch_thread_updatingVdWLL,
                 //   which will to lookup.safely_swap_layers().
-                if (updatingLL() == false) {
-                    thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.es_h*(1.0 / params.kappa));
+                if (updatingVdWLL() == false) {
+                    thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.es_h*(1.0 / params.kappa));
                 } else
 #else
                 if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR)
@@ -1851,9 +1851,8 @@ int World::run() {
 
 #ifdef FFEA_PARALLEL_FUTURE
         // #pragma omp master // Then a single thread does the catching and swapping
-        if (updatingLL_ready_to_swap() == true) {
-            if ( catch_thread_updatingLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
-            // catch_thread_updatingLL(step, wtime, 3);
+        if (updatingVdWLL_ready_to_swap() == true) {
+            if ( catch_thread_updatingVdWLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
         }
         // #pragma omp barrier // the barrier holds people off, before catching the thread
 #endif
@@ -3977,15 +3976,15 @@ int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size) {
      return lookup.prebuild_nearest_neighbour_lookup(cell_size);
 }
 
-bool World::updatingLL() {
-     return thread_updatingLL.valid();
+bool World::updatingVdWLL() {
+     return thread_updatingVdWLL.valid();
 }
 
-bool World::updatingLL_ready_to_swap(){
+bool World::updatingVdWLL_ready_to_swap(){
 
      bool its = false;
-     if (thread_updatingLL.valid()) {
-        if (thread_updatingLL.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
+     if (thread_updatingVdWLL.valid()) {
+        if (thread_updatingVdWLL.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
           its = true;
        }
      }
@@ -3993,15 +3992,15 @@ bool World::updatingLL_ready_to_swap(){
 
 }
 
-int World::catch_thread_updatingLL(int step, scalar wtime, int where) {
+int World::catch_thread_updatingVdWLL(int step, scalar wtime, int where) {
 
-          if (updatingLL() == false) { // i. e., thread has been already catched!
+          if (updatingVdWLL() == false) { // i. e., thread has been already catched!
               cout << "trying to catch from: " << where <<
-                      ", but updatingLL was false" << endl;
+                      ", but updatingVdWLL was false" << endl;
               return 0;
           }
 
-          if (thread_updatingLL.get() == FFEA_ERROR) {
+          if (thread_updatingVdWLL.get() == FFEA_ERROR) {
               return die_with_dignity(step, wtime);
           }
           if (lookup.safely_swap_layers() == FFEA_ERROR) {
