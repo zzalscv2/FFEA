@@ -423,15 +423,22 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    if (x_range[1] > vdwVoxelSize) {
      pcVoxelSize = ceil(x_range[1] / vdwVoxelSize) * vdwVoxelSize; 
    } else { 
-     // int tmp = floor(vdwVoxelSize / x_range[1]);
      pcVoxelSize = vdwVoxelSize / floor(vdwVoxelSize/x_range[1]) ;
    } 
    for (int i=0; i<3; i++) {
      pcVoxelsInBox[i] = dimBox[i] / pcVoxelSize; 
+     if (pcVoxelsInBox[i] == 0) {
+       FFEA_ERROR_MESSG("ERROR! Zero voxels were allocated in the %d th direction.", i);
+     }
    }
    printf("... with %d x %d x %d voxels of size %f, while vdwVoxelSize was %f and pc_range %f\n",
                    pcVoxelsInBox[0], pcVoxelsInBox[1], pcVoxelsInBox[2], pcVoxelSize, vdwVoxelSize, x_range[1]); 
-   int lookup_error = pcLookUp.alloc(pcVoxelsInBox[0], pcVoxelsInBox[1], pcVoxelsInBox[2], n_beads);
+   int lookup_error = FFEA_OK;
+#ifdef FFEA_PARALLEL_FUTURE
+   lookup_error = pcLookUp.alloc_dual(pcVoxelsInBox[0], pcVoxelsInBox[1], pcVoxelsInBox[2], n_beads);
+#else
+   lookup_error = pcLookUp.alloc(pcVoxelsInBox[0], pcVoxelsInBox[1], pcVoxelsInBox[2], n_beads);
+#endif
    if (lookup_error == FFEA_ERROR) {
        FFEA_error_text();
        printf("When allocating memory for the PC nearest neighbour lookup grid\n");
@@ -443,18 +450,24 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    b_ind = new int[n_beads];
    for (int i=0; i<n_beads; i++) {
      b_ind[i] = i; 
-     pcLookUp.add_to_pool(&b_ind[i]);
-    
+#ifdef FFEA_PARALLEL_FUTURE
+     lookup_error = pcLookUp.add_to_pool_dual(&b_ind[i]);
+#else
+     lookup_error = pcLookUp.add_to_pool(&b_ind[i]);
+#endif
+     if (lookup_error == FFEA_ERROR) {
+        FFEA_error_text();
+        printf("When attempting to add a face to the PC lookup pool\n");
+        return FFEA_ERROR;
+     }
    } 
-
-
-   // 5.3 - Now try to initialise 
-   // build_pc_nearest_neighbour_lookup(); 
-   // Will be removed
+   // one last check: see if all beads were stored.
    if (pcLookUp.get_pool_size() != n_beads) {
-      FFEA_ERROR_MESSG("1 - something went wrong"); 
+      FFEA_ERROR_MESSG(" The number of beads in the LinkedList %d is not the same as the total number of beads %d", pcLookUp.get_pool_size(), n_beads); 
    }
 
+
+   // 5.3 - We cannot compute_bead_positions here because the system is not into the box yet.
    cout << "done!" << endl;
 
    return FFEA_OK; 
@@ -473,7 +486,6 @@ int PreComp_solver::solve_using_neighbours(){
 
     // 1 - Compute the position of the beads:
     compute_bead_positions();
-
 
     // X - from time to time:
     build_pc_nearest_neighbour_lookup();
@@ -898,7 +910,7 @@ scalar PreComp_solver::get_field_energy(int index0, int index1) {
 
 
 int PreComp_solver::build_pc_nearest_neighbour_lookup() {
- 
+
    pcLookUp.clear(); 
    int x, y, z; 
    for (int i=0; i<n_beads; i++) {
@@ -906,16 +918,53 @@ int PreComp_solver::build_pc_nearest_neighbour_lookup() {
      y = (int) floor(b_pos[3*i+1] / pcVoxelSize);
      z = (int) floor(b_pos[3*i+2] / pcVoxelSize);
 
-     cout << "bead index: " << i << " in: " << b_pos[3*i  ] << ", " << b_pos[3*i+1] << ", " << b_pos[3*i+2]
-                            << " was stored in voxel: "  << x << ", " << y << ", " << z << endl; 
-     int add_node_to_stack_error = pcLookUp.add_node_to_stack(i, x, y, z); 
-     if (add_node_to_stack_error == FFEA_ERROR) {
-     // if (pcLookUp.add_node_to_stack(i, x, y, z) == FFEA_ERROR) {
+     if (pcLookUp.add_node_to_stack(i, x, y, z) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error when trying to add bead %d to nearest neighbour stack at (%d, %d, %d)\n", i, x,y,z);
      }
  
    }
 
+   return FFEA_OK; 
+
+}
+
+
+int PreComp_solver::prebuild_pc_nearest_neighbour_lookup_and_swap() {
+ 
+   pcLookUp.clear_shadow_layer();
+   int x, y, z; 
+   for (int i=0; i<n_beads; i++) {
+     x = (int) floor(b_pos[3*i  ] / pcVoxelSize);
+     y = (int) floor(b_pos[3*i+1] / pcVoxelSize);
+     z = (int) floor(b_pos[3*i+2] / pcVoxelSize);
+
+     if (pcLookUp.add_node_to_stack_shadow(i, x, y, z) == FFEA_ERROR) {
+        FFEA_ERROR_MESSG("Error when trying to add bead %d to nearest neighbour stack at (%d, %d, %d)\n", i, x,y,z);
+     }
+ 
+   }
+   pcLookUp.safely_swap_layers();
+   return FFEA_OK; 
+
+}
+
+
+int PreComp_solver::prebuild_pc_nearest_neighbour_lookup() {
+ 
+   pcLookUp.clear_shadow_layer();
+   pcLookUp.forbid_swapping();
+   int x, y, z; 
+   for (int i=0; i<n_beads; i++) {
+     x = (int) floor(b_pos[3*i  ] / pcVoxelSize);
+     y = (int) floor(b_pos[3*i+1] / pcVoxelSize);
+     z = (int) floor(b_pos[3*i+2] / pcVoxelSize);
+
+     if (pcLookUp.add_node_to_stack_shadow(i, x, y, z) == FFEA_ERROR) {
+        FFEA_ERROR_MESSG("Error when trying to add bead %d to nearest neighbour stack at (%d, %d, %d)\n", i, x,y,z);
+     }
+ 
+   }
+   pcLookUp.allow_swapping();
    return FFEA_OK; 
 
 }
