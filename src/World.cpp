@@ -880,15 +880,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
       thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa));
 #endif
 
-#ifdef FFEA_PARALLEL_FUTURE
       // pc_solver has already allocated its own neighbour list. 
       // Still it had to wait until everything was put into box,
       //   to place the beads onto the voxels.
-      // CHECKED!
-      /* if (params.calc_preComp == 1) {
-            pc_solver.compute_bead_positions();
-            pc_solver.build_pc_nearest_neighbour_lookup();
-      }*/ 
+      // We now calculate the bead positions
+      //    to be able to build_pc_nearest_neighbour_lookup()
+      if (params.calc_preComp == 1) pc_solver.compute_bead_positions();
+#ifdef FFEA_PARALLEL_FUTURE
+      //     pc_solver.build_pc_nearest_neighbour_lookup();
 #endif 
 
 
@@ -1825,6 +1824,13 @@ int World::run() {
                     return die_with_dignity(step, wtime);
                 }
 
+                // Attempt to place all beads in the PC nearest neighbour lookup table
+                if (pc_solver.build_pc_nearest_neighbour_lookup() == FFEA_ERROR) {
+                    return die_with_dignity(step, wtime); 
+                }
+
+ 
+                // Finally do calc_es, which is done only from time to time...
                 if (params.calc_es == 1) {
                     do_es();
                 }
