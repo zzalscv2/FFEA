@@ -65,8 +65,8 @@ public:
   PreComp_solver();
   ~PreComp_solver();
   int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
-  int solve();
-  int solve_using_neighbours(); 
+  int solve(); ///< calculate the forces using a straightforward double loop.
+  int solve_using_neighbours();  ///< calculate the forces using linkedlists.
   void reset_fieldenergy(); 
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
