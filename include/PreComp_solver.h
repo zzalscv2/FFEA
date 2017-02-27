@@ -32,12 +32,13 @@
 #include <math.h>
 #include <boost/algorithm/string.hpp>
 #include <algorithm>
+
 #include "FFEA_return_codes.h"
 #include "dimensions.h"
 #include "FFEA_user_info.h"
-
-
 #include "mat_vec_types.h"
+#include "LinkedListCube.h"
+
 // WARNING: Blob.h will be included after defining PreComp_params! 
 
 using namespace std;
@@ -65,6 +66,7 @@ public:
   ~PreComp_solver();
   int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
   int solve();
+  int solve_using_neighbours(); 
   void reset_fieldenergy(); 
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
@@ -81,6 +83,15 @@ private:
   int calc_force_from_pot();
   
   scalar finterpolate(scalar *Z, scalar x, int typei, int typej);
+
+  // stuff related to the LinkedLists:
+  LinkedListCube<int> pcLookUp; ///< the linkedlist itself
+  scalar pcVoxelSize;    ///< the size of the voxels.
+  int pcVoxelsInBox[3];  ///< num of voxels per side.
+  int build_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
+  int *b_ind; ///< list of indexes pointing to the beads. Did not come with anything else to recycle code... 
+  static const int adjacent_cells[27][3]; 
+  
 
   int compute_bead_positions();
 

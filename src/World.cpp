@@ -1831,7 +1831,8 @@ int World::run() {
 
         // if PreComp is required:
         if (params.calc_preComp == 1) {
-          pc_solver.solve();
+          // pc_solver.solve();
+          pc_solver.solve_using_neighbours();
         }
 
 
