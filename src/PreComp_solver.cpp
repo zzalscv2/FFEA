@@ -432,6 +432,12 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    printf("... with %d x %d x %d voxels of size %f, while vdwVoxelSize was %f and pc_range %f\n",
                    pcVoxelsInBox[0], pcVoxelsInBox[1], pcVoxelsInBox[2], pcVoxelSize, vdwVoxelSize, x_range[1]); 
    int lookup_error = pcLookUp.alloc(pcVoxelsInBox[0], pcVoxelsInBox[1], pcVoxelsInBox[2], n_beads);
+   if (lookup_error == FFEA_ERROR) {
+       FFEA_error_text();
+       printf("When allocating memory for the PC nearest neighbour lookup grid\n");
+       return FFEA_ERROR;
+   }
+
 
    // 5.2 - store indices in there:
    b_ind = new int[n_beads];
@@ -444,13 +450,10 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
 
    // 5.3 - Now try to initialise 
    // build_pc_nearest_neighbour_lookup(); 
-   
-
-
-   
-
-
-
+   // Will be removed
+   if (pcLookUp.get_pool_size() != n_beads) {
+      FFEA_ERROR_MESSG("1 - something went wrong"); 
+   }
 
    cout << "done!" << endl;
 
@@ -471,8 +474,8 @@ int PreComp_solver::solve_using_neighbours(){
     // 1 - Compute the position of the beads:
     compute_bead_positions();
 
-    // from time to time:
-    cout << " --- new time step --- "  << endl;
+
+    // X - from time to time:
     build_pc_nearest_neighbour_lookup();
 
 
@@ -480,11 +483,6 @@ int PreComp_solver::solve_using_neighbours(){
     LinkedListNode<int> *b_j = NULL; 
     int b_index_i, b_index_j; 
   
-    // Will be removed
-    if (pcLookUp.get_pool_size() != n_beads) {
-      FFEA_ERROR_MESSG("1 - something went wrong"); 
-    }
-
     // 
     // 2 - Compute all the i-j forces:
 #ifdef USE_OPENMP
