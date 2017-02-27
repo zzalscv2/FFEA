@@ -436,7 +436,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		shift.x = box_dim.x / 2.0 - world_centroid.x;
 		shift.y = box_dim.y / 2.0 - world_centroid.y;
 		shift.z = box_dim.z / 2.0 - world_centroid.z;
-		if(params.move_into_box == 1) {// && params.restart == 0) {
+		if(params.move_into_box == 1) {// && params.restart == 0) 
 			for (i = 0; i < params.num_blobs; i++) {
 				//active_blob_array[i]->get_centroid(&world_centroid);
 				active_blob_array[i]->move(shift.x, shift.y, shift.z);
@@ -879,6 +879,19 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
       // And build the lookup table for the first time:
       thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa));
 #endif
+
+#ifdef FFEA_PARALLEL_FUTURE
+      // pc_solver has already allocated its own neighbour list. 
+      // Still it had to wait until everything was put into box,
+      //   to place the beads onto the voxels.
+      // CHECKED!
+      /* if (params.calc_preComp == 1) {
+            pc_solver.compute_bead_positions();
+            pc_solver.build_pc_nearest_neighbour_lookup();
+      }*/ 
+#endif 
+
+
 
 		// Initialise the BEM PBE solver
 		if (params.calc_es == 1) {
@@ -3982,7 +3995,7 @@ bool World::updatingLL_ready_to_swap(){
 
 int World::catch_thread_updatingLL(int step, scalar wtime, int where) {
 
-          if (updatingLL() == false) {
+          if (updatingLL() == false) { // i. e., thread has been already catched!
               cout << "trying to catch from: " << where <<
                       ", but updatingLL was false" << endl;
               return 0;

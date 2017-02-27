@@ -72,6 +72,10 @@ public:
   scalar get_F(scalar x, int typei, int typej);
   scalar get_field_energy(int index0, int index1);
 
+  int compute_bead_positions(); ///< calculate b_pos, the absolute positions of the beads. 
+
+  int build_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
+
 private: 
   /** msgc and msg are helpful while developing */
   int msgc;
@@ -88,12 +92,11 @@ private:
   LinkedListCube<int> pcLookUp; ///< the linkedlist itself
   scalar pcVoxelSize;    ///< the size of the voxels.
   int pcVoxelsInBox[3];  ///< num of voxels per side.
-  int build_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
+  int prebuild_pc_nearest_neighbour_lookup_and_swap(); ///< put the beads on the grid.
+  int prebuild_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
   int *b_ind; ///< list of indexes pointing to the beads. Did not come with anything else to recycle code... 
   static const int adjacent_cells[27][3]; 
   
-
-  int compute_bead_positions();
 
   /** delta x in tabulated potentials and forces"  */
   scalar Dx; 
