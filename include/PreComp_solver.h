@@ -95,7 +95,6 @@ private:
   int pcVoxelsInBox[3];  ///< num of voxels per side.
   int prebuild_pc_nearest_neighbour_lookup_and_swap(); ///< put the beads on the grid.
   int prebuild_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
-  int *b_ind; ///< list of indexes pointing to the beads. Did not come with anything else to recycle code... 
   static const int adjacent_cells[27][3]; 
   
 
