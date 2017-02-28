@@ -521,7 +521,7 @@ bool Face::getTetraIntersectionVolumeAndShapeFunctions(Face *f2, grr3 (&r), grr3
 
 bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2)){
 
-  geoscalar tetA[4][3], tetB[4][3], tetC[4][3];
+  geoscalar tetA[4][3], tetB[4][3], tetC[4][3], tetB0[4][3];
   grr3 ap1, ap2, cm1, cm2;
   geoscalar dr = 1e-3;
   geoscalar vol_m, vol_M;
@@ -530,9 +530,12 @@ bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&
      tetA[i][0] = n[i]->pos.x;
      tetA[i][1] = n[i]->pos.y;
      tetA[i][2] = n[i]->pos.z;
-     tetB[i][0] = f2->n[i]->pos.x -dr*r[0];
-     tetB[i][1] = f2->n[i]->pos.y -dr*r[1];
-     tetB[i][2] = f2->n[i]->pos.z -dr*r[2];
+     tetB0[i][0] = f2->n[i]->pos.x;
+     tetB0[i][1] = f2->n[i]->pos.y;
+     tetB0[i][2] = f2->n[i]->pos.z;
+     tetB[i][0] = f2->n[i]->pos.x - dr*r[0];
+     tetB[i][1] = f2->n[i]->pos.y - dr*r[1];
+     tetB[i][2] = f2->n[i]->pos.z - dr*r[2];
      tetC[i][0] = f2->n[i]->pos.x + dr*r[0];
      tetC[i][1] = f2->n[i]->pos.y + dr*r[1];
      tetC[i][2] = f2->n[i]->pos.z + dr*r[2];
@@ -548,7 +551,7 @@ bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&
   arr3Resize<geoscalar,grr3>(0.5, cm1);
 
   getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetA[0], tetA[1], tetA[2], tetA[3], cm1, phi1);
-  getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetB[0], tetB[1], tetB[2], tetB[3], cm1, phi2);
+  getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(tetB0[0], tetB0[1], tetB0[2], tetB0[3], cm1, phi2);
 
   return true;
 
