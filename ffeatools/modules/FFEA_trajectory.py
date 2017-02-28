@@ -281,14 +281,19 @@ class FFEA_trajectory:
 	def build_from_pdb(self, pdb, scale = 1):
 
 		# Single blob single conf
-		self.set_header(1, [1], [[pdb.blob[0].num_atoms]])
-		for i in range(pdb.num_frames):
-			frame = FFEA_frame.FFEA_frame()
-			frame.pos = pdb.blob[0].frame[i].pos * scale
-			frame.set_step(i)
-			self.blob[0][0].num_nodes = len(frame.pos)
-			self.blob[0][0].frame.append(frame)
-			self.num_frames += 1
+		self.set_header(1, [1], [[pdb.chain[0].num_atoms]])
+
+		# Get all frames in one go (they're the same core objects) 
+		self.blob[0][0].num_nodes = pdb.chain[0].num_atoms
+		self.blob[0][0].frame = pdb.chain[0].frame
+		
+		index = 0
+		for f in self.blob[0][0].frame:
+			f.pos *= scale
+			f.set_step(index)
+			index += 1
+
+		self.num_frames = pdb.chain[0].num_frames
 
 	# Manually set a single frame
 	def set_single_frame(self, node, surf = None, step = 0):

@@ -702,8 +702,8 @@ class FFEA_viewer_control_window:
 			self.draw_frame(self.num_frames - 1)
 
 			# Delete frames from memory
-			if(self.num_frames > 2):
-				self.traj.delete_frame(index = self.num_frames - 3)
+			if(self.num_frames > 3):
+				self.traj.delete_frame(index = -3)
 	
 			self.remove_frame_from_blobs()
 		else:

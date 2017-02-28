@@ -25,6 +25,7 @@ import sys, os
 from time import sleep
 import numpy as np
 from FFEA_exceptions import *
+import FFEA_frame
 
 class FFEA_pdb:
 
@@ -366,6 +367,8 @@ class FFEA_pdb:
 			# Add data
 			self.num_atoms.append(c.num_nodes)
 
+			bin += 1
+
 		self.num_frames = traj.num_frames
 		self.valid = True
 
@@ -422,19 +425,20 @@ class FFEA_pdb_chain:
 		self.num_atoms = num_atoms
 		self.atom = [FFEA_pdb_atom() for i in range(self.num_atoms)]
 		self.num_frames = num_frames
-		self.frame = [FFEA_pdb_frame() for i in range(self.num_frames)]
+		self.frame = [FFEA_frame.FFEA_frame() for i in range(self.num_frames)]
 		
 	def setID(self, ID):
 
 		self.chainID = ID
 
 	def add_empty_frame(self):
-		
-		self.frame.append(FFEA_pdb_frame(num_atoms = self.num_atoms))
+		f = FFEA_frame.FFEA_frame()
+		f.num_nodes = self.num_atoms
+		f.pos = np.array([[0.0,0.0,0.0] for i in range(f.num_nodes)])
+		self.frame.append(f)
 		self.num_frames += 1
 
 	def set_atom_position(self, x, y, z, frame = -1, atom = None):
-
 		if atom == None:
 			raise IndexError
 		
@@ -510,7 +514,11 @@ class FFEA_pdb_frame:
 			self.pos += trans
 		except:
 			raise
-		
+	
+	def set_step(self, step):
+		self.step = step
+
 	def reset(self):
 
 		self.pos = []
+		self.step = 0
