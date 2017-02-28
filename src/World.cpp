@@ -1704,10 +1704,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
-#ifdef USE_MPI
-    double st, st1, st2, time1, time2, time3;
-    st =MPI::Wtime();
-#endif
+
     for (long long step = step_initial; step < params.num_steps; step++) {
 
         // check if we need to calculate electrostatics,
@@ -1815,7 +1812,8 @@ int World::run() {
 
 
         if (es_update) {
-                // Attempt to place all faces in the nearest neighbour lookup table
+                // REFRESH LINKED LISTS: 
+                // Refresh the VdW-LinkedList
 #ifdef FFEA_PARALLEL_FUTURE
                 // Thread out to update the LinkedLists,
                 //   after calculating the centroids of the faces.
@@ -1831,7 +1829,7 @@ int World::run() {
                     return die_with_dignity(step, wtime);
                 }
 
-                // Attempt to place all beads in the PC nearest neighbour lookup table
+                // Refresh the PreComp-LinkedList
 #ifdef FFEA_PARALLEL_FUTURE
                 // Just as in VdW, thread out to update the PC LinkedLists
                 if (updatingPCLL() == false) {
@@ -1843,19 +1841,15 @@ int World::run() {
                 {
                     return die_with_dignity(step, wtime); 
                 }
+                // FINSHED REFRESHING LINKED LISTS.
 
  
                 // Finally do calc_es, which is done only from time to time...
-                if (params.calc_es == 1) {
-                    do_es();
-                }
+                if (params.calc_es == 1) do_es();
 
         }
-        // timing solve() function
-#ifdef USE_MPI
-          st1 = MPI::Wtime();
-#endif
 
+        
         // Apply springs directly to nodes
 #ifdef FFEA_PARALLEL_FUTURE
         thread_applyingSprings = std::async(std::launch::async,&World::apply_springs,this);
@@ -1863,13 +1857,15 @@ int World::run() {
         apply_springs();
 #endif
 
+
 #ifdef FFEA_PARALLEL_FUTURE
+        // Get the thread updating the VdW-LinkedLists if it has finished.
         if (updatingPCLL_ready_to_swap() == true) {
             if ( catch_thread_updatingPCLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
         }
 #endif
         
-        // if PreComp is required:
+        // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
           // pc_solver.solve();
           pc_solver.solve_using_neighbours();
@@ -1877,6 +1873,7 @@ int World::run() {
 
 
 #ifdef FFEA_PARALLEL_FUTURE
+        // Get the thread updating the VdW-LinkedLists if it has finished.
         // #pragma omp master // Then a single thread does the catching and swapping
         if (updatingVdWLL_ready_to_swap() == true) {
             if ( catch_thread_updatingVdWLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
@@ -1885,19 +1882,18 @@ int World::run() {
 #endif
 
 
-        if (params.calc_vdw == 1 && params.force_pbc == 0) vdw_solver->solve();
+        // Calculate the VdW forces:
+        if (params.calc_vdw == 1) {
+           if (params.force_pbc == 0) vdw_solver->solve();
+           else if (params.force_pbc == 1) {
+              calc_blob_corr_matrix(params.num_blobs, blob_corr);
+              vdw_solver->solve(blob_corr);
+           }
+        }
         if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
 
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
-        if (params.calc_vdw ==1 && params.force_pbc == 1) {
-        calc_blob_corr_matrix(params.num_blobs, blob_corr);
-        vdw_solver->solve(blob_corr);
-        }
-
-#ifdef USE_MPI
-        time2 = MPI::Wtime() -st1 + time2;
-#endif
 
 #ifdef FFEA_PARALLEL_FUTURE
         thread_applyingSprings.get();
@@ -1906,11 +1902,6 @@ int World::run() {
 
         // Sort internal forces out
         int fatal_errors = 0;
-
-        // timing update() function
-#ifdef USE_MPI
-        st2 = MPI::Wtime();
-#endif
 
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
@@ -1933,9 +1924,6 @@ int World::run() {
 		if(calculate_kinetic_rates() != FFEA_OK) {
 			FFEA_ERROR_MESSG("'calculate_kinetic_rates()' failed.\n")
 		}
-
-	//	print_kinetic_rates_to_screen(0);
-	//	print_kinetic_rates_to_screen(1);
 
 		// Now we can treat each blob separately
 		int target;
@@ -1962,15 +1950,6 @@ int World::run() {
 #ifdef FFEA_PARALLEL_FUTURE
     // Wait until the last step has correctly been written:
     thread_writingTraj.get();
-#endif
-
-    // Total mpi timing, compare with openmp timing
-#ifdef USE_MPI
-    time1 = MPI::Wtime() -st;
-    cout<<"total steps:"<< params.num_steps <<endl;
-    cout<< "benchmarking--------calculate vdw for \t"<< time2 << "seconds"<< endl;
-    cout<< "benchmarking--------update blobs for \t"<< time3 << "seconds"<< endl;
-    cout<< "benchmarking--------Total MPI time in World::run():" << time1 << "seconds"<< endl;
 #endif
 
     printf("\n\nTime taken: %2f seconds\n", (omp_get_wtime() - wtime));
