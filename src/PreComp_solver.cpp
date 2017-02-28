@@ -495,14 +495,14 @@ int PreComp_solver::solve_using_neighbours(){
 
     // 2 - Compute all the i-j forces:
 #ifdef USE_OPENMP
-// #pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j)
+#pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j)
 #endif
     for (int i=0; i<n_beads; i++){
       b_i = pcLookUp.get_from_pool(i); 
       b_index_i = *(b_i->obj); 
       if (b_index_i != b_i->index) { // we'll use b_index_i as b_i->index to increase the performance.
-        cout << "indices different!!" << endl; 
-        cout << " alternative approach, useless!!" << endl;
+        printf("indices different!!\n");
+        printf(" alternative approach, useless!!\n");
       }
 
       type_i = b_types[b_index_i]; 
@@ -965,4 +965,12 @@ int PreComp_solver::prebuild_pc_nearest_neighbour_lookup() {
    return FFEA_OK; 
 
 }
+
+
+int PreComp_solver::safely_swap_pc_layers() {
+
+   return pcLookUp.safely_swap_layers();
+
+}
+
 /**@}*/

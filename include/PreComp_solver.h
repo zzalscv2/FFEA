@@ -75,6 +75,7 @@ public:
   int compute_bead_positions(); ///< calculate b_pos, the absolute positions of the beads. 
 
   int build_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
+  int safely_swap_pc_layers(); 
 
 private: 
   /** msgc and msg are helpful while developing */
