@@ -318,6 +318,7 @@ class FFEA_pdb:
 			fout.write("MODEL     %4d\n" % (i + 1))
 			for j in range(self.num_chains):
 				for k in range(self.num_atoms[j]):
+					#print j, self.num_chains, len(self.chain), k, self.num_atoms[j], len(self.chain[j].atom)
 					a = self.chain[j].atom[k]
 					fout.write("%6s%5d %4s %3s %c%4d    %8.3f%8.3f%8.3f%6.2f%6.2f      %4s%2s%2s\n" % ("ATOM  ", a.atomID, a.name, a.res, self.chain[j].chainID, a.resID, self.chain[j].frame[i].pos[k][0], self.chain[j].frame[i].pos[k][1], self.chain[j].frame[i].pos[k][2], a.occupancy, a.temperature, a.segID ,a.element, a.charge))
 
@@ -328,6 +329,46 @@ class FFEA_pdb:
 		print "...done"
 		fout.close()
 	
+	def build_from_traj(self, traj, scale = 1.0):
+
+		# Reset	
+		self.reset()
+		
+		# Chain labels
+		plates = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+		
+		# Each traj blob is one chain
+		bin = 0
+		for b in traj.blob:
+			
+			c = b[0]
+
+			# Build chain
+			chain = FFEA_pdb_chain()
+			chain.chainID = plates[bin]
+
+			# Sort atoms (make pseudo-atoms)
+			chain.num_atoms = c.num_nodes
+			for i in range(chain.num_atoms):
+				atom = FFEA_pdb_atom()
+				atom.set_structure()
+				chain.atom.append(atom)
+
+			# Sort frames
+			chain.num_frames = traj.num_frames
+			chain.frame = c.frame
+			for f in chain.frame:
+				f.pos *= scale
+
+			self.chain.append(chain)
+			self.num_chains += 1
+			
+			# Add data
+			self.num_atoms.append(c.num_nodes)
+
+		self.num_frames = traj.num_frames
+		self.valid = True
+
 	def clear_position_data(self):
 		
 		for i in range(self.num_chains):
