@@ -474,7 +474,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
 int PreComp_solver::solve_using_neighbours(){
 
     scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
-    vector3 dx, dtemp;
+    vector3 dx, dtemp, dxik, dxjk;
     int type_i; 
     scalar phi_i[4], phi_j[4];
     tetra_element_linear *e_i, *e_j;
@@ -492,7 +492,7 @@ int PreComp_solver::solve_using_neighbours(){
     LinkedListNode<int> *b_j = NULL; 
     int b_index_i, b_index_j; 
 #ifdef USE_OPENMP
-#pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j)
+#pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j,dxik,dxjk)
 #endif
     for (int i=0; i<n_beads; i++){
       b_i = pcLookUp.get_from_pool(i); 
@@ -542,27 +542,25 @@ int PreComp_solver::solve_using_neighbours(){
 
            // Add energies to record 
            e_j = b_elems[b_index_j];
-           #pragma omp atomic
-           fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[b_index_j]);
 
            vec3_scale(&dx, f_ij);
-           dtemp = dx; 
 
            phi_j[1] = b_rel_pos[3*b_index_j];
            phi_j[2] = b_rel_pos[3*b_index_j+1];
            phi_j[3]= b_rel_pos[3*b_index_j+2];
            phi_j[0]= 1 - phi_j[1] - phi_j[2] - phi_j[3];
+
            // and apply the force to all the nodes in the elements i and j:
+           #pragma omp critical
+           {
+           fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[b_index_j]);
            for (int k=0; k<4; k++) {
-             // forces for e_i
-             vec3_scale(&dx, -phi_i[k]);
-             e_i->add_force_to_node(k, &dx);
-             dx = dtemp; 
-             // forces for e_j
-             vec3_scale(&dx, phi_j[k]);
-             e_j->add_force_to_node(k, &dx);
-             dx = dtemp;
+             vec3_scale2(&dx, &dxik, -phi_i[k]);
+             vec3_scale2(&dx, &dxjk, phi_j[k]);
+             e_i->add_force_to_node(k, &dxik);
+             e_j->add_force_to_node(k, &dxjk); 
            } // close k, nodes for the elements.
+           } // close critical
 
 
            b_j = b_j->next; 
