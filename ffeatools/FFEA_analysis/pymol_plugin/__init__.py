@@ -87,7 +87,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("400x225")
+     self.root.geometry("450x225")
 
      self.root.title("FFEA Loader")
 
@@ -111,6 +111,7 @@ class FFEA_viewer_control_window:
      self.do_load_trajectory = StringVar(self.root, value=self.display_flags['load_trajectory'])
      self.show_box = StringVar(self.root, value=self.display_flags['show_box'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
+     self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
      self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
      self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
@@ -146,6 +147,10 @@ class FFEA_viewer_control_window:
      # show pinned_nodes: 
      check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
      check_button_show_pinned.grid(row=1, column=2, sticky=W)
+
+     # show inverted_elements: 
+     check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
+     check_button_show_inverted.grid(row=1, column=3, sticky=W)
  
 
      # # show solid:
@@ -484,6 +489,11 @@ class FFEA_viewer_control_window:
 				
 	if waitForTrajToLoad: 
 		self.load_trajectory_thread.join()
+
+	# Requires knowledge of whole trajectory
+	if self.display_flags["show_inverted"] == 1:
+		self.draw_inverted_elements()
+
 	try:
 		self.root.destroy()
 	except:
@@ -573,6 +583,80 @@ class FFEA_viewer_control_window:
               cmd.pseudoatom(pos = node_object_list[node_object].pos[node].tolist())   
         
  
+  def draw_inverted_elements(self):
+
+	# For each blob
+	bin = 0
+	for b in self.blob_list:
+		# Change when conformations are stable
+		cin = 0
+		c = b[cin]
+
+		element_list = []
+		
+		# Get last two frames and check whether volume / jacobian has changed it's sign
+		
+		index = 0
+		if (c.top == None):
+			print("Cannot draw inverted elements for blob %d as there is not topology" % (bin))
+			continue
+
+		flast = self.traj.blob[bin][cin].frame[-1]
+
+		try:
+			f2last = self.traj.blob[bin][cin].frame[-2]
+		except:
+			f2last = c.node
+
+		for el in c.top.element:
+			jac = np.linalg.det(el.calc_jacobian(flast))
+			jac_last = np.linalg.det(el.calc_jacobian(f2last))
+			if jac * jac_last < 0:
+				element_list.append(index)
+
+			index += 1
+		
+		# Draw these as a new object on the last frame		
+		invele = []
+		numtxt = []
+		txtscale = 0.1
+		axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
+		invele.extend( [BEGIN, LINES] )
+
+		for el in element_list:
+			n1 = flast.pos[c.top.element[el].n[0]]
+			n2 = flast.pos[c.top.element[el].n[1]]
+			n3 = flast.pos[c.top.element[el].n[2]]
+			n4 = flast.pos[c.top.element[el].n[3]]
+
+			invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+			invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+
+			invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+			invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+
+			invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+		        invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+
+		        invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+		        invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+
+		        invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+			invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+
+			invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+		        invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+
+			nn = c.top.element[el].calc_centroid(flast)
+			cyl_text(numtxt,plain,nn,str(el), txtscale, axes=axes * txtscale)
+
+		invele.append(END)
+
+		if len(invele) > 3:
+			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted_" + str(c.num_loads), self.num_frames)
+			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex_" + str(c.num_loads), self.num_frames)
+		bin += 1
+
   def load_trajectory(self, trajectory_out_fname):
 	
 	#
@@ -582,9 +666,9 @@ class FFEA_viewer_control_window:
 
 	# Load header and skip first frame (we already have it from the node files)
 	try:
-		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+		self.traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
 		try:
-			failure = traj.skip_frame()
+			failure = self.traj.skip_frame()
 		except:
 			failure = 1
 	except(IOError):
@@ -595,28 +679,32 @@ class FFEA_viewer_control_window:
 	self.draw_frame(self.num_frames - 1)
 
 	# If necessary, stop now (broken traj or user asked for)
-	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or traj.num_blobs == 0:		
+	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or self.traj.num_blobs == 0:		
 		self.wontLoadTraj = 1
 		return
 
 	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
+	# Save final two frames for later calculations though
+	
 	while True:
 		
 		# Get frame from traj
-		if traj.load_frame() == 0:
+		if self.traj.load_frame() == 0:
 
 			# Scale traj frame
-			traj.scale(self.global_scale, 0)
-
+			self.traj.scale(self.global_scale, -1)
+			
 			# Load into blob objects asnd increment frame count
-			self.add_frame_to_blobs(traj)
+			self.add_frame_to_blobs(self.traj)
 			self.num_frames += 1
 
 			# Draw whole frame (if above worked, these should work no problem...)
 			self.draw_frame(self.num_frames - 1)
 
 			# Delete frames from memory
-			traj.delete_frame()
+			if(self.num_frames > 2):
+				self.traj.delete_frame(index = self.num_frames - 3)
+	
 			self.remove_frame_from_blobs()
 		else:
 			break
@@ -624,9 +712,6 @@ class FFEA_viewer_control_window:
 	# Finally show the "progress bar":
 	if self.num_frames > 1:
 		cmd.mset("1-"+str(self.num_frames))
-
-	return
-
 
   def get_system_dimensions(self, findex):
 	maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])	
@@ -770,12 +855,12 @@ class FFEA_viewer_control_window:
 		'show_mesh': "No Mesh",
 		'show_numbers': "No Indices", ## PYMOL OK
 		'show_pinned': 1,
+		'show_inverted': 1,
 		'show_vdw': 0,
 		'show_shortest_edge': 0,
 		'show_springs': 1,
 		'show_box': "No Box",
 		'load_trajectory': "Trajectory", ## PYMOL OK
-		'show_inverted': 0,
 		'highlight': '',
 		'load_sfa': 'None',
       'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
