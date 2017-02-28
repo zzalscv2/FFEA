@@ -32,6 +32,10 @@ add_executable(test_squidgy checkSquidgySpheres.cpp
                ${PROJECT_SOURCE_DIR}/src/BlobLite.cpp
                ${PROJECT_SOURCE_DIR}/src/VolumeIntersection.cpp
                ${PROJECT_SOURCE_DIR}/src/FFEA_return_codes.cpp)
+if (USE_EIGEN3_INTERNAL)
+   add_dependencies(test_squidgy getEigen)
+endif(USE_EIGEN3_INTERNAL)
+
 
 add_test(NAME squidgy_steric_check COMMAND 
          ${CMAKE_CURRENT_BINARY_DIR}/test_squidgy 5e-9 ../sphere_63_120_structure/sphere_63_120.node ../sphere_63_120_structure/sphere_63_120.top 5e-9 ../sphere_63_120_structure/sphere_63_120.node ../sphere_63_120_structure/sphere_63_120.top sphere_63_120_trajectory.ftj 332)
