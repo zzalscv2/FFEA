@@ -36,7 +36,7 @@ except(ImportError):
 parser = _argparse.ArgumentParser(description="Test KE of blob against classical equipartition theorem")
 parser.add_argument("script", action="store", help="Input script file (.ffea).")
 
-def test_equilibration(script):
+def plotEnergyTraces(script):
 
     meas = FFEA_measurement.FFEA_measurement(script.params.measurement_out_fname, frame_rate = 10)
     top = [script.load_topology(i) for i in range(script.params.num_blobs)]
@@ -179,4 +179,4 @@ if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     script = FFEA_script.FFEA_script(args.script)
     if not os.path.exists(script.params.measurement_out_fname):
         raise IOError("Error. Measurement file not found. Please supply a script with a completed measurement file.")
-    test_equilibration(script)
+    plotEnergyTraces(script)
