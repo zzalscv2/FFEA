@@ -28,7 +28,8 @@
 #include "FFEA_return_codes.h"
 #include "dimensions.h"
 
-using namespace std;
+using std::cout;
+using std::endl;
 
 #define NUM_NODES_QUADRATIC_TET 10
 

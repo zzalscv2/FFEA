@@ -50,7 +50,8 @@ ffea_tools = 	{
       "tettonet": "FFEA_initialise/FFEA_volume_tools/convert_tet_to_net.py",
       "makestructuremap": "FFEA_initialise/FFEA_mapping_tools/make_structure_map",
       "maptosparse": "FFEA_initialise/FFEA_mapping_tools/FFEA_convert_kinetic_map_to_sparse.py",
-      "maptraj": "FFEA_initialise/FFEA_mapping_tools/Kinetic_FFEA_map_apply_to_FFEA_traj.py"
+      "maptraj": "FFEA_initialise/FFEA_mapping_tools/Kinetic_FFEA_map_apply_to_FFEA_traj.py",
+      "automodel": "FFEA_initialise/FFEA_automodel.py"
 		}
 
 if len(sys.argv) == 1:

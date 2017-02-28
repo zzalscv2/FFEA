@@ -74,6 +74,7 @@ void vec3_add_to_scaled(vector3 *v1, vector3 *v2, scalar a, int vec_size);
 void vec3_scale_and_add(vector3 *v1, vector3 *v2, scalar a, int vec_size);
 
 void vec3_scale(vector3 *v, scalar scale);
+void vec3_scale2(vector3 *v1, vector3 *v2, scalar scale); ///< v2 = v1 * scale
 
 void vec12_set_zero(vector12 v);
 

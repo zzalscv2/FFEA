@@ -6,9 +6,13 @@
 *.out
 *.pdf
 *.x
-core.*
 /bin/
 *.exe
-build
 ffeatools_build
 dist
+external/boost/tools/build/b2
+external/boost/tools/build/bin/
+external/boost/tools/build/bjam
+external/boost/tools/build/bootstrap.log
+external/boost/tools/build/src/engine/bin.linuxx86_64/
+external/boost/tools/build/src/engine/bootstrap/

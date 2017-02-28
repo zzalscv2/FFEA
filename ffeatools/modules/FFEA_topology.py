@@ -789,6 +789,22 @@ class FFEA_element:
 
 		return np.fabs(np.dot(e[2], np.cross(e[1], e[0])) / 6.0) * np.power(scale, 3.0)
 
+	def calc_jacobian(self, node, scale = 1.0):
+		J = np.array([[0.0 for i in range(3)] for j in range(3)])
+		J[0][0] = node.pos[self.n[1]][0] - node.pos[self.n[0]][0]
+		J[0][1] = node.pos[self.n[1]][1] - node.pos[self.n[0]][1]
+		J[0][2] = node.pos[self.n[1]][2] - node.pos[self.n[0]][2]
+
+		J[1][0] = node.pos[self.n[2]][0] - node.pos[self.n[0]][0]
+		J[1][1] = node.pos[self.n[2]][1] - node.pos[self.n[0]][1]
+		J[1][2] = node.pos[self.n[2]][2] - node.pos[self.n[0]][2]
+
+		J[2][0] = node.pos[self.n[3]][0] - node.pos[self.n[0]][0]
+		J[2][1] = node.pos[self.n[3]][1] - node.pos[self.n[0]][1]
+		J[2][2] = node.pos[self.n[3]][2] - node.pos[self.n[0]][2]
+		
+		return J
+
 	def get_smallest_lengthscale(self, node):
 
 		# Smallest length is smalles node to opposite plane normal distance

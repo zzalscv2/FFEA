@@ -78,9 +78,12 @@ Blob::Blob() {
     num_pinned_nodes = 0;
     pinned_nodes_list = NULL;
     bsite_pinned_nodes_list.clear();
+
     pbc_count[0]= 0;
     pbc_count[1]= 0;
     pbc_count[2]= 0;
+
+    toBePrinted_nodes = NULL;
 }
 
 Blob::~Blob() {
@@ -188,6 +191,9 @@ Blob::~Blob() {
     rng = NULL;
     num_pinned_nodes = 0;
     bsite_pinned_nodes_list.clear();
+
+    delete[] toBePrinted_nodes;
+    toBePrinted_nodes = NULL;
 }
 
 
@@ -523,6 +529,17 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     if (calc_compress ==1){
        compress_blob(compress);
     }
+
+    if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
+      toBePrinted_nodes = new scalar[10*num_nodes];
+    } else {
+      if (params->calc_es == 0) {
+        toBePrinted_nodes = new scalar[3*num_nodes];
+      } else {
+        toBePrinted_nodes = new scalar[4*num_nodes];
+      }
+    }
+
 
     // Return FFEA_OK to indicate "success"
     return FFEA_OK;
@@ -1087,6 +1104,94 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
     }
 }
 
+void Blob::write_pre_print_to_file(FILE *trajectory_out) {
+    // If this is a static blob, then don't bother printing out all the node positions (since there will be no change)
+    if (blob_state == FFEA_BLOB_IS_STATIC) {
+        fprintf(trajectory_out, "STATIC\n");
+        return;
+    } else if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
+        fprintf(trajectory_out, "DYNAMIC\n");
+    } else if (blob_state == FFEA_BLOB_IS_FROZEN) {
+        fprintf(trajectory_out, "FROZEN\n");
+    }
+
+    if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
+        for (int i = 0; i < num_nodes; i++) {
+            fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
+                toBePrinted_nodes[10*i], toBePrinted_nodes[10*i+1], toBePrinted_nodes[10*i+2],
+                toBePrinted_nodes[10*i+3], toBePrinted_nodes[10*i+4], toBePrinted_nodes[10*i+5],
+                toBePrinted_nodes[10*i+6], toBePrinted_nodes[10*i+7], toBePrinted_nodes[10*i+8],
+                toBePrinted_nodes[10*i+9]);
+        }
+    } else {
+        if (params->calc_es == 0) {
+            for (int i = 0; i < num_nodes; i++) {
+                fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
+                    toBePrinted_nodes[3*i], toBePrinted_nodes[3*i+1], toBePrinted_nodes[3*i+2],
+                    0., 0., 0., 0., 0., 0., 0.);
+            }
+        } else {
+            for (int i = 0; i < num_nodes; i++) {
+                fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
+                    toBePrinted_nodes[3*i], toBePrinted_nodes[3*i+1], toBePrinted_nodes[3*i+2],
+                    0., 0., 0.,
+                    toBePrinted_nodes[3*i+3], 0., 0., 0.);
+            }
+        }
+    }
+}
+
+void Blob::pre_print() {
+    // If this is a static blob, then don't bother printing out all the node positions (since there will be no change)
+    if (blob_state == FFEA_BLOB_IS_STATIC) {
+        return;
+    }
+
+    toBePrinted_conf[0] = previous_conformation_index;
+    toBePrinted_conf[1] = conformation_index;
+    toBePrinted_state[0] = previous_state_index;
+    toBePrinted_state[1] = state_index;
+
+    if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+#pragma omp parallel for default(none)
+#endif
+        for (int i = 0; i < num_nodes; i++) {
+            toBePrinted_nodes[10*i   ] = node[i].pos.x*mesoDimensions::length;
+            toBePrinted_nodes[10*i +1] = node[i].pos.y*mesoDimensions::length;
+            toBePrinted_nodes[10*i +2] = node[i].pos.z*mesoDimensions::length;
+            toBePrinted_nodes[10*i +3] = node[i].vel.x*mesoDimensions::velocity;
+            toBePrinted_nodes[10*i +4] = node[i].vel.y*mesoDimensions::velocity;
+            toBePrinted_nodes[10*i +5] = node[i].vel.z*mesoDimensions::velocity;
+            toBePrinted_nodes[10*i +6] = node[i].phi;
+            toBePrinted_nodes[10*i +7] = force[i].x*mesoDimensions::force;
+            toBePrinted_nodes[10*i +8] = force[i].y*mesoDimensions::force;
+            toBePrinted_nodes[10*i +9] = force[i].z*mesoDimensions::force;
+        }
+    } else {
+        if (params->calc_es == 0) {
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+#pragma omp parallel for default(none)
+#endif
+            for (int i = 0; i < num_nodes; i++) {
+                toBePrinted_nodes[3*i   ] = node[i].pos.x*mesoDimensions::length;
+                toBePrinted_nodes[3*i +1] = node[i].pos.y*mesoDimensions::length;
+                toBePrinted_nodes[3*i +2] = node[i].pos.z*mesoDimensions::length;
+            }
+        } else {
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+#pragma omp parallel for default(none)
+#endif
+            for (int i = 0; i < num_nodes; i++) {
+                toBePrinted_nodes[4*i   ] = node[i].pos.x*mesoDimensions::length;
+                toBePrinted_nodes[4*i +1] = node[i].pos.y*mesoDimensions::length;
+                toBePrinted_nodes[4*i +2] = node[i].pos.z*mesoDimensions::length;
+                toBePrinted_nodes[4*i +3] = node[i].phi;
+            }
+        }
+    }
+}
+
 int Blob::read_nodes_from_file(FILE *trajectory_out) {
     char state_str[20];
     char *result = NULL;
@@ -1182,7 +1287,7 @@ scalar Blob::calculate_strain_energy() {
 	return 0.5 * strain_energy;
 }
 
-void Blob::make_measurements(vector3 *box_dim) {
+void Blob::make_measurements() {
 
     int n, i, j;
     scalar kenergy, senergy;
@@ -1329,17 +1434,17 @@ void Blob::make_measurements(vector3 *box_dim) {
 
 	if(remTrans) {
 		for(i = 0; i < num_nodes; ++i) {
-		    temp1 = node[i].pos.x - node[i].pos_0.x + CoG_0.x - CoG.x +pbc_count[0]*box_dim->x;
-        	    temp2 = node[i].pos.y - node[i].pos_0.y + CoG_0.y - CoG.y+pbc_count[1]*box_dim->y;
-        	    temp3 = node[i].pos.z - node[i].pos_0.z + CoG_0.z - CoG.z + pbc_count[2]*box_dim->z;
+		    temp1 = node[i].pos.x - node[i].pos_0.x + CoG_0.x - CoG.x;
+        	    temp2 = node[i].pos.y - node[i].pos_0.y + CoG_0.y - CoG.y;
+        	    temp3 = node[i].pos.z - node[i].pos_0.z + CoG_0.z - CoG.z;
         	    brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
 		}
 	} else {
 		for(i = 0; i < num_nodes; ++i) {
-		    temp1 = node[i].pos.x - node[i].pos_0.x + pbc_count[0]*box_dim->x;
-        	    temp2 = node[i].pos.y - node[i].pos_0.y + pbc_count[1]*box_dim->y;
-        	    temp3 = node[i].pos.z - node[i].pos_0.z + pbc_count[2]*box_dim->z;
-        	    brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
+		    temp1 = node[i].pos.x - node[i].pos_0.x;
+            temp2 = node[i].pos.y - node[i].pos_0.y;
+        	temp3 = node[i].pos.z - node[i].pos_0.z;
+        	brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
 		}
 	}
 	rmsd = sqrt(brmsd / num_nodes);
@@ -1702,11 +1807,11 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 	vector<Eigen::Triplet<scalar> > components;
 
 	// Firstly, get a mapping from all node indices to just linear node indices
-	
+
 	int map[num_nodes];
 	int offset = 0;
 	for(i = 0; i < num_nodes; ++i) {
-		
+
 		if(node[i].am_I_linear()) {
 		//if(true) {
 			map[i] = i - offset;
@@ -1760,7 +1865,7 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 			//sum += it.value();
 		}
 	}
-	//cout << "Blob mass matrix sums: " << mesoDimensions::mass * sum2 << " " << mesoDimensions::mass * sum << endl;	
+	//cout << "Blob mass matrix sums: " << mesoDimensions::mass * sum2 << " " << mesoDimensions::mass * sum << endl;
 	M->setFromTriplets(components.begin(), components.end());
 	return FFEA_OK;
 

@@ -24,9 +24,9 @@
 	<calc_noise = 1>
 	<calc_es = 0>
 	<es_update = 1>
-	<es_N_x = 0>
-	<es_N_y = 0>
-	<es_N_z = 0>
+	<es_N_x = 10>
+	<es_N_y = 10>
+	<es_N_z = 10>
 	<sticky_wall_xz = 0>
 	<wall_x_1 = PBC>
 	<wall_x_2 = PBC>
