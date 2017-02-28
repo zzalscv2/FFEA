@@ -23,16 +23,45 @@
 
 import sys, os
 from math import ceil
-import FFEA_traj
+import FFEA_trajectory
+import argparse as _argparse
+import __builtin__
 
-if len(sys.argv) != 6:
-	sys.exit("Usage python " + os.path.basename(sys.argv[0]) + " [FFEA traj fname] [FFEA output traj fname] [frames to read] [First frame] [Last frame]")
+parser = _argparse.ArgumentParser(description="FFEA Trim Trajectory")
+parser.add_argument("traj_fname", action="store", help="Input trajectory file (.ftj)")
+parser.add_argument("out_fname", action="store", help="Output trajectory file (.ftj)")
+parser.add_argument("frames_to_read", action="store", type=int, help="Number of frames to read")
+parser.add_argument("trim_percent", action="store", type=float, help="Percentage to keep")
 
-traj_fname = sys.argv[1]
-out_fname = sys.argv[2]
-frames_to_read = int(sys.argv[3])
-first_frame = int(sys.argv[4])
-last_frame = int(sys.argv[5])
-
-traj = FFEA_traj.FFEA_traj(traj_fname, frames_to_read, first_frame, last_frame, 1)
-traj.write_traj_to_file(out_fname)
+def thin_trajectory(traj_fname, frames_to_read, trim_percent):
+    """
+    Remove frames from end of an FFEA_trajectory file.
+    In:
+    traj_fname an ffea trajectory file (note: a file, not an instance!)
+    out_fname: an output filename
+    frames_to_read: the number of frames to read,
+    thin_percent: percentage of the file to keep
+    Retruns:
+    an FFEA trajectory object.
+    """
+    
+    if trim_percent < 0 or trim_percent > 100:
+        sys.exit("Error. Percentage must be between 0 and 100. You used %f\n" % (trim_percent))
+    
+    if trim_percent < 1:
+        verify = raw_input("Percentage to keep was %f. Did you mean %f (y/n)?" % (trim_percent, thin_percent * 100))
+        if verify.lower() == "y":
+            trim_percent *= 100
+    
+    trim_percent /= 100.0
+    traj = FFEA_trajectory.FFEA_trajectory(traj_fname, num_frames_to_read = frames_to_read * trim_percent)
+    return traj
+    
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
+    args = parser.parse_args()
+    # Get args and build objects
+    print args.traj_fname
+    if not os.path.exists(args.traj_fname):
+        raise IOError("Trajectory file specified doesnae exist.")
+    out_traj = thin_trajectory(args.traj_fname, args.frames_to_read, args.trim_percent, )
+    out_traj.write_to_file(args.out_fname)

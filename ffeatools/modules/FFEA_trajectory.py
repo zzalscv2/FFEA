@@ -269,13 +269,15 @@ class FFEA_trajectory:
 		return 0
 
 	def delete_frame(self, index=-1):
-		
-		for i in range(self.num_blobs):
-			for j in range(self.num_conformations[i]):
-				del self.blob[i][j].frame[index]
+		try:
+			for i in range(self.num_blobs):
+				for j in range(self.num_conformations[i]):
+					del self.blob[i][j].frame[index]
 				
-		self.num_frames -= 1
-				
+			self.num_frames -= 1
+		except:
+			raise
+			
 	def build_from_pdb(self, pdb, scale = 1):
 
 		# Single blob single conf
