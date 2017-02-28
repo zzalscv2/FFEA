@@ -17,13 +17,13 @@
 	<dielec_ext = 1.00e+00>
 	<calc_stokes = 1>
 	<stokes_visc = 1.00e-03>
-	<calc_vdw = 0>
+	<calc_vdw = 1>
 	<calc_noise = 1>
 	<calc_es = 0>
 	<es_update = 1>
-	<es_N_x = 0>
-	<es_N_y = 0>
-	<es_N_z = 0>
+	<es_N_x = 10>
+	<es_N_y = 10>
+	<es_N_z = 10>
 	<move_into_box = 1>
 	<sticky_wall_xz = 0>
 	<wall_x_1 = PBC>
