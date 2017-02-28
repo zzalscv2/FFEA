@@ -76,6 +76,7 @@ public:
      */
     void clear();
     void clear_layer(int l);
+    void clear_shadow_layer();
 
     /**
      * Adds the specified pool node to the stack at index (x, y, z) on the grid.
@@ -94,6 +95,10 @@ public:
     void get_dim(int *Nx, int *Ny, int *Nz);
 
     int safely_swap_layers(); 
+
+    void allow_swapping(); 
+    void forbid_swapping(); 
+    
 
 protected:
 

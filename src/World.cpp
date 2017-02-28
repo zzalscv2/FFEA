@@ -436,7 +436,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 		shift.x = box_dim.x / 2.0 - world_centroid.x;
 		shift.y = box_dim.y / 2.0 - world_centroid.y;
 		shift.z = box_dim.z / 2.0 - world_centroid.z;
-		if(params.move_into_box == 1) {// && params.restart == 0) {
+		if(params.move_into_box == 1) {// && params.restart == 0) 
 			for (i = 0; i < params.num_blobs; i++) {
 				//active_blob_array[i]->get_centroid(&world_centroid);
 				active_blob_array[i]->move(shift.x, shift.y, shift.z);
@@ -871,14 +871,29 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				    num_faces_added++;
 				}
 			    }
-			    printf("%d 'VdW active' faces, from blob %d, conformation %d, added to lookup grid.\n", num_faces_added, i, j);
+             if (userInfo::verblevel > 1) printf("%d 'VdW active' faces, from blob %d, conformation %d, added to lookup grid.\n", num_faces_added, i, j);
 		    }
 		}
 
 #ifdef FFEA_PARALLEL_FUTURE
       // And build the lookup table for the first time:
-      thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa));
+      thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa));
 #endif
+
+
+      // pc_solver has already allocated its own neighbour list. 
+      // Still it had to wait until everything was put into box,
+      //   to place the beads onto the voxels.
+      // We now calculate the bead positions
+      //    to be able to build_pc_nearest_neighbour_lookup()
+      if (params.calc_preComp == 1)  {
+           pc_solver.compute_bead_positions();
+#ifdef FFEA_PARALLEL_FUTURE
+           thread_updatingPCLL = std::async(std::launch::async, &PreComp_solver::prebuild_pc_nearest_neighbour_lookup, &pc_solver);
+#endif 
+      }
+
+
 
 		// Initialise the BEM PBE solver
 		if (params.calc_es == 1) {
@@ -1699,14 +1714,18 @@ int World::run() {
         //                     update the neighbour list,
         //                     and calculate normals and centroids for the faces.
         bool es_update = false;
-        if (params.calc_es == 1 || params.calc_vdw == 1 || params.sticky_wall_xz == 1) {
+        if (params.calc_vdw == 1 || params.calc_preComp == 1 || params.sticky_wall_xz == 1 || params.calc_es == 1) {
             if (es_count == params.es_update) {
                 es_count = 1;
                 es_update = true;
 #ifdef FFEA_PARALLEL_FUTURE
-                if (updatingLL() == true) {  // we will have to wait!
-                   if (catch_thread_updatingLL(step, wtime, 1)) return FFEA_ERROR;
+                // we will have to wait for both threads to finish!
+                if (updatingVdWLL() == true) {
+                   if (catch_thread_updatingVdWLL(step, wtime, 1)) return FFEA_ERROR;
                 }
+                if (updatingPCLL() == true) {
+                   if (catch_thread_updatingPCLL(step, wtime, 1)) return FFEA_ERROR;
+                } 
 #endif
             } else
                 es_count++;
@@ -1800,11 +1819,11 @@ int World::run() {
 #ifdef FFEA_PARALLEL_FUTURE
                 // Thread out to update the LinkedLists,
                 //   after calculating the centroids of the faces.
-                // Catching up the thread should be done through catch_thread_updatingLL,
+                // Catching up the thread should be done through catch_thread_updatingVdWLL,
                 //   which will to lookup.safely_swap_layers().
-                if (updatingLL() == false) {
-                    thread_updatingLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.es_h*(1.0 / params.kappa));
-                } else
+                if (updatingVdWLL() == false) {
+                    thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.es_h*(1.0 / params.kappa));
+                } else // die with dignity
 #else
                 if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR)
 #endif
@@ -1812,6 +1831,21 @@ int World::run() {
                     return die_with_dignity(step, wtime);
                 }
 
+                // Attempt to place all beads in the PC nearest neighbour lookup table
+#ifdef FFEA_PARALLEL_FUTURE
+                // Just as in VdW, thread out to update the PC LinkedLists
+                if (updatingPCLL() == false) {
+                    thread_updatingPCLL = std::async(std::launch::async, &PreComp_solver::prebuild_pc_nearest_neighbour_lookup, &pc_solver);
+                } else // die with dignity
+#else
+                if (pc_solver.build_pc_nearest_neighbour_lookup() == FFEA_ERROR) 
+#endif
+                {
+                    return die_with_dignity(step, wtime); 
+                }
+
+ 
+                // Finally do calc_es, which is done only from time to time...
                 if (params.calc_es == 1) {
                     do_es();
                 }
@@ -1829,17 +1863,23 @@ int World::run() {
         apply_springs();
 #endif
 
+#ifdef FFEA_PARALLEL_FUTURE
+        if (updatingPCLL_ready_to_swap() == true) {
+            if ( catch_thread_updatingPCLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
+        }
+#endif
+        
         // if PreComp is required:
         if (params.calc_preComp == 1) {
-          pc_solver.solve();
+          // pc_solver.solve();
+          pc_solver.solve_using_neighbours();
         }
 
 
 #ifdef FFEA_PARALLEL_FUTURE
         // #pragma omp master // Then a single thread does the catching and swapping
-        if (updatingLL_ready_to_swap() == true) {
-            if ( catch_thread_updatingLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
-            // catch_thread_updatingLL(step, wtime, 3);
+        if (updatingVdWLL_ready_to_swap() == true) {
+            if ( catch_thread_updatingVdWLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
         }
         // #pragma omp barrier // the barrier holds people off, before catching the thread
 #endif
@@ -3963,15 +4003,19 @@ int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size) {
      return lookup.prebuild_nearest_neighbour_lookup(cell_size);
 }
 
-bool World::updatingLL() {
-     return thread_updatingLL.valid();
+bool World::updatingVdWLL() {
+     return thread_updatingVdWLL.valid();
 }
 
-bool World::updatingLL_ready_to_swap(){
+bool World::updatingPCLL() {
+     return thread_updatingPCLL.valid();
+}
+
+bool World::updatingVdWLL_ready_to_swap(){
 
      bool its = false;
-     if (thread_updatingLL.valid()) {
-        if (thread_updatingLL.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
+     if (thread_updatingVdWLL.valid()) {
+        if (thread_updatingVdWLL.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
           its = true;
        }
      }
@@ -3979,18 +4023,50 @@ bool World::updatingLL_ready_to_swap(){
 
 }
 
-int World::catch_thread_updatingLL(int step, scalar wtime, int where) {
+bool World::updatingPCLL_ready_to_swap(){
 
-          if (updatingLL() == false) {
+     bool its = false;
+     if (thread_updatingPCLL.valid()) {
+        if (thread_updatingPCLL.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
+          its = true;
+       }
+     }
+     return its;
+
+}
+
+
+int World::catch_thread_updatingVdWLL(int step, scalar wtime, int where) {
+
+          if (updatingVdWLL() == false) { // i. e., thread has been already catched!
               cout << "trying to catch from: " << where <<
-                      ", but updatingLL was false" << endl;
+                      ", but updatingVdWLL was false" << endl;
               return 0;
           }
 
-          if (thread_updatingLL.get() == FFEA_ERROR) {
+          if (thread_updatingVdWLL.get() == FFEA_ERROR) {
               return die_with_dignity(step, wtime);
           }
           if (lookup.safely_swap_layers() == FFEA_ERROR) {
+              return die_with_dignity(step, wtime);
+          }
+
+          return FFEA_OK;
+}
+
+
+int World::catch_thread_updatingPCLL(int step, scalar wtime, int where) {
+
+          if (updatingPCLL() == false) { // i. e., thread has been already catched!
+              cout << "trying to catch from: " << where <<
+                      ", but updatingPCLL was false" << endl;
+              return 0;
+          }
+
+          if (thread_updatingPCLL.get() == FFEA_ERROR) { // we'll need to change this check
+              return die_with_dignity(step, wtime);
+          }
+          if (pc_solver.safely_swap_pc_layers() == FFEA_ERROR) {
               return die_with_dignity(step, wtime);
           }
 
