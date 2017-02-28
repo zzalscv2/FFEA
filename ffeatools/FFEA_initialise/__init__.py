@@ -36,3 +36,4 @@ from FFEA_convert_from_volume import __init__
 from .FFEA_volume_tools import __init__
 #from .FFEA_volume_tools import cull_small_interior_elements # python cli tool only
 from .Surface_tools import __init__ # c - EM density map and coarse grainer
+#from FFEA_automodel import automodel #not in API yet
