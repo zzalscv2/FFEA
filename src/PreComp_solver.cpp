@@ -447,13 +447,11 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
 
 
    // 5.2 - store indices in there:
-   b_ind = new int[n_beads];
    for (int i=0; i<n_beads; i++) {
-     b_ind[i] = i; 
 #ifdef FFEA_PARALLEL_FUTURE
-     lookup_error = pcLookUp.add_to_pool_dual(&b_ind[i]);
+     lookup_error = pcLookUp.add_to_pool_dual(NULL);
 #else
-     lookup_error = pcLookUp.add_to_pool(&b_ind[i]);
+     lookup_error = pcLookUp.add_to_pool(NULL);
 #endif
      if (lookup_error == FFEA_ERROR) {
         FFEA_error_text();
@@ -484,26 +482,21 @@ int PreComp_solver::solve_using_neighbours(){
     // 0 - clear fieldenery:
     reset_fieldenergy(); 
 
+
     // 1 - Compute the position of the beads:
     compute_bead_positions();
 
 
+    // 2 - Compute all the i-j forces:
     LinkedListNode<int> *b_i = NULL; 
     LinkedListNode<int> *b_j = NULL; 
     int b_index_i, b_index_j; 
-  
-
-    // 2 - Compute all the i-j forces:
 #ifdef USE_OPENMP
 #pragma omp parallel for default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j)
 #endif
     for (int i=0; i<n_beads; i++){
       b_i = pcLookUp.get_from_pool(i); 
-      b_index_i = *(b_i->obj); 
-      if (b_index_i != b_i->index) { // we'll use b_index_i as b_i->index to increase the performance.
-        printf("indices different!!\n");
-        printf(" alternative approach, useless!!\n");
-      }
+      b_index_i = b_i->index; 
 
       type_i = b_types[b_index_i]; 
       phi_i[1] = b_rel_pos[3*b_index_i  ];
@@ -518,7 +511,7 @@ int PreComp_solver::solve_using_neighbours(){
                                         b_i->z + adjacent_cells[c][2]);
   
         while (b_j != NULL) {
-           b_index_j = *(b_j->obj); 
+           b_index_j = b_j->index;
            if (b_index_j <= b_index_i) {
              b_j = b_j->next; 
              continue; 

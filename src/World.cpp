@@ -1863,6 +1863,12 @@ int World::run() {
         apply_springs();
 #endif
 
+#ifdef FFEA_PARALLEL_FUTURE
+        if (updatingPCLL_ready_to_swap() == true) {
+            if ( catch_thread_updatingPCLL(step, wtime, 3) ) return die_with_dignity(step,wtime);
+        }
+#endif
+        
         // if PreComp is required:
         if (params.calc_preComp == 1) {
           // pc_solver.solve();
