@@ -491,7 +491,8 @@ class FFEA_viewer_control_window:
 		self.load_trajectory_thread.join()
 
 	# Requires knowledge of whole trajectory
-	self.draw_inverted_elements()
+	if self.display_flags["show_inverted"] == 1:
+		self.draw_inverted_elements()
 
 	try:
 		self.root.destroy()
@@ -601,25 +602,32 @@ class FFEA_viewer_control_window:
 			continue
 
 		flast = self.traj.blob[bin][cin].frame[-1]
-		f2last = self.traj.blob[bin][cin].frame[-2]
+
+		try:
+			f2last = self.traj.blob[bin][cin].frame[-2]
+		except:
+			f2last = c.node
 
 		for el in c.top.element:
-			v1 = el.calc_volume(flast)
-			v2 = el.calc_volume(f2last)
-			if v1 * v2 < 0:
+			jac = np.linalg.det(el.calc_jacobian(flast))
+			jac_last = np.linalg.det(el.calc_jacobian(f2last))
+			if jac * jac_last < 0:
 				element_list.append(index)
 
 			index += 1
 		
-		# Draw these as a new object on the last frame
+		# Draw these as a new object on the last frame		
 		invele = []
+		numtxt = []
+		txtscale = 0.1
+		axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
 		invele.extend( [BEGIN, LINES] )
 
 		for el in element_list:
-			n1 = flast.pos[self.top.element[el].n[0]]
-			n2 = flast.pos[self.top.element[el].n[1]]
-			n3 = flast.pos[self.top.element[el].n[2]]
-			n4 = flast.pos[self.top.element[el].n[3]]
+			n1 = flast.pos[c.top.element[el].n[0]]
+			n2 = flast.pos[c.top.element[el].n[1]]
+			n3 = flast.pos[c.top.element[el].n[2]]
+			n4 = flast.pos[c.top.element[el].n[3]]
 
 			invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 			invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
@@ -638,11 +646,15 @@ class FFEA_viewer_control_window:
 
 			invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 		        invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+
+			nn = c.top.element[el].calc_centroid(flast)
+			cyl_text(numtxt,plain,nn,str(el), txtscale, axes=axes * txtscale)
+
 		invele.append(END)
 
 		if len(invele) > 3:
 			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted_" + str(c.num_loads), self.num_frames)
-
+			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex_" + str(c.num_loads), self.num_frames)
 		bin += 1
 
   def load_trajectory(self, trajectory_out_fname):
@@ -690,10 +702,8 @@ class FFEA_viewer_control_window:
 			self.draw_frame(self.num_frames - 1)
 
 			# Delete frames from memory
-			try:
+			if(self.num_frames > 2):
 				self.traj.delete_frame(index = self.num_frames - 3)
-			except:
-				pass
 	
 			self.remove_frame_from_blobs()
 		else:
@@ -702,7 +712,6 @@ class FFEA_viewer_control_window:
 	# Finally show the "progress bar":
 	if self.num_frames > 1:
 		cmd.mset("1-"+str(self.num_frames))
-
 
   def get_system_dimensions(self, findex):
 	maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])	

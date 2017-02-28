@@ -269,7 +269,6 @@ class FFEA_trajectory:
 		return 0
 
 	def delete_frame(self, index=-1):
-		
 		try:
 			for i in range(self.num_blobs):
 				for j in range(self.num_conformations[i]):
