@@ -44,6 +44,10 @@ set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
 set(USE_PRECISION 2 CACHE STRING "1: Floats + Doubles; 2: Doubles; 3: Doubles + Long Doubles")
 mark_as_advanced(USE_PRECISION)
+option(USE_BOOST_INTERNAL "Use the sources we ship (ON) or your own boost (OFF)" ON)
+mark_as_advanced(USE_BOOST_INTERNAL)
+option(USE_EIGEN3_INTERNAL "Build Eigen automatically as building FFEA (ON) or use your own install (OFF)" ON)
+mark_as_advanced(USE_EIGEN3_INTERNAL)
 
 
 set (LIBS_TO_LINK)
@@ -53,7 +57,6 @@ set (LIBS_TO_LINK)
 # benchmark ### MPI #########
 if (USE_MPI)
   add_definitions(-DUSE_MPI)
-
   find_package(MPI REQUIRED)
   set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
   set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
@@ -135,46 +138,74 @@ endif(UNIX)
 
 # 5 ### BOOST #####
 # set (Boost_NO_SYSTEM_PATHS ON)
-set (Boost_NO_BOOST_CMAKE ON)
-set (Boost_USE_STATIC_LIBS ON)
-# Check version:
-find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
-if (Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-  set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${Boost_LIBRARY_DIRS}")
-  set(LIBS_TO_LINK ${LIBS_TO_LINK} ${Boost_LIBRARIES})
-else (Boost_FOUND)
-  message(FATAL_ERROR "You could provide valid paths through either:
-   -- BOOST_ROOT or
-   -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR")
-endif (Boost_FOUND)
+if (USE_BOOST_INTERNAL) 
+
+   message(STATUS "Configuring internal Boost")
+   if (UNIX) 
+      include(cmake/GetBoost.cmake)
+   else (UNIX) 
+      message(FATAL_ERROR "Some day my prince will come.")
+   endif(UNIX)
+
+else(USE_BOOST_INTERNAL) 
+   set (Boost_NO_BOOST_CMAKE ON)
+   set (Boost_USE_STATIC_LIBS ON)
+   # Check version:
+   find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
+   if (NOT Boost_FOUND)
+     message(FATAL_ERROR "You could provide valid paths through either:
+      -- BOOST_ROOT or
+      -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR or
+try reconfiguring with -DUSE_BOOST_INTERNAL")
+   endif (NOT Boost_FOUND)
+
+endif(USE_BOOST_INTERNAL) 
+
+# Anyway:
+include_directories(${Boost_INCLUDE_DIRS})
+set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${Boost_LIBRARY_DIRS}")
+set(LIBS_TO_LINK ${LIBS_TO_LINK} ${Boost_LIBRARIES})
 
 
 
 
 # 6 ### EIGEN3 #####
-# 6.1 # set up EIGEN3_HOME
-if (EIGEN3_HOME)  
-  set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
-else(EIGEN3_HOME)   
-  set(EIGEN3_HOME $ENV{EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
-endif(EIGEN3_HOME)
-# 6.2 # we guarantee that if $EIGEN3_HOME is given, it will be take 
-      # before than any of the other possible installations available.
-set(CMAKE_PREFIX_PATH ${EIGEN3_HOME} $ENV{EIGEN_HOME} ${CMAKE_PREFIX_PATH})
-# 6.3 # Sometimes "FindEigen3.cmake" is not distributed with CMake, so we're shipping it:
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
-# 6.4 # Go for it:
-find_package(Eigen3 3.2.0 REQUIRED)
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
-     if (${EIGEN3_VERSION} VERSION_LESS "3.3") 
-       if (NOT ${EIGEN3_VERSION} VERSION_EQUAL "3.2.10")
-         message(FATAL_ERROR "\n Found Eigen3 ${EIGEN3_VERSION}, but GCC 5.0 and higher need Eigen version 3.2.10, or > 3.3. Release candidates for 3.3 (internally known as 3.2.91 and higher) are known to fail.")
-       endif (NOT ${EIGEN3_VERSION} VERSION_EQUAL "3.2.10")
-     endif (${EIGEN3_VERSION} VERSION_LESS "3.3") 
-   endif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
-endif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if (USE_EIGEN3_INTERNAL) 
+
+   message(STATUS "Configuring internal Eigen")
+  # 6.a.1 # set up EIGEN3_HOME
+  set(EIGEN3_HOME ${PROJECT_BINARY_DIR}/external/install_eigen)
+  # 6.a.2 # get and install Eigen in EIGEN3_HOME
+  include(cmake/GetEigen3.cmake)
+
+else (USE_EIGEN3_INTERNAL) 
+
+  # 6.1 # set up EIGEN3_HOME
+  if (EIGEN3_HOME)  
+    set(EIGEN3_HOME ${EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
+  else(EIGEN3_HOME)   
+    set(EIGEN3_HOME $ENV{EIGEN3_HOME} CACHE PATH "[OPTIONAL] Path to your local EIGEN3 installation")
+  endif(EIGEN3_HOME)
+
+  # 6.2 # we guarantee that if $EIGEN3_HOME is given, it will be take 
+        # before than any of the other possible installations available.
+  set(CMAKE_PREFIX_PATH ${EIGEN3_HOME} $ENV{EIGEN_HOME} ${CMAKE_PREFIX_PATH})
+  # 6.3 # Sometimes "FindEigen3.cmake" is not distributed with CMake, so we're shipping it:
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+  # 6.4 # Go for it:
+  find_package(Eigen3 3.2.0 REQUIRED)
+  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
+       if (${EIGEN3_VERSION} VERSION_LESS "3.3") 
+         if (NOT ${EIGEN3_VERSION} VERSION_EQUAL "3.2.10")
+           message(FATAL_ERROR "\n Found Eigen3 ${EIGEN3_VERSION}, but GCC 5.0 and higher need Eigen version 3.2.10, or > 3.3. Release candidates for 3.3 (internally known as 3.2.91 and higher) are known to fail.")
+         endif (NOT ${EIGEN3_VERSION} VERSION_EQUAL "3.2.10")
+       endif (${EIGEN3_VERSION} VERSION_LESS "3.3") 
+     endif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
+  endif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  
+
+endif (USE_EIGEN3_INTERNAL) 
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 
@@ -229,7 +260,7 @@ if (NOT USE_PACK)
       if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -ffast-math -fipa-pta")
       else(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -ffast-math -fipa-pta -march=native")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -fipa-pta -march=native")
       endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8")
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ipo -no-prec-div -fp-model fast=2 -xHost")
@@ -238,7 +269,7 @@ if (NOT USE_PACK)
   endif(USE_FAST)
 else (NOT USE_PACK)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -ffast-math -fipa-pta -mtune=generic")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -fipa-pta -mtune=generic")
   else()
       message(FATAL_ERROR "No packaging without GNU compilers")
   endif()

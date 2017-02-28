@@ -40,8 +40,15 @@ add_executable(ffea ffea.cpp
     PreComp_solver.cpp CheckTetrahedraOverlap.cpp VolumeIntersection.cpp
     FFEA_user_info.cpp RngStream.cpp )
     
+if (USE_BOOST_INTERNAL)
+   add_dependencies(ffea ourboost)
+endif(USE_BOOST_INTERNAL)
+if (USE_EIGEN3_INTERNAL)
+   add_dependencies(ffea getEigen)
+endif(USE_EIGEN3_INTERNAL)
 
-target_link_libraries(ffea ${LIBS_TO_LINK})
+
+target_link_libraries(ffea ${LIBS_TO_LINK} ${CMAKE_THREAD_LIBS_INIT})
 
 install (TARGETS ffea RUNTIME DESTINATION bin)
 

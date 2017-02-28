@@ -183,6 +183,14 @@ public:
     void write_nodes_to_file(FILE *trajectory_out);
 
     /**
+     * Dumps all the node positions (in order) from the node array to the given file stream in two steps.
+     */
+    void pre_print(); 
+    void write_pre_print_to_file(FILE *trajectory_out); 
+    int toBePrinted_conf[2]; 
+    int toBePrinted_state[2]; 
+
+    /**
      * Reads the node positions from the given trajectory file stream.
      * This is useful for restarting simulations from trajectory files.
      */
@@ -191,7 +199,7 @@ public:
     /**
      * Takes measurements of system properties: KE, PE, Centre of Mass and Angular momentum etc
      */
-    void make_measurements(vector3 *box_dim);
+    void make_measurements();
 
     /**
      * Writes only the detailed measurements local to this blob to file!
@@ -592,6 +600,10 @@ private:
      */
     SparseMatrixFixedPattern *M;
 
+
+    /*
+     */
+    scalar *toBePrinted_nodes; 
 
     /**
      * Opens and reads the given 'ffea node file', extracting all the nodes for this Blob.

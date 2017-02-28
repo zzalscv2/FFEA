@@ -237,6 +237,13 @@ void vec3_scale(vector3 *v, scalar scale) {
 	v->z *= scale;
 }
 
+void vec3_scale2(vector3 *v1, vector3 *v2, scalar scale) {
+	v2->x = scale*v1->x;
+	v2->y = scale*v1->y;
+	v2->z = scale*v1->z;
+}
+
+
 /*
  *
  */
