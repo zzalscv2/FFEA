@@ -308,9 +308,13 @@ private:
     std::future<void> thread_writingTraj; 
     std::future<int> thread_applyingSprings; 
     std::future<int> thread_updatingVdWLL; 
-    bool updatingVdWLL();
-    bool updatingVdWLL_ready_to_swap();
+    std::future<int> thread_updatingPCLL; 
+    bool updatingVdWLL(); ///< check if the thread has been catched.
+    bool updatingVdWLL_ready_to_swap(); ///< true if thread waiting to be catched.
     int catch_thread_updatingVdWLL(int step, scalar wtime, int where); 
+    bool updatingPCLL(); ///< check if the thread has been catched.
+    bool updatingPCLL_ready_to_swap(); ///< true if thread waiting to be catched.
+    int catch_thread_updatingPCLL(int step, scalar wtime, int where); 
 #endif
 
     void make_measurements();
