@@ -1704,8 +1704,15 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
 int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
+#ifdef BENCHMARK
+    scalar wtime0, wtime1, wtime2, wtime3, wtime4, time0=0, time1=0, time2=0, time3=0;
+#endif
 
     for (long long step = step_initial; step < params.num_steps; step++) {
+
+#ifdef BENCHMARK
+        wtime0 = omp_get_wtime();
+#endif
 
         // check if we need to calculate electrostatics,
         //                     update the neighbour list,
@@ -1851,11 +1858,7 @@ int World::run() {
 
         
         // Apply springs directly to nodes
-#ifdef FFEA_PARALLEL_FUTURE
-        thread_applyingSprings = std::async(std::launch::async,&World::apply_springs,this);
-#else
         apply_springs();
-#endif
 
 
 #ifdef FFEA_PARALLEL_FUTURE
@@ -1865,11 +1868,22 @@ int World::run() {
         }
 #endif
         
+#ifdef BENCHMARK
+        wtime1 = omp_get_wtime();
+        time0 += wtime1 - wtime0;
+#endif
+
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
           // pc_solver.solve();
           pc_solver.solve_using_neighbours();
         }
+
+#ifdef BENCHMARK
+        wtime2 = omp_get_wtime();
+        time1 += wtime2 - wtime1;
+#endif
+
 
 
 #ifdef FFEA_PARALLEL_FUTURE
@@ -1895,14 +1909,14 @@ int World::run() {
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
 
-#ifdef FFEA_PARALLEL_FUTURE
-        thread_applyingSprings.get();
+
+#ifdef BENCHMARK
+        wtime3 = omp_get_wtime();
+        time2 += wtime3 - wtime2;
 #endif
 
-
-        // Sort internal forces out
+        // Update Blobs, while tracking possible errors.
         int fatal_errors = 0;
-
 #ifdef FFEA_PARALLEL_PER_BLOB
 #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
 #endif
@@ -1945,12 +1959,36 @@ int World::run() {
         if ((step + 1) % params.check == 0) {
             print_kinetic_files(step + 1);
         }
+
+#ifdef BENCHMARK
+        wtime4 = omp_get_wtime();
+        time3 += wtime4 - wtime3;
+#endif
+
     }
 
 #ifdef FFEA_PARALLEL_FUTURE
     // Wait until the last step has correctly been written:
     thread_writingTraj.get();
 #endif
+
+    // Total mpi timing, compare with openmp timing
+#ifdef BENCHMARK
+    cout<<"total steps:"<< params.num_steps <<endl;
+    cout<< "benchmarking--------cleaning & threading out\t"<< time0 << "seconds"<< endl;
+    cout<< "benchmarking--------strictly preComp for \t"<< time1 << "seconds"<< endl;
+    cout<< "benchmarking--------vdw & threading back in\t"<< time2 << "seconds"<< endl;
+    cout<< "benchmarking--------update blobs for \t"<< time3 << "seconds"<< endl;
+    cout<< "benchmarking--------Total time in World::run():" << omp_get_wtime() - wtime << "seconds"<< endl;
+
+    cout<< "benchmarking--------PreComp decomposition: " << endl;
+    cout<< "            --------Cleaning: " << pc_solver.timep0 << " seconds" << endl;
+    cout<< "            --------Positions: " << pc_solver.timep1 << " seconds" << endl;
+    cout<< "            --------Doubleloop: " << pc_solver.timep2 << " seconds" << endl;
+    cout<< "            ------------------part1 : " << pc_solver.timep3 << " seconds" << endl;
+    cout<< "            ------------------part2 : " << pc_solver.timep4 << " seconds" << endl;
+#endif
+
 
     printf("\n\nTime taken: %2f seconds\n", (omp_get_wtime() - wtime));
 
