@@ -192,6 +192,15 @@ void LinkedListCube<T>::clear_layer(int l) {
     }
 }
 
+
+/* */
+template <class T>
+void LinkedListCube<T>::clear_shadow_layer() {
+
+    clear_layer(shadow_layer); 
+
+}
+
 /* */
 template <class T>
 int LinkedListCube<T>::add_node_to_stack(int i, int x, int y, int z) {
@@ -307,5 +316,19 @@ int LinkedListCube<T>::safely_swap_layers() {
        swap_layers(); 
        return FFEA_OK; 
     } else return FFEA_ERROR;
+
+}
+
+template <class T>
+void LinkedListCube<T>::allow_swapping() {
+
+    can_swap = true;
+
+}
+
+template <class T>
+void LinkedListCube<T>::forbid_swapping() {
+
+    can_swap = false;
 
 }
