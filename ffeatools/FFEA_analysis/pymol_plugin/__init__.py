@@ -491,7 +491,7 @@ class FFEA_viewer_control_window:
 		self.load_trajectory_thread.join()
 
 	# Requires knowledge of whole trajectory
-	if self.display_flags["show_inverted"] == 1:
+	if self.traj != None and self.display_flags["show_inverted"] == 1:
 		self.draw_inverted_elements()
 
 	try:
@@ -817,6 +817,9 @@ class FFEA_viewer_control_window:
 
 	# num times loaded
 	self.num_loads = 0
+	
+	# Empty traj object
+	self.traj = None
 
 	# camera
 	# self.orientation = Quaternion()
