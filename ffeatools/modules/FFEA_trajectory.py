@@ -456,7 +456,6 @@ class FFEA_traj_blob:
 		ctraj = []
 		step = []
 		
-		print len(self.frame)
 		for f in self.frame:
 			centroid = np.array([0.0,0.0,0.0])
 			for i in indices:
