@@ -519,7 +519,7 @@ bool Face::getTetraIntersectionVolumeAndShapeFunctions(Face *f2, grr3 (&r), grr3
 }
 
 
-bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2)){
+bool Face::getTetraIntersectionVolumeGradientAndShapeFunctions__old(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2)){
 
   geoscalar tetA[4][3], tetB[4][3], tetC[4][3];
   grr3 ap1, ap2, cm1, cm2;
