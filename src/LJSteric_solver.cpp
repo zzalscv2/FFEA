@@ -73,23 +73,25 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
            lj = false;
            vol *= steric_factor;
 
-           // Store the measurement
-           fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
-
             // Force is proportional to the gradient, i. e.:
             arr3Resize<geoscalar,grr3>(steric_factor, dVdr);
 
            grr3 ftmp1, ftmp2;
+           #pragma omp critical
+           {
+           // Store the measurement
+           fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
            // Finally, apply the force onto the nodes:
-            for (int j = 0; j < 4; j++) {
-            arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
-            f1->add_force_to_node(j, ftmp1);
-            f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+           for (int j = 0; j < 4; j++) {
+               arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
+               f1->add_force_to_node(j, ftmp1);
+               f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
 
-            arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
-            f2->add_force_to_node(j, ftmp2);
-            f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
-    }
+               arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
+               f2->add_force_to_node(j, ftmp2);
+               f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+           }
+           } // close omp critical
 
         }
     }
@@ -191,37 +193,38 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 	    //f2->add_bb_vdw_energy_to_record(energy, f1->daddy_blob->blob_index);
 
 	    // Store the measurement
+	    #pragma omp critical
+       {
 	    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
+       for (int j = 0; j < 3; j++) {
+          vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
+          for (int k = 0; k < num_tri_gauss_quad_points; k++) {
+             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
+                scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
+                scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
 
-	    for (int j = 0; j < 3; j++) {
-		vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
-		for (int k = 0; k < num_tri_gauss_quad_points; k++) {
-		    for (int l = 0; l < num_tri_gauss_quad_points; l++) {
-		        scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
-		        scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
+                force1.x += c * force_pair_matrix[k][l].x;
+                force1.y += c * force_pair_matrix[k][l].y;
+                force1.z += c * force_pair_matrix[k][l].z;
 
-		        force1.x += c * force_pair_matrix[k][l].x;
-		        force1.y += c * force_pair_matrix[k][l].y;
-		        force1.z += c * force_pair_matrix[k][l].z;
+                force2.x -= d * force_pair_matrix[l][k].x;
+                force2.y -= d * force_pair_matrix[l][k].y;
+                force2.z -= d * force_pair_matrix[l][k].z;
+             }
+          }
+          force1.x *= ApAq;
+          force1.y *= ApAq;
+          force1.z *= ApAq;
+          f1->add_force_to_node(j, &force1);
+          f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
 
-		        force2.x -= d * force_pair_matrix[l][k].x;
-		        force2.y -= d * force_pair_matrix[l][k].y;
-		        force2.z -= d * force_pair_matrix[l][k].z;
-		    }
-		}
-		force1.x *= ApAq;
-		force1.y *= ApAq;
-		force1.z *= ApAq;
-		f1->add_force_to_node(j, &force1);
-		f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
-
-		force2.x *= ApAq;
-		force2.y *= ApAq;
-		force2.z *= ApAq;
-		f2->add_force_to_node(j, &force2);
-		f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
-	    }
-
+          force2.x *= ApAq;
+          force2.y *= ApAq;
+          force2.z *= ApAq;
+          f2->add_force_to_node(j, &force2);
+          f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+	    } // end updating face nodes
+       } // end of critical
     }
 
     return;
@@ -278,24 +281,25 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
            lj = false;
            vol *= steric_factor;
 
-           // Store the measurement
-           fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
-
            // Force is proportional to the gradient, i. e.:
             arr3Resize<geoscalar,grr3>(steric_factor, dVdr);
 
            grr3 ftmp1, ftmp2;
+           #pragma omp critical
+           {
+           // Store the measurement
+           fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
            // Finally, apply the force onto the nodes:
-            for (int j = 0; j < 4; j++) {
-            arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
-            f1->add_force_to_node(j, ftmp1);
-            f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+           for (int j = 0; j < 4; j++) {
+              arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
+              f1->add_force_to_node(j, ftmp1);
+              f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
 
-            arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
-            f2->add_force_to_node(j, ftmp2);
-            f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+              arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
+              f2->add_force_to_node(j, ftmp2);
+              f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
             }
-
+            }
         }
     }
     if (lj) {
@@ -396,37 +400,40 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
 	    //f1->add_bb_vdw_energy_to_record(energy, f2->daddy_blob->blob_index);
 	    //f2->add_bb_vdw_energy_to_record(energy, f1->daddy_blob->blob_index);
 
+
 	    // Store the measurement
+	    #pragma omp critical
+       {
 	    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
+       for (int j = 0; j < 3; j++) {
+          vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
+          for (int k = 0; k < num_tri_gauss_quad_points; k++) {
+             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
+                scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
+                scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
 
-	    for (int j = 0; j < 3; j++) {
-		vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
-		for (int k = 0; k < num_tri_gauss_quad_points; k++) {
-		    for (int l = 0; l < num_tri_gauss_quad_points; l++) {
-		        scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
-		        scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
+                force1.x += c * force_pair_matrix[k][l].x;
+                force1.y += c * force_pair_matrix[k][l].y;
+                force1.z += c * force_pair_matrix[k][l].z;
 
-		        force1.x += c * force_pair_matrix[k][l].x;
-		        force1.y += c * force_pair_matrix[k][l].y;
-		        force1.z += c * force_pair_matrix[k][l].z;
+                force2.x -= d * force_pair_matrix[l][k].x;
+                force2.y -= d * force_pair_matrix[l][k].y;
+                force2.z -= d * force_pair_matrix[l][k].z;
+             }
+          }
+          force1.x *= ApAq;
+          force1.y *= ApAq;
+          force1.z *= ApAq;
+          f1->add_force_to_node(j, &force1);
+          f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
 
-		        force2.x -= d * force_pair_matrix[l][k].x;
-		        force2.y -= d * force_pair_matrix[l][k].y;
-		        force2.z -= d * force_pair_matrix[l][k].z;
-		    }
-		}
-		force1.x *= ApAq;
-		force1.y *= ApAq;
-		force1.z *= ApAq;
-		f1->add_force_to_node(j, &force1);
-		f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
-
-		force2.x *= ApAq;
-		force2.y *= ApAq;
-		force2.z *= ApAq;
-		f2->add_force_to_node(j, &force2);
-		f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
-	    }
+          force2.x *= ApAq;
+          force2.y *= ApAq;
+          force2.z *= ApAq;
+          f2->add_force_to_node(j, &force2);
+          f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+	    } // end updating face nodes
+       } // end of critical
 
     }
 

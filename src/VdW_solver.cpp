@@ -144,10 +144,6 @@ int VdW_solver::solve() {
 	}
         f_i = l_i->obj;
 
-        //time2 = MPI::Wtime() - st;
-        //cout<< "time to get the ith face:" << time2 << "seconds" << endl;
-        //cout<< "inner loop" << endl;
-
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
@@ -380,11 +376,6 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
         for(int l = k; l < num_tri_gauss_quad_points; l++) {
-//          vector3 r =     {
-//                                  minimum_image(p[k].x - q[l].x, box_size.x),
-//                                  minimum_image(p[k].y - q[l].y, box_size.y),
-//                                  minimum_image(p[k].z - q[l].z, box_size.z)
-//                          };
             mag_r = sqrt( (p[k].x - q[l].x) * (p[k].x - q[l].x) +
                           (p[k].y - q[l].y) * (p[k].y - q[l].y) +
                           (p[k].z - q[l].z) * (p[k].z - q[l].z) );
@@ -408,21 +399,13 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
         }
     }
 
-    //			printf("YO\n");
-    //			for(int k = 0; k < num_tri_gauss_quad_points; k++) {
-    //				for(int l = 0; l < num_tri_gauss_quad_points; l++) {
-    //					printf("(%e %e %e) ", force_pair_matrix[k][l].x, force_pair_matrix[k][l].y, force_pair_matrix[k][l].z);
-    //				}
-    //				printf("\n");
-    //			}
-
     scalar ApAq = f1->area * f2->area;
     energy *= ApAq;
 
     // Store the measurement
-    #pragma omp atomic
+    #pragma omp critical
+    {
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
-
     for (int j = 0; j < 3; j++) {
         vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
@@ -451,46 +434,9 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
         force2.z *= ApAq;
         f2->add_force_to_node(j, &force2);
         f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
-        //				printf("2:: %d %e %e %e\n", j, force2.x, force2.y, force2.z);
+    } // end updating face nodes.
+    } // end of critical
 
-        //				f2->add_force_to_node_atomic(j, &force);
-
-        //				if(j == 0) {
-        //					f2->add_force_to_node_atomic(0, &force);
-        //				} else if(j == 1) {
-        //					f2->add_force_to_node_atomic(1, &force);
-        //				} else if(j == 2) {
-        //					f2->add_force_to_node_atomic(2, &force);
-        //				} else {
-        //					printf("WTF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-        //				}
-
-        //				printf("Face 1: force on node %d = {%e %e %e}\n", j, force.x, force.y, force.z);
-    }
-
-
-    //			printf("\n\n\n\n");
-
-    /*
-                            for(int j = 0; j < 3; j++) {
-                                    vector3 force = {0, 0, 0};
-                                    for(int k = 0; k < num_tri_gauss_quad_points; k++) {
-                                            for(int l = 0; l < num_tri_gauss_quad_points; l++) {
-                                                    scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
-                                                    force.x -= c * force_pair_matrix[k][l].x;
-                                                    force.y -= c * force_pair_matrix[k][l].y;
-                                                    force.z -= c * force_pair_matrix[k][l].z;
-                                            }
-                                    }
-                                    force.x *= ApAq;
-                                    force.y *= ApAq;
-                                    force.z *= ApAq;
-                                    f2->add_force_to_node(j, &force);
-                                    printf("Face 2: force on node %d = {%e %e %e}\n", j, force.x, force.y, force.z);
-                            }
-                            printf("\n");
-
-     */
 
 }
     /**Alters interaction calculations to apply periodic boundary conditions*/
@@ -618,16 +564,16 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     energy *= ApAq;
 
     // Store the measurement
-    #pragma omp atomic
+    #pragma omp critical
+    {
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
-
     for (int j = 0; j < 3; j++) {
         vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
                 scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
-                //printf("c = %e, %e, %e, %e\n", c, gauss_points[k].W, gauss_points[l].W, gauss_points[l].eta[j]);
+
                 force1.x += c * force_pair_matrix[k][l].x;
                 force1.y += c * force_pair_matrix[k][l].y;
                 force1.z += c * force_pair_matrix[k][l].z;
@@ -642,53 +588,15 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
         force1.z *= ApAq;
         f1->add_force_to_node(j, &force1);
         f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
-        //				printf("1:: %d %e %e %e\n", j, force1.x, force1.y, force1.z);
 
         force2.x *= ApAq;
         force2.y *= ApAq;
         force2.z *= ApAq;
         f2->add_force_to_node(j, &force2);
         f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
-        //				printf("2:: %d %e %e %e\n", j, force2.x, force2.y, force2.z);
 
-        //				f2->add_force_to_node_atomic(j, &force);
-
-        //				if(j == 0) {
-        //					f2->add_force_to_node_atomic(0, &force);
-        //				} else if(j == 1) {
-        //					f2->add_force_to_node_atomic(1, &force);
-        //				} else if(j == 2) {
-        //					f2->add_force_to_node_atomic(2, &force);
-        //				} else {
-        //					printf("WTF!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-        //				}
-
-        //				printf("Face 1: force on node %d = {%e %e %e}\n", j, force.x, force.y, force.z);
-    }
-
-
-    //			printf("\n\n\n\n");
-
-    /*
-                            for(int j = 0; j < 3; j++) {
-                                    vector3 force = {0, 0, 0};
-                                    for(int k = 0; k < num_tri_gauss_quad_points; k++) {
-                                            for(int l = 0; l < num_tri_gauss_quad_points; l++) {
-                                                    scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
-                                                    force.x -= c * force_pair_matrix[k][l].x;
-                                                    force.y -= c * force_pair_matrix[k][l].y;
-                                                    force.z -= c * force_pair_matrix[k][l].z;
-                                            }
-                                    }
-                                    force.x *= ApAq;
-                                    force.y *= ApAq;
-                                    force.z *= ApAq;
-                                    f2->add_force_to_node(j, &force);
-                                    printf("Face 2: force on node %d = {%e %e %e}\n", j, force.x, force.y, force.z);
-                            }
-                            printf("\n");
-
-     */
+    } // end updating face nodes.
+    } // end omp critical
 
 }
 
