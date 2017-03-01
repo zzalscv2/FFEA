@@ -306,7 +306,6 @@ private:
     int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size); 
 #ifdef FFEA_PARALLEL_FUTURE
     std::future<void> thread_writingTraj; 
-    std::future<int> thread_applyingSprings; 
     std::future<int> thread_updatingVdWLL; 
     std::future<int> thread_updatingPCLL; 
     bool updatingVdWLL(); ///< check if the thread has been catched.

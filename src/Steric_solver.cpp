@@ -66,13 +66,15 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     if (!f1->getTetraIntersectionVolumeGradientAndShapeFunctions(f2, dVdr, vol, phi1, phi2)) return;
 
     vol *= steric_factor;
-    // Store the measurement
-    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
 
     // Force is proportional to the gradient, i. e.:
     arr3Resize<geoscalar,grr3>(steric_factor, dVdr);
 
     grr3 ftmp1, ftmp2;
+    #pragma omp critical 
+    { 
+    // Store the measurement
+    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
     // Finally, apply the force onto the nodes:
     for (int j = 0; j < 4; j++) {
       arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
@@ -83,6 +85,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
       f2->add_force_to_node(j, ftmp2);
       f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
     }
+    } 
 
     /* // //  Working version for F = k // //
     geoscalar vol, dVdr;
@@ -176,13 +179,14 @@ void Steric_solver::do_interaction(Face *f1, Face *f2, scalar * blob_corr){
 
     vol *= steric_factor;
 
-    // Store the measurement
-    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
-
     // Force is proportional to the gradient, i. e.:
     arr3Resize<geoscalar,grr3>(steric_factor, dVdr);
 
     grr3 ftmp1, ftmp2;
+    // Store the measurement
+    #pragma omp critical 
+    { 
+    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
     // Finally, apply the force onto the nodes:
     for (int j = 0; j < 4; j++) {
       arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
@@ -192,6 +196,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2, scalar * blob_corr){
       arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
       f2->add_force_to_node(j, ftmp2);
       f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+    }
     }
 
 
