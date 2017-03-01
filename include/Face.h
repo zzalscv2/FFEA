@@ -155,6 +155,10 @@ public:
       **/
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
+
+    bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
+
+
      /** Get the volume that enclose the intersection
       *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.
