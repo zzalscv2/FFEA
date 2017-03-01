@@ -69,7 +69,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
     grr3 dVdr;
     grr4 phi1, phi2;
 
-       if (!f1->getTetraIntersectionVolumeGradientAndShapeFunctions(f2, dVdr, vol, phi1, phi2)) {
+       if (!f1->getTetraIntersectionVolumeTotalGradientAndShapeFunctions(f2, dVdr, vol, phi1, phi2)) {
            lj = false;
            vol *= steric_factor;
 
