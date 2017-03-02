@@ -51,7 +51,7 @@ VdW_solver::~VdW_solver() {
     vdw_type = VDW_TYPE_UNDEFINED; 
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
@@ -61,6 +61,7 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 
     this->inc_self_vdw = inc_self_vdw;
     this->steric_factor = vdw_steric_factor;
+    this->steric_dr = vdw_steric_dr;
     if (vdw_type_string == "lennard-jones")
       vdw_type = VDW_TYPE_LJ;
     else if (vdw_type_string == "steric")
@@ -237,10 +238,6 @@ int VdW_solver::solve(scalar * blob_corr) {
 	}
         f_i = l_i->obj;
 
-        //time2 = MPI::Wtime() - st;
-        //cout<< "time to get the ith face:" << time2 << "seconds" << endl;
-        //cout<< "inner loop" << endl;
-
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
@@ -249,7 +246,7 @@ int VdW_solver::solve(scalar * blob_corr) {
                     l_i->y + adjacent_cell_lookup_table[c].iy,
                     l_i->z + adjacent_cell_lookup_table[c].iz);
             while (l_j != NULL) {
-                if (l_i->index != l_j->index) {
+                if (l_i->index < l_j->index) {
                     f_j = l_j->obj;
                     if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
                         // f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
@@ -260,16 +257,8 @@ int VdW_solver::solve(scalar * blob_corr) {
                 l_j = l_j->next;
             }
         }
-        //timing 1000 face execution
-        /*if (i = 1000){
-          time3 = MPI::Wtime() - st;
-          cout<<"calculating face's interaction for 1000 face"<<time3<<"seconds"<<endl;
-        }*/
-
     }
 
-    //time1 = MPI::Wtime()-st;
-    //cout<<"total time for the outer loop: "<<time1<<"seconds"<<endl;
     return FFEA_OK;
 }
 

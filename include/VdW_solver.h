@@ -42,7 +42,7 @@ public:
 
     ~VdW_solver();
 
-    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string);
+    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr);
 
     int solve();
 
@@ -79,6 +79,7 @@ protected:
     virtual void do_interaction(Face *f1, Face *f2, scalar * blob_corr);
 
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
+    scalar steric_dr; ///< Constant to calculate the numerical derivative.
     // static const scalar phi_f[4]; ///< shape function for the center of the "element"
 
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
