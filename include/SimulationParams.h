@@ -113,6 +113,7 @@ public:
     scalar stokes_visc;
 
     scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
+    geoscalar vdw_steric_dr; ///< used to calculate the numerical derivative.
 
     string FFEA_script_filename;
     b_fs::path FFEA_script_path, FFEA_script_basename;

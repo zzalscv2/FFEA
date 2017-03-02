@@ -118,6 +118,11 @@ In between it can take the following parameters:
         Proportionality factor for the steric repulsion approach. More details 
          can be found [here](\ref sPotential).
 
+   * ` vdw_steric_dr ` <float> (5e-3) <BR>
+        Constant used to calculate the numerial derivative of the steric repulsion.
+        The value should only be changed for experienced users trying to use FFEA with 
+        elements larger than tens of nm. 
+
    * ` inc_self_vdw ` <int> <BR>
         Enter either 1 or 0 to enable or disable short range interactions 
          between faces within the same blob.

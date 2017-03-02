@@ -54,7 +54,7 @@
 			<beads = left.pdb>
 		</conformation>
 		<solver = CG_nomass>
-		<scale = 5e-9>
+		<scale = 1e-10>
 		<centroid = (0.0,0.0,0.0)>
 	</blob>
 	<blob>
@@ -70,7 +70,7 @@
 			<beads = right.pdb>
 		</conformation>
 		<solver = CG_nomass>
-		<scale = 5e-9>
+		<scale = 1e-10>
 		<centroid = (2.0,0.0,0.0)>
 	</blob>
 	<interactions>
