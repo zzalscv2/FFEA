@@ -646,6 +646,15 @@ class FFEA_topology:
 
 		return length
 
+	def calculate_strain_energy(self, frame, frame0, mat):
+		
+		se = 0.0
+		index = 0
+		for el in self.element:
+			se += el.calculate_strain_energy(frame, frame0, mat.element[index])
+			index += 1
+		return se
+
 	def print_details(self):
 
 		print "num_elements = %d" % (self.num_elements)
@@ -804,6 +813,29 @@ class FFEA_element:
 		J[2][2] = node.pos[self.n[3]][2] - node.pos[self.n[0]][2]
 		
 		return J
+
+	def calculate_strain_energy(self, frame, frame0, matel):
+
+		# Initisalise (stuff we will need)
+		se = 0.0
+		startJ = self.calc_jacobian(frame0)
+		J = self.calc_jacobian(frame)
+		F = np.dot(J, np.linalg.inv(startJ))
+		F = F.transpose()
+		dF = np.linalg.det(F)
+		G = matel[3]
+		K = matel[4]
+		C = K - (2.0/3.0) * G
+
+		# Energy terms
+		se += 0.5 * matel[3] * (np.dot(F,F.transpose()).trace() - 3)
+		se += (C / 4.0) * (dF**2 - 1)
+		se -= (0.5 * C + G) * np.log(dF)
+		
+		# Scale by volume
+		se *= self.calc_volume(frame0)
+
+		return se
 
 	def get_smallest_lengthscale(self, node):
 
