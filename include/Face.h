@@ -157,8 +157,8 @@ public:
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     // This version works well for the double loop i<j. 
-    bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
-    bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr, int f1_daddy_blob_index, int f2_daddy_blob_index);
+    bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, geoscalar dr, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
+    bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, geoscalar dr, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr, int f1_daddy_blob_index, int f2_daddy_blob_index);
 
 
      /** Get the volume that enclose the intersection
