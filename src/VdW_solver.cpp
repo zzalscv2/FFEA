@@ -51,7 +51,7 @@ VdW_solver::~VdW_solver() {
     vdw_type = VDW_TYPE_UNDEFINED; 
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
@@ -61,6 +61,7 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 
     this->inc_self_vdw = inc_self_vdw;
     this->steric_factor = vdw_steric_factor;
+    this->steric_dr = vdw_steric_dr;
     if (vdw_type_string == "lennard-jones")
       vdw_type = VDW_TYPE_LJ;
     else if (vdw_type_string == "steric")

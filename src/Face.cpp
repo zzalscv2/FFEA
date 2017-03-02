@@ -705,11 +705,10 @@ bool Face::checkTetraIntersection(Face *f2,scalar *blob_corr,int f1_daddy_blob_i
 }
 
 
-bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2)){
+bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, geoscalar dr, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2)){
 
   geoscalar tetA[4][3], tetB[4][3], tetC[4][3], tetD[4][3];
   grr3 ap1, ap2, cm;
-  geoscalar dr = 5e-3;
   geoscalar vol_m, vol_M;
 
   // GET THE VOLUME AND THE DIRECTION OF THE GRADIENT:
@@ -735,15 +734,15 @@ bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, gr
   grr3 dx;
   for (int dir=0; dir<3; dir++) {
     arr3Initialise<grr3>(dx);
-    dx[dir] = 1;
+    dx[dir] = dr;
     for (int i=0; i<4; i++) {
-       tetC[i][0] = tetB[i][0] + dr*dx[0];
-       tetC[i][1] = tetB[i][1] + dr*dx[1];
-       tetC[i][2] = tetB[i][2] + dr*dx[2];
+       tetC[i][0] = tetB[i][0] + dx[0];
+       tetC[i][1] = tetB[i][1] + dx[1];
+       tetC[i][2] = tetB[i][2] + dx[2];
 
-       tetD[i][0] = tetA[i][0] + dr*dx[0];
-       tetD[i][1] = tetA[i][1] + dr*dx[1];
-       tetD[i][2] = tetA[i][2] + dr*dx[2];
+       tetD[i][0] = tetA[i][0] + dx[0];
+       tetD[i][1] = tetA[i][1] + dx[1];
+       tetD[i][2] = tetA[i][2] + dx[2];
     }
     vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);
     dVdr[dir] = (vol_M - vol)/dr;
@@ -756,11 +755,10 @@ bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, gr
 }
 
 
-bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index){
+bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, geoscalar dr, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index){
 
   geoscalar tetA[4][3], tetB[4][3], tetC[4][3], tetD[4][3];
   grr3 ap1, ap2, cm;
-  geoscalar dr = 5e-3;
   geoscalar vol_m, vol_M;
 
   // GET THE VOLUME AND THE DIRECTION OF THE GRADIENT:
@@ -787,15 +785,15 @@ bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, gr
   grr3 dx;
   for (int dir=0; dir<3; dir++) {
     arr3Initialise<grr3>(dx);
-    dx[dir] = 1;
+    dx[dir] = dr;
     for (int i=0; i<4; i++) {
-       tetC[i][0] = tetB[i][0] + dr*dx[0];
-       tetC[i][1] = tetB[i][1] + dr*dx[1];
-       tetC[i][2] = tetB[i][2] + dr*dx[2];
+       tetC[i][0] = tetB[i][0] + dx[0];
+       tetC[i][1] = tetB[i][1] + dx[1];
+       tetC[i][2] = tetB[i][2] + dx[2];
 
-       tetD[i][0] = tetA[i][0] + dr*dx[0];
-       tetD[i][1] = tetA[i][1] + dr*dx[1];
-       tetD[i][2] = tetA[i][2] + dr*dx[2];
+       tetD[i][0] = tetA[i][0] + dx[0];
+       tetD[i][1] = tetA[i][1] + dx[1];
+       tetD[i][2] = tetA[i][2] + dx[2];
     }
     vol_M = volumeIntersection<geoscalar,grr3>(tetA, tetC);
     dVdr[dir] = (vol_M - vol)/dr;

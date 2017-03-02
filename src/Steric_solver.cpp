@@ -63,7 +63,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     grr3 dVdr;
     grr4 phi1, phi2;
 
-    if (!f1->getTetraIntersectionVolumeTotalGradientAndShapeFunctions(f2, dVdr, vol, phi1, phi2)) return;
+    if (!f1->getTetraIntersectionVolumeTotalGradientAndShapeFunctions(f2, steric_dr, dVdr, vol, phi1, phi2)) return;
 
     vol *= steric_factor;
 
@@ -175,7 +175,7 @@ void Steric_solver::do_interaction(Face *f1, Face *f2, scalar * blob_corr){
     grr3 dVdr;
     grr4 phi1, phi2;
 
-    if (!f1->getTetraIntersectionVolumeTotalGradientAndShapeFunctions(f2, dVdr, vol, phi1, phi2,blob_corr,f1_daddy_blob_index, f2_daddy_blob_index)) return;
+    if (!f1->getTetraIntersectionVolumeTotalGradientAndShapeFunctions(f2, steric_dr, dVdr, vol, phi1, phi2,blob_corr,f1_daddy_blob_index, f2_daddy_blob_index)) return;
 
     vol *= steric_factor;
 
