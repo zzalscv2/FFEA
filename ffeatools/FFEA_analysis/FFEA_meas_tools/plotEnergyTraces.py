@@ -28,6 +28,7 @@ import __builtin__
 
 try:
     from matplotlib import pyplot as plt
+    from matplotlib.ticker import FormatStrFormatter
     import numpy as np
 except(ImportError):
     raise ImportError("ImportError recieved. Without the numpy and matplotlib libraries, this script cannot run. Please install these, or manually use gnuplot :)")
@@ -62,7 +63,7 @@ def plotEnergyTraces(script):
     x = cmeas["Time"] * 1e9    # ns
 
     if script.params.num_blobs >= 1:
-	    plt.figure(0)
+	    fig, ax = plt.subplots()
 	    
 	    # And y axis data (all energies)
 	    ys = []
@@ -75,22 +76,28 @@ def plotEnergyTraces(script):
 	    print "\nGlobal System:\n"
 	    
 	    ysEXP = [(3 * total_num_nodes - 6) / 2.0 for i in range(num_steps)]
-	    ysh, = plt.plot(x, ys, label='ysh')
-	    ysEXPh, = plt.plot(x, ysEXP, "-", label='ysEXPh')
+	    ysh, = plt.loglog(x, ys, label='ysh')
+	    ysEXPh, = plt.loglog(x, ysEXP, "-", label='ysEXPh')
 	    
 	    yserr = (np.fabs(ys[-1] - ysEXP[-1]) / ysEXP[-1]) * 100.0
 	    print "\tTheoretical strain energy = %f; Simulation strain energy = %f; Error is %f%%" % (ysEXP[-1], ys[-1], yserr) 
 	    if cmeas["KineticEnergy"] != None:
 		ykEXP = [(3 * total_num_mass_nodes) / 2.0 for i in range(num_steps)]
-		ykh, = plt.plot(x, yk, label='ykh')
-		ykEXPh, = plt.plot(x, ykEXP, "-", label='ykEXPh')
+		ykh, = plt.loglog(x, yk, label='ykh')
+		ykEXPh, = plt.loglog(x, ykEXP, "-", label='ykEXPh')
 	    
 		ykerr = (np.fabs(yk[-1] - ykEXP[-1]) / ykEXP[-1]) * 100.0
 		print "\tTheoretical kinetic energy = %f; Simulation kinetic energy = %f; Error is %f%%" % (ykEXP[-1], yk[-1], ykerr)
 	    
-	    plt.xlabel("Time (ns)")
-	    plt.ylabel("Energy (kT)")
-	    plt.title("Global Energy - Running Average")
+	    # Axis stuff
+	    ax.set_xlim(xmin=1)
+
+	    ax.xaxis.set_major_formatter(FormatStrFormatter("%.0f"))
+	    ax.yaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
+	    ax.yaxis.set_major_formatter(FormatStrFormatter("%.0f"))
+	    ax.set_xlabel("Time (ns)")
+	    ax.set_ylabel("Energy (kT)")
+	    ax.set_title("Global Energy - Running Average")
 	    
 	    # Put details on the graph
 	    if cmeas["KineticEnergy"] != None:
@@ -149,19 +156,23 @@ def plotEnergyTraces(script):
     
         print "\nBlob %d:\n" % (i)
         ysEXP = [(3 * num_nodes - 6) / 2.0 for j in range(num_steps)]
-        ysh, = ax.plot(x, ys, label='ysh')
-        ysEXPh, = ax.plot(x, ysEXP, "-", label='ysEXPh')
+        ysh, = ax.loglog(x, ys, label='ysh')
+        ysEXPh, = ax.loglog(x, ysEXP, "-", label='ysEXPh')
     
         yserr = (np.fabs(ys[-1] - ysEXP[-1]) / ysEXP[-1]) * 100.0
         print "\tTheoretical strain energy = %f; Simulation strain energy = %f; Error is %f%%" % (ysEXP[-1], ys[-1], yserr) 
         if cmeas["KineticEnergy"] != None:
             ykEXP = [(3 * num_nodes) / 2.0 for j in range(num_steps)]
-            ykh, = ax.plot(x, yk, label='ykh')
-            ykEXPh, = ax.plot(x, ykEXP, "-", label='ykEXPh')
+            ykh, = ax.loglog(x, yk, label='ykh')
+            ykEXPh, = ax.loglog(x, ykEXP, "-", label='ykEXPh')
     
             ykerr = (np.fabs(yk[-1] - ykEXP[-1]) / ykEXP[-1]) * 100.0
             print "\tTheoretical kinetic energy = %f; Simulation kinetic energy = %f; Error is %f%%" % (ykEXP[-1], yk[-1], ykerr)
-    
+
+	ax.set_xlim(xmin=1)
+  	ax.xaxis.set_major_formatter(FormatStrFormatter("%.0f"))
+	ax.yaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
+	ax.yaxis.set_major_formatter(FormatStrFormatter("%.0f"))
         ax.set_xlabel("Time (ns)")
         ax.set_ylabel("Energy (kT)")
         ax.set_title("Blob %d Energy - Running Average" % (i))
