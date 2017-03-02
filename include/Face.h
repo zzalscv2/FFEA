@@ -95,15 +95,6 @@ public:
       * It calls some private functions.
       **/
     bool checkTetraIntersection(Face *f2);
-
-
-    /** Check whether the tetrahedron formed by this face an the opposite
-      *   linear node does intersect with the corresponding tetrahedron in f2
-      * Returns true if there is intersection.
-      * Uses the "Fast Tetrahedron-Tetrahedron Overlap Algorithm".
-      * It calls some private functions.
-      * Altered to act periodically around box boundaries.
-      **/
     bool checkTetraIntersection(Face *f2, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     /** Get the volume that the enclose the intersection
@@ -112,6 +103,7 @@ public:
       * It calls volumeIntersection, at volumeIntersection.h
       **/
     scalar getTetraIntersectionVolume(Face *f2);
+    scalar getTetraIntersectionVolume(Face *f2, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
     /** Check whether the tetrahedron formed by this face an the opposite
       *   linear node does intersect with the corresponding tetrahedron in f2.
@@ -123,26 +115,12 @@ public:
     scalar checkTetraIntersectionAndGetVolume(Face *f2,scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
 
-        /** Get the volume that the enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite
-      *   linear node with the corresponding tetrahedron in f2.
-      * It calls volumeIntersection, at volumeIntersection.h
-      **/
-    scalar getTetraIntersectionVolume(Face *f2, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
-
     /** Get the volume and area that the enclose the intersection
       *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.
       * It calls volumeIntersection, at volumeIntersection.h
       **/
     void getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area);
-
-        /** Get the volume and area that the enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite
-      *   linear node with the corresponding tetrahedron in f2.
-      * It calls volumeIntersection, at volumeIntersection.h
-      * Altered to act periodically around box boundaries.
-      **/
     void getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
 
@@ -154,16 +132,8 @@ public:
       * It calls twice volumeIntersection, at volumeIntersection.h
       **/
     void getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &vol, geoscalar &dVdr);
-
-     /** Get the volume that enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite
-      *   linear node with the corresponding tetrahedron in f2.
-      *   In addition, return the gradient of this volume,
-      *     with respect to the unit vector r.
-      * It calls volumeIntersection, at volumeIntersection.h
-    * Altered to act periodically around box boundaries.
-      **/
     void getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &vol, geoscalar &dVdr, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
+
 
      /** Get the volume that enclose the intersection
       *   of the tetrahedron formed by this face an the opposite
@@ -173,7 +143,7 @@ public:
       *     and the two action points where the force is applied.
       * It calls twice volumeIntersection and lineFaceIntersectionPoint.
       **/
-    bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2));
+    bool getTetraIntersectionVolumeGradientAndShapeFunctions__old(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2));
 
      /** Get the volume that enclose the intersection
       *   of the tetrahedron formed by this face an the opposite
@@ -185,6 +155,12 @@ public:
       **/
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
     bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
+
+    // This version works well for the double loop i<j. 
+    bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, geoscalar dr, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
+    bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, geoscalar dr, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr, int f1_daddy_blob_index, int f2_daddy_blob_index);
+
+
      /** Get the volume that enclose the intersection
       *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.

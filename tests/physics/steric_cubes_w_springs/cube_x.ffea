@@ -1,8 +1,8 @@
 <param>
 	<restart = 0>
-	<dt = 1.00e-15>
+	<dt = 5.00e-14>
 	<kT = 4.11e-21>
-	<check = 100>
+	<check = 1e2>
 	<num_steps = 1e3>
 	<rng_seed = time>
 	<trajectory_out_fname = cube_x_trajectory.ftj>
@@ -10,7 +10,7 @@
 	<vdw_forcefield_params = ../cube_springs_structure/cube_x.lj>
 	<epsilon = 1.00e-02>
 	<max_iterations_cg = 1000>
-	<kappa = 1.00e+09>
+	<kappa = 3.48672360e8>
 	<epsilon_0 = 1.00e+00>
 	<dielec_ext = 1.00e+00>
 	<calc_stokes = 1>
@@ -18,7 +18,7 @@
 	<calc_vdw = 1>
 	<inc_self_vdw = 0>
 	<vdw_type = steric>
-	<vdw_steric_factor = 4.e0>
+	<vdw_steric_factor = 1.e0>
 	<calc_springs=1>
 	<calc_noise = 0>
 	<calc_es = 0>
@@ -34,7 +34,7 @@
 	<wall_y_2 = PBC>
 	<wall_z_1 = PBC>
 	<wall_z_2 = PBC>
-	<es_h = 3>
+	<es_h = 1>
 	<num_blobs = 2>
 	<num_conformations = (1,1)>
 </param>
@@ -52,7 +52,7 @@
 			<vdw = ../cube_springs_structure/cube_x.vdw>
 		</conformation>
 		<solver = CG_nomass>
-		<scale = 2.00e-9>
+		<scale = 5.00e-9>
 		<centroid_pos = (0.,0.,0.)>
 	</blob>
 	<blob>
@@ -67,8 +67,8 @@
 			<vdw = ../cube_springs_structure/cube_x.vdw>
 		</conformation>
 		<solver = CG_nomass>
-		<scale = 2.00e-9>
-		<centroid_pos = (1.001,0.,0.)>
+		<scale = 5.00e-9>
+		<centroid_pos = (1.05,0.,0.)>
       <rotation = (-1.,0.,0.,0.,1.,0.,0.,0.,-1.)>
 	</blob>
 	<interactions>

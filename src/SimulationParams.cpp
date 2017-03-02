@@ -40,6 +40,7 @@ SimulationParams::SimulationParams() {
     sticky_wall_xz = 0;
     vdw_type = "steric";
     vdw_steric_factor = 1e-2;
+    vdw_steric_dr = 5e-3;
     move_into_box = 1;
     es_update = 1;
     kappa = 1e9 * mesoDimensions::length;
@@ -378,6 +379,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         	vdw_steric_factor = atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << vdw_steric_factor << endl;
 
+	} else if (lvalue == "vdw_steric_dr") {
+        	vdw_steric_dr = atof(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << vdw_steric_dr << endl;
+
 	} else if (lvalue == "wall_x_1") {
 		if (rvalue == "PBC") {
 			wall_x_1 = WALL_TYPE_PBC;
@@ -681,6 +686,10 @@ int SimulationParams::validate() {
 
     if (vdw_steric_factor < 0) {
        printf("\tFRIENDLY WARNING: Beware, vdw_steric_factor is negative.\n");
+    }
+
+    if (vdw_steric_dr <= 0) {
+       FFEA_ERROR_MESSG("vdw_steric_dr can only be >=0.\n"); 
     }
 
     if (calc_kinetics == 1) {
