@@ -26,8 +26,7 @@
 #include "mpi.h"
 #endif
 
-World::World()
-{
+World::World() {
 
     // Initialise everything to zero
     blob_array = NULL;
@@ -67,8 +66,7 @@ World::World()
     rmsd = 0.0;
 }
 
-World::~World()
-{
+World::~World() {
     delete[] rng;
     rng = NULL;
     num_threads = 0;
@@ -147,8 +145,7 @@ World::~World()
  * initialise BEM PBE solver
  * */
 
-int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeDetailed)
-{
+int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeDetailed) {
 
     // Set some constants and variables
     int i, j, k;
@@ -952,8 +949,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
  *   algebra using the Eigen libraries to find the largest allowed timestep for
  *   ffea numerical integration.
  * */
-int World::get_smallest_time_constants()
-{
+int World::get_smallest_time_constants() {
 
     // This is currently only for active blob, as inactive blobs are all at infinity due to linked list problems
 
@@ -1285,8 +1281,7 @@ int World::get_smallest_time_constants()
  * this function performs matrix algebra using the Eigen libraries to diagonalise
  * elasticity matrix and output pseudo-trajectories based upon these eigenvectors
  * */
-int World::enm(set<int> blob_indices, int num_modes)
-{
+int World::enm(set<int> blob_indices, int num_modes) {
 
     int i, j;
     int num_nodes, num_rows;
@@ -1386,8 +1381,7 @@ int World::enm(set<int> blob_indices, int num_modes)
  * pseudo-trajectories based upon these eigenvectors
  * */
 
-int World::dmm(set<int> blob_indices, int num_modes)
-{
+int World::dmm(set<int> blob_indices, int num_modes) {
 
     int i, j, k;
     int num_nodes, num_rows;
@@ -1534,8 +1528,7 @@ int World::dmm(set<int> blob_indices, int num_modes)
  * pseudo-trajectories based upon these eigenvectors
  * */
 
-int World::dmm_rp(set<int> blob_indices, int num_modes)
-{
+int World::dmm_rp(set<int> blob_indices, int num_modes) {
 
     int i, j, k, l;
     int num_nodes, num_rows;
@@ -1708,8 +1701,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes)
 /**
  * Update entire World for num_steps time steps
  * */
-int World::run()
-{
+int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
 #ifdef BENCHMARK
@@ -2014,8 +2006,7 @@ int World::run()
  * For a binding / unbinding event, the binding sites are activated.
  * */
 
-int World::change_kinetic_state(int blob_index, int target_state)
-{
+int World::change_kinetic_state(int blob_index, int target_state) {
 
     // Do we even need to change anything?
     int current_state = active_blob_array[blob_index]->get_state_index();
@@ -2084,8 +2075,7 @@ int World::change_kinetic_state(int blob_index, int target_state)
  * @param[in] vector<string> script_vector, which is essentially the FFEA input file,
  *            line by line, as it comes out of FFEA_input_reader::file_to_lines
  */
-int World::read_and_build_system(vector<string> script_vector)
-{
+int World::read_and_build_system(vector<string> script_vector) {
 
     // Create some blobs based on params
     cout << "\tCreating blob array..." << endl;
@@ -2635,8 +2625,7 @@ int World::read_and_build_system(vector<string> script_vector)
  * between conformations. Does no error checking for correct number of maps
  * */
 
-int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, vector<int> map_to, int blob_index)
-{
+int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, vector<int> map_to, int blob_index) {
 
     unsigned int i, j, num_rows, num_cols, num_entries;
     string buf_string;
@@ -2735,8 +2724,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
  * 'return_maps', which are used for energy calculations and comparisons
  * */
 
-int World::build_kinetic_identity_maps()
-{
+int World::build_kinetic_identity_maps() {
 
     int i, j, k;
 
@@ -2761,8 +2749,7 @@ int World::build_kinetic_identity_maps()
  * The average rate throughout the simulation should still be the given values.
  * */
 
-int World::calculate_kinetic_rates()
-{
+int World::calculate_kinetic_rates() {
 
     int i, j;
     int current_state;
@@ -2899,8 +2886,7 @@ int World::calculate_kinetic_rates()
  * */
 
 
-int World::choose_new_kinetic_state(int blob_index, int *target)
-{
+int World::choose_new_kinetic_state(int blob_index, int *target) {
 
     int i;
     scalar switch_check;
@@ -2933,8 +2919,7 @@ int World::choose_new_kinetic_state(int blob_index, int *target)
     return FFEA_OK;
 }
 
-int World::load_kinetic_states(string states_fname, int blob_index)
-{
+int World::load_kinetic_states(string states_fname, int blob_index) {
 
     int i, j, num_states, conf_index, from, to; //, site_index;
     int MAX_BUF_SIZE = 255;
@@ -3050,8 +3035,7 @@ int World::load_kinetic_states(string states_fname, int blob_index)
     return FFEA_OK;
 }
 
-int World::load_kinetic_rates(string rates_fname, int blob_index)
-{
+int World::load_kinetic_rates(string rates_fname, int blob_index) {
 
     int i, j, num_states;
     char *crap;
@@ -3143,8 +3127,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index)
     return FFEA_OK;
 }
 
-void World::print_kinetic_rates_to_screen(int type)
-{
+void World::print_kinetic_rates_to_screen(int type) {
 
     int i, j, k;
     cout << "Kinetic Rates:" << endl;
@@ -3172,8 +3155,7 @@ void World::print_kinetic_rates_to_screen(int type)
 }
 
 /* */
-void World::get_system_CoM(vector3 *system_CoM)
-{
+void World::get_system_CoM(vector3 *system_CoM) {
     system_CoM->x = 0;
     system_CoM->y = 0;
     system_CoM->z = 0;
@@ -3193,8 +3175,7 @@ void World::get_system_CoM(vector3 *system_CoM)
 }
 
 /* */
-void World::get_system_centroid(vector3 *centroid)
-{
+void World::get_system_centroid(vector3 *centroid) {
     centroid->x = 0;
     centroid->y = 0;
     centroid->z = 0;
@@ -3213,8 +3194,7 @@ void World::get_system_centroid(vector3 *centroid)
     centroid->z /= total_num_nodes;
 }
 
-void World::get_system_dimensions(vector3 *dimension)
-{
+void World::get_system_dimensions(vector3 *dimension) {
     dimension->x = 0;
     dimension->y = 0;
     dimension->z = 0;
@@ -3258,14 +3238,12 @@ void World::get_system_dimensions(vector3 *dimension)
     dimension->z = max.z - min.z;
 }
 
-int World::get_num_blobs()
-{
+int World::get_num_blobs() {
 
     return params.num_blobs;
 }
 
-int World::load_springs(const char *fname)
-{
+int World::load_springs(const char *fname) {
 
     int i, crap;
     FILE *in = NULL;
@@ -3367,8 +3345,7 @@ int World::load_springs(const char *fname)
     return 0;
 }
 
-void World::activate_springs()
-{
+void World::activate_springs() {
     for (int i = 0; i < num_springs; ++i) {
 
         // If both ends of spring are active molecules, activate! This could probably be done more quickly with pointers if necessary in future
@@ -3380,8 +3357,7 @@ void World::activate_springs()
     }
 }
 
-int World::apply_springs()
-{
+int World::apply_springs() {
     scalar force_mag;
     vector3 n1, n0, force0, force1, sep, sep_norm;
     for (int i = 0; i < num_springs; ++i) {
@@ -3421,8 +3397,7 @@ int World::apply_springs()
     return FFEA_OK;
 }
 
-scalar World::get_spring_field_energy(int index0, int index1)
-{
+scalar World::get_spring_field_energy(int index0, int index1) {
 
     // Sum over all field
     if(index0 == -1 || index1 == -1) {
@@ -3444,8 +3419,7 @@ scalar World::get_spring_field_energy(int index0, int index1)
     }
 }
 
-int World::get_next_script_tag(FILE *in, char *buf)
-{
+int World::get_next_script_tag(FILE *in, char *buf) {
     if (fscanf(in, "%*[^<]") != 0) {
         printf("White space removal error in get_next_script_tag(). Something odd has happened: this error should never occur...\n");
     }
@@ -3458,8 +3432,7 @@ int World::get_next_script_tag(FILE *in, char *buf)
     return FFEA_OK;
 }
 
-void World::apply_dense_matrix(scalar *y, scalar *M, scalar *x, int N)
-{
+void World::apply_dense_matrix(scalar *y, scalar *M, scalar *x, int N) {
     int i, j;
     for (i = 0; i < N; i++) {
         y[i] = 0;
@@ -3468,8 +3441,7 @@ void World::apply_dense_matrix(scalar *y, scalar *M, scalar *x, int N)
     }
 }
 
-void World::do_es()
-{
+void World::do_es() {
     printf("Building BEM matrices\n");
     PB_solver.build_BEM_matrices();
 
@@ -3538,8 +3510,7 @@ void World::do_es()
  * @details This function writes the eigenvalues calculated for enms and dmms to files
  * */
 
-void World::write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes)
-{
+void World::write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes) {
 
     // Get some filenames
     vector<string> all;
@@ -3573,8 +3544,7 @@ void World::write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, in
  * to the given blob.
  * */
 
-void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen_VectorX evec, scalar step)
-{
+void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen_VectorX evec, scalar step) {
 
     int i, j, from_index = 0, to_index = 0;
     scalar dx;
@@ -3625,8 +3595,7 @@ void World::make_trajectory_from_eigenvector(string traj_out_fname, int blob_ind
     fclose(fout);
 }
 
-void World::print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, int num_modes)
-{
+void World::print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, int num_modes) {
 
     int i, j;
     FILE *fout;
@@ -3642,8 +3611,7 @@ void World::print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, in
     fclose(fout);
 }
 
-void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes)
-{
+void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes) {
 
     int i;
     FILE *fout;
@@ -3656,8 +3624,7 @@ void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes)
     fclose(fout);
 }
 
-void World::write_output_header(FILE *fout, string fname)
-{
+void World::write_output_header(FILE *fout, string fname) {
 
     // Write all header data. script fname, time and date etc
     fprintf(fout, "FFEA Global Measurement File\n\nSimulation Details:\n");
@@ -3668,8 +3635,7 @@ void World::write_output_header(FILE *fout, string fname)
     fprintf(fout, "\tSimulation Type = %s\n\n", "Full");
 }
 
-void World::write_pre_print_to_trajfile(int step)
-{
+void World::write_pre_print_to_trajfile(int step) {
     for (int i = 0; i < params.num_blobs; i++) {
         fprintf(trajectory_out, "Blob %d, Conformation %d, step %d\n", i, active_blob_array[i]->get_conformation_index(), step);
         active_blob_array[i]->write_pre_print_to_file(trajectory_out);
@@ -3695,8 +3661,7 @@ void World::write_pre_print_to_trajfile(int step)
 
 
 /** Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used) */
-void World::print_trajectory_and_measurement_files(int step, scalar wtime)
-{
+void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     // ONSCREEN progress:
     if (step % (params.check * 10) != 0) {
@@ -3823,8 +3788,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime)
 
 }
 
-void World::make_measurements()
-{
+void World::make_measurements() {
 
     int i, j, total_num_nodes = 0;
 
@@ -3884,8 +3848,7 @@ void World::make_measurements()
     }
 }
 
-void World::write_measurements_to_file(FILE *fout, int step)
-{
+void World::write_measurements_to_file(FILE *fout, int step) {
 
     // In same order as initialisation
     fprintf(fout, "%-14.6e", step * params.dt * mesoDimensions::time);
@@ -3909,8 +3872,7 @@ void World::write_measurements_to_file(FILE *fout, int step)
     fflush(fout);
 }
 
-void World::write_detailed_measurements_to_file(FILE *fout)
-{
+void World::write_detailed_measurements_to_file(FILE *fout) {
 
     // In same order as initialisation
     int i, j;
@@ -3933,8 +3895,7 @@ void World::write_detailed_measurements_to_file(FILE *fout)
     fflush(fout);
 }
 
-void World::print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index)
-{
+void World::print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index) {
 
     // Check input
     int *to;
@@ -3976,8 +3937,7 @@ void World::print_trajectory_conformation_changes(FILE *fout, int step, int *fro
     }
 }
 
-void World::print_kinetic_files(int step)
-{
+void World::print_kinetic_files(int step) {
 
     if(params.calc_kinetics == 0) return;
 
@@ -3998,8 +3958,7 @@ void World::print_kinetic_files(int step)
     }
 }
 
-void World::print_static_trajectory(int step, scalar wtime, int blob_index)
-{
+void World::print_static_trajectory(int step, scalar wtime, int blob_index) {
     printf("Printing single trajectory of Blob %d for viewer\n", blob_index);
     // Write the node data for this blob
     fprintf(trajectory_out, "Blob %d, step %d\n", blob_index, step);
@@ -4007,8 +3966,7 @@ void World::print_static_trajectory(int step, scalar wtime, int blob_index)
 }
 
 
-void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr)
-{
+void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr) {
     //sets blob distance from itself to 0
     for(int i = 0; i < num_blobs; ++i) {
         blob_corr[i*num_blobs*3 + i*3]= 0;
@@ -4035,13 +3993,11 @@ void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr)
     }
 }
 
-void World::do_nothing()
-{
+void World::do_nothing() {
     // that means nothing.
 }
 
-int World::die_with_dignity(int step, scalar wtime)
-{
+int World::die_with_dignity(int step, scalar wtime) {
 
     FFEA_error_text();
     printf("A problem occurred when...\n");
@@ -4062,23 +4018,19 @@ int World::die_with_dignity(int step, scalar wtime)
 
 
 #ifdef FFEA_PARALLEL_FUTURE
-int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size)
-{
+int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size) {
     return lookup.prebuild_nearest_neighbour_lookup(cell_size);
 }
 
-bool World::updatingVdWLL()
-{
+bool World::updatingVdWLL() {
     return thread_updatingVdWLL.valid();
 }
 
-bool World::updatingPCLL()
-{
+bool World::updatingPCLL() {
     return thread_updatingPCLL.valid();
 }
 
-bool World::updatingVdWLL_ready_to_swap()
-{
+bool World::updatingVdWLL_ready_to_swap() {
 
     bool its = false;
     if (thread_updatingVdWLL.valid()) {
@@ -4090,8 +4042,7 @@ bool World::updatingVdWLL_ready_to_swap()
 
 }
 
-bool World::updatingPCLL_ready_to_swap()
-{
+bool World::updatingPCLL_ready_to_swap() {
 
     bool its = false;
     if (thread_updatingPCLL.valid()) {
@@ -4104,8 +4055,7 @@ bool World::updatingPCLL_ready_to_swap()
 }
 
 
-int World::catch_thread_updatingVdWLL(int step, scalar wtime, int where)
-{
+int World::catch_thread_updatingVdWLL(int step, scalar wtime, int where) {
 
     if (updatingVdWLL() == false) { // i. e., thread has been already catched!
         cout << "trying to catch from: " << where <<
@@ -4124,8 +4074,7 @@ int World::catch_thread_updatingVdWLL(int step, scalar wtime, int where)
 }
 
 
-int World::catch_thread_updatingPCLL(int step, scalar wtime, int where)
-{
+int World::catch_thread_updatingPCLL(int step, scalar wtime, int where) {
 
     if (updatingPCLL() == false) { // i. e., thread has been already catched!
         cout << "trying to catch from: " << where <<
