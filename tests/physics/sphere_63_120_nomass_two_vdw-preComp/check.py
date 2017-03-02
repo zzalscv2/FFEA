@@ -61,7 +61,8 @@ H, dH = readAndStore(iFile[0])
 
 ## compare the PreCompEnergy of the first step to a value that has been checked:
 err = 0
-if ( abs (H[dH["PreCompEnergy"]][-1] - 1.0075630000000001e-18) > 1e-32 ): 
+# if ( abs (H[dH["PreCompEnergy"]][-1] - 1.0075630000000001e-18) > 1e-32 ): 
+if ( abs (H[dH["PreCompEnergy"]][-1] - 6.87781100000000001e-17) > 1e-32 ): 
   print( "PreComputed energy should be %e, but was found to be %e" % (1.0075630000000001e-18, (H[dH["PreCompEnergy"]][-1])))
   err = 1
 
