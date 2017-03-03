@@ -75,7 +75,9 @@ public:
   int compute_bead_positions(); ///< calculate b_pos, the absolute positions of the beads. 
 
   int build_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
-  int safely_swap_pc_layers(); 
+  int prebuild_pc_nearest_neighbour_lookup_and_swap(); ///< put the beads on the grid.
+  int prebuild_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
+  int safely_swap_pc_layers(); ///< swap the two LinkedLists. 
 
 private: 
   /** msgc and msg are helpful while developing */
@@ -93,8 +95,6 @@ private:
   LinkedListCube<int> pcLookUp; ///< the linkedlist itself
   scalar pcVoxelSize;    ///< the size of the voxels.
   int pcVoxelsInBox[3];  ///< num of voxels per side.
-  int prebuild_pc_nearest_neighbour_lookup_and_swap(); ///< put the beads on the grid.
-  int prebuild_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
   static const int adjacent_cells[27][3]; 
   
 
