@@ -331,6 +331,7 @@ set(IGNORE_NUMPY_TESTS "")
 if (${NUMPY_FOUND} STREQUAL "FAIL")
   set(IGNORE_NUMPY_TESTS 
        python_load_trajectory
+       sphere_diffusion_mass sphere_diffusion_mass_check
        sphere_diffusion_nomass sphere_diffusion_nomass_check
        sphere_mass sphere_mass_check 
        sphere_nomass sphere_nomass_check
