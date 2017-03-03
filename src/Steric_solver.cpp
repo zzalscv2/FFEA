@@ -36,7 +36,8 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     /* Robin suspects that this was leading to unstabilities...
      *  but this steric solver is more stable than the LJ one. */
     // Check that faces are in front of each other
-    vector3 sep = {f2->centroid.x - f1->centroid.x, f2->centroid.y - f1->centroid.y, f2->centroid.z - f1->centroid.z};
+    vector3 sep;
+    sep.data = {f2->centroid.x - f1->centroid.x, f2->centroid.y - f1->centroid.y, f2->centroid.z - f1->centroid.z};
     if(dot(&sep, &f1->normal) < 0 && dot(&sep, &f2->normal) > 0) {
         return;
     }
@@ -149,7 +150,8 @@ void Steric_solver::do_interaction(Face *f1, Face *f2, scalar * blob_corr){
     /* Robin suspects that this was leading to unstabilities...
      *  but this steric solver is more stable than the LJ one. */
     // Check that faces are in front of each other (with periodicity modification)
-    vector3 sep = {f2->centroid.x - f1->centroid.x-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3],f2->centroid.y - f1->centroid.y-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3+1],f2->centroid.z - f1->centroid.z-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3+2]};
+    vector3 sep;
+    sep.data = {f2->centroid.x - f1->centroid.x-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3],f2->centroid.y - f1->centroid.y-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3+1],f2->centroid.z - f1->centroid.z-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3+2]};
     if(dot(&sep, &f1->normal) < 0 && dot(&sep, &f2->normal) > 0) {
         return;
     }
