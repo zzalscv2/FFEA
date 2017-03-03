@@ -32,23 +32,26 @@ set(MINOR   "0")
 set(PACKAGE_VERSION "${VERSION}.${MINOR}")
 
 
-option(USE_OPENMP "Build with OpenMP support" ON)
-set(USE_OMP_MODE 1 CACHE STRING "0: disabled; 1: threads within blob; 2: threads per blob")
-option(USE_MPI "Use MPI parallelisation: EXPERIMENTAL!" OFF)
-mark_as_advanced(USE_MPI)
-option(USE_FAST "Add automatic compiler flags" ON)
-mark_as_advanced(USE_FAST)
-option(USE_PACK "Add genereic automatic compiler flags" OFF)
-mark_as_advanced(USE_PACK)
-set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
-mark_as_advanced(USE_PACK_DIST)
-set(USE_PRECISION 2 CACHE STRING "1: Floats + Doubles; 2: Doubles; 3: Doubles + Long Doubles")
-mark_as_advanced(USE_PRECISION)
 option(USE_BOOST_INTERNAL "Use the sources we ship (ON) or your own boost (OFF)" ON)
 mark_as_advanced(USE_BOOST_INTERNAL)
 option(USE_EIGEN3_INTERNAL "Build Eigen automatically as building FFEA (ON) or use your own install (OFF)" ON)
 mark_as_advanced(USE_EIGEN3_INTERNAL)
 
+option(USE_OPENMP "Build with OpenMP support" ON)
+set(USE_OMP_MODE 1 CACHE STRING "0: disabled; 1: threads within blob; 2: threads per blob")
+option(USE_FAST "Add automatic compiler flags" ON)
+mark_as_advanced(USE_FAST)
+option(USE_FUTURE "Use C++11 <future> tasking threads" OFF)
+mark_as_advanced(USE_FUTURE)
+set(USE_PRECISION 2 CACHE STRING "1: Floats + Doubles; 2: Doubles; 3: Doubles + Long Doubles")
+mark_as_advanced(USE_PRECISION)
+
+option(USE_MPI "Use MPI parallelisation: EXPERIMENTAL!" OFF)
+mark_as_advanced(USE_MPI)
+option(USE_PACK "Add genereic automatic compiler flags" OFF)
+mark_as_advanced(USE_PACK)
+set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
+mark_as_advanced(USE_PACK_DIST)
 
 set (LIBS_TO_LINK)
 #################################
@@ -129,6 +132,15 @@ endif()
 # MSVC: does not need any flag.
 include(cmake/CheckForCXX11Features.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_COMPILER_FLAGS}")
+if (USE_FUTURE)
+  if (HAS_CXX11_FUTURE)
+    message(STATUS "Will use C++11 <future>")
+    add_definitions(-DFFEA_PARALLEL_FUTURE)
+  else (HAS_CXX11_FUTURE)
+    message (FATAL "Cannot use C++11 <future>; we did not manage to compile a test program. Possible solutions include using a newer compiler (e. g. GNU 4.8 or higher) or configuring without future: -DUSE_FUTURE=OFF")
+  endif (HAS_CXX11_FUTURE)
+endif(USE_FUTURE)
+
 
 
 # 4 ### MATH ######
@@ -279,6 +291,9 @@ else (NOT USE_PACK)
   message(STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}")
 endif(NOT USE_PACK)
 
+get_directory_property( DirDefs COMPILE_DEFINITIONS )
+message(STATUS "Compiler definitions: ${DirDefs}" )
+
 ######## END OF LIBRARIES #######
 #################################
 
@@ -316,6 +331,7 @@ set(IGNORE_NUMPY_TESTS "")
 if (${NUMPY_FOUND} STREQUAL "FAIL")
   set(IGNORE_NUMPY_TESTS 
        python_load_trajectory
+       sphere_diffusion_mass sphere_diffusion_mass_check
        sphere_diffusion_nomass sphere_diffusion_nomass_check
        sphere_mass sphere_mass_check 
        sphere_nomass sphere_nomass_check
