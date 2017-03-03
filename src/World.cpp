@@ -1705,7 +1705,7 @@ int World::run() {
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
 #ifdef BENCHMARK
-    scalar wtime0, wtime1, wtime2, wtime3, wtime4, time0=0, time1=0, time2=0, time3=0;
+    scalar wtime0, wtime1, wtime2, wtime3, wtime4, time0=0, time1=0, time2=0, time3=0, time4=0;
 #endif
 
     for (long long step = step_initial; step < params.num_steps; step++) {
@@ -1918,13 +1918,18 @@ int World::run() {
         // Update Blobs, while tracking possible errors.
         int fatal_errors = 0;
 #ifdef FFEA_PARALLEL_PER_BLOB
-        #pragma omp parallel for default(none) shared(step, wtime) reduction(+: fatal_errors) schedule(runtime)
+        #pragma omp parallel for default(none) reduction(+: fatal_errors) schedule(dynamic,1)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             if (active_blob_array[i]->update() == FFEA_ERROR) fatal_errors++;
         }
 
         if (fatal_errors > 0) return die_with_dignity(step, wtime);
+
+#ifdef BENCHMARK
+        wtime4 = omp_get_wtime();
+        time3 += wtime4 - wtime3;
+#endif
 
         // Output traj data to files
         if ((step + 1) % params.check == 0) {
@@ -1961,8 +1966,7 @@ int World::run() {
         }
 
 #ifdef BENCHMARK
-        wtime4 = omp_get_wtime();
-        time3 += wtime4 - wtime3;
+        time4 += omp_get_wtime() - wtime4;
 #endif
 
     }
@@ -1979,14 +1983,15 @@ int World::run() {
     cout<< "benchmarking--------strictly preComp for \t"<< time1 << "seconds"<< endl;
     cout<< "benchmarking--------vdw & threading back in\t"<< time2 << "seconds"<< endl;
     cout<< "benchmarking--------update blobs for \t"<< time3 << "seconds"<< endl;
+    cout<< "benchmarking--------writing and measuring \t"<< time4 << "seconds"<< endl;
     cout<< "benchmarking--------Total time in World::run():" << omp_get_wtime() - wtime << "seconds"<< endl;
 
-    cout<< "benchmarking--------PreComp decomposition: " << endl;
+    /* cout<< "benchmarking--------PreComp decomposition: " << endl;
     cout<< "            --------Cleaning: " << pc_solver.timep0 << " seconds" << endl;
     cout<< "            --------Positions: " << pc_solver.timep1 << " seconds" << endl;
     cout<< "            --------Doubleloop: " << pc_solver.timep2 << " seconds" << endl;
     cout<< "            ------------------part1 : " << pc_solver.timep3 << " seconds" << endl;
-    cout<< "            ------------------part2 : " << pc_solver.timep4 << " seconds" << endl;
+    cout<< "            ------------------part2 : " << pc_solver.timep4 << " seconds" << endl; */
 #endif
 
 
