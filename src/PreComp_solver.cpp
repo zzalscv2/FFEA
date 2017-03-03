@@ -316,7 +316,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
 
      // for each bead within this blob (remember that we only deal with conf 0):
      for (int j=0; j < n; j++) {
-       v = blob_array[i][0].get_bead_position(j);
+       v.data = blob_array[i][0].get_bead_position(j);
        vector<int> b_assignment = blob_array[i][0].get_bead_assignment(j); 
        d2_0 = 1e9;
        int mj = m+j;
@@ -385,12 +385,12 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        s.x = b_elems[mj]->n[0]->pos.x + u.x*e1.x + u.y*e2.x + u.z*e3.x;
        s.y = b_elems[mj]->n[0]->pos.y + u.x*e1.y + u.y*e2.y + u.z*e3.y;
        s.z = b_elems[mj]->n[0]->pos.z + u.x*e1.z + u.y*e2.z + u.z*e3.z;
-       print_vector3(&v);
-       print_vector3(&s);
+       print_vector3(v);
+       print_vector3(s);
        s.x = b_elems[mj]->n[0]->pos.x + u.x*J[0][0] + u.y*J[1][0] + u.z*J[2][0];
        s.y = b_elems[mj]->n[0]->pos.y + u.x*J[0][1] + u.y*J[1][1] + u.z*J[2][1];
        s.z = b_elems[mj]->n[0]->pos.z + u.x*J[0][2] + u.y*J[1][2] + u.z*J[2][2];
-       print_vector3(&s);
+       print_vector3(s);
        */
 
        /* the following is useless but useful while testing:
@@ -629,7 +629,7 @@ int PreComp_solver::solve() {
 	fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[j]);
 
         vec3_scale(&dx, f_ij);
-        dtemp = dx; 
+        dtemp.data = dx.data; 
 
         phi_j[1] = b_rel_pos[3*j];
         phi_j[2] = b_rel_pos[3*j+1];
@@ -640,11 +640,11 @@ int PreComp_solver::solve() {
           // forces for e_i
           vec3_scale(&dx, -phi_i[k]);
           e_i->add_force_to_node(k, &dx);
-          dx = dtemp; 
+          dx.data = dtemp.data; 
           // forces for e_j
           vec3_scale(&dx, phi_j[k]);
           e_j->add_force_to_node(k, &dx);
-          dx = dtemp;
+          dx.data = dtemp.data;
 
         } 
       }

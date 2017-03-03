@@ -66,10 +66,10 @@ namespace ffea_const {
 /**
  * A simple 3 dimensional vector (x, y, z)
  */
-typedef struct {
+/* typedef struct {
     scalar x, y, z;
-} vector3;
-
+} vector3; */ 
+ 
 /** arr3 will hopefully substitute vector3 one day */ 
 typedef scalar arr3[3]; 
 typedef geoscalar grr3[3]; 
@@ -77,7 +77,7 @@ typedef geoscalar grr3[3];
 typedef scalar arr4[4]; 
 typedef geoscalar grr4[4]; 
 
-/* // The following class will be a temporary replacement
+// The following class will be a temporary replacement
     //   for the current vector3 struct so that we have some
     //   time to change from Whatever.x into Whatever[0] 
     // Then vector3 will become arr3.
@@ -90,7 +90,7 @@ public:
     scalar& y = data[1]; 
     scalar& z = data[2]; 
     scalar& operator [](std::size_t i) { return data[i]; }
-};*/
+};
 
 /** arr3_view has the spirit of "span" or "array_view" */
 template <class t_scalar, class brr3> class arr3_view

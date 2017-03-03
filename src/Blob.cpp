@@ -1551,8 +1551,8 @@ int Blob::get_linear_solver() {
 /*
  *
  */
-vector3 Blob::get_CoG() {
-    return CoG;
+std::array<scalar,3> Blob::get_CoG() {
+    return CoG.data;
 }
 
 /*
@@ -1582,12 +1582,12 @@ tetra_element_linear *Blob::get_element(int i) {
  *
  * @ingroup FMM
  **/
-vector3 Blob::get_bead_position(int i) {
+std::array<scalar,3> Blob::get_bead_position(int i) {
     vector3 v;
     v.x = bead_position[3*i];
     v.y = bead_position[3*i+1];
     v.z = bead_position[3*i+2];
-    return v;
+    return v.data;
 }
 
 /**
@@ -2099,8 +2099,8 @@ void Blob::set_forces_to_zero() {
     }
 }
 
-vector3 Blob::get_node(int index) {
-    return node[index].pos;
+std::array<scalar,3> Blob::get_node(int index) {
+    return node[index].pos.data;
 }
 
 void Blob::add_force_to_node(vector3 f, int index) {

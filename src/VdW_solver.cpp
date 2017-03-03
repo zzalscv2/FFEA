@@ -396,7 +396,9 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     {
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
     for (int j = 0; j < 3; j++) {
-        vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
+        vector3 force1, force2;
+        force1.data = {0, 0, 0};
+        force2.data = {0, 0, 0};
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
@@ -557,7 +559,9 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     {
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
     for (int j = 0; j < 3; j++) {
-        vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
+        vector3 force1, force2;
+        force1.data = {0, 0, 0};
+        force2.data = {0, 0, 0};
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
@@ -670,7 +674,8 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
     f->add_xz_vdw_energy_to_record(energy);
 
     for (int j = 0; j < 3; j++) {
-        vector3 force = {0, 0, 0};
+        vector3 force;
+        force.data = {0, 0, 0};
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
