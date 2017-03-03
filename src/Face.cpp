@@ -191,13 +191,9 @@ void Face::set_kinetic_state(bool state) {
 
 void Face::calc_area_normal_centroid() {
     // (1/2) * |a x b|
-    /* new_vector3:
     vector3 a, b;
     a.data = {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z};
     b.data = {n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z};
-    */
-    vector3 a = {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z},
-    b = {n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z};
     normal.x = a.y * b.z - a.z * b.y;
     normal.y = a.z * b.x - a.x * b.z;
     normal.z = a.x * b.y - a.y * b.x;
@@ -245,13 +241,9 @@ scalar Face::get_area() {
     vector3 temp;
 
     // (1/2) * |a x b|
-    /* new_vector3:
     vector3 a, b;
     a.data = {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z},
     b.data = {n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z};
-    */
-    vector3 a = {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z},
-    b = {n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z};
 
     temp.x = a.y * b.z - a.z * b.y;
     temp.y = a.z * b.x - a.x * b.z;

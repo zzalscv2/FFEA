@@ -248,7 +248,7 @@ public:
     tetra_element_linear *get_element(int i);
 
     /** get_bead_position [precomp] */
-    vector3 get_bead_position(int i);
+    std::array<scalar,3> get_bead_position(int i);
 
     /** get the pointer to "bead_type"  [precomp] */
     int *get_bead_type_ptr();
@@ -290,7 +290,8 @@ public:
 
     void set_forces_to_zero();
 
-    vector3 get_node(int index);
+    // vector3 get_node(int index);
+    std::array<scalar,3> get_node(int index);
 
     void copy_node_positions(vector3 *nodes);
 
@@ -378,7 +379,7 @@ public:
 
     int get_linear_solver();
 
-    vector3 get_CoG();
+    std::array<scalar,3> get_CoG();
 
     int get_conformation_index();
     int get_previous_conformation_index();

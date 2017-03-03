@@ -166,9 +166,9 @@ void BindingSite::add_face(Face *aface) {
 	faces.push_back(aface);
 }
 
-vector3 BindingSite::get_centroid() {
+std::array<scalar,3> BindingSite::get_centroid() {
 	
-	return centroid;
+	return centroid.data;
 }
 
 void BindingSite::calculate_centroid() {
@@ -233,8 +233,8 @@ bool BindingSite::sites_in_range(BindingSite a, BindingSite b) {
 
 	a.calculate_centroid();
 	b.calculate_centroid();
-	a_cent = a.get_centroid();
-	b_cent = b.get_centroid();
+	a_cent.data = a.get_centroid();
+	b_cent.data = b.get_centroid();
 	separation = sqrt(pow(a_cent.x - b_cent.x, 2) + pow(a_cent.y - b_cent.y, 2) + pow(a_cent.z - b_cent.z, 2));
 	//cout << "Separation = " << separation << ", Limiting distance = " << a.get_characteristic_length() + b.get_characteristic_length() << endl;
 	//cout << "Char length a = " << a.get_characteristic_length() << ", Char length b = " << b.get_characteristic_length() << endl;
