@@ -393,7 +393,7 @@ bool Face::is_kinetic_active() {
 
 bool Face::checkTetraIntersection(Face *f2) {
 
-  // V1 = n
+  /* // V1 = n
   // V2 = f2->n
   scalar tetA[4][3], tetB[4][3];
   for (int i=0; i<4; i++) {
@@ -404,7 +404,9 @@ bool Face::checkTetraIntersection(Face *f2) {
      tetB[i][1] = f2->n[i]->pos.y;
      tetB[i][2] = f2->n[i]->pos.z;
   }
-  return (tet_a_tet(tetA, tetB));
+  return (tet_a_tet(tetA, tetB));*/ 
+  return (tet_a_tetII(    n[0]->pos.data,     n[1]->pos.data,     n[2]->pos.data,     n[3]->pos.data, 
+                    f2->n[0]->pos.data, f2->n[1]->pos.data, f2->n[2]->pos.data, f2->n[3]->pos.data));
 
 }
 
@@ -438,7 +440,9 @@ scalar Face::checkTetraIntersectionAndGetVolume(Face *f2){
      tetB[i][1] = f2->n[i]->pos.y;
      tetB[i][2] = f2->n[i]->pos.z;
   }
-  if (!tet_a_tet(tetA, tetB)) return 0.0;
+  // if (!tet_a_tet(tetA, tetB)) return 0.0;
+  if (!tet_a_tetII(    n[0]->pos.data,     n[1]->pos.data,     n[2]->pos.data,     n[3]->pos.data, 
+                   f2->n[0]->pos.data, f2->n[1]->pos.data, f2->n[2]->pos.data, f2->n[3]->pos.data)) return 0.0;
   return volumeIntersection<scalar,arr3>(tetA, tetB);
 
 
@@ -692,7 +696,10 @@ bool Face::checkTetraIntersection(Face *f2,scalar *blob_corr,int f1_daddy_blob_i
      //printf("blob_corr element for blob %d to blob %d is %F \n corrected location for f2.y is %F\n face %d y is at %F\n face %d y is at %F\n",f1_daddy_blob_index,f2_daddy_blob_index,blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1],tetB[i][1],this->index,this->n[i]->pos.y,f2->index,f2->n[i]->pos.y);
      //printf("blob_corr element for blob %d to blob %d is %F \n corrected location for f2.z is %F\n face %d z is at %F\n face %d z is at %F\n",f1_daddy_blob_index,f2_daddy_blob_index,blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2],tetB[i][2],this->index,this->n[i]->pos.z,f2->index,f2->n[i]->pos.z);
   }
-  return (tet_a_tet(tetA, tetB));
+  // return (tet_a_tet(tetA, tetB));
+  return (tet_a_tetII(    n[0]->pos.data,     n[1]->pos.data,     n[2]->pos.data,     n[3]->pos.data, 
+                       tetB[0], tetB[1], tetB[2], tetB[3]));
+  return false;
 
 }
 
@@ -829,7 +836,9 @@ scalar Face::checkTetraIntersectionAndGetVolume(Face *f2, scalar *blob_corr,int 
      tetB[i][1] = f2->n[i]->pos.y-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+1];
      tetB[i][2] = f2->n[i]->pos.z-blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3+2];
   }
-  if (!tet_a_tet(tetA, tetB)) return 0.0;
+  // if (!tet_a_tet(tetA, tetB)) return 0.0;
+  if (!tet_a_tetII(   n[0]->pos.data,     n[1]->pos.data,     n[2]->pos.data,     n[3]->pos.data, 
+                   tetB[0], tetB[1], tetB[2], tetB[3])) return 0.0;
   return volumeIntersection<scalar,arr3>(tetA, tetB);
 
 

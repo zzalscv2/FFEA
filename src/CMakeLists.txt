@@ -36,8 +36,8 @@ add_executable(ffea ffea.cpp
     PoissonMatrixQuadratic.cpp SparseMatrixFixedPattern.cpp 
     SparseMatrixTypes.cpp SparseMatrixUnknownPattern.cpp SparsityPattern.cpp 
     Spring.cpp World.cpp VdW_solver.cpp 
-    Steric_solver.cpp LJSteric_solver.cpp KineticState.cpp 
-    PreComp_solver.cpp CheckTetrahedraOverlap.cpp VolumeIntersection.cpp
+    Steric_solver.cpp LJSteric_solver.cpp KineticState.cpp PreComp_solver.cpp 
+    CheckTetrahedraOverlap_II.cpp VolumeIntersection.cpp
     FFEA_user_info.cpp RngStream.cpp )
     
 if (USE_BOOST_INTERNAL)
