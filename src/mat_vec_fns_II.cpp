@@ -127,6 +127,7 @@ template <class t_scalar, class brr3> void arr3Normalise2(arr3_view<t_scalar,brr
    for (int i=0; i<3; i++) {
      norm += e[i]*e[i];
    }
+   if (norm == 0.0) throw -1; 
    norm = sqrt(norm);
    for (int i=0; i<3; i++) {
      n[i] = e[i]/norm;

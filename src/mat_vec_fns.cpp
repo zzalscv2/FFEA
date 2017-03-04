@@ -330,7 +330,7 @@ scalar mag(vector3 &v) {
     return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-std::array<scalar,3> normalise(vector3 &v) {
+/* std::array<scalar,3> normalise(vector3 &v) {
     scalar magnitude;
     vector3 norm;
     magnitude = mag(v);
@@ -341,4 +341,4 @@ std::array<scalar,3> normalise(vector3 &v) {
     norm.y = v.y / magnitude;
     norm.z = v.z / magnitude;
     return norm.data;
-}
+} */ 
