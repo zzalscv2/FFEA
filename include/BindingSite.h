@@ -59,8 +59,7 @@ class BindingSite{
 		set<int> get_nodes();
 
 		void calculate_centroid();
-		// vector3 get_centroid();
-		std::array<scalar,3> get_centroid(); 
+		void get_centroid(arr3 &v); 
 		void calculate_area();
 		scalar get_area();
 		void calculate_characteristic_length();

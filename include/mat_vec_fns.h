@@ -94,6 +94,6 @@ void print_vector3(vector3 &v);
 
 scalar mag(vector3 &v);
 
-std::array<scalar,3> normalise(vector3 &v);
+// std::array<scalar,3> normalise(vector3 &v);
 
 #endif
