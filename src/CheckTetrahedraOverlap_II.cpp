@@ -60,14 +60,6 @@
 // Functions from the checkVars object
 
 checkVars::checkVars() {
-	V1_0 = NULL;
-	V1_1 = NULL;
-	V1_2 = NULL;
-	V1_3 = NULL;
-	V2_0 = NULL;
-	V2_1 = NULL;
-	V2_2 = NULL;
-	V2_3 = NULL;
 	for(int i = 0; i < 3; ++i) {
 		n[i] = 0.0;
 		for(int j = 0; j < 6; ++j) {
@@ -90,14 +82,6 @@ checkVars::checkVars() {
 }
 
 checkVars::~checkVars() {
-	V1_0 = NULL;
-	V1_1 = NULL;
-	V1_2 = NULL;
-	V1_3 = NULL;
-	V2_0 = NULL;
-	V2_1 = NULL;
-	V2_2 = NULL;
-	V2_3 = NULL;
 	for(int i = 0; i < 3; ++i) {
 		n[i] = 0.0;
 		for(int j = 0; j < 6; ++j) {
@@ -141,16 +125,16 @@ inline bool FaceA_1(  scalar * Coord,  int & maskEdges, checkVars vars)
 
 // hence they do not need to be stored
 
-inline bool FaceA_2(scalar * Coord,int & maskEdges, checkVars vars)
+inline bool FaceA_2(scalar * Coord,int & maskEdges, checkVars vars, arr3 &V2_0, arr3 &V2_1, arr3 &V2_2, arr3 &V2_3, arr3 &V1_1)
 {
   maskEdges = 000;
-  // scalar * v_ref = vars.V1_1;
-  arr3 * v_ref = vars.V1_1;
+  // scalar * v_ref = V1_1;
+  // arr3 * v_ref = V1_1;
   
-  if (( Coord[0] = SUB_DOT(vars.V2_0,v_ref, vars.n)) > 0.0) maskEdges = 001;	
-  if (( Coord[1] = SUB_DOT(vars.V2_1,v_ref, vars.n)) > 0.0) maskEdges |= 002; 
-  if (( Coord[2] = SUB_DOT(vars.V2_2,v_ref, vars.n)) > 0.0) maskEdges |= 004; 
-  if (( Coord[3] = SUB_DOT(vars.V2_3,v_ref, vars.n)) > 0.0) maskEdges |= 010; 
+  if (( Coord[0] = SUB_DOT(V2_0,V1_1, vars.n)) > 0.0) maskEdges = 001;	
+  if (( Coord[1] = SUB_DOT(V2_1,V1_1, vars.n)) > 0.0) maskEdges |= 002; 
+  if (( Coord[2] = SUB_DOT(V2_2,V1_1, vars.n)) > 0.0) maskEdges |= 004; 
+  if (( Coord[3] = SUB_DOT(V2_3,V1_1, vars.n)) > 0.0) maskEdges |= 010; 
   
   return (maskEdges == 017);	
 }
@@ -168,14 +152,13 @@ inline bool FaceB_1(checkVars vars)
 	   (DOT(vars.P_V2[3] , vars.n) > 0.0));
 }
 
-inline bool FaceB_2(checkVars vars)
+inline bool FaceB_2(checkVars vars, arr3 &V1_0, arr3 &V1_1, arr3 &V1_2, arr3 &V1_3, arr3 &V2_1)
 {
-  // scalar * v_ref = vars.V2_1;
-  arr3 * v_ref = vars.V2_1;
-  return	(( SUB_DOT(vars.V1_0,v_ref , vars.n) > 0.0)  &&
-		 ( SUB_DOT(vars.V1_1,v_ref , vars.n) > 0.0)  &&
-		 ( SUB_DOT(vars.V1_2,v_ref , vars.n) > 0.0)  &&
-		 ( SUB_DOT(vars.V1_3,v_ref , vars.n) > 0.0) );
+  // scalar * v_ref = V2_1;
+  return	(( SUB_DOT(V1_0,V2_1 , vars.n) > 0.0)  &&
+		 ( SUB_DOT(V1_1,V2_1 , vars.n) > 0.0)  &&
+		 ( SUB_DOT(V1_2,V2_1 , vars.n) > 0.0)  &&
+		 ( SUB_DOT(V1_3,V2_1 , vars.n) > 0.0) );
 }
 
 
@@ -260,29 +243,21 @@ inline bool EdgeA(const int & f0 , const int & f1, checkVars vars)
 }
 
 // main function
-bool tet_a_tetII(arr3 &V1a, arr3 &V1b, arr3 &V1c, arr3 &V1d,
-                 arr3 &V2a, arr3 &V2b, arr3 &V2c, arr3 &V2d) {
+bool tet_a_tetII(arr3 &V1_0, arr3 &V1_1, arr3 &V1_2, arr3 &V1_3,
+                 arr3 &V2_0, arr3 &V2_1, arr3 &V2_2, arr3 &V2_3) {
   
   // First, we must define the variable object for this call (to ensure thread safety)
   //checkVars vars = new checkVars();
   checkVars vars;
-  vars.V1_0 = &V1a;
-  vars.V1_1 = &V1b;
-  vars.V1_2 = &V1c;
-  vars.V1_3 = &V1d;
-  vars.V2_0 = &V2a;
-  vars.V2_1 = &V2b;
-  vars.V2_2 = &V2c;
-  vars.V2_3 = &V2d;
   
-  SUB(vars.P_V1[0] ,vars.V2_0,vars.V1_0);	
-  SUB(vars.P_V1[1] ,vars.V2_1,vars.V1_0);	
-  SUB(vars.P_V1[2] ,vars.V2_2,vars.V1_0);	
-  SUB(vars.P_V1[3] ,vars.V2_3,vars.V1_0);	
+  SUB(vars.P_V1[0] ,V2_0,V1_0);	
+  SUB(vars.P_V1[1] ,V2_1,V1_0);	
+  SUB(vars.P_V1[2] ,V2_2,V1_0);	
+  SUB(vars.P_V1[3] ,V2_3,V1_0);	
   
   
-  SUB(vars.e_v1[0] , vars.V1_1 , vars.V1_0);	
-  SUB(vars.e_v1[1] , vars.V1_2 , vars.V1_0);
+  SUB(vars.e_v1[0] , V1_1 , V1_0);	
+  SUB(vars.e_v1[1] , V1_2 , V1_0);
   
 
   VECT(vars.n , vars.e_v1[0] ,vars.e_v1[1]);		// find the normal to  face 0
@@ -291,7 +266,7 @@ bool tet_a_tetII(arr3 &V1a, arr3 &V1b, arr3 &V1c, arr3 &V1d,
   if(FaceA_1(&vars.Coord_1[0][0],vars.masks[0], vars))	return false; // if FaceA_1 returns true, it means that a separation plane has been found, and thus returns false, so both tetrahedra don't intersect.
   
   
-  SUB(vars.e_v1[2],vars.V1_3,vars.V1_0);
+  SUB(vars.e_v1[2],V1_3,V1_0);
   VECT(vars.n ,vars.e_v1[2] ,  vars.e_v1[0]);
   
   if(FaceA_1(&vars.Coord_1[1][0], vars.masks[1], vars)) 	return false;		
@@ -306,12 +281,12 @@ bool tet_a_tetII(arr3 &V1a, arr3 &V1b, arr3 &V1c, arr3 &V1d,
   if(EdgeA(0,2, vars)) return false;	
   if(EdgeA(1,2, vars)) return false;  	
   
-  SUB(vars.e_v1[4], vars.V1_3,vars.V1_1);
-  SUB(vars.e_v1[3], vars.V1_2,vars.V1_1);
+  SUB(vars.e_v1[4], V1_3,V1_1);
+  SUB(vars.e_v1[3], V1_2,V1_1);
   
   VECT(vars.n ,vars.e_v1[4] , vars.e_v1[3]);
   
-  if(FaceA_2(&vars.Coord_1[3][0],vars.masks[3], vars))  return false;	
+  if(FaceA_2(&vars.Coord_1[3][0],vars.masks[3], vars, V2_0, V2_1, V2_2, V2_3, V1_1))  return false;	
   
   if(EdgeA(0,3, vars)) return false;	
   if(EdgeA(1,3, vars)) return false; 	
@@ -322,19 +297,19 @@ bool tet_a_tetII(arr3 &V1a, arr3 &V1b, arr3 &V1c, arr3 &V1d,
   
   // from now on, if there is a separating plane it is parallel to a face of b
   
-  SUB(vars.P_V2[0] , vars.V1_0,vars.V2_0);
-  SUB(vars.P_V2[1] , vars.V1_1,vars.V2_0);	
-  SUB(vars.P_V2[2] , vars.V1_2,vars.V2_0);	
-  SUB(vars.P_V2[3] , vars.V1_3,vars.V2_0);	
+  SUB(vars.P_V2[0] , V1_0,V2_0);
+  SUB(vars.P_V2[1] , V1_1,V2_0);	
+  SUB(vars.P_V2[2] , V1_2,V2_0);	
+  SUB(vars.P_V2[3] , V1_3,V2_0);	
   
   
-  SUB(vars.e_v2[0] , vars.V2_1, vars.V2_0);
-  SUB(vars.e_v2[1] , vars.V2_2, vars.V2_0);
+  SUB(vars.e_v2[0] , V2_1, V2_0);
+  SUB(vars.e_v2[1] , V2_2, V2_0);
   
   VECT(vars.n, vars.e_v2[0] , vars.e_v2[1] );
   if(FaceB_1(vars)) return false;	
   
-  SUB(vars.e_v2[2], vars.V2_3, vars.V2_0);
+  SUB(vars.e_v2[2], V2_3, V2_0);
   
   VECT(vars.n,  vars.e_v2[2] ,  vars.e_v2[0]);
   
@@ -344,12 +319,12 @@ bool tet_a_tetII(arr3 &V1a, arr3 &V1b, arr3 &V1c, arr3 &V1d,
   
   if(FaceB_1(vars)) return false;
   
-  SUB(vars.e_v2[4] , vars.V2_3 , vars.V2_1);
-  SUB(vars.e_v2[3] , vars.V2_2 , vars.V2_1);
+  SUB(vars.e_v2[4] , V2_3 , V2_1);
+  SUB(vars.e_v2[3] , V2_2 , V2_1);
   
   VECT(vars.n , vars.e_v2[4] , vars.e_v2[3]);
   
-  if(FaceB_2(vars)) return false;
+  if(FaceB_2(vars, V1_0, V1_1, V1_2, V1_3, V2_1)) return false;
 
   return true;	
 
