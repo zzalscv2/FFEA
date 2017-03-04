@@ -35,8 +35,6 @@ class checkVars {
 		~checkVars();
 		
 		// Member variables
-		// typedef scalar arr3[3];
-		arr3 *V1_0, *V1_1, *V1_2, *V1_3 ,*V2_0, *V2_1, *V2_2, *V2_3;	 ///< vertices coordinates
 		scalar e_v1[6][3];            ///< vector edge-oriented 
       scalar e_v2[6][3];            ///< vectors edge-oriented
 		int masks[4];  ///< for each face of the first tetrahedron stores the halfspace each vertex of the second tetrahedron belongs to
@@ -50,8 +48,8 @@ class checkVars {
 };
 
 /** Fast Tetrahedron-Tetrahedron Overlap Algorithm, by Fabio Ganovelli, Frederico Ponchio, Claudio Rocchini. ACM 2002. */
-bool tet_a_tetII(arr3 &V1a, arr3 &V1b, arr3 &V1c, arr3 &V1d, 
-               arr3 &V2a, arr3 &V2b, arr3 &V2c, arr3 &V2d);
+bool tet_a_tetII(arr3 &V1_0, arr3 &V1_1, arr3 &V1_2, arr3 &V1_3,
+                 arr3 &V2_0, arr3 &V2_1, arr3 &V2_2, arr3 &V2_3);
               
 
 
