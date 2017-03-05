@@ -177,7 +177,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
     // Check for consistency
     cout << "\nVerifying Parameters..." << endl;
-    if(params.validate() != 0) {
+    if(params.validate(mode) != 0) {
         FFEA_error_text();
         printf("Parameters found to be inconsistent in SimulationParams::validate()\n");
         return FFEA_ERROR;
@@ -1320,7 +1320,7 @@ int World::enm(set<int> blob_indices, int num_modes) {
 
         // This matrix 'should' contain 6 zero modes, and then num_rows - 6 actual floppy modes
         // The most important mode corresponds to the smallest non-zero eigenvalue
-
+	
         // Most important mode will have motion ~ largest system size. Get a length...
         scalar dx = -1 * INFINITY;
         vector3 min, max;
@@ -1336,6 +1336,9 @@ int World::enm(set<int> blob_indices, int num_modes) {
         }
 
         dx /= 20.0;
+
+	// Sort evals into correct units (N/m)
+	scalar unitscaler = mesoDimensions::force / mesoDimensions::length;
 
         // Make some trajectories (ignoring the first 6)
         cout << "\t\tMaking trajectories from eigenvectors..." << endl;
@@ -1365,7 +1368,7 @@ int World::enm(set<int> blob_indices, int num_modes) {
         evecs_out_fname = base + "_ffeaenm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, es.eigenvectors(), num_rows, num_modes);
-        print_evals_to_file(evals_out_fname, es.eigenvalues(), num_modes);
+        print_evals_to_file(evals_out_fname, es.eigenvalues(), num_modes, unitscaler);
     }
 
     return FFEA_OK;
@@ -1513,7 +1516,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
         evecs_out_fname = base + "_ffeadmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, R, num_rows, num_modes);
-        print_evals_to_file(evals_out_fname, esAhat.eigenvalues(), num_modes);
+        print_evals_to_file(evals_out_fname, esAhat.eigenvalues(), num_modes, 1.0);
     }
     return FFEA_OK;
 }
@@ -1693,7 +1696,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
         evecs_out_fname = base + "_ffearpdmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, Rvecs, num_rows, num_modes);
-        print_evals_to_file(evals_out_fname, Rvals, num_modes);
+        print_evals_to_file(evals_out_fname, Rvals, num_modes, 1.0);
     }
     return FFEA_OK;
 }
@@ -3616,7 +3619,7 @@ void World::print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, in
     fclose(fout);
 }
 
-void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes) {
+void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes, scalar scale) {
 
     int i;
     FILE *fout;
@@ -3624,7 +3627,7 @@ void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes) {
 
     // Skip the zero modes
     for(i = 6; i < num_modes +  6; ++i) {
-        fprintf(fout, "%6.3e\n", ev[i]);
+        fprintf(fout, "%6.3e\n", ev[i] * scale);
     }
     fclose(fout);
 }
