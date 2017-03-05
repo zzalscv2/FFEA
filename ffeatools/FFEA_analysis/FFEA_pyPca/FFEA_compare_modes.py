@@ -54,7 +54,7 @@ for i in range(2):
 	fin.close()
 
 	# This means spring constants (hopefully...)
-	if evals[i][0] < 1.0:
+	if "ffeaenm" in inevalsfile[i] or "ffeadmm" in inevalsfile[i]:
 		conversion = True
 	else:
 		conversion = False
