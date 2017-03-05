@@ -25,6 +25,7 @@ import sys, os
 import numpy as np
 import copy
 from matplotlib import pyplot as plt
+from matplotlib import rc
 
 if len(sys.argv) < 6:
 	sys.exit("Usage: python " + sys.argv[0] + " [INPUT .evals file 1] [INPUT .evals file 2] [INPUT .evecs file 1] [INPUT .evecs file 2] [OUTPUT fname] OPTIONAL{[EIG SWITCH (x,y)]}")
@@ -145,9 +146,9 @@ row_labels = []
 
 if num_modes <= 20:
 	for i in range(num_modes):
-		row_labels.append(str(i))
+		row_labels.append(str(i + 1))
 		#column_labels.append(str((num_modes - 1) - i))
-		column_labels.append(str(i))
+		column_labels.append(str(i + 1))
 else:
 	count = 0
 	for i in range(num_modes + 1):
@@ -208,13 +209,20 @@ fig, ax = plt.subplots(figsize=(13,10))
 evals[0] = np.array(evals[0])
 evals[1] = np.array(evals[1])
 
-ind = np.arange(evals[0].size)  # the x locations for the groups
 width = 0.35
+ind = np.arange(evals[0].size) + width / 2.0  # the x locations for the groups
+
 eva = ax.bar(ind, evals[0], width, color='r')
 evb = ax.bar(ind + width, evals[1], width, color='g')
+ax.set_xticks(ind + width)
+ax.set_xticklabels((str(int(i + 1)) for i in ind), fontsize = 14)
+for label in ax.get_yticklabels():
+	label.set_fontsize(14)
+
+#rcParams.update({'font.size': 22})
 ax.set_title("Eigenvalue Bar Chart Comparison", fontsize=24)
 ax.set_ylabel("Eigenvalue " + r"$(\AA ^2)$", fontsize=18)
-ax.set_xlabel("Index", fontsize=18)
+ax.set_xlabel("Eigenmode", fontsize=18)
 ax.legend([eva,evb], ['Eigensystem A', 'Eigensystem B'], loc = 1, fontsize=12)
 
 #base, ext = os.path.splitext(out_fname)
