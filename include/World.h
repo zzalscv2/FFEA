@@ -293,7 +293,7 @@ private:
 
     void print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, int num_modes);
 
-    void print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes);
+    void print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes, scalar scale);
 
     void write_eig_to_files(scalar *evals_ordered, scalar **evecs_ordered, int num_modes, int num_nodes);
 
