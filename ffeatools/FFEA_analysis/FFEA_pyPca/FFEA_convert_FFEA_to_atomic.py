@@ -24,7 +24,7 @@
 import sys, os
 import FFEA_trajectory, FFEA_pdb
 
-if len(sys.argv) < 8:
+if len(sys.argv) < 6:
 	sys.exit("Usage: python " + sys.argv[0] + " -traj [FFEA trajectory (.ftj)] -scale [FFEA scale (inverts to work in metres)] -out [Output fname] -format[mdcrd/pdb] -blob [blob_number (optional)] -frames [num_frames (optional)]")
 
 # Get arguments
@@ -32,7 +32,6 @@ scriptdir = os.path.dirname(os.path.abspath(sys.argv[0])) + "/"
 traj_fname_set = 0
 out_fname_set = 0
 format_set = 0
-scale_set = 0;
 blob_num = -1
 num_frames = 100000
 for i in range(1, len(sys.argv), 2):
@@ -50,10 +49,6 @@ for i in range(1, len(sys.argv), 2):
 			sys.exit("Error. Unexpected format '" + format + "'\nAccepted formats:\nmdcrd\npdb\n")
 		format_set = 1
 		print("format = " + format)
-	elif sys.argv[i].strip() == "-scale":
-		scale = float(sys.argv[i + 1])
-		scale_set = 1
-		print("scale = " + str(scale))
 	elif sys.argv[i].strip() == "-blob":
 		blob_num = int(sys.argv[i + 1])
 		print("blob_num = " + str(blob_num))
@@ -63,8 +58,10 @@ for i in range(1, len(sys.argv), 2):
 	else:
 		sys.exit("Error. Unexpected argument '" + sys.argv[i] + "'\n")
 
-if traj_fname_set == 0 or out_fname_set == 0 or scale_set == 0 or format_set == 0:
-	sys.exit("Error. '-traj', '-out', 'format' and '-scale' must all be set.\n")
+
+scale = 1e-10
+if traj_fname_set == 0 or out_fname_set == 0 or format_set == 0:
+	sys.exit("Error. '-traj', '-out' and 'format' must all be set.\n")
 
 if len(out_fname.split(".")) == 2:
 	out_basename = os.path.splitext(out_fname)[0]
