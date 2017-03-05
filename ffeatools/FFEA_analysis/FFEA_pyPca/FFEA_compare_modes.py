@@ -223,7 +223,7 @@ for label in ax.get_yticklabels():
 ax.set_title("Eigenvalue Bar Chart Comparison", fontsize=24)
 ax.set_ylabel("Eigenvalue " + r"$(\AA ^2)$", fontsize=18)
 ax.set_xlabel("Eigenmode", fontsize=18)
-ax.legend([eva,evb], ['Eigensystem A', 'Eigensystem B'], loc = 1, fontsize=12)
+ax.legend([eva,evb], ['Eigensystem A', 'Eigensystem B'], loc = 0, fontsize=12)
 
 #base, ext = os.path.splitext(out_fname)
 #plt.savefig(base + ".png")
