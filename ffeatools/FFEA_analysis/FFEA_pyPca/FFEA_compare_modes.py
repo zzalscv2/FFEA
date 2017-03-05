@@ -129,10 +129,10 @@ print("Visualising eigenvectors as a heatmap...")
 #os.system(os.path.dirname("python " + os.path.abspath(sys.argv[0])) + "/plot_eigensystem_comparison.py " + out_fname)
 
 # Get figure properties
-fig = plt.figure(figsize=(20,10))
-fig.suptitle("Eigensystem Comparison", fontsize=24)
-ax = fig.add_subplot(1,2,1)
-#fig, ax = plt.subplots(figsize=(13,10))
+#fig = plt.figure(figsize=(20,10))
+#fig.suptitle("Eigensystem Comparison", fontsize=24)
+#ax = fig.add_subplot(1,2,1)
+fig, ax = plt.subplots(figsize=(13,10))
 
 #column_labels = list('43210')
 #row_labels = list('01234')
@@ -196,11 +196,14 @@ ax.set_ylabel("Eigensystem B Modes", fontsize=18)
 cbar.ax.set_yticklabels(["%2.1f" % (i / 10.0) for i in range(11)], fontsize=18)
 cbar.set_label('Normalised Dot Product Values', fontsize=18)
 
+plt.show()
+
 #
 # Now eigenvalues
 #
 print("Visualising eigenvalues as a histogram...")
-ax = fig.add_subplot(1,2,2)
+fig, ax = plt.subplots(figsize=(13,10))
+#ax = fig.add_subplot(1,2,2)
 
 evals[0] = np.array(evals[0])
 evals[1] = np.array(evals[1])
@@ -214,7 +217,7 @@ ax.set_ylabel("Eigenvalue " + r"$(\AA ^2)$", fontsize=18)
 ax.set_xlabel("Index", fontsize=18)
 ax.legend([eva,evb], ['Eigensystem A', 'Eigensystem B'], loc = 1, fontsize=12)
 
-base, ext = os.path.splitext(out_fname)
-plt.savefig(base + ".png")
+#base, ext = os.path.splitext(out_fname)
+#plt.savefig(base + ".png")
 plt.show()
 print("done!")
