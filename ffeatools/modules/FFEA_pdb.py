@@ -215,7 +215,7 @@ class FFEA_pdb:
 				line = fin.readline()
 					
 				# Now atom structure
-				self.chain[i].atom[j].set_structure(atomID=line[6:12], name=line[12:16], res=line[17:20], resID=line[22:26], occupancy=line[54:60], temperature=line[60:66], segID=line[72:76], element=line[76:78], charge=line[78:80])
+				self.chain[i].atom[j].set_structure(atomID=line[6:12], name=line[12:16], res=line[17:20], resID=line[22:26], occupancy=line[54:60], temperature=line[60:66], segID=line[72:76], element=line[76:78], charge=line[78:80].strip())
 			if ters_exist:
 				fin.readline()
 
