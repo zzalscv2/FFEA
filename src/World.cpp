@@ -1300,6 +1300,12 @@ int World::enm(set<int> blob_indices, int num_modes) {
 
         // Get an elasticity matrix
         num_nodes = active_blob_array[i]->get_num_linear_nodes();
+
+	// Check this is allowed
+	if(num_modes > 3 * num_nodes - 6) {
+		cout << "\n\t\t" << num_modes << " unavailable for only " << num_nodes << " linear nodes. Deafulting to 3N-6 = " << 3 * num_nodes - 6 << " modes." << endl << endl; 
+	}
+	num_modes = 3 * num_nodes - 6;
         num_rows = num_nodes * 3;
 
         Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
@@ -1404,6 +1410,12 @@ int World::dmm(set<int> blob_indices, int num_modes) {
         // Get a viscosity matrix
         num_nodes = active_blob_array[i]->get_num_linear_nodes();
         num_rows = num_nodes * 3;
+
+	// Check this is allowed
+	if(num_modes > 3 * num_nodes - 6) {
+		cout << "\n\t\t" << num_modes << " unavailable for only " << num_nodes << " linear nodes. Deafulting to 3N-6 = " << 3 * num_nodes - 6 << " modes." << endl << endl; 
+	}
+	num_modes = 3 * num_nodes - 6;
 
         Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
 
@@ -1551,6 +1563,12 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
         // Explicitly calculate a diffusion matrix
         num_nodes = active_blob_array[i]->get_num_linear_nodes();
         num_rows = num_nodes * 3;
+
+	// Check this is allowed
+	if(num_modes > 3 * num_nodes - 6) {
+		cout << "\n\t\t" << num_modes << " unavailable for only " << num_nodes << " linear nodes. Deafulting to 3N-6 = " << 3 * num_nodes - 6 << " modes." << endl << endl; 
+	}
+	num_modes = 3 * num_nodes - 6;
 
         Eigen_MatrixX D(num_rows, num_rows);
 
