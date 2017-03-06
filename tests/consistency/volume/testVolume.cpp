@@ -76,7 +76,8 @@ int main() {
     return 1;
   } 
 
-  scalar vol = volumeIntersection<scalar,arr3>(tetA, tetB);
+  arr3 cm; 
+  scalar vol = volumeIntersectionII<scalar,arr3>(tetA[0], tetA[1], tetA[2], tetA[3], tetB[0], tetB[1], tetB[2], tetB[3], cm, false);
   stringstream ss;
   ss.precision(14);
   ss << vol;
@@ -123,7 +124,7 @@ int main() {
     // return 1;
   } 
 
-  vol = volumeIntersection<scalar,arr3>(tetC, tetD);
+  vol = volumeIntersection<scalar,arr3>(tetC, tetD, cm, false);
   if (vol == 0) {
     cout << " intersecting volume should not be zero for these tetrahedra" << endl; 
     return 1;

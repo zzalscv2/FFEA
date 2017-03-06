@@ -33,6 +33,8 @@
  * Defines what is meant by a scalar (essentially sets the precision of
  * the code between float or double).
  */
+typedef double scalar;
+typedef double geoscalar;
 #ifdef USE_DOUBLE_PLUS
 typedef double scalar;
 typedef long double geoscalar;
@@ -86,8 +88,6 @@ typedef struct {
     // Therefore, don't ever populate this class with methods!!
 class vector3 {
 public:
-    // vector3 v(); 
-    // std::array<scalar, 3> data; 
     arr3 data;
     scalar& x = data[0]; 
     scalar& y = data[1]; 
@@ -104,10 +104,7 @@ template <class t_scalar, class brr3> class arr3_view
 {
 public:
     arr3_view(brr3 (&arr) ) : data(arr) {}
-    arr3_view(t_scalar* data, std::size_t size) : data(data) {
-       // if (size != 3) // simple check removed in benefit of performance.
-       //  throw std::runtime_error("arr3 - wrong size of data: " + std::to_string(size)); 
-    }
+    arr3_view(t_scalar* data, std::size_t size) : data(data) { }
 
     t_scalar* begin() { return data; }
     t_scalar* end() { return data + 3; }
@@ -116,7 +113,6 @@ public:
 private:
     t_scalar* data;
 }; 
-
 
 
 /**
