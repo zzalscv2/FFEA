@@ -33,9 +33,9 @@ parser.add_argument("out_fname", action="store", help="Output trajectory file (.
 parser.add_argument("frames_to_read", action="store", type=int, help="Number of frames to read")
 parser.add_argument("trim_percent", action="store", type=float, help="Percentage to keep")
 
-def thin_trajectory(traj_fname, frames_to_read, trim_percent):
+def trim_trajectory(traj_fname, frames_to_read, trim_percent):
     """
-    Remove frames from end of an FFEA_trajectory file.
+    Remove frames from start of an FFEA_trajectory file.
     In:
     traj_fname an ffea trajectory file (note: a file, not an instance!)
     out_fname: an output filename
@@ -54,7 +54,12 @@ def thin_trajectory(traj_fname, frames_to_read, trim_percent):
             trim_percent *= 100
     
     trim_percent /= 100.0
-    traj = FFEA_trajectory.FFEA_trajectory(traj_fname, num_frames_to_read = frames_to_read * trim_percent)
+
+    total_num_frames = FFEA_trajectory.get_num_frames(traj_fname)
+    if frames_to_read > total_num_frames:
+	frames_to_read = total_num_frames
+
+    traj = FFEA_trajectory.FFEA_trajectory(traj_fname, start = frames_to_read * (1 - trim_percent), num_frames_to_read = frames_to_read)
     return traj
     
 if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
@@ -63,5 +68,5 @@ if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     print args.traj_fname
     if not os.path.exists(args.traj_fname):
         raise IOError("Trajectory file specified doesnae exist.")
-    out_traj = thin_trajectory(args.traj_fname, args.frames_to_read, args.trim_percent, )
+    out_traj = trim_trajectory(args.traj_fname, args.frames_to_read, args.trim_percent, )
     out_traj.write_to_file(args.out_fname)

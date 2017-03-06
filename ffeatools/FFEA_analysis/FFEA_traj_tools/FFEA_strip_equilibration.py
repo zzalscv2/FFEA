@@ -69,11 +69,15 @@ def strip_equilibration(fname, limit, split=True):
 
 		blobs_to_delete = []
 		for i in blobs_to_check:
-		
+			if len(blobs_to_check) == 1:
+				blobmeas = meas.global_meas
+			else:
+				blobmeas = meas.blob_meas[i]
+
 			# New averages
-			seavg[i] = (seavg[i] * t + meas.blob_meas[i]["StrainEnergy"][t] / kT) / (t + 1)
+			seavg[i] = (seavg[i] * t + blobmeas["StrainEnergy"][t] / kT) / (t + 1)
 			if script.blob[i].solver != "CG_nomass":
-				keavg[i] = (keavg[i] * t + meas.blob_meas[i]["KineticEnergy"][t] / kT) / (t + 1)
+				keavg[i] = (keavg[i] * t + blobmeas["KineticEnergy"][t] / kT) / (t + 1)
 			else:
 				keavg[i] = 0.0
 
@@ -140,21 +144,22 @@ def strip_equilibration(fname, limit, split=True):
 				pass
 
 	total_num_nodes = 0
-	for i in range(script.params.num_blobs):
-		for key in meas.blob_meas[i]:
-			try:
-				eqmeas.blob_meas[i][key] = meas.blob_meas[i][key][0:eqat]
-				meas.blob_meas[i][key] = meas.blob_meas[i][key][eqat:]
-			except:
-				pass
-
-		for j in range(script.params.num_blobs):
+	if script.params.num_blobs > 1:
+		for i in range(script.params.num_blobs):
 			for key in meas.blob_meas[i]:
 				try:
-					eqmeas.interblob_meas[i][j][key] = meas.interblob_meas[i][j][key][0:eqat]
-					meas.interblob_meas[i][j][key] = meas.interblob_meas[i][j][key][eqat:]
+					eqmeas.blob_meas[i][key] = meas.blob_meas[i][key][0:eqat]
+					meas.blob_meas[i][key] = meas.blob_meas[i][key][eqat:]
 				except:
 					pass
+
+			for j in range(script.params.num_blobs):
+				for key in meas.blob_meas[i]:
+					try:
+						eqmeas.interblob_meas[i][j][key] = meas.interblob_meas[i][j][key][0:eqat]
+						meas.interblob_meas[i][j][key] = meas.interblob_meas[i][j][key][eqat:]
+					except:
+						pass
 
 
 	# Now, write all out to files
