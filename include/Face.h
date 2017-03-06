@@ -125,27 +125,6 @@ public:
     void getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar &area, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
 
-    /** Get the volume that enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite
-      *   linear node with the corresponding tetrahedron in f2.
-      *   In addition, return the gradient of this volume,
-      *     with respect to the unit vector r.
-      * It calls twice volumeIntersection, at volumeIntersection.h
-      **/
-    void getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &vol, geoscalar &dVdr);
-    void getTetraIntersectionVolumeAndGradient(Face *f2, grr3 &r, geoscalar &vol, geoscalar &dVdr, scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
-
-
-     /** Get the volume that enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite
-      *   linear node with the corresponding tetrahedron in f2.
-      *   In addition, return the gradient of this volume,
-      *     with respect to the unit vector r (input),
-      *     and the two action points where the force is applied.
-      * It calls twice volumeIntersection and lineFaceIntersectionPoint.
-      **/
-    bool getTetraIntersectionVolumeGradientAndShapeFunctions__old(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2));
-
      /** Get the volume that enclose the intersection
       *   of the tetrahedron formed by this face an the opposite
       *   linear node with the corresponding tetrahedron in f2.
@@ -153,34 +132,11 @@ public:
       *     calculated as dV/dx,dV/dy,dV/dz, and the internal coordinates
       *     of the point where the force is applied.
       * It calls 4 times volumeIntersection.
+      * This version works well for the double loop i<j. 
       **/
-    bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
-    bool getTetraIntersectionVolumeGradientAndShapeFunctions(Face *f2, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
-
-    // This version works well for the double loop i<j. 
     bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, geoscalar dr, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
     bool getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, geoscalar dr, grr3 (&dVdr), geoscalar &vol, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr, int f1_daddy_blob_index, int f2_daddy_blob_index);
 
-
-     /** Get the volume that enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite
-      *   linear node with the corresponding tetrahedron in f2.
-      *   In addition, return the gradient of this volume,
-      *     with respect to the unit vector r (output),
-      *     and the two action points where the force is applied.
-      * It calls twice volumeIntersection and lineFaceIntersectionPoint.
-      **/
-    bool getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2));
-    bool getTetraIntersectionVolumeGradientDirAndShapeFunctions(Face *f2, grr3 (&r), geoscalar &vol, geoscalar &dVdr, grr4 (&phi1), grr4 (&phi2), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
-
-     /** Get the volume that enclose the intersection
-      *   of the tetrahedron formed by this face an the opposite
-      *   linear node with the corresponding tetrahedron in f2.
-      *   In addition, return the shape functions to be applied on the faces,
-      *     if the force were applied on a point of the surfaces,
-      *     for a line given by axis r and point p.
-      **/
-    bool getTetraIntersectionVolumeAndShapeFunctions(Face *f2, grr3 (&r), grr3 (&p), geoscalar &vol, grr4 (&phi1), grr4 (&phi2));
 
     Blob *daddy_blob;
 

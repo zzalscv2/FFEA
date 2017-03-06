@@ -28,9 +28,8 @@
 
 // scalar volumeIntersection(arr3 (&tetA)[4], arr3 (&tetB)[4]);
 /** return the the overlapping volume between tetrahedra tetA and tetB */ 
-template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4]);
-template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4], brr3 &cm);
-template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4], brr3 &cm, brr3 &r);
+template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4], brr3 &cm, bool calcCM);
+template <class t_scalar, class brr3> t_scalar volumeIntersectionII(brr3 &tetA0, brr3 &tetA1, brr3 &tetA2, brr3 &tetA3, brr3 &tetB0, brr3 &tetB1, brr3 &tetB2, brr3 &tetB3, brr3 &cm, bool calcCM);
 /** return the the overlapping volume between tetrahedra tetA and tetB, and the area enclosing this volume */ 
 template <class t_scalar, class brr3> void volumeAndAreaIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4], t_scalar &vol, t_scalar &area);
 
