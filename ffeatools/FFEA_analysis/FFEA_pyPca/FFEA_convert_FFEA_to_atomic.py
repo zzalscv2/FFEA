@@ -25,7 +25,7 @@ import sys, os
 import FFEA_trajectory, FFEA_pdb
 
 if len(sys.argv) < 6:
-	sys.exit("Usage: python " + sys.argv[0] + " -traj [FFEA trajectory (.ftj)] -scale [FFEA scale (inverts to work in metres)] -out [Output fname] -format[mdcrd/pdb] -blob [blob_number (optional)] -frames [num_frames (optional)]")
+	sys.exit("Usage: python " + sys.argv[0] + " -traj [FFEA trajectory (.ftj)] -out [Output fname] -format[mdcrd/pdb] -blob [blob_number (optional)] -frames [num_frames (optional)]")
 
 # Get arguments
 scriptdir = os.path.dirname(os.path.abspath(sys.argv[0])) + "/"
