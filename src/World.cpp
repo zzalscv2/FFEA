@@ -1303,11 +1303,10 @@ int World::enm(set<int> blob_indices, int num_modes) {
 
 	// Check this is allowed
 	if(num_modes > 3 * num_nodes - 6) {
-		cout << "\n\t\t" << num_modes << " unavailable for only " << num_nodes << " linear nodes. Deafulting to 3N-6 = " << 3 * num_nodes - 6 << " modes." << endl << endl; 
+		cout << "\n\t\t" << num_modes << " unavailable for only " << num_nodes << " linear nodes. Deafulting to 3N-6 = " << 3 * num_nodes - 6 << " modes." << endl << endl;
+		num_modes = 3 * num_nodes - 6;
 	}
-	num_modes = 3 * num_nodes - 6;
         num_rows = num_nodes * 3;
-
         Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
 
         cout << "\t\tCalculating the Global Linearised Elasticity Matrix, A...";
