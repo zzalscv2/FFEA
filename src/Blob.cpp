@@ -1550,9 +1550,12 @@ int Blob::get_linear_solver() {
 
 /*
  *
+arr3 Blob::get_CoG() {
+    return CoG.data;
+}
  */
-vector3 Blob::get_CoG() {
-    return CoG;
+void Blob::get_CoG(arr3 &cog){
+    arr3Store<scalar,arr3>(CoG.data, cog); 
 }
 
 /*
@@ -1582,12 +1585,9 @@ tetra_element_linear *Blob::get_element(int i) {
  *
  * @ingroup FMM
  **/
-vector3 Blob::get_bead_position(int i) {
-    vector3 v;
-    v.x = bead_position[3*i];
-    v.y = bead_position[3*i+1];
-    v.z = bead_position[3*i+2];
-    return v;
+void Blob::get_bead_position(int i, arr3 &v) {
+
+    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v); 
 }
 
 /**
@@ -2099,8 +2099,10 @@ void Blob::set_forces_to_zero() {
     }
 }
 
-vector3 Blob::get_node(int index) {
-    return node[index].pos;
+void Blob::get_node(int index, arr3 &v) {
+    
+    arr3Store<scalar,arr3>(node[index].pos.data, v); 
+    
 }
 
 void Blob::add_force_to_node(vector3 f, int index) {

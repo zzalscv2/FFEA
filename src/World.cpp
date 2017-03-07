@@ -3367,14 +3367,14 @@ int World::apply_springs() {
     vector3 n1, n0, force0, force1, sep, sep_norm;
     for (int i = 0; i < num_springs; ++i) {
         if (spring_array[i].am_i_active == true) {
-            n1 = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
-            n0 = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
+            active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], n1.data);
+            active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], n0.data);
             sep.x = n1.x - n0.x;
             sep.y = n1.y - n0.y;
             sep.z = n1.z - n0.z;
 
             try {
-                sep_norm = normalise(&sep);
+                arr3Normalise2<scalar,arr3>(sep.data, sep_norm.data); 
             } catch (int e) {
 
                 // If zero magnitude, we're ok
@@ -3387,7 +3387,7 @@ int World::apply_springs() {
                 }
             }
 
-            force_mag = spring_array[i].k * (mag(&sep) - spring_array[i].l);
+            force_mag = spring_array[i].k * (mag(sep) - spring_array[i].l);
             force0.x = force_mag * sep_norm.x;
             force0.y = force_mag * sep_norm.y;
             force0.z = force_mag * sep_norm.z;
@@ -3813,7 +3813,7 @@ void World::make_measurements() {
         kineticenergy += active_blob_array[i]->get_kinetic_energy();
         strainenergy += active_blob_array[i]->get_strain_energy();
         rmsd += (active_blob_array[i]->get_rmsd() * active_blob_array[i]->get_rmsd()) * active_blob_array[i]->get_num_nodes();
-        bCoG = active_blob_array[i]->get_CoG();
+        active_blob_array[i]->get_CoG(bCoG.data);
         CoG.x += bCoG.x * active_blob_array[i]->get_num_nodes();
         CoG.y += bCoG.y * active_blob_array[i]->get_num_nodes();
         CoG.z += bCoG.z * active_blob_array[i]->get_num_nodes();
@@ -3835,10 +3835,10 @@ void World::make_measurements() {
         }
 
         for(i = 0; i < num_springs; ++i) {
-            a = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
-            b = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
+            active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], a.data);
+            active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], b.data);
             vec3_vec3_subs(&a, &b, &c);
-            springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag(&c) - spring_array[i].l) * (mag(&c) - spring_array[i].l);
+            springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag(c) - spring_array[i].l) * (mag(c) - spring_array[i].l);
         }
 
         springenergy = get_spring_field_energy(-1, -1);

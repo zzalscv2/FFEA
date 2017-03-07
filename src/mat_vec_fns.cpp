@@ -322,23 +322,23 @@ void print_vector12(vector12 v) {
         printf("%e\n", v[i]);
 }
 
-void print_vector3(vector3 *v) {
-    printf("%e %e %e\n", v->x, v->y, v->z);
+void print_vector3(vector3 &v) {
+    printf("%e %e %e\n", v.x, v.y, v.z);
 }
 
-scalar mag(vector3 *v) {
-    return sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+scalar mag(vector3 &v) {
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-vector3 normalise(vector3 *v) {
+/* std::array<scalar,3> normalise(vector3 &v) {
     scalar magnitude;
     vector3 norm;
     magnitude = mag(v);
     if(magnitude == 0.0) {
 	throw -1;
     }
-    norm.x = v->x / magnitude;
-    norm.y = v->y / magnitude;
-    norm.z = v->z / magnitude;
-    return norm;
-}
+    norm.x = v.x / magnitude;
+    norm.y = v.y / magnitude;
+    norm.z = v.z / magnitude;
+    return norm.data;
+} */ 

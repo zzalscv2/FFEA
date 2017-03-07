@@ -236,9 +236,10 @@ void BEM_Poisson_Boltzmann::gauss_quadrature_4_point(vector3 gqp[4], vector3 *p,
 
 scalar BEM_Poisson_Boltzmann::self_term(vector3 *n0, vector3 *n1, vector3 *n2, int precision) {
     // Calculate the triangle side vectors, r_01, r_02 and r_12
-    vector3 r_01 = {n1->x - n0->x, n1->y - n0->y, n1->z - n0->z},
-    r_02 = {n2->x - n0->x, n2->y - n0->y, n2->z - n0->z},
-    r_12 = {n2->x - n1->x, n2->y - n1->y, n2->z - n1->z};
+    vector3 r_01, r_02, r_12; // r_12;
+    r_01.assign ( {n1->x - n0->x, n1->y - n0->y, n1->z - n0->z} );
+    r_02.assign ( {n2->x - n0->x, n2->y - n0->y, n2->z - n0->z} );
+    r_12.assign ( {n2->x - n1->x, n2->y - n1->y, n2->z - n1->z} );
 
     // Get the lengths of these vectors
     scalar r_01_sq = r_01.x * r_01.x + r_01.y * r_01.y + r_01.z * r_01.z,
@@ -253,9 +254,10 @@ scalar BEM_Poisson_Boltzmann::self_term(vector3 *n0, vector3 *n1, vector3 *n2, i
     scalar theta_max = acos(r_01_dot_r_02 / sqrt(r_01_sq * r_02_sq));
 
     // Get the vector between node 0 and the point perpendicularly opposite (on line node 1 to 2)
-    vector3 r_0_perp = {r_01.x - r_01_dot_r_12 * r_12.x / r_12_sq,
+    vector3 r_0_perp;
+    r_0_perp.assign ( {r_01.x - r_01_dot_r_12 * r_12.x / r_12_sq,
         r_01.y - r_01_dot_r_12 * r_12.y / r_12_sq,
-        r_01.z - r_01_dot_r_12 * r_12.z / r_12_sq};
+        r_01.z - r_01_dot_r_12 * r_12.z / r_12_sq} );
 
     // Get the perpendicular distance between node 0 and line 1 to 2
     scalar L_perp = sqrt(r_0_perp.x * r_0_perp.x + r_0_perp.y * r_0_perp.y + r_0_perp.z * r_0_perp.z);
