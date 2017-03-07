@@ -60,10 +60,10 @@ int BindingSite_matrix::init(string fname) {
 	}
 
 	// Get all interactions
-	interaction = new bool*[num_interaction_types];
+	interaction = new(std::nothrow) bool*[num_interaction_types];
 	if (interaction == NULL) FFEA_ERROR_MESSG("Could not allocate 2D interaction array\n"); 
 	for(int i = 0; i < num_interaction_types; ++i) {
-		interaction[i] = new bool[num_interaction_types];
+		interaction[i] = new(std::nothrow) bool[num_interaction_types];
 		if (interaction[i] == NULL) FFEA_ERROR_MESSG("Could not allocate memory for interaction[%d]\n", i);
 		for(int j = 0; j < num_interaction_types; ++j) {
 			if(fin.eof()) {

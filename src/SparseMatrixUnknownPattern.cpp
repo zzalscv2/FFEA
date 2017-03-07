@@ -40,7 +40,7 @@ int SparseMatrixUnknownPattern::init(int num_rows, int suggested_initial_size_fo
     this->num_rows = num_rows;
 
     // Allocate the array of row vectors
-    row = new vector<sparse_entry>[num_rows];
+    row = new(std::nothrow) vector<sparse_entry>[num_rows];
 
     if (row == NULL) {
         return FFEA_ERROR;
@@ -52,7 +52,7 @@ int SparseMatrixUnknownPattern::init(int num_rows, int suggested_initial_size_fo
     }
 
     // Allocate the array for the diagonal elements (which are treated differently)
-    diagonal = new scalar[num_rows];
+    diagonal = new(std::nothrow) scalar[num_rows];
 
     if (diagonal == NULL) {
         return FFEA_ERROR;

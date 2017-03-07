@@ -69,7 +69,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     this->i_max = params->max_iterations_cg;
 
     printf("\t\tAttempting to allocate %d scalars for mass_LU...\n", num_rows * num_rows);
-    scalar *mass_LU = new scalar[num_rows * num_rows];
+    scalar *mass_LU = new(std::nothrow) scalar[num_rows * num_rows];
     if (mass_LU == NULL) {
         FFEA_ERROR_MESSG("Could not allocate mass_LU\n");
     }
@@ -132,7 +132,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
 	sum2 += elem[n].vol_0 * elem[n].rho;
     }
     // Allocate memory for and initialise 'key' array
-    key = new int[num_rows + 1];
+    key = new(std::nothrow) int[num_rows + 1];
     if (key == NULL) FFEA_ERROR_MESSG("Failed to allocate 'key' in ConjugateGradientSolver\n"); 
 
     for (i = 0; i < num_rows; i++) {
@@ -160,7 +160,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
 
     // Allocate memory for the 'entry' array
     printf("\t\tNum non zero entries = %d.\n\t\tAllocating space...\n", total_non_zeros);
-    entry = new sparse_entry[total_non_zeros];
+    entry = new(std::nothrow) sparse_entry[total_non_zeros];
     if (entry == NULL) FFEA_ERROR_MESSG("Failed to allocate 'entry' in ConjugateGradientSolver\n"); 
     printf("\t\t...done.\n");
 
@@ -185,17 +185,17 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     }
     cout << "Mass Solver Sums: " << mesoDimensions::mass*sum1 << " " << mesoDimensions::mass*sum2 << " " << mesoDimensions::mass*sum3 << endl;
     // Create the jacobi preconditioner matrix (diagonal)
-    preconditioner = new scalar[num_rows];
+    preconditioner = new(std::nothrow) scalar[num_rows];
     if (preconditioner == NULL) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in ConjugateGradientSolver\n"); 
     for (i = 0; i < num_rows; i++)
         preconditioner[i] = 1.0 / mass_LU[i * num_rows + i];
 
     // create the work vectors necessary for use by the conjugate gradient solver
-    d = new vector3[num_rows];
-    r = new vector3[num_rows];
-    q = new vector3[num_rows];
-    s = new vector3[num_rows];
-    f = new vector3[num_rows];
+    d = new(std::nothrow) vector3[num_rows];
+    r = new(std::nothrow) vector3[num_rows];
+    q = new(std::nothrow) vector3[num_rows];
+    s = new(std::nothrow) vector3[num_rows];
+    f = new(std::nothrow) vector3[num_rows];
     if (d == NULL || r == NULL || q == NULL || s == NULL || f == NULL) FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for ConjugateGradientSolver\n"); 
 
     delete[] mass_LU;

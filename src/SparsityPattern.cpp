@@ -38,7 +38,7 @@ SparsityPattern::~SparsityPattern() {
 
 int SparsityPattern::init(int num_rows) {
     this->num_rows = num_rows;
-    row = new list<sparse_contribution_location*>[num_rows];
+    row = new(std::nothrow) list<sparse_contribution_location*>[num_rows];
     if (row == NULL) {
         printf("Could not allocate memory for 'row' array in SparsityPattern\n");
         return FFEA_ERROR;
@@ -66,7 +66,7 @@ int SparsityPattern::register_contribution(int i, int j, scalar *contrib_memory_
     }
 
     num_nonzero_elements++;
-    sparse_contribution_location *scl = new sparse_contribution_location();
+    sparse_contribution_location *scl = new(std::nothrow) sparse_contribution_location();
     if (scl == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for 'scl' in SparsityPattern::register_contribution\n"); 
     scl->column_index = j;
     scl->source_list.push_back(contrib_memory_loc);

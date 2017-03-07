@@ -84,10 +84,10 @@ int Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1,
     this->centroid_stu.u = centroid_stu.u;
 
     this->num_blobs = params->num_blobs;
-    vdw_bb_force = new vector3[num_blobs];
-    vdw_bb_energy = new scalar[num_blobs];
+    vdw_bb_force = new(std::nothrow) vector3[num_blobs];
+    vdw_bb_energy = new(std::nothrow) scalar[num_blobs];
     // vdw_bb_interaction_flag = new bool[num_blobs]; // DEPRECATED 
-    vdw_xz_force = new vector3;
+    vdw_xz_force = new(std::nothrow) vector3;
     // if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_bb_interaction_flag == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); // DEPRECATED
     if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); 
 
@@ -122,10 +122,10 @@ int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node
     this->centroid_stu.u = 0;
 
     this->num_blobs = params->num_blobs;
-    vdw_bb_force = new vector3[num_blobs];
-    vdw_bb_energy = new scalar[num_blobs];
+    vdw_bb_force = new(std::nothrow) vector3[num_blobs];
+    vdw_bb_energy = new(std::nothrow) scalar[num_blobs];
     // vdw_bb_interaction_flag = new bool[num_blobs]; // DEPRECATED
-    vdw_xz_force = new vector3;
+    vdw_xz_force = new(std::nothrow) vector3;
     // if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_bb_interaction_flag == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); // DEPRECATED
     if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); 
 
@@ -154,7 +154,7 @@ int Face::build_opposite_node() {
     //   is meant to add forces, but this is a static blob.
 
     if(n[3] == NULL) {
-	n[3] = new mesh_node();
+	n[3] = new(std::nothrow) mesh_node();
    if (n[3] == NULL) FFEA_ERROR_MESSG("Couldn't find memory for an opposite node\n"); 
 	n[3]->index = n[0]->index;
 
