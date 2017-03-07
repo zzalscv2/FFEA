@@ -772,7 +772,7 @@ template <class t_scalar, class brr3> void volumeAndAreaForIntPoint(brr3 &ip, br
 
 
 /** Return the volume intersection between two tetrahedra */ 
-template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4], brr3 &cm, bool calcCM){
+template <class t_scalar, class brr3> t_scalar volumeIntersection(brr3 (&tetA)[4], brr3 (&tetB)[4], bool calcCM, brr3 &cm){
 
 
   t_scalar vol = 0.0; 
@@ -947,7 +947,7 @@ template <class t_scalar, class brr3> void contribVolForIntersections(t_scalar &
 }
 
 /** Return the volume intersection between two tetrahedra */ 
-template <class t_scalar, class brr3> t_scalar volumeIntersectionII(brr3 &tetA0, brr3 &tetA1, brr3 &tetA2, brr3 &tetA3, brr3 &tetB0, brr3 &tetB1, brr3 &tetB2, brr3 &tetB3, brr3 &cm, bool calcCM){
+template <class t_scalar, class brr3> t_scalar volumeIntersectionII(brr3 &tetA0, brr3 &tetA1, brr3 &tetA2, brr3 &tetA3, brr3 &tetB0, brr3 &tetB1, brr3 &tetB2, brr3 &tetB3, bool calcCM, brr3 &cm){
 
   t_scalar vol = 0.0; 
   brr3 W[56]; 
@@ -1212,8 +1212,8 @@ template scalar volumeForIntPointII<scalar,arr3>(arr3 &ip, arr3 &tetAe1, arr3 &t
 
 template void volumeAndAreaForIntPoint<scalar,arr3>(arr3 &ip, arr3 (&tetA)[4], int e1, int e2, arr3 (&tetB)[4], int f1, int f2, int f3, scalar &volume, scalar &area);
 
-template scalar volumeIntersection<scalar,arr3>(arr3 (&tetA)[4], arr3 (&tetB)[4], arr3 &cm, bool calcCM);
-template scalar volumeIntersectionII<scalar,arr3>(arr3 &tetA0, arr3 &tetA1, arr3 &tetA2, arr3 &tetA3, arr3 &tetB0, arr3 &tetB1, arr3 &tetB2, arr3 &tetB3, arr3 &cm, bool calcCM);
+template scalar volumeIntersection<scalar,arr3>(arr3 (&tetA)[4], arr3 (&tetB)[4], bool calcCM, arr3 &cm); 
+template scalar volumeIntersectionII<scalar,arr3>(arr3 &tetA0, arr3 &tetA1, arr3 &tetA2, arr3 &tetA3, arr3 &tetB0, arr3 &tetB1, arr3 &tetB2, arr3 &tetB3, bool calcCM, arr3 &cm);
 
 template void volumeAndAreaIntersection<scalar,arr3>(arr3 (&tetA)[4], arr3 (&tetB)[4], scalar &vol, scalar &area);
 
@@ -1237,8 +1237,8 @@ template void volumeAndAreaForNode<geoscalar,grr3>(grr3 (&tetA)[4], int node, ge
 template geoscalar volumeForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3);
 template geoscalar volumeForIntPointII<geoscalar,grr3>(grr3 &ip, grr3 &tetAe1, grr3 &tetAe2, grr3 &tetAe3, grr3 &tetAe4, grr3 &tetBf1, grr3 &tetBf2, grr3 &tetBf3, grr3 &tetBf4); 
 template void volumeAndAreaForIntPoint<geoscalar,grr3>(grr3 &ip, grr3 (&tetA)[4], int e1, int e2, grr3 (&tetB)[4], int f1, int f2, int f3, geoscalar &volume, geoscalar &area);
-template geoscalar volumeIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4], grr3 &cm, bool calcCM);
-template geoscalar volumeIntersectionII<geoscalar,grr3>(grr3 &tetA0, grr3 &tetA1, grr3 &tetA2, grr3 &tetA3, grr3 &tetB0, grr3 &tetB1, grr3 &tetB2, grr3 &tetB3, grr3 &cm, bool calcCM);
+template geoscalar volumeIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4], bool calcCM, grr3 &cm);
+template geoscalar volumeIntersectionII<geoscalar,grr3>(grr3 &tetA0, grr3 &tetA1, grr3 &tetA2, grr3 &tetA3, grr3 &tetB0, grr3 &tetB1, grr3 &tetB2, grr3 &tetB3, bool calcCM, grr3 &cm);
 
 template void volumeAndAreaIntersection<geoscalar,grr3>(grr3 (&tetA)[4], grr3 (&tetB)[4], geoscalar &vol, geoscalar &area);
 template void contribVolForNode<geoscalar,grr3>(geoscalar &vol, grr3 &n0, grr3 &n1, grr3 &n2, grr3 &n3, grr3 (&W)[56], int &ips);

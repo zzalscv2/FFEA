@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
            }
          }
          checks += 1;
-         if (volumeIntersection<scalar,arr3>(tet1, tet2, aux, false)){
+         if (volumeIntersection<scalar,arr3>(tet1, tet2, false, aux)){
            // cout << " ivol " << endl;
            i_vol += 1;
          }

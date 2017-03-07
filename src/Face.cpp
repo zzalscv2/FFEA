@@ -403,7 +403,7 @@ scalar Face::getTetraIntersectionVolume(Face *f2){
   grr3 cm; 
   volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data,
                                        n[3]->pos.data, f2->n[0]->pos.data, f2->n[1]->pos.data,
-                                       f2->n[2]->pos.data, f2->n[3]->pos.data, cm, false); 
+                                       f2->n[2]->pos.data, f2->n[3]->pos.data, false, cm); 
                                        
 }
 
@@ -415,7 +415,7 @@ scalar Face::checkTetraIntersectionAndGetVolume(Face *f2){
 
   return volumeIntersectionII<scalar,arr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data,
                                            n[3]->pos.data, f2->n[0]->pos.data, f2->n[1]->pos.data, 
-                                           f2->n[2]->pos.data, f2->n[3]->pos.data, cm, false);
+                                           f2->n[2]->pos.data, f2->n[3]->pos.data, false, cm);
 
 
 
@@ -477,7 +477,7 @@ bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, ge
   vol = volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, 
                                              n[2]->pos.data, n[3]->pos.data,
                                              f2->n[0]->pos.data, f2->n[1]->pos.data,
-                                             f2->n[2]->pos.data, f2->n[3]->pos.data, cm, true);
+                                             f2->n[2]->pos.data, f2->n[3]->pos.data, true, cm);
   if (vol == 0) return false;
 
   // GET THE LOCAL COORDINATES where the force will be applied.
@@ -498,9 +498,9 @@ bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, ge
        } 
     }
 
-    vol_M = volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, n[3]->pos.data, tetB[0], tetB[1], tetB[2], tetB[3], cm, false);
+    vol_M = volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, n[3]->pos.data, tetB[0], tetB[1], tetB[2], tetB[3], false, cm);
     dVdr[dir] = (vol_M - vol)/dr;
-    vol_M = volumeIntersectionII<geoscalar,grr3>(f2->n[0]->pos.data, f2->n[1]->pos.data, f2->n[2]->pos.data, f2->n[3]->pos.data, tetA[0], tetA[1], tetA[2], tetA[3], cm, false);
+    vol_M = volumeIntersectionII<geoscalar,grr3>(f2->n[0]->pos.data, f2->n[1]->pos.data, f2->n[2]->pos.data, f2->n[3]->pos.data, tetA[0], tetA[1], tetA[2], tetA[3], false, cm);
     dVdr[dir] -= (vol_M - vol)/dr;
   }
 
@@ -523,7 +523,7 @@ bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, ge
   } 
 
   // get the volume, the CM for the intersection, and the direction of the gradient:
-  vol = volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, n[3]->pos.data, tetB[0], tetB[1], tetB[2], tetB[3], cm, true);
+  vol = volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, n[3]->pos.data, tetB[0], tetB[1], tetB[2], tetB[3], true, cm);
   if (vol == 0) return false;
 
   // GET THE LOCAL COORDINATES where the force will be applied.
@@ -544,9 +544,9 @@ bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, ge
          tetC[i][j] = n[i]->pos[j] + dx[j];
        }
     }
-    vol_M = volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, n[3]->pos.data, tetD[0], tetD[1], tetD[2], tetD[3], cm, false);
+    vol_M = volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, n[3]->pos.data, tetD[0], tetD[1], tetD[2], tetD[3], false, cm);
     dVdr[dir] = (vol_M - vol)/dr;
-    vol_M = volumeIntersection<geoscalar,grr3>(tetB, tetC, cm, false);
+    vol_M = volumeIntersection<geoscalar,grr3>(tetB, tetC, false, cm);
     dVdr[dir] -= (vol_M - vol)/dr;
   }
 
@@ -564,7 +564,7 @@ scalar Face::getTetraIntersectionVolume(Face *f2, scalar *blob_corr,int f1_daddy
         tetB[i][j] = f2->n[i]->pos[j] - blob_corr[f1_daddy_blob_index*(this->num_blobs)*3 + f2_daddy_blob_index*3 + j];
      } 
   }
-  return volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, n[3]->pos.data, tetB[0], tetB[1], tetB[2], tetB[3], cm, false);
+  return volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, n[3]->pos.data, tetB[0], tetB[1], tetB[2], tetB[3], false, cm);
 
 
 }
@@ -582,7 +582,7 @@ scalar Face::checkTetraIntersectionAndGetVolume(Face *f2, scalar *blob_corr,int 
   if (!tet_a_tetII(   n[0]->pos.data,     n[1]->pos.data,     n[2]->pos.data,     n[3]->pos.data, 
                    tetB[0], tetB[1], tetB[2], tetB[3])) return 0.0;
   return volumeIntersectionII<scalar,arr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data, 
-                          n[3]->pos.data, tetB[0], tetB[1], tetB[2], tetB[3], cm, false);
+                          n[3]->pos.data, tetB[0], tetB[1], tetB[2], tetB[3], false, cm);
 
 
 
