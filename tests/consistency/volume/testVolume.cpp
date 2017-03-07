@@ -24,7 +24,7 @@
 #include <iostream>
 #include <sstream>
 #include "VolumeIntersection.h"
-#include "CheckTetrahedraOverlap_II.h"
+#include "CheckTetrahedraOverlap.h"
 
 using namespace std; 
 

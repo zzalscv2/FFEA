@@ -32,7 +32,7 @@
    of the computation needed to perform the Separating Axis Test.
 */
 
-#include "CheckTetrahedraOverlap_II.h"
+#include "CheckTetrahedraOverlap.h"
 
 // ----------- 3D algebraic operators -------------
 
