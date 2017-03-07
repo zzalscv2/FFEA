@@ -90,10 +90,10 @@ void print_matrix12(matrix12 m);
 /** Prints out the given 12-vector */
 void print_vector12(vector12 v);
 
-void print_vector3(vector3 *v);
+void print_vector3(vector3 &v);
 
-scalar mag(vector3 *v);
+scalar mag(vector3 &v);
 
-vector3 normalise(vector3 *v);
+// std::array<scalar,3> normalise(vector3 &v);
 
 #endif
