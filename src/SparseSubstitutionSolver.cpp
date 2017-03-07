@@ -53,8 +53,8 @@ int SparseSubstitutionSolver::init(int num_nodes, int num_elements, mesh_node *n
     num_rows = num_nodes;
 
     printf("Allocating memory for mass matrix...\n");
-    scalar *mass = new scalar[num_rows * num_rows];
-    scalar *mass_LU = new scalar[num_rows * num_rows];
+    scalar *mass = new(std::nothrow) scalar[num_rows * num_rows];
+    scalar *mass_LU = new(std::nothrow) scalar[num_rows * num_rows];
     if (mass == NULL || mass_LU == NULL) FFEA_ERROR_MESSG("Failed to store mass matrix in SparseSubstitutionSolver::init\n");
     printf("...done.\n");
 
@@ -138,15 +138,15 @@ int SparseSubstitutionSolver::init(int num_nodes, int num_elements, mesh_node *n
     }
 
     // Allocate and fill the 'inverse_diag' array
-    inverse_diag = new scalar[num_rows];
+    inverse_diag = new(std::nothrow) scalar[num_rows];
     if (inverse_diag == NULL) FFEA_ERROR_MESSG("Failed to alloc 'inverse_diag' in SparseSubstitutionSolver::init\n");
 
     for (int i = 0; i < num_rows; i++)
         inverse_diag[i] = 1.0 / mass_LU[i * num_rows + i];
 
     // Allocate the 'key' arrays
-    L_key = new int[num_rows];
-    U_key = new int[num_rows];
+    L_key = new(std::nothrow) int[num_rows];
+    U_key = new(std::nothrow) int[num_rows];
     if (L_key == NULL || U_key == NULL) FFEA_ERROR_MESSG("Failed to alloc 'key' arrays in SparseSubstitutionSolver::init\n");
 
     // Build the lower triangular matrix key
@@ -172,8 +172,8 @@ int SparseSubstitutionSolver::init(int num_nodes, int num_elements, mesh_node *n
             }
 
     // Allocate the off-diagonal entry arrays
-    L = new scalar[total_L];
-    U = new scalar[total_entries_in_U];
+    L = new(std::nothrow) scalar[total_L];
+    U = new(std::nothrow) scalar[total_entries_in_U];
     if (L == NULL || U == NULL) FFEA_ERROR_MESSG("Failed to alloc off-diagonal entry arrays in SparseSubstitutionSolver::init\n"); 
 
     // Fill up the L and U sparse triangular matrices

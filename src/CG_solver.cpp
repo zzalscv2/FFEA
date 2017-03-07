@@ -57,11 +57,11 @@ int CG_solver::init(int N, scalar tol, int max_num_iterations) {
     this->max_num_iterations = max_num_iterations;
 
     // Allocate all required memory
-    inv_M = new scalar[N];
-    d = new scalar[N];
-    r = new scalar[N];
-    q = new scalar[N];
-    s = new scalar[N];
+    inv_M = new(std::nothrow) scalar[N];
+    d = new(std::nothrow) scalar[N];
+    r = new(std::nothrow) scalar[N];
+    q = new(std::nothrow) scalar[N];
+    s = new(std::nothrow) scalar[N];
 
     // Check that memory has been allocated
     if (inv_M == NULL ||

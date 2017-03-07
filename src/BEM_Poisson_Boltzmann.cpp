@@ -65,13 +65,13 @@ int BEM_Poisson_Boltzmann::init(NearestNeighbourLinkedListCube *lookup) {
     //			mat_D = new scalar[n2];
 
     /* Create and initialise our sparse matrices */
-    mat_C = new SparseMatrixUnknownPattern();
+    mat_C = new(std::nothrow) SparseMatrixUnknownPattern();
     if (mat_C == NULL) FFEA_ERROR_MESSG("Could not allocate C matrix\n");
     if (mat_C->init(num_faces, 100) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Could not allocate memory for C matrix\n")
     }
 
-    mat_D = new SparseMatrixUnknownPattern();
+    mat_D = new(std::nothrow) SparseMatrixUnknownPattern();
     if (mat_D == NULL) FFEA_ERROR_MESSG("Could not allocate D matrix\n");
     if (mat_D->init(num_faces, 100) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Could not allocate memory for D matrix\n")

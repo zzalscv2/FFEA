@@ -815,11 +815,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
 
     if (params.vdw_type == "lennard-jones")
-        vdw_solver = new VdW_solver();
+        vdw_solver = new(std::nothrow) VdW_solver();
     else if (params.vdw_type == "steric")
-        vdw_solver = new Steric_solver();
+        vdw_solver = new(std::nothrow) Steric_solver();
     else if (params.vdw_type == "ljsteric")
-        vdw_solver = new LJSteric_solver();
+        vdw_solver = new(std::nothrow) LJSteric_solver();
     if (vdw_solver == NULL)
         FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
     vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw, params.vdw_type, params.vdw_steric_dr);

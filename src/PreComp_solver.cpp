@@ -158,10 +158,10 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
     
 
     num_blobs = params->num_blobs;
-    fieldenergy = new scalar*[num_blobs];
+    fieldenergy = new(std::nothrow) scalar*[num_blobs];
     if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for fieldenergy in PreCompSolver\n"); 
     for(int i = 0; i < num_blobs; ++i) {
-      fieldenergy[i] = new scalar[num_blobs];
+      fieldenergy[i] = new(std::nothrow) scalar[num_blobs];
       if (fieldenergy[i] == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for fieldenergy[%d] in PreCompSolver\n", i); 
     }
 
@@ -246,9 +246,9 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
 
    /*--------- SECONDLY ----------*/ 
    // allocate:
-   U = new scalar[n_values * nint];    
-   F = new scalar[n_values * nint];    
-   isPairActive = new bool[ntypes * ntypes]; 
+   U = new(std::nothrow) scalar[n_values * nint];    
+   F = new(std::nothrow) scalar[n_values * nint];    
+   isPairActive = new(std::nothrow) bool[ntypes * ntypes]; 
    if (U == NULL || F == NULL || isPairActive == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for arrays in PreComp_solver::init\n"); 
       
    // and load potentials and forces:
@@ -289,14 +289,14 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
       msg(" ABORTING: The total number of beads is 0, but PreComp_calc was set to 1.");
       return FFEA_ERROR;
    }
-   b_elems = new TELPtr[n_beads];
+   b_elems = new(std::nothrow) TELPtr[n_beads];
    // allocate the array that store the relative positions 
    //    of the beads to the elements where they belong to. 
-   b_rel_pos = new scalar[n_beads*3];
+   b_rel_pos = new(std::nothrow) scalar[n_beads*3];
    // allocate the array to compute the absolute positions of the beads:
-   b_pos = new scalar[n_beads*3];
+   b_pos = new(std::nothrow) scalar[n_beads*3];
    // and allocate the bead types: 
-   b_types = new int[n_beads]; 
+   b_types = new(std::nothrow) int[n_beads]; 
    if (b_elems == NULL || b_rel_pos == NULL || b_pos == NULL || b_types == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for array beads in PreComp_solver::init\n"); 
    
 
