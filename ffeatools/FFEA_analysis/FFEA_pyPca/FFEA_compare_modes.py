@@ -190,7 +190,7 @@ ax.set_xticklabels(column_labels, fontsize=18)
 ax.set_xlim(0, num_modes)
 ax.set_ylim(0, num_modes)
 
-ax.set_title("Eigenvector Dot Product Array", fontsize=24)
+ax.set_title("Eigenvector Inner Product Matrix", fontsize=24)
 ax.set_xlabel("Eigensystem A Modes", fontsize=18)
 ax.set_ylabel("Eigensystem B Modes", fontsize=18)
 
