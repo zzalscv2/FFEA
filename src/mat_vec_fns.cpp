@@ -42,13 +42,11 @@ void vec3_mat3_mult(vector3 *v, matrix3 &A, vector3 *notv) {
 
 }
 
-void vec3_vec3_subs(vector3 *u, vector3 *v, vector3 *w) {
+/* void vec3_vec3_subs(vector3 *u, vector3 *v, vector3 *w) {
     
     w->x = u->x - v->x;
     w->y = u->y - v->y;
     w->z = u->z - v->z;
-
-
 
 }
 
@@ -57,7 +55,7 @@ void vec3_vec3_cross(vector3 *u, vector3 *v, vector3 *w) {
 	w->x = u->y * v->z - u->z * v->y;
 	w->y = u->z * v->x - u->x * v->z;
 	w->z = u->x * v->y - u->y * v->x;
-}
+}*/ 
 
 /*
  *
@@ -230,7 +228,6 @@ void vector3_set_zero(vector3 *v) {
 
 /*
  *
- */
 void vec3_scale(vector3 *v, scalar scale) {
 	v->x *= scale;
 	v->y *= scale;
@@ -242,6 +239,7 @@ void vec3_scale2(vector3 *v1, vector3 *v2, scalar scale) {
 	v2->y = scale*v1->y;
 	v2->z = scale*v1->z;
 }
+ */
 
 
 /*

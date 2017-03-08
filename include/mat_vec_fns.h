@@ -36,10 +36,6 @@ void mat12_apply(matrix12 A, vector12 v);
 
 void vec3_mat3_mult(vector3 *v, matrix3 &A, vector3 *notV);
 
-void vec3_vec3_subs(vector3 *u, vector3 *v, vector3 *w);
-
-void vec3_vec3_cross(vector3 *u, vector3 *v, vector3 *w);
-
 void mat3_mult(matrix3 A, matrix3 B, matrix3 result);
 
 void vec12_add(vector12 A, vector12 B);
@@ -73,9 +69,6 @@ void vec3_add_to_scaled(vector3 *v1, vector3 *v2, scalar a, int vec_size);
 
 void vec3_scale_and_add(vector3 *v1, vector3 *v2, scalar a, int vec_size);
 
-void vec3_scale(vector3 *v, scalar scale);
-void vec3_scale2(vector3 *v1, vector3 *v2, scalar scale); ///< v2 = v1 * scale
-
 void vec12_set_zero(vector12 v);
 
 /** Prints out the given 3x3 matrix */
@@ -91,9 +84,5 @@ void print_matrix12(matrix12 m);
 void print_vector12(vector12 v);
 
 void print_vector3(vector3 &v);
-
-scalar mag(vector3 &v);
-
-// std::array<scalar,3> normalise(vector3 &v);
 
 #endif
