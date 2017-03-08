@@ -60,13 +60,7 @@ int main(int argc, char *argv[])
 	cout << "  Coding:\tAlbert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk),\n" << endl;
 	cout << "  Theory:\tOliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou\n" << endl;
 
-	#ifdef FFEA_PARALLEL_WITHIN_BLOB
-		cout << "Parallelisation switch: FFEA_PARALLEL_WITHIN_BLOB\n" << endl;
-	#endif
-
-	#ifdef FFEA_PARALLEL_PER_BLOB
-		 cout << "Parallelisation switch: FFEA_PARALLEL_PER_BLOB\n" << endl;
-	#endif
+   print_preprocessor_flags();
 	
 	// Get some arguments using boost
 	b_po::options_description desc("Allowed options");
