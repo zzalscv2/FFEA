@@ -60,9 +60,9 @@ World::World() {
     vdwenergy = 0.0;
     preCompenergy = 0.0;
 
-    vector3_set_zero(&L);
-    vector3_set_zero(&CoM);
-    vector3_set_zero(&CoG);
+    vector3_set_zero(L);
+    vector3_set_zero(CoM);
+    vector3_set_zero(CoG);
     rmsd = 0.0;
 }
 
@@ -126,9 +126,9 @@ World::~World() {
     vdwenergy = 0.0;
     preCompenergy = 0.0;
 
-    vector3_set_zero(&L);
-    vector3_set_zero(&CoM);
-    vector3_set_zero(&CoG);
+    vector3_set_zero(L);
+    vector3_set_zero(CoM);
+    vector3_set_zero(CoG);
     rmsd = 0.0;
 }
 
@@ -3815,7 +3815,7 @@ void World::make_measurements() {
     vdwenergy = 0.0;
     preCompenergy = 0.0;
     rmsd = 0.0;
-    vector3_set_zero(&CoG);
+    vector3_set_zero(CoG);
 
     vector3 bCoG;
 

@@ -1302,9 +1302,9 @@ void Blob::make_measurements() {
     senergy = 0.0;
 
     // OpenMP can't reduce members of classes :(
-    //vector3_set_zero(&L);
-    //vector3_set_zero(&CoG);
-    vector3_set_zero(&CoM);
+    //vector3_set_zero(L);
+    //vector3_set_zero(CoG);
+    vector3_set_zero(CoM);
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp parallel for default(none) reduction(+:kenergy, senergy) private(n, vec, temp1, temp2, temp3)
@@ -1484,7 +1484,7 @@ void Blob::calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_
       vector3 total_vdw_bb_force;
       scalar total_vdw_bb_energy = 0.0;
       scalar total_vdw_bb_area = 0.0;
-      vector3_set_zero(&total_vdw_bb_force);
+      vector3_set_zero(total_vdw_bb_force);
       for (int i = 0; i < num_surface_faces; ++i) {
           if (surface[i].vdw_bb_interaction_flag[other_blob_index] == true) {
               total_vdw_bb_force.x += surface[i].vdw_bb_force[other_blob_index].x;

@@ -352,7 +352,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        b_elems[mj]->calculate_jacobian(J); 
        mat3_invert(J, J_inv, &det);
        arr3arr3Substract<scalar,arr3>(v.data, b_elems[mj]->n[0]->pos.data, w.data);
-       vec3_mat3_mult(&w, J_inv, &u); 
+       vec3_mat3_mult(w, J_inv, u); 
        // now u has the relative coordinates, not under unit vectors
        //    but under full length vectors. And we store them:
        b_rel_pos[3*mj] = u.x;

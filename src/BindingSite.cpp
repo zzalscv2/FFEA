@@ -124,7 +124,7 @@ BindingSite::BindingSite() {
 	num_faces = 0;
 	site_type = -1;
 	faces.clear();
-	vector3_set_zero(&centroid);
+	vector3_set_zero(centroid);
 	area = 0.0;
 	characteristic_length = 0.0;
 }
@@ -133,7 +133,7 @@ BindingSite::~BindingSite() {
 	num_faces = 0;
 	site_type = -1;
 	faces.clear();
-	vector3_set_zero(&centroid);
+	vector3_set_zero(centroid);
 	area = 0.0;
 	characteristic_length = 0.0;
 }
@@ -173,7 +173,7 @@ void BindingSite::get_centroid(arr3 &v) {
 
 void BindingSite::calculate_centroid() {
 	
-	vector3_set_zero(&centroid);
+	vector3_set_zero(centroid);
 	vector3 *face_centroid;
 	vector<Face*>::iterator it;
 	for(it = faces.begin(); it != faces.end(); ++it) {
