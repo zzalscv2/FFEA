@@ -250,9 +250,9 @@ void vec3_add_to_scaled(vector3 *v1, vector3 *v2, scalar a, int vec_size) {
 #pragma omp parallel for default(none) private(i) shared(v1, v2, a, vec_size)
 #endif
     for (i = 0; i < vec_size; i++) {
-        v1[i].x += a * v2[i].x;
-        v1[i].y += a * v2[i].y;
-        v1[i].z += a * v2[i].z;
+        v1[i][0] += a * v2[i][0];
+        v1[i][1] += a * v2[i][1];
+        v1[i][2] += a * v2[i][2];
     }
 }
 
@@ -265,9 +265,9 @@ void vec3_scale_and_add(vector3 *v1, vector3 *v2, scalar a, int vec_size) {
 #pragma omp parallel for default(none) private(i) shared(v1, v2, a, vec_size)
 #endif
     for (i = 0; i < vec_size; i++) {
-        v1[i].x = a * v1[i].x + v2[i].x;
-        v1[i].y = a * v1[i].y + v2[i].y;
-        v1[i].z = a * v1[i].z + v2[i].z;
+        v1[i][0] = a * v1[i][0] + v2[i][0];
+        v1[i][1] = a * v1[i][1] + v2[i][1];
+        v1[i][2] = a * v1[i][2] + v2[i][2];
     }
 }
 
@@ -323,11 +323,11 @@ void print_vector3(vector3 &v) {
     printf("%e %e %e\n", v.x, v.y, v.z);
 }
 
-scalar mag(vector3 &v) {
+/*scalar mag(vector3 &v) {
     return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-/* std::array<scalar,3> normalise(vector3 &v) {
+std::array<scalar,3> normalise(vector3 &v) {
     scalar magnitude;
     vector3 norm;
     magnitude = mag(v);
