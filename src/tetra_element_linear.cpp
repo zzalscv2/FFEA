@@ -548,7 +548,7 @@ void tetra_element_linear::volume_coord_to_xyz(scalar eta0, scalar eta1, scalar 
 
 void tetra_element_linear::zero_force() {
     for (int i = 0; i < NUM_NODES_QUADRATIC_TET; i++) {
-        vector3_set_zero(&node_force[i]);
+        vector3_set_zero(node_force[i]);
     }
 }
 

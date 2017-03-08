@@ -92,11 +92,11 @@ int Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1,
     if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); 
 
     for(int i = 0; i < num_blobs; ++i) {
-	vector3_set_zero(&vdw_bb_force[i]);
+	vector3_set_zero(vdw_bb_force[i]);
         vdw_bb_energy[i] = 0.0;
 	// vdw_bb_interaction_flag[i] = false; // DEPRECATED
     }
-    vector3_set_zero(vdw_xz_force);
+    vdw_xz_force->assign( { 0., 0., 0.} );
     vdw_xz_energy = 0.0;
 
 
@@ -130,11 +130,11 @@ int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node
     if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); 
 
     for(int i = 0; i < num_blobs; ++i) {
-        vector3_set_zero(&vdw_bb_force[i]);
+        vector3_set_zero(vdw_bb_force[i]);
         vdw_bb_energy[i] = 0.0;
         // vdw_bb_interaction_flag[i] = false; // DEPRECATED
     }
-    vector3_set_zero(vdw_xz_force);
+    vdw_xz_force->assign({0.,0.,0.});
     vdw_xz_energy = 0.0;
 
     zero_force();
