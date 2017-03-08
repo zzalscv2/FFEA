@@ -607,6 +607,27 @@ void Face::getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar
 
 }
 
+
+scalar Face::length_of_longest_edge() {
+
+   scalar d2=0, di2=0;
+   for (int i=0; i<3; i++){ // for the double loop of all the 3 nodes on the face:
+      for (int j=i+1; j<3; j++) { 
+        
+         // calculate d_ij squared:
+         for (int k=0; k<3; k++) {
+           di2 += ( n[i]->pos[k] - n[j]->pos[k] ) * (n[i]->pos[k] - n[j]->pos[k]);
+         }
+         if (di2 > d2) d2 = di2;
+         di2 = 0;
+
+      }
+   }
+
+   return sqrt(d2);
+
+}
+
 template <class brr3> void Face::vec3Vec3SubsToArr3Mod(Face *f2, brr3 (&w),scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index){
     //this->get_centroid();
      //f2->get_centroid();

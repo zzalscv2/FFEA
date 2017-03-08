@@ -3673,6 +3673,7 @@ void Blob::calc_rest_state_info() {
     matrix3 J;
     scalar min_vol = INFINITY, temp;
     scalar longest_edge = 0;
+    scalar longest_surface_edge = 0;
     int min_vol_elem = 0;
     mass = 0;
     scalar total_vol = 0;
@@ -3702,6 +3703,12 @@ void Blob::calc_rest_state_info() {
         // Calc the mass of the element
         elem[i].mass = elem[i].vol_0 * elem[i].rho;
     }
+
+    for (int i=0; i<num_surface_faces; i++) {
+        scalar longest_surface_edge_i = surface[i].length_of_longest_edge();
+        if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i; 
+    }
+
     if (blob_state == FFEA_BLOB_IS_STATIC) {
         printf("\t\tBlob is static, so volume not defined within simulation.\n");
         printf("\t\tDefining Total rest volume of Blob to be 0 cubic Angstroms.\n");
@@ -3711,6 +3718,7 @@ void Blob::calc_rest_state_info() {
         printf("\t\tTotal rest volume of Blob is %e cubic Angstroms.\n", total_vol * mesoDimensions::volume* 1e30);
         printf("\t\tSmallest element (%i) has volume %e cubic Angstroms.\n", min_vol_elem, min_vol * mesoDimensions::volume * 1e30);
         printf("\t\tLongest edge has length %e Angstroms.\n", longest_edge * mesoDimensions::length * 1e10);
+        printf("\t\tLongest surface edge has length %e Angstroms.\n", longest_surface_edge * mesoDimensions::length * 1e10);
     }
 
     // Calc the total mass of this Blob

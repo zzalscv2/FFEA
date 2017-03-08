@@ -193,6 +193,8 @@ public:
     bool is_vdw_active();
     bool is_kinetic_active();
 
+    scalar length_of_longest_edge(); 
+
 private:
     int stuff;
 
