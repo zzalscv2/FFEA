@@ -1725,9 +1725,11 @@ int World::run() {
 #ifdef FFEA_PARALLEL_FUTURE
                 // we will have to wait for both threads to finish!
                 if (updatingVdWLL() == true) {
+                    cout << "Waiting for thread VdW LL" << endl; 
                     if (catch_thread_updatingVdWLL(step, wtime, 1)) return FFEA_ERROR;
                 }
                 if (updatingPCLL() == true) {
+                    cout << "Waiting for thread PC LL" << endl; 
                     if (catch_thread_updatingPCLL(step, wtime, 1)) return FFEA_ERROR;
                 }
 #endif
@@ -3679,6 +3681,15 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // TRAJECTORY file: can be printed serially, or in parallel:
 #ifdef FFEA_PARALLEL_FUTURE
     // TRAJECTORY PARALLEL:
+    // CHECK // CHECK // CHECK // 
+    bool its = false;
+    if (thread_writingTraj.valid()) {
+        if (thread_writingTraj.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
+            its = true;
+        }
+    }
+    if (!its) cout << " We're waiting while writing the trajectory" << endl;
+    // END CHECK // END CHECK // END CHECK // 
     thread_writingTraj.get();
 #ifdef FFEA_PARALLEL_PER_BLOB
     #pragma omp parallel for default(none) shared(step) schedule(guided)
