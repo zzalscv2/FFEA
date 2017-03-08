@@ -182,7 +182,7 @@ void BindingSite::calculate_centroid() {
 		centroid.y += face_centroid->y;
 		centroid.z += face_centroid->z;
 	}
-	vec3_scale(&centroid, 1.0/num_faces);
+	arr3Resize<scalar,arr3>(1.0/num_faces, centroid.data);
 }
 
 set<int> BindingSite::get_nodes() {

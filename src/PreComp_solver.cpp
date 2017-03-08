@@ -351,7 +351,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        //   as a fraction of the basis vectors length.
        b_elems[mj]->calculate_jacobian(J); 
        mat3_invert(J, J_inv, &det);
-       vec3_vec3_subs(&v, &b_elems[mj]->n[0]->pos, &w);
+       arr3arr3Substract<scalar,arr3>(v.data, b_elems[mj]->n[0]->pos.data, w.data);
        vec3_mat3_mult(&w, J_inv, &u); 
        // now u has the relative coordinates, not under unit vectors
        //    but under full length vectors. And we store them:
@@ -543,7 +543,7 @@ int PreComp_solver::solve_using_neighbours(){
            // Add energies to record 
            e_j = b_elems[b_index_j];
 
-           vec3_scale(&dx, f_ij);
+           arr3Resize<scalar,arr3>(f_ij, dx.data);
 
            phi_j[1] = b_rel_pos[3*b_index_j];
            phi_j[2] = b_rel_pos[3*b_index_j+1];
@@ -555,8 +555,8 @@ int PreComp_solver::solve_using_neighbours(){
            {
            fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[b_index_j]);
            for (int k=0; k<4; k++) {
-             vec3_scale2(&dx, &dxik, -phi_i[k]);
-             vec3_scale2(&dx, &dxjk, phi_j[k]);
+             arr3Resize2<scalar,arr3>(-phi_i[k], dx.data, dxik.data); 
+             arr3Resize2<scalar,arr3>(phi_j[k], dx.data, dxjk.data); 
              e_i->add_force_to_node(k, &dxik);
              e_j->add_force_to_node(k, &dxjk); 
            } // close k, nodes for the elements.
@@ -628,7 +628,7 @@ int PreComp_solver::solve() {
 	#pragma omp atomic
 	fieldenergy[e_i->daddy_blob->blob_index][e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[j]);
 
-        vec3_scale(&dx, f_ij);
+        arr3Resize<scalar,arr3>(f_ij, dx.data);
         arr3Store<scalar,arr3>(dx.data, dtemp.data); 
 
         phi_j[1] = b_rel_pos[3*j];
@@ -638,11 +638,11 @@ int PreComp_solver::solve() {
         // and apply the force to all the nodes in the elements i and j:
         for (int k=0; k<4; k++) {
           // forces for e_i
-          vec3_scale(&dx, -phi_i[k]);
+          arr3Resize<scalar,arr3>(-phi_i[k], dx.data);
           e_i->add_force_to_node(k, &dx);
           arr3Store<scalar,arr3>(dtemp.data, dx.data); 
           // forces for e_j
-          vec3_scale(&dx, phi_j[k]);
+          arr3Resize<scalar,arr3>(phi_j[k], dx.data);
           e_j->add_force_to_node(k, &dx);
           arr3Store<scalar,arr3>(dtemp.data, dx.data); 
 

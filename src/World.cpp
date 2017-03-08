@@ -3389,7 +3389,7 @@ int World::apply_springs() {
                 }
             }
 
-            force_mag = spring_array[i].k * (mag(sep) - spring_array[i].l);
+            force_mag = spring_array[i].k * (mag<scalar,arr3>(sep.data) - spring_array[i].l);
             force0.x = force_mag * sep_norm.x;
             force0.y = force_mag * sep_norm.y;
             force0.z = force_mag * sep_norm.z;
@@ -3834,7 +3834,7 @@ void World::make_measurements() {
 
     // And divide by num_nodes
     rmsd = sqrt(rmsd / total_num_nodes);
-    vec3_scale(&CoG, 1.0 / total_num_nodes);
+    arr3Resize<scalar,arr3>(1.0/total_num_nodes, CoG.data);
 
     // Now global stuff
     vector3 a, b, c;
@@ -3848,8 +3848,8 @@ void World::make_measurements() {
         for(i = 0; i < num_springs; ++i) {
             active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], a.data);
             active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], b.data);
-            vec3_vec3_subs(&a, &b, &c);
-            springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag(c) - spring_array[i].l) * (mag(c) - spring_array[i].l);
+            arr3arr3Substract<scalar,arr3>(a.data, b.data, c.data);
+            springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag<scalar,arr3>(c.data) - spring_array[i].l) * (mag<scalar,arr3>(c.data) - spring_array[i].l);
         }
 
         springenergy = get_spring_field_energy(-1, -1);
