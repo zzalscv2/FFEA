@@ -2033,7 +2033,7 @@ int Blob::apply_ctforces() {
             intersectingPointToLine<scalar,arr3>(node[ctf_r_nodes[i]].pos,// point out of the line
                                                  arr3_view<scalar,arr3>(ctf_r_axis+6*i, 3), //  point
                                                  arr3_view<scalar,arr3>(ctf_r_axis+(6*i+3), 3), r); // vector, axis
-            arr3Vec3SubsToArr3(r, node[ctf_r_nodes[i]].pos, r);
+            arr3arr3Substract<scalar,arr3>(r, node[ctf_r_nodes[i]].pos.data, r);
         } /* else if (ctf_l_type[2*i] == 'n') {
         // not working yet!
         that should read:
