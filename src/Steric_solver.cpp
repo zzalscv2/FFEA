@@ -29,18 +29,15 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
 
     // First check two things (either of which results in not having to calculate anything):
     // Check that faces are facing each other, if not then they are not interacting
-    if (dot(&f1->normal, &f2->normal) > ffea_const::zero) {
-        return;
-    }
+    if (arr3arr3DotProduct<scalar,arr3>(f1->normal.data, f2->normal.data) > ffea_const::zero) return;
 
     /* Robin suspects that this was leading to unstabilities...
      *  but this steric solver is more stable than the LJ one. */
     // Check that faces are in front of each other
     vector3 sep;
     sep.assign ( {f2->centroid.x - f1->centroid.x, f2->centroid.y - f1->centroid.y, f2->centroid.z - f1->centroid.z} );
-    if(dot(&sep, &f1->normal) < 0 && dot(&sep, &f2->normal) > 0) {
-        return;
-    }
+    if ((arr3arr3DotProduct<scalar,arr3>(sep.data, f1->normal.data) < 0) && 
+         arr3arr3DotProduct<scalar,arr3>(sep.data, f2->normal.data) > 0) return;
 
     //  Firstly, check that no nodes are shared,
     //     only in the case that faces belong to the same blob:
