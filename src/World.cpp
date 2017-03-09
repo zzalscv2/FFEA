@@ -1274,14 +1274,14 @@ int World::get_smallest_time_constants() {
 
 
 /**
- * @brief Calculates an elastic network model for a given blob.
- * @param[in] set<int> List of blobs to get Elastic Network Model
+ * @brief Calculates an linear elastic model for a given blob.
+ * @param[in] set<int> List of blobs to get Linear Elastic Model
  * @param[in] int num_modes The number of modes / eigenvalues to be calculated
  * @details By linearising the elasticity vector around the initial position,
  * this function performs matrix algebra using the Eigen libraries to diagonalise
  * elasticity matrix and output pseudo-trajectories based upon these eigenvectors
  * */
-int World::enm(set<int> blob_indices, int num_modes) {
+int World::lem(set<int> blob_indices, int num_modes) {
 
     int i, j;
     int num_nodes, num_rows;
@@ -1304,7 +1304,7 @@ int World::enm(set<int> blob_indices, int num_modes) {
 
         Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
 
-        cout << "\t\tCalculating the Global Linearised Elasticity Matrix, A...";
+        cout << "\t\tCalculating the Linearised Elasticity Matrix, A...";
         if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
             cout << endl;
             FFEA_error_text();
@@ -1352,7 +1352,7 @@ int World::enm(set<int> blob_indices, int num_modes) {
             // Get a filename end
             ostringstream mi;
             mi << j - 6;
-            traj_out_fname = base + "_ffeaenm_blob" + bi.str() + "mode" + mi.str() + ext;
+            traj_out_fname = base + "_FFEAlem_blob" + bi.str() + "mode" + mi.str() + ext;
             make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, es.eigenvectors().col(j), dx);
             cout << "done!" << endl;
         }
@@ -1361,8 +1361,8 @@ int World::enm(set<int> blob_indices, int num_modes) {
         // Print out relevant eigenvalues and eigenvectors
 
         // Get a filename
-        evals_out_fname = base + "_ffeaenm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_ffeaenm_blob" + bi.str() + ".evecs";
+        evals_out_fname = base + "_FFEAlem_blob" + bi.str() + ".evals";
+        evecs_out_fname = base + "_FFEAlem_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, es.eigenvectors(), num_rows, num_modes);
         print_evals_to_file(evals_out_fname, es.eigenvalues(), num_modes);
@@ -1372,8 +1372,8 @@ int World::enm(set<int> blob_indices, int num_modes) {
 }
 
 /**
- * @brief Calculates an elastic network model for a given blob.
- * @param[in] set<int> List of blobs to get Elastic Network Model
+ * @brief Calculates an dynamic mode model for a given blob.
+ * @param[in] set<int> List of blobs to get Dynamic Mode Model
  * @param[in] int num_modes The number of modes / eigenvalues to be calculated
  * @details By linearising the elasticity vector around the initial position,
  * this function performs matrix algebra using the Eigen libraries to diagonalise
@@ -1499,7 +1499,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
             // Get a filename end
             ostringstream mi;
             mi << j - 6;
-            traj_out_fname = base + "_ffeadmm_blob" + bi.str() + "mode" + mi.str() + ext;
+            traj_out_fname = base + "_FFEAdmm_blob" + bi.str() + "mode" + mi.str() + ext;
 
             make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, R.col(j), dx);
             cout << "done!" << endl;
@@ -1509,8 +1509,8 @@ int World::dmm(set<int> blob_indices, int num_modes) {
         // Print out relevant eigenvalues and eigenvectors
 
         // Get a filename
-        evals_out_fname = base + "_ffeadmm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_ffeadmm_blob" + bi.str() + ".evecs";
+        evals_out_fname = base + "_FFEAdmm_blob" + bi.str() + ".evals";
+        evecs_out_fname = base + "_FFEA*dmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, R, num_rows, num_modes);
         print_evals_to_file(evals_out_fname, esAhat.eigenvalues(), num_modes);
@@ -1679,7 +1679,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
             // Get a filename end
             ostringstream mi;
             mi << j - 6;
-            traj_out_fname = base + "_ffearpdmm_blob" + bi.str() + "mode" + mi.str() + ext;
+            traj_out_fname = base + "_FFEArpdmm_blob" + bi.str() + "mode" + mi.str() + ext;
 
             make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, Rvecs.col(j), dx);
             cout << "done!" << endl;
@@ -1689,8 +1689,8 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
         // Print out relevant eigenvalues and eigenvectors
 
         // Get a filename
-        evals_out_fname = base + "_ffearpdmm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_ffearpdmm_blob" + bi.str() + ".evecs";
+        evals_out_fname = base + "_FFEArpdmm_blob" + bi.str() + ".evals";
+        evecs_out_fname = base + "_FFEArpdmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, Rvecs, num_rows, num_modes);
         print_evals_to_file(evals_out_fname, Rvals, num_modes);
