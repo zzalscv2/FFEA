@@ -1714,7 +1714,8 @@ int World::run() {
         wtime0 = omp_get_wtime();
 #endif
 
-        // check if we need to calculate electrostatics,
+        // check if we are in one of those time-steps
+        //     where we need to calculate electrostatics,
         //                     update the neighbour list,
         //                     and calculate normals and centroids for the faces.
         bool es_update = false;

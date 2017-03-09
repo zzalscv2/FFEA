@@ -93,8 +93,8 @@ public:
     scalar& y = data[1]; 
     scalar& z = data[2]; 
     scalar& operator [](std::size_t i) { return data[i]; }
-    void assign( std::initializer_list<scalar> t )
-    { std::copy( t.begin(), t.end(), std::begin( data ) ); }
+    void assign( scalar t0, scalar t1, scalar t2 )
+    { data[0] = t0; data[1] = t1; data[2] = t2; }
 };
 
 /** arr3_view has the spirit of "span" or "array_view" 

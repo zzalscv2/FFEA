@@ -222,7 +222,10 @@ void mat4_set_zero(matrix4 A) {
  */
 void vector3_set_zero(vector3 &v) {
    
-    v.assign( {0., 0., 0.} ); 
+    v[0] = 0;
+    v[1] = 0;
+    v[2] = 0;
+
 }
 
 /*
