@@ -28,6 +28,36 @@
 
 // const scalar VdW_solver::phi_f[4] = { 0.25, 0.25, 0.25, 0.25};
 
+const int VdW_solver::adjacent_cell_lookup_table[27][3] ={
+        {-1, -1, -1},
+        {-1, -1, 0},
+        {-1, -1, +1},
+        {-1, 0, -1},
+        {-1, 0, 0},
+        {-1, 0, +1},
+        {-1, +1, -1},
+        {-1, +1, 0},
+        {-1, +1, +1},
+        {0, -1, -1},
+        {0, -1, 0},
+        {0, -1, +1},
+        {0, 0, -1},
+        {0, 0, 0},
+        {0, 0, +1},
+        {0, +1, -1},
+        {0, +1, 0},
+        {0, +1, +1},
+        {+1, -1, -1},
+        {+1, -1, 0},
+        {+1, -1, +1},
+        {+1, 0, -1},
+        {+1, 0, 0},
+        {+1, 0, +1},
+        {+1, +1, -1},
+        {+1, +1, 0},
+        {+1, +1, +1}
+    };
+
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
     surface_face_lookup = NULL;
@@ -92,35 +122,6 @@ void VdW_solver::reset_fieldenergy() {
 
 int VdW_solver::solve() {
     // double st, time1, time2, time3;
-    const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
-        {-1, -1, -1},
-        {-1, -1, 0},
-        {-1, -1, +1},
-        {-1, 0, -1},
-        {-1, 0, 0},
-        {-1, 0, +1},
-        {-1, +1, -1},
-        {-1, +1, 0},
-        {-1, +1, +1},
-        {0, -1, -1},
-        {0, -1, 0},
-        {0, -1, +1},
-        {0, 0, -1},
-        {0, 0, 0},
-        {0, 0, +1},
-        {0, +1, -1},
-        {0, +1, 0},
-        {0, +1, +1},
-        {+1, -1, -1},
-        {+1, -1, 0},
-        {+1, -1, +1},
-        {+1, 0, -1},
-        {+1, 0, 0},
-        {+1, 0, +1},
-        {+1, +1, -1},
-        {+1, +1, 0},
-        {+1, +1, +1}
-    };
 
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
@@ -149,9 +150,9 @@ int VdW_solver::solve() {
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
             l_j = surface_face_lookup->get_top_of_stack(
-                    l_i->x + adjacent_cell_lookup_table[c].ix,
-                    l_i->y + adjacent_cell_lookup_table[c].iy,
-                    l_i->z + adjacent_cell_lookup_table[c].iz);
+                    l_i->x + adjacent_cell_lookup_table[c][0],
+                    l_i->y + adjacent_cell_lookup_table[c][1],
+                    l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
                 if (l_i->index != l_j->index) {
                     f_j = l_j->obj;
@@ -180,35 +181,6 @@ int VdW_solver::solve() {
     /**Alters solver to apply periodic boundary conditions*/
 int VdW_solver::solve(scalar * blob_corr) {
     // double st, time1, time2, time3;
-    const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
-        {-1, -1, -1},
-        {-1, -1, 0},
-        {-1, -1, +1},
-        {-1, 0, -1},
-        {-1, 0, 0},
-        {-1, 0, +1},
-        {-1, +1, -1},
-        {-1, +1, 0},
-        {-1, +1, +1},
-        {0, -1, -1},
-        {0, -1, 0},
-        {0, -1, +1},
-        {0, 0, -1},
-        {0, 0, 0},
-        {0, 0, +1},
-        {0, +1, -1},
-        {0, +1, 0},
-        {0, +1, +1},
-        {+1, -1, -1},
-        {+1, -1, 0},
-        {+1, -1, +1},
-        {+1, 0, -1},
-        {+1, 0, 0},
-        {+1, 0, +1},
-        {+1, +1, -1},
-        {+1, +1, 0},
-        {+1, +1, +1}
-    };
 
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
@@ -242,9 +214,9 @@ int VdW_solver::solve(scalar * blob_corr) {
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
             l_j = surface_face_lookup->get_top_of_stack(
-                    l_i->x + adjacent_cell_lookup_table[c].ix,
-                    l_i->y + adjacent_cell_lookup_table[c].iy,
-                    l_i->z + adjacent_cell_lookup_table[c].iz);
+                    l_i->x + adjacent_cell_lookup_table[c][0],
+                    l_i->y + adjacent_cell_lookup_table[c][1],
+                    l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
                 if (l_i->index < l_j->index) {
                     f_j = l_j->obj;
