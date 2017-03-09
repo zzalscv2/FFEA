@@ -96,7 +96,7 @@ int Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1,
         vdw_bb_energy[i] = 0.0;
 	// vdw_bb_interaction_flag[i] = false; // DEPRECATED
     }
-    vdw_xz_force->assign( { 0., 0., 0.} );
+    vdw_xz_force->assign( 0., 0., 0. );
     vdw_xz_energy = 0.0;
 
 
@@ -134,7 +134,7 @@ int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node
         vdw_bb_energy[i] = 0.0;
         // vdw_bb_interaction_flag[i] = false; // DEPRECATED
     }
-    vdw_xz_force->assign({0.,0.,0.});
+    vdw_xz_force->assign(0.,0.,0.);
     vdw_xz_energy = 0.0;
 
     zero_force();
@@ -192,8 +192,8 @@ void Face::set_kinetic_state(bool state) {
 void Face::calc_area_normal_centroid() {
     // (1/2) * |a x b|
     vector3 a, b;
-    a.assign ( {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z} );
-    b.assign ( {n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z} );
+    a.assign ( n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z );
+    b.assign ( n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z );
     normal.x = a.y * b.z - a.z * b.y;
     normal.y = a.z * b.x - a.x * b.z;
     normal.z = a.x * b.y - a.y * b.x;
@@ -242,8 +242,8 @@ scalar Face::get_area() {
 
     // (1/2) * |a x b|
     vector3 a, b;
-    a.assign ( {n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z} );
-    b.assign ( {n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z} );
+    a.assign ( n[1]->pos.x - n[0]->pos.x, n[1]->pos.y - n[0]->pos.y, n[1]->pos.z - n[0]->pos.z );
+    b.assign ( n[2]->pos.x - n[0]->pos.x, n[2]->pos.y - n[0]->pos.y, n[2]->pos.z - n[0]->pos.z );
 
     temp.x = a.y * b.z - a.z * b.y;
     temp.y = a.z * b.x - a.x * b.z;

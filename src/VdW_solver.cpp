@@ -134,7 +134,7 @@ int VdW_solver::solve() {
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-#pragma omp parallel for private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
+#pragma omp parallel for default(none) private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
@@ -198,7 +198,7 @@ int VdW_solver::solve(scalar * blob_corr) {
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-#pragma omp parallel for private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
+#pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
@@ -369,8 +369,8 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
     for (int j = 0; j < 3; j++) {
         vector3 force1, force2;
-        force1.assign( {0, 0, 0} );
-        force2.assign( {0, 0, 0} );
+        force1.assign( 0, 0, 0 );
+        force2.assign( 0, 0, 0 );
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
@@ -532,8 +532,8 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
     for (int j = 0; j < 3; j++) {
         vector3 force1, force2;
-        force1.assign( {0, 0, 0} );
-        force2.assign( {0, 0, 0} );
+        force1.assign( 0, 0, 0 );
+        force2.assign( 0, 0, 0 );
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
@@ -647,7 +647,7 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
 
     for (int j = 0; j < 3; j++) {
         vector3 force;
-        force.assign( {0, 0, 0} );
+        force.assign( 0, 0, 0 );
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
