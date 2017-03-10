@@ -278,8 +278,8 @@ scalar Face::average_phi() {
 
 scalar Face::get_normal_flux() {
     vector3 dphi;
-    e->get_grad_phi_at_stu(&dphi, centroid_stu.s, centroid_stu.t, centroid_stu.u);
-    return dphi.x * normal.x + dphi.y * normal.y + dphi.z * normal.z;
+    e->get_grad_phi_at_stu(dphi, centroid_stu.s, centroid_stu.t, centroid_stu.u);
+    return dphi[0] * normal[0] + dphi[1] * normal[1] + dphi[2] * normal[2];
 }
 
 /*
@@ -346,9 +346,9 @@ void Face::add_xz_vdw_energy_to_record(scalar energy) {
 
 void Face::zero_force() {
     for (int i = 0; i < 4; i++) {
-        force[i].x = 0;
-        force[i].y = 0;
-        force[i].z = 0;
+        force[i][0] = 0;
+        force[i][1] = 0;
+        force[i][2] = 0;
     }
 
 }

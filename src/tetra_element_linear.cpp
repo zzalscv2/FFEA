@@ -82,7 +82,7 @@ void tetra_element_linear::add_K_alpha(scalar *K, int num_nodes) {
 }
 
 /* Returns the gradient of the potential at the given (s,t,u) position in the element */
-void tetra_element_linear::get_grad_phi_at_stu(vector3 *grad_phi, scalar s, scalar t, scalar u) {
+void tetra_element_linear::get_grad_phi_at_stu(vector3 &grad_phi, scalar s, scalar t, scalar u) {
     vector3 grad_psi[NUM_NODES_QUADRATIC_TET];
 
     SecondOrderFunctions::abcd J_coeff[3][3];
@@ -91,18 +91,18 @@ void tetra_element_linear::get_grad_phi_at_stu(vector3 *grad_phi, scalar s, scal
     scalar det_J = SecondOrderFunctions::calc_det_J(J_coeff, s, t, u, J_inv);
     SecondOrderFunctions::calc_grad_psi(grad_psi, s, t, u, J_inv);
 
-    grad_phi->x = 0;
-    grad_phi->y = 0;
-    grad_phi->z = 0;
+    grad_phi[0] = 0;
+    grad_phi[1] = 0;
+    grad_phi[2] = 0;
     for (int i = 0; i < NUM_NODES_QUADRATIC_TET; i++) {
-        grad_phi->x += grad_psi[i].x * n[i]->phi;
-        grad_phi->y += grad_psi[i].y * n[i]->phi;
-        grad_phi->z += grad_psi[i].z * n[i]->phi;
+        grad_phi[0] += grad_psi[i][0] * n[i]->phi;
+        grad_phi[1] += grad_psi[i][1] * n[i]->phi;
+        grad_phi[2] += grad_psi[i][2] * n[i]->phi;
     }
 
-    grad_phi->x *= det_J;
-    grad_phi->y *= det_J;
-    grad_phi->z *= det_J;
+    grad_phi[0] *= det_J;
+    grad_phi[1] *= det_J;
+    grad_phi[2] *= det_J;
 }
 
 /* Calculates the force on each node of the element due to the electrostatic potential gradient there */
@@ -191,17 +191,17 @@ void tetra_element_linear::calculate_electrostatic_forces() {
 
 /* Calculates the Jacobian matrix for this element */
 void tetra_element_linear::calculate_jacobian(matrix3 J) {
-    J[0][0] = n[1]->pos.x - n[0]->pos.x;
-    J[0][1] = n[1]->pos.y - n[0]->pos.y;
-    J[0][2] = n[1]->pos.z - n[0]->pos.z;
+    J[0][0] = n[1]->pos[0] - n[0]->pos[0];
+    J[0][1] = n[1]->pos[1] - n[0]->pos[1];
+    J[0][2] = n[1]->pos[2] - n[0]->pos[2];
 
-    J[1][0] = n[2]->pos.x - n[0]->pos.x;
-    J[1][1] = n[2]->pos.y - n[0]->pos.y;
-    J[1][2] = n[2]->pos.z - n[0]->pos.z;
+    J[1][0] = n[2]->pos[0] - n[0]->pos[0];
+    J[1][1] = n[2]->pos[1] - n[0]->pos[1];
+    J[1][2] = n[2]->pos[2] - n[0]->pos[2];
 
-    J[2][0] = n[3]->pos.x - n[0]->pos.x;
-    J[2][1] = n[3]->pos.y - n[0]->pos.y;
-    J[2][2] = n[3]->pos.z - n[0]->pos.z;
+    J[2][0] = n[3]->pos[0] - n[0]->pos[0];
+    J[2][1] = n[3]->pos[1] - n[0]->pos[1];
+    J[2][2] = n[3]->pos[2] - n[0]->pos[2];
 }
 
 /*

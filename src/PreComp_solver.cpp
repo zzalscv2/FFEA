@@ -105,6 +105,7 @@ int PreComp_solver::msg(string whatever){
 /** Zero measurement stuff, AKA fieldenergy */
 void PreComp_solver::reset_fieldenergy() {
     for(int i = 0; i < num_blobs; ++i) {
+      #pragma omp simd
       for(int j = 0; j < num_blobs; ++j) {
         fieldenergy[i][j] = 0.0;
       }
@@ -663,9 +664,10 @@ int PreComp_solver::compute_bead_positions() {
 #endif
     for (int i=0; i<n_beads; i++){
        b_elems[i]->calculate_jacobian(J); 
-       b_pos[3*i]   = b_elems[i]->n[0]->pos.x + b_rel_pos[3*i]*J[0][0] + b_rel_pos[3*i+1]*J[1][0] + b_rel_pos[3*i+2]*J[2][0];
-       b_pos[3*i+1] = b_elems[i]->n[0]->pos.y + b_rel_pos[3*i]*J[0][1] + b_rel_pos[3*i+1]*J[1][1] + b_rel_pos[3*i+2]*J[2][1];
-       b_pos[3*i+2] = b_elems[i]->n[0]->pos.z + b_rel_pos[3*i]*J[0][2] + b_rel_pos[3*i+1]*J[1][2] + b_rel_pos[3*i+2]*J[2][2];
+       #pragma omp simd
+       for (int j=0; j<3; j++) {
+          b_pos[3*i+j] = b_elems[i]->n[0]->pos[j] + b_rel_pos[3*i]*J[0][j] + b_rel_pos[3*i+1]*J[1][j] + b_rel_pos[3*i+2]*J[2][j];
+       }
        // cout << "bead " << i << " in: " << b_pos[3*i]*mesoDimensions::length << ", " << b_pos[3*i+1]*mesoDimensions::length << ", " << b_pos[3*i+2]*mesoDimensions::length << endl;
  
     }
