@@ -41,12 +41,13 @@ pdb = FFEA_pdb.FFEA_pdb(inpdbfname)
 kineticmap = FFEA_kinetic_map.FFEA_kinetic_map(mapfname)
 
 print "Num_nodes in trajectory = ", traj.blob[0][0].num_nodes
-print "Num_atoms in pdb = ", pdb.blob[0].num_atoms
+print "Num_atoms in pdb = ", pdb.chain[0].num_atoms
 print "Dimensions of map = ", kineticmap.num_rows, " x ", kineticmap.num_columns
 
 # Make some empty frames
 pdb.clear_position_data()
-pdb.add_frames(traj.num_frames)
+for i in range(traj.num_frames):
+	pdb.add_empty_frame()
 
 
 # Apply map to each frame
@@ -55,7 +56,7 @@ for i in range(traj.num_frames):
 	sys.stdout.write("\r%d%% read" % (int(i * 100.0 / traj.num_frames)))
 	sys.stdout.flush()
 	new_pos = (1.0 / scale) * kineticmap.apply_sparse(traj.blob[0][0].frame[i])
-	pdb.blob[0].set_pos(i, new_pos)
+	pdb.chain[0].frame[i].pos = new_pos
 
 print("\ndone!")
 print("Wrinting PDB to " + outpdbfname + "...")
