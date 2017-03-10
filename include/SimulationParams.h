@@ -181,6 +181,8 @@ public:
 
     int check_ratio;
 
+    int check_ratio;
+
 private:
     int trajectory_out_fname_set;
     int measurement_out_fname_set;
