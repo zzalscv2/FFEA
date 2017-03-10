@@ -407,7 +407,6 @@ scalar Face::getTetraIntersectionVolume(Face *f2) {
     volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data,
                                          n[3]->pos.data, f2->n[0]->pos.data, f2->n[1]->pos.data,
                                          f2->n[2]->pos.data, f2->n[3]->pos.data, false, cm);
-
 }
 
 scalar Face::checkTetraIntersectionAndGetVolume(Face *f2) {
@@ -506,7 +505,6 @@ bool Face::getTetraIntersectionVolumeTotalGradientAndShapeFunctions(Face *f2, ge
         vol_M = volumeIntersectionII<geoscalar,grr3>(f2->n[0]->pos.data, f2->n[1]->pos.data, f2->n[2]->pos.data, f2->n[3]->pos.data, tetA[0], tetA[1], tetA[2], tetA[3], false, cm);
         dVdr[dir] -= (vol_M - vol)/dr;
     }
-
     return true;
 
 }
@@ -612,6 +610,7 @@ void Face::getTetraIntersectionVolumeAndArea(Face *f2, geoscalar &vol, geoscalar
 
 
 scalar Face::length_of_longest_edge() {
+
 
     scalar d2=0, di2=0;
     for (int i=0; i<3; i++) { // for the double loop of all the 3 nodes on the face:

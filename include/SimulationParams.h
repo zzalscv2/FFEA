@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -77,6 +77,7 @@ public:
     scalar dt; ///< time step
     long long num_steps; ///< Number of time steps to run simulation for
     int check; ///< Every how many steps should the program 'check' the system i.e calculate energies, print snapshots etc.
+    int mini_meas; ///< Every how many steps should the program output centroid, F_ij mult F_ij transpose.
     int num_blobs; ///< Number of blobs in the system
     int *num_conformations; ///< Number of conformations for each blob
     int *num_states; ///< Number of states for each blob
@@ -111,12 +112,12 @@ public:
     int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins
     int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique
     int calc_stokes; ///< Whether or not to include local action of the external fluid
-    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites  
-    int calc_preComp; ///< Whether or not use preComputed potentials and forces   
-    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
+    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites
+    int calc_preComp; ///< Whether or not use preComputed potentials and forces
+    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block
     int calc_ctforces; ///< Whether or not to include constant forces onto nodes defined in the ctforces block
     int force_pbc; ///< Whether or not to apply pbc to surface insteractions
-    int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
+    int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high
     int wall_x_1;
     int wall_x_2;
     int wall_y_1;
@@ -137,6 +138,7 @@ public:
     string trajectory_out_fname;
     string kinetics_out_fname;
     string measurement_out_fname;
+    string mini_meas_out_fname;
     string detailed_meas_out_fname;
     string vdw_in_fname;
     string bsite_in_fname;
@@ -177,9 +179,12 @@ public:
     /** Writes all params to fout (either a file or stdout) for user's info */
     void write_to_file(FILE *fout, PreComp_params &pc_params);
 
+    int check_ratio;
+
 private:
     int trajectory_out_fname_set;
     int measurement_out_fname_set;
+    int mini_meas_out_fname_set;
     int icheckpoint_fname_set;
     int ocheckpoint_fname_set;
     int vdw_in_fname_set;

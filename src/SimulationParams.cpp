@@ -46,6 +46,7 @@ SimulationParams::SimulationParams() {
     es_update = 10;
     kappa = 1e9 * mesoDimensions::length;
     es_h = 3;
+    mini_meas = 0;
 
     calc_noise = 1;
     calc_es = 0;
@@ -82,6 +83,7 @@ SimulationParams::SimulationParams() {
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
+
     icheckpoint_fname_set = 0;
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
@@ -89,9 +91,11 @@ SimulationParams::SimulationParams() {
     trajbeads_fname_set = 0;
 
 
+    mini_meas_out_fname_set = 0;
     trajectory_out_fname = "\n";
     kinetics_out_fname = "\n";
     measurement_out_fname = "\n";
+    mini_meas_out_fname = "\n";
     vdw_in_fname = "\n";
     bsite_in_fname = "\n";
     icheckpoint_fname = "\n";
@@ -138,6 +142,7 @@ SimulationParams::~SimulationParams() {
     calc_springs = 0;
     calc_ctforces = 0;
     calc_kinetics = 0;
+    mini_meas = 0;
 
     wall_x_1 = -1;
     wall_x_2 = -1;
@@ -156,6 +161,7 @@ SimulationParams::~SimulationParams() {
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
+    mini_meas_out_fname_set = 0;
     icheckpoint_fname_set = 0;
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
@@ -163,6 +169,7 @@ SimulationParams::~SimulationParams() {
 
     trajectory_out_fname = "\n";
     measurement_out_fname = "\n";
+    mini_meas_out_fname = "\n";
     kinetics_out_fname, "\n";
     icheckpoint_fname = "\n";
     ocheckpoint_fname = "\n";
@@ -204,6 +211,7 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 
 int SimulationParams::assign(string lvalue, string rvalue) {
 
+
     b_fs::path ffea_script = FFEA_script_filename;
     FFEA_script_path = ffea_script.parent_path();
     FFEA_script_basename = ffea_script.stem();
@@ -236,6 +244,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "check") {
         check = (int) atof(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << check << endl;
+
+    } else if (lvalue == "mini_meas") {
+      		mini_meas = (int) atof(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << mini_meas << endl;
 
     } else if (lvalue == "num_blobs") {
         num_blobs = atoi(rvalue.c_str());
@@ -482,6 +494,12 @@ int SimulationParams::assign(string lvalue, string rvalue) {
             detailed_meas_out_fname = meas_basename + ".fdm";
         }
 
+		if (mini_meas_out_fname == "\n") {
+			string mini_meas_basename = measurement_out_fname;
+			mini_meas_basename = RemoveFileExtension(mini_meas_basename);
+			mini_meas_out_fname = mini_meas_basename + ".fmm";
+		}
+
     } else if (lvalue == "kinetics_out_fname") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         kinetics_out_fname = auxpath.string();
@@ -639,6 +657,13 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("Required: 'calc_kinetics', must be 0 (no) or 1 (yes).\n");
     }
 
+    if (mini_meas!=0){
+            if(check%mini_meas!=0){
+                FFEA_ERROR_MESSG("Required: Check must be divisible by mini_meas")
+            }
+            check_ratio = check/mini_meas;
+    }
+
     if (calc_vdw == 1 or calc_es == 1 or calc_preComp == 1) {
         if (es_N_x < 1) {
             printf("\tFRIENDLY WARNING: Length of the nearest neighbour lookup grid, 'es_N_x', is less than 1. Will assign default value to encompass whole system.\n");
@@ -697,11 +722,12 @@ int SimulationParams::validate(int sim_mode) {
 
         // check if the output files exists, and if so, rename it.
         if (restart == 0) {
-            checkFileName(measurement_out_fname);
-            checkFileName(detailed_meas_out_fname);
-            checkFileName(trajectory_out_fname);
-            checkFileName(kinetics_out_fname);
-            checkFileName(trajectory_beads_fname);
+          checkFileName(measurement_out_fname);
+          checkFileName(detailed_meas_out_fname);
+          checkFileName(mini_meas_out_fname);
+          checkFileName(trajectory_out_fname);
+          checkFileName(kinetics_out_fname);
+          checkFileName(trajectory_beads_fname);
         } else {
             if (trajbeads_fname_set == 1) FFEA_ERROR_MESSG("FFEA cannot still restart and keep writing on the beads file. Just remove it from your input file.");
         }

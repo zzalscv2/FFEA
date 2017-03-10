@@ -50,6 +50,7 @@ World::World() {
     measurement_out = NULL;
     detailed_meas_out = NULL;
     writeDetailed = true;
+    mini_meas_out = NULL;
     kinetics_out = NULL;
     checkpoint_out = NULL;
     vdw_solver = NULL;
@@ -147,6 +148,7 @@ World::~World() {
 
 
     delete vdw_solver; 
+    mini_meas_out = NULL;
     vdw_solver = NULL;
 
     delete ffeareader;
@@ -496,7 +498,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         // And launch a first trajectory thread, that will be catched up at print_traj time
         thread_writingTraj = std::async(std::launch::async,&World::do_nothing,this);
 #endif
-
         if (params.restart == 0) {
 
 
@@ -604,6 +605,20 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                  FFEA_FILE_ERROR_MESSG(params.trajectory_beads_fname.c_str())
                }
             }
+            if(params.mini_meas!=0){
+                        printf("before we open the file\n");
+                mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "w");
+                printf("We've opened the file\n");
+                printf("%d\n", strlen(params.mini_meas_out_fname.c_str()));
+				fprintf(mini_meas_out, "FFEA Mini Measurement File\n\nMeasurements:\n%-14s", "Time");
+				    printf("we tried to print\n");
+				for(i = 0; i < params.num_blobs; ++i) {
+					fprintf(mini_meas_out, "| B%d ", i);
+					fprintf(mini_meas_out, "%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s","Centroid.x", "Centroid.y", "Centroid.z","PBC_count.x","PBC_count.y","PBC_count.z", "FFt11","FFt12","FFt13","FFt22","FFt23","FFt33");
+				}
+                fprintf(mini_meas_out, "\n");
+				fflush(mini_meas_out);
+			}
 
             // Open the kinetics output file for writing (if neccessary) and write initial stuff
             if (params.kinetics_out_fname_set == 1) {
@@ -820,6 +835,64 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 }
             }
 
+            if(params.mini_meas!=0) {
+
+                if(params.check%params.mini_meas!=0){
+                        FFEA_FILE_ERROR_MESSG("Cannot restart mini_measurement file as Check not integer divisible by mini_meas")
+                }
+				if ((mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "r")) == NULL) {
+				    FFEA_FILE_ERROR_MESSG(params.mini_meas_out_fname.c_str())
+				}
+
+
+				if (fseek(mini_meas_out, 0, SEEK_END) != 0) {
+				    FFEA_ERROR_MESSG("Could not seek to end of file\n")
+				}
+
+				last_asterisk_pos = ftello(mini_meas_out);
+
+				num_asterisks = 0;
+				num_asterisks_to_find = (frames_to_delete) +1; // 3 to get to top of last frame, then two for every subsequent frame. Final 1 to find ending conformations of last step
+			    while (num_asterisks != num_asterisks_to_find) {
+			        if (fseek(mini_meas_out, -2, SEEK_CUR) != 0) {
+				//perror(NULL);
+				//FFEA_ERROR_MESSG("It is likely we have reached the begininng of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
+				    printf("Found beginning of file. Searching forwards for next asterisk...");
+				    singleframe = true;
+
+				// This loop will allow the script to find the 'final' asterisk
+				    while(true) {
+					    if ((c = fgetc(mini_meas_out)) == '*') {
+						    fseek(mini_meas_out, -1, SEEK_CUR);
+						    break;
+					    }
+				    }
+
+
+			        }
+			        c = fgetc(mini_meas_out);
+			        if (c == '*') {
+                    num_asterisks++;
+				printf("Found %d\n", num_asterisks);
+
+				// get the position in the file of this last asterisk
+				//if (num_asterisks == num_asterisks_to_find - 2) {
+				  //  last_asterisk_pos = ftello(trajectory_out);
+				//}
+			    }
+			}
+
+            if ((c = fgetc(mini_meas_out)) != '\n') {
+			    ungetc(c, mini_meas_out);
+			} else {
+				last_asterisk_pos = ftello(mini_meas_out);
+			}
+			printf("Truncating the mini_meas file to the last asterisk...\n");
+			if (truncate(params.mini_meas_out_fname.c_str(), last_asterisk_pos) != 0) {
+			    FFEA_ERROR_MESSG("Error when trying to truncate mini_meas file %s\n", params.mini_meas_out_fname.c_str())
+			}
+			}
+
             // Open trajectory and measurment files for appending
             printf("Opening trajectory and measurement files for appending.\n");
             if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "a")) == NULL) {
@@ -844,6 +917,13 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 //fprintf(kinetics_out, "#==RESTART==\n");
             }
 
+
+            if(params.mini_meas!=0) {
+                    printf("mini_meas opened for appending properly\n");
+            	if((mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "a")) == NULL) {
+					FFEA_FILE_ERROR_MESSG(params.mini_meas_out_fname.c_str())
+				}
+			}
             /*
             *
             *
@@ -976,6 +1056,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             J_Gamma[i] = 0;
     }
 
+
+    if (params.restart == 0 && mode == 0) {
+        // Carry out measurements on the system before carrying out any updates (if this is step 0)
+        if (params.mini_meas!=0){
+		    print_mini_meas_file(0,omp_get_wtime());
+		    fprintf(mini_meas_out,"*\n");
+		}
+    }
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
@@ -1796,11 +1884,11 @@ int World::run() {
 #ifdef FFEA_PARALLEL_FUTURE
                 // we will have to wait for both threads to finish!
                 if (updatingVdWLL() == true) {
-                    cout << "Waiting for thread VdW LL" << endl; 
+                    cout << "Waiting for thread VdW LL" << endl;
                     if (catch_thread_updatingVdWLL(step, wtime, 1)) return FFEA_ERROR;
                 }
                 if (updatingPCLL() == true) {
-                    cout << "Waiting for thread PC LL" << endl; 
+                    cout << "Waiting for thread PC LL" << endl;
                     if (catch_thread_updatingPCLL(step, wtime, 1)) return FFEA_ERROR;
                 }
 #endif
@@ -1999,6 +2087,11 @@ int World::run() {
             print_trajectory_and_measurement_files(step, wtime);
             print_kinetic_files(step);
         }
+        if (params.mini_meas!=0){
+            if ((step + 1) % params.mini_meas == 0) {
+                print_mini_meas_file(step + 1, wtime);
+        }
+	
 
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
@@ -3479,7 +3572,7 @@ int World::apply_springs() {
             sep.z = n1.z - n0.z;
 
             try {
-                arr3Normalise2<scalar,arr3>(sep.data, sep_norm.data); 
+                arr3Normalise2<scalar,arr3>(sep.data, sep_norm.data);
             } catch (int e) {
 
                 // If zero magnitude, we're ok
@@ -3793,11 +3886,14 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     } else {
         printf("\rstep = %d (simulation time = %.2fns, wall clock time = %.3f hrs)\n", step, step * params.dt * (mesoDimensions::time / 1e-9), (omp_get_wtime() - wtime) / 3600.0);
     }
+    if(params.mini_meas !=0){
+        fprintf(mini_meas_out,"*\n");
+    }
 
     // TRAJECTORY file: can be printed serially, or in parallel:
 #ifdef FFEA_PARALLEL_FUTURE
     // TRAJECTORY PARALLEL:
-    // CHECK // CHECK // CHECK // 
+    // CHECK // CHECK // CHECK //
     bool its = false;
     if (thread_writingTraj.valid()) {
         if (thread_writingTraj.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
@@ -3805,7 +3901,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         }
     }
     if (!its) cout << " We're waiting while writing the trajectory" << endl;
-    // END CHECK // END CHECK // END CHECK // 
+    // END CHECK // END CHECK // END CHECK //
     thread_writingTraj.get();
 #ifdef FFEA_PARALLEL_PER_BLOB
     #pragma omp parallel for default(none) shared(step) schedule(static)
@@ -3928,6 +4024,24 @@ void World::print_checkpoints() {
 	//cout << "hi" << endl << flush;   
 	fflush(checkpoint_out);
     // Done with the checkpoint!
+}
+
+void World::print_mini_meas_file(int step, scalar wtime) {
+    // Stuff needed on each blob, and in global energy files
+    fprintf(mini_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
+
+    // Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used)
+    for (int i = 0; i < params.num_blobs; i++) {
+
+        // Write the node data for this blob
+        active_blob_array[i]->calc_and_write_mini_meas_to_file(mini_meas_out);
+    }
+
+    if(detailed_meas_out != NULL) {
+	write_detailed_measurements_to_file(detailed_meas_out);
+    }
+   	fprintf(mini_meas_out, "\n");
+    fflush(mini_meas_out);
 }
 
 void World::make_measurements() {
@@ -4150,6 +4264,10 @@ int World::die_with_dignity(int step, scalar wtime) {
         printf("Dumping final step:\n");
         print_trajectory_and_measurement_files(step, wtime);
         print_kinetic_files(step);
+        if(params.mini_meas!=0){
+            print_mini_meas_file(step,wtime);
+            fprintf(mini_meas_out,"*\n");
+        }
     }
 
     return FFEA_ERROR;
