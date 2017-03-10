@@ -848,7 +848,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				last_asterisk_pos = ftello(mini_meas_out);
 
 				num_asterisks = 0;
-                num_asterisks_to_find = (frames_to_delete)+1; // 1 to get to top of last frame, one to delete the previous
+               num_asterisks_to_find = (frames_to_delete)+1; // 1 to get to top of last frame, one to delete the previous
 			    while (num_asterisks != num_asterisks_to_find) {
 			        if (fseek(mini_meas_out, -2, SEEK_CUR) != 0) {
 				//perror(NULL);
