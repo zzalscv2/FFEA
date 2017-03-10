@@ -26,7 +26,7 @@ import numpy as np
 import FFEA_trajectory, FFEA_pdb, FFEA_kinetic_map
 
 if len(sys.argv) != 6:
-	sys.exit("Usage: python " + os.path.basename(os.path.abspath(sys.argv[0])) + " [INPUT FFEA trajectory (.out)] [INPUT Original .pdb] [INPUT FFEA map (.map)] [OUTPUT .pdb] [FFEA scale]")
+	sys.exit("Usage: python " + os.path.basename(os.path.abspath(sys.argv[0])) + " [INPUT FFEA trajectory (.ftj)] [INPUT Original .pdb] [INPUT FFEA map (.map)] [OUTPUT .pdb] [FFEA scale]")
 
 # Get args
 trajfname = sys.argv[1]
