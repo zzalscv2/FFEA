@@ -191,6 +191,7 @@ int VdW_solver::solve(scalar * blob_corr) {
 
     // Zero some measurement_ stuff
     for(int i = 0; i < num_blobs; ++i) {
+      #pragma omp simd
       for(int j = 0; j < num_blobs; ++j) {
         fieldenergy[i][j] = 0.0;
       }

@@ -178,7 +178,7 @@ template <class t_scalar, class brr3> void arr3Normalise2(arr3_view<t_scalar,brr
 template <class t_scalar, class brr3> void arr3Resize(t_scalar f, arr3_view<t_scalar,brr3> u){
 
    for (int i=0; i<3; i++) {
-      u[i] *= f;
+      u[i] = f*u[i];
     }
 
 }
@@ -186,6 +186,7 @@ template <class t_scalar, class brr3> void arr3Resize(t_scalar f, arr3_view<t_sc
 /** resize vector u into vector v, given scalar f */
 template <class t_scalar, class brr3> void arr3Resize2(t_scalar f, arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v){
 
+   #pragma omp simd
    for (int i=0; i<3; i++) {
       v[i] = f*u[i];
     }
@@ -195,6 +196,7 @@ template <class t_scalar, class brr3> void arr3Resize2(t_scalar f, arr3_view<t_s
 /** cp arr3 u into arr3 v */ 
 template <class t_scalar, class brr3> void arr3Store(arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v){
 
+   #pragma omp simd
    for (int i=0; i<3; i++) {
      v[i] = u[i];
     }
@@ -216,6 +218,7 @@ template <class t_scalar, class brr3> t_scalar arr3arr3Distance(arr3_view<t_scal
 template <class t_scalar, class brr3> t_scalar mag(arr3_view<t_scalar,brr3> v) {
 
    t_scalar s=0.0;
+   #pragma omp simd reduction(+:s)
    for (int i=0; i<3; i++) {
       s += v[i] * v[i];
    }

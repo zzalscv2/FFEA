@@ -159,6 +159,7 @@ void LinkedListCube<T>::clear() {
     int i;
 
     // Clear the grid
+    #pragma omp simd
     for (i = 0; i < N_x * N_y * N_z; i++)
         root[i] = NULL;
 

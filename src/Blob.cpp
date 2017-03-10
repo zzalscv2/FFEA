@@ -989,24 +989,16 @@ void Blob::linearise_force() {
         for (int j=0; j<NUM_NODES_QUADRATIC_TET; j++) {
             nIdx[j] = elem[i].n[j]->index;
         }
-        force[nIdx[0]].x += 0.5 * ( force[nIdx[4]].x + force[nIdx[5]].x + force[nIdx[6]].x);
-        force[nIdx[1]].x += 0.5 * ( force[nIdx[4]].x + force[nIdx[7]].x + force[nIdx[8]].x);
-        force[nIdx[2]].x += 0.5 * ( force[nIdx[5]].x + force[nIdx[7]].x + force[nIdx[9]].x);
-        force[nIdx[3]].x += 0.5 * ( force[nIdx[6]].x + force[nIdx[8]].x + force[nIdx[9]].x);
-
-        force[nIdx[0]].y += 0.5 * ( force[nIdx[4]].y + force[nIdx[5]].y + force[nIdx[6]].y);
-        force[nIdx[1]].y += 0.5 * ( force[nIdx[4]].y + force[nIdx[7]].y + force[nIdx[8]].y);
-        force[nIdx[2]].y += 0.5 * ( force[nIdx[5]].y + force[nIdx[7]].y + force[nIdx[9]].y);
-        force[nIdx[3]].y += 0.5 * ( force[nIdx[6]].y + force[nIdx[8]].y + force[nIdx[9]].y);
-
-        force[nIdx[0]].z += 0.5 * ( force[nIdx[4]].z + force[nIdx[5]].z + force[nIdx[6]].z);
-        force[nIdx[1]].z += 0.5 * ( force[nIdx[4]].z + force[nIdx[7]].z + force[nIdx[8]].z);
-        force[nIdx[2]].z += 0.5 * ( force[nIdx[5]].z + force[nIdx[7]].z + force[nIdx[9]].z);
-        force[nIdx[3]].z += 0.5 * ( force[nIdx[6]].z + force[nIdx[8]].z + force[nIdx[9]].z);
+        for (int j=0; j<3; j++){
+           force[nIdx[0]][j] += 0.5 * ( force[nIdx[4]][j] + force[nIdx[5]][j] + force[nIdx[6]][j]);
+           force[nIdx[1]][j] += 0.5 * ( force[nIdx[4]][j] + force[nIdx[7]][j] + force[nIdx[8]][j]);
+           force[nIdx[2]][j] += 0.5 * ( force[nIdx[5]][j] + force[nIdx[7]][j] + force[nIdx[9]][j]);
+           force[nIdx[3]][j] += 0.5 * ( force[nIdx[6]][j] + force[nIdx[8]][j] + force[nIdx[9]][j]);
+        } 
         for (int j=4; j<NUM_NODES_QUADRATIC_TET; j++) {
-            force[nIdx[j]].x   = 0.;
-            force[nIdx[j]].y   = 0.;
-            force[nIdx[j]].z   = 0.;
+            force[nIdx[j]][0]   = 0.;
+            force[nIdx[j]][1]   = 0.;
+            force[nIdx[j]][2]   = 0.;
         }
     }
 }
@@ -2093,9 +2085,9 @@ void Blob::zero_force() {
 
 void Blob::set_forces_to_zero() {
     for (int i = 0; i < num_nodes; ++i) {
-        force[i].x = 0;
-        force[i].y = 0;
-        force[i].z = 0;
+        force[i][0] = 0;
+        force[i][1] = 0;
+        force[i][2] = 0;
     }
 }
 
@@ -3739,9 +3731,9 @@ int Blob::aggregate_forces_and_solve() {
 #endif
     for (n = 0; n < num_nodes; n++) {
         for (m = 0; m < node[n].num_element_contributors; m++) {
-            force[n].x += node[n].force_contributions[m]->x;
-            force[n].y += node[n].force_contributions[m]->y;
-            force[n].z += node[n].force_contributions[m]->z;
+            force[n][0] += node[n].force_contributions[m]->x;
+            force[n][1] += node[n].force_contributions[m]->y;
+            force[n][2] += node[n].force_contributions[m]->z;
         }
     }
 
@@ -3851,13 +3843,13 @@ void Blob::euler_integrate() {
         #pragma omp parallel for default(none) private(i) schedule(static)
 #endif
         for (i = 0; i < num_nodes; i++) {
-            node[i].vel.x = force[i].x;
-            node[i].vel.y = force[i].y;
-            node[i].vel.z = force[i].z;
-
-            node[i].pos.x += node[i].vel.x * params->dt;
-            node[i].pos.y += node[i].vel.y * params->dt;
-            node[i].pos.z += node[i].vel.z * params->dt;
+            node[i].vel[0] = force[i][0];
+            node[i].vel[1] = force[i][1];
+            node[i].vel[2] = force[i][2];
+        
+            node[i].pos[0] += force[i][0] * params->dt; // really meaning v * dt
+            node[i].pos[1] += force[i][1] * params->dt;
+            node[i].pos[2] += force[i][2] * params->dt;
         }
 
     } else {
@@ -3865,13 +3857,13 @@ void Blob::euler_integrate() {
         #pragma omp parallel for default(none) private(i) schedule(static)
 #endif
         for (i = 0; i < num_nodes; i++) {
-            node[i].vel.x += force[i].x * params->dt;
-            node[i].vel.y += force[i].y * params->dt;
-            node[i].vel.z += force[i].z * params->dt;
+            node[i].vel[0] += force[i][0] * params->dt;
+            node[i].vel[1] += force[i][1] * params->dt;
+            node[i].vel[2] += force[i][2] * params->dt;
 
-            node[i].pos.x += node[i].vel.x * params->dt;
-            node[i].pos.y += node[i].vel.y * params->dt;
-            node[i].pos.z += node[i].vel.z * params->dt;
+            node[i].pos[0] += node[i].vel[0] * params->dt;
+            node[i].pos[1] += node[i].vel[1] * params->dt;
+            node[i].pos[2] += node[i].vel[2] * params->dt;
         }
     }
 }
