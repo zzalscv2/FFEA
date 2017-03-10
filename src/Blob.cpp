@@ -84,6 +84,7 @@ Blob::Blob() {
     pbc_count[0]= 0;
     pbc_count[1]= 0;
     pbc_count[2]= 0;
+    total_vol = 0;
 
     toBePrinted_nodes = NULL;
 
@@ -591,8 +592,6 @@ int Blob::init(){
             toBePrinted_nodes = new scalar[4*num_nodes];
         }
     }
-
-
     // Return FFEA_OK to indicate "success"
     return FFEA_OK;
 }
@@ -1492,6 +1491,54 @@ void Blob::write_measurements_to_file(FILE *fout) {
     fflush(fout);
 }
 
+void Blob::calc_and_write_mini_meas_to_file(FILE *fout) {
+
+	// White space for blob index bit
+    int i;
+	scalar F_ij_store[6];
+    for(i=0;i<6;i++){
+            F_ij_store[i]=0;
+    }
+	matrix3 F_ij_calc;
+
+	scalar cogx = 0.0, cogy = 0.0, cogz = 0.0;
+	for (i = 0; i < num_nodes; i++) {
+
+	    /*
+	     * Center of geometry contribution (geometry better on nodes than elements)
+	     */
+	    cogx += node[i].pos.x;
+	    cogy += node[i].pos.y;
+	    cogz += node[i].pos.z;
+
+    }
+
+	CoG.x = cogx / num_nodes;
+	CoG.y = cogy / num_nodes;
+	CoG.z = cogz / num_nodes;
+
+	for(i=0;i< num_elements;i++){
+        mat3_set_zero(F_ij_calc);
+        mat3_mult_transpose(elem[i].F_ij, elem[i].F_ij, F_ij_calc);
+        mat3_scale(F_ij_calc, (elem[i].vol_0));
+        //mat3_scale(F_ij_calc, (elem[i].G * elem[i].vol_0 / elem[i].vol));
+        F_ij_store[0] += F_ij_calc[0][0];
+        F_ij_store[1] += F_ij_calc[0][1];
+        F_ij_store[2] += F_ij_calc[0][2];
+        F_ij_store[3] += F_ij_calc[1][1];
+        F_ij_store[4] += F_ij_calc[1][2];
+        F_ij_store[5] += F_ij_calc[2][2];
+	}
+
+	    for(int i=0;i<6;i++){
+                F_ij_store[i]=F_ij_store[i]/(num_elements*total_vol);
+        }
+
+
+	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14d%-14d%-14d%-14.6e%-14.6e%-14.6e%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length,pbc_count[0],pbc_count[1],pbc_count[2],F_ij_store[0],F_ij_store[1],F_ij_store[2],F_ij_store[3],F_ij_store[4],F_ij_store[5]);
+	fflush(fout);
+}
+
 void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
     int n;
     if (stress_out != NULL) {
@@ -1618,7 +1665,7 @@ tetra_element_linear *Blob::get_element(int i) {
  **/
 void Blob::get_bead_position(int i, arr3 &v) {
 
-    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v); 
+    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v);
 }
 
 /**
@@ -2131,9 +2178,9 @@ void Blob::set_forces_to_zero() {
 }
 
 void Blob::get_node(int index, arr3 &v) {
-    
-    arr3Store<scalar,arr3>(node[index].pos.data, v); 
-    
+
+    arr3Store<scalar,arr3>(node[index].pos.data, v);
+
 }
 
 void Blob::add_force_to_node(vector3 f, int index) {
@@ -3714,7 +3761,6 @@ void Blob::calc_rest_state_info() {
     scalar longest_surface_edge = 0;
     int min_vol_elem = 0;
     mass = 0;
-    scalar total_vol = 0;
     for (int i = 0; i < num_elements; i++) {
         // Get jacobian matrix for this element
         elem[i].calculate_jacobian(J);
@@ -3744,7 +3790,7 @@ void Blob::calc_rest_state_info() {
 
     for (int i=0; i<num_surface_faces; i++) {
         scalar longest_surface_edge_i = surface[i].length_of_longest_edge();
-        if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i; 
+        if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i;
     }
 
     if (blob_state == FFEA_BLOB_IS_STATIC) {

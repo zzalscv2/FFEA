@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -203,8 +203,10 @@ private:
     bool writeDetailed;
     FILE *detailed_meas_out;
 
-    /** @brief Output file for the trajectory beads. Completely optional. */
+/** @brief Output file for the trajectory beads. Completely optional. */
     FILE *trajbeads_out; 
+    /** @brief Output mini measurements file. May be unneccesary */
+    FILE *mini_meas_out;
 
     /** Reader objects */
     FFEA_input_reader *ffeareader;
@@ -310,26 +312,30 @@ private:
     void print_trajectory_and_measurement_files(int step, scalar wtime);
     void print_checkpoints();
     void write_pre_print_to_trajfile(int step);
-    void do_nothing(); 
+    void do_nothing();
 
-    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size); 
+    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size);
 #ifdef FFEA_PARALLEL_FUTURE
-    std::future<void> thread_writingTraj; 
-    std::future<int> thread_updatingVdWLL; 
-    std::future<int> thread_updatingPCLL; 
+    std::future<void> thread_writingTraj;
+    std::future<int> thread_updatingVdWLL;
+    std::future<int> thread_updatingPCLL;
     bool updatingVdWLL(); ///< check if the thread has been catched.
     bool updatingVdWLL_ready_to_swap(); ///< true if thread waiting to be catched.
-    int catch_thread_updatingVdWLL(int step, scalar wtime, int where); 
+    int catch_thread_updatingVdWLL(int step, scalar wtime, int where);
     bool updatingPCLL(); ///< check if the thread has been catched.
     bool updatingPCLL_ready_to_swap(); ///< true if thread waiting to be catched.
-    int catch_thread_updatingPCLL(int step, scalar wtime, int where); 
+    int catch_thread_updatingPCLL(int step, scalar wtime, int where);
 #endif
+
+    void print_mini_meas_file(int step, scalar wtime);
 
     void make_measurements();
 
     void write_measurements_to_file(FILE *fout, int step);
 
     void write_detailed_measurements_to_file(FILE *fout);
+
+    void write_mini_measurements_to_file(FILE *fout);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
 
@@ -342,7 +348,7 @@ private:
 
     scalar *blob_corr;
 
-    int die_with_dignity(int step, scalar wtime); 
+    int die_with_dignity(int step, scalar wtime);
 };
 
 #endif

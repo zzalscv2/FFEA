@@ -213,10 +213,10 @@ public:
     /**
      * Dumps all the node positions (in order) from the node array to the given file stream in two steps.
      */
-    void pre_print(); 
-    void write_pre_print_to_file(FILE *trajectory_out); 
-    int toBePrinted_conf[2]; 
-    int toBePrinted_state[2]; 
+    void pre_print();
+    void write_pre_print_to_file(FILE *trajectory_out);
+    int toBePrinted_conf[2];
+    int toBePrinted_state[2];
 
     /**
      * Reads the node positions from the given trajectory file stream.
@@ -233,6 +233,11 @@ public:
      * Writes only the detailed measurements local to this blob to file!
      */
     void write_measurements_to_file(FILE *fout);
+
+    /**
+    * Writes Center of Geometry, deformation gradient mult with transpose and pbc_count to file
+    */
+    void calc_and_write_mini_meas_to_file(FILE *fout);
 
     /**
      * Calculates the current jacobian and elasticity properties of the structure
@@ -654,7 +659,7 @@ private:
 
     /*
      */
-    scalar *toBePrinted_nodes; 
+    scalar *toBePrinted_nodes;
 
     /**
      * Opens and reads the given 'ffea node file', extracting all the nodes for this Blob.
@@ -743,6 +748,8 @@ private:
     int calculate_node_element_connectivity();
 
     int build_mass_matrix();
+
+    scalar total_vol;
 };
 
 #endif
