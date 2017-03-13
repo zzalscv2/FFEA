@@ -1036,7 +1036,7 @@ class Surface
 			} else if (ext.compare("stl") == 0) {
 				
 				// Header
-				fprintf(surf_out, "solid ffeatools_STL\n\n");
+				fprintf(surf_out, "solid ffeatoolsSTL\n");
 				for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
 
 					// Calculate normal
@@ -1049,14 +1049,14 @@ class Surface
 
 					// Now write everything
 					fprintf(surf_out, "facet normal %3.2f %3.2f %3.2f\n", n.x, n.y, n.z);
-					fprintf(surf_out, "\touterloop\n");
+					fprintf(surf_out, "outer loop\n");
 					for(i = 0; i < 3; ++i) {
-						fprintf(surf_out, "\t\tvertex %10.6f %10.6f %10.6f\n", node[(*face_iterator)->n[i]].x, node[(*face_iterator)->n[i]].y, node[(*face_iterator)->n[i]].z);
+						fprintf(surf_out, "vertex %10.6f %10.6f %10.6f\n", node[(*face_iterator)->n[i]].x, node[(*face_iterator)->n[i]].y, node[(*face_iterator)->n[i]].z);
 					}
-					fprintf(surf_out, "\tendloop\n");
+					fprintf(surf_out, "endloop\n");
 					fprintf(surf_out, "endfacet\n");
 				}
-				fprintf(surf_out, "endsolid ffeatools_STL\n");
+				fprintf(surf_out, "endsolid ffeatoolsSTL\n");
 			}
 			fclose(surf_out);
 			return 0;
