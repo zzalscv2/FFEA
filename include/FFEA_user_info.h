@@ -45,5 +45,7 @@ void print_mid(string s);
 void print_high(string s);
 void print_mania(string s);
 
+void print_preprocessor_flags();
+
 
 #endif

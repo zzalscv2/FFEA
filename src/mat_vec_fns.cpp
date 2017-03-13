@@ -33,22 +33,20 @@ void mat12_apply(matrix12 A, vector12 v) {
     for (i = 0; i < 12; i++) v[i] = temp_v[i];
 }
 
-void vec3_mat3_mult(vector3 *v, matrix3 &A, vector3 *notv) {
+void vec3_mat3_mult(vector3 &v, matrix3 &A, vector3 &notv) {
     //int i, j;
 
-    notv->x = A[0][0]*v->x + A[1][0]*v->y + A[2][0]*v->z;
-    notv->y = A[0][1]*v->x + A[1][1]*v->y + A[2][1]*v->z;
-    notv->z = A[0][2]*v->x + A[1][2]*v->y + A[2][2]*v->z;
+    notv[0] = A[0][0]*v[0] + A[1][0]*v[1] + A[2][0]*v[2];
+    notv[1] = A[0][1]*v[0] + A[1][1]*v[1] + A[2][1]*v[2];
+    notv[2] = A[0][2]*v[0] + A[1][2]*v[1] + A[2][2]*v[2];
 
 }
 
-void vec3_vec3_subs(vector3 *u, vector3 *v, vector3 *w) {
+/* void vec3_vec3_subs(vector3 *u, vector3 *v, vector3 *w) {
     
     w->x = u->x - v->x;
     w->y = u->y - v->y;
     w->z = u->z - v->z;
-
-
 
 }
 
@@ -57,7 +55,7 @@ void vec3_vec3_cross(vector3 *u, vector3 *v, vector3 *w) {
 	w->x = u->y * v->z - u->z * v->y;
 	w->y = u->z * v->x - u->x * v->z;
 	w->z = u->x * v->y - u->y * v->x;
-}
+}*/ 
 
 /*
  *
@@ -222,15 +220,16 @@ void mat4_set_zero(matrix4 A) {
 /*
  *
  */
-void vector3_set_zero(vector3 *v) {
-    v->x = 0;
-    v->y = 0;
-    v->z = 0;
+void vector3_set_zero(vector3 &v) {
+   
+    v[0] = 0;
+    v[1] = 0;
+    v[2] = 0;
+
 }
 
 /*
  *
- */
 void vec3_scale(vector3 *v, scalar scale) {
 	v->x *= scale;
 	v->y *= scale;
@@ -242,6 +241,7 @@ void vec3_scale2(vector3 *v1, vector3 *v2, scalar scale) {
 	v2->y = scale*v1->y;
 	v2->z = scale*v1->z;
 }
+ */
 
 
 /*
@@ -253,9 +253,9 @@ void vec3_add_to_scaled(vector3 *v1, vector3 *v2, scalar a, int vec_size) {
 #pragma omp parallel for default(none) private(i) shared(v1, v2, a, vec_size)
 #endif
     for (i = 0; i < vec_size; i++) {
-        v1[i].x += a * v2[i].x;
-        v1[i].y += a * v2[i].y;
-        v1[i].z += a * v2[i].z;
+        v1[i][0] += a * v2[i][0];
+        v1[i][1] += a * v2[i][1];
+        v1[i][2] += a * v2[i][2];
     }
 }
 
@@ -268,9 +268,9 @@ void vec3_scale_and_add(vector3 *v1, vector3 *v2, scalar a, int vec_size) {
 #pragma omp parallel for default(none) private(i) shared(v1, v2, a, vec_size)
 #endif
     for (i = 0; i < vec_size; i++) {
-        v1[i].x = a * v1[i].x + v2[i].x;
-        v1[i].y = a * v1[i].y + v2[i].y;
-        v1[i].z = a * v1[i].z + v2[i].z;
+        v1[i][0] = a * v1[i][0] + v2[i][0];
+        v1[i][1] = a * v1[i][1] + v2[i][1];
+        v1[i][2] = a * v1[i][2] + v2[i][2];
     }
 }
 
@@ -322,23 +322,23 @@ void print_vector12(vector12 v) {
         printf("%e\n", v[i]);
 }
 
-void print_vector3(vector3 *v) {
-    printf("%e %e %e\n", v->x, v->y, v->z);
+void print_vector3(vector3 &v) {
+    printf("%e %e %e\n", v.x, v.y, v.z);
 }
 
-scalar mag(vector3 *v) {
-    return sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+/*scalar mag(vector3 &v) {
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-vector3 normalise(vector3 *v) {
+std::array<scalar,3> normalise(vector3 &v) {
     scalar magnitude;
     vector3 norm;
     magnitude = mag(v);
     if(magnitude == 0.0) {
 	throw -1;
     }
-    norm.x = v->x / magnitude;
-    norm.y = v->y / magnitude;
-    norm.z = v->z / magnitude;
-    return norm;
-}
+    norm.x = v.x / magnitude;
+    norm.y = v.y / magnitude;
+    norm.z = v.z / magnitude;
+    return norm.data;
+} */ 

@@ -71,12 +71,14 @@ int main() {
   }
 
 
-  if (! tet_a_tet(tetA, tetB)) {
+  if (! tet_a_tetII(tetA[0], tetA[1], tetA[2], tetA[3],
+                    tetB[0], tetB[1], tetB[2], tetB[3])) {
     cout << " these tetrahedra are known to intersect" << endl;
     return 1;
   } 
 
-  scalar vol = volumeIntersection<scalar,arr3>(tetA, tetB);
+  arr3 cm; 
+  scalar vol = volumeIntersectionII<scalar,arr3>(tetA[0], tetA[1], tetA[2], tetA[3], tetB[0], tetB[1], tetB[2], tetB[3], false, cm);
   stringstream ss;
   ss.precision(14);
   ss << vol;
@@ -117,13 +119,14 @@ int main() {
   tetD[3][1] = 5.11134;
   tetD[3][2] = -5.00755; 
 
-  if (! tet_a_tet(tetC, tetD)) {
+  if (! tet_a_tetII(tetC[0], tetC[1], tetC[2], tetC[3], 
+                    tetD[0], tetD[1], tetD[2], tetD[3])) {
     cout << "tetrahedra tetC and tetD are known to intersect " << endl;
     cout << "  and I found tet_a_tet fails in this case" << endl;
     // return 1;
   } 
 
-  vol = volumeIntersection<scalar,arr3>(tetC, tetD);
+  vol = volumeIntersection<scalar,arr3>(tetC, tetD, false, cm);
   if (vol == 0) {
     cout << " intersecting volume should not be zero for these tetrahedra" << endl; 
     return 1;

@@ -24,24 +24,17 @@
 #ifndef TETRAHEDRAOVERLAP_H_INCLUDED
 #define TETRAHEDRAOVERLAP_H_INCLUDED
 
-#ifdef USE_DOUBLE_LESS
-typedef float scalar;
-#else
-typedef double scalar;
-#endif
-
 #include <stddef.h>
+#include "mat_vec_types.h"
 
 class checkVars {
 	
 	public:
 
-		checkVars();
-		~checkVars();
+		/* checkVars();
+		~checkVars(); */ 
 		
 		// Member variables
-		typedef scalar point[3];
-		point *V1,*V2;			        ///< vertices coordinates
 		scalar e_v1[6][3];            ///< vector edge-oriented 
       scalar e_v2[6][3];            ///< vectors edge-oriented
 		int masks[4];  ///< for each face of the first tetrahedron stores the halfspace each vertex of the second tetrahedron belongs to
@@ -55,8 +48,9 @@ class checkVars {
 };
 
 /** Fast Tetrahedron-Tetrahedron Overlap Algorithm, by Fabio Ganovelli, Frederico Ponchio, Claudio Rocchini. ACM 2002. */
-bool tet_a_tet(scalar (&V_1)[4][3],  /* [in] pointers on 3D coord of tetrahedron A */
-               scalar (&V_2)[4][3] ); /* [in] pointers on 3D coord of tetrahedron B */
+bool tet_a_tetII(arr3 &V1_0, arr3 &V1_1, arr3 &V1_2, arr3 &V1_3,
+                 arr3 &V2_0, arr3 &V2_1, arr3 &V2_2, arr3 &V2_3);
+              
 
 
 #endif 

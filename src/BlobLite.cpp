@@ -84,7 +84,7 @@ int BlobLite::load_topology(const char *topology_filename){
     printf("\t\t\tNumber of interior elements = %d\n", num_interior_elements);
 
     // Allocate the memory for all these elements
-    elem = new int[NUM_NODES_QUADRATIC_TET*num_elements];
+    elem = new(std::nothrow) int[NUM_NODES_QUADRATIC_TET*num_elements];
     if (elem == NULL) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for element array.\n")
@@ -214,7 +214,7 @@ int BlobLite::load_nodes(const char *node_filename, scalar scale) {
     printf("\t\t\tNumber of interior nodes = %d\n", num_interior_nodes);
 
     // Allocate the memory for all these nodes
-    coord = new scalar[3*num_nodes];
+    coord = new(std::nothrow) scalar[3*num_nodes];
     if (coord == NULL) FFEA_ERROR_MESSG("Failed to allocate node coordinates\n");
 
     // Check for "surface nodes:" line

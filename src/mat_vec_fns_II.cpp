@@ -57,6 +57,45 @@ int getMissingNode(int n0, int n1, int n2) {
 
 }
 
+/** Given 1 integers iN,
+ *    return the index missing indices of the list [0,1,2,3] 
+ */
+void getRestOfNodes(int iN, int &iO0, int &iO1, int &iO2) {
+
+  if (iN == 0) {
+    iO0 = 1; 
+    iO1 = 2; 
+    iO2 = 3; 
+  } else if (iN == 1) {
+    iO0 = 0; 
+    iO1 = 2; 
+    iO2 = 3; 
+  } else if (iN == 2) {
+    iO0 = 0; 
+    iO1 = 1; 
+    iO2 = 3; 
+  } else {
+    iO0 = 0; 
+    iO1 = 1; 
+    iO2 = 2; 
+  }
+}
+
+/** Given 1 integers iN,
+ *    return the index missing indices of the list [0,1,2,3] 
+ */
+void getMissingPair(int in0, int in1, int &on0, int &on1) {
+
+  for (int i=0; i<4; i++) {
+    if ((i != in0) && (i != in1)) {
+      on0 = i;
+      on1 = getMissingNode(in0, in1, on0);
+      break; 
+    }
+  }
+}
+
+
 ////////////////// SECTION 1 ///////////////////////
 ///  Basic operations for arr3, i. e., scalar v[3]// 
 ////////////////////////////////////////////////////
@@ -127,6 +166,7 @@ template <class t_scalar, class brr3> void arr3Normalise2(arr3_view<t_scalar,brr
    for (int i=0; i<3; i++) {
      norm += e[i]*e[i];
    }
+   if (norm == 0.0) throw -1; 
    norm = sqrt(norm);
    for (int i=0; i<3; i++) {
      n[i] = e[i]/norm;
@@ -138,7 +178,7 @@ template <class t_scalar, class brr3> void arr3Normalise2(arr3_view<t_scalar,brr
 template <class t_scalar, class brr3> void arr3Resize(t_scalar f, arr3_view<t_scalar,brr3> u){
 
    for (int i=0; i<3; i++) {
-      u[i] *= f;
+      u[i] = f*u[i];
     }
 
 }
@@ -146,6 +186,7 @@ template <class t_scalar, class brr3> void arr3Resize(t_scalar f, arr3_view<t_sc
 /** resize vector u into vector v, given scalar f */
 template <class t_scalar, class brr3> void arr3Resize2(t_scalar f, arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v){
 
+   #pragma omp simd
    for (int i=0; i<3; i++) {
       v[i] = f*u[i];
     }
@@ -155,6 +196,7 @@ template <class t_scalar, class brr3> void arr3Resize2(t_scalar f, arr3_view<t_s
 /** cp arr3 u into arr3 v */ 
 template <class t_scalar, class brr3> void arr3Store(arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v){
 
+   #pragma omp simd
    for (int i=0; i<3; i++) {
      v[i] = u[i];
     }
@@ -176,6 +218,7 @@ template <class t_scalar, class brr3> t_scalar arr3arr3Distance(arr3_view<t_scal
 template <class t_scalar, class brr3> t_scalar mag(arr3_view<t_scalar,brr3> v) {
 
    t_scalar s=0.0;
+   #pragma omp simd reduction(+:s)
    for (int i=0; i<3; i++) {
       s += v[i] * v[i];
    }
@@ -300,6 +343,28 @@ template <class t_scalar, class brr3> void getNormalInwards(brr3 (&tetA)[4], int
 
 }
 
+/* Given the face formed by f0, f1, and f2,
+ *     and knowing the remaining p3 for a tetrahedron,
+ * get n, the normal to a face pointing inwards.
+ */
+template <class t_scalar, class brr3> void getNormalInwards(brr3 &f0, brr3 &f1, brr3 &f2, brr3 &p3, brr3 (&n)){
+
+   // pl1 and pl2 are the unit vectors (tetA[n1] - tetA[n0]) and (tetA[n2] - tetA[n0]), 
+   brr3 pl1, pl2, aux;
+   arr3arr3Substract<t_scalar,brr3>(f1, f0, pl1);
+   arr3arr3Substract<t_scalar,brr3>(f2, f0, pl2);
+   // n is a unit vector normal to the face:
+   arr3arr3VectorProduct<t_scalar,brr3>(pl1, pl2, aux);
+   arr3Normalise2<t_scalar,brr3>(aux, n);
+   // but it must be inwards, i. e., on the same side of the plane than n3. 
+   arr3arr3Add<t_scalar,brr3>(aux, f0, aux);
+   t_scalar d = - arr3arr3DotProduct<t_scalar,brr3>(n, f0);
+   t_scalar t1 = arr3arr3DotProduct<t_scalar,brr3>(p3, n) + d;
+   t_scalar t2 = arr3arr3DotProduct<t_scalar,brr3>(aux, n) + d;
+   if (!sameSign(t1,t2)) arr3Resize<t_scalar,brr3>(ffea_const::mOne, n);
+
+}
+
 
 /** check if points vec and test are at the same side
  *  of the plane formed by p1, p2 and p3 
@@ -344,13 +409,23 @@ template <class t_scalar, class brr3> bool sameSideLine(brr3 &e, brr3 &p1, brr3 
 /**  more specifically, it will be there if 
  *     for each plane of the tetrahedron, 
  *     the point is on the same side as the remaining vertex */
-// bool nodeInTet(arr3 &vec, arr3 (tet)[4]){
 template <class t_scalar,class brr3> bool nodeInTet(brr3 &vec, brr3 (tet)[4]){
 
    if (!sameSidePlane<t_scalar,brr3>(vec, tet[0], tet[1], tet[2], tet[3])) return false;
    if (!sameSidePlane<t_scalar,brr3>(vec, tet[1], tet[2], tet[3], tet[0])) return false;
    if (!sameSidePlane<t_scalar,brr3>(vec, tet[2], tet[3], tet[0], tet[1])) return false;
    if (!sameSidePlane<t_scalar,brr3>(vec, tet[3], tet[0], tet[1], tet[2])) return false;
+
+   return true;
+
+}
+
+template <class t_scalar,class brr3> bool nodeInTet(brr3 &vec, brr3 &tet0, brr3 &tet1, brr3 &tet2, brr3 &tet3){
+
+   if (!sameSidePlane<t_scalar,brr3>(vec, tet0, tet1, tet2, tet3)) return false;
+   if (!sameSidePlane<t_scalar,brr3>(vec, tet1, tet2, tet3, tet0)) return false;
+   if (!sameSidePlane<t_scalar,brr3>(vec, tet2, tet3, tet0, tet1)) return false;
+   if (!sameSidePlane<t_scalar,brr3>(vec, tet3, tet0, tet1, tet2)) return false;
 
    return true;
 
@@ -470,6 +545,30 @@ template <class t_scalar,class brr3> bool intersectionPoint(brr3 &(ip), brr3 (&e
 
   // and finally check whether this point ip belongs to the triangular face:
   if ( (isPointInFace<t_scalar,brr3>(ip, tet[f1], tet[f2], tet[f3])) ) return true;
+
+
+  return false;
+
+}
+
+
+/** Check whether an edge and a plane intersect, 
+ *    and return the intersection point ip and true if found, false otherwise.
+ * more specifically check that both:
+ *    - both ends of the edge (e1 and e2) are on different sides
+ *           of the plane defined by the vectors (f2 - f1) and (f3 - f1).
+ *    - the intersection of a line is a point in the plane 
+ */
+template <class t_scalar,class brr3> bool intersectionPoint(brr3 &ip, brr3 &e1, brr3 &e2, brr3 &f1, brr3 &f2, brr3 &f3){
+
+  // check it e1 and e2 are on the same side of the plane:
+  if ( sameSidePlane<t_scalar,brr3>(e1, e2, f1, f2, f3) ) return false;
+
+  // given that they are on different sides of the plane look for the intersection point.
+  linePlaneIntersectionPoint<t_scalar,brr3>(ip, e1, e2, f1, f2, f3);
+
+  // and finally check whether this point ip belongs to the triangular face:
+  if ( (isPointInFace<t_scalar,brr3>(ip, f1, f2, f3)) ) return true;
 
 
   return false;
@@ -776,12 +875,14 @@ template void getUnitNormal<scalar,arr3>(arr3 &u, arr3 &v, arr3 &w);
 template void getNormal<scalar,arr3>(arr3 &v1, arr3 &v2, arr3 &v3, arr3 &n);
 
 template void getNormalInwards<scalar,arr3>(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 (&n));
+template void getNormalInwards<scalar,arr3>(arr3 &f0, arr3 &f1, arr3 &f2, arr3 &p3, arr3 (&n));
 
 template bool sameSidePlane<scalar,arr3>(arr3 &vec, arr3 &test, arr3 &p1, arr3 &p2, arr3 &p3);
 
 template bool sameSideLine<scalar,arr3>(arr3 &e, arr3 &p1, arr3 &p2, arr3 &p3);
 
 template bool nodeInTet<scalar,arr3>(arr3 &vec, arr3 (tet)[4]);
+template bool nodeInTet<scalar,grr3>(arr3 &vec, arr3 &tet0, arr3 &tet1, arr3 &tet2, arr3 &tet3);
 
 template void linePlaneIntersectionPoint<scalar,arr3>(arr3 &ip, arr3 &e1, arr3 &e2, arr3 &p1, arr3 &p2, arr3 &p3);
 
@@ -792,6 +893,8 @@ template bool lineFaceIntersectionPoint<scalar,arr3>(arr3 (&ip), arr3 (&e1), arr
 template bool isPointInFace<scalar,arr3>(arr3 &ip, arr3 &p1, arr3 &p2, arr3 &p3);
 
 template bool intersectionPoint<scalar,arr3>(arr3 &(ip), arr3 (&e1), arr3 (&e2), arr3 (&tet)[4], int f1, int f2, int f3);
+template bool intersectionPoint<scalar,arr3>(arr3 &ip, arr3 &e1, arr3 &e2, arr3 &f1, arr3 &f2, arr3 &f3);
+
 
 // template void intersectingPointToLine<scalar, arr3>(arr3 &p0, arr3 &p1, arr3 &p2, arr3 &p3);
 template void intersectingPointToLine<scalar, arr3>(arr3_view<scalar, arr3> p0, arr3_view<scalar,arr3> p1, arr3_view<scalar,arr3> p2p1, arr3_view<scalar,arr3> p3);
@@ -817,14 +920,17 @@ template void tangent<geoscalar,grr3>(grr3 &vecA, grr3 &vecB, grr3 &t);
 template void getUnitNormal<geoscalar,grr3>(grr3 &u, grr3 &v, grr3 &w);
 template void getNormal<geoscalar,grr3>(grr3 &v1, grr3 &v2, grr3 &v3, grr3 &n);
 template void getNormalInwards<geoscalar,grr3>(grr3 (&tetA)[4], int n0, int n1, int n2, grr3 (&n));
+template void getNormalInwards<geoscalar,grr3>(grr3 &f0, grr3 &f1, grr3 &f2, grr3 &p3, grr3 (&n));
 template bool sameSidePlane<geoscalar,grr3>(grr3 &vec, grr3 &test, grr3 &p1, grr3 &p2, grr3 &p3);
 template bool sameSideLine<geoscalar,grr3>(grr3 &e, grr3 &p1, grr3 &p2, grr3 &p3);
 template bool nodeInTet<geoscalar,grr3>(grr3 &vec, grr3 (tet)[4]);
+template bool nodeInTet<geoscalar,grr3>(grr3 &vec, grr3 &tet0, grr3 &tet1, grr3 &tet2, grr3 &tet3);
 template void linePlaneIntersectionPoint<geoscalar,grr3>(grr3 &ip, grr3 &e1, grr3 &e2, grr3 &p1, grr3 &p2, grr3 &p3);
 template bool safeLinePlaneIntersectionPoint<geoscalar,grr3>(grr3 &ip, grr3 &e1, grr3 &e2, grr3 &p1, grr3 &p2, grr3 &p3);
 template bool lineFaceIntersectionPoint<geoscalar,grr3>(grr3 (&ip), grr3 (&e1), grr3 (&e2), grr3 (&p1), grr3 (&p2), grr3 (&p3));
 template bool isPointInFace<geoscalar,grr3>(grr3 &ip, grr3 &p1, grr3 &p2, grr3 &p3);
 template bool intersectionPoint<geoscalar,grr3>(grr3 &(ip), grr3 (&e1), grr3 (&e2), grr3 (&tet)[4], int f1, int f2, int f3);
+template bool intersectionPoint<geoscalar,grr3>(grr3 &ip, grr3 &e1, grr3 &e2, grr3 &f1, grr3 &f2, grr3 &f3);
 template void intersectingPointToLine<geoscalar, grr3>(arr3_view<geoscalar, grr3> p0, arr3_view<geoscalar,grr3> p1, arr3_view<geoscalar,grr3> p2p1, arr3_view<geoscalar,grr3> p3);
 template void intersectingPointToLine<geoscalar, grr3>(vector3 &p0, arr3_view<geoscalar,grr3> p1, arr3_view<geoscalar,grr3> p2p1, arr3_view<geoscalar,grr3> p3);
 template geoscalar distanceFromPointToLine<geoscalar,grr3>(arr3_view<geoscalar, grr3> p0, arr3_view<geoscalar, grr3> p1, arr3_view<geoscalar, grr3> p2);

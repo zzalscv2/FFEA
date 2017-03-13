@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
    int checks = 0;
    int i_vol = 0;
    int i_cms = 0;
-   arr3 cm1, cm2; 
+   arr3 cm1, cm2, aux; 
    scalar d0 = 1000; 
    scalar d = 10*d0;
    // for every time step:
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
            }
          }
          checks += 1;
-         if (volumeIntersection<scalar,arr3>(tet1, tet2)){
+         if (volumeIntersection<scalar,arr3>(tet1, tet2, false, aux)){
            // cout << " ivol " << endl;
            i_vol += 1;
          }

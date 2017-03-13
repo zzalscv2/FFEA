@@ -90,7 +90,7 @@ public:
     int get_smallest_time_constants();
 
     /* */
-    int enm(set<int> blob_indices, int num_modes);
+    int lem(set<int> blob_indices, int num_modes);
 
     /* */
     int dmm(set<int> blob_indices, int num_modes);

@@ -60,10 +60,10 @@ int BindingSite_matrix::init(string fname) {
 	}
 
 	// Get all interactions
-	interaction = new bool*[num_interaction_types];
+	interaction = new(std::nothrow) bool*[num_interaction_types];
 	if (interaction == NULL) FFEA_ERROR_MESSG("Could not allocate 2D interaction array\n"); 
 	for(int i = 0; i < num_interaction_types; ++i) {
-		interaction[i] = new bool[num_interaction_types];
+		interaction[i] = new(std::nothrow) bool[num_interaction_types];
 		if (interaction[i] == NULL) FFEA_ERROR_MESSG("Could not allocate memory for interaction[%d]\n", i);
 		for(int j = 0; j < num_interaction_types; ++j) {
 			if(fin.eof()) {
@@ -124,7 +124,7 @@ BindingSite::BindingSite() {
 	num_faces = 0;
 	site_type = -1;
 	faces.clear();
-	vector3_set_zero(&centroid);
+	vector3_set_zero(centroid);
 	area = 0.0;
 	characteristic_length = 0.0;
 }
@@ -133,7 +133,7 @@ BindingSite::~BindingSite() {
 	num_faces = 0;
 	site_type = -1;
 	faces.clear();
-	vector3_set_zero(&centroid);
+	vector3_set_zero(centroid);
 	area = 0.0;
 	characteristic_length = 0.0;
 }
@@ -166,14 +166,14 @@ void BindingSite::add_face(Face *aface) {
 	faces.push_back(aface);
 }
 
-vector3 BindingSite::get_centroid() {
+void BindingSite::get_centroid(arr3 &v) {
 	
-	return centroid;
+   arr3Store<scalar,arr3>(centroid.data, v);
 }
 
 void BindingSite::calculate_centroid() {
 	
-	vector3_set_zero(&centroid);
+	vector3_set_zero(centroid);
 	vector3 *face_centroid;
 	vector<Face*>::iterator it;
 	for(it = faces.begin(); it != faces.end(); ++it) {
@@ -182,7 +182,7 @@ void BindingSite::calculate_centroid() {
 		centroid.y += face_centroid->y;
 		centroid.z += face_centroid->z;
 	}
-	vec3_scale(&centroid, 1.0/num_faces);
+	arr3Resize<scalar,arr3>(1.0/num_faces, centroid.data);
 }
 
 set<int> BindingSite::get_nodes() {
@@ -233,8 +233,8 @@ bool BindingSite::sites_in_range(BindingSite a, BindingSite b) {
 
 	a.calculate_centroid();
 	b.calculate_centroid();
-	a_cent = a.get_centroid();
-	b_cent = b.get_centroid();
+	a.get_centroid(a_cent.data);
+	b.get_centroid(b_cent.data);
 	separation = sqrt(pow(a_cent.x - b_cent.x, 2) + pow(a_cent.y - b_cent.y, 2) + pow(a_cent.z - b_cent.z, 2));
 	//cout << "Separation = " << separation << ", Limiting distance = " << a.get_characteristic_length() + b.get_characteristic_length() << endl;
 	//cout << "Char length a = " << a.get_characteristic_length() << ", Char length b = " << b.get_characteristic_length() << endl;

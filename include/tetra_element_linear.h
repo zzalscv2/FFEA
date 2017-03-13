@@ -204,7 +204,7 @@ public:
     void add_K_alpha(scalar *K, int num_nodes);
 
     /** @brief Returns the gradient of the potential at the given (s,t,u) position in the element */
-    void get_grad_phi_at_stu(vector3 *grad_phi, scalar s, scalar t, scalar u);
+    void get_grad_phi_at_stu(vector3 &grad_phi, scalar s, scalar t, scalar u);
 
     /** @brief Calculates the force on each node of the element due to the electrostatic potential gradient there */
     void calculate_electrostatic_forces();
