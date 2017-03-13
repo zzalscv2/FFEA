@@ -39,7 +39,7 @@ parser.add_argument("script", action="store", help="Input script file (.ffea).")
 
 def plotEnergyTraces(script):
 
-    meas = FFEA_measurement.FFEA_measurement(script.params.measurement_out_fname, frame_rate = 10)
+    meas = FFEA_measurement.FFEA_measurement(script.params.measurement_out_fname)
     top = [script.load_topology(i) for i in range(script.params.num_blobs)]
     
     # We need to plot a global measurement graph, and a graph for every blob
