@@ -31,8 +31,8 @@ class checkVars {
 	
 	public:
 
-		checkVars();
-		~checkVars();
+		/* checkVars();
+		~checkVars(); */ 
 		
 		// Member variables
 		scalar e_v1[6][3];            ///< vector edge-oriented 
