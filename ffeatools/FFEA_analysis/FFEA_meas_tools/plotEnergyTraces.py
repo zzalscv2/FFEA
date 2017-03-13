@@ -90,7 +90,7 @@ def plotEnergyTraces(script):
 		print "\tTheoretical kinetic energy = %f; Simulation kinetic energy = %f; Error is %f%%" % (ykEXP[-1], yk[-1], ykerr)
 	    
 	    # Axis stuff
-	    ax.set_xlim(xmin=1)
+	  #  ax.set_xlim(xmin=1)
 
 	    ax.xaxis.set_major_formatter(FormatStrFormatter("%.0f"))
 	    ax.yaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
