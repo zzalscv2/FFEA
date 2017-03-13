@@ -28,6 +28,36 @@
 
 // const scalar VdW_solver::phi_f[4] = { 0.25, 0.25, 0.25, 0.25};
 
+const int VdW_solver::adjacent_cell_lookup_table[27][3] ={
+        {-1, -1, -1},
+        {-1, -1, 0},
+        {-1, -1, +1},
+        {-1, 0, -1},
+        {-1, 0, 0},
+        {-1, 0, +1},
+        {-1, +1, -1},
+        {-1, +1, 0},
+        {-1, +1, +1},
+        {0, -1, -1},
+        {0, -1, 0},
+        {0, -1, +1},
+        {0, 0, -1},
+        {0, 0, 0},
+        {0, 0, +1},
+        {0, +1, -1},
+        {0, +1, 0},
+        {0, +1, +1},
+        {+1, -1, -1},
+        {+1, -1, 0},
+        {+1, -1, +1},
+        {+1, 0, -1},
+        {+1, 0, 0},
+        {+1, 0, +1},
+        {+1, +1, -1},
+        {+1, +1, 0},
+        {+1, +1, +1}
+    };
+
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
     surface_face_lookup = NULL;
@@ -92,35 +122,6 @@ void VdW_solver::reset_fieldenergy() {
 
 int VdW_solver::solve() {
     // double st, time1, time2, time3;
-    const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
-        {-1, -1, -1},
-        {-1, -1, 0},
-        {-1, -1, +1},
-        {-1, 0, -1},
-        {-1, 0, 0},
-        {-1, 0, +1},
-        {-1, +1, -1},
-        {-1, +1, 0},
-        {-1, +1, +1},
-        {0, -1, -1},
-        {0, -1, 0},
-        {0, -1, +1},
-        {0, 0, -1},
-        {0, 0, 0},
-        {0, 0, +1},
-        {0, +1, -1},
-        {0, +1, 0},
-        {0, +1, +1},
-        {+1, -1, -1},
-        {+1, -1, 0},
-        {+1, -1, +1},
-        {+1, 0, -1},
-        {+1, 0, 0},
-        {+1, 0, +1},
-        {+1, +1, -1},
-        {+1, +1, 0},
-        {+1, +1, +1}
-    };
 
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
@@ -133,7 +134,7 @@ int VdW_solver::solve() {
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-#pragma omp parallel for private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
+#pragma omp parallel for default(none) private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
@@ -149,9 +150,9 @@ int VdW_solver::solve() {
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
             l_j = surface_face_lookup->get_top_of_stack(
-                    l_i->x + adjacent_cell_lookup_table[c].ix,
-                    l_i->y + adjacent_cell_lookup_table[c].iy,
-                    l_i->z + adjacent_cell_lookup_table[c].iz);
+                    l_i->x + adjacent_cell_lookup_table[c][0],
+                    l_i->y + adjacent_cell_lookup_table[c][1],
+                    l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
                 if (l_i->index != l_j->index) {
                     f_j = l_j->obj;
@@ -180,35 +181,6 @@ int VdW_solver::solve() {
     /**Alters solver to apply periodic boundary conditions*/
 int VdW_solver::solve(scalar * blob_corr) {
     // double st, time1, time2, time3;
-    const struct adjacent_cell_lookup_table_entry adjacent_cell_lookup_table[27] ={
-        {-1, -1, -1},
-        {-1, -1, 0},
-        {-1, -1, +1},
-        {-1, 0, -1},
-        {-1, 0, 0},
-        {-1, 0, +1},
-        {-1, +1, -1},
-        {-1, +1, 0},
-        {-1, +1, +1},
-        {0, -1, -1},
-        {0, -1, 0},
-        {0, -1, +1},
-        {0, 0, -1},
-        {0, 0, 0},
-        {0, 0, +1},
-        {0, +1, -1},
-        {0, +1, 0},
-        {0, +1, +1},
-        {+1, -1, -1},
-        {+1, -1, 0},
-        {+1, -1, +1},
-        {+1, 0, -1},
-        {+1, 0, 0},
-        {+1, 0, +1},
-        {+1, +1, -1},
-        {+1, +1, 0},
-        {+1, +1, +1}
-    };
 
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
@@ -219,6 +191,7 @@ int VdW_solver::solve(scalar * blob_corr) {
 
     // Zero some measurement_ stuff
     for(int i = 0; i < num_blobs; ++i) {
+      #pragma omp simd
       for(int j = 0; j < num_blobs; ++j) {
         fieldenergy[i][j] = 0.0;
       }
@@ -226,7 +199,7 @@ int VdW_solver::solve(scalar * blob_corr) {
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-#pragma omp parallel for private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
+#pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
@@ -242,9 +215,9 @@ int VdW_solver::solve(scalar * blob_corr) {
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
             l_j = surface_face_lookup->get_top_of_stack(
-                    l_i->x + adjacent_cell_lookup_table[c].ix,
-                    l_i->y + adjacent_cell_lookup_table[c].iy,
-                    l_i->z + adjacent_cell_lookup_table[c].iz);
+                    l_i->x + adjacent_cell_lookup_table[c][0],
+                    l_i->y + adjacent_cell_lookup_table[c][1],
+                    l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
                 if (l_i->index < l_j->index) {
                     f_j = l_j->obj;
@@ -396,7 +369,9 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     {
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
     for (int j = 0; j < 3; j++) {
-        vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
+        vector3 force1, force2;
+        force1.assign( 0, 0, 0 );
+        force2.assign( 0, 0, 0 );
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
@@ -557,7 +532,9 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     {
     fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
     for (int j = 0; j < 3; j++) {
-        vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
+        vector3 force1, force2;
+        force1.assign( 0, 0, 0 );
+        force2.assign( 0, 0, 0 );
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
@@ -670,7 +647,8 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
     f->add_xz_vdw_energy_to_record(energy);
 
     for (int j = 0; j < 3; j++) {
-        vector3 force = {0, 0, 0};
+        vector3 force;
+        force.assign( 0, 0, 0 );
         for (int k = 0; k < num_tri_gauss_quad_points; k++) {
             for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];

@@ -38,6 +38,8 @@ template <class t_scalar> bool sameSign(t_scalar a, t_scalar b);
  *    return the index missing in the list [0,1,2,3] 
  */
 int getMissingNode(int n0, int n1, int n2);
+void getRestOfNodes(int iN, int &iO0, int &iO1, int &iO2);
+void getMissingPair(int in0, int in1, int &on0, int &on1); 
 
 ///////////////// SECTION 1 ////////////////////
 ////  Basic operations for arr3, i. e., scalar v[3]// 
@@ -117,11 +119,13 @@ template <class t_scalar, class brr3> void getUnitNormal(brr3 &u, brr3 &v, brr3 
 /** calculate the unit normal vector n to the plane defined by the three points */
 template <class t_scalar, class brr3> void getNormal(brr3 &v1, brr3 &v2, brr3 &v3, brr3 &n);
 
-/* Given the face formed by tetA[0]:tetA[1]:tetA[2] 
+/** Given the face formed by tetA[0]:tetA[1]:tetA[2] 
+ *  [ or the face formed by f0, f1, and f2,
+ *    and knowing the remaining p3 for a tetrahedron ]
  * get n, the normal to a face pointing inwards.
  */
-// void getNormalInwards(arr3 (&tetA)[4], int n0, int n1, int n2, arr3 &n);
 template <class t_scalar, class brr3> void getNormalInwards(brr3 (&tetA)[4], int n0, int n1, int n2, brr3 (&n));
+template <class t_scalar, class brr3> void getNormalInwards(brr3 &f0, brr3 &f1, brr3 &f2, brr3 &p3, brr3 (&n));
 
 /** check if points vec and test are at the same side
  *  of the plane formed by p1, p2 and p3 
@@ -140,8 +144,8 @@ template <class t_scalar, class brr3> bool sameSideLine(brr3 &e, brr3 &p1, brr3 
 /**  more specifically, it will be there if 
  *     for each plane of the tetrahedron, 
  *     the point is on the same side as the remaining vertex */
-// bool nodeInTet(arr3 &vec, arr3 (tet)[4]);
 template <class t_scalar, class brr3> bool nodeInTet(brr3 &vec, brr3 (tet)[4]);
+template <class t_scalar, class brr3> bool nodeInTet(brr3 &vec, brr3 &tet0, brr3 &tet1, brr3 &tet2, brr3 &tet3);
 
 /** Find the intersection point of the line that passes through the points e1 and e2, 
  *   and the plane defined by points p1, p2 and p3.
@@ -183,6 +187,7 @@ template <class t_scalar, class brr3> bool isPointInFace(brr3 &ip, brr3 &p1, brr
  */
 // bool intersectionPoint(arr3 &(ip), arr3 (&e1), arr3 (&e2), arr3 (&tet)[4], int f1, int f2, int f3);
 template <class t_scalar, class brr3> bool intersectionPoint(brr3 &(ip), brr3 (&e1), brr3 (&e2), brr3 (&tet)[4], int f1, int f2, int f3);
+template <class t_scalar, class brr3> bool intersectionPoint(brr3 &ip, brr3 &e1, brr3 &e2, brr3 &f1, brr3 &f2, brr3 &f3);
 
 /** Return the center of coordinates for three points p1, p2, p3 in c */
 // void faceCentroid(arr3 &p1, arr3 &p2, arr3 &p3, arr3 &c);

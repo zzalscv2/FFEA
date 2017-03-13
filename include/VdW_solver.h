@@ -81,6 +81,8 @@ protected:
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
     scalar steric_dr; ///< Constant to calculate the numerical derivative.
     // static const scalar phi_f[4]; ///< shape function for the center of the "element"
+    static const int adjacent_cell_lookup_table[27][3];
+
 
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
 

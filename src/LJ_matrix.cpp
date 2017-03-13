@@ -45,7 +45,7 @@ int LJ_matrix::init_steric() {
 
     num_vdw_face_types = 1;
     // Allocate the memory for that LJ pair
-    params = new LJ_pair[num_vdw_face_types * num_vdw_face_types];
+    params = new(std::nothrow) LJ_pair[num_vdw_face_types * num_vdw_face_types];
     if (params == NULL) {
         FFEA_ERROR_MESSG("Unable to allocate memory for LJ matrix.\n")
     }
@@ -83,7 +83,7 @@ int LJ_matrix::init_lj(string vdw_params_fname) {
     printf("\t\tNumber of vdw face types = %d\n", num_vdw_face_types);
 
     // Allocate the memory for all these LJ pairs
-    params = new LJ_pair[num_vdw_face_types * num_vdw_face_types];
+    params = new(std::nothrow) LJ_pair[num_vdw_face_types * num_vdw_face_types];
     if (params == NULL) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for LJ matrix.\n")

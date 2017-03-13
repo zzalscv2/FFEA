@@ -40,7 +40,8 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
     /* Robin suspects that this was leading to unstabilities...
      *  but this steric solver is more stable than the LJ one. */
     // Check that faces are in front of each other
-    vector3 sep = {f2->centroid.x - f1->centroid.x, f2->centroid.y - f1->centroid.y, f2->centroid.z - f1->centroid.z};
+    vector3 sep;
+    sep.assign( f2->centroid.x - f1->centroid.x, f2->centroid.y - f1->centroid.y, f2->centroid.z - f1->centroid.z );
     if(dot(&sep, &f1->normal) < 0 && dot(&sep, &f2->normal) > 0) {
         return;
     }
@@ -197,7 +198,9 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
        {
 	    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
        for (int j = 0; j < 3; j++) {
-          vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
+          vector3 force1, force2;
+          force1.assign( 0, 0, 0 );
+          force2.assign( 0, 0, 0 );
           for (int k = 0; k < num_tri_gauss_quad_points; k++) {
              for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
@@ -247,7 +250,8 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
     /* Robin suspects that this was leading to unstabilities...
      *  but this steric solver is more stable than the LJ one. */
     // Check that faces are in front of each other (with periodicity modification)
-    vector3 sep = {f2->centroid.x - f1->centroid.x-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3],f2->centroid.y - f1->centroid.y-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3+1],f2->centroid.z - f1->centroid.z-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3+2]};
+    vector3 sep;
+    sep.assign ( f2->centroid.x - f1->centroid.x-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3],f2->centroid.y - f1->centroid.y-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3+1],f2->centroid.z - f1->centroid.z-blob_corr[f1_daddy_blob_index*(num_blobs)*3 + f2_daddy_blob_index*3+2] );
     if(dot(&sep, &f1->normal) < 0 && dot(&sep, &f2->normal) > 0) {
         return;
     }
@@ -406,7 +410,9 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
        {
 	    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
        for (int j = 0; j < 3; j++) {
-          vector3 force1 = {0, 0, 0}, force2 = {0, 0, 0};
+          vector3 force1, force2;
+          force1.assign( 0, 0, 0 );
+          force2.assign( 0, 0, 0 );
           for (int k = 0; k < num_tri_gauss_quad_points; k++) {
              for (int l = 0; l < num_tri_gauss_quad_points; l++) {
                 scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];

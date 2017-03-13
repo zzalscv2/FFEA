@@ -54,3 +54,31 @@ void print_mania(string s) {
 		cout << s << endl;
 	}
 }
+
+void print_preprocessor_flags() {
+   
+   cout << " FFEA was compiled using: "
+   #ifdef USE_OPENMP
+        << "-DUSE_OPENMP " 
+   #endif
+   #ifdef FFEA_PARALLEL_WITHIN_BLOB
+        << "-DFFEA_PARALLEL_WITHIN_BLOB "
+   #endif
+   #ifdef FFEA_PARALLEL_PER_BLOB
+        << "-DFFEA_PARALLEL_PER_BLOB "
+   #endif
+   #ifdef FFEA_PARALLEL_FUTURE
+        << "-DFFEA_PARALLEL_FUTURE "
+   #endif
+   #ifdef USE_DOUBLE_PLUS
+        << "-DUSE_DOUBLE_PLUS "
+   #endif 
+   #ifdef USE_DOUBLE
+        << "-DUSE_DOUBLE "
+   #endif 
+   #ifdef USE_DOUBLE_LESS
+        << "-DUSE_DOUBLE_LESS "
+   #endif
+   << endl; 
+   
+}

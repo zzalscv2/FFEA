@@ -306,16 +306,16 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
         // Create the chosen linear equation Solver for this Blob
         if (linear_solver == FFEA_DIRECT_SOLVER) {
-            solver = new SparseSubstitutionSolver();
+            solver = new(std::nothrow) SparseSubstitutionSolver();
             mass_in_blob = true;
         } else if (linear_solver == FFEA_ITERATIVE_SOLVER) {
-            solver = new ConjugateGradientSolver();
+            solver = new(std::nothrow) ConjugateGradientSolver();
             mass_in_blob = true;
         } else if (linear_solver == FFEA_MASSLUMPED_SOLVER) {
-            solver = new MassLumpedSolver();
+            solver = new(std::nothrow) MassLumpedSolver();
             mass_in_blob = true;
         } else if (linear_solver == FFEA_NOMASS_CG_SOLVER) {
-            solver = new NoMassCGSolver();
+            solver = new(std::nothrow) NoMassCGSolver();
         } else {
             FFEA_ERROR_MESSG("Error in Blob initialisation: linear_solver=%d is not a valid solver choice\n", linear_solver);
         }
@@ -330,7 +330,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
 
 
     // Allocate the force vector array for the whole Blob
-    force = new vector3[num_nodes];
+    force = new(std::nothrow) vector3[num_nodes];
     if (force == NULL) FFEA_ERROR_MESSG("Could not store the force vector array\n");
     for (int i = 0; i < num_nodes; i++) {
         force[i].x = 0;
@@ -339,7 +339,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     }
 
     // Calculate how many faces each surface node is a part of
-    num_contributing_faces = new int[num_surface_nodes];
+    num_contributing_faces = new(std::nothrow) int[num_surface_nodes];
     if (num_contributing_faces == NULL) FFEA_ERROR_MESSG("Failed to allocate num_contributing_faces\n");
     for (int i = 0; i < num_surface_nodes; i++) {
         num_contributing_faces[i] = 0;
@@ -416,7 +416,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         }
 
         // Create the vector containing all values of the potential at each interior node
-        phi_Omega = new scalar[num_interior_nodes];
+        phi_Omega = new(std::nothrow) scalar[num_interior_nodes];
 
         if (phi_Omega == NULL) {
             FFEA_ERROR_MESSG("Could not allocate memory (for phi_Omega array).\n");
@@ -427,7 +427,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         }
 
         // Create the vector containing all values of the potential on each surface node
-        phi_Gamma = new scalar[num_surface_nodes];
+        phi_Gamma = new(std::nothrow) scalar[num_surface_nodes];
 
         if (phi_Gamma == NULL) {
             FFEA_ERROR_MESSG("Could not allocate memory (for phi_Gamma array).\n");
@@ -481,7 +481,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
          */
 
         // Create the vector containing the charge distribution across the elements
-        q = new scalar[num_nodes];
+        q = new(std::nothrow) scalar[num_nodes];
 
         if (q == NULL) {
             FFEA_ERROR_MESSG("Could not allocate memory (for q array).\n");
@@ -508,7 +508,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         //		}
 
         // Create the Right Hand Side vector for the Poisson solver
-        poisson_rhs = new scalar[num_interior_nodes];
+        poisson_rhs = new(std::nothrow) scalar[num_interior_nodes];
 
         if (poisson_rhs == NULL) {
             FFEA_ERROR_MESSG("Could not allocate memory (for poisson_rhs array).\n");
@@ -989,24 +989,16 @@ void Blob::linearise_force() {
         for (int j=0; j<NUM_NODES_QUADRATIC_TET; j++) {
             nIdx[j] = elem[i].n[j]->index;
         }
-        force[nIdx[0]].x += 0.5 * ( force[nIdx[4]].x + force[nIdx[5]].x + force[nIdx[6]].x);
-        force[nIdx[1]].x += 0.5 * ( force[nIdx[4]].x + force[nIdx[7]].x + force[nIdx[8]].x);
-        force[nIdx[2]].x += 0.5 * ( force[nIdx[5]].x + force[nIdx[7]].x + force[nIdx[9]].x);
-        force[nIdx[3]].x += 0.5 * ( force[nIdx[6]].x + force[nIdx[8]].x + force[nIdx[9]].x);
-
-        force[nIdx[0]].y += 0.5 * ( force[nIdx[4]].y + force[nIdx[5]].y + force[nIdx[6]].y);
-        force[nIdx[1]].y += 0.5 * ( force[nIdx[4]].y + force[nIdx[7]].y + force[nIdx[8]].y);
-        force[nIdx[2]].y += 0.5 * ( force[nIdx[5]].y + force[nIdx[7]].y + force[nIdx[9]].y);
-        force[nIdx[3]].y += 0.5 * ( force[nIdx[6]].y + force[nIdx[8]].y + force[nIdx[9]].y);
-
-        force[nIdx[0]].z += 0.5 * ( force[nIdx[4]].z + force[nIdx[5]].z + force[nIdx[6]].z);
-        force[nIdx[1]].z += 0.5 * ( force[nIdx[4]].z + force[nIdx[7]].z + force[nIdx[8]].z);
-        force[nIdx[2]].z += 0.5 * ( force[nIdx[5]].z + force[nIdx[7]].z + force[nIdx[9]].z);
-        force[nIdx[3]].z += 0.5 * ( force[nIdx[6]].z + force[nIdx[8]].z + force[nIdx[9]].z);
+        for (int j=0; j<3; j++){
+           force[nIdx[0]][j] += 0.5 * ( force[nIdx[4]][j] + force[nIdx[5]][j] + force[nIdx[6]][j]);
+           force[nIdx[1]][j] += 0.5 * ( force[nIdx[4]][j] + force[nIdx[7]][j] + force[nIdx[8]][j]);
+           force[nIdx[2]][j] += 0.5 * ( force[nIdx[5]][j] + force[nIdx[7]][j] + force[nIdx[9]][j]);
+           force[nIdx[3]][j] += 0.5 * ( force[nIdx[6]][j] + force[nIdx[8]][j] + force[nIdx[9]][j]);
+        } 
         for (int j=4; j<NUM_NODES_QUADRATIC_TET; j++) {
-            force[nIdx[j]].x   = 0.;
-            force[nIdx[j]].y   = 0.;
-            force[nIdx[j]].z   = 0.;
+            force[nIdx[j]][0]   = 0.;
+            force[nIdx[j]][1]   = 0.;
+            force[nIdx[j]][2]   = 0.;
         }
     }
 }
@@ -1302,9 +1294,9 @@ void Blob::make_measurements() {
     senergy = 0.0;
 
     // OpenMP can't reduce members of classes :(
-    //vector3_set_zero(&L);
-    //vector3_set_zero(&CoG);
-    vector3_set_zero(&CoM);
+    //vector3_set_zero(L);
+    //vector3_set_zero(CoG);
+    vector3_set_zero(CoM);
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp parallel for default(none) reduction(+:kenergy, senergy) private(n, vec, temp1, temp2, temp3)
@@ -1484,7 +1476,7 @@ void Blob::calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_
       vector3 total_vdw_bb_force;
       scalar total_vdw_bb_energy = 0.0;
       scalar total_vdw_bb_area = 0.0;
-      vector3_set_zero(&total_vdw_bb_force);
+      vector3_set_zero(total_vdw_bb_force);
       for (int i = 0; i < num_surface_faces; ++i) {
           if (surface[i].vdw_bb_interaction_flag[other_blob_index] == true) {
               total_vdw_bb_force.x += surface[i].vdw_bb_force[other_blob_index].x;
@@ -1550,9 +1542,12 @@ int Blob::get_linear_solver() {
 
 /*
  *
+arr3 Blob::get_CoG() {
+    return CoG.data;
+}
  */
-vector3 Blob::get_CoG() {
-    return CoG;
+void Blob::get_CoG(arr3 &cog){
+    arr3Store<scalar,arr3>(CoG.data, cog); 
 }
 
 /*
@@ -1582,12 +1577,9 @@ tetra_element_linear *Blob::get_element(int i) {
  *
  * @ingroup FMM
  **/
-vector3 Blob::get_bead_position(int i) {
-    vector3 v;
-    v.x = bead_position[3*i];
-    v.y = bead_position[3*i+1];
-    v.z = bead_position[3*i+2];
-    return v;
+void Blob::get_bead_position(int i, arr3 &v) {
+
+    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v); 
 }
 
 /**
@@ -2033,7 +2025,7 @@ int Blob::apply_ctforces() {
             intersectingPointToLine<scalar,arr3>(node[ctf_r_nodes[i]].pos,// point out of the line
                                                  arr3_view<scalar,arr3>(ctf_r_axis+6*i, 3), //  point
                                                  arr3_view<scalar,arr3>(ctf_r_axis+(6*i+3), 3), r); // vector, axis
-            arr3Vec3SubsToArr3(r, node[ctf_r_nodes[i]].pos, r);
+            arr3arr3Substract<scalar,arr3>(r, node[ctf_r_nodes[i]].pos.data, r);
         } /* else if (ctf_l_type[2*i] == 'n') {
         // not working yet!
         that should read:
@@ -2093,14 +2085,16 @@ void Blob::zero_force() {
 
 void Blob::set_forces_to_zero() {
     for (int i = 0; i < num_nodes; ++i) {
-        force[i].x = 0;
-        force[i].y = 0;
-        force[i].z = 0;
+        force[i][0] = 0;
+        force[i][1] = 0;
+        force[i][2] = 0;
     }
 }
 
-vector3 Blob::get_node(int index) {
-    return node[index].pos;
+void Blob::get_node(int index, arr3 &v) {
+    
+    arr3Store<scalar,arr3>(node[index].pos.data, v); 
+    
 }
 
 void Blob::add_force_to_node(vector3 f, int index) {
@@ -2359,8 +2353,8 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
     printf("\t\t\tNumber of interior nodes = %d\n", num_interior_nodes);
 
     // Allocate the memory for all these nodes
-    node = new mesh_node[num_nodes];
-    node_position = new vector3*[num_nodes];
+    node = new(std::nothrow) mesh_node[num_nodes];
+    node_position = new(std::nothrow) vector3*[num_nodes];
 
     if (node == NULL || node_position == NULL) {
         fclose(in);
@@ -2460,7 +2454,7 @@ int Blob::load_topology(const char *topology_filename) {
     printf("\t\t\tNumber of interior elements = %d\n", num_interior_elements);
 
     // Allocate the memory for all these elements
-    elem = new tetra_element_linear[num_elements];
+    elem = new(std::nothrow) tetra_element_linear[num_elements];
     if (elem == NULL) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for element array.\n")
@@ -2572,7 +2566,7 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
     printf("\t\t\tNumber of faces = %d\n", num_surface_faces);
 
     // Allocate the memory for all these faces
-    surface = new Face[num_surface_faces];
+    surface = new(std::nothrow) Face[num_surface_faces];
     if (surface == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
 
     // Check for "faces:" line
@@ -2671,7 +2665,7 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
     printf("\t\t\tNumber of faces = %d\n", num_surface_faces);
 
     // Allocate the memory for all these faces
-    surface = new Face[num_surface_faces];
+    surface = new(std::nothrow) Face[num_surface_faces];
     if (surface == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
 
     // Check for "faces:" line
@@ -2957,7 +2951,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
 
     // 2 - store the data efficiently:
     // 2.1 - positions:
-    bead_position = new scalar[positions.size()];
+    bead_position = new(std::nothrow) scalar[positions.size()];
     if (bead_position == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for bead positions\n")
         for (unsigned int i=0; i<positions.size(); i++) {
             bead_position[i] = positions[i];
@@ -2965,7 +2959,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
 
     // 2.2 - bead types are integers starting from zero:
     vector<string>::iterator it;
-    bead_type = new int[stypes.size()];
+    bead_type = new(std::nothrow) int[stypes.size()];
     if (bead_type == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for bead types\n")
         int index;
     for (unsigned int i=0; i<stypes.size(); i++) {
@@ -3112,8 +3106,8 @@ int Blob::load_ctforces(string ctforces_fname) {
     if (num_l_ctf > 0) cout << num_l_ctf << " linear forces were loaded for blob " << blob_index << ":" << conformation_index << endl;
 
     // 2.3 - And finally store the stuff properly:
-    ctf_l_nodes = new int[num_l_ctf];       // allocate nodes
-    ctf_l_forces = new scalar[3*num_l_ctf]; // allocate forces
+    ctf_l_nodes = new(std::nothrow) int[num_l_ctf];       // allocate nodes
+    ctf_l_forces = new(std::nothrow) scalar[3*num_l_ctf]; // allocate forces
     if (ctf_l_nodes == NULL || ctf_l_forces == NULL) FFEA_ERROR_MESSG("Failed to allocate ctf_l relevant arrays\n");
     arr3 ctf_d; // direction of the force
     int cnt = 0;
@@ -3192,10 +3186,10 @@ int Blob::load_ctforces(string ctforces_fname) {
 
     // 3.3 - And finally store the stuff properly:
     arr3 ctf_p; // temporary point in the axis.
-    ctf_r_nodes = new int[num_r_ctf];       // allocate nodes
-    ctf_r_forces = new scalar[num_r_ctf]; // allocate forces
-    ctf_r_axis = new scalar[6*num_r_ctf]; // allocate axis
-    ctf_r_type = new char[2*num_r_ctf]; // allocate type of rotational force
+    ctf_r_nodes = new(std::nothrow) int[num_r_ctf];       // allocate nodes
+    ctf_r_forces = new(std::nothrow) scalar[num_r_ctf]; // allocate forces
+    ctf_r_axis = new(std::nothrow) scalar[6*num_r_ctf]; // allocate axis
+    ctf_r_type = new(std::nothrow) char[2*num_r_ctf]; // allocate type of rotational force
     if (ctf_r_nodes == NULL || ctf_r_forces == NULL || ctf_r_axis == NULL || ctf_r_type == NULL) FFEA_ERROR_MESSG("Failed to allocate ctf_r relevant arrays\n");
     const scalar mdfm1 = 1./mesoDimensions::force;
     const scalar mdlm1 = 1./mesoDimensions::length;
@@ -3300,10 +3294,10 @@ int Blob::load_ctforces(string ctforces_fname) {
     // 4.3 - And finally store the stuff properly:
     //     - If a face were appearing different lines, force will be applied "serially",
     //            and not summed up. They may be part of different "surfaces".
-    ctf_sl_faces = new int[num_sltotal_ctf];       // allocate faces
+    ctf_sl_faces = new(std::nothrow) int[num_sltotal_ctf];       // allocate faces
     num_slsets_ctf = my_lines.size();
-    ctf_sl_surfsize = new int[num_slsets_ctf];
-    ctf_sl_forces = new scalar[3*num_slsets_ctf]; // allocate forces
+    ctf_sl_surfsize = new(std::nothrow) int[num_slsets_ctf];
+    ctf_sl_forces = new(std::nothrow) scalar[3*num_slsets_ctf]; // allocate forces
     if (ctf_sl_faces == NULL || ctf_sl_surfsize == NULL || ctf_sl_forces == NULL) FFEA_ERROR_MESSG("Failed to allocate ctf_sl relevant arrays\n");
     ctf_d; // direction of the force
     cnt = 0;
@@ -3526,7 +3520,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
     }
 
     // Create binding sites
-    binding_site = new BindingSite[num_binding_sites];
+    binding_site = new(std::nothrow) BindingSite[num_binding_sites];
     if (binding_site == NULL) FFEA_ERROR_MESSG("Failed to allocate array of binding sites\n");
 
     // Check for "binding sites:" line
@@ -3671,6 +3665,7 @@ void Blob::calc_rest_state_info() {
     matrix3 J;
     scalar min_vol = INFINITY, temp;
     scalar longest_edge = 0;
+    scalar longest_surface_edge = 0;
     int min_vol_elem = 0;
     mass = 0;
     scalar total_vol = 0;
@@ -3700,6 +3695,12 @@ void Blob::calc_rest_state_info() {
         // Calc the mass of the element
         elem[i].mass = elem[i].vol_0 * elem[i].rho;
     }
+
+    for (int i=0; i<num_surface_faces; i++) {
+        scalar longest_surface_edge_i = surface[i].length_of_longest_edge();
+        if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i; 
+    }
+
     if (blob_state == FFEA_BLOB_IS_STATIC) {
         printf("\t\tBlob is static, so volume not defined within simulation.\n");
         printf("\t\tDefining Total rest volume of Blob to be 0 cubic Angstroms.\n");
@@ -3709,6 +3710,7 @@ void Blob::calc_rest_state_info() {
         printf("\t\tTotal rest volume of Blob is %e cubic Angstroms.\n", total_vol * mesoDimensions::volume* 1e30);
         printf("\t\tSmallest element (%i) has volume %e cubic Angstroms.\n", min_vol_elem, min_vol * mesoDimensions::volume * 1e30);
         printf("\t\tLongest edge has length %e Angstroms.\n", longest_edge * mesoDimensions::length * 1e10);
+        printf("\t\tLongest surface edge has length %e Angstroms.\n", longest_surface_edge * mesoDimensions::length * 1e10);
     }
 
     // Calc the total mass of this Blob
@@ -3729,9 +3731,9 @@ int Blob::aggregate_forces_and_solve() {
 #endif
     for (n = 0; n < num_nodes; n++) {
         for (m = 0; m < node[n].num_element_contributors; m++) {
-            force[n].x += node[n].force_contributions[m]->x;
-            force[n].y += node[n].force_contributions[m]->y;
-            force[n].z += node[n].force_contributions[m]->z;
+            force[n][0] += node[n].force_contributions[m]->x;
+            force[n][1] += node[n].force_contributions[m]->y;
+            force[n][2] += node[n].force_contributions[m]->z;
         }
     }
 
@@ -3841,13 +3843,13 @@ void Blob::euler_integrate() {
         #pragma omp parallel for default(none) private(i) schedule(static)
 #endif
         for (i = 0; i < num_nodes; i++) {
-            node[i].vel.x = force[i].x;
-            node[i].vel.y = force[i].y;
-            node[i].vel.z = force[i].z;
-
-            node[i].pos.x += node[i].vel.x * params->dt;
-            node[i].pos.y += node[i].vel.y * params->dt;
-            node[i].pos.z += node[i].vel.z * params->dt;
+            node[i].vel[0] = force[i][0];
+            node[i].vel[1] = force[i][1];
+            node[i].vel[2] = force[i][2];
+        
+            node[i].pos[0] += force[i][0] * params->dt; // really meaning v * dt
+            node[i].pos[1] += force[i][1] * params->dt;
+            node[i].pos[2] += force[i][2] * params->dt;
         }
 
     } else {
@@ -3855,13 +3857,13 @@ void Blob::euler_integrate() {
         #pragma omp parallel for default(none) private(i) schedule(static)
 #endif
         for (i = 0; i < num_nodes; i++) {
-            node[i].vel.x += force[i].x * params->dt;
-            node[i].vel.y += force[i].y * params->dt;
-            node[i].vel.z += force[i].z * params->dt;
+            node[i].vel[0] += force[i][0] * params->dt;
+            node[i].vel[1] += force[i][1] * params->dt;
+            node[i].vel[2] += force[i][2] * params->dt;
 
-            node[i].pos.x += node[i].vel.x * params->dt;
-            node[i].pos.y += node[i].vel.y * params->dt;
-            node[i].pos.z += node[i].vel.z * params->dt;
+            node[i].pos[0] += node[i].vel[0] * params->dt;
+            node[i].pos[1] += node[i].vel[1] * params->dt;
+            node[i].pos[2] += node[i].vel[2] * params->dt;
         }
     }
 }
@@ -3884,14 +3886,14 @@ int Blob::calculate_node_element_connectivity() {
 
     // allocate the contributions array for each node to the length given by num_element_contributors
     for (i = 0; i < num_nodes; i++) {
-        node[i].force_contributions = new vector3 *[node[i].num_element_contributors];
+        node[i].force_contributions = new(std::nothrow) vector3 *[node[i].num_element_contributors];
         if (node[i].force_contributions == NULL) {
             FFEA_ERROR_MESSG("Failed to allocate memory for 'force_contributions' array (on node %d)\n", i);
         }
     }
 
     // create an array of counters keeping track of how full each contributions array is on each node
-    node_counter = new int[num_nodes];
+    node_counter = new(std::nothrow) int[num_nodes];
     if (node_counter == NULL) {
         FFEA_ERROR_MESSG("Failed to allocate node_counter array.\n");
     }
@@ -3938,7 +3940,7 @@ int Blob::create_pinned_nodes(set<int> list) {
     set<int>::iterator it;
     delete[] pinned_nodes_list;
 
-    pinned_nodes_list = new int[list.size()];
+    pinned_nodes_list = new(std::nothrow) int[list.size()];
     if (pinned_nodes_list == NULL) FFEA_ERROR_MESSG("Could not allocate memory for pinned_nodes_list\n");
     i = 0;
     for(it = list.begin(); it != list.end(); ++it) {
@@ -3994,7 +3996,7 @@ int Blob::build_mass_matrix() {
     SparsityPattern sparsity_pattern_mass_matrix;
     sparsity_pattern_mass_matrix.init(num_nodes);
 
-    MassMatrixQuadratic *M_alpha = new MassMatrixQuadratic[num_elements];
+    MassMatrixQuadratic *M_alpha = new(std::nothrow) MassMatrixQuadratic[num_elements];
     if (M_alpha == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for the mass matrix\n");
 
     scalar *mem_loc;

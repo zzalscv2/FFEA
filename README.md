@@ -10,25 +10,19 @@ Features  {#features}
 ========
 
  * Protein Interactions:
-  * A 6-12 [Lennard-Jones Potential](\ref ljPotential)
+  * A 6-12 Lennard-Jones Potential.
   * A repulsive potential that is proportional 
-        to the [volume overlap](\ref sPotential).
+        to the overlapping volume.
   * Specific interactions defined using precomputed potentials.
         More documentation can be found [here](\ref fmApproach).
   * Coulombic interactions [EXPERIMENTAL].
- * [Kinetic state changes](\ref kineticApproach) can be simulated together with the continuum model to
+ * Kinetic state changes can be simulated together with the continuum model to
     account for conformational changes and binding events.
  * Conversion tools for EM density data and atomistic structures into FFEA simulations.
  * A plugin for PyMOL, allowing the visualisation of FFEA systems and trajectories.
  * Analysis tools (equilibration, Euler characteristic, principal component analysis, geometric measurements) available on the command line and under a Python API.
  * Extensive test suite including checks of FFEA's simulation output against analytical results.
 
-
-
-Videos
-======
-
-[video will go here]
 
 
 Publications  {#publications}
@@ -51,9 +45,9 @@ Technology  {#technology}
    * [Boost](http://www.boost.org) (>=1.54.0) is used 
      for ease of programming 
      at the initialisation phase. Modules "system", "filesystem" and 
-     "program-options" are required.
+     "program-options" are required. A bundle of version 1.63 is shipped with FFEA.
    * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1).   
-     FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
+     FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. CMake will download and use Eigen 3.3.2 if not told otherwise.
    * [RngStreams](http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/)<sup>[1](#RngStreams1)</sup><sup>,[2](#RngStreams2)</sup>
         is shipped with FFEA and used as Random Number Generator (RNG). RngStreams 
         allows the FFEA to **safely** generate random numbers when running 
@@ -61,15 +55,13 @@ Technology  {#technology}
         of the RNGs in the last saved time step.
    * [Tet_a_tet](https://github.com/erich666/jgt-code/blob/master/Volume_07/Number_2/Ganovelli2002/tet_a_tet.h)<sup>[3](#tetatetpaper)</sup>
         is shipped with FFEA and used to detect element overlapping 
-        in the [steric](\ref sPotential) module. 
-   * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL] is used to generate the documentation. 
+        in the steric repulsion module. 
+   * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL] 
+        is used to generate the documentation. 
    * [PyMOL](https://www.pymol.org) (>=1.8) [OPTIONAL] can 
         be used, using the plugin we provide,
         to visualise FFEA systems and trajectories
-        as well as molecular and EM systems. Alternatives 
-        to visualise and work with molecular systems 
-        include [Chimera](https://www.cgl.ucsf.edu/chimera/)
-        and [VMD](http://www.ks.uiuc.edu/Research/vmd/).
+        as well as molecular and EM systems.
    * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) (0.4) is shipped 
         with FFEA and used in the PyMOL plugin, allowing safe threading. 
    * [GTS](http://gts.sourceforge.net) (>=0.7.6)[OPTIONAL]. The
@@ -111,11 +103,12 @@ FFEA Team  {#FFEAteam}
    * Robin Richardson
    * [Rob Welch](http://robwel.ch/)
 
+
 ### Theory: ###
    * [Oliver Harlen](https://www.maths.leeds.ac.uk/index.php?id=263&uid=1025)
    * [Sarah Harris](http://www.comp-bio.physics.leeds.ac.uk/)
-   * Robin Oliver
    * [Daniel Read](http://www1.maths.leeds.ac.uk/~djread/)
+   * Robin Oliver
    * Robin Richardson
    * Ben Hanson
    * Albert Solernou
@@ -139,16 +132,6 @@ We want to thank everybody who has helped in making FFEA possible, from
    * Guanhao Lu
    * Jonathan Boyle
    * Mike Croucher
+   * Christopher Woods
 
 
-
-How to read this manual
-=======================
-
-Because the software is split between the FFEA runner (written in C++) 
-  and the rest of FFEA tools (written mostly Python, with some C++ and C), 
-  this manual is split also in these two sections: 
-   [FFEA runner](\ref userManual) and [ffeatools](../../ffeamodules/html/index.html)
-  to be used as reference pages.
-However, the new user may want start reading the [tutorial](\ref Tutorial),
-  and consult the reference pages later.

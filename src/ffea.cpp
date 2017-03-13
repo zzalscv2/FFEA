@@ -60,13 +60,7 @@ int main(int argc, char *argv[])
 	cout << "  Coding:\tAlbert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk),\n" << endl;
 	cout << "  Theory:\tOliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou\n" << endl;
 
-	#ifdef FFEA_PARALLEL_WITHIN_BLOB
-		cout << "Parallelisation switch: FFEA_PARALLEL_WITHIN_BLOB\n" << endl;
-	#endif
-
-	#ifdef FFEA_PARALLEL_PER_BLOB
-		 cout << "Parallelisation switch: FFEA_PARALLEL_PER_BLOB\n" << endl;
-	#endif
+   print_preprocessor_flags();
 	
 	// Get some arguments using boost
 	b_po::options_description desc("Allowed options");
@@ -193,8 +187,8 @@ int main(int argc, char *argv[])
 		// Some form of network model
 		if(mode == 1) {
 
-			/* Elastic Network Model */
-			cout << "\n\n\n***************************************************\n\tFFEA - Elastic Network Model\n***************************************************\n\n";
+			/* Linear Elastic Model */
+			cout << "\n\n\n***************************************************\n\tFFEA - Linear Elastic Model\n***************************************************\n\n";
 		} else if (mode == 2) {
 
 			/* Dynamic Mode Model */
@@ -284,12 +278,12 @@ int main(int argc, char *argv[])
 
 		if(mode == 1) {
 
-			/* Elastic Network Model */
-			cout << endl << endl << "\tBeginning the calculation of the ENMs..." << endl;
-			if(world->enm(blobs, num_modes) == FFEA_ERROR) {
+			/* Linear Elastic Model */
+			cout << endl << endl << "\tBeginning the calculation of the LEMs..." << endl;
+			if(world->lem(blobs, num_modes) == FFEA_ERROR) {
 				cout << endl;
 				FFEA_error_text();
-				cout << "Problem when calculating elastic network models." << endl;
+				cout << "Problem when calculating linear elastic models." << endl;
 				myreturn = FFEA_ERROR;
 
 			} else {

@@ -34,11 +34,7 @@
  */
 void mat12_apply(matrix12 A, vector12 v);
 
-void vec3_mat3_mult(vector3 *v, matrix3 &A, vector3 *notV);
-
-void vec3_vec3_subs(vector3 *u, vector3 *v, vector3 *w);
-
-void vec3_vec3_cross(vector3 *u, vector3 *v, vector3 *w);
+void vec3_mat3_mult(vector3 &v, matrix3 &A, vector3 &notV);
 
 void mat3_mult(matrix3 A, matrix3 B, matrix3 result);
 
@@ -67,14 +63,11 @@ void mat3_set_identity(matrix3 A);
 
 void mat4_set_zero(matrix4 A);
 
-void vector3_set_zero(vector3 *v);
+void vector3_set_zero(vector3 &v);
 
 void vec3_add_to_scaled(vector3 *v1, vector3 *v2, scalar a, int vec_size);
 
 void vec3_scale_and_add(vector3 *v1, vector3 *v2, scalar a, int vec_size);
-
-void vec3_scale(vector3 *v, scalar scale);
-void vec3_scale2(vector3 *v1, vector3 *v2, scalar scale); ///< v2 = v1 * scale
 
 void vec12_set_zero(vector12 v);
 
@@ -90,10 +83,6 @@ void print_matrix12(matrix12 m);
 /** Prints out the given 12-vector */
 void print_vector12(vector12 v);
 
-void print_vector3(vector3 *v);
-
-scalar mag(vector3 *v);
-
-vector3 normalise(vector3 *v);
+void print_vector3(vector3 &v);
 
 #endif

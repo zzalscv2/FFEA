@@ -63,8 +63,8 @@ int LinkedListCube<T>::alloc(int N_x, int N_y, int N_z, int max_num_nodes_in_poo
     this->N_z = N_z;
     this->max_num_nodes_in_pool = max_num_nodes_in_pool;
     num_nodes_in_pool = 0;
-    root = new LinkedListNode<T> * [N_x * N_y * N_z];
-    pool = new LinkedListNode<T>[max_num_nodes_in_pool];
+    root = new(std::nothrow) LinkedListNode<T> * [N_x * N_y * N_z];
+    pool = new(std::nothrow) LinkedListNode<T>[max_num_nodes_in_pool];
 
     if (root == NULL || pool == NULL) {
         FFEA_ERROR_MESSG("Could not allocate memory (for root and pool arrays) in LinkedListCube\n");
@@ -87,10 +87,10 @@ int LinkedListCube<T>::alloc_dual(int N_x, int N_y, int N_z, int max_num_nodes_i
     this->N_z = N_z;
     this->max_num_nodes_in_pool = max_num_nodes_in_pool;
     num_nodes_in_pool = 0;
-    root1 = new LinkedListNode<T> * [N_x * N_y * N_z];
-    pool1 = new LinkedListNode<T>[max_num_nodes_in_pool];
-    root2 = new LinkedListNode<T> * [N_x * N_y * N_z];
-    pool2 = new LinkedListNode<T>[max_num_nodes_in_pool];
+    root1 = new(std::nothrow) LinkedListNode<T> * [N_x * N_y * N_z];
+    pool1 = new(std::nothrow) LinkedListNode<T>[max_num_nodes_in_pool];
+    root2 = new(std::nothrow) LinkedListNode<T> * [N_x * N_y * N_z];
+    pool2 = new(std::nothrow) LinkedListNode<T>[max_num_nodes_in_pool];
 
     if (root1 == NULL || pool1 == NULL || root2 == NULL || pool2 == NULL) {
         FFEA_ERROR_MESSG("Could not allocate memory (for root and pool arrays) in LinkedListCube\n");
@@ -159,6 +159,7 @@ void LinkedListCube<T>::clear() {
     int i;
 
     // Clear the grid
+    #pragma omp simd
     for (i = 0; i < N_x * N_y * N_z; i++)
         root[i] = NULL;
 

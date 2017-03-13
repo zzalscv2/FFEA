@@ -60,9 +60,9 @@ World::World() {
     vdwenergy = 0.0;
     preCompenergy = 0.0;
 
-    vector3_set_zero(&L);
-    vector3_set_zero(&CoM);
-    vector3_set_zero(&CoG);
+    vector3_set_zero(L);
+    vector3_set_zero(CoM);
+    vector3_set_zero(CoG);
     rmsd = 0.0;
 }
 
@@ -126,9 +126,9 @@ World::~World() {
     vdwenergy = 0.0;
     preCompenergy = 0.0;
 
-    vector3_set_zero(&L);
-    vector3_set_zero(&CoM);
-    vector3_set_zero(&CoG);
+    vector3_set_zero(L);
+    vector3_set_zero(CoM);
+    vector3_set_zero(CoG);
     rmsd = 0.0;
 }
 
@@ -815,11 +815,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
 
     if (params.vdw_type == "lennard-jones")
-        vdw_solver = new VdW_solver();
+        vdw_solver = new(std::nothrow) VdW_solver();
     else if (params.vdw_type == "steric")
-        vdw_solver = new Steric_solver();
+        vdw_solver = new(std::nothrow) Steric_solver();
     else if (params.vdw_type == "ljsteric")
-        vdw_solver = new LJSteric_solver();
+        vdw_solver = new(std::nothrow) LJSteric_solver();
     if (vdw_solver == NULL)
         FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
     vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw, params.vdw_type, params.vdw_steric_dr);
@@ -1274,14 +1274,14 @@ int World::get_smallest_time_constants() {
 
 
 /**
- * @brief Calculates an elastic network model for a given blob.
- * @param[in] set<int> List of blobs to get Elastic Network Model
+ * @brief Calculates an linear elastic model for a given blob.
+ * @param[in] set<int> List of blobs to get Linear Elastic Model
  * @param[in] int num_modes The number of modes / eigenvalues to be calculated
  * @details By linearising the elasticity vector around the initial position,
  * this function performs matrix algebra using the Eigen libraries to diagonalise
  * elasticity matrix and output pseudo-trajectories based upon these eigenvectors
  * */
-int World::enm(set<int> blob_indices, int num_modes) {
+int World::lem(set<int> blob_indices, int num_modes) {
 
     int i, j;
     int num_nodes, num_rows;
@@ -1309,7 +1309,7 @@ int World::enm(set<int> blob_indices, int num_modes) {
         num_rows = num_nodes * 3;
         Eigen::SparseMatrix<scalar> A(num_rows, num_rows);
 
-        cout << "\t\tCalculating the Global Linearised Elasticity Matrix, A...";
+        cout << "\t\tCalculating the Linearised Elasticity Matrix, A...";
         if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
             cout << endl;
             FFEA_error_text();
@@ -1360,7 +1360,7 @@ int World::enm(set<int> blob_indices, int num_modes) {
             // Get a filename end
             ostringstream mi;
             mi << j - 6;
-            traj_out_fname = base + "_ffeaenm_blob" + bi.str() + "mode" + mi.str() + ext;
+            traj_out_fname = base + "_FFEAlem_blob" + bi.str() + "mode" + mi.str() + ext;
             make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, es.eigenvectors().col(j), dx);
             cout << "done!" << endl;
         }
@@ -1369,8 +1369,8 @@ int World::enm(set<int> blob_indices, int num_modes) {
         // Print out relevant eigenvalues and eigenvectors
 
         // Get a filename
-        evals_out_fname = base + "_ffeaenm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_ffeaenm_blob" + bi.str() + ".evecs";
+        evals_out_fname = base + "_FFEAlem_blob" + bi.str() + ".evals";
+        evecs_out_fname = base + "_FFEAlem_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, es.eigenvectors(), num_rows, num_modes);
         print_evals_to_file(evals_out_fname, es.eigenvalues(), num_modes, unitscaler);
@@ -1380,8 +1380,8 @@ int World::enm(set<int> blob_indices, int num_modes) {
 }
 
 /**
- * @brief Calculates an elastic network model for a given blob.
- * @param[in] set<int> List of blobs to get Elastic Network Model
+ * @brief Calculates an dynamic mode model for a given blob.
+ * @param[in] set<int> List of blobs to get Dynamic Mode Model
  * @param[in] int num_modes The number of modes / eigenvalues to be calculated
  * @details By linearising the elasticity vector around the initial position,
  * this function performs matrix algebra using the Eigen libraries to diagonalise
@@ -1513,7 +1513,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
             // Get a filename end
             ostringstream mi;
             mi << j - 6;
-            traj_out_fname = base + "_ffeadmm_blob" + bi.str() + "mode" + mi.str() + ext;
+            traj_out_fname = base + "_FFEAdmm_blob" + bi.str() + "mode" + mi.str() + ext;
 
             make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, R.col(j), dx);
             cout << "done!" << endl;
@@ -1523,8 +1523,8 @@ int World::dmm(set<int> blob_indices, int num_modes) {
         // Print out relevant eigenvalues and eigenvectors
 
         // Get a filename
-        evals_out_fname = base + "_ffeadmm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_ffeadmm_blob" + bi.str() + ".evecs";
+        evals_out_fname = base + "_FFEAdmm_blob" + bi.str() + ".evals";
+        evecs_out_fname = base + "_FFEA*dmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, R, num_rows, num_modes);
         print_evals_to_file(evals_out_fname, esAhat.eigenvalues(), num_modes, 1.0);
@@ -1699,7 +1699,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
             // Get a filename end
             ostringstream mi;
             mi << j - 6;
-            traj_out_fname = base + "_ffearpdmm_blob" + bi.str() + "mode" + mi.str() + ext;
+            traj_out_fname = base + "_FFEArpdmm_blob" + bi.str() + "mode" + mi.str() + ext;
 
             make_trajectory_from_eigenvector(traj_out_fname, i, j - 6, Rvecs.col(j), dx);
             cout << "done!" << endl;
@@ -1709,8 +1709,8 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
         // Print out relevant eigenvalues and eigenvectors
 
         // Get a filename
-        evals_out_fname = base + "_ffearpdmm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_ffearpdmm_blob" + bi.str() + ".evecs";
+        evals_out_fname = base + "_FFEArpdmm_blob" + bi.str() + ".evals";
+        evecs_out_fname = base + "_FFEArpdmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, Rvecs, num_rows, num_modes);
         print_evals_to_file(evals_out_fname, Rvals, num_modes, 1.0);
@@ -1734,7 +1734,8 @@ int World::run() {
         wtime0 = omp_get_wtime();
 #endif
 
-        // check if we need to calculate electrostatics,
+        // check if we are in one of those time-steps
+        //     where we need to calculate electrostatics,
         //                     update the neighbour list,
         //                     and calculate normals and centroids for the faces.
         bool es_update = false;
@@ -1745,9 +1746,11 @@ int World::run() {
 #ifdef FFEA_PARALLEL_FUTURE
                 // we will have to wait for both threads to finish!
                 if (updatingVdWLL() == true) {
+                    cout << "Waiting for thread VdW LL" << endl; 
                     if (catch_thread_updatingVdWLL(step, wtime, 1)) return FFEA_ERROR;
                 }
                 if (updatingPCLL() == true) {
+                    cout << "Waiting for thread PC LL" << endl; 
                     if (catch_thread_updatingPCLL(step, wtime, 1)) return FFEA_ERROR;
                 }
 #endif
@@ -3387,14 +3390,14 @@ int World::apply_springs() {
     vector3 n1, n0, force0, force1, sep, sep_norm;
     for (int i = 0; i < num_springs; ++i) {
         if (spring_array[i].am_i_active == true) {
-            n1 = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
-            n0 = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
+            active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], n1.data);
+            active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], n0.data);
             sep.x = n1.x - n0.x;
             sep.y = n1.y - n0.y;
             sep.z = n1.z - n0.z;
 
             try {
-                sep_norm = normalise(&sep);
+                arr3Normalise2<scalar,arr3>(sep.data, sep_norm.data); 
             } catch (int e) {
 
                 // If zero magnitude, we're ok
@@ -3407,7 +3410,7 @@ int World::apply_springs() {
                 }
             }
 
-            force_mag = spring_array[i].k * (mag(&sep) - spring_array[i].l);
+            force_mag = spring_array[i].k * (mag<scalar,arr3>(sep.data) - spring_array[i].l);
             force0.x = force_mag * sep_norm.x;
             force0.y = force_mag * sep_norm.y;
             force0.z = force_mag * sep_norm.z;
@@ -3699,6 +3702,15 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // TRAJECTORY file: can be printed serially, or in parallel:
 #ifdef FFEA_PARALLEL_FUTURE
     // TRAJECTORY PARALLEL:
+    // CHECK // CHECK // CHECK // 
+    bool its = false;
+    if (thread_writingTraj.valid()) {
+        if (thread_writingTraj.wait_for(std::chrono::milliseconds(0)) == future_status::ready) {
+            its = true;
+        }
+    }
+    if (!its) cout << " We're waiting while writing the trajectory" << endl;
+    // END CHECK // END CHECK // END CHECK // 
     thread_writingTraj.get();
 #ifdef FFEA_PARALLEL_PER_BLOB
     #pragma omp parallel for default(none) shared(step) schedule(guided)
@@ -3824,7 +3836,7 @@ void World::make_measurements() {
     vdwenergy = 0.0;
     preCompenergy = 0.0;
     rmsd = 0.0;
-    vector3_set_zero(&CoG);
+    vector3_set_zero(CoG);
 
     vector3 bCoG;
 
@@ -3833,7 +3845,7 @@ void World::make_measurements() {
         kineticenergy += active_blob_array[i]->get_kinetic_energy();
         strainenergy += active_blob_array[i]->get_strain_energy();
         rmsd += (active_blob_array[i]->get_rmsd() * active_blob_array[i]->get_rmsd()) * active_blob_array[i]->get_num_nodes();
-        bCoG = active_blob_array[i]->get_CoG();
+        active_blob_array[i]->get_CoG(bCoG.data);
         CoG.x += bCoG.x * active_blob_array[i]->get_num_nodes();
         CoG.y += bCoG.y * active_blob_array[i]->get_num_nodes();
         CoG.z += bCoG.z * active_blob_array[i]->get_num_nodes();
@@ -3843,7 +3855,7 @@ void World::make_measurements() {
 
     // And divide by num_nodes
     rmsd = sqrt(rmsd / total_num_nodes);
-    vec3_scale(&CoG, 1.0 / total_num_nodes);
+    arr3Resize<scalar,arr3>(1.0/total_num_nodes, CoG.data);
 
     // Now global stuff
     vector3 a, b, c;
@@ -3855,10 +3867,10 @@ void World::make_measurements() {
         }
 
         for(i = 0; i < num_springs; ++i) {
-            a = active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0]);
-            b = active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1]);
-            vec3_vec3_subs(&a, &b, &c);
-            springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag(&c) - spring_array[i].l) * (mag(&c) - spring_array[i].l);
+            active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], a.data);
+            active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], b.data);
+            arr3arr3Substract<scalar,arr3>(a.data, b.data, c.data);
+            springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag<scalar,arr3>(c.data) - spring_array[i].l) * (mag<scalar,arr3>(c.data) - spring_array[i].l);
         }
 
         springenergy = get_spring_field_energy(-1, -1);
