@@ -59,7 +59,7 @@
 
 // Functions from the checkVars object
 
-checkVars::checkVars() {
+/* checkVars::checkVars() {
 	for(int i = 0; i < 3; ++i) {
 		n[i] = 0.0;
 		for(int j = 0; j < 6; ++j) {
@@ -101,7 +101,7 @@ checkVars::~checkVars() {
 			Coord_2[i][j] = 0.0;
 		}
 	}
-}
+}  */
 
 // FaceA ----------------------------------------------------
 
