@@ -23,7 +23,8 @@
 
 #include "mat_vec_fns_II.h"
 #include <iostream>
-using namespace std;
+using std::cout;
+using std::endl;
 
 ///////////////// SECTION 0 ////////////////////
 ////////  Constants and scalar functions ///////
