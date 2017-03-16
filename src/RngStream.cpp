@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * along with RngStreams.  If not, see <http://www.gnu.org/licenses/>.
  *
- * To help us fund our research, we would appreciate that 
+ * We would appreciate that 
  * if you use this software for work leading to publications, 
  * you cite the following relevant articles in which MRG32k3a 
  * and the package with multiple streams were proposed:
