@@ -23,7 +23,8 @@
 
 #include "FFEA_user_info.h"
 
-using namespace std;
+using std::cout;
+using std::endl;
 
 string userInfo::log_out_fname;
 int userInfo::verblevel;
