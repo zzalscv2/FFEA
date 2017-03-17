@@ -337,3 +337,8 @@ bool tet_a_tetII(arr3 &V1_0, arr3 &V1_1, arr3 &V1_2, arr3 &V1_3,
   return true;	
 
 }
+
+#undef DOT
+#undef SUB
+#undef SUB_DOT
+#undef VECT
