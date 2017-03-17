@@ -150,7 +150,7 @@ class FFEA_viewer_control_window:
 
      # show inverted_elements: 
      check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
-     check_button_show_inverted.grid(row=1, column=3, sticky=W)
+     check_button_show_inverted.grid(row=2, column=2, sticky=W)
  
 
      # # show solid:
@@ -481,7 +481,7 @@ class FFEA_viewer_control_window:
 	# Print info for the user that won't be deleted from the command line by the trajectory loading
 	#
 	if self.display_flags['show_springs'] == 1 and self.springs != None:
-		if self.script.params.calc_springs == 0:
+		if self.script.params.calc_springs == 0 and self.springs.get_num_springs() > 0:
 			for b in self.script.blob:
 				if b.solver == "CG_nomass":
 					print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
