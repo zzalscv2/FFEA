@@ -26,7 +26,8 @@
 #include <iomanip>
 #include "VolumeIntersection.h"
 
-using namespace std; 
+using std::cout;
+using std::endl; 
 
 template <class t_scalar, class brr3> bool exists(brr3 &p, int ips, brr3 (&W)[56]){
 

@@ -538,7 +538,7 @@ int SimulationParams::checkFileName(string oFile){
     return FFEA_OK;
 }
 
-int SimulationParams::validate() {
+int SimulationParams::validate(int sim_mode) {
 
     if (restart != 0 && restart != 1) {
         FFEA_ERROR_MESSG("Required: Restart flag, 'restart', must be 0 (false) or 1 (true).\n");
@@ -668,16 +668,18 @@ int SimulationParams::validate() {
     if (ocheckpoint_fname.compare(icheckpoint_fname) == 0) {
         FFEA_ERROR_MESSG("it is not allowed to set up checkpoint_in and checkpoint_out with the same file names\n");
     }
-    // CPT.3 - checkpoint_out will be backed up if it exists
-    checkFileName(ocheckpoint_fname);
+    // CPT.3 - checkpoint_out will be backed up if it exists and needs to be used
+    if(sim_mode == 0) {
+        checkFileName(ocheckpoint_fname);
 
 
-    // check if the output files exists, and if so, rename it.
-    if (restart == 0) {
-      checkFileName(measurement_out_fname);
-      checkFileName(detailed_meas_out_fname);
-      checkFileName(trajectory_out_fname);
-      checkFileName(kinetics_out_fname);
+        // check if the output files exists, and if so, rename it.
+        if (restart == 0) {
+          checkFileName(measurement_out_fname);
+          checkFileName(detailed_meas_out_fname);
+          checkFileName(trajectory_out_fname);
+          checkFileName(kinetics_out_fname);
+        }
     }
 
     if (calc_stokes == 1 && stokes_visc <= 0) {

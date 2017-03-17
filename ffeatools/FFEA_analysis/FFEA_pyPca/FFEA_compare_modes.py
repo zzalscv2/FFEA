@@ -25,6 +25,7 @@ import sys, os
 import numpy as np
 import copy
 from matplotlib import pyplot as plt
+from matplotlib import rc
 
 if len(sys.argv) < 6:
 	sys.exit("Usage: python " + sys.argv[0] + " [INPUT .evals file 1] [INPUT .evals file 2] [INPUT .evecs file 1] [INPUT .evecs file 2] [OUTPUT fname] OPTIONAL{[EIG SWITCH (x,y)]}")
@@ -53,7 +54,7 @@ for i in range(2):
 	fin.close()
 
 	# This means spring constants (hopefully...)
-	if evals[i][0] < 1.0:
+	if "ffeaenm" in inevalsfile[i] or "ffeadmm" in inevalsfile[i]:
 		conversion = True
 	else:
 		conversion = False
@@ -129,10 +130,10 @@ print("Visualising eigenvectors as a heatmap...")
 #os.system(os.path.dirname("python " + os.path.abspath(sys.argv[0])) + "/plot_eigensystem_comparison.py " + out_fname)
 
 # Get figure properties
-fig = plt.figure(figsize=(20,10))
-fig.suptitle("Eigensystem Comparison", fontsize=24)
-ax = fig.add_subplot(1,2,1)
-#fig, ax = plt.subplots(figsize=(13,10))
+#fig = plt.figure(figsize=(20,10))
+#fig.suptitle("Eigensystem Comparison", fontsize=24)
+#ax = fig.add_subplot(1,2,1)
+fig, ax = plt.subplots(figsize=(13,10))
 
 #column_labels = list('43210')
 #row_labels = list('01234')
@@ -145,9 +146,9 @@ row_labels = []
 
 if num_modes <= 20:
 	for i in range(num_modes):
-		row_labels.append(str(i))
+		row_labels.append(str(i + 1))
 		#column_labels.append(str((num_modes - 1) - i))
-		column_labels.append(str(i))
+		column_labels.append(str(i + 1))
 else:
 	count = 0
 	for i in range(num_modes + 1):
@@ -189,32 +190,42 @@ ax.set_xticklabels(column_labels, fontsize=18)
 ax.set_xlim(0, num_modes)
 ax.set_ylim(0, num_modes)
 
-ax.set_title("Eigenvector Dot Product Array", fontsize=24)
+ax.set_title("Eigenvector Inner Product Matrix", fontsize=24)
 ax.set_xlabel("Eigensystem A Modes", fontsize=18)
 ax.set_ylabel("Eigensystem B Modes", fontsize=18)
 
 cbar.ax.set_yticklabels(["%2.1f" % (i / 10.0) for i in range(11)], fontsize=18)
 cbar.set_label('Normalised Dot Product Values', fontsize=18)
 
+plt.show()
+
 #
 # Now eigenvalues
 #
 print("Visualising eigenvalues as a histogram...")
-ax = fig.add_subplot(1,2,2)
+fig, ax = plt.subplots(figsize=(13,10))
+#ax = fig.add_subplot(1,2,2)
 
 evals[0] = np.array(evals[0])
 evals[1] = np.array(evals[1])
 
-ind = np.arange(evals[0].size)  # the x locations for the groups
 width = 0.35
+ind = np.arange(evals[0].size) + width / 2.0  # the x locations for the groups
+
 eva = ax.bar(ind, evals[0], width, color='r')
 evb = ax.bar(ind + width, evals[1], width, color='g')
+ax.set_xticks(ind + width)
+ax.set_xticklabels((str(int(i + 1)) for i in ind), fontsize = 14)
+for label in ax.get_yticklabels():
+	label.set_fontsize(14)
+
+#rcParams.update({'font.size': 22})
 ax.set_title("Eigenvalue Bar Chart Comparison", fontsize=24)
 ax.set_ylabel("Eigenvalue " + r"$(\AA ^2)$", fontsize=18)
-ax.set_xlabel("Index", fontsize=18)
-ax.legend([eva,evb], ['Eigensystem A', 'Eigensystem B'], loc = 1, fontsize=12)
+ax.set_xlabel("Eigenmode", fontsize=18)
+ax.legend([eva,evb], ['Eigensystem A', 'Eigensystem B'], loc = 0, fontsize=12)
 
-base, ext = os.path.splitext(out_fname)
-plt.savefig(base + ".png")
+#base, ext = os.path.splitext(out_fname)
+#plt.savefig(base + ".png")
 plt.show()
 print("done!")

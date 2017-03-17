@@ -56,7 +56,7 @@ int main (void)
 
 	// Check for consistency
 	cout << "\nVerifying Parameters..." << endl;
-	if(params.validate() != 0) {
+	if(params.validate(0) != 0) {
 		FFEA_error_text();
 		printf("Parameters found to be inconsistent in SimulationParams::validate()\n");
 		return(1);
