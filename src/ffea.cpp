@@ -44,9 +44,10 @@
 #include "mpi.h"
 #endif
 
-using namespace std;
 namespace b_po = boost::program_options;
 namespace b_fs = boost::filesystem; 
+using std::cout;
+using std::endl;
 
 int main(int argc, char *argv[])
 {

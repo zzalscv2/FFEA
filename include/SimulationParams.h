@@ -131,7 +131,7 @@ public:
 
     ~SimulationParams();
 
-    int validate();
+    int validate(int sim_mode);
 
     /**
      * @brief DEPRECATED! Superseeded by: extract_params + assign.
