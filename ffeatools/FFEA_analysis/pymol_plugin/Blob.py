@@ -947,15 +947,21 @@ class Blob:
 		#
 
 		if display_flags['show_pinned'] == 1 and self.pin != None and self.pin.num_pinned_nodes != 0:
-			
-			pinsphere.extend([COLOR, 1.0, 0.0, 0.0])
+			pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_" + str(self.num_loads)
+			psa_name = "CA"
+			psa_b = 20
+			text = ""
 			for n in self.pin.index:
-				nn = self.frames[i].pos[n]
-				pinsphere.extend( [ SPHERE, nn[0], nn[1], nn[2], 5 ] )
+				pos = self.frames[i].pos[n]
+				text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
 
-			# Only load if there are pinned nodes (dur!)
-			if len(pinsphere) != 0:
-				cmd.load_cgo(pinsphere, display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_" + str(self.num_loads), frameLabel) 
+			# load, if it's not an empty object:
+			if len(text) != 0:
+				cmd.read_pdbstr(text, pin_name, frameLabel)
+				cmd.show("spheres", pin_name)
+				cmd.color("red", pin_name)
+				
+
 
 		#
 		#  Load SFA: Supportive Fake Atoms #
@@ -996,7 +1002,7 @@ class Blob:
 						en = self.top.element[e].calc_centroid(self.frames[i])
 						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e, psa_name, "FEA", "A", e, en[0], en[1], en[2]))
 						
-			# in both cases:
+			# in any case:
 			cmd.read_pdbstr(text, sfa_name, frameLabel)
 			cmd.show("spheres", sfa_name)
 	
