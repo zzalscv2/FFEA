@@ -440,147 +440,6 @@ class Blob:
 		vdw_file.close()
 		print "Finished writing vdw file " + vdw_fname
 
-#	def load_frame(self, traj_file):
-#
-#		# Inactive conf
-#		if traj_file == None:
-#			self.frames.append(None)
-#			self.num_frames += 1
-#			return
-#
-#		# There is a trajectory! Ignore offset
-#		self.offset = [0.0, 0.0, 0.0]
-#
-#		# skip blob, step line
-#		line = traj_file.readline()
-#		blob_state = traj_file.readline().rstrip()
-#		
-#		nodes = []
-#		centroid_x = 0.0
-#		centroid_y = 0.0
-#		centroid_z = 0.0
-#		#cdef int n
-#		for n in xrange(self.num_nodes):
-#			line = traj_file.readline().split()
-#			el_nodes = [float(line[i])* self.global_scale for i in xrange(10)]
-#			nodes.append(el_nodes)
-#		
-#			centroid_x += el_nodes[0]
-#			centroid_y += el_nodes[1]
-#			centroid_z += el_nodes[2]
-#
-#		centroid_x /= self.num_nodes
-#		centroid_y /= self.num_nodes
-#		centroid_z /= self.num_nodes
-#		
- #               ## ## Normals are calculated later ## 
-#		# # Calculate average normal at each node (for gl lighting effects)
-#		# normal_list = [[0.0, 0.0, 0.0] for i in xrange(self.num_nodes)]
-#		# #cdef int f
-#		# for f in xrange(self.surf.num_faces):
-#		#	# get node indices of this face
-#		#	i1 = self.surf.face[f].n[0]
-#		#	i2 = self.surf.face[f].n[1]
-#		#	i3 = self.surf.face[f].n[2]
-#		
-#		#	# get the normal of the face
-#		#	norm = self.calc_normal(nodes[i1], nodes[i2], nodes[i3])
-#		
-#		#	normal_list[i1][0] += norm[0]
-#		#	normal_list[i1][1] += norm[1]
-#		#	normal_list[i1][2] += norm[2]
-#		
-#		#	normal_list[i2][0] += norm[0]
-#		#	normal_list[i2][1] += norm[1]
-#		#	normal_list[i2][2] += norm[2]
-#		
-#		#	normal_list[i3][0] += norm[0]
-#		#	normal_list[i3][1] += norm[1]
-#		#	normal_list[i3][2] += norm[2]
-#		
-#		
-#		# self.frames.append(Frame(blob_state, nodes, normal_list, centroid_x, centroid_y, centroid_z))
-#		self.frames.append(Frame(blob_state, nodes, NULL, centroid_x, centroid_y, centroid_z))
-#		self.num_frames += 1
-#
-#		if self.calculated_linear_nodes == False:
-#			if self.no_topology == False:
-#				self.linear_node_list = []
-#				for i in range(self.num_nodes):
-#					for el in self.topology:
-#						if i in el[0:4]:
-#							self.linear_node_list.append(i)
-#							break
-#				print "Found", len(self.linear_node_list), "linear nodes."
-#				self.calculated_linear_nodes = True	
-#
-#		if self.calculated_first_frame_volumes == False:
-#			self.first_frame_vol_list = []
-#			if self.no_topology == False:
-#				print "Calculating volumes of elements in first frame..."
-#
-#				# Find first frame available
-#				for i in range(len(self.frames)):
-#					if self.frames[i] != None:
-#						frame_index = i
-#						break
-#
-#				for el in xrange(self.elem.num_elements):
-#					# Get the indices of the 4 nodes of this tetrahedron
-#					i1 = self.topology[el][0]
-#					i2 = self.topology[el][1]
-#					i3 = self.topology[el][2]
-#					i4 = self.topology[el][3]
-#
-#					# Get the nodes
-#					n1a = self.frames[frame_index].pos[i1]
-#					n2a = self.frames[frame_index].pos[i2]
-#					n3a = self.frames[frame_index].pos[i3]
-#					n4a = self.frames[frame_index].pos[i4]
-#					n1 = n1a[0:3]
-#					n2 = n2a[0:3]
-#					n3 = n3a[0:3]
-#					n4 = n4a[0:3]
-#	
-#					# get the volume of the elements
-#					self.first_frame_vol_list.append(self.get_element_volume(n1, n2, n3, n4))
-#				print "...Done."
-#				self.calculated_first_frame_volumes = True
-#
-#
-#		if self.calculated_first_frame_J_inv == False:
-#			self.first_frame_J_inv = []
-#			if self.no_topology == False:
-#				print "Calculating J inv of elements in first frame..."
-#
-#				# Find first frame available
-#				for i in range(len(self.frames)):
-#					if self.frames[i] != None:
-#						frame_index = i
-#						break
-#
-#				for el in xrange(self.elem.num_elements):
-#					# Get the indices of the 4 nodes of this tetrahedron
-#					i1 = self.topology[el][0]
-#					i2 = self.topology[el][1]
-#					i3 = self.topology[el][2]
-#					i4 = self.topology[el][3]
-#
-#					# Get the nodes
-#					n1a = self.frames[frame_index].pos[i1]
-#					n2a = self.frames[frame_index].pos[i2]
-#					n3a = self.frames[frame_index].pos[i3]
-#					n4a = self.frames[frame_index].pos[i4]
-#					n1 = n1a[0:3]
-#					n2 = n2a[0:3]
-#					n3 = n3a[0:3]
-#					n4 = n4a[0:3]
-#	
-#					# get the J_inv of the elements
-#					self.first_frame_J_inv.append(self.get_J_inv(n1, n2, n3, n4))
-#				print "...Done."
-#				self.calculated_first_frame_J_inv = True
- 
 
 	def delete_all_frames(self):
 		self.num_frames = 0
@@ -918,9 +777,16 @@ class Blob:
 						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
 	
 				elif display_flags['show_numbers'] == 'Node Indices (Linear)':
-					for n in self.linear_node_list:
-						nn = (self.frames[i].pos[n])[0:3]
-						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
+					if len(self.linear_node_list) == 0: 
+						if frameLabel == 1:
+							print "Linear node indices cannot be loaded onto blob ", self.idnum, " as no topology was loaded."
+							if  self.motion_state != "DYNAMIC":
+								print "Try editing the FFEA script, and changing motion state to DYNAMIC"
+
+					else:
+						for n in self.linear_node_list:
+							nn = (self.frames[i].pos[n])[0:3]
+							cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
 	
 				elif display_flags['show_numbers'] == "Element Indicies":
 						
@@ -947,15 +813,21 @@ class Blob:
 		#
 
 		if display_flags['show_pinned'] == 1 and self.pin != None and self.pin.num_pinned_nodes != 0:
-			
-			pinsphere.extend([COLOR, 1.0, 0.0, 0.0])
+			pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_" + str(self.num_loads)
+			psa_name = "CA"
+			psa_b = 20
+			text = ""
 			for n in self.pin.index:
-				nn = self.frames[i].pos[n]
-				pinsphere.extend( [ SPHERE, nn[0], nn[1], nn[2], 5 ] )
+				pos = self.frames[i].pos[n]
+				text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
 
-			# Only load if there are pinned nodes (dur!)
-			if len(pinsphere) != 0:
-				cmd.load_cgo(pinsphere, display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_" + str(self.num_loads), frameLabel) 
+			# load, if it's not an empty object:
+			if len(text) != 0:
+				cmd.read_pdbstr(text, pin_name, frameLabel)
+				cmd.show("spheres", pin_name)
+				cmd.color("red", pin_name)
+				
+
 
 		#
 		#  Load SFA: Supportive Fake Atoms #
@@ -972,10 +844,18 @@ class Blob:
 					pos = (self.frames[i].pos[n].tolist())[0:3]
 					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
 
+
 			elif display_flags['load_sfa'] == 'Onto Linear Nodes':
-				for n in self.linear_node_list:
-					nn = (self.frames[i].pos[n])[0:3]
-					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, nn[0], nn[1], nn[2]))
+				if len(self.linear_node_list) == 0: 
+					if frameLabel == 1:
+						print "Atoms cannot be loaded onto blob ", self.idnum, " as no topology was loaded."
+						if  self.motion_state != "DYNAMIC":
+							print "Try editing the FFEA script, and changing motion state to DYNAMIC"
+
+				else:
+					for n in self.linear_node_list:
+						nn = (self.frames[i].pos[n])[0:3]
+						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, nn[0], nn[1], nn[2]))
 	
 
 			elif display_flags['load_sfa'] == "Onto Faces":
@@ -996,9 +876,10 @@ class Blob:
 						en = self.top.element[e].calc_centroid(self.frames[i])
 						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e, psa_name, "FEA", "A", e, en[0], en[1], en[2]))
 						
-			# in both cases:
-			cmd.read_pdbstr(text, sfa_name, frameLabel)
-			cmd.show("spheres", sfa_name)
+			# in any case:
+ 			if len(text) > 0: 
+ 				cmd.read_pdbstr(text, sfa_name, frameLabel)
+				cmd.show("spheres", sfa_name)
 	
 
 	def draw_pick_frame(self, i):

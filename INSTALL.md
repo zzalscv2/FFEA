@@ -13,7 +13,7 @@ To install FFEA you need:
    * C and C++ compilers.   
      There is some C++ code written using 
        the C++11 standard, and so CMake will ensure that you have a 
-       recent enough compiler. FFEA will compile with GCC 4.4 or Intel 13
+       recent enough compiler. FFEA will compile with GCC 4.4 or Intel 15
        but we recommend to use an up to date compiler to get the best performance.
 
    * [CMake](https://cmake.org) (>=2.8.11).   
@@ -28,8 +28,8 @@ To install FFEA you need:
         several FFEAtools.
 
 
-FFEA uses Boost and Eigen. To make your life easier, the code is shipped whih 
- a subset of Boost (v. 1.63), and Eigen (v 3.3.2) will be downloaded
+FFEA uses Boost and Eigen. To make your life easier, **the code is shipped whih 
+ a subset of Boost (v. 1.63), and Eigen (v 3.3.2)** will be downloaded
  at configure time. Still, you are welcome to use your own versions of the libraries.
 
    * [Boost](http://www.boost.org) (>=1.54.0) [OPTIONAL]   
@@ -38,7 +38,7 @@ FFEA uses Boost and Eigen. To make your life easier, the code is shipped whih
    * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1) [OPTIONAL]
    FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
 
-   > Warning - GCC >= 5 will require version 3.2.10 or higher for Eigen. Earlier versions (including 3.3 release candidates, marked internally as 3.2.91 and higher) did prove to be incompatible with GCC >= 5 and the C++11 standard. You may also need a newer version of Boost. 
+   > Warning - GCC >= 5 will require version 3.2.10 or higher for Eigen. Earlier versions (including 3.3 release candidates, marked internally as 3.2.91 and higher) did prove to be incompatible with GCC >= 5 and using C++11 standard. You may also need a newer version of Boost. 
      
 
 Configure {#configure}

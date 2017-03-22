@@ -20,8 +20,9 @@
  * You should have received a copy of the GNU General Public License
  * along with RngStreams.  If not, see <http://www.gnu.org/licenses/>.
  *
- * If you use this software for work leading to publications, 
- * please cite the following relevant articles in which MRG32k3a 
+ * We would appreciate that 
+ * if you use this software for work leading to publications, 
+ * you cite the following relevant articles in which MRG32k3a 
  * and the package with multiple streams were proposed:
 
  * P. L'Ecuyer, ``Good Parameter Sets for Combined Multiple Recursive Random Number Generators'', 

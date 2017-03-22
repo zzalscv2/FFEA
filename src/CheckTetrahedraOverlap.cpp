@@ -18,14 +18,22 @@
  **********************************************************************************/
 
 /* 
-   Fast Tetrahedron-Tetrahedron Overlap Algorithm. 
+  This is a fork of the:
+     Fast Tetrahedron-Tetrahedron Overlap Algorithm. 
    
-   Authors:
+  The original file can be found in:
+     https://github.com/erich666/jgt-code/blob/master/Volume_07/Number_2/Ganovelli2002/tet_a_tet.h
+
+
+  Original Authors:
    - Fabio Ganovelli, Istituto di Elaborazione dell'Informazione, National Research Council, Pisa, Italy.
    - Frederico Ponchio, Istituto di Elaborazione dell'Informazione, National Research Council, Pisa, Italy.
    - Claudio Rocchini, Istituto di Elaborazione dell'Informazione, National Research Council, Pisa, Italy.
-   
-   Abstract: 
+
+  Modifications by:
+   - FFEA team. 
+
+  Abstract: 
    We present an algorithm to test two tetrahedra for overlap. The
    algorithm is based on a dimension reduction technique that allows
    the application of the Separating Axis Theorem, thus avoiding part
@@ -329,3 +337,8 @@ bool tet_a_tetII(arr3 &V1_0, arr3 &V1_1, arr3 &V1_2, arr3 &V1_3,
   return true;	
 
 }
+
+#undef DOT
+#undef SUB
+#undef SUB_DOT
+#undef VECT
