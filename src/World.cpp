@@ -1959,10 +1959,11 @@ int World::run() {
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
         #pragma omp parallel for default(none) schedule(dynamic,1)
-        for (int i = 0; i < params.num_blobs; i++) {
-            active_blob_array[i]->update_internal_forces();
-        }
 #endif
+        for (int i = 0; i < params.num_blobs; i++) {
+            active_blob_array[i]->update_positions();
+        }
+
 #ifdef BENCHMARK
         wtime4 = omp_get_wtime();
         time3 += wtime4 - wtime3;
@@ -3771,10 +3772,10 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         rng[i].GetState(state);
         fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
                 state[3], state[4], state[5]);
-        // for(int j = 0; j < 6; ++j) {
-        //    cout << state[j] << " ";
-//      }
-        //  cout << endl;
+         for(int j = 0; j < 6; ++j) {
+            cout << " " << state[j];
+      }
+          cout << endl;
     }
     // If there were more threads running on the previous run, we'll save them too:
     int oldThreads = thermal_seeds - num_threads;
