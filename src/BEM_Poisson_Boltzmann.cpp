@@ -27,7 +27,7 @@
  *	Email: pyrar@leeds.ac.uk
  */
 
-#include <math.h>
+#include <cmath>
 
 #include "FFEA_return_codes.h"
 #include "BEM_Poisson_Boltzmann.h"
