@@ -3812,10 +3812,10 @@ void World::print_checkpoints() {
         rng[i].GetState(state);
         fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
                 state[3], state[4], state[5]);
-       //  for(int j = 0; j < 6; ++j) {
-         //   cout << " " << state[j];
-      //}
-     //     cout << endl;
+         //for(int j = 0; j < 6; ++j) {
+         // cout << " " << state[j];
+      	 //}
+         // cout << endl;
     }
     // If there were more threads running on the previous run, we'll save them too:
     int oldThreads = thermal_seeds - num_threads;
@@ -3823,10 +3823,10 @@ void World::print_checkpoints() {
         fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0],
                 Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
                 Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
-        //for(int j = 0; j < 6; ++j) {
-//	    cout << Seeds[i+num_threads][j] << " ";
-        //   }
-        // cout << endl;
+       // for(int j = 0; j < 6; ++j) {
+	//    cout << " " << Seeds[i+num_threads][j];
+     //     }
+      //  cout << endl;
     }
     // If we're doing kinetics, we're saving the state of the extra RNG:
     if (params.calc_kinetics) {
