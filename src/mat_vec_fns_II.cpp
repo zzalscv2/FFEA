@@ -344,7 +344,7 @@ template <class t_scalar, class brr3> void getNormalInwards(brr3 (&tetA)[4], int
 
 }
 
-/* Given the face formed by f0, f1, and f2,
+/** Given the face formed by f0, f1, and f2,
  *     and knowing the remaining p3 for a tetrahedron,
  * get n, the normal to a face pointing inwards.
  */
