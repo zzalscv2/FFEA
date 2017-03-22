@@ -97,6 +97,15 @@ class FFEA_pdb:
 
 					# Seek back a line
 					fin.seek(-len(line),1)
+					start_pos = fin.tell()
+					while(True):
+						if line[0:4] == "ATOM":
+							if line[21].strip() == "":
+								chains_exist = False
+							break
+						line = fin.readline()
+
+					fin.seek(start_pos)
 					break
 
 				elif line[0:4] == "ATOM":
@@ -146,8 +155,8 @@ class FFEA_pdb:
 				if line[0:4] == "ATOM":
 					
 					if chains_exist:
-						chainID = line[21]		
-
+						chainID = line[21]	
+	
 					#if chainID != last_chain:
 					#	if chainID in chainIDs:
 					#		# No models, no ters, badly formatted. But we can deal with it

@@ -47,6 +47,8 @@ class FFEA_surface:
 			self.load_surf(fname)
 		elif ext == ".face":
 			self.load_face(fname)
+		elif ext == ".stl":
+			self.load_stl(fname)
 		elif ext == ".vol":
 			self.load_vol(fname)
 		else:
@@ -104,6 +106,30 @@ class FFEA_surface:
 
 		fin.close()
 
+	def load_stl(self, fname):
+
+		print("Not currently supported.")
+		raise IOError
+
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			print("\tFile '" + fname + "' not found.")
+			self.reset()
+			raise
+
+		# Get all lines
+		lines = fin.readlines()
+		fin.close()
+
+		# Strip title
+		if "solid" in lines[0]:
+			lines = lines[1:]
+
+		# Read all faces
+		#while True:
+			
 	def load_face(self, fname):
 
 		# Open file

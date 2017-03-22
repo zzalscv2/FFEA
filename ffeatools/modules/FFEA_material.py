@@ -43,17 +43,17 @@ class FFEA_material:
 		except FFEAFormatError as e:
 			self.reset()
 			print_error()
-			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
 			raise
 
 		except FFEAIOError as e:
 			self.reset()
 			print_error()
-			print "Input error for file " + e.fname
+			print("Input error for file " + e.fname)
 			if e.fext != [""]:
-				print "       Acceptable file types:"
+				print("       Acceptable file types:")
 				for ext in e.fext:
-					print "       " + ext
+					print("       " + ext)
 		except IOError:
 			raise
 
@@ -63,7 +63,7 @@ class FFEA_material:
 
 		# Test file exists
 		if not path.exists(fname):
-			print fname + " not found."
+			print(fname + " not found.")
 			raise IOError
 	
 		# File format?
@@ -132,9 +132,9 @@ class FFEA_material:
 			try:
 				plist.append(float(params[key]))
 			except(KeyError):
-				print "Error. Required build parameters not present. We need:"
+				print("Error. Required build parameters not present. We need:")
 				for key2 in order:
-					print "\t" + key2
+					print("\t" + key2)
 
 				raise
 		
@@ -165,17 +165,18 @@ class FFEA_material:
 		try:
 			self.element[index] = [float(d), float(sv), float(bv), float(sm), float(bm), float(di)]
 		except(IndexError):
-			print "Element " + str(index) + " does not yet exist."
-			 
+			print("Element " + str(index) + " does not yet exist.")
+		
+
 	def get_num_elements(self):
 
 		return len(self.element)
 
 	def print_details(self):
 
-		print "num_elements = %d" % (self.num_elements)
+		print("num_elements = %d" % (self.num_elements))
 
-		print "\t\tDensity,Shear Viscosity,Bulk Viscosity,Shear Modulus,Bulk Modulus,Dielectric Constant\n"
+		print("\t\tDensity,Shear Viscosity,Bulk Viscosity,Shear Modulus,Bulk Modulus,Dielectric Constant\n")
 		sleep(1)
 
 		index = -1
@@ -185,7 +186,7 @@ class FFEA_material:
 			for param in e:
 				outline += str(param) + ", "
 
-			print outline
+			print(outline)
 
 	def reset(self):
 
