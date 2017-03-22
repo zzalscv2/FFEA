@@ -103,9 +103,15 @@ public:
         //int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, MTRand rng[], int num_threads);
 
     /**
+     * Calculates all internal forces on the finite element mesh, storing them on the elements
+     * This requires the jacobian for each element, so if the mesh has inverted anywhere we will find out within this function
+     */
+    int update_internal_forces();
+
+    /**
      * Solves the EOM on the finite element mesh, updating the node positions and velocities by one time step
      */
-    int update();
+    int update_positions();
 
     /**
      * If the system changes mid run (binding event, say) we may need to reinitialise the solver

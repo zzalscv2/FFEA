@@ -919,11 +919,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
     }
 
-    if (params.restart == 0 && mode == 0) {
-        // Carry out measurements on the system before carrying out any updates (if this is step 0)
-        print_trajectory_and_measurement_files(0, omp_get_wtime());
-        print_kinetic_files(0);
-    }
+  //  if (params.restart == 0 && mode == 0) {
+  //      // Carry out measurements on the system before carrying out any updates (if this is step 0)
+    //    print_trajectory_and_measurement_files(0, omp_get_wtime());
+  //      print_kinetic_files(0);
+  //  }
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
 #endif
@@ -1944,22 +1944,33 @@ int World::run() {
         #pragma omp parallel for default(none) reduction(+: fatal_errors) schedule(dynamic,1)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
-            if (active_blob_array[i]->update() == FFEA_ERROR) fatal_errors++;
+            if (active_blob_array[i]->update_internal_forces() == FFEA_ERROR) fatal_errors++;
         }
 
         if (fatal_errors > 0) return die_with_dignity(step, wtime);
 
+	// Now, for this step, all forces and positions are correct, as are the kinetic states
+        if ((step) % params.check == 0) {
+            print_trajectory_and_measurement_files(step, wtime);
+            print_kinetic_files(step);
+        }
+	
+
+	// Finally, update the positions
+#ifdef FFEA_PARALLEL_PER_BLOB
+        #pragma omp parallel for default(none) schedule(dynamic,1)
+        for (int i = 0; i < params.num_blobs; i++) {
+            active_blob_array[i]->update_internal_forces();
+        }
+#endif
 #ifdef BENCHMARK
         wtime4 = omp_get_wtime();
         time3 += wtime4 - wtime3;
 #endif
 
-        // Output traj data to files
-        if ((step + 1) % params.check == 0) {
-            print_trajectory_and_measurement_files(step + 1, wtime);
-        }
-
         /* Kinetic Part of each step */
+	// This part consists of a discrete change, and so must occur before a force calculation cycle to be consistent with measurement data
+	// This means is must happen either at the very end of a timstep, or at the very beginning
         if (params.calc_kinetics == 1 && step % params.kinetics_update == 0) {
 
             // Calculate the kinetic switching probablilites. These are scaled from the base rates provided
@@ -1983,10 +1994,6 @@ int World::run() {
             }
         }
 
-        // Output kinetic data to files
-        if ((step + 1) % params.check == 0) {
-            print_kinetic_files(step + 1);
-        }
 
 #ifdef BENCHMARK
         time4 += omp_get_wtime() - wtime4;

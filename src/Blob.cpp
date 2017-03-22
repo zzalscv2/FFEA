@@ -545,7 +545,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     return FFEA_OK;
 }
 
-int Blob::update() {
+int Blob::update_internal_forces() {
     if (blob_state != FFEA_BLOB_IS_DYNAMIC) {
         return FFEA_OK;
     }
@@ -640,6 +640,11 @@ int Blob::update() {
         }
     }
 
+    return FFEA_OK;
+}
+
+int Blob::update_positions() {
+
     // Aggregate forces on nodes from all elements
     if (aggregate_forces_and_solve() == FFEA_ERROR) {
         FFEA_ERROR_MESSG("There was a problem in 'aggregate_forces_and_solve' function.\n");
@@ -649,11 +654,9 @@ int Blob::update() {
     euler_integrate();
 
     // Linearise the 2nd order elements
-    for (n = 0; n < num_elements; n++) {
+    for (int n = 0; n < num_elements; n++) {
         elem[n].linearise_element();
     }
-
-    return FFEA_OK;
 }
 
 int Blob::reset_solver() {
