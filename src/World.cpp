@@ -593,7 +593,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
             }
 
-            printf("Reverse searching for 3 asterisks ");
+            printf("Reverse searching for 4 asterisks ");
             if(frames_to_delete != 0) {
                 printf(", plus an extra %d, ", (frames_to_delete) * 2);
             }
@@ -659,7 +659,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 }
             }
 
-            // Load next frame
+            // Load this frame
             printf("Loading Blob position and velocity data from last completely written snapshot \n");
             int blob_id, conformation_id;
             long long rstep;
@@ -684,12 +684,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             crap = fscanf(trajectory_out, "*\n");
 
             // Set truncation location
-            last_asterisk_pos = ftello(trajectory_out);
+         //   last_asterisk_pos = ftello(trajectory_out);
             step_initial = rstep;
             printf("...done. Simulation will commence from step %lld\n", step_initial);
             fclose(trajectory_out);
 
-            // Truncate the trajectory file up to the point of the last asterisk (thereby erasing any half-written time steps that may occur after it)
+            // Truncate the trajectory file up to the point of the stored asterisk position, thereby deleting the last frame and erasing any half-written time steps that may occur after it
             printf("Truncating the trajectory file to the last asterisk...\n");
             if (truncate(params.trajectory_out_fname.c_str(), last_asterisk_pos) != 0) {
                 FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname.c_str())
@@ -713,7 +713,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
             // Looking for newlines this time, as each measurement frame is a single line
             int num_newlines = 0;
-            int num_newlines_to_find = frames_to_delete; // 1 for every frame only. No need to read in the last meas line
+            int num_newlines_to_find = frames_to_delete + 1; // 1 for every frame only, and 1 extra as we redo the last step. No need to read in the last meas line
             while (num_newlines != num_newlines_to_find) {
                 if (fseek(measurement_out, -2, SEEK_CUR) != 0) {
                     FFEA_ERROR_MESSG("Error when trying to find last frame from file %s\n", params.measurement_out_fname.c_str())
@@ -1728,7 +1728,7 @@ int World::run() {
     scalar wtime0, wtime1, wtime2, wtime3, wtime4, time0=0, time1=0, time2=0, time3=0, time4=0;
 #endif
 
-    for (long long step = step_initial; step < params.num_steps; step++) {
+    for (long long step = step_initial; step < params.num_steps + 1; step++) {
 
 #ifdef BENCHMARK
         wtime0 = omp_get_wtime();
@@ -1937,6 +1937,11 @@ int World::run() {
         wtime3 = omp_get_wtime();
         time2 += wtime3 - wtime2;
 #endif
+
+	// Output to checkpoint files the random numbers responsible for the current system before they advance in the update_internal_forces bit
+	if ((step) % params.check == 0) {
+		print_checkpoints();
+	}
 
         // Update Blobs, while tracking possible errors.
         int fatal_errors = 0;
@@ -3759,48 +3764,6 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // TRAJECTORY END
 
 
-    // CHECKPOINT - Write the state of the RNGs:
-    // REWIND!
-    rewind(checkpoint_out);
-    // Header for the thermal stresses:
-    int thermal_seeds = num_seeds;
-    if(params.calc_kinetics == 1) thermal_seeds += 1;
-    fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", thermal_seeds);
-    unsigned long state[6];
-    // First save the state of the running threads:
-    for (int i=0; i<num_threads; i++) {
-        rng[i].GetState(state);
-        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
-                state[3], state[4], state[5]);
-         for(int j = 0; j < 6; ++j) {
-            cout << " " << state[j];
-      }
-          cout << endl;
-    }
-    // If there were more threads running on the previous run, we'll save them too:
-    int oldThreads = thermal_seeds - num_threads;
-    for (int i=0; i<oldThreads; i++) {
-        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0],
-                Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
-                Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
-        //for(int j = 0; j < 6; ++j) {
-//	    cout << Seeds[i+num_threads][j] << " ";
-        //   }
-        // cout << endl;
-    }
-    // If we're doing kinetics, we're saving the state of the extra RNG:
-    if (params.calc_kinetics) {
-        fprintf(checkpoint_out, "RNGStream dedicated to the kinetics:\n");
-        kinetic_rng->GetState(state);
-        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
-                state[3], state[4], state[5]);
-
-    }
-    fflush(checkpoint_out);
-    // Done with the checkpoint!
-
-
-
     // Detailed Measurement Stuff.
     // Stuff needed on each blob, and in global energy files
     if(detailed_meas_out != NULL) {
@@ -3831,6 +3794,50 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     }
     fflush(measurement_out);
 
+}
+
+/** Print the RNG values responsible for the current state of the system i.e. do this before all forces are calculated, which advances the system */
+void World::print_checkpoints() {
+
+    // CHECKPOINT - Write the state of the RNGs:
+    // REWIND!
+    rewind(checkpoint_out);
+    // Header for the thermal stresses:
+    int thermal_seeds = num_seeds;
+    if(params.calc_kinetics == 1) thermal_seeds += 1;
+    fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", thermal_seeds);
+    unsigned long state[6];
+    // First save the state of the running threads:
+    for (int i=0; i<num_threads; i++) {
+        rng[i].GetState(state);
+        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
+                state[3], state[4], state[5]);
+       //  for(int j = 0; j < 6; ++j) {
+         //   cout << " " << state[j];
+      //}
+     //     cout << endl;
+    }
+    // If there were more threads running on the previous run, we'll save them too:
+    int oldThreads = thermal_seeds - num_threads;
+    for (int i=0; i<oldThreads; i++) {
+        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0],
+                Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
+                Seeds[i+num_threads][4], Seeds[i+num_threads][5]);
+        //for(int j = 0; j < 6; ++j) {
+//	    cout << Seeds[i+num_threads][j] << " ";
+        //   }
+        // cout << endl;
+    }
+    // If we're doing kinetics, we're saving the state of the extra RNG:
+    if (params.calc_kinetics) {
+        fprintf(checkpoint_out, "RNGStream dedicated to the kinetics:\n");
+        kinetic_rng->GetState(state);
+        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
+                state[3], state[4], state[5]);
+
+    }
+    fflush(checkpoint_out);
+    // Done with the checkpoint!
 }
 
 void World::make_measurements() {
