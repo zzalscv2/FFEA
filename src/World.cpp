@@ -2490,7 +2490,7 @@ int World::read_and_build_system(vector<string> script_vector) {
         for(j = 0; j < params.num_conformations[i]; ++j) {
             cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
 
-            if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), binding.at(j).c_str(), beads.at(j).c_str(),
+            if (blob_array[i][j].init(i, j, nodes.at(j), topology.at(j), surface.at(j), material.at(j), stokes.at(j), vdw.at(j), pin.at(j), binding.at(j), beads.at(j),
                                       scale,calc_compress, compress, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
                 FFEA_error_text();
                 cout << "\tError when trying to initialise Blob " << i << ", conformation " << j << "." << endl;

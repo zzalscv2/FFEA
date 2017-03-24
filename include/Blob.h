@@ -95,12 +95,13 @@ public:
      * substitution) and 1 for iterative (preconditioned gonjugate gradient).
      * Also takes the simulation parameters and the array of RNGs (for multiprocessor runs).
      */
-    int init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
-            const char *stokes_filename, const char *vdw_filename, const char *pin_filename, const char *binding_filename, const char *beads_filename, scalar scale, scalar calc_compress, scalar compress, int linear_solver,
-            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, RngStream rng[], int num_threads);
-    //int init(const int blob_index, const int conformation_index, const string node_filename, const string topology_filename, const string surface_filename, const string material_params_filename,
-      //  const string stokes_filename, const string vdw_filename, const string pin_filename, scalar scale, int linear_solver,
-        //int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, MTRand rng[], int num_threads);
+    int init(const int blob_index, const int conformation_index, string node_filename, 
+             string topology_filename, string surface_filename, string material_params_filename,
+             string stokes_filename, string vdw_filename, string pin_filename, 
+             string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
+             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
+             PreComp_params *pc_params, LJ_matrix *lj_matrix,
+             BindingSite_matrix *binding_matrix, RngStream rng[], int num_threads);
 
     /**
      * Calculates all internal forces on the finite element mesh, storing them on the elements
