@@ -2141,13 +2141,14 @@ int World::read_and_build_system(vector<string> script_vector) {
     vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, maps, beads;
     string states, rates, map_fname;
     int map_indices[2];
-    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, set_calc_compress = 0, set_compress = 0,calc_compress = 0;
+    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, set_centroid = 0, set_velocity = 0, set_rotation = 0, calc_compress = 0; 
     scalar scale = 1, compress = 1;
     int solver = FFEA_NOMASS_CG_SOLVER;
     vector<int> motion_state, maps_conf_index_to, maps_conf_index_from;
     vector<int>::iterator maps_conf_ind_it;
 
-    scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
+    vector<string> sv_centroid, sv_velocity, sv_rotation; 
+    
 
     // Get interactions vector first, for later use
     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) {
@@ -2344,8 +2345,6 @@ int World::read_and_build_system(vector<string> script_vector) {
             set_binding = 0;
             set_pin = 0;
             set_preComp = 0;
-            set_compress = 0;
-            set_calc_compress = 0;
             conformation_vector.clear();
         }
 
@@ -2438,38 +2437,22 @@ int World::read_and_build_system(vector<string> script_vector) {
                 scale /= mesoDimensions::length;
             } else if(lrvalue[0] == "calc_compress") {
                 calc_compress = atof(lrvalue[1].c_str());
-                set_calc_compress = 1;
             } else if(lrvalue[0] == "compress") {
                 compress = atof(lrvalue[1].c_str());
-                set_compress = 1;
             } else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
-                /** centroid will be rescaled later **/
-                centroid = new scalar[3];
-
-                lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
-                boost::trim(lrvalue[1]);
-                systemreader->split_string(lrvalue[1], centroid, ",");
-
+                set_centroid = 1; 
+                sv_centroid.push_back(lrvalue[1]); 
             } else if(lrvalue[0] == "velocity") {
-                /** velocity will be rescaled later **/
-                velocity = new scalar[3];
-
-                lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
-                boost::trim(lrvalue[1]);
-                systemreader->split_string(lrvalue[1], velocity, ",");
-
+                set_velocity = 1;
+                sv_velocity.push_back(lrvalue[1]); 
             } else if(lrvalue[0] == "rotation") {
-
-                rotation = new scalar[9];
-                lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
-                boost::trim(lrvalue[1]);
-                if(systemreader->split_string(lrvalue[1], rotation, ",") == 3) {
-                    rotation_type = 0;
-                } else {
-                    rotation_type = 1;
-                }
+                set_rotation = 1; 
+                sv_rotation.push_back(lrvalue[1]); 
             }
         }
+        if (set_centroid == 0) sv_centroid.push_back(""); 
+        if (set_velocity == 0) sv_velocity.push_back(""); 
+        if (set_rotation == 0) sv_rotation.push_back(""); 
 
         // Error checking
         if(set_solver == 0) {
@@ -2488,49 +2471,85 @@ int World::read_and_build_system(vector<string> script_vector) {
         // Build conformations (structural data)
         // vector3 *cent = new vector3;
         for(j = 0; j < params.num_conformations[i]; ++j) {
-            cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
+            cout << "\tConfiguring blob " << i << " conformation " << j << "..." << endl;
 
-            if (blob_array[i][j].init(i, j, nodes.at(j), topology.at(j), surface.at(j), material.at(j), stokes.at(j), vdw.at(j), pin.at(j), binding.at(j), beads.at(j),
-                                      scale,calc_compress, compress, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
-                FFEA_error_text();
-                cout << "\tError when trying to initialise Blob " << i << ", conformation " << j << "." << endl;
-                return FFEA_ERROR;
+            if (blob_array[i][j].config(i, j, nodes.at(j), topology.at(j), surface.at(j), material.at(j), stokes.at(j), vdw.at(j), pin.at(j), binding.at(j), beads.at(j),
+                                      scale,calc_compress, compress, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng) == FFEA_ERROR) {
+                FFEA_ERROR_MESSG("\tError when trying to pre-initialise Blob %d, conformation %d.\n", i, j); 
+            }
+         } 
+
+
+
+        // Clear blob vector and other vectors for next round
+        motion_state.clear();
+        nodes.clear();
+        topology.clear();
+        surface.clear();
+        material.clear();
+        stokes.clear();
+        vdw.clear();
+        binding.clear();
+        pin.clear();
+        maps.clear();
+        beads.clear();
+        scale = 1;
+        solver = FFEA_NOMASS_CG_SOLVER;
+        map_vector.clear();
+        kinetics_vector.clear();
+        blob_vector.clear();
+        set_centroid = 0;
+        set_velocity = 0;
+        set_rotation = 0;
+        set_scale = 0;
+        set_solver = 0;
+        set_rates = 0;
+        set_states = 0;
+    }
+
+    // Blobs are now configured. Initialisation will allocate memory,
+    //    and thus it may be performance wise to initialise things in the 
+    //    thread they will be. Hopefully will work. 
+    for(i = 0; i < params.num_blobs; ++i) {
+        for(j = 0; j < params.num_conformations[i]; ++j) {
+
+            cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
+            if (blob_array[i][j].init() == FFEA_ERROR) {
+                FFEA_ERROR_MESSG("Error when initialising Blob %d, conformation %d", i, j); 
             }
 
             // If not an active conforamtion, move to random area in infinity so vdw and stuff are not active (face linked list is not set up for deleting elements)
             if (j > 0) {
                 blob_array[i][j].position(arng.RandU01() * 1e10, arng.RandU01() * 1e10, arng.RandU01() * 1e10);
-                //blob_array[i][0].get_centroid(cent);
-                //cout << "Blob " << i << ", Conformation " << "0" << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
-                //blob_array[i][j].get_centroid(cent);
-                //cout << "Blob " << i << ", Conformation " << j << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
             } else {
 
                 // Activate all faces
                 blob_array[i][j].kinetically_set_faces(true);
 
                 // if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
-                if (centroid != NULL) {
+                if (sv_centroid[i].empty() == false) { 
+                    scalar centroid[3]; 
+                    cout << "passing centroid" << sv_centroid[i] << endl; 
+                    sv_centroid[i] = boost::erase_last_copy(boost::erase_first_copy(sv_centroid[i], "("), ")");
+                    boost::trim(sv_centroid[i]); 
+                    systemreader->split_string(sv_centroid[i], centroid, ","); 
 
-                    // Rescale first
-                    //cout << centroid[0] << " " << centroid[1] << " " << centroid[2] << endl;
-                    centroid[0] *= scale;
-                    centroid[1] *= scale;
-                    centroid[2] *= scale;
-                    //vector3 lol = blob_array[i][j].calc_centroid();
-                    //cout << lol.x << " " << lol.y << " " << lol.z << endl;
+                    centroid[0] *= blob_array[i][j].get_scale();
+                    centroid[1] *= blob_array[i][j].get_scale();
+                    centroid[2] *= blob_array[i][j].get_scale();
                     vector3 dv = blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
-                    //lol = blob_array[i][j].calc_centroid();
-                    //cout << lol.x << " " << lol.y << " " << lol.z << endl;
-                    //exit(0);
 
                     // if Blob has a number of beads, transform them too:
                     if (blob_array[i][j].get_num_beads() > 0)
                         blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
                 }
 
-                if(rotation != NULL) {
-                    if(rotation_type == 0) {
+                if(sv_rotation[i].empty() == false) {
+                    scalar rotation[9]; 
+                    sv_rotation[i] = boost::erase_last_copy(boost::erase_first_copy(sv_rotation[i], "("), ")");
+                    boost::trim(sv_rotation[i]); 
+
+                    if(systemreader->split_string(sv_rotation[i], rotation, ",") == 3) {
                         if (blob_array[i][j].get_num_beads() > 0) {
                             blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
                         } else {
@@ -2546,11 +2565,18 @@ int World::read_and_build_system(vector<string> script_vector) {
                     }
                 }
 
-                if (velocity != NULL)
+                
+                if (sv_velocity[i].empty() == false) {
+                    scalar velocity[3]; 
+                    sv_velocity[i] = boost::erase_last_copy(boost::erase_first_copy(sv_velocity[i], "("), ")");
+                    boost::trim(sv_velocity[i]);
+                    systemreader->split_string(sv_velocity[i], velocity, ",");
+
                     blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
+                }
 
                 // Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
-                if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
+                if (blob_array[i][j].get_motion_state() == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
                     blob_array[i][j].add_steric_nodes();
                 }
 
@@ -2605,35 +2631,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 
         }
-
-        // Clear blob vector and other vectors for next round
-        motion_state.clear();
-        nodes.clear();
-        topology.clear();
-        surface.clear();
-        material.clear();
-        stokes.clear();
-        vdw.clear();
-        binding.clear();
-        pin.clear();
-        maps.clear();
-        beads.clear();
-        scale = 1;
-        solver = FFEA_NOMASS_CG_SOLVER;
-        map_vector.clear();
-        kinetics_vector.clear();
-        blob_vector.clear();
-        centroid = NULL;
-        velocity = NULL;
-        rotation = NULL;
-        set_scale = 0;
-        set_solver = 0;
-        set_rates = 0;
-        set_states = 0;
-        set_calc_compress = 0;
-        set_compress = 0;
     }
 
+/// /// 
     // Finally, get springs
     if (params.calc_springs == 1)
         systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
