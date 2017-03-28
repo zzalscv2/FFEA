@@ -95,6 +95,7 @@ SimulationParams::SimulationParams() {
     ocheckpoint_fname = "\n";
     detailed_meas_out_fname = "\n";
     ctforces_fname = "\n";
+    trajectory_beads_fname = "\n"; 
 }
 
 SimulationParams::~SimulationParams() {
@@ -164,6 +165,7 @@ SimulationParams::~SimulationParams() {
     vdw_in_fname = "\n";
     detailed_meas_out_fname = "\n";
     ctforces_fname = "\n";
+    trajectory_beads_fname = "\n"; 
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
@@ -490,6 +492,12 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 		ocheckpoint_fname_set = 1;
 		cout << "\tSetting " << lvalue << " = " << ocheckpoint_fname << endl;
 
+	} else if (lvalue == "beads_out_fname") {
+		b_fs::path auxpath = FFEA_script_path / rvalue;
+		trajectory_beads_fname = auxpath.string();
+		trajbeads_fname_set = 1;
+		cout << "\tSetting " << lvalue << " = " << trajectory_beads_fname << endl;
+
 	} else if (lvalue == "bsite_in_fname") {
 		b_fs::path auxpath = FFEA_script_path / rvalue;
 		bsite_in_fname = auxpath.string();
@@ -679,6 +687,7 @@ int SimulationParams::validate(int sim_mode) {
           checkFileName(detailed_meas_out_fname);
           checkFileName(trajectory_out_fname);
           checkFileName(kinetics_out_fname);
+          checkFileName(trajectory_beads_fname);
         }
     }
 
@@ -769,6 +778,7 @@ int SimulationParams::validate(int sim_mode) {
     if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "ljsteric")) {
         printf("\tvdw_steric_factor = %e\n", vdw_steric_factor);
     }
+    if (trajbeads_fname_set == 1) printf("\tbeads_out_fname = %s\n", trajectory_beads_fname.c_str());
     return FFEA_OK;
 }
 
