@@ -51,6 +51,7 @@ typedef double geoscalar;
 namespace ffea_const {
    const scalar threeErr = 3.0*std::numeric_limits<scalar>::epsilon();
    const scalar threeGeoErr = 3.0*std::numeric_limits<geoscalar>::epsilon();
+   const scalar pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148;
    const scalar mOne = -1.0;
    const scalar zero = 0.0;
    const scalar half = 0.5;

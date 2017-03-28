@@ -388,7 +388,7 @@ int Blob::init(){
     // Store stokes drag on nodes, for use in viscosity matrix
     if (params->calc_stokes == 1) {
         for (int i = 0; i < num_nodes; ++i) {
-            node[i].stokes_drag = 6.0 * 3.141592654 * params->stokes_visc * node[i].stokes_radius;
+            node[i].stokes_drag = 6.0 * ffea_const::pi * params->stokes_visc * node[i].stokes_radius;
         }
     }
 
@@ -732,31 +732,16 @@ void Blob::translate_linear(vector3 *vec) {
 }
 
 // Rotate about x axis, then y axis, then z axis
-void Blob::rotate(float xang, float yang, float zang, int beads) {
-    int i;
-    scalar x, y, z;
-    // scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
-    vector3 com;
+void Blob::rotate(float xang, float yang, float zang, bool beads) {
+
     scalar r[3][3];
 
     // Convert to radians
-    xang *= 3.1415926 / 180.0;
-    yang *= 3.1415926 / 180.0;
-    zang *= 3.1415926 / 180.0;
+    xang *= ffea_const::pi / 180.0;
+    yang *= ffea_const::pi / 180.0;
+    zang *= ffea_const::pi / 180.0;
 
-    get_centroid(&com);
-
-    // Move all nodes to the origin:
-#ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel for default(none) private(i) shared(com)
-#endif
-    for (i = 0; i < num_nodes; i++) {
-        node[i].pos.x -= com.x;
-        node[i].pos.y -= com.y;
-        node[i].pos.z -= com.z;
-    }
-
-    // Do rotation
+    // Get rotation
     r[0][0] = cos(yang) * cos(zang);
     r[0][1] = sin(xang) * sin(yang) * cos(zang) - cos(xang) * sin(zang);
     r[0][2] = cos(xang) * sin(yang) * cos(zang) + sin(xang) * sin(zang);
@@ -767,39 +752,13 @@ void Blob::rotate(float xang, float yang, float zang, int beads) {
     r[2][1] = sin(xang) * cos(yang);
     r[2][2] = cos(xang) * cos(yang);
 
-    for (i = 0; i < num_nodes; i++) {
-        x = node[i].pos.x;
-        y = node[i].pos.y;
-        z = node[i].pos.z;
-
-        node[i].pos.x = x * r[0][0] + y * r[0][1] + z * r[0][2] + com.x;
-        node[i].pos.y = x * r[1][0] + y * r[1][1] + z * r[1][2] + com.y;
-        node[i].pos.z = x * r[2][0] + y * r[2][1] + z * r[2][2] + com.z;
-    }
-
-
-
-    if (beads == 1) {
-        if (num_beads > 0) {
-            // Move all beads to the origin:
-            for (i = 0; i < num_beads; i++) {
-                bead_position[3*i] -= com.x;
-                bead_position[3*i+1] -= com.y;
-                bead_position[3*i+2] -= com.z;
-            }
-
-            // Do the actual rotation and bring the beads back to its initial position:
-            for (i = 0; i < num_beads; i++) {
-                node[i].pos.x = bead_position[3*i] * r[0][0] + bead_position[3*i+1] * r[0][1] + bead_position[3*i+2] * r[0][2] + com.x;
-                node[i].pos.y = bead_position[3*i] * r[1][0] + bead_position[3*i+1] * r[1][1] + bead_position[3*i+2] * r[1][2] + com.y;
-                node[i].pos.z = bead_position[3*i] * r[2][0] + bead_position[3*i+1] * r[2][1] + bead_position[3*i+2] * r[2][2] + com.z;
-            }
-        }
-    }
+    rotate(r[0][0], r[0][1], r[0][2],
+           r[1][0], r[1][1], r[1][2], 
+           r[2][0], r[2][1], r[2][2], beads); 
 
 }
 
-void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, int beads) {
+void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, bool beads) {
     int i;
     vector3 com;
     scalar x, y, z;
@@ -830,7 +789,7 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
     }
 
 
-    if (beads == 1) {
+    if (beads) {
         if (num_beads > 0) {
             // Move all beads to the origin:
             for (i = 0; i < num_beads; i++) {
@@ -1564,6 +1523,11 @@ int Blob::get_num_beads() {
     return num_beads;
 }
 
+bool Blob::is_using_beads() {
+    if (num_beads > 0) return true;
+    else return false; 
+}
+
 /*
  *
  */
@@ -1973,12 +1937,12 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
                     block *= 2 * a * a / mod2;
                     block += Eigen_Matrix3::Identity() * mod2;
                     block += rr;
-                    block *= params->kT / (8 * 3.14159265 * params->stokes_visc * mod2 * mod);
+                    block *= params->kT / (8 * ffea_const::pi * params->stokes_visc * mod2 * mod);
 
                 } else {
                     block = Eigen::Matrix3d::Identity() * (1 - ((9 * mod) / (32.0 * a)));
                     block += rr * (3 / (32.0 * a * mod));
-                    block *= params->kT / (6 * 3.14159265 * params->stokes_visc * a);
+                    block *= params->kT / (6 * ffea_const::pi * params->stokes_visc * a);
                 }
             }
 
@@ -2295,6 +2259,10 @@ int Blob::get_motion_state() {
 
 scalar Blob::get_scale() {
     return scale; 
+}
+
+scalar Blob::get_RandU01() {
+    return rng->RandU01(); 
 }
 
 int Blob::get_num_linear_nodes() {

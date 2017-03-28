@@ -69,6 +69,25 @@ typedef Eigen::Vector3d Eigen_Vector3;
 #endif
 
 
+struct Blob_conf {
+
+   // initial placement, orientation and velocity:
+   int set_centroid;
+   scalar centroid[3];
+   int set_velocity; 
+   scalar velocity[3];
+   int set_rotation; 
+   int rotation_type;
+   scalar rotation[9];
+
+   // kinetics:
+   string states, rates;
+   vector<string> maps; 
+   vector<int> maps_conf_index_to, maps_conf_index_from; 
+   
+};
+
+
 /*
  * The "Blob" class
  */
@@ -130,12 +149,12 @@ public:
      * rotates all nodes in the Blob, and brings back the Blob to the initial position.
      * If beads = 1, then it rotates its own "bead_positions" too.
      */
-    void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, int beads=0);
+    void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, bool beads=false);
 
     /**
      *   Performs rotation about x axis, then y axis, then z axis
      */
-    void rotate(float xang, float yang, float zang, int beads=0);
+    void rotate(float xang, float yang, float zang, bool beads=false);
 
     /**
      * Calculates the centroid of this Blob, then translates all nodes in the Blob
@@ -381,10 +400,13 @@ public:
     int get_motion_state();
 
     scalar get_scale();
+    
+    scalar get_RandU01(); 
 
     int get_num_linear_nodes();
 
     int get_num_beads();
+    bool is_using_beads();
 
     scalar get_rmsd();
 
