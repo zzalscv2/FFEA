@@ -984,12 +984,15 @@ int PreComp_solver::safely_swap_pc_layers() {
   
 void PreComp_solver::write_beads_to_file(FILE *fout, int timestep){
 
+   const float toA = mesoDimensions::length * 1e10;
+   fprintf(fout, "MODEL %12d\n", timestep); 
    for (int i=0; i<n_beads; i++){ 
-      fprintf(fout, "ATOM %8d %4s %3s %3s %8d %12.3f %12.3f %12.3f %3d %12d\n", 
-                 i, stypes[b_types[i]].c_str(), "FEA", "A", b_elems_ndx[i], 
-                 b_pos[3*i], b_pos[3*i+1], b_pos[3*i+2],
-                 b_blob_ndx[i], timestep); 
+      fprintf(fout, "ATOM %6d %4s %3s %1s%4i    %8.3f%8.3f%8.3f  %8d %3d\n",
+               i+1, "CA", stypes[b_types[i]].c_str(), "A", i+1, 
+               b_pos[3*i]*toA, b_pos[3*i+1]*toA, b_pos[3*i+2]*toA,
+               b_elems_ndx[i], b_blob_ndx[i]); 
    } 
+   fprintf(fout, "ENDMDL\n");
 
 } 
 
