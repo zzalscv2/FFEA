@@ -202,6 +202,9 @@ private:
     /** @brief Output detailed measurements file. May be unneccesary */
     FILE *detailed_meas_out;
 
+    /** @brief Output file for the trajectory beads. Completely optional. */
+    FILE *trajbeads_out; 
+
     //@{
     /** Energies */
     scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, vdwenergy, preCompenergy;

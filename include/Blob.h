@@ -69,6 +69,25 @@ typedef Eigen::Vector3d Eigen_Vector3;
 #endif
 
 
+struct Blob_conf {
+
+   // initial placement, orientation and velocity:
+   int set_centroid;
+   scalar centroid[3];
+   int set_velocity; 
+   scalar velocity[3];
+   int set_rotation; 
+   int rotation_type;
+   scalar rotation[9];
+
+   // kinetics:
+   string states, rates;
+   vector<string> maps; 
+   vector<int> maps_conf_index_to, maps_conf_index_from; 
+   
+};
+
+
 /*
  * The "Blob" class
  */
@@ -95,12 +114,14 @@ public:
      * substitution) and 1 for iterative (preconditioned gonjugate gradient).
      * Also takes the simulation parameters and the array of RNGs (for multiprocessor runs).
      */
-    int init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
-            const char *stokes_filename, const char *vdw_filename, const char *pin_filename, const char *binding_filename, const char *beads_filename, scalar scale, scalar calc_compress, scalar compress, int linear_solver,
-            int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, RngStream rng[], int num_threads);
-    //int init(const int blob_index, const int conformation_index, const string node_filename, const string topology_filename, const string surface_filename, const string material_params_filename,
-      //  const string stokes_filename, const string vdw_filename, const string pin_filename, scalar scale, int linear_solver,
-        //int blob_state, SimulationParams *params, LJ_matrix *lj_matrix, MTRand rng[], int num_threads);
+    int config(const int blob_index, const int conformation_index, string node_filename, 
+             string topology_filename, string surface_filename, string material_params_filename,
+             string stokes_filename, string vdw_filename, string pin_filename, 
+             string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
+             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
+             PreComp_params *pc_params, LJ_matrix *lj_matrix,
+             BindingSite_matrix *binding_matrix, RngStream rng[]);
+    int init();
 
     /**
      * Calculates all internal forces on the finite element mesh, storing them on the elements
@@ -128,12 +149,12 @@ public:
      * rotates all nodes in the Blob, and brings back the Blob to the initial position.
      * If beads = 1, then it rotates its own "bead_positions" too.
      */
-    void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, int beads=0);
+    void rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, bool beads=false);
 
     /**
      *   Performs rotation about x axis, then y axis, then z axis
      */
-    void rotate(float xang, float yang, float zang, int beads=0);
+    void rotate(float xang, float yang, float zang, bool beads=false);
 
     /**
      * Calculates the centroid of this Blob, then translates all nodes in the Blob
@@ -378,9 +399,14 @@ public:
 
     int get_motion_state();
 
+    scalar get_scale();
+    
+    scalar get_RandU01(); 
+
     int get_num_linear_nodes();
 
     int get_num_beads();
+    bool is_using_beads();
 
     scalar get_rmsd();
 
@@ -543,10 +569,24 @@ private:
       * being Fx, Fy, Fz the components of the force */
     scalar *ctf_sl_forces;
 
+    /** Strings of all the files that contain input data: */
+    string s_node_filename, s_topology_filename, s_surface_filename, 
+          s_material_params_filename, s_stokes_filename, s_vdw_filename, 
+          s_pin_filename, s_binding_filename, s_beads_filename;
 
+
+    /** Scale of the input coordinates to m: */
+    scalar scale;
+
+    /** Compression stuff: */
+    scalar calc_compress, compress; 
 
     /** A pointer to a class containing simulation parameters, such as the time step, dt */
     SimulationParams *params;
+    PreComp_params *pc_params;
+
+    /** A pointer to the same binding matrix configured in World */ 
+    BindingSite_matrix *binding_matrix;
 
     /** pointer to the vdw forcefield parameters (for some energy calcs) */
     LJ_matrix *lj_matrix;
@@ -669,7 +709,7 @@ private:
     /**
      * Opens and reads the given 'ffea binding site file', extracting all the kinetic binding sites (types and face lists) for this Blob.
      */
-    int load_binding_sites(const char *binding_filename, int num_binding_site_types);
+    int load_binding_sites(); // const char *binding_filename, int num_binding_site_types);
 
     /**
      * Opens and reads the given 'ffea pinned nodes file', extracting all the faces for this Blob.

@@ -126,6 +126,7 @@ public:
     string icheckpoint_fname;  ///< Input Checkpoint file name
     string ocheckpoint_fname;  ///< Output Checkpoint file name
     string ctforces_fname; ///< Input file containing constant forces onto a list of nodes.
+    string trajectory_beads_fname; ///< Output optional file.
 
     SimulationParams();
 
@@ -153,6 +154,7 @@ public:
 
     /** These set parameters are not private because the World needs them!! */
     int kinetics_out_fname_set;
+    int trajbeads_fname_set; 
 
     /** Writes all params to params_out_fname for user's info */
     void write_to_file(FILE *fout);

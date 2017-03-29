@@ -450,6 +450,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             blob_array[i][j].set_pos_0();
         }
     }
+
+
     // If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
     if(mode == 0) {
         // In any case, open the output checkpoint file for writing
@@ -467,11 +469,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             // Open the trajectory output file for writing
             if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "w")) == NULL) {
                 FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
-            }
-
-            // Open the measurement output file for writing
-            if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "w")) == NULL) {
-                FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
             }
 
             // HEADER FOR TRAJECTORY
@@ -493,6 +490,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
             // First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
             fprintf(trajectory_out, "*\n");
+
+
+            // Open the measurement output file for writing
+            if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "w")) == NULL) {
+                FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
+            }
 
             // HEADER FOR MEASUREMENTS
             // Write header to output file
@@ -558,6 +561,28 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 }
                 fprintf(detailed_meas_out, "\n");
                 fflush(detailed_meas_out);
+            }
+
+            // Open the beads_out file:
+            if (params.trajbeads_fname_set == 1) {
+               if ((trajbeads_out = fopen(params.trajectory_beads_fname.c_str(), "w")) == NULL) {
+                 FFEA_FILE_ERROR_MESSG(params.trajectory_beads_fname.c_str())
+               }
+               /* attempt to write a cif file:
+               // ATOM 2 CA GLN A 23.581 -26.768 24.416  1 1
+               fprintf(trajbeads_out, "data_ffea\n"); 
+               fprintf(trajbeads_out, "loop_\n"); 
+               fprintf(trajbeads_out, "_atom_site.group_PDB\n");  // "ATOM"
+               fprintf(trajbeads_out, "_atom_site.id\n");         //  bead_id (atomnum)
+               fprintf(trajbeads_out, "_atom_site.auth_atom_id\n"); // CA
+               fprintf(trajbeads_out, "_atom_site.auth_comp_id\n"); // GLN
+               fprintf(trajbeads_out, "_atom_site.auth_asym_id\n"); // A (Chain) 
+               fprintf(trajbeads_out, "_atom_site.auth_seq_id\n"); // elem_id (resid)
+               fprintf(trajbeads_out, "_atom_site.Cartn_x\n_atom_site.Cartn_y\n_atom_site.Cartn_z\n"); // x y z
+               fprintf(trajbeads_out, "_atom_type.number_in_cell\n"); // elem where bead is assoc
+               fprintf(trajbeads_out, "_entity.id"); // molecule number aka blobid
+               fprintf(trajbeads_out, "_atom_site.pdbx_PDB_model_num\n"); // timestep. */ 
+
             }
 
             // Open the kinetics output file for writing (if neccessary) and write initial stuff
@@ -805,6 +830,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             * Fix restart for measurements and kinetics in future. Use rstep to find appropriate line
             *
             */
+            // traj beads do not work yet:
+            if (params.trajbeads_fname_set == 1) 
+               FFEA_ERROR_MESSG("FFEA cannot still restart and keep writing on the beads file. Just remove it from your input file."); 
 
         }
 
@@ -1761,7 +1789,7 @@ int World::run() {
 
         // Zero the force across all blobs
 #ifdef USE_OPENMP
-        #pragma omp parallel for default(none) shared(es_update,stderr,step) schedule(guided)
+        #pragma omp parallel for default(none) shared(es_update,stderr,step) schedule(static)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->zero_force();
@@ -1946,7 +1974,7 @@ int World::run() {
         // Update Blobs, while tracking possible errors.
         int fatal_errors = 0;
 #ifdef FFEA_PARALLEL_PER_BLOB
-        #pragma omp parallel for default(none) reduction(+: fatal_errors) schedule(dynamic,1)
+        #pragma omp parallel for default(none) reduction(+: fatal_errors) schedule(static)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             if (active_blob_array[i]->update_internal_forces() == FFEA_ERROR) fatal_errors++;
@@ -1963,7 +1991,8 @@ int World::run() {
 
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
-        #pragma omp parallel for default(none) schedule(dynamic,1) shared(cout)
+
+        #pragma omp parallel for default(none) schedule(static) 
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->update_positions();
@@ -2062,10 +2091,6 @@ int World::change_kinetic_state(int blob_index, int target_state) {
     if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
         // Conformation change!
-        RngStream arng;
-        cout << "New RngStream created with initial state:" << endl;
-        arng.WriteState();
-
         // Get current nodes
         vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
 
@@ -2080,7 +2105,7 @@ int World::change_kinetic_state(int blob_index, int target_state) {
         kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
 
         // Move the old one to random space so as not to interfere with calculations, and deactivate all faces
-        blob_array[blob_index][current_conformation].position(arng.RandU01() * 1e10, arng.RandU01() * 1e10, arng.RandU01() * 1e10);
+        blob_array[blob_index][current_conformation].position(blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10);
         blob_array[blob_index][current_conformation].kinetically_set_faces(false);
 
         // Reactivate springs
@@ -2123,6 +2148,9 @@ int World::read_and_build_system(vector<string> script_vector) {
     blob_array = new Blob*[params.num_blobs];
     active_blob_array = new Blob*[params.num_blobs];
 
+#ifdef FFEA_PARALLEL_PER_BLOB
+    #pragma omp parallel for default(none) schedule(static) shared(blob_array, active_blob_array)
+#endif
     for (int i = 0; i < params.num_blobs; ++i) {
         blob_array[i] = new Blob[params.num_conformations[i]];
         active_blob_array[i] = &blob_array[i][0];
@@ -2138,16 +2166,16 @@ int World::read_and_build_system(vector<string> script_vector) {
     vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, param_vector, spring_vector, binding_vector;
     vector<string>::iterator it;
 
-    vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, maps, beads;
-    string states, rates, map_fname;
+    vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, beads;
+    string map_fname;
     int map_indices[2];
-    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, set_calc_compress = 0, set_compress = 0,calc_compress = 0;
+    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0; 
     scalar scale = 1, compress = 1;
     int solver = FFEA_NOMASS_CG_SOLVER;
-    vector<int> motion_state, maps_conf_index_to, maps_conf_index_from;
+    vector<int> motion_state;
     vector<int>::iterator maps_conf_ind_it;
 
-    scalar *centroid = NULL, *velocity = NULL, *rotation = NULL;
+    vector<Blob_conf> blob_conf;
 
     // Get interactions vector first, for later use
     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) {
@@ -2212,8 +2240,13 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 
     // Read in each blob one at a time
-    RngStream arng;
     for(i = 0; i < params.num_blobs; ++i) {
+
+        // Initialise some blob_conf stuff:
+        blob_conf.push_back(Blob_conf()); 
+        blob_conf[i].set_centroid = 0;
+        blob_conf[i].set_velocity = 0;
+        blob_conf[i].set_rotation = 0;
 
         // Get blob data
         systemreader->extract_block("blob", i, script_vector, &blob_vector);
@@ -2344,8 +2377,6 @@ int World::read_and_build_system(vector<string> script_vector) {
             set_binding = 0;
             set_pin = 0;
             set_preComp = 0;
-            set_compress = 0;
-            set_calc_compress = 0;
             conformation_vector.clear();
         }
 
@@ -2364,15 +2395,15 @@ int World::read_and_build_system(vector<string> script_vector) {
                 // Parse map data
                 for(it = map_vector.begin(); it != map_vector.end(); ++it) {
                     systemreader->parse_map_tag(*it, map_indices, &map_fname);
-                    maps.push_back(map_fname);
-                    maps_conf_index_from.push_back(map_indices[0]);
-                    maps_conf_index_to.push_back(map_indices[1]);
+                    blob_conf[i].maps.push_back(map_fname);
+                    blob_conf[i].maps_conf_index_from.push_back(map_indices[0]);
+                    blob_conf[i].maps_conf_index_to.push_back(map_indices[1]);
                 }
 
                 // Error check
-                if(maps.size() != params.num_conformations[i] * (params.num_conformations[i] - 1)) {
+                if(blob_conf[i].maps.size() != params.num_conformations[i] * (params.num_conformations[i] - 1)) {
                     FFEA_error_text();
-                    cout << "In blob " << i << ", expected " << params.num_conformations[i] * (params.num_conformations[i] - 1) << " maps to describe all possible switches.\n Read " << maps.size() << " maps." << endl;
+                    cout << "In blob " << i << ", expected " << params.num_conformations[i] * (params.num_conformations[i] - 1) << " maps to describe all possible switches.\n Read " << blob_conf[i].maps.size() << " maps." << endl;
                     return FFEA_ERROR;
                 }
             }
@@ -2384,10 +2415,10 @@ int World::read_and_build_system(vector<string> script_vector) {
                     if(lrvalue[0] == "maps" || lrvalue[0] == "/maps") {
                         continue;
                     } else if(lrvalue[0] == "states") {
-                        states = lrvalue[1];
+                        blob_conf[i].states = lrvalue[1];
                         set_states = 1;
                     } else if (lrvalue[0] == "rates") {
-                        rates = lrvalue[1];
+                        blob_conf[i].rates = lrvalue[1];
                         set_rates = 1;
                     }
                 }
@@ -2400,8 +2431,8 @@ int World::read_and_build_system(vector<string> script_vector) {
                     FFEA_ERROR_MESSG("Expected a .rates files for blob %d, as num_states = %d\n", i, params.num_states[i])
                 }
             } else {
-                states = "";
-                rates = "";
+                blob_conf[i].states = "";
+                blob_conf[i].rates = "";
             }
         }
 
@@ -2438,36 +2469,29 @@ int World::read_and_build_system(vector<string> script_vector) {
                 scale /= mesoDimensions::length;
             } else if(lrvalue[0] == "calc_compress") {
                 calc_compress = atof(lrvalue[1].c_str());
-                set_calc_compress = 1;
             } else if(lrvalue[0] == "compress") {
                 compress = atof(lrvalue[1].c_str());
-                set_compress = 1;
             } else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
-                /** centroid will be rescaled later **/
-                centroid = new scalar[3];
-
+                blob_conf[i].set_centroid = 1; 
                 lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
                 boost::trim(lrvalue[1]);
-                systemreader->split_string(lrvalue[1], centroid, ",");
-
+                systemreader->split_string(lrvalue[1], blob_conf[i].centroid, ",");
             } else if(lrvalue[0] == "velocity") {
-                /** velocity will be rescaled later **/
-                velocity = new scalar[3];
-
+                blob_conf[i].set_velocity = 1;
                 lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
                 boost::trim(lrvalue[1]);
-                systemreader->split_string(lrvalue[1], velocity, ",");
+                systemreader->split_string(lrvalue[1], blob_conf[i].velocity, ",");
 
             } else if(lrvalue[0] == "rotation") {
-
-                rotation = new scalar[9];
+                blob_conf[i].set_rotation = 1; 
                 lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
                 boost::trim(lrvalue[1]);
-                if(systemreader->split_string(lrvalue[1], rotation, ",") == 3) {
-                    rotation_type = 0;
+                if(systemreader->split_string(lrvalue[1], blob_conf[i].rotation, ",") == 3) {
+                    blob_conf[i].rotation_type = 0;
                 } else {
-                    rotation_type = 1;
+                    blob_conf[i].rotation_type = 1;
                 }
+
             }
         }
 
@@ -2488,123 +2512,16 @@ int World::read_and_build_system(vector<string> script_vector) {
         // Build conformations (structural data)
         // vector3 *cent = new vector3;
         for(j = 0; j < params.num_conformations[i]; ++j) {
-            cout << "\tInitialising blob " << i << " conformation " << j << "..." << endl;
+            cout << "\tConfiguring blob " << i << " conformation " << j << "..." << endl;
 
-            if (blob_array[i][j].init(i, j, nodes.at(j).c_str(), topology.at(j).c_str(), surface.at(j).c_str(), material.at(j).c_str(), stokes.at(j).c_str(), vdw.at(j).c_str(), pin.at(j).c_str(), binding.at(j).c_str(), beads.at(j).c_str(),
-                                      scale,calc_compress, compress, solver, motion_state.at(j), &params, &pc_params, &lj_matrix, &binding_matrix, rng, num_threads) == FFEA_ERROR) {
-                FFEA_error_text();
-                cout << "\tError when trying to initialise Blob " << i << ", conformation " << j << "." << endl;
-                return FFEA_ERROR;
+            if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
+                                        material[j], stokes[j], vdw[j], pin[j], binding[j],
+                                        beads[j], scale, calc_compress, compress, solver,
+                                        motion_state[j], &params, &pc_params, &lj_matrix,
+                                        &binding_matrix, rng) == FFEA_ERROR) {
+                FFEA_ERROR_MESSG("\tError when trying to pre-initialise Blob %d, conformation %d.\n", i, j); 
             }
-
-            // If not an active conforamtion, move to random area in infinity so vdw and stuff are not active (face linked list is not set up for deleting elements)
-            if (j > 0) {
-                blob_array[i][j].position(arng.RandU01() * 1e10, arng.RandU01() * 1e10, arng.RandU01() * 1e10);
-                //blob_array[i][0].get_centroid(cent);
-                //cout << "Blob " << i << ", Conformation " << "0" << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
-                //blob_array[i][j].get_centroid(cent);
-                //cout << "Blob " << i << ", Conformation " << j << ", " << cent->x << " " << cent->y << " " << cent->z << endl;
-            } else {
-
-                // Activate all faces
-                blob_array[i][j].kinetically_set_faces(true);
-
-                // if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
-                if (centroid != NULL) {
-
-                    // Rescale first
-                    //cout << centroid[0] << " " << centroid[1] << " " << centroid[2] << endl;
-                    centroid[0] *= scale;
-                    centroid[1] *= scale;
-                    centroid[2] *= scale;
-                    //vector3 lol = blob_array[i][j].calc_centroid();
-                    //cout << lol.x << " " << lol.y << " " << lol.z << endl;
-                    vector3 dv = blob_array[i][j].position(centroid[0], centroid[1], centroid[2]);
-                    //lol = blob_array[i][j].calc_centroid();
-                    //cout << lol.x << " " << lol.y << " " << lol.z << endl;
-                    //exit(0);
-
-                    // if Blob has a number of beads, transform them too:
-                    if (blob_array[i][j].get_num_beads() > 0)
-                        blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
-                }
-
-                if(rotation != NULL) {
-                    if(rotation_type == 0) {
-                        if (blob_array[i][j].get_num_beads() > 0) {
-                            blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
-                        } else {
-                            blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2]);
-                        }
-                    } else {
-                        if (blob_array[i][j].get_num_beads() > 0) {
-                            blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8]);
-                        } else {
-                            // if Blob has a number of beads, transform them too:
-                            blob_array[i][j].rotate(rotation[0], rotation[1], rotation[2], rotation[3], rotation[4], rotation[5], rotation[6], rotation[7], rotation[8], 1);
-                        }
-                    }
-                }
-
-                if (velocity != NULL)
-                    blob_array[i][j].velocity_all(velocity[0], velocity[1], velocity[2]);
-
-                // Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
-                if (motion_state.at(j) == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
-                    blob_array[i][j].add_steric_nodes();
-                }
-
-                // set the current node positions as pos_0 for this blob, so that all rmsd values
-                // are calculated relative to this conformation centred at this point in space.
-                //blob_array[i][j].set_pos_0();
-            }
-            cout << "\t...done!" << endl;
-        }
-
-        // Build kinetic system (at world level, for future potential global kinetics)
-        if(params.calc_kinetics == 1) {
-            cout << "\tInitialising kinetics for blob " << i << "..." << endl;
-
-            // Will load a default state if params.num_states[i] == 1
-            cout << "\t\tLoading kinetic states...";
-
-            if(load_kinetic_states(states, i) == FFEA_ERROR) {
-                FFEA_error_text();
-                cout << "\nProblem reading kinetic states in 'read_kinetic_states' function" << endl;
-                return FFEA_ERROR;
-            }
-            cout << "...done!" << endl;
-
-            cout << "\t\tLoading kinetic rates...";
-            if(load_kinetic_rates(rates, i) == FFEA_ERROR) {
-                FFEA_error_text();
-                cout << "\nProblem reading kinetic rates in 'read_kinetic_rates' function" << endl;
-                return FFEA_ERROR;
-            }
-            cout << "...done!" << endl;
-
-            // Maps only if num_conforamtions for this blob > 1
-            if(params.num_conformations[i] > 1) {
-                cout << "\t\tLoading kinetic maps..." << endl;
-                if(load_kinetic_maps(maps, maps_conf_index_from, maps_conf_index_to, i) == FFEA_ERROR) {
-                    FFEA_error_text();
-                    cout << "\nProblem reading kinetic maps in 'read_kinetic_maps' function" << endl;
-                    return FFEA_ERROR;
-                }
-                cout << "\t\t...done!" << endl;
-
-                cout << "\t\tBuilding 'identity' maps for energy comparison...";
-                if(build_kinetic_identity_maps() == FFEA_ERROR) {
-                    FFEA_error_text();
-                    cout << "\nProblem reading kinetic maps in 'build_kinetic_identity_maps' function" << endl;
-                    return FFEA_ERROR;
-                }
-                cout << "...done!" << endl;
-            }
-            cout << "\t...done!" << endl;
-
-
-        }
+         } 
 
         // Clear blob vector and other vectors for next round
         motion_state.clear();
@@ -2616,24 +2533,134 @@ int World::read_and_build_system(vector<string> script_vector) {
         vdw.clear();
         binding.clear();
         pin.clear();
-        maps.clear();
         beads.clear();
         scale = 1;
         solver = FFEA_NOMASS_CG_SOLVER;
-        map_vector.clear();
-        kinetics_vector.clear();
-        blob_vector.clear();
-        centroid = NULL;
-        velocity = NULL;
-        rotation = NULL;
+        map_vector.clear(); // container for the input <map> block 
+        kinetics_vector.clear(); // container for the input <kinetics> block 
+        blob_vector.clear(); // container for the input <blob> block
         set_scale = 0;
         set_solver = 0;
-        set_rates = 0;
-        set_states = 0;
-        set_calc_compress = 0;
-        set_compress = 0;
+        set_rates = 0; // aux reader flag
+        set_states = 0; // aux reader flag
     }
 
+    // Blobs are now configured. Initialisation will allocate memory,
+    //    and thus it may be performance wise to initialise things in the 
+    //    thread they will be. Hopefully will work, though that 
+    //    leaves us with schedule static.
+    int fatal_errors = 0; 
+#ifdef FFEA_PARALLEL_PER_BLOB
+    #pragma omp parallel for default(none) schedule(static) private(i,j) shared(params, blob_array, systemreader, blob_conf) reduction(+: fatal_errors)
+#endif
+    for(i = 0; i < params.num_blobs; ++i) {
+        for(j = 0; j < params.num_conformations[i]; ++j) {
+
+            if (blob_array[i][j].init() == FFEA_ERROR) {
+                printf("Error when initialising Blob %d, conformation %d", i, j); 
+                fatal_errors += 1;
+            }
+
+            // If not an active conforamtion, move to random area in infinity so vdw and stuff are not active (face linked list is not set up for deleting elements)
+            if (j > 0) {
+                blob_array[i][j].position(blob_array[i][j].get_RandU01() * 1e10, blob_array[i][j].get_RandU01() * 1e10, blob_array[i][j].get_RandU01() * 1e10);
+            } else {
+
+                // Activate all faces
+                blob_array[i][j].kinetically_set_faces(true);
+
+                // if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
+                if (blob_conf[i].set_centroid) {
+
+                    blob_conf[i].centroid[0] *= blob_array[i][j].get_scale();
+                    blob_conf[i].centroid[1] *= blob_array[i][j].get_scale();
+                    blob_conf[i].centroid[2] *= blob_array[i][j].get_scale();
+                    vector3 dv = blob_array[i][j].position(blob_conf[i].centroid[0], 
+                                      blob_conf[i].centroid[1], blob_conf[i].centroid[2]);
+
+                    // if Blob has a number of beads, transform them too:
+                    if (blob_array[i][j].get_num_beads() > 0)
+                        blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
+                }
+
+                if (blob_conf[i].set_rotation) {
+                    if(blob_conf[i].rotation_type == 0) {
+                        blob_array[i][j].rotate(blob_conf[i].rotation[0], blob_conf[i].rotation[1], blob_conf[i].rotation[2], blob_array[i][j].is_using_beads());
+                    } else {
+                        blob_array[i][j].rotate(blob_conf[i].rotation[0], blob_conf[i].rotation[1], blob_conf[i].rotation[2], blob_conf[i].rotation[3], blob_conf[i].rotation[4], blob_conf[i].rotation[5], blob_conf[i].rotation[6], blob_conf[i].rotation[7], blob_conf[i].rotation[8], blob_array[i][j].is_using_beads());
+                    }
+                }
+
+                
+                if (blob_conf[i].set_velocity) {
+                    blob_array[i][j].velocity_all(blob_conf[i].velocity[0], blob_conf[i].velocity[1], blob_conf[i].velocity[2]);
+                }
+
+                // Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
+                if (blob_array[i][j].get_motion_state() == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
+                    blob_array[i][j].add_steric_nodes();
+                }
+
+                // set the current node positions as pos_0 for this blob, so that all rmsd values
+                // are calculated relative to this conformation centred at this point in space.
+                //blob_array[i][j].set_pos_0();
+            }
+        }
+
+        // Build kinetic system (at world level, for future potential global kinetics)
+        /* */ 
+        #pragma omp critical // maybe not needed, but 
+                             //   I haven't written this, 
+                             //   it's still experimental, and don't have time to read.
+        if(params.calc_kinetics == 1) {
+            printf("\tInitialising kinetics for blob %d...\n", i);
+
+            // Will load a default state if params.num_states[i] == 1
+            printf("\t\tLoading kinetic states...");
+            if(load_kinetic_states(blob_conf[i].states, i) == FFEA_ERROR) {
+                FFEA_error_text();
+                printf("\nProblem reading kinetic states in 'read_kinetic_states' function");
+                fatal_errors += 1;
+            }
+            printf("...done!");
+
+            printf("\t\tLoading kinetic rates...");
+            if(load_kinetic_rates(blob_conf[i].rates, i) == FFEA_ERROR) {
+                FFEA_error_text();
+                printf("\nProblem reading kinetic rates in 'read_kinetic_rates' function");
+                fatal_errors += 1;
+            }
+            printf("...done!\n");
+
+            // Maps only if num_conforamtions for this blob > 1
+            if(params.num_conformations[i] > 1) {
+                printf("\t\tLoading kinetic maps...\n");
+                if(load_kinetic_maps(blob_conf[i].maps, blob_conf[i].maps_conf_index_from, blob_conf[i].maps_conf_index_to, i) == FFEA_ERROR) {
+                    FFEA_error_text();
+                    printf("\nProblem reading kinetic maps in 'read_kinetic_maps' function");
+                    fatal_errors += 1; 
+                }
+                printf("\t\t...done!\n");
+
+                printf("\t\tBuilding 'identity' maps for energy comparison...");
+                if(build_kinetic_identity_maps() == FFEA_ERROR) {
+                    FFEA_error_text();
+                    printf("\nProblem reading kinetic maps in 'build_kinetic_identity_maps' function");
+                    fatal_errors += 1;
+                }
+                printf("...done!\n");
+            }
+            printf("\t...done!");
+
+
+        }
+    }
+    if (fatal_errors > 0) {
+      cout << "There were fatal errors initialising the blobs" << endl;
+      return FFEA_ERROR;
+    } 
+
+/// /// 
     // Finally, get springs
     if (params.calc_springs == 1)
         systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
@@ -3735,7 +3762,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // END CHECK // END CHECK // END CHECK // 
     thread_writingTraj.get();
 #ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none) shared(step) schedule(guided)
+    #pragma omp parallel for default(none) shared(step) schedule(static)
 #endif
     for (int i = 0; i < params.num_blobs; i++) {
         // store the node data for this blob
@@ -3780,7 +3807,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     }
 
 #ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none)
+    #pragma omp parallel for default(none) schedule(static)
 #endif
     for (int i = 0; i < params.num_blobs; i++) {
         // Calculate properties for this blob
@@ -3803,6 +3830,9 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     }
     fflush(measurement_out);
 
+    if (params.trajbeads_fname_set == 1) {
+       pc_solver.write_beads_to_file(trajbeads_out, step); 
+    } 
 }
 
 /** Print the RNG values responsible for the current state of the system i.e. do this before all forces are calculated, which advances the system */

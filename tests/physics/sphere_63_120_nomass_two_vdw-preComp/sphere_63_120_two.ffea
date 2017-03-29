@@ -3,11 +3,12 @@
 	<dt = 1e-14>
 	<kT = 4.11e-21>
 	<check = 1>
-	<num_steps = 1>
+	<num_steps = 0>
 	<rng_seed = 44>
 	<trajectory_out_fname = sphere_63_120_two_trajectory.out>
 	<measurement_out_fname = sphere_63_120_two_measurement.out>
 	<vdw_forcefield_params = ../sphere_63_120_structure/sphere_63_120.lj>
+   <beads_out_fname = beads_traj.pdb>
 	<epsilon = 0.01>
 	<max_iterations_cg = 1000>
 	<kappa = 1e9>
@@ -51,10 +52,10 @@
 			<stokes = ../sphere_63_120_structure/sphere_63_120.stokes>
 			<vdw = ../sphere_63_120_structure/sphere_63_120.vdw>
 			<pin = ../sphere_63_120_structure/sphere_63_120.pin>
-			<beads = left.pdb>
+			<beads = right.pdb>
 		</conformation>
 		<solver = CG_nomass>
-		<scale = 1e-10>
+		<scale = 2.5e-9>
 		<centroid = (0.0,0.0,0.0)>
 	</blob>
 	<blob>
@@ -67,11 +68,11 @@
 			<stokes = ../sphere_63_120_structure/sphere_63_120.stokes>
 			<vdw = ../sphere_63_120_structure/sphere_63_120.vdw>
 			<pin = ../sphere_63_120_structure/sphere_63_120.pin>
-			<beads = right.pdb>
+			<beads = left.pdb>
 		</conformation>
 		<solver = CG_nomass>
-		<scale = 1e-10>
-		<centroid = (2.0,0.0,0.0)>
+		<scale = 2.5e-9>
+		<centroid = (2.01,0.0,0.0)>
 	</blob>
 	<interactions>
 		<precomp>

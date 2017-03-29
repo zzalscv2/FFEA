@@ -79,6 +79,8 @@ public:
   int prebuild_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
   int safely_swap_pc_layers(); ///< swap the two LinkedLists. 
 
+  void write_beads_to_file(FILE *fout, int timestep); ///< write beads to file, for the current timestep
+
 private: 
   /** msgc and msg are helpful while developing */
   int msgc;
@@ -127,6 +129,12 @@ private:
   scalar *b_pos; 
   /** bool "matrix" (array) storing for every pair if it is active or not */
   bool *isPairActive;
+
+  /** variables stypes, b_elems_ndx, and b_blob_ndx will only be used if writing traj */ 
+  vector<string> stypes; ///< string types for the beads; sorry it is a c++ vector
+  int *b_elems_ndx; ///< array with the corresponding element index.
+  int *b_blob_ndx; ///< array with the corresponding blob index.
+  
 
   /** Variables to store the energy field data between each pair of blobs */
   scalar **fieldenergy;
