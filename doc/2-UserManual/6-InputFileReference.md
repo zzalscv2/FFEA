@@ -78,12 +78,15 @@ In between it can take the following parameters:
    * ` det_measurement_out_fname ` <string> (Defaulting to ` measurement_out_fname ` with extension replaced with ` .fdm `). <BR>
         The name of the file where detailed measurements will be recorded. 
 
-   * ` kinetics_out_fname ` <string> <BR>
-        The name of the file where kinetic trajectory will be recorded.
-
    * ` checkpoint_out ` <string> (Defaulting to ` ffea-file-name ` with extension replaced with `.fcp`) <BR> 
         The name of the checkpoint file where the details of the state 
           of the last recorded frame will be saved in order to be able to use restarts.
+
+   * ` kinetics_out_fname ` <string> <BR>
+        The name of the file where kinetic trajectory will be recorded.
+
+   * ` beads_out_fname ` <string> <BR>
+        The name of the file where the trajectory for the beads will be recorded, if found. Currently, restarts are not supported.
 
 
 #### Enable different calculations #### 
