@@ -244,6 +244,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    }  
    fin.close();
 
+
    /*--------- SECONDLY ----------*/ 
    // allocate:
    U = new(std::nothrow) scalar[n_values * nint];    
@@ -464,8 +465,24 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
       FFEA_ERROR_MESSG(" The number of beads in the LinkedList %d is not the same as the total number of beads %d", pcLookUp.get_pool_size(), n_beads); 
    }
 
-
    // 5.3 - We cannot compute_bead_positions here because the system is not into the box yet.
+   //        So 5 is done. 
+
+
+   /*------------ SIXTHLY ---:O---*/
+   //  in case we're writing the trajectory for the beads we need to keep some data:
+   if (params->trajbeads_fname_set == 1) {
+      stypes = pc_params->types; 
+      b_blob_ndx = new(std::nothrow) int[n_beads];
+      b_elems_ndx = new(std::nothrow) int[n_beads];
+      if (b_blob_ndx == NULL || b_elems_ndx == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for beads details to write trajectory in PreComp_solver::init\n"); 
+      for (int i=0; i<n_beads; i++){ 
+        b_elems_ndx[i] = b_elems[i]->index;
+        b_blob_ndx[i] = b_elems[i]->daddy_blob->blob_index;
+      } 
+   } 
+
+
    cout << "done!" << endl;
 
    return FFEA_OK; 
@@ -964,5 +981,17 @@ int PreComp_solver::safely_swap_pc_layers() {
    return pcLookUp.safely_swap_layers();
 
 }
+  
+void PreComp_solver::write_beads_to_file(FILE *fout, int timestep){
+
+   for (int i=0; i<n_beads; i++){ 
+      fprintf(fout, "ATOM %8d %4s %3s %3s %8d %12.3f %12.3f %12.3f %3d %12d\n", 
+                 i, stypes[b_types[i]].c_str(), "FEA", "A", b_elems_ndx[i], 
+                 b_pos[3*i], b_pos[3*i+1], b_pos[3*i+2],
+                 b_blob_ndx[i], timestep); 
+   } 
+
+} 
+
 
 /**@}*/
