@@ -882,6 +882,7 @@ class Blob:
 			elif display_flags['show_mesh'] == "Surface Mesh":
 
 				# Loop over surface
+				mes.extend([COLOR, 0.33, 0.33, 0.33])
 				for f in xrange(self.surf.num_faces):
 					n1 = self.frames[i].pos[self.surf.face[f].n[0]]
 					n2 = self.frames[i].pos[self.surf.face[f].n[1]]
