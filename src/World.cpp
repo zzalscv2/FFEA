@@ -568,6 +568,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                if ((trajbeads_out = fopen(params.trajectory_beads_fname.c_str(), "w")) == NULL) {
                  FFEA_FILE_ERROR_MESSG(params.trajectory_beads_fname.c_str())
                }
+               /* attempt to write a cif file:
                // ATOM 2 CA GLN A 23.581 -26.768 24.416  1 1
                fprintf(trajbeads_out, "data_ffea\n"); 
                fprintf(trajbeads_out, "loop_\n"); 
@@ -578,8 +579,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                fprintf(trajbeads_out, "_atom_site.auth_asym_id\n"); // A (Chain) 
                fprintf(trajbeads_out, "_atom_site.auth_seq_id\n"); // elem_id (resid)
                fprintf(trajbeads_out, "_atom_site.Cartn_x\n_atom_site.Cartn_y\n_atom_site.Cartn_z\n"); // x y z
+               fprintf(trajbeads_out, "_atom_type.number_in_cell\n"); // elem where bead is assoc
                fprintf(trajbeads_out, "_entity.id"); // molecule number aka blobid
-               fprintf(trajbeads_out, "_atom_site.pdbx_PDB_model_num\n"); // timestep.
+               fprintf(trajbeads_out, "_atom_site.pdbx_PDB_model_num\n"); // timestep. */ 
 
             }
 
