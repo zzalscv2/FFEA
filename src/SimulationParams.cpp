@@ -688,6 +688,8 @@ int SimulationParams::validate(int sim_mode) {
           checkFileName(trajectory_out_fname);
           checkFileName(kinetics_out_fname);
           checkFileName(trajectory_beads_fname);
+        } else {
+          if (trajbeads_fname_set == 1) FFEA_ERROR_MESSG("FFEA cannot still restart and keep writing on the beads file. Just remove it from your input file."); 
         }
     }
 

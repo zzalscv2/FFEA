@@ -450,6 +450,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             blob_array[i][j].set_pos_0();
         }
     }
+
+
     // If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
     if(mode == 0) {
         // In any case, open the output checkpoint file for writing
@@ -467,11 +469,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             // Open the trajectory output file for writing
             if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "w")) == NULL) {
                 FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
-            }
-
-            // Open the measurement output file for writing
-            if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "w")) == NULL) {
-                FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
             }
 
             // HEADER FOR TRAJECTORY
@@ -493,6 +490,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
             // First line in trajectory data should be an asterisk (used to delimit different steps for easy seek-search in restart code)
             fprintf(trajectory_out, "*\n");
+
+
+            // Open the measurement output file for writing
+            if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "w")) == NULL) {
+                FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
+            }
 
             // HEADER FOR MEASUREMENTS
             // Write header to output file
@@ -558,6 +561,26 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 }
                 fprintf(detailed_meas_out, "\n");
                 fflush(detailed_meas_out);
+            }
+
+            // Open the beads_out file:
+            if (params.trajbeads_fname_set == 1) {
+               if ((trajbeads_out = fopen(params.trajectory_beads_fname.c_str(), "w")) == NULL) {
+                 FFEA_FILE_ERROR_MESSG(params.trajectory_beads_fname.c_str())
+               }
+               // ATOM 2 CA GLN A 23.581 -26.768 24.416  1 1
+               fprintf(trajbeads_out, "data_ffea\n"); 
+               fprintf(trajbeads_out, "loop_\n"); 
+               fprintf(trajbeads_out, "_atom_site.group_PDB\n");  // "ATOM"
+               fprintf(trajbeads_out, "_atom_site.id\n");         //  bead_id (atomnum)
+               fprintf(trajbeads_out, "_atom_site.auth_atom_id\n"); // CA
+               fprintf(trajbeads_out, "_atom_site.auth_comp_id\n"); // GLN
+               fprintf(trajbeads_out, "_atom_site.auth_asym_id\n"); // A (Chain) 
+               fprintf(trajbeads_out, "_atom_site.auth_seq_id\n"); // elem_id (resid)
+               fprintf(trajbeads_out, "_atom_site.Cartn_x\n_atom_site.Cartn_y\n_atom_site.Cartn_z\n"); // x y z
+               fprintf(trajbeads_out, "_entity.id"); // molecule number aka blobid
+               fprintf(trajbeads_out, "_atom_site.pdbx_PDB_model_num\n"); // timestep.
+
             }
 
             // Open the kinetics output file for writing (if neccessary) and write initial stuff
@@ -805,6 +828,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             * Fix restart for measurements and kinetics in future. Use rstep to find appropriate line
             *
             */
+            // traj beads do not work yet:
+            if (params.trajbeads_fname_set == 1) 
+               FFEA_ERROR_MESSG("FFEA cannot still restart and keep writing on the beads file. Just remove it from your input file."); 
 
         }
 
@@ -3792,6 +3818,9 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     }
     fflush(measurement_out);
 
+    if (params.trajbeads_fname_set == 1) {
+       pc_solver.write_beads_to_file(trajbeads_out, step); 
+    } 
 }
 
 /** Print the RNG values responsible for the current state of the system i.e. do this before all forces are calculated, which advances the system */
