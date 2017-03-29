@@ -54,13 +54,13 @@ for i in range(2):
 	fin.close()
 
 	# This means spring constants (hopefully...)
-	if "ffeaenm" in inevalsfile[i] or "ffeadmm" in inevalsfile[i]:
+	if "FFEAlem" in inevalsfile[i] or "FFEAdmm" in inevalsfile[i]:
 		conversion = True
 	else:
 		conversion = False
 	if conversion:
 		for j in range(len(evals[i])):
-			evals[i][j] = 0.411 / evals[i][j]	# Converted to angstroms	
+			evals[i][j] = 5 * 0.411 / evals[i][j]	# Converted to angstroms	
 
 
 print("done!")

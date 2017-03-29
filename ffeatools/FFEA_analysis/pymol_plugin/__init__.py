@@ -87,7 +87,7 @@ class FFEA_viewer_control_window:
 
      self.root = Tk()
 
-     self.root.geometry("450x225")
+     self.root.geometry("600x225")
 
      self.root.title("FFEA Loader")
 
@@ -598,7 +598,8 @@ class FFEA_viewer_control_window:
 		
 		index = 0
 		if (c.top == None):
-			print("Cannot draw inverted elements for blob %d as there is not topology" % (bin))
+			if (c.motion_state != "STATIC"):
+				print("Cannot draw inverted elements for blob %d as there is not topology" % (bin))
 			continue
 
 		flast = self.traj.blob[bin][cin].frame[-1]
