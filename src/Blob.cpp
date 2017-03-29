@@ -197,54 +197,101 @@ Blob::~Blob() {
 }
 
 
-int Blob::init(const int blob_index, const int conformation_index, const char *node_filename, const char *topology_filename, const char *surface_filename, const char *material_params_filename,
-               const char *stokes_filename, const char *vdw_filename, const char *pin_filename, const char *binding_filename, const char *beads_filename, scalar scale,scalar calc_compress, scalar compress, int linear_solver,
-               int blob_state, SimulationParams *params, PreComp_params *pc_params, LJ_matrix *lj_matrix, BindingSite_matrix *binding_matrix, RngStream rng[], int num_threads) {
+int Blob::config(const int blob_index, const int conformation_index, string node_filename,
+             string topology_filename, string surface_filename, string material_params_filename,
+             string stokes_filename, string vdw_filename, string pin_filename,
+             string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
+             scalar compress, int linear_solver, int blob_state, SimulationParams *params, 
+             PreComp_params *pc_params, LJ_matrix *lj_matrix, 
+             BindingSite_matrix *binding_matrix, RngStream rng[]){
 
     // Which blob and conformation am i?
     this->blob_index = blob_index;
     this->conformation_index = conformation_index;
 
+    // Input files:
+    this->s_node_filename = node_filename; 
+    this->s_topology_filename = topology_filename;
+    this->s_surface_filename = surface_filename;
+    this->s_material_params_filename = material_params_filename;
+    this->s_stokes_filename = stokes_filename;      
+    this->s_vdw_filename = vdw_filename;
+    this->s_beads_filename = beads_filename;
+    this->s_binding_filename = binding_filename;
+    this->s_pin_filename = pin_filename;
+    
+    // scaling coordinates:
+    this->scale = scale;
+
+    // compressing: 
+    this->calc_compress = calc_compress; 
+    this->compress = compress;
+
+    // precomputed configuration: 
+    this->pc_params = pc_params;
+
+    // BindingSite_matrix:
+    this->binding_matrix = binding_matrix; 
+
+    // lennard-jones interaction matrix:
+    this->lj_matrix = lj_matrix;
+
+    // Store the pointer to the simulation parameters class
+    this->params = params;
+    this->pc_params = pc_params;
+
+    // Store the pointer to the random number generator array
+    this->rng = rng;
+
+    // Get the blob state
+    this->blob_state = blob_state;
+
+    // Need to know solver type
+    this->linear_solver = linear_solver;
+
+
+    return FFEA_OK; 
+}
+
+int Blob::init(){
+
     //Load the node, topology, surface, materials and stokes parameter files.
-    if (load_nodes(node_filename, scale) == FFEA_ERROR) {
+    if (load_nodes(s_node_filename.c_str(), scale) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error when loading Blob nodes.\n");
     }
+
     if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
-        if (load_topology(topology_filename) == FFEA_ERROR) {
+        if (load_topology(s_topology_filename.c_str()) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob topology.\n");
         }
-        if (load_surface(surface_filename, params) == FFEA_ERROR) {
+        if (load_surface(s_surface_filename.c_str(), params) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob surface.\n");
         }
     } else {
-        if (load_surface_no_topology(surface_filename, params) == FFEA_ERROR) {
+        if (load_surface_no_topology(s_surface_filename.c_str(), params) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob surface (ignoring topology).\n");
         }
     }
+
     if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
-        if (load_material_params(material_params_filename) == FFEA_ERROR) {
+        if (load_material_params(s_material_params_filename.c_str()) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob element material params.\n");
         }
-        if (load_stokes_params(stokes_filename, scale) == FFEA_ERROR) {
+        if (load_stokes_params(s_stokes_filename.c_str(), scale) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob stokes parameter file.\n");
         }
     }
 
-    this->lj_matrix = lj_matrix;
-
     if (params->calc_vdw == 1) {
-        if (load_vdw(vdw_filename, lj_matrix->get_num_types(), params->vdw_type) == FFEA_ERROR) {
+        if (load_vdw(s_vdw_filename.c_str(), lj_matrix->get_num_types(), params->vdw_type) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
         }
     }
 
     if (params->calc_preComp == 1) {
-        if (strcmp(beads_filename, "") == 0) {
-            /*char buffer [50];
-            sprintf(buffer, "No beads file was assigned to Blob %d\n", blob_index);
-            FFEA_CAUTION_MESSG(buffer);*/
+        if (strcmp(s_beads_filename.c_str(), "") == 0) {
             FFEA_CAUTION_MESSG("No beads file was assigned to Blob %d\n", blob_index);
-        } else if (load_beads(beads_filename, pc_params, scale) == FFEA_ERROR) {
+        } else if (load_beads(s_beads_filename.c_str(), pc_params, scale) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading beads file.\n")
         }
     }
@@ -256,30 +303,18 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     }
 
     // Kinetic binding sites are still a structural property
-    if (load_binding_sites(binding_filename, binding_matrix->get_num_interaction_types()) == FFEA_ERROR) {
+    if ( load_binding_sites() == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error when loading binding sites file.\n")
     }
 
     if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
-        if (load_pinned_nodes(pin_filename) == FFEA_ERROR) {
+        if (load_pinned_nodes(s_pin_filename.c_str()) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob pinned nodes file.\n");
         }
     } else {
         num_pinned_nodes = 0;
         pinned_nodes_list = NULL;
     }
-
-    // Store the pointer to the simulation parameters class
-    this->params = params;
-
-    // Store the pointer to the random number generator array
-    this->rng = rng;
-
-    // Get the blob state
-    this->blob_state = blob_state;
-
-    // Need to know solver type
-    this->linear_solver = linear_solver;
 
     // Linearise all the elements
     for (int i = 0; i < num_elements; i++) {
@@ -356,7 +391,7 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
     // Store stokes drag on nodes, for use in viscosity matrix
     if (params->calc_stokes == 1) {
         for (int i = 0; i < num_nodes; ++i) {
-            node[i].stokes_drag = 6.0 * 3.141592654 * params->stokes_visc * node[i].stokes_radius;
+            node[i].stokes_drag = 6.0 * ffea_const::pi * params->stokes_visc * node[i].stokes_radius;
         }
     }
 
@@ -704,31 +739,16 @@ void Blob::translate_linear(vector3 *vec) {
 }
 
 // Rotate about x axis, then y axis, then z axis
-void Blob::rotate(float xang, float yang, float zang, int beads) {
-    int i;
-    scalar x, y, z;
-    // scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
-    vector3 com;
+void Blob::rotate(float xang, float yang, float zang, bool beads) {
+
     scalar r[3][3];
 
     // Convert to radians
-    xang *= 3.1415926 / 180.0;
-    yang *= 3.1415926 / 180.0;
-    zang *= 3.1415926 / 180.0;
+    xang *= ffea_const::pi / 180.0;
+    yang *= ffea_const::pi / 180.0;
+    zang *= ffea_const::pi / 180.0;
 
-    get_centroid(&com);
-
-    // Move all nodes to the origin:
-#ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel for default(none) private(i) shared(com)
-#endif
-    for (i = 0; i < num_nodes; i++) {
-        node[i].pos.x -= com.x;
-        node[i].pos.y -= com.y;
-        node[i].pos.z -= com.z;
-    }
-
-    // Do rotation
+    // Get rotation
     r[0][0] = cos(yang) * cos(zang);
     r[0][1] = sin(xang) * sin(yang) * cos(zang) - cos(xang) * sin(zang);
     r[0][2] = cos(xang) * sin(yang) * cos(zang) + sin(xang) * sin(zang);
@@ -739,39 +759,13 @@ void Blob::rotate(float xang, float yang, float zang, int beads) {
     r[2][1] = sin(xang) * cos(yang);
     r[2][2] = cos(xang) * cos(yang);
 
-    for (i = 0; i < num_nodes; i++) {
-        x = node[i].pos.x;
-        y = node[i].pos.y;
-        z = node[i].pos.z;
-
-        node[i].pos.x = x * r[0][0] + y * r[0][1] + z * r[0][2] + com.x;
-        node[i].pos.y = x * r[1][0] + y * r[1][1] + z * r[1][2] + com.y;
-        node[i].pos.z = x * r[2][0] + y * r[2][1] + z * r[2][2] + com.z;
-    }
-
-
-
-    if (beads == 1) {
-        if (num_beads > 0) {
-            // Move all beads to the origin:
-            for (i = 0; i < num_beads; i++) {
-                bead_position[3*i] -= com.x;
-                bead_position[3*i+1] -= com.y;
-                bead_position[3*i+2] -= com.z;
-            }
-
-            // Do the actual rotation and bring the beads back to its initial position:
-            for (i = 0; i < num_beads; i++) {
-                node[i].pos.x = bead_position[3*i] * r[0][0] + bead_position[3*i+1] * r[0][1] + bead_position[3*i+2] * r[0][2] + com.x;
-                node[i].pos.y = bead_position[3*i] * r[1][0] + bead_position[3*i+1] * r[1][1] + bead_position[3*i+2] * r[1][2] + com.y;
-                node[i].pos.z = bead_position[3*i] * r[2][0] + bead_position[3*i+1] * r[2][1] + bead_position[3*i+2] * r[2][2] + com.z;
-            }
-        }
-    }
+    rotate(r[0][0], r[0][1], r[0][2],
+           r[1][0], r[1][1], r[1][2], 
+           r[2][0], r[2][1], r[2][2], beads); 
 
 }
 
-void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, int beads) {
+void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, bool beads) {
     int i;
     vector3 com;
     scalar x, y, z;
@@ -802,7 +796,7 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
     }
 
 
-    if (beads == 1) {
+    if (beads) {
         if (num_beads > 0) {
             // Move all beads to the origin:
             for (i = 0; i < num_beads; i++) {
@@ -1536,6 +1530,11 @@ int Blob::get_num_beads() {
     return num_beads;
 }
 
+bool Blob::is_using_beads() {
+    if (num_beads > 0) return true;
+    else return false; 
+}
+
 /*
  *
  */
@@ -1945,12 +1944,12 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
                     block *= 2 * a * a / mod2;
                     block += Eigen_Matrix3::Identity() * mod2;
                     block += rr;
-                    block *= params->kT / (8 * 3.14159265 * params->stokes_visc * mod2 * mod);
+                    block *= params->kT / (8 * ffea_const::pi * params->stokes_visc * mod2 * mod);
 
                 } else {
                     block = Eigen::Matrix3d::Identity() * (1 - ((9 * mod) / (32.0 * a)));
                     block += rr * (3 / (32.0 * a * mod));
-                    block *= params->kT / (6 * 3.14159265 * params->stokes_visc * a);
+                    block *= params->kT / (6 * ffea_const::pi * params->stokes_visc * a);
                 }
             }
 
@@ -2263,6 +2262,14 @@ int Blob::get_num_elements() {
 
 int Blob::get_motion_state() {
     return blob_state;
+}
+
+scalar Blob::get_scale() {
+    return scale; 
+}
+
+scalar Blob::get_RandU01() {
+    return rng->RandU01(); 
 }
 
 int Blob::get_num_linear_nodes() {
@@ -3488,21 +3495,20 @@ int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types, string vdw_
 
 /*
  */
-int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_types) {
+int Blob::load_binding_sites() {
 
+    int num_binding_site_types = binding_matrix->get_num_interaction_types();
+
+    // Return successful as params.calc_kinetics == 0 or no sites are required
+    if (s_binding_filename.empty()) return FFEA_OK; 
     // Open file
-    if(strcmp(binding_filename, "") == 0) {
-
-        // Return successful as params.calc_kinetics == 0 or no sites are required
-        return FFEA_OK;
-    }
     ifstream fin;
-    fin.open(binding_filename);
+    fin.open(s_binding_filename.c_str());
     if(fin.fail()) {
-        FFEA_ERROR_MESSG("'binding_params_fname' %s not found\n", binding_filename)
+        FFEA_ERROR_MESSG("'binding_params_fname' %s not found\n", s_binding_filename.c_str())
     }
 
-    cout << "\t\tReading in Binding Sites file: " << binding_filename << endl;
+    cout << "\t\tReading in Binding Sites file: " << s_binding_filename << endl;
 
     // Check if correct file
     int MAX_BUF_SIZE = 255;
@@ -3557,7 +3563,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
             num_faces = atoi(string_vec.at(3).c_str());
 
         } catch (...) {
-            FFEA_ERROR_MESSG("Unable to read type %%d num_faces %%d line for binding site %d in %s.\n", i, binding_filename)
+            FFEA_ERROR_MESSG("Unable to read type %%d num_faces %%d line for binding site %d in %s.\n", i, s_binding_filename.c_str())
         }
 
         if(bind_type >= num_binding_site_types) {
@@ -3574,7 +3580,7 @@ int Blob::load_binding_sites(const char *binding_filename, int num_binding_site_
         boost::trim(buf_string);
         boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
         if(string_vec.size() != num_faces + 1) {
-            FFEA_ERROR_MESSG("In %s, num_faces specified, %d, != num_faces in following line, %zd.\n", binding_filename, num_faces, string_vec.size() - 1)
+            FFEA_ERROR_MESSG("In %s, num_faces specified, %d, != num_faces in following line, %zd.\n", s_binding_filename.c_str(), num_faces, string_vec.size() - 1)
         }
 
         for(unsigned int j = 0; j < num_faces; ++j) {

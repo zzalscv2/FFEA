@@ -52,7 +52,10 @@ At the beginning of the simulation, each bead is assigned onto a tetrahedron, an
 
 
 where the directive ` nodes ` ensures that no accidental confusion arises with
- B-factors or other information after the position of the beads. 
+ B-factors or other information after the position of the beads. Note that 
+ ` nodes ` belongs to the ` <conformation> ` block, and therefore, the coordinates 
+ given will be rescaled according to ` <blob> ` ` scale `, as well as 
+ possibly rotated and translated if ` rotation ` and ` centroid ` are set, too.
 
 
 Finally, the rest of the input flags are passed within block ` <precomp> ` in ` <interactions> ` 
@@ -66,6 +69,13 @@ Finally, the rest of the input flags are passed within block ` <precomp> ` in ` 
 
 Details on how to use these keywords can be found in the
   [corresponding subsection](\ref preCompBlock) of the FFEA input file.
+
+
+The trajectory for the beads can be saved in a `.pdb` formatted file if ` beads_out_fname ` 
+ is set in the ` .ffea ` input file. Because beads will stay bound to the elements where 
+ they have been assigned to, this feature aims to proof whether the system has been 
+ configured correctly, so once the user is sure, it can be unset. Restarts are currently 
+ not supported. 
 
 
 Implementation details {#fm_implementation}
