@@ -1963,7 +1963,7 @@ int World::run() {
 
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
-        #pragma omp parallel for default(none) schedule(dynamic,1)
+        #pragma omp parallel for default(none) schedule(dynamic,1) shared(cout)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->update_positions();
@@ -3649,7 +3649,13 @@ void World::print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, in
         }
         fprintf(fout, "\n");
     }
-    fclose(fout);
+    //for(i = num_modes + 5; i > 5; --i) {
+    //    for(j = 0; j < num_rows; ++j) {
+    //        fprintf(fout, "%6.3f ", ev.col(i)[j]);
+    //    }
+    //    fprintf(fout, "\n");
+    //}
+    //fclose(fout);
 }
 
 void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes, scalar scale) {
@@ -3662,6 +3668,9 @@ void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes, s
     for(i = 6; i < num_modes +  6; ++i) {
         fprintf(fout, "%6.3e\n", ev[i] * scale);
     }
+    //for(i = num_modes + 5; i > 5; --i) {
+    //    fprintf(fout, "%6.3e\n", ev[i] * scale);
+    //}
     fclose(fout);
 }
 
