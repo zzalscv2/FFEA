@@ -305,21 +305,24 @@ int Blob::init(const int blob_index, const int conformation_index, const char *n
         }
 
         // Create the chosen linear equation Solver for this Blob
-        if (linear_solver == FFEA_DIRECT_SOLVER) {
-            solver = new(std::nothrow) SparseSubstitutionSolver();
-            mass_in_blob = true;
-        } else if (linear_solver == FFEA_ITERATIVE_SOLVER) {
-            solver = new(std::nothrow) ConjugateGradientSolver();
-            mass_in_blob = true;
-        } else if (linear_solver == FFEA_MASSLUMPED_SOLVER) {
-            solver = new(std::nothrow) MassLumpedSolver();
-            mass_in_blob = true;
-        } else if (linear_solver == FFEA_NOMASS_CG_SOLVER) {
-            solver = new(std::nothrow) NoMassCGSolver();
-        } else {
-            FFEA_ERROR_MESSG("Error in Blob initialisation: linear_solver=%d is not a valid solver choice\n", linear_solver);
-        }
-        if (solver == NULL) FFEA_ERROR_MESSG("No solver to work with\n");
+	// Only initialise for dynamic blobs. Static don not need to be mechanically solved
+	if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
+		if (linear_solver == FFEA_DIRECT_SOLVER) {
+		    solver = new(std::nothrow) SparseSubstitutionSolver();
+		    mass_in_blob = true;
+		} else if (linear_solver == FFEA_ITERATIVE_SOLVER) {
+		    solver = new(std::nothrow) ConjugateGradientSolver();
+		    mass_in_blob = true;
+		} else if (linear_solver == FFEA_MASSLUMPED_SOLVER) {
+		    solver = new(std::nothrow) MassLumpedSolver();
+		    mass_in_blob = true;
+		} else if (linear_solver == FFEA_NOMASS_CG_SOLVER) {
+		    solver = new(std::nothrow) NoMassCGSolver();
+		} else {
+		    FFEA_ERROR_MESSG("Error in Blob initialisation: linear_solver=%d is not a valid solver choice\n", linear_solver);
+		}
+		if (solver == NULL) FFEA_ERROR_MESSG("No solver to work with\n");
+	}
 
         // Initialise the Solver (whatever it may be)
         printf("\t\tBuilding solver:\n");
@@ -645,7 +648,11 @@ int Blob::update_internal_forces() {
 
 int Blob::update_positions() {
 
-    // Aggregate forces on nodes from all elements
+    // Aggregate forces on nodes from all elements (if not static)
+    if (get_motion_state() != FFEA_BLOB_IS_DYNAMIC) {
+	return FFEA_OK;
+    }
+
     if (aggregate_forces_and_solve() == FFEA_ERROR) {
         FFEA_ERROR_MESSG("There was a problem in 'aggregate_forces_and_solve' function.\n");
     }
@@ -3740,7 +3747,6 @@ int Blob::aggregate_forces_and_solve() {
         }
     }
 
-
     // Aggregate surface forces onto nodes
     for (n = 0; n < num_surface_faces; n++) {
         for (int i = 0; i < 4; i++) {
@@ -3753,7 +3759,6 @@ int Blob::aggregate_forces_and_solve() {
         }
     }
     //	printf("----\n\n");
-
     if (params->calc_stokes == 1) {
         if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
@@ -3808,7 +3813,6 @@ int Blob::aggregate_forces_and_solve() {
         }
     }
 
-
     // Set to zero any forces on the pinned nodes
     for (n = 0; n < num_pinned_nodes; n++) {
         int pn_index = pinned_nodes_list[n];
@@ -3824,13 +3828,13 @@ int Blob::aggregate_forces_and_solve() {
     }
 
     linearise_force();
+
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix,
     // or Kv = f where K is the viscosity matrix for the system
     // x/v is the (unknown) force solution and f is the force vector for the system.
     if (solver->solve(force) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error reported by Solver.\n");
     }
-
     return FFEA_OK;
 }
 
