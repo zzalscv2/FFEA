@@ -52,7 +52,10 @@ At the beginning of the simulation, each bead is assigned onto a tetrahedron, an
 
 
 where the directive ` nodes ` ensures that no accidental confusion arises with
- B-factors or other information after the position of the beads. 
+ B-factors or other information after the position of the beads. Note that 
+ ` nodes ` belongs to the ` <conformation> ` block, and therefore, the coordinates 
+ given will be rescaled according to ` <blob> ` ` scale `, as well as 
+ possibly rotated and translated if ` rotation ` and ` centroid ` are set, too.
 
 
 Finally, the rest of the input flags are passed within block ` <precomp> ` in ` <interactions> ` 
