@@ -68,6 +68,13 @@ Details on how to use these keywords can be found in the
   [corresponding subsection](\ref preCompBlock) of the FFEA input file.
 
 
+The trajectory for the beads can be saved in a `.pdb` formatted file if ` beads_out_fname ` 
+ is set in the ` .ffea ` input file. Because beads will stay bound to the elements where 
+ they have been assigned to, this feature aims to proof whether the system has been 
+ configured correctly, so once the user is sure, it can be unset. Restarts are currently 
+ not supported. 
+
+
 Implementation details {#fm_implementation}
 ----------------------
 
