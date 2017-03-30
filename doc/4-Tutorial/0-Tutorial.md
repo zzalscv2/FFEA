@@ -14,6 +14,7 @@ For further details on setting up a simulation, please refer to the [next chapte
 
 Content:
 
+- @subpage fiveminute
 - @subpage pdbtoemmaptut
 - @subpage emmaptosurftut
 - @subpage surftocgsurftut
