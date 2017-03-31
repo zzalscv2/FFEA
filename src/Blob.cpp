@@ -807,9 +807,14 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
 
             // Do the actual rotation and bring the beads back to its initial position:
             for (i = 0; i < num_beads; i++) {
-                node[i].pos.x = bead_position[3*i] * r11 + bead_position[3*i+1] * r12 + bead_position[3*i+2] * r13 + com.x;
-                node[i].pos.y = bead_position[3*i] * r21 + bead_position[3*i+1] * r22 + bead_position[3*i+2] * r23 + com.y;
-                node[i].pos.z = bead_position[3*i] * r31 + bead_position[3*i+1] * r32 + bead_position[3*i+2] * r33 + com.z;
+                x = bead_position[3*i];
+                y = bead_position[3*i+1];
+                z = bead_position[3*i+2];
+
+                bead_position[3*i  ] = x * r11 + y * r12 + z * r13 + com.x;
+                bead_position[3*i+1] = x * r21 + y * r22 + z * r23 + com.y;
+                bead_position[3*i+2] = x * r31 + y * r32 + z * r33 + com.z;
+
             }
         }
     }
