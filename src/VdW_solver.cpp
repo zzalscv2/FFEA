@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -28,35 +28,35 @@
 
 // const scalar VdW_solver::phi_f[4] = { 0.25, 0.25, 0.25, 0.25};
 
-const int VdW_solver::adjacent_cell_lookup_table[27][3] ={
-        {-1, -1, -1},
-        {-1, -1, 0},
-        {-1, -1, +1},
-        {-1, 0, -1},
-        {-1, 0, 0},
-        {-1, 0, +1},
-        {-1, +1, -1},
-        {-1, +1, 0},
-        {-1, +1, +1},
-        {0, -1, -1},
-        {0, -1, 0},
-        {0, -1, +1},
-        {0, 0, -1},
-        {0, 0, 0},
-        {0, 0, +1},
-        {0, +1, -1},
-        {0, +1, 0},
-        {0, +1, +1},
-        {+1, -1, -1},
-        {+1, -1, 0},
-        {+1, -1, +1},
-        {+1, 0, -1},
-        {+1, 0, 0},
-        {+1, 0, +1},
-        {+1, +1, -1},
-        {+1, +1, 0},
-        {+1, +1, +1}
-    };
+const int VdW_solver::adjacent_cell_lookup_table[27][3] = {
+    {-1, -1, -1},
+    {-1, -1, 0},
+    {-1, -1, +1},
+    {-1, 0, -1},
+    {-1, 0, 0},
+    {-1, 0, +1},
+    {-1, +1, -1},
+    {-1, +1, 0},
+    {-1, +1, +1},
+    {0, -1, -1},
+    {0, -1, 0},
+    {0, -1, +1},
+    {0, 0, -1},
+    {0, 0, 0},
+    {0, 0, +1},
+    {0, +1, -1},
+    {0, +1, 0},
+    {0, +1, +1},
+    {+1, -1, -1},
+    {+1, -1, 0},
+    {+1, -1, +1},
+    {+1, 0, -1},
+    {+1, 0, 0},
+    {+1, 0, +1},
+    {+1, +1, -1},
+    {+1, +1, 0},
+    {+1, +1, +1}
+};
 
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
@@ -66,7 +66,7 @@ VdW_solver::VdW_solver() {
     box_size.z = 0;
     num_blobs = 0;
     fieldenergy = NULL;
-    vdw_type = VDW_TYPE_UNDEFINED; 
+    vdw_type = VDW_TYPE_UNDEFINED;
 }
 
 VdW_solver::~VdW_solver() {
@@ -78,7 +78,7 @@ VdW_solver::~VdW_solver() {
     num_blobs = 0;
     delete[] fieldenergy;
     fieldenergy = NULL;
-    vdw_type = VDW_TYPE_UNDEFINED; 
+    vdw_type = VDW_TYPE_UNDEFINED;
 }
 
 int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr) {
@@ -93,20 +93,20 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     this->steric_factor = vdw_steric_factor;
     this->steric_dr = vdw_steric_dr;
     if (vdw_type_string == "lennard-jones")
-      vdw_type = VDW_TYPE_LJ;
+        vdw_type = VDW_TYPE_LJ;
     else if (vdw_type_string == "steric")
-      vdw_type = VDW_TYPE_STERIC;
+        vdw_type = VDW_TYPE_STERIC;
     else if (vdw_type_string == "ljsteric")
-      vdw_type = VDW_TYPE_LJSTERIC;
+        vdw_type = VDW_TYPE_LJSTERIC;
 
 
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;
     fieldenergy = new scalar*[num_blobs];
-    if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy in VdW_solver::init\n"); 
+    if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy in VdW_solver::init\n");
     for(int i = 0; i < num_blobs; ++i) {
-      fieldenergy[i] = new scalar[num_blobs];
-      if (fieldenergy[i] == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy[%d] in VdW_solver::init\n", i); 
+        fieldenergy[i] = new scalar[num_blobs];
+        if (fieldenergy[i] == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy[%d] in VdW_solver::init\n", i);
     }
     return FFEA_OK;
 }
@@ -114,9 +114,9 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 /**  Zero measurement stuff, AKA fieldenergy */
 void VdW_solver::reset_fieldenergy() {
     for(int i = 0; i < num_blobs; ++i) {
-      for(int j = 0; j < num_blobs; ++j) {
-        fieldenergy[i][j] = 0.0;
-      }
+        for(int j = 0; j < num_blobs; ++j) {
+            fieldenergy[i][j] = 0.0;
+        }
     }
 }
 
@@ -130,11 +130,11 @@ int VdW_solver::solve() {
     total_num_surface_faces = surface_face_lookup->get_pool_size();
     //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
-    reset_fieldenergy(); 
+    reset_fieldenergy();
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-#pragma omp parallel for default(none) private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
+    #pragma omp parallel for default(none) private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
@@ -142,27 +142,28 @@ int VdW_solver::solve() {
         // get the ith face
         l_i = surface_face_lookup->get_from_pool(i);
         if(!l_i->obj->is_kinetic_active()) {
-		continue;
-	}
+            continue;
+        }
         f_i = l_i->obj;
+        int motion_state_i = f_i->daddy_blob->get_motion_state(); 
 
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
             l_j = surface_face_lookup->get_top_of_stack(
-                    l_i->x + adjacent_cell_lookup_table[c][0],
-                    l_i->y + adjacent_cell_lookup_table[c][1],
-                    l_i->z + adjacent_cell_lookup_table[c][2]);
+                      l_i->x + adjacent_cell_lookup_table[c][0],
+                      l_i->y + adjacent_cell_lookup_table[c][1],
+                      l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
                 if (l_i->index != l_j->index) {
                     f_j = l_j->obj;
                     if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
                         // f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
                         // f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
-			if(f_i->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC and f_j->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC) {
-	                        do_interaction(f_i, f_j);
-        		}
-	            }
+                        if(motion_state_i == FFEA_BLOB_IS_DYNAMIC and f_j->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC) {
+                            do_interaction(f_i, f_j);
+                        }
+                    }
                 }
                 l_j = l_j->next;
             }
@@ -180,7 +181,7 @@ int VdW_solver::solve() {
     return FFEA_OK;
 }
 
-    /**Alters solver to apply periodic boundary conditions*/
+/**Alters solver to apply periodic boundary conditions*/
 int VdW_solver::solve(scalar * blob_corr) {
     // double st, time1, time2, time3;
 
@@ -193,15 +194,15 @@ int VdW_solver::solve(scalar * blob_corr) {
 
     // Zero some measurement_ stuff
     for(int i = 0; i < num_blobs; ++i) {
-      #pragma omp simd
-      for(int j = 0; j < num_blobs; ++j) {
-        fieldenergy[i][j] = 0.0;
-      }
+        #pragma omp simd
+        for(int j = 0; j < num_blobs; ++j) {
+            fieldenergy[i][j] = 0.0;
+        }
     }
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-#pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
+    #pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
@@ -209,17 +210,17 @@ int VdW_solver::solve(scalar * blob_corr) {
         // get the ith face
         l_i = surface_face_lookup->get_from_pool(i);
         if(!l_i->obj->is_kinetic_active()) {
-		continue;
-	}
+            continue;
+        }
         f_i = l_i->obj;
 
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
             l_j = surface_face_lookup->get_top_of_stack(
-                    l_i->x + adjacent_cell_lookup_table[c][0],
-                    l_i->y + adjacent_cell_lookup_table[c][1],
-                    l_i->z + adjacent_cell_lookup_table[c][2]);
+                      l_i->x + adjacent_cell_lookup_table[c][0],
+                      l_i->y + adjacent_cell_lookup_table[c][1],
+                      l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
                 if (l_i->index < l_j->index) {
                     f_j = l_j->obj;
@@ -287,14 +288,17 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
 
     const int num_tri_gauss_quad_points = 3;
 
-    const struct tri_gauss_point gauss_points[num_tri_gauss_quad_points] ={
+    const struct tri_gauss_point gauss_points[num_tri_gauss_quad_points] = {
         // Weight, eta1, eta2, eta3
-        {0.333333333333333,
-            {0.666666666666667, 0.166666666666667, 0.166666666666667}},
-        {0.333333333333333,
-            {0.166666666666667, 0.666666666666667, 0.166666666666667}},
-        {0.333333333333333,
-            {0.166666666666667, 0.166666666666667, 0.666666666666667}}
+        {   0.333333333333333,
+            {0.666666666666667, 0.166666666666667, 0.166666666666667}
+        },
+        {   0.333333333333333,
+            {0.166666666666667, 0.666666666666667, 0.166666666666667}
+        },
+        {   0.333333333333333,
+            {0.166666666666667, 0.166666666666667, 0.666666666666667}
+        }
 
         /*
                                                 {0.109951743655322,     {0.816847572980459, 0.091576213509771, 0.091576213509771}},
@@ -369,43 +373,43 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
     // Store the measurement
     #pragma omp critical
     {
-    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
-    for (int j = 0; j < 3; j++) {
-        vector3 force1, force2;
-        force1.assign( 0, 0, 0 );
-        force2.assign( 0, 0, 0 );
-        for (int k = 0; k < num_tri_gauss_quad_points; k++) {
-            for (int l = 0; l < num_tri_gauss_quad_points; l++) {
-                scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
-                scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
-                //printf("c = %e, %e, %e, %e\n", c, gauss_points[k].W, gauss_points[l].W, gauss_points[l].eta[j]);
-                force1.x += c * force_pair_matrix[k][l].x;
-                force1.y += c * force_pair_matrix[k][l].y;
-                force1.z += c * force_pair_matrix[k][l].z;
+        fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
+        for (int j = 0; j < 3; j++) {
+            vector3 force1, force2;
+            force1.assign( 0, 0, 0 );
+            force2.assign( 0, 0, 0 );
+            for (int k = 0; k < num_tri_gauss_quad_points; k++) {
+                for (int l = 0; l < num_tri_gauss_quad_points; l++) {
+                    scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
+                    scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
+                    //printf("c = %e, %e, %e, %e\n", c, gauss_points[k].W, gauss_points[l].W, gauss_points[l].eta[j]);
+                    force1.x += c * force_pair_matrix[k][l].x;
+                    force1.y += c * force_pair_matrix[k][l].y;
+                    force1.z += c * force_pair_matrix[k][l].z;
 
-                force2.x -= d * force_pair_matrix[l][k].x;
-                force2.y -= d * force_pair_matrix[l][k].y;
-                force2.z -= d * force_pair_matrix[l][k].z;
+                    force2.x -= d * force_pair_matrix[l][k].x;
+                    force2.y -= d * force_pair_matrix[l][k].y;
+                    force2.z -= d * force_pair_matrix[l][k].z;
+                }
             }
-        }
-        force1.x *= ApAq;
-        force1.y *= ApAq;
-        force1.z *= ApAq;
-        f1->add_force_to_node(j, &force1);
-        f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
-        //				printf("1:: %d %e %e %e\n", j, force1.x, force1.y, force1.z);
+            force1.x *= ApAq;
+            force1.y *= ApAq;
+            force1.z *= ApAq;
+            f1->add_force_to_node(j, &force1);
+            f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
+            //				printf("1:: %d %e %e %e\n", j, force1.x, force1.y, force1.z);
 
-        force2.x *= ApAq;
-        force2.y *= ApAq;
-        force2.z *= ApAq;
-        f2->add_force_to_node(j, &force2);
-        f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
-    } // end updating face nodes.
+            force2.x *= ApAq;
+            force2.y *= ApAq;
+            force2.z *= ApAq;
+            f2->add_force_to_node(j, &force2);
+            f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+        } // end updating face nodes.
     } // end of critical
 
 
 }
-    /**Alters interaction calculations to apply periodic boundary conditions*/
+/**Alters interaction calculations to apply periodic boundary conditions*/
 void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // First check two things (either of which results in not having to calculate anything):
     // Check that faces are facing each other, if not then they are not interacting
@@ -437,14 +441,17 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 
     const int num_tri_gauss_quad_points = 3;
 
-    const struct tri_gauss_point gauss_points[num_tri_gauss_quad_points] ={
+    const struct tri_gauss_point gauss_points[num_tri_gauss_quad_points] = {
         // Weight, eta1, eta2, eta3
-        {0.333333333333333,
-            {0.666666666666667, 0.166666666666667, 0.166666666666667}},
-        {0.333333333333333,
-            {0.166666666666667, 0.666666666666667, 0.166666666666667}},
-        {0.333333333333333,
-            {0.166666666666667, 0.166666666666667, 0.666666666666667}}
+        {   0.333333333333333,
+            {0.666666666666667, 0.166666666666667, 0.166666666666667}
+        },
+        {   0.333333333333333,
+            {0.166666666666667, 0.666666666666667, 0.166666666666667}
+        },
+        {   0.333333333333333,
+            {0.166666666666667, 0.166666666666667, 0.666666666666667}
+        }
 
         /*
                                                 {0.109951743655322,     {0.816847572980459, 0.091576213509771, 0.091576213509771}},
@@ -532,38 +539,38 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // Store the measurement
     #pragma omp critical
     {
-    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
-    for (int j = 0; j < 3; j++) {
-        vector3 force1, force2;
-        force1.assign( 0, 0, 0 );
-        force2.assign( 0, 0, 0 );
-        for (int k = 0; k < num_tri_gauss_quad_points; k++) {
-            for (int l = 0; l < num_tri_gauss_quad_points; l++) {
-                scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
-                scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
+        fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += energy;
+        for (int j = 0; j < 3; j++) {
+            vector3 force1, force2;
+            force1.assign( 0, 0, 0 );
+            force2.assign( 0, 0, 0 );
+            for (int k = 0; k < num_tri_gauss_quad_points; k++) {
+                for (int l = 0; l < num_tri_gauss_quad_points; l++) {
+                    scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
+                    scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
 
-                force1.x += c * force_pair_matrix[k][l].x;
-                force1.y += c * force_pair_matrix[k][l].y;
-                force1.z += c * force_pair_matrix[k][l].z;
+                    force1.x += c * force_pair_matrix[k][l].x;
+                    force1.y += c * force_pair_matrix[k][l].y;
+                    force1.z += c * force_pair_matrix[k][l].z;
 
-                force2.x -= d * force_pair_matrix[l][k].x;
-                force2.y -= d * force_pair_matrix[l][k].y;
-                force2.z -= d * force_pair_matrix[l][k].z;
+                    force2.x -= d * force_pair_matrix[l][k].x;
+                    force2.y -= d * force_pair_matrix[l][k].y;
+                    force2.z -= d * force_pair_matrix[l][k].z;
+                }
             }
-        }
-        force1.x *= ApAq;
-        force1.y *= ApAq;
-        force1.z *= ApAq;
-        f1->add_force_to_node(j, &force1);
-        f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
+            force1.x *= ApAq;
+            force1.y *= ApAq;
+            force1.z *= ApAq;
+            f1->add_force_to_node(j, &force1);
+            f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
 
-        force2.x *= ApAq;
-        force2.y *= ApAq;
-        force2.z *= ApAq;
-        f2->add_force_to_node(j, &force2);
-        f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+            force2.x *= ApAq;
+            force2.y *= ApAq;
+            force2.z *= ApAq;
+            f2->add_force_to_node(j, &force2);
+            f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
 
-    } // end updating face nodes.
+        } // end updating face nodes.
     } // end omp critical
 
 }
@@ -585,14 +592,17 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
 
     const int num_tri_gauss_quad_points = 3;
 
-    const struct tri_gauss_point gauss_points[num_tri_gauss_quad_points] ={
+    const struct tri_gauss_point gauss_points[num_tri_gauss_quad_points] = {
         // Weight, eta1, eta2, eta3
-        {0.333333333333333,
-            {0.666666666666667, 0.166666666666667, 0.166666666666667}},
-        {0.333333333333333,
-            {0.166666666666667, 0.666666666666667, 0.166666666666667}},
-        {0.333333333333333,
-            {0.166666666666667, 0.166666666666667, 0.666666666666667}}
+        {   0.333333333333333,
+            {0.666666666666667, 0.166666666666667, 0.166666666666667}
+        },
+        {   0.333333333333333,
+            {0.166666666666667, 0.666666666666667, 0.166666666666667}
+        },
+        {   0.333333333333333,
+            {0.166666666666667, 0.166666666666667, 0.666666666666667}
+        }
 
         /*
                                                 {0.109951743655322,     {0.816847572980459, 0.091576213509771, 0.091576213509771}},
@@ -687,22 +697,22 @@ scalar VdW_solver::minimum_image(scalar delta, scalar size) {
 
 scalar VdW_solver::get_field_energy(int index0, int index1) {
 
-	// Sum over all field
-	if(index0 == -1 || index1 == -1) {
-		scalar energy = 0.0;
-		for(int i = 0; i < num_blobs; ++i) {
-			for(int j = 0; j < num_blobs; ++j) {
-				energy += fieldenergy[i][j];
-			}
-		}
+    // Sum over all field
+    if(index0 == -1 || index1 == -1) {
+        scalar energy = 0.0;
+        for(int i = 0; i < num_blobs; ++i) {
+            for(int j = 0; j < num_blobs; ++j) {
+                energy += fieldenergy[i][j];
+            }
+        }
 
-		return energy;
+        return energy;
 
-	} else if (index0 == index1) {
-		return fieldenergy[index0][index1];
-	} else {
+    } else if (index0 == index1) {
+        return fieldenergy[index0][index1];
+    } else {
 
-		// Order of blob indices is unknown in the calculations, so must add
-		return fieldenergy[index0][index1] + fieldenergy[index1][index0];
-	}
+        // Order of blob indices is unknown in the calculations, so must add
+        return fieldenergy[index0][index1] + fieldenergy[index1][index0];
+    }
 }
