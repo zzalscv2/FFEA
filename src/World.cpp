@@ -2149,7 +2149,7 @@ int World::read_and_build_system(vector<string> script_vector) {
     active_blob_array = new Blob*[params.num_blobs];
 
 #ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none) schedule(static) shared(blob_array, active_blob_array)
+    #pragma omp parallel for default(none) schedule(static) // shared(blob_array, active_blob_array)
 #endif
     for (int i = 0; i < params.num_blobs; ++i) {
         blob_array[i] = new Blob[params.num_conformations[i]];
@@ -2551,7 +2551,8 @@ int World::read_and_build_system(vector<string> script_vector) {
     //    leaves us with schedule static.
     int fatal_errors = 0; 
 #ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none) schedule(static) private(i,j) shared(params, blob_array, systemreader, blob_conf) reduction(+: fatal_errors)
+    #pragma omp parallel for default(none) schedule(static) private(i,j) reduction(+: fatal_errors) shared(blob_conf, systemreader) // shared(params, blob_array, systemreader, blob_conf)
+
 #endif
     for(i = 0; i < params.num_blobs; ++i) {
         for(j = 0; j < params.num_conformations[i]; ++j) {
