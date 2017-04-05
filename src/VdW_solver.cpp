@@ -155,7 +155,7 @@ int VdW_solver::solve() {
                       l_i->y + adjacent_cell_lookup_table[c][1],
                       l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
-                if (l_i->index != l_j->index) {
+                if (l_i->index < l_j->index) {
                     f_j = l_j->obj;
                     if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
                         // f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
