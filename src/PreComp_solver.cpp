@@ -71,15 +71,15 @@ PreComp_solver::PreComp_solver() {
 
 /** @brief destructor: deallocates pointers. */
 PreComp_solver::~PreComp_solver() {
-  delete U;
-  delete F;
-  delete isPairActive;
-  delete b_types;
+  delete[] U;
+  delete[] F;
+  delete[] isPairActive;
+  delete[] b_types;
   if (n_beads > 0) {
-    delete b_elems; 
+    delete[] b_elems; 
   }
   for (int i=0; i<num_blobs; i++){
-    delete fieldenergy[i];
+    delete[] fieldenergy[i];
   } 
   delete[] fieldenergy;
   num_blobs = 0;

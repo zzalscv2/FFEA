@@ -35,8 +35,8 @@ BlobLite::BlobLite() {
 } 
 
 BlobLite::~BlobLite() { 
-  delete coord; 
-  delete elem; 
+  delete[] coord; 
+  delete[] elem; 
 } 
 
 int BlobLite::load_topology(const char *topology_filename){
