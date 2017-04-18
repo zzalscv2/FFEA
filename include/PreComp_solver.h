@@ -67,6 +67,8 @@ public:
   int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
   int solve(); ///< calculate the forces using a straightforward double loop.
   int solve_using_neighbours();  ///< calculate the forces using linkedlists.
+  int solve_using_neighbours_non_critical();  ///< calculate the forces using linkedlists.
+  int solve_using_neighbours_double();  ///< calculate the forces using linkedlists.
   void reset_fieldenergy(); 
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
@@ -119,14 +121,21 @@ private:
   /** interacting elements */
   typedef tetra_element_linear* TELPtr;
   TELPtr *b_elems;
+  TELPtr *b_unq_elems; 
   /** bead types */
   int *b_types; 
+  /** map b_unq_elems to beads */
+  int *map_e_to_b;
   /** number of beads */ 
   int n_beads; 
+  /** number of different elements */
+  int num_diff_elems; 
   /** relative position of the beads to the element they belong, xyzxyzxyz... */
   scalar *b_rel_pos;
   /** absolute position of the beads */
   scalar *b_pos; 
+  /** forces to be applied */
+  scalar *b_forces;
   /** bool "matrix" (array) storing for every pair if it is active or not */
   bool *isPairActive;
 
