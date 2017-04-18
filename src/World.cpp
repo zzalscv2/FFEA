@@ -1927,7 +1927,9 @@ int World::run() {
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
             // pc_solver.solve();
-            pc_solver.solve_using_neighbours();
+            // pc_solver.solve_using_neighbours();
+            // pc_solver.solve_using_neighbours_double();
+            pc_solver.solve_using_neighbours_non_critical();
         }
 
 #ifdef BENCHMARK
