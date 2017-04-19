@@ -102,7 +102,6 @@ int PreComp_solver::msg(string whatever){
 void PreComp_solver::reset_fieldenergy() {
     for (int i=0; i<num_threads; i++) {
         for(int j = 0; j < num_blobs; j++) {
-           #pragma omp simd
            for(int k = 0; k < num_blobs; k++) {
               fieldenergy[(i*num_threads + j)*num_blobs + k] = 0.0;
            }
@@ -643,7 +642,11 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
            arr3Resize3<scalar,arr3>(f_ij, dx.data, arr3_view<scalar,arr3>(b_forces+3*b_index_i, 3) );
 
            e_j = b_elems[b_index_j];
-           fieldenergy[(thread_id*num_threads + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += 0.5*get_U(d, type_i, b_types[b_index_j]);
+           fieldenergy[(thread_id*num_blobs + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += 0.5*get_U(d, type_i, b_types[b_index_j]);
+           #pragma omp critical
+           {
+           printf("fieldenergy %d = %f; thread_id: %d, blob_i: %d, blob_j: %d\n", (thread_id*num_blobs + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index, fieldenergy[(thread_id*num_threads + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index], thread_id, e_i->daddy_blob->blob_index, e_j->daddy_blob->blob_index);
+           }
 
 
            b_j = b_j->next; 
@@ -673,6 +676,13 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
 #ifdef USE_OPENMP
     }
 #endif
+ 
+    for (int i=0; i<num_threads*num_blobs*num_blobs; i++) {
+       cout << " " << fieldenergy[i];
+    }
+    cout << endl; 
+
+
     return FFEA_OK;
 }
 
@@ -753,7 +763,7 @@ int PreComp_solver::solve_using_neighbours(){
 
            // Add energies to record 
            e_j = b_elems[b_index_j];
-           fieldenergy[(thread_id*num_threads + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[b_index_j]);
+           fieldenergy[(thread_id*num_blobs + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[b_index_j]);
 
            arr3Resize<scalar,arr3>(f_ij, dx.data);
 
@@ -844,7 +854,7 @@ int PreComp_solver::solve() {
         e_j = b_elems[j];
 
 	// Add energies to record 
-   fieldenergy[(thread_id*num_threads + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[j]);
+   fieldenergy[(thread_id*num_blobs + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += get_U(d, type_i, b_types[j]);
 
         arr3Resize<scalar,arr3>(f_ij, dx.data);
         arr3Store<scalar,arr3>(dx.data, dtemp.data); 
@@ -1109,14 +1119,14 @@ scalar PreComp_solver::get_field_energy(int index0, int index1) {
       }
 	} else if (index0 == index1) {
       for (int i = 0; i < num_threads; i++) {
-        energy += fieldenergy[ (i*num_threads + index0)*num_blobs + index1]; 
+        energy += fieldenergy[ (i*num_blobs + index0)*num_blobs + index1]; 
       } 
 		// return fieldenergy[index0][index1];
 	} else {
 		// Order of blob indices is unknown in the calculations, so must add
       for (int i = 0; i < num_threads; i++) {
-        energy += fieldenergy[ (i*num_threads + index0)*num_blobs + index1]; 
-        energy += fieldenergy[ (i*num_threads + index1)*num_blobs + index0];
+        energy += fieldenergy[ (i*num_blobs + index0)*num_blobs + index1]; 
+        energy += fieldenergy[ (i*num_blobs + index1)*num_blobs + index0];
       } 
 		// return fieldenergy[index0][index1] + fieldenergy[index1][index0];
 	}
