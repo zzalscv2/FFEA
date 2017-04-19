@@ -361,7 +361,8 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
        } 
        if (newelem == true) num_diff_elems_in_blob += 1;
        // record the elem stamp to sort arrays later. 
-       vector<int> elem_stamp(mj_elem_index, mj); 
+       vector<int> elem_stamp(2);
+       elem_stamp = {mj_elem_index, mj}; 
        sorting_pattern.push_back(elem_stamp);
        
        
@@ -449,7 +450,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
          } 
        } 
        sorting_pattern[j][1] = swap_low;
-     } 
+     }
      m += n;
    }
 
@@ -459,7 +460,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    b_unq_elems = new(std::nothrow) TELPtr[num_diff_elems];
    if (b_forces == NULL || b_unq_elems == NULL || map_e_to_b == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for supplementary array beads in PreComp_solver::init\n"); 
    m = 0; 
-   int cnt = 0; 
+   int cnt = 0;
    for (int i=0; i < params->num_blobs; i ++) {
      n = blob_array[i][0].get_num_beads();
      int updating = 0; 
