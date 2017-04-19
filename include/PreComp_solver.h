@@ -67,8 +67,7 @@ public:
   int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
   int solve(); ///< calculate the forces using a straightforward double loop.
   int solve_using_neighbours();  ///< calculate the forces using linkedlists.
-  int solve_using_neighbours_non_critical();  ///< calculate the forces using linkedlists.
-  int solve_using_neighbours_double();  ///< calculate the forces using linkedlists.
+  int solve_using_neighbours_non_critical();  ///< using linkedlists, calculate twice the forces to avoid any critical regions.
   void reset_fieldenergy(); 
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
@@ -146,8 +145,9 @@ private:
   
 
   /** Variables to store the energy field data between each pair of blobs */
-  scalar **fieldenergy;
+  scalar *fieldenergy;
   int num_blobs;
+  int num_threads;
 
 };
 

@@ -237,17 +237,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     }
 
     // detect how many threads we have for openmp
-    int tid;
-
 #ifdef USE_OPENMP
-    #pragma omp parallel default(none) private(tid)
-    {
-        tid = omp_get_thread_num();
-        if (tid == 0) {
-            num_threads = omp_get_num_threads();
-            printf("\n\tNumber of threads detected: %d\n\n", num_threads);
-        }
-    }
+    num_threads = omp_get_max_threads(); 
+    printf("\n\tNumber of threads detected: %d\n\n", num_threads);
 #else
     num_threads = 1;
 #endif
@@ -1927,9 +1919,8 @@ int World::run() {
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
             // pc_solver.solve();
-            // pc_solver.solve_using_neighbours();
-            // pc_solver.solve_using_neighbours_double();
-            pc_solver.solve_using_neighbours_non_critical();
+            pc_solver.solve_using_neighbours();
+            // pc_solver.solve_using_neighbours_non_critical();
         }
 
 #ifdef BENCHMARK
