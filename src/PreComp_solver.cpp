@@ -103,7 +103,7 @@ void PreComp_solver::reset_fieldenergy() {
     for (int i=0; i<num_threads; i++) {
         for(int j = 0; j < num_blobs; j++) {
            for(int k = 0; k < num_blobs; k++) {
-              fieldenergy[(i*num_threads + j)*num_blobs + k] = 0.0;
+              fieldenergy[(i*num_blobs + j)*num_blobs + k] = 0.0;
            }
         }
     }
