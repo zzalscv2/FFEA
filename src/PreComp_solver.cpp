@@ -579,6 +579,10 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
 
     // 0 - clear fieldenery:
     reset_fieldenergy(); 
+    //   - and reset b_forces!
+    for (int i=0; i<3*n_beads; i++) {
+      b_forces[i] = 0.;
+    } 
 
 
     // 1 - Compute the position of the beads:
@@ -643,11 +647,6 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
 
            e_j = b_elems[b_index_j];
            fieldenergy[(thread_id*num_blobs + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += 0.5*get_U(d, type_i, b_types[b_index_j]);
-           #pragma omp critical
-           {
-           printf("fieldenergy %d = %f; thread_id: %d, blob_i: %d, blob_j: %d\n", (thread_id*num_blobs + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index, fieldenergy[(thread_id*num_threads + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index], thread_id, e_i->daddy_blob->blob_index, e_j->daddy_blob->blob_index);
-           }
-
 
            b_j = b_j->next; 
         } // close b_j, beads in neighbour voxel loop 
