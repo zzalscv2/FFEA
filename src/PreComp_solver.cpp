@@ -676,12 +676,6 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
     }
 #endif
  
-    for (int i=0; i<num_threads*num_blobs*num_blobs; i++) {
-       cout << " " << fieldenergy[i];
-    }
-    cout << endl; 
-
-
     return FFEA_OK;
 }
 
