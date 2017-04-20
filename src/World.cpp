@@ -237,17 +237,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     }
 
     // detect how many threads we have for openmp
-    int tid;
-
 #ifdef USE_OPENMP
-    #pragma omp parallel default(none) private(tid)
-    {
-        tid = omp_get_thread_num();
-        if (tid == 0) {
-            num_threads = omp_get_num_threads();
-            printf("\n\tNumber of threads detected: %d\n\n", num_threads);
-        }
-    }
+    num_threads = omp_get_max_threads(); 
+    printf("\n\tNumber of threads detected: %d\n\n", num_threads);
 #else
     num_threads = 1;
 #endif
@@ -842,6 +834,18 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
     box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
 
+    // Check if there are static blobs: 
+    bool there_are_static_blobs = false;
+    for (i = 0; i < params.num_blobs; i++) {
+        for(j = 0; j < params.num_conformations[i]; ++j) {
+            if (blob_array[i][j].get_motion_state() != FFEA_BLOB_IS_DYNAMIC) {
+              there_are_static_blobs = true; 
+              break; 
+            }
+        }
+        if (there_are_static_blobs == true) break; 
+    }
+
     if (params.vdw_type == "lennard-jones")
         vdw_solver = new(std::nothrow) VdW_solver();
     else if (params.vdw_type == "steric")
@@ -850,7 +854,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         vdw_solver = new(std::nothrow) LJSteric_solver();
     if (vdw_solver == NULL)
         FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
-    vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw, params.vdw_type, params.vdw_steric_dr);
+
+    vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw, params.vdw_type, params.vdw_steric_dr, params.calc_kinetics, there_are_static_blobs);
 
     // Calculate the total number of vdw interacting faces in the entire system
     total_num_surface_faces = 0;
@@ -1927,7 +1932,8 @@ int World::run() {
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
             // pc_solver.solve();
-            pc_solver.solve_using_neighbours();
+            // pc_solver.solve_using_neighbours();
+            pc_solver.solve_using_neighbours_non_critical();
         }
 
 #ifdef BENCHMARK
@@ -2149,7 +2155,7 @@ int World::read_and_build_system(vector<string> script_vector) {
     active_blob_array = new Blob*[params.num_blobs];
 
 #ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none) schedule(static) shared(blob_array, active_blob_array)
+    #pragma omp parallel for default(none) schedule(static) // shared(blob_array, active_blob_array)
 #endif
     for (int i = 0; i < params.num_blobs; ++i) {
         blob_array[i] = new Blob[params.num_conformations[i]];
@@ -2551,7 +2557,8 @@ int World::read_and_build_system(vector<string> script_vector) {
     //    leaves us with schedule static.
     int fatal_errors = 0; 
 #ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none) schedule(static) private(i,j) shared(params, blob_array, systemreader, blob_conf) reduction(+: fatal_errors)
+    #pragma omp parallel for default(none) schedule(static) private(i,j) reduction(+: fatal_errors) shared(blob_conf, systemreader) // shared(params, blob_array, systemreader, blob_conf)
+
 #endif
     for(i = 0; i < params.num_blobs; ++i) {
         for(j = 0; j < params.num_conformations[i]; ++j) {

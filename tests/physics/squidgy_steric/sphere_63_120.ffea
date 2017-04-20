@@ -19,7 +19,7 @@
 	<calc_kinetics = 0>
 	<vdw_type = steric>
    <inc_self_vdw = 0>
-	<vdw_steric_factor = 1e3>
+	<vdw_steric_factor = 2e3>
 	<calc_es = 0>
 	<es_update = 4>
 	<es_N_x = 50>

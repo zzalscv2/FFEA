@@ -194,6 +194,16 @@ template <class t_scalar, class brr3> void arr3Resize2(t_scalar f, arr3_view<t_s
 
 }
 
+/** Given a scalar f, change v so that v += f*u */
+template <class t_scalar, class brr3> void arr3Resize3(t_scalar f, arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v){
+
+   #pragma omp simd
+   for (int i=0; i<3; i++) {
+      v[i] += f*u[i]; 
+   }
+}
+
+
 /** cp arr3 u into arr3 v */ 
 template <class t_scalar, class brr3> void arr3Store(arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v){
 
@@ -833,6 +843,7 @@ template void arr3Normalise2<scalar,arr3>(arr3_view<scalar,arr3> e, arr3_view<sc
 template void arr3Resize<scalar,arr3>(scalar f, arr3_view<scalar,arr3> u);
 
 template void arr3Resize2<scalar,arr3> (scalar f, arr3_view<scalar,arr3> u, arr3_view<scalar,arr3> v);
+template void arr3Resize3<scalar,arr3> (scalar f, arr3_view<scalar,arr3> u, arr3_view<scalar,arr3> v);
 
 template void arr3Store<scalar,arr3>(arr3_view<scalar,arr3> u, arr3_view<scalar,arr3> v);
 
@@ -859,6 +870,7 @@ template void arr3Normalise<geoscalar,grr3>(arr3_view<geoscalar,grr3> e);
 template void arr3Normalise2<geoscalar,grr3>(arr3_view<geoscalar,grr3> e, arr3_view<geoscalar,grr3> n);
 template void arr3Resize<geoscalar,grr3>(geoscalar f, arr3_view<geoscalar,grr3> u);
 template void arr3Resize2<geoscalar,grr3> (geoscalar f, arr3_view<geoscalar,grr3> u, arr3_view<geoscalar,grr3> v);
+template void arr3Resize3<geoscalar,grr3> (geoscalar f, arr3_view<geoscalar,grr3> u, arr3_view<geoscalar,grr3> v);
 template void arr3Store<geoscalar,grr3>(arr3_view<geoscalar,grr3> u, arr3_view<geoscalar,grr3> v);
 template geoscalar arr3arr3Distance<geoscalar,grr3>(arr3_view<geoscalar,grr3> vecA, arr3_view<geoscalar,grr3> vecB); 
 template geoscalar mag<geoscalar,grr3>(arr3_view<geoscalar,grr3> v);
