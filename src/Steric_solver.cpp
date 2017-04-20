@@ -29,7 +29,10 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
 
     // First check two things (either of which results in not having to calculate anything):
     // Check that faces are facing each other, if not then they are not interacting
-    if (arr3arr3DotProduct<scalar,arr3>(f1->normal.data, f2->normal.data) > ffea_const::zero) return;
+    // if (arr3arr3DotProduct<scalar,arr3>(f1->normal.data, f2->normal.data) > ffea_const::zero) return;
+    if ( (f1->normal[0]*f2->normal[0] + 
+          f1->normal[1]*f2->normal[1] + 
+          f1->normal[2]*f2->normal[2]) > ffea_const::zero ) return;
 
     /* Robin suspects that this was leading to unstabilities...
      *  but this steric solver is more stable than the LJ one. */
@@ -77,11 +80,11 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     for (int j = 0; j < 4; j++) {
       arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
       f1->add_force_to_node(j, ftmp1);
-      f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+      // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
 
       arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
       f2->add_force_to_node(j, ftmp2);
-      f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+      // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
     }
     } 
 

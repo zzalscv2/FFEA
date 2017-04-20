@@ -80,6 +80,9 @@ template <class t_scalar, class brr3> void arr3Resize(t_scalar f, arr3_view<t_sc
 // void arr3Resize2(scalar f, arr3 &u, arr3 &v);
 template <class t_scalar, class brr3> void arr3Resize2(t_scalar f, arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v);
 
+/** Given a scalar f, change v so that v += f*u */
+template <class t_scalar, class brr3> void arr3Resize3(t_scalar f, arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v);
+
 /** cp arr3 u into arr3 v */
 template <class t_scalar, class brr3> void arr3Store(arr3_view<t_scalar,brr3> u, arr3_view<t_scalar,brr3> v);
 
