@@ -834,6 +834,18 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
     box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
 
+    // Check if there are static blobs: 
+    bool there_are_static_blobs = false;
+    for (i = 0; i < params.num_blobs; i++) {
+        for(j = 0; j < params.num_conformations[i]; ++j) {
+            if (blob_array[i][j].get_motion_state() != FFEA_BLOB_IS_DYNAMIC) {
+              there_are_static_blobs = true; 
+              break; 
+            }
+        }
+        if (there_are_static_blobs == true) break; 
+    }
+
     if (params.vdw_type == "lennard-jones")
         vdw_solver = new(std::nothrow) VdW_solver();
     else if (params.vdw_type == "steric")
@@ -842,7 +854,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         vdw_solver = new(std::nothrow) LJSteric_solver();
     if (vdw_solver == NULL)
         FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
-    vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw, params.vdw_type, params.vdw_steric_dr);
+
+    vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw, params.vdw_type, params.vdw_steric_dr, params.calc_kinetics, there_are_static_blobs);
 
     // Calculate the total number of vdw interacting faces in the entire system
     total_num_surface_faces = 0;

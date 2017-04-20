@@ -42,7 +42,7 @@ public:
 
     ~VdW_solver();
 
-    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr);
+    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr, int calc_kinetics, bool working_w_static_blobs);
 
     int solve();
 
@@ -65,6 +65,8 @@ protected:
     scalar **fieldenergy;
     int num_blobs;
     int inc_self_vdw;  ///< whether to include interactions between faces within the same blob, or not.
+    int calc_kinetics; 
+    bool working_w_static_blobs;
     struct adjacent_cell_lookup_table_entry {
         int ix, iy, iz;
     };
