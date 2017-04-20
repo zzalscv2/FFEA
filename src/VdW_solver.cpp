@@ -81,7 +81,7 @@ VdW_solver::~VdW_solver() {
     vdw_type = VDW_TYPE_UNDEFINED;
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr, int calc_kinetics, bool working_w_static_blobs) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
@@ -102,6 +102,8 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 
     // And some measurement stuff it should know about
     this->num_blobs = num_blobs;
+    this->calc_kinetics = calc_kinetics;
+    this->working_w_static_blobs = working_w_static_blobs;
     fieldenergy = new scalar*[num_blobs];
     if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy in VdW_solver::init\n");
     for(int i = 0; i < num_blobs; ++i) {
@@ -131,21 +133,22 @@ int VdW_solver::solve() {
     //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
     reset_fieldenergy();
+    int motion_state_i; 
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-    #pragma omp parallel for default(none) private(c, l_i, l_j, f_i, f_j)  schedule(dynamic, 1) // OMP-GHL
+    #pragma omp parallel for default(none) private(c, l_i, l_j, f_i, f_j, motion_state_i) // schedule(dynamic, 1) // OMP-GHL
 #endif
     //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
 
         // get the ith face
         l_i = surface_face_lookup->get_from_pool(i);
-        if(!l_i->obj->is_kinetic_active()) {
+        if ((calc_kinetics == 1) && (!l_i->obj->is_kinetic_active()) ) {
             continue;
         }
         f_i = l_i->obj;
-        int motion_state_i = f_i->daddy_blob->get_motion_state(); 
+        if (working_w_static_blobs) motion_state_i = f_i->daddy_blob->get_motion_state(); 
 
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
@@ -160,7 +163,7 @@ int VdW_solver::solve() {
                     if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
                         // f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
                         // f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
-                        if(motion_state_i == FFEA_BLOB_IS_DYNAMIC and f_j->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC) {
+                        if((working_w_static_blobs == false) || (motion_state_i == FFEA_BLOB_IS_DYNAMIC and f_j->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC)) {
                             do_interaction(f_i, f_j);
                         }
                     }
