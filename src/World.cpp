@@ -1804,8 +1804,8 @@ int World::run() {
             } */
 
             // If blob centre of mass moves outside simulation box, apply PBC to it
-            vector3 com;
-            active_blob_array[i]->get_centroid(&com);
+            vector3 com, comt;
+            active_blob_array[i]->calc_and_store_centroid(com);
 
             scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
@@ -3896,7 +3896,7 @@ void World::make_measurements() {
         kineticenergy += active_blob_array[i]->get_kinetic_energy();
         strainenergy += active_blob_array[i]->get_strain_energy();
         rmsd += (active_blob_array[i]->get_rmsd() * active_blob_array[i]->get_rmsd()) * active_blob_array[i]->get_num_nodes();
-        active_blob_array[i]->get_CoG(bCoG.data);
+        active_blob_array[i]->get_stored_centroid(bCoG.data);
         CoG.x += bCoG.x * active_blob_array[i]->get_num_nodes();
         CoG.y += bCoG.y * active_blob_array[i]->get_num_nodes();
         CoG.z += bCoG.z * active_blob_array[i]->get_num_nodes();
@@ -4063,12 +4063,14 @@ void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr) {
     }
 
     //calculates blob corrections for periodic interactions
+    vector3 com,com2;
     for(int i = 0; i < num_blobs; ++i) {
+        // active_blob_array[i]->get_centroid(&com);
+        active_blob_array[i]->get_stored_centroid(com.data);
         for(int j = i+1; j < num_blobs; ++j) {
 
-            vector3 com,com2;
-            active_blob_array[i]->get_centroid(&com);
-            active_blob_array[j]->get_centroid(&com2);
+            // active_blob_array[j]->get_centroid(&com2);
+            active_blob_array[j]->get_stored_centroid(com2.data);
             blob_corr[i*num_blobs*3 + j*3]= box_dim.x*floor((com2.x-com.x+0.5*box_dim.x)/box_dim.x);
             blob_corr[i*num_blobs*3 + j*3+1]= box_dim.y*floor((com2.y-com.y+0.5*box_dim.y)/box_dim.y);
             blob_corr[i*num_blobs*3 + j*3+2]= box_dim.z*floor((com2.z-com.z+0.5*box_dim.z)/box_dim.z);
