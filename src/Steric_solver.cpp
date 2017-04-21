@@ -80,11 +80,11 @@ void Steric_solver::do_interaction(Face *f1, Face *f2){
     for (int j = 0; j < 4; j++) {
       arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
       f1->add_force_to_node(j, ftmp1);
-      // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+      // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index); // DEPRECATED
 
       arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
       f2->add_force_to_node(j, ftmp2);
-      // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+      // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index); // DEPRECATED
     }
     } 
 
@@ -193,11 +193,11 @@ void Steric_solver::do_interaction(Face *f1, Face *f2, scalar * blob_corr){
     for (int j = 0; j < 4; j++) {
       arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
       f1->add_force_to_node(j, ftmp1);
-      f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+      // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index); // DEPRECATED
 
       arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
       f2->add_force_to_node(j, ftmp2);
-      f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+      // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index); // DEPRECATED
     }
     }
 

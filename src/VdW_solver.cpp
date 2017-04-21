@@ -399,14 +399,14 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
             force1.y *= ApAq;
             force1.z *= ApAq;
             f1->add_force_to_node(j, &force1);
-            f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
+            // f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index); // DEPRECATED
             //				printf("1:: %d %e %e %e\n", j, force1.x, force1.y, force1.z);
 
             force2.x *= ApAq;
             force2.y *= ApAq;
             force2.z *= ApAq;
             f2->add_force_to_node(j, &force2);
-            f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+            // f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index); // DEPRECATED
         } // end updating face nodes.
     } // end of critical
 
@@ -565,13 +565,13 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
             force1.y *= ApAq;
             force1.z *= ApAq;
             f1->add_force_to_node(j, &force1);
-            f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
+            // f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index); // DEPRECATED
 
             force2.x *= ApAq;
             force2.y *= ApAq;
             force2.z *= ApAq;
             f2->add_force_to_node(j, &force2);
-            f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+            // f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index); // DEPRECATED
 
         } // end updating face nodes.
     } // end omp critical
@@ -659,7 +659,7 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
     // Record energy with xz plane
     scalar Asq = f->area * f->area;
     energy *= Asq;
-    f->add_xz_vdw_energy_to_record(energy);
+    // f->add_xz_vdw_energy_to_record(energy); // DEPRECATED
 
     for (int j = 0; j < 3; j++) {
         vector3 force;
@@ -672,7 +672,7 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
         }
         force.y *= Asq;
         f->add_force_to_node(j, &force);
-        f->add_xz_vdw_force_to_record(&force);
+        // f->add_xz_vdw_force_to_record(&force); // DEPRECATED
     }
 
 }

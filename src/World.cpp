@@ -1798,14 +1798,10 @@ int World::run() {
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->zero_force();
-            if ((step+1) % params.check == 0) { // we only do measurements if we need so.
-                if (params.calc_vdw == 1) {
-                    active_blob_array[i]->zero_vdw_bb_measurement_data();
-                }
-                if (params.sticky_wall_xz == 1) {
-                    active_blob_array[i]->zero_vdw_xz_measurement_data();
-                }
-            }
+            /* if ((step+1) % params.check == 0) { // we only do measurements if we need so.
+                // if (params.calc_vdw == 1) active_blob_array[i]->zero_vdw_bb_measurement_data(); // DEPRECATED
+                // if (params.sticky_wall_xz == 1) active_blob_array[i]->zero_vdw_xz_measurement_data(); // DEPRECATED 
+            } */
 
             // If blob centre of mass moves outside simulation box, apply PBC to it
             vector3 com;
@@ -1817,14 +1813,12 @@ int World::run() {
             if (com.x < 0) {
                 if (params.wall_x_1 == WALL_TYPE_PBC) {
                     dx += box_dim.x;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[0]-=1;
                     check_move = 1;
                 }
             } else if (com.x > box_dim.x) {
                 if (params.wall_x_2 == WALL_TYPE_PBC) {
                     dx -= box_dim.x;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[0]+=1;
                     check_move = 1;
                 }
@@ -1832,14 +1826,12 @@ int World::run() {
             if (com.y < 0) {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[1]-=1;
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[1]+=1;
                     check_move = 1;
                 }
@@ -1847,14 +1839,12 @@ int World::run() {
             if (com.z < 0) {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[2]-=1;
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[2]+=1;
                     check_move = 1;
                 }

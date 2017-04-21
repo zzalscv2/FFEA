@@ -86,11 +86,11 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
            for (int j = 0; j < 4; j++) {
                arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
                f1->add_force_to_node(j, ftmp1);
-               f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+               // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index); // DEPRECATED
 
                arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
                f2->add_force_to_node(j, ftmp2);
-               f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+               // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index); // DEPRECATED
            }
            } // close omp critical
 
@@ -219,13 +219,13 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
           force1.y *= ApAq;
           force1.z *= ApAq;
           f1->add_force_to_node(j, &force1);
-          f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
+          // f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index); // DEPRECATED
 
           force2.x *= ApAq;
           force2.y *= ApAq;
           force2.z *= ApAq;
           f2->add_force_to_node(j, &force2);
-          f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+          // f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index); // DEPRECATED
 	    } // end updating face nodes
        } // end of critical
     }
@@ -297,11 +297,11 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
            for (int j = 0; j < 4; j++) {
               arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
               f1->add_force_to_node(j, ftmp1);
-              f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index);
+              // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index); // DEPRECATED
 
               arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
               f2->add_force_to_node(j, ftmp2);
-              f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index);
+              // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index); // DEPRECATED
             }
             }
         }
@@ -431,13 +431,13 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
           force1.y *= ApAq;
           force1.z *= ApAq;
           f1->add_force_to_node(j, &force1);
-          f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index);
+          // f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index); // DEPRECATED
 
           force2.x *= ApAq;
           force2.y *= ApAq;
           force2.z *= ApAq;
           f2->add_force_to_node(j, &force2);
-          f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index);
+          // f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index); // DEPRECATED
 	    } // end updating face nodes
        } // end of critical
 
