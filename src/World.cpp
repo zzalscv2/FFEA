@@ -1919,11 +1919,14 @@ int World::run() {
         time0 += wtime1 - wtime0;
 #endif
 
+        // Calculate the correlation matrix if Blob-Blob forces need PBC:
+        if (params.force_pbc == 1) calc_blob_corr_matrix(params.num_blobs, blob_corr);
+
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
             // pc_solver.solve();
             // pc_solver.solve_using_neighbours();
-            pc_solver.solve_using_neighbours_non_critical();
+            pc_solver.solve_using_neighbours_non_critical(blob_corr); // blob_corr == NULL if force_pbc = 0
         }
 
 #ifdef BENCHMARK
@@ -1946,10 +1949,7 @@ int World::run() {
         // Calculate the VdW forces:
         if (params.calc_vdw == 1) {
             if (params.force_pbc == 0) vdw_solver->solve();
-            else if (params.force_pbc == 1) {
-                calc_blob_corr_matrix(params.num_blobs, blob_corr);
-                vdw_solver->solve(blob_corr);
-            }
+            else if (params.force_pbc == 1) vdw_solver->solve(blob_corr);
         }
         if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
 
