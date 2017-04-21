@@ -329,9 +329,9 @@ public:
 
     void add_force_to_node(vector3 f, int index);
 
-    void zero_vdw_bb_measurement_data();
+    // void zero_vdw_bb_measurement_data(); // DEPRECATED
 
-    void zero_vdw_xz_measurement_data();
+    // void zero_vdw_xz_measurement_data(); // DEPRECATED
 
     /**
      * Set all nodes on the Blob to the given velocity vector
