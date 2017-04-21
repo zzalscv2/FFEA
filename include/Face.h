@@ -82,10 +82,10 @@ public:
     //@{
     /** vdw measurement info **/
     int num_blobs;
-    vector3 *vdw_bb_force;
-    scalar *vdw_bb_energy;
-    vector3 *vdw_xz_force;
-    scalar vdw_xz_energy;
+    // vector3 *vdw_bb_force; // DEPRECATED
+    // scalar *vdw_bb_energy; // DEPRECATED
+    // vector3 *vdw_xz_force; // DEPRECATED
+    // scalar vdw_xz_energy; // DEPRECATED
     //@}
 
     /** Check whether the tetrahedron formed by this face an the opposite
@@ -169,20 +169,20 @@ public:
 
     void add_force_to_node_atomic(int i, vector3 *f);
 
-    void add_bb_vdw_force_to_record(vector3 *f, int other_blob_index);
-    template <class brr3> void add_bb_vdw_force_to_record(brr3 &f, int other_blob_index);
+    // void add_bb_vdw_force_to_record(vector3 *f, int other_blob_index); // DEPRECATED
+    // template <class brr3> void add_bb_vdw_force_to_record(brr3 &f, int other_blob_index); // DEPRECATED
 
-    void add_bb_vdw_energy_to_record(scalar energy, int other_blob_index);
+    // void add_bb_vdw_energy_to_record(scalar energy, int other_blob_index); // DEPRECATED
 
-    void add_xz_vdw_force_to_record(vector3 *f);
+    // void add_xz_vdw_force_to_record(vector3 *f); // DEPRECATED
 
-    void add_xz_vdw_energy_to_record(scalar energy);
+    // void add_xz_vdw_energy_to_record(scalar energy); // DEPRECATED
 
     void zero_force();
 
-    void zero_vdw_bb_measurement_data();
+    // void zero_vdw_bb_measurement_data(); // DEPRECATED
 
-    void zero_vdw_xz_measurement_data();
+    // void zero_vdw_xz_measurement_data(); // DEPRECATED
 
     void set_vdw_xz_interaction_flag(bool state);
 
