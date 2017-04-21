@@ -2117,17 +2117,17 @@ void Blob::add_force_to_node(vector3 f, int index) {
     force[index].z += f.z;
 }
 
-void Blob::zero_vdw_bb_measurement_data() {
+/* void Blob::zero_vdw_bb_measurement_data() {
     for (int i = 0; i < num_surface_faces; ++i) {
         surface[i].zero_vdw_bb_measurement_data();
     }
-}
+}*/ 
 
-void Blob::zero_vdw_xz_measurement_data() {
+/* void Blob::zero_vdw_xz_measurement_data() {
     for (int i = 0; i < num_surface_faces; ++i) {
         surface[i].zero_vdw_xz_measurement_data();
     }
-}
+}*/
 
 /*
 
