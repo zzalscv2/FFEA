@@ -195,6 +195,7 @@ public:
      * Calculates and returns the centroid of this Blob
      */
     void get_centroid(vector3 *com);
+    void calc_and_store_centroid(vector3 &com);
     vector3 calc_centroid();
 
     void set_pos_0();
@@ -414,7 +415,7 @@ public:
 
     // std::array<scalar,3> get_CoG();
     // arr3 get_CoG();
-    void get_CoG(arr3 &cog); 
+    void get_stored_centroid(arr3 &cog); 
 
     int get_conformation_index();
     int get_previous_conformation_index();

@@ -123,7 +123,6 @@ void VdW_solver::reset_fieldenergy() {
 }
 
 int VdW_solver::solve() {
-    // double st, time1, time2, time3;
 
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
@@ -139,7 +138,6 @@ int VdW_solver::solve() {
 #ifdef USE_OPENMP
     #pragma omp parallel for default(none) private(c, l_i, l_j, f_i, f_j, motion_state_i) // schedule(dynamic, 1) // OMP-GHL
 #endif
-    //st = MPI::Wtime();
     for (int i = 0; i < total_num_surface_faces; i++) {
 
         // get the ith face
@@ -161,8 +159,6 @@ int VdW_solver::solve() {
                 if (l_i->index < l_j->index) {
                     f_j = l_j->obj;
                     if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
-                        // f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
-                        // f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
                         if((working_w_static_blobs == false) || (motion_state_i == FFEA_BLOB_IS_DYNAMIC and f_j->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC)) {
                             do_interaction(f_i, f_j);
                         }
@@ -171,21 +167,60 @@ int VdW_solver::solve() {
                 l_j = l_j->next;
             }
         }
-        //timing 1000 face execution
-        /*if (i = 1000){
-          time3 = MPI::Wtime() - st;
-          cout<<"calculating face's interaction for 1000 face"<<time3<<"seconds"<<endl;
-        }*/
-
     }
 
-    //time1 = MPI::Wtime()-st;
-    //cout<<"total time for the outer loop: "<<time1<<"seconds"<<endl;
     return FFEA_OK;
 }
 
 /**Alters solver to apply periodic boundary conditions*/
 int VdW_solver::solve(scalar * blob_corr) {
+
+    LinkedListNode<Face> *l_i = NULL;
+    LinkedListNode<Face> *l_j = NULL;
+    Face *f_i, *f_j;
+    int c;
+    total_num_surface_faces = surface_face_lookup->get_pool_size();
+    //total_num_surface_faces = surface_face_lookup->get_stack_size();
+
+    reset_fieldenergy();
+    int motion_state_i; 
+
+    /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
+#ifdef USE_OPENMP
+    #pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j, motion_state_i) // schedule(dynamic, 1) // OMP-GHL
+#endif
+    for (int i = 0; i < total_num_surface_faces; i++) {
+
+        // get the ith face
+        l_i = surface_face_lookup->get_from_pool(i);
+        if ((calc_kinetics == 1) && (!l_i->obj->is_kinetic_active()) ) {
+            continue;
+        }
+        f_i = l_i->obj;
+        if (working_w_static_blobs) motion_state_i = f_i->daddy_blob->get_motion_state(); 
+
+        // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
+        // Remember to check that the face is not interacting with itself or connected faces
+        for (c = 0; c < 27; c++) {
+            l_j = surface_face_lookup->get_top_of_stack(
+                      l_i->x + adjacent_cell_lookup_table[c][0],
+                      l_i->y + adjacent_cell_lookup_table[c][1],
+                      l_i->z + adjacent_cell_lookup_table[c][2]);
+            while (l_j != NULL) {
+                if (l_i->index < l_j->index) {
+                    f_j = l_j->obj;
+                    if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
+                        if((working_w_static_blobs == false) || (motion_state_i == FFEA_BLOB_IS_DYNAMIC and f_j->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC)) {
+                            do_interaction(f_i, f_j, blob_corr);
+                        }
+                    }
+                }
+                l_j = l_j->next;
+            }
+        }
+    }
+
+/*
     // double st, time1, time2, time3;
 
     LinkedListNode<Face> *l_i = NULL;
@@ -203,7 +238,7 @@ int VdW_solver::solve(scalar * blob_corr) {
         }
     }
 
-    /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
+    // For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.
 #ifdef USE_OPENMP
     #pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
 #endif
@@ -236,8 +271,8 @@ int VdW_solver::solve(scalar * blob_corr) {
                 l_j = l_j->next;
             }
         }
-    }
-
+    }*/
+    
     return FFEA_OK;
 }
 

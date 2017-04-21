@@ -920,6 +920,16 @@ void Blob::get_centroid(vector3 *com) {
     com->z /= num_nodes;
 }
 
+void Blob::calc_and_store_centroid(vector3 &com) {
+
+    get_centroid(&com); 
+
+    CoG[0] = com[0];
+    CoG[1] = com[1];
+    CoG[2] = com[2]; 
+
+}
+
 // This one returns an array rather than arsing about with pointers
 vector3 Blob::calc_centroid() {
 
@@ -1560,7 +1570,7 @@ arr3 Blob::get_CoG() {
     return CoG.data;
 }
  */
-void Blob::get_CoG(arr3 &cog){
+void Blob::get_stored_centroid(arr3 &cog){
     arr3Store<scalar,arr3>(CoG.data, cog); 
 }
 

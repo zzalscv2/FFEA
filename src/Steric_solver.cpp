@@ -143,9 +143,10 @@ void Steric_solver::do_interaction(Face *f1, Face *f2, scalar * blob_corr){
 
     // First check two things (either of which results in not having to calculate anything):
     // Check that faces are facing each other, if not then they are not interacting
-    if (dot(&f1->normal, &f2->normal) > ffea_const::zero) {
-        return;
-    }
+    if ( (f1->normal[0]*f2->normal[0] + 
+          f1->normal[1]*f2->normal[1] + 
+          f1->normal[2]*f2->normal[2]) > ffea_const::zero ) return;
+
 
     /* Robin suspects that this was leading to unstabilities...
      *  but this steric solver is more stable than the LJ one. */
