@@ -810,13 +810,14 @@ int PreComp_solver::solve_using_neighbours(){
     return FFEA_OK;
 }
 
-int PreComp_solver::solve() {
+int PreComp_solver::solve(scalar *blob_corr/*=NULL*/) {
 
     scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
     vector3 dx, dtemp;
     int type_i; 
     scalar phi_i[4], phi_j[4];
     tetra_element_linear *e_i, *e_j;
+    int daddy_i, daddy_j;
 
     // 0 - clear fieldenery:
     reset_fieldenergy(); 
@@ -828,7 +829,7 @@ int PreComp_solver::solve() {
     /*scalar e_tot = 0.0; 
     scalar f_tot = 0.0;*/
 #ifdef USE_OPENMP
-#pragma omp parallel default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij)
+#pragma omp parallel default(none) shared(blob_corr) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,daddy_i,daddy_j)
     {
     int thread_id = omp_get_thread_num(); 
     #pragma omp for
@@ -842,11 +843,21 @@ int PreComp_solver::solve() {
       phi_i[3] = b_rel_pos[3*i+2];
       phi_i[0] = 1 - phi_i[1] - phi_i[2] - phi_i[3];
       e_i = b_elems[i];  
+      daddy_i = b_daddyblob[i];
       for (int j=i+1; j<n_beads; j++) {
         if (!isPairActive[type_i*ntypes+b_types[j]]) continue; 
-        dx.x = (b_pos[3*j] - b_pos[3*i]);
-        dx.y = (b_pos[3*j+1] - b_pos[3*i+1]);
-        dx.z = (b_pos[3*j+2] - b_pos[3*i+2]);
+
+        daddy_j = b_daddyblob[j];
+        if (blob_corr == NULL) {
+            dx[0] = (b_pos[3*j  ] - b_pos[3*i]);
+            dx[1] = (b_pos[3*j+1] - b_pos[3*i+1]);
+            dx[2] = (b_pos[3*j+2] - b_pos[3*i+2]);
+        } else {
+            dx[0] = (b_pos[3*j  ] - blob_corr[3*(daddy_i*num_blobs + daddy_j)   ] - b_pos[3*i  ]);
+            dx[1] = (b_pos[3*j+1] - blob_corr[3*(daddy_i*num_blobs + daddy_j) +1] - b_pos[3*i+1]);
+            dx[2] = (b_pos[3*j+2] - blob_corr[3*(daddy_i*num_blobs + daddy_j) +2] - b_pos[3*i+2]);
+        }
+
         d = dx.x*dx.x + dx.y*dx.y + dx.z*dx.z; 
         if (d > x_range2[1]) continue;
         else if (d < x_range2[0]) continue;

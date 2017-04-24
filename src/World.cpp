@@ -1804,7 +1804,7 @@ int World::run() {
             } */
 
             // If blob centre of mass moves outside simulation box, apply PBC to it
-            vector3 com, comt;
+            vector3 com;
             active_blob_array[i]->calc_and_store_centroid(com);
 
             scalar dx = 0, dy = 0, dz = 0;
@@ -1849,8 +1849,10 @@ int World::run() {
                     check_move = 1;
                 }
             }
-            if (check_move == 1) {
-                active_blob_array[i]->move(dx, dy, dz);
+            // So if it has to move, do so and update its centroid.
+            if (check_move == 1) { 
+                active_blob_array[i]->move(dx, dy, dz); 
+                active_blob_array[i]->calc_and_store_centroid(com);
             }
 
             // If Blob is near a hard wall, prevent it from moving further into it
@@ -1924,7 +1926,7 @@ int World::run() {
 
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
-            // pc_solver.solve();
+            // pc_solver.solve(blob_corr); // keep that one as reference implementation. 
             // pc_solver.solve_using_neighbours();
             pc_solver.solve_using_neighbours_non_critical(blob_corr); // blob_corr == NULL if force_pbc = 0
         }
