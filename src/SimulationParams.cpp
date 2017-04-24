@@ -625,7 +625,7 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("Required: 'calc_kinetics', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (calc_vdw == 1 or calc_es == 1) {
+    if (calc_vdw == 1 or calc_es == 1 or calc_preComp == 1) {
         if (es_N_x < 1) {
             printf("\tFRIENDLY WARNING: Length of the nearest neighbour lookup grid, 'es_N_x', is less than 1. Will assign default value to encompass whole system.\n");
         } else if (es_N_y < 1) {
@@ -643,7 +643,7 @@ int SimulationParams::validate(int sim_mode) {
         }
 
     } else {
-        printf("\tFRIENDLY WARNING: No electrostatic or vdw interactions will be simulated\n");
+        printf("\tFRIENDLY WARNING: No electrostatic, vdw or pre-computed interactions will be simulated\n");
         es_N_x = 0;
         es_N_y = 0;
         es_N_z = 0;
