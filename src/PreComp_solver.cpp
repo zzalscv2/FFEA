@@ -100,6 +100,9 @@ int PreComp_solver::msg(string whatever){
 
 /** Zero measurement stuff, AKA fieldenergy */
 void PreComp_solver::reset_fieldenergy() {
+#ifdef USE_OPENMP
+#pragma omp parallel for default(none) 
+#endif
     for (int i=0; i<num_threads; i++) {
         for(int j = 0; j < num_blobs; j++) {
            for(int k = 0; k < num_blobs; k++) {
