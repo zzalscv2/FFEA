@@ -30,6 +30,7 @@ set(PACKAGE_NAME "ffea")
 set(VERSION "1")
 set(MINOR   "0")
 set(PACKAGE_VERSION "${VERSION}.${MINOR}")
+set(FFEA_DEVEL "TRUE")
 
 
 option(USE_BOOST_INTERNAL "Use the sources we ship (ON) or your own boost (OFF)" ON)
@@ -284,11 +285,11 @@ if (GIT_FOUND)
      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
      OUTPUT_VARIABLE PACKAGE_BRANCH
      ERROR_VARIABLE PACKAGE_BRANCH_ERROR)
-  string(STRIP ${PACKAGE_BRANCH} PACKAGE_BRANCH)
 
   if (NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
      add_definitions(-DUSE_CMAKECONF)
      set(VERSION_CMAKECONF "TRUE")
+     string(STRIP ${PACKAGE_BRANCH} PACKAGE_BRANCH)
   endif (NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
 
 endif(GIT_FOUND)
@@ -296,6 +297,11 @@ endif(GIT_FOUND)
 configure_file("${PROJECT_SOURCE_DIR}/include/FFEA_version.h.in"
                "${PROJECT_BINARY_DIR}/include/FFEA_version.h" @ONLY)
 include_directories(${PROJECT_BINARY_DIR}/include)
+
+if (FFEA_DEVEL STREQUAL "TRUE")
+  add_definitions(-DFFEA_DEVEL)
+endif (FFEA_DEVEL STREQUAL "TRUE")
+
 
 
 # 10 ### FAST! ##########
