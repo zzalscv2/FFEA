@@ -21,32 +21,24 @@
 //  the research papers on the package.
 //
 
-#ifndef FFEA_USER_INFO_H_INCLUDED
-#define FFEA_USER_INFO_H_INCLUDED
+#ifndef FFEA_VERSION_H_INCLUDED
+#define FFEA_VERSION_H_INCLUDED
 
-#include <iostream>
 #include <string>
 
-using namespace std;
+using std::string;
 
-// Variables
-namespace userInfo {
-	extern string log_out_fname;
-	extern int verblevel;
-	extern FILE *log_out;
-}
 
-// Methods
-void set_verbosity_level(int l);
-void set_log_fname(string s);
-
-void print_normal(string s);
-void print_mid(string s);
-void print_high(string s);
-void print_mania(string s);
-
-void print_ffea_version();
-void print_ffea_compilation_details();
+static string FFEA_version = "@PACKAGE_VERSION@";
+#ifdef USE_CMAKECONF
+static string FFEA_commit = "@PACKAGE_COMMIT@";
+static string FFEA_branch = "@PACKAGE_BRANCH@";
+static string FFEA_date = "@PACKAGE_DATE@";
+#else
+static string FFEA_prev_commit = "PACKAGE_PREV_COMMIT";
+static string FFEA_prev_branch = "PACKAGE_PREV_BRANCH";
+static string FFEA_prev_date = "PACKAGE_PREV_DATE";
+#endif
 
 
 #endif
