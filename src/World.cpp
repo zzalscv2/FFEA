@@ -4057,21 +4057,18 @@ void World::print_static_trajectory(int step, scalar wtime, int blob_index) {
 
 
 void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr) {
-    //sets blob distance from itself to 0
-    for(int i = 0; i < num_blobs; ++i) {
-        blob_corr[i*num_blobs*3 + i*3]= 0;
-        blob_corr[i*num_blobs*3 + i*3+1]= 0;
-        blob_corr[i*num_blobs*3 + i*3+2]= 0;
-    }
 
     //calculates blob corrections for periodic interactions
     vector3 com,com2;
     for(int i = 0; i < num_blobs; ++i) {
-        // active_blob_array[i]->get_centroid(&com);
+        //sets blob distance from itself to 0
+        blob_corr[i*num_blobs*3 + i*3]= 0;
+        blob_corr[i*num_blobs*3 + i*3+1]= 0;
+        blob_corr[i*num_blobs*3 + i*3+2]= 0;
+        
         active_blob_array[i]->get_stored_centroid(com.data);
         for(int j = i+1; j < num_blobs; ++j) {
 
-            // active_blob_array[j]->get_centroid(&com2);
             active_blob_array[j]->get_stored_centroid(com2.data);
             blob_corr[i*num_blobs*3 + j*3]= box_dim.x*floor((com2.x-com.x+0.5*box_dim.x)/box_dim.x);
             blob_corr[i*num_blobs*3 + j*3+1]= box_dim.y*floor((com2.y-com.y+0.5*box_dim.y)/box_dim.y);
