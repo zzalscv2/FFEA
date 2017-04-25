@@ -89,6 +89,7 @@ void print_ffea_compilation_details() {
 void print_ffea_version() {
 
    cout << "FFEA Version: " << FFEA_version << endl;
+   #ifdef FFEA_DEVEL
    #ifdef USE_CMAKECONF
    cout << "FFEA commit " << FFEA_commit << endl;
    cout << "     branch " << FFEA_branch << endl;
@@ -98,6 +99,6 @@ void print_ffea_version() {
    cout << "              branch " << FFEA_prev_branch << endl;
    cout << "              date " << FFEA_prev_date << endl;
    #endif 
-
+   #endif
 
 }
