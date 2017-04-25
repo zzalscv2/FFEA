@@ -22,6 +22,7 @@
 //
 
 #include "FFEA_user_info.h"
+#include "FFEA_version.h"
 
 using std::cout;
 using std::endl;
@@ -56,9 +57,10 @@ void print_mania(string s) {
 	}
 }
 
-void print_preprocessor_flags() {
+void print_ffea_compilation_details() {
    
-   cout << " FFEA was compiled using: "
+   cout << "FFEA was compiled in " __DATE__ " at " << __TIME__ << endl;
+   cout << "     using: "
    #ifdef USE_OPENMP
         << "-DUSE_OPENMP " 
    #endif
@@ -82,4 +84,20 @@ void print_preprocessor_flags() {
    #endif
    << endl; 
    
+}
+
+void print_ffea_version() {
+
+   cout << "FFEA Version: " << FFEA_version << endl;
+   #ifdef USE_CMAKECONF
+   cout << "FFEA commit " << FFEA_commit << endl;
+   cout << "     branch " << FFEA_branch << endl;
+   cout << "     date " << FFEA_date << endl;
+   #else
+   cout << "PREVIOUS FFEA commit " << FFEA_prev_commit << endl;
+   cout << "              branch " << FFEA_prev_branch << endl;
+   cout << "              date " << FFEA_prev_date << endl;
+   #endif 
+
+
 }
