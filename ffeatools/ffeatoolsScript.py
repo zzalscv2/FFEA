@@ -45,7 +45,7 @@ ffea_tools = 	{
       "cullvol": "FFEA_initialise/FFEA_volume_tools/cull_small_interior_elements.py",
 		"makekineticmaps": "FFEA_initialise/FFEA_mapping_tools/FFEA_generate_kinetic_maps.py",
 		"split": "FFEA_analysis/FFEA_traj_tools/FFEA_split_trajectory.py",
-		"thin": "FFEA_analysis/FFEA_traj_tools/FFEA_thin_trajectory.py",
+		"thin": "FFEA_analysis/FFEA_thin_system.py",
       "nodesFromTraj": "FFEA_analysis/FFEA_traj_tools/FFEA_get_snapshots_in_nodes.py",
       "tettonet": "FFEA_initialise/FFEA_volume_tools/convert_tet_to_net.py",
       "makestructuremap": "FFEA_initialise/FFEA_mapping_tools/make_structure_map",
