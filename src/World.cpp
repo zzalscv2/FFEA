@@ -2177,7 +2177,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
     // Get interactions vector first, for later use
     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) {
-        systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
+        if (systemreader->extract_block("interactions", 0, script_vector, &interactions_vector) == FFEA_ERROR) return FFEA_ERROR;
     }
 
     // Get precomputed data first
@@ -2247,13 +2247,13 @@ int World::read_and_build_system(vector<string> script_vector) {
         blob_conf[i].set_rotation = 0;
 
         // Get blob data
-        systemreader->extract_block("blob", i, script_vector, &blob_vector);
+        if (systemreader->extract_block("blob", i, script_vector, &blob_vector) == FFEA_ERROR) return FFEA_ERROR;
 
         // Read all conformations
         for(j = 0; j < params.num_conformations[i]; ++j) {
 
             // Get conformation data
-            systemreader->extract_block("conformation", j, blob_vector, &conformation_vector);
+            if (systemreader->extract_block("conformation", j, blob_vector, &conformation_vector) == FFEA_ERROR) return FFEA_ERROR;
 
             // Error check
             if(conformation_vector.size() == 0) {
@@ -2382,13 +2382,13 @@ int World::read_and_build_system(vector<string> script_vector) {
         if(params.calc_kinetics == 1) {
 
             // Get kinetic data
-            systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector);
+            if (systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector) == FFEA_ERROR) return FFEA_ERROR;
 
             // Get map info if necessary
             if(params.num_conformations[i] > 1) {
 
                 // Get map data
-                systemreader->extract_block("maps", 0, kinetics_vector, &map_vector);
+                if (systemreader->extract_block("maps", 0, kinetics_vector, &map_vector) == FFEA_ERROR) return FFEA_ERROR;
 
                 // Parse map data
                 for(it = map_vector.begin(); it != map_vector.end(); ++it) {
@@ -2662,7 +2662,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 /// /// 
     // Finally, get springs
     if (params.calc_springs == 1)
-        systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
+        if (systemreader->extract_block("springs", 0, interactions_vector, &spring_vector) == FFEA_ERROR) return FFEA_ERROR;
 
     if (spring_vector.size() > 1) {
         FFEA_error_text();
