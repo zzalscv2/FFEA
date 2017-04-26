@@ -82,228 +82,145 @@ class FFEA_pdb:
 		except(IOError):
 			raise IOError("File '" + fname + "' not found.")
 
-				
-		# Make robust against dodgy formating by the user
-		sys.stdout.write("\tReading first frame to determine structure sizes...")
-		models_exist = False
-		chains_exist = True
-		line = fin.readline()
-		while(True):
-			try:
-				if line [0:5] == "MODEL":
-
-					# PDB file set up for frames
-					models_exist = True
-
-					# Seek back a line
-					fin.seek(-len(line),1)
-					start_pos = fin.tell()
-					while(True):
-						if line[0:4] == "ATOM":
-							if line[21].strip() == "":
-								chains_exist = False
-							break
-						line = fin.readline()
-
-					fin.seek(start_pos)
-					break
-
-				elif line[0:4] == "ATOM":
-					if line[21].strip() == "":
-						chains_exist = False
-
-					# Seek back a line
-					fin.seek(-len(line),1)
-
-					break
-
-				line = fin.readline()
-
-			except(IndexError):
-
-				# EOF check
-				if not line:
-					sys.exit("EOF found before MODEL or ATOM. File badly formatted (we think...)")
-
-		sys.stdout.write("done!\n")
-
-		# Save pointer to the start
-		start_pos = fin.tell()
-
-
-		# We are ready to read the first frame, but we will not build objects, merely store the data for fast reading
-		self.num_chains = 1
-		self.num_frames = 1
-		self.num_atoms = [0]
-
-		if models_exist:
-			fin.readline()
-
-		ters_exist = False
-		endmdls_exist = False
-
-		sys.stdout.write("\tBuilding container objects...")
-		chainIDs = []
-		chainID = "A"
-		while(True):
-
-			line = fin.readline()
-			if line == "":
-				break
-			try:
-				# Different things depeinding on lines
-				if line[0:4] == "ATOM":
-					
-					if chains_exist:
-						chainID = line[21]	
-	
-					#if chainID != last_chain:
-					#	if chainID in chainIDs:
-					#		# No models, no ters, badly formatted. But we can deal with it
-					#		break
-
-						
-					self.num_atoms[-1] += 1
-
-				elif line[0:3] == "TER":
-
-					chainIDs.append(chainID)
-					chainID = chr(ord(chainID) + 1)					
-					self.num_chains += 1
-					self.num_atoms.append(0)
-
-					# Register that ters exist
-					ters_exist = True
-					# Ignore. Next ATOM chain ID will catch this chain ending
-				
-				elif line[0:6] == "ENDMDL":
-					
-					endmdls_exist = True
-					break
-				else:
-					continue
-			
-			except(IndexError):
-
-				# EOF check
-				if not line:
-
-					# We will assume a single frame (rather than returning an error)
-					break
-
-		if self.num_atoms[-1] == 0:
-			self.num_atoms.pop()
-			self.num_chains -= 1
-
-		fin.seek(start_pos)
-		sys.stdout.write("done!\n")
-
-		# We've got everything! Now we can read without having to check things all the time
-
-
 		#
-		# Build empty containers
+		# Try to make robust against dodgy formating by the user
 		#
-
-		self.chain = [FFEA_pdb_chain(num_atoms = self.num_atoms[i]) for i in range(self.num_chains)]
-
-		# Load atom structure from first frame
-		sys.stdout.write("\tLoading atomic structure from first frame...")
-		if models_exist:
-			fin.readline()
-
-		for i in range(self.num_chains):
-
-			# Chain ID first (no need to store on every atom)
-			chain_start_pos = fin.tell()
-			line = fin.readline()
-			self.chain[i].setID(line[21])
-			fin.seek(chain_start_pos)
-
-			for j in range(self.num_atoms[i]):
-				line = fin.readline()
-					
-				# Now atom structure
-				self.chain[i].atom[j].set_structure(atomID=line[6:12], name=line[12:16], res=line[17:20], resID=line[22:26], occupancy=line[54:60], temperature=line[60:66], segID=line[72:76], element=line[76:78], charge=line[78:80].strip())
-			if ters_exist:
-				fin.readline()
-
+		sys.stdout.write("\tScanning first frame to determine format...")
 		
+		# Read to first bit of interest (each MODEL is a frame, each chain a blob)
+		line = fin.readline()
+		while True:
+
+			# Ignore MODEL, only insert when we output
+			if line[0:4] == "ATOM":
+				aID=int(line[6:12])
+				cID = line[21]
+				fin.seek(-len(line),1)
+				start_pos = fin.tell()
+				break
+			else:
+				line = fin.readline()
+		num_atoms = [0]
+		num_chains = 1
+
+		# Now read the first frame (can't trust TERs to exist, sometimes people leave them out)
+		while True:
+			line = fin.readline()
+			if line[0:4] == "ATOM":
+
+				# New frame?
+				if int(line[6:12]) < aID:
+					break
+				
+				aID = int(line[6:12])
+
+				# New chain?
+				if line[21] != cID:
+					cID = line[21]
+					num_chains += 1
+					num_atoms.append(0)
+
+				num_atoms[-1] += 1
+
+			elif line[0:3] == "END" or line.strip() == "":
+				break
+		sys.stdout.write("\tdone!\n")
+
+		#
+		# Reset to beginning and read atomic structures
+		#
+		sys.stdout.write("\tReading first frame to determine structure...")		
 		fin.seek(start_pos)
-		sys.stdout.write("done!\n")
+		
+		# Build everything we need
+		self.num_chains = num_chains
+		self.num_atoms = num_atoms
+		self.chain = [FFEA_pdb_chain(num_atoms = num_atoms[i]) for i in range(num_chains)]
+		
+		# Read atom structures
+		for c in range(self.num_chains):
+			
+			# Get to "ATOM" lines
+			line = fin.readline()
+			while True:
+				if line[0:4] == "ATOM":
+					fin.seek(-len(line),1)
+					break
+			
+				line = fin.readline()
+
+			# Read ATOM structures like a boss
+			for j in range(self.chain[c].num_atoms):
+				line = fin.readline()
+				self.chain[c].chainID = line[21]
+				self.chain[c].atom[j].set_structure(atomID=line[6:12], name=line[12:16], res=line[17:20], resID=line[22:26], occupancy=line[54:60], temperature=line[60:66], segID=line[72:76], element=line[76:78], charge=line[78:80].strip())
+
+		sys.stdout.write("\tdone!\n")
 
 		#
-		# Load potential trajectory data
+		# Reset to beginning and read frame data
 		#
-		self.num_frames = 0
-		lindex = 1
-		sys.stdout.write("\tLoading trajectory data (if it exists)...\n")
+		sys.stdout.write("\tReading all frame data...\n\n")
+		fin.seek(start_pos)
+		
+		# Read all frames
+		completed = False
+		while not completed:
+			
+			# Check for EOF quickly (hopefully)
+			fspos = fin.tell()
+			while True:
+				line = fin.readline()
+				if line[0:4] == "ATOM":
+					fin.seek(-len(line), 1)
+					break
 
-		if num_frames_to_read == 0:
-			sys.stdout.write("\t\tRequested to load 0 frames. Will upgrade to a single frame\n\n")
-			num_frames_to_read = 1
-
-		while(True):
-
-			# Check for completion
-			if self.num_frames >= num_frames_to_read:
+				if line[0:3] == "END" or line.strip() == "":
+					completed = True
+					break
+			
+			if completed:
 				break
 
-			sys.stdout.write("\r\t\tFrames read = %d" % (self.num_frames))
-			sys.stdout.flush()
-			try:
-				if models_exist:
+			# Read all data for all chains
+			sys.stdout.write("\r\t\tFrames Read %d" % (self.num_frames))
 
-					# MODELS line
-					line = fin.readline()
-					lindex += 1
-					if line.strip() == "" or line[0:3] == "END":
-						break
-
-				# Check for EOF
-				frame_start_pos = fin.tell()
+			for c in range(self.num_chains):
+			
+				# Get to "ATOM" lines
 				line = fin.readline()
-				if line.strip() == "" or line[0:3] == "END":
-					break
-				fin.seek(frame_start_pos)
+				while True:
 
-				for i in range(self.num_chains):
-				
-					# Add new frame to object
-					self.chain[i].add_empty_frame()
+					if line[0:4] == "ATOM":
+						fin.seek(-len(line),1)
+						break
+			
+					line = fin.readline()
 
-					for j in range(self.num_atoms[i]):
-						line = fin.readline()
-						lindex += 1
-
-						# Get trajectory data and add to object
-						try:
-							self.chain[i].set_atom_position(line[30:38], line[38:46], line[46:54], atom = j)
-						except(IndexError):
-							print "Unable to set position for atom " + str(j) + " in chain " + str(i) + " for frame "
-							raise
+				# Get a frame
+				frame = FFEA_frame.FFEA_frame()
+				frame.num_nodes = self.num_atoms[c]
+				frame.pos = [[0.0,0.0,0.0] for i in range(self.num_atoms[c])]
 	
-					if ters_exist:
-						fin.readline()
-						lindex += 1
-				if endmdls_exist:
-					fin.readline()
-					lindex += 1
+				# Read ATOM positions like a boss
+				for j in range(self.chain[c].num_atoms):
+					line = fin.readline()
+					frame.pos[j][0] = float(line[30:38])
+					frame.pos[j][1] = float(line[38:46])
+					frame.pos[j][2] = float(line[46:54])
+				frame.pos = np.array(frame.pos)
+				self.chain[c].frame.append(frame)
+				self.chain[c].num_frames += 1
+			self.num_frames += 1
 
-				self.num_frames += 1
+			# Check finish condition
+			if self.num_frames == num_frames_to_read:
+				completed == True
 
-			except(IndexError):
-
-				if not line:
-
-					# EOF
-					break
-				else:
-					"Couldn't read file at line " + str(lindex)
-					raise FFEAFormatError
+		# Finish
+		sys.stdout.write("\r\t\tFrames Read %d" % (self.num_frames))
+		sys.stdout.write("\n\n\t...done! Read %d frames from file.\n" % (self.num_frames))
 		fin.close()
-		sys.stdout.write("\r\t\tFrames read = %d\n\n" % (self.num_frames))
-		sys.stdout.write("\t...done!\n")
 
 	def write_to_file(self, fname):
 
