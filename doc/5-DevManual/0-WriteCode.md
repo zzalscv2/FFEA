@@ -6,6 +6,7 @@ This set of notes try to summarise some notes on
 
 Content:
 
+- @subpage ffeaTags
 - @subpage newKeywords
 - @subpage document
 - @subpage bundleBoost
