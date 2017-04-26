@@ -22,7 +22,6 @@
 #
 
 import sys, os
-from math import ceil
 import FFEA_script, FFEA_trajectory, FFEA_measurement
 import argparse as _argparse
 import __builtin__
@@ -53,7 +52,7 @@ def thin_system(script_fname, frames_to_read, thin_percent):
         if verify.lower() == "y":
             thin_percent *= 100
     
-    frame_rate = ceil(100 / thin_percent)
+    frame_rate = int(round(100 / thin_percent))
     script = FFEA_script.FFEA_script(script_fname)
     traj = FFEA_trajectory.FFEA_trajectory(script.params.trajectory_out_fname, frame_rate = frame_rate, num_frames_to_read = frames_to_read)
     meas = FFEA_measurement.FFEA_measurement(script.params.measurement_out_fname, frame_rate = frame_rate, num_frames_to_read = frames_to_read)
