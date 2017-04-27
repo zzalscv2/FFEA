@@ -195,6 +195,7 @@ public:
      * Calculates and returns the centroid of this Blob
      */
     void get_centroid(vector3 *com);
+    void calc_and_store_centroid(vector3 &com);
     vector3 calc_centroid();
 
     void set_pos_0();
@@ -329,9 +330,9 @@ public:
 
     void add_force_to_node(vector3 f, int index);
 
-    void zero_vdw_bb_measurement_data();
+    // void zero_vdw_bb_measurement_data(); // DEPRECATED
 
-    void zero_vdw_xz_measurement_data();
+    // void zero_vdw_xz_measurement_data(); // DEPRECATED
 
     /**
      * Set all nodes on the Blob to the given velocity vector
@@ -414,7 +415,7 @@ public:
 
     // std::array<scalar,3> get_CoG();
     // arr3 get_CoG();
-    void get_CoG(arr3 &cog); 
+    void get_stored_centroid(arr3 &cog); 
 
     int get_conformation_index();
     int get_previous_conformation_index();

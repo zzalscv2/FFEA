@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+FFEA_COMMIT=` git log -1 --pretty=format:'%H' `
+FFEA_DATE=` git log -1 --pretty=format:'%ad' --date=short `
+FFEA_BRANCH=` git rev-parse --abbrev-ref HEAD `
+
+sed -i "/^static string FFEA_prev_commit/c\static string FFEA_prev_commit = \"${FFEA_COMMIT}\";" include/FFEA_version.h.in
+sed -i "/^static string FFEA_prev_branch/c\static string FFEA_prev_branch = \"${FFEA_BRANCH}\";" include/FFEA_version.h.in
+sed -i "/^static string FFEA_prev_date/c\static string FFEA_prev_date = \"${FFEA_DATE}\";" include/FFEA_version.h.in
+
+git add include/FFEA_version.h.in

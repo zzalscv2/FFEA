@@ -100,6 +100,9 @@ int PreComp_solver::msg(string whatever){
 
 /** Zero measurement stuff, AKA fieldenergy */
 void PreComp_solver::reset_fieldenergy() {
+#ifdef USE_OPENMP
+#pragma omp parallel for default(none) 
+#endif
     for (int i=0; i<num_threads; i++) {
         for(int j = 0; j < num_blobs; j++) {
            for(int k = 0; k < num_blobs; k++) {
@@ -487,6 +490,17 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      // and make Blob[i] forget all about beads. 
      blob_array[i][0].forget_beads();
    } 
+
+   // even if we have the elems, pointing to blob_index, 
+   //   it may better to just store the indices, 
+   //   so that b_elems can be removed some day (and used only for debugging purposes). 
+   b_daddyblob = new(std::nothrow) int[n_beads]; 
+   if (b_daddyblob == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for daddy beads array in PreComp_solver::init\n");
+   for (int i=0; i<n_beads; i++) {
+      b_daddyblob[i] = b_elems[i]->daddy_blob->blob_index;
+   } 
+
+
    num_blobs = params->num_blobs;
 
 
@@ -569,7 +583,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    return FFEA_OK; 
 }
 
-int PreComp_solver::solve_using_neighbours_non_critical(){
+int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL*/){
 
     scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
     vector3 dx, dtemp, dxik;
@@ -593,8 +607,9 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
     LinkedListNode<int> *b_i = NULL; 
     LinkedListNode<int> *b_j = NULL; 
     int b_index_i, b_index_j; 
+    int daddy_i, daddy_j;
 #ifdef USE_OPENMP
-#pragma omp parallel default(none) private(type_i,phi_i,e_i,e_j,dx,dxik,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j)
+#pragma omp parallel default(none) shared(blob_corr) private(type_i,phi_i,e_i,e_j,dx,dxik,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j,daddy_i, daddy_j)
     {
     int thread_id = omp_get_thread_num(); 
     #pragma omp for
@@ -607,6 +622,7 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
 
       type_i = b_types[b_index_i]; 
       e_i = b_elems[b_index_i];  
+      daddy_i = b_daddyblob[b_index_i];
 
       for (int c=0; c<27; c++) {
         b_j = pcLookUp.get_top_of_stack(b_i->x + adjacent_cells[c][0], 
@@ -624,9 +640,17 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
              b_j = b_j->next; 
              continue; 
            }
-           dx.x = (b_pos[3*b_index_j  ] - b_pos[3*b_index_i  ]);
-           dx.y = (b_pos[3*b_index_j+1] - b_pos[3*b_index_i+1]);
-           dx.z = (b_pos[3*b_index_j+2] - b_pos[3*b_index_i+2]);
+
+           daddy_j = b_daddyblob[b_index_j];
+           if (blob_corr == NULL) {
+             dx.x = (b_pos[3*b_index_j  ] - b_pos[3*b_index_i  ]);
+             dx.y = (b_pos[3*b_index_j+1] - b_pos[3*b_index_i+1]);
+             dx.z = (b_pos[3*b_index_j+2] - b_pos[3*b_index_i+2]);
+           } else {
+             dx.x = (b_pos[3*b_index_j  ] - blob_corr[3*(daddy_i*num_blobs + daddy_j)   ] - b_pos[3*b_index_i  ]);
+             dx.y = (b_pos[3*b_index_j+1] - blob_corr[3*(daddy_i*num_blobs + daddy_j) +1] - b_pos[3*b_index_i+1]);
+             dx.z = (b_pos[3*b_index_j+2] - blob_corr[3*(daddy_i*num_blobs + daddy_j) +2] - b_pos[3*b_index_i+2]);
+           }
            d = dx.x*dx.x + dx.y*dx.y + dx.z*dx.z; 
            if (d > x_range2[1]) {
              b_j = b_j->next; 
@@ -645,8 +669,9 @@ int PreComp_solver::solve_using_neighbours_non_critical(){
            // += the force: 
            arr3Resize3<scalar,arr3>(f_ij, dx.data, arr3_view<scalar,arr3>(b_forces+3*b_index_i, 3) );
 
-           e_j = b_elems[b_index_j];
-           fieldenergy[(thread_id*num_blobs + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += 0.5*get_U(d, type_i, b_types[b_index_j]);
+           // e_j = b_elems[b_index_j];
+           // fieldenergy[(thread_id*num_blobs + e_i->daddy_blob->blob_index) * num_blobs + e_j->daddy_blob->blob_index] += 0.5*get_U(d, type_i, b_types[b_index_j]);
+           fieldenergy[(thread_id*num_blobs + daddy_i) * num_blobs + daddy_j] += 0.5*get_U(d, type_i, b_types[b_index_j]);
 
            b_j = b_j->next; 
         } // close b_j, beads in neighbour voxel loop 
@@ -788,13 +813,14 @@ int PreComp_solver::solve_using_neighbours(){
     return FFEA_OK;
 }
 
-int PreComp_solver::solve() {
+int PreComp_solver::solve(scalar *blob_corr/*=NULL*/) {
 
     scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
     vector3 dx, dtemp;
     int type_i; 
     scalar phi_i[4], phi_j[4];
     tetra_element_linear *e_i, *e_j;
+    int daddy_i, daddy_j;
 
     // 0 - clear fieldenery:
     reset_fieldenergy(); 
@@ -806,7 +832,7 @@ int PreComp_solver::solve() {
     /*scalar e_tot = 0.0; 
     scalar f_tot = 0.0;*/
 #ifdef USE_OPENMP
-#pragma omp parallel default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij)
+#pragma omp parallel default(none) shared(blob_corr) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,daddy_i,daddy_j)
     {
     int thread_id = omp_get_thread_num(); 
     #pragma omp for
@@ -820,11 +846,21 @@ int PreComp_solver::solve() {
       phi_i[3] = b_rel_pos[3*i+2];
       phi_i[0] = 1 - phi_i[1] - phi_i[2] - phi_i[3];
       e_i = b_elems[i];  
+      daddy_i = b_daddyblob[i];
       for (int j=i+1; j<n_beads; j++) {
         if (!isPairActive[type_i*ntypes+b_types[j]]) continue; 
-        dx.x = (b_pos[3*j] - b_pos[3*i]);
-        dx.y = (b_pos[3*j+1] - b_pos[3*i+1]);
-        dx.z = (b_pos[3*j+2] - b_pos[3*i+2]);
+
+        daddy_j = b_daddyblob[j];
+        if (blob_corr == NULL) {
+            dx[0] = (b_pos[3*j  ] - b_pos[3*i]);
+            dx[1] = (b_pos[3*j+1] - b_pos[3*i+1]);
+            dx[2] = (b_pos[3*j+2] - b_pos[3*i+2]);
+        } else {
+            dx[0] = (b_pos[3*j  ] - blob_corr[3*(daddy_i*num_blobs + daddy_j)   ] - b_pos[3*i  ]);
+            dx[1] = (b_pos[3*j+1] - blob_corr[3*(daddy_i*num_blobs + daddy_j) +1] - b_pos[3*i+1]);
+            dx[2] = (b_pos[3*j+2] - blob_corr[3*(daddy_i*num_blobs + daddy_j) +2] - b_pos[3*i+2]);
+        }
+
         d = dx.x*dx.x + dx.y*dx.y + dx.z*dx.z; 
         if (d > x_range2[1]) continue;
         else if (d < x_range2[0]) continue;

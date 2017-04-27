@@ -56,15 +56,28 @@ def readAndStore(iFile):
   return H, dH
 
 
+## compare the PreCompEnergy of the first step to a value that has been checked:
+err = 0
+knownValue = 2.79280200000000000e-18
+#knownValue = 1.0075630000000001e-18
+#knownValue = 6.87781100000000001e-17
+
+## ## ## STRAIGHT ## ## ## 
 iFile = ["sphere_63_120_two_measurement.out"]
 H, dH = readAndStore(iFile[0])
 
-## compare the PreCompEnergy of the first step to a value that has been checked:
-err = 0
-# if ( abs (H[dH["PreCompEnergy"]][-1] - 1.0075630000000001e-18) > 1e-32 ): 
-# if ( abs (H[dH["PreCompEnergy"]][-1] - 6.87781100000000001e-17) > 1e-32 ): 
-if ( abs (H[dH["PreCompEnergy"]][-1] - 2.79280200000000000e-18) > 1e-32 ): 
-  print( "PreComputed energy should be %e, but was found to be %e" % (1.0075630000000001e-18, (H[dH["PreCompEnergy"]][-1])))
+if ( abs (H[dH["PreCompEnergy"]][-1] - knownValue) > 1e-32 ): 
+  print( "PreComputed energy should be %e, but was found to be %e" % (knownValue, (H[dH["PreCompEnergy"]][-1])))
   err = 1
+
+
+## ## ## PBC ## ## ## 
+iFile = ["sphere_63_120_two-PBC_measurement.out"]
+H, dH = readAndStore(iFile[0])
+if ( abs (H[dH["PreCompEnergy"]][-1] - knownValue) > 1e-32 ): 
+  print( "PBC PreComputed energy should be %e, but was found to be %e" % (knownValue, (H[dH["PreCompEnergy"]][-1])))
+  err = 1
+
+
 
 sys.exit(err)

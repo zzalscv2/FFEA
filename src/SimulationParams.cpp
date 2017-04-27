@@ -202,35 +202,35 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     // Carry out parameter assignments
     if (lvalue == "restart") {
         restart = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << restart << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << restart << endl;
 
     } else if (lvalue == "dt") {
         dt = atof(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << dt << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << dt << endl;
         dt /= mesoDimensions::time;
 
     } else if (lvalue == "epsilon") {
         epsilon2 = atof(rvalue.c_str());
         epsilon2 *= epsilon2;
-        cout << "\tSetting " << lvalue << " = " << epsilon2 << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << epsilon2 << endl;
 
     } else if (lvalue == "num_steps") {
 
         // convert to float first so that user may write numbers of the form 1e4 for 10000 etc
         num_steps = (long long) (atof(rvalue.c_str()));
-        cout << "\tSetting " << lvalue << " = " << num_steps << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_steps << endl;
 
     } else if (lvalue == "max_iterations_cg") {
         max_iterations_cg = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << max_iterations_cg << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << max_iterations_cg << endl;
 
     } else if (lvalue == "check") {
         check = (int) atof(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << check << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << check << endl;
 
     } else if (lvalue == "num_blobs") {
         num_blobs = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << num_blobs << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_blobs << endl;
 
     } else if (lvalue == "num_conformations") {
 
@@ -247,7 +247,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         int i = 0;
         for(it = conformation_vector.begin(); it != conformation_vector.end(); ++it) {
             num_conformations[i] = atoi((*it).c_str());
-            cout << "\tSetting Blob " << i << ", " << lvalue << " = " << num_conformations[i] << endl;
+            if (userInfo::verblevel > 1) cout << "\tSetting Blob " << i << ", " << lvalue << " = " << num_conformations[i] << endl;
             i++;
         }
 
@@ -266,41 +266,41 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         int i = 0;
         for(it = state_vector.begin(); it != state_vector.end(); ++it) {
             num_states[i] = atoi((*it).c_str());
-            cout << "\tSetting Blob " << i << ", " << lvalue << " = " << num_states[i] << endl;
+            if (userInfo::verblevel > 1) cout << "\tSetting Blob " << i << ", " << lvalue << " = " << num_states[i] << endl;
             i++;
         }
 
     } else if (lvalue == "es_update") {
         es_update = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << es_update << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << es_update << endl;
 
     } else if (lvalue == "kinetics_update") {
         kinetics_update = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << kinetics_update << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << kinetics_update << endl;
 
     } else if (lvalue == "es_N_x") {
         es_N_x = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << es_N_x << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << es_N_x << endl;
 
     } else if (lvalue == "es_N_y") {
         es_N_y = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << es_N_y << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << es_N_y << endl;
 
     } else if (lvalue == "es_N_z") {
         es_N_z = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << es_N_z << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << es_N_z << endl;
 
     } else if (lvalue == "move_into_box") {
         move_into_box = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << move_into_box << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << move_into_box << endl;
 
     } else if (lvalue == "sticky_wall_xz") {
         sticky_wall_xz = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << sticky_wall_xz << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << sticky_wall_xz << endl;
 
     } else if (lvalue == "es_h") {
         es_h = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << es_h << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << es_h << endl;
 
     } else if (lvalue == "rng_seed") {
         if(rvalue == "time") {
@@ -308,82 +308,82 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         } else {
             rng_seed = atoi(rvalue.c_str());
         }
-        cout << "\tSetting " << lvalue << " = " << rng_seed << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << rng_seed << endl;
 
     } else if (lvalue == "kT") {
         kT = atof(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << kT << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << kT << endl;
         kT /= mesoDimensions::Energy;
 
     } else if (lvalue == "kappa") {
         kappa = atof(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << kappa << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << kappa << endl;
         kappa *= mesoDimensions::length;
 
     } else if (lvalue == "dielec_ext") {
         dielec_ext = atof(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << dielec_ext << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << dielec_ext << endl;
 
     } else if (lvalue == "epsilon_0") {
         epsilon_0 = atof(rvalue.c_str()); // relative permittivity
-        cout << "\tSetting " << lvalue << " = " << epsilon_0 << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << epsilon_0 << endl;
 
     } else if (lvalue == "calc_vdw") {
         calc_vdw = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << calc_vdw << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_vdw << endl;
 
     } else if (lvalue == "inc_self_vdw") {
         inc_self_vdw = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << inc_self_vdw << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << inc_self_vdw << endl;
 
     } else if (lvalue == "vdw_type") {
         vdw_type = rvalue;
-        cout << "\tSetting " << lvalue << " = " << vdw_type << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_type << endl;
 
     } else if (lvalue == "calc_es") {
         calc_es = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << calc_es << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_es << endl;
 
     } else if (lvalue == "calc_noise") {
         calc_noise = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << calc_noise << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_noise << endl;
 
     } else if (lvalue == "calc_preComp") {
         calc_preComp = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << calc_preComp << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_preComp << endl;
 
     } else if (lvalue == "calc_springs") {
         calc_springs = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << calc_springs << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_springs << endl;
 
     } else if (lvalue == "force_pbc") {
         force_pbc = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << force_pbc << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << force_pbc << endl;
 
     } else if (lvalue == "calc_kinetics") {
         calc_kinetics = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << calc_kinetics << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_kinetics << endl;
 
     } else if (lvalue == "calc_ctforces") {
         calc_ctforces = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << calc_ctforces << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_ctforces << endl;
 
     } else if (lvalue == "calc_stokes" || lvalue == "do_stokes") {
         calc_stokes = atoi(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << calc_stokes << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_stokes << endl;
 
     } else if (lvalue == "stokes_visc") {
         stokes_visc = atof(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << stokes_visc << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << stokes_visc << endl;
         stokes_visc /= mesoDimensions::pressure * mesoDimensions::time;
 
     } else if (lvalue == "vdw_steric_factor") {
         vdw_steric_factor = atof(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << vdw_steric_factor << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_steric_factor << endl;
 
     } else if (lvalue == "vdw_steric_dr") {
         vdw_steric_dr = atof(rvalue.c_str());
-        cout << "\tSetting " << lvalue << " = " << vdw_steric_dr << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_steric_dr << endl;
 
     } else if (lvalue == "wall_x_1") {
         if (rvalue == "PBC") {
@@ -393,7 +393,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         } else if (rvalue == "STOP") {
             wall_x_1 = WALL_TYPE_STOP;
         }
-        cout << "\tSetting " << lvalue << " = " << wall_x_1 << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << wall_x_1 << endl;
 
     } else if (lvalue == "wall_x_2") {
         if (rvalue == "PBC") {
@@ -403,7 +403,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         } else if (rvalue == "STOP") {
             wall_x_2 = WALL_TYPE_STOP;
         }
-        cout << "\tSetting " << lvalue << " = " << wall_x_2 << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << wall_x_2 << endl;
 
     } else if (lvalue == "wall_y_1") {
         if (rvalue == "PBC") {
@@ -413,7 +413,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         } else if (rvalue == "STOP") {
             wall_y_1 = WALL_TYPE_STOP;
         }
-        cout << "\tSetting " << lvalue << " = " << wall_y_1 << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << wall_y_1 << endl;
 
     } else if (lvalue == "wall_y_2") {
         if (rvalue == "PBC") {
@@ -423,7 +423,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         } else if (rvalue == "STOP") {
             wall_y_2 = WALL_TYPE_STOP;
         }
-        cout << "\tSetting " << lvalue << " = " << wall_y_2 << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << wall_y_2 << endl;
 
     } else if (lvalue == "wall_z_1") {
         if (rvalue == "PBC") {
@@ -433,7 +433,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         } else if (rvalue == "STOP") {
             wall_z_1 = WALL_TYPE_STOP;
         }
-        cout << "\tSetting " << lvalue << " = " << wall_z_1 << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << wall_z_1 << endl;
 
     } else if (lvalue == "wall_z_2") {
         if (rvalue == "PBC") {
@@ -443,13 +443,13 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         } else if (rvalue == "STOP") {
             wall_z_2 = WALL_TYPE_STOP;
         }
-        cout << "\tSetting " << lvalue << " = " << wall_z_2 << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << wall_z_2 << endl;
 
     } else if (lvalue == "trajectory_out_fname") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         trajectory_out_fname = auxpath.string();
         trajectory_out_fname_set = 1;
-        cout << "\tSetting " << lvalue << " = " << trajectory_out_fname << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << trajectory_out_fname << endl;
 
     } else if (lvalue == "det_measurement_out_fname") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
@@ -459,7 +459,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         measurement_out_fname = auxpath.string();
         measurement_out_fname_set = 1;
-        cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << measurement_out_fname << endl;
 
         // Break up the meas fname to get default names for optional detailed measurements.
         if (detailed_meas_out_fname == "\n") {
@@ -472,37 +472,37 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         kinetics_out_fname = auxpath.string();
         kinetics_out_fname_set = 1;
-        cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
 
     } else if (lvalue == "vdw_in_fname" || lvalue == "vdw_forcefield_params") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         vdw_in_fname = auxpath.string();
         vdw_in_fname_set = 1;
-        cout << "\tSetting " << lvalue << " = " << vdw_in_fname << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_in_fname << endl;
 
     } else if (lvalue == "checkpoint_in") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         icheckpoint_fname = auxpath.string();
         icheckpoint_fname_set = 1;
-        cout << "\tSetting " << lvalue << " = " << icheckpoint_fname << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << icheckpoint_fname << endl;
 
     } else if (lvalue == "checkpoint_out") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         ocheckpoint_fname = auxpath.string();
         ocheckpoint_fname_set = 1;
-        cout << "\tSetting " << lvalue << " = " << ocheckpoint_fname << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ocheckpoint_fname << endl;
 
     } else if (lvalue == "beads_out_fname") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         trajectory_beads_fname = auxpath.string();
         trajbeads_fname_set = 1;
-        cout << "\tSetting " << lvalue << " = " << trajectory_beads_fname << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << trajectory_beads_fname << endl;
 
     } else if (lvalue == "bsite_in_fname") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         bsite_in_fname = auxpath.string();
         bsite_in_fname_set = 1;
-        cout << "\tSetting " << lvalue << " = " << bsite_in_fname << endl;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << bsite_in_fname << endl;
 
     } else if (lvalue == "stress_out_fname") {
         cout << lvalue << " no longer recognised" << endl;
@@ -625,7 +625,7 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("Required: 'calc_kinetics', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (calc_vdw == 1 or calc_es == 1) {
+    if (calc_vdw == 1 or calc_es == 1 or calc_preComp == 1) {
         if (es_N_x < 1) {
             printf("\tFRIENDLY WARNING: Length of the nearest neighbour lookup grid, 'es_N_x', is less than 1. Will assign default value to encompass whole system.\n");
         } else if (es_N_y < 1) {
@@ -643,7 +643,7 @@ int SimulationParams::validate(int sim_mode) {
         }
 
     } else {
-        printf("\tFRIENDLY WARNING: No electrostatic or vdw interactions will be simulated\n");
+        printf("\tFRIENDLY WARNING: No electrostatic, vdw or pre-computed interactions will be simulated\n");
         es_N_x = 0;
         es_N_y = 0;
         es_N_z = 0;

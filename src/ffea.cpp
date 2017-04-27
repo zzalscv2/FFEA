@@ -56,12 +56,12 @@ int main(int argc, char *argv[])
 #endif
 	cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
 	//cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
-	cout << " Version:\tSuper Saiyan " << FFEA_MASCOT << " " << FFEA_VERSION << "(Version " << FFEA_VERSION << ")" << endl;
-	cout << "Compiled:\t" << __DATE__ " at " << __TIME__ << endl;
+	// cout << " Version:\tSuper Saiyan " << FFEA_MASCOT << " " << FFEA_VERSION << "(Version " << FFEA_VERSION << ")" << endl;
 	cout << "  Coding:\tAlbert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk),\n" << endl;
 	cout << "  Theory:\tOliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou\n" << endl;
 
-   print_preprocessor_flags();
+   print_ffea_version(); 
+   print_ffea_compilation_details();
 	
 	// Get some arguments using boost
 	b_po::options_description desc("Allowed options");

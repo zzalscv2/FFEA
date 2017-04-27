@@ -1798,18 +1798,14 @@ int World::run() {
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->zero_force();
-            if ((step+1) % params.check == 0) { // we only do measurements if we need so.
-                if (params.calc_vdw == 1) {
-                    active_blob_array[i]->zero_vdw_bb_measurement_data();
-                }
-                if (params.sticky_wall_xz == 1) {
-                    active_blob_array[i]->zero_vdw_xz_measurement_data();
-                }
-            }
+            /* if ((step+1) % params.check == 0) { // we only do measurements if we need so.
+                // if (params.calc_vdw == 1) active_blob_array[i]->zero_vdw_bb_measurement_data(); // DEPRECATED
+                // if (params.sticky_wall_xz == 1) active_blob_array[i]->zero_vdw_xz_measurement_data(); // DEPRECATED 
+            } */
 
             // If blob centre of mass moves outside simulation box, apply PBC to it
             vector3 com;
-            active_blob_array[i]->get_centroid(&com);
+            active_blob_array[i]->calc_and_store_centroid(com);
 
             scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
@@ -1817,14 +1813,12 @@ int World::run() {
             if (com.x < 0) {
                 if (params.wall_x_1 == WALL_TYPE_PBC) {
                     dx += box_dim.x;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[0]-=1;
                     check_move = 1;
                 }
             } else if (com.x > box_dim.x) {
                 if (params.wall_x_2 == WALL_TYPE_PBC) {
                     dx -= box_dim.x;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[0]+=1;
                     check_move = 1;
                 }
@@ -1832,14 +1826,12 @@ int World::run() {
             if (com.y < 0) {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[1]-=1;
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[1]+=1;
                     check_move = 1;
                 }
@@ -1847,20 +1839,20 @@ int World::run() {
             if (com.z < 0) {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[2]-=1;
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
-                    //					printf("frog\n");
                     active_blob_array[i]->pbc_count[2]+=1;
                     check_move = 1;
                 }
             }
-            if (check_move == 1) {
-                active_blob_array[i]->move(dx, dy, dz);
+            // So if it has to move, do so and update its centroid.
+            if (check_move == 1) { 
+                active_blob_array[i]->move(dx, dy, dz); 
+                active_blob_array[i]->calc_and_store_centroid(com);
             }
 
             // If Blob is near a hard wall, prevent it from moving further into it
@@ -1929,11 +1921,14 @@ int World::run() {
         time0 += wtime1 - wtime0;
 #endif
 
+        // Calculate the correlation matrix if Blob-Blob forces need PBC:
+        if (params.force_pbc == 1) calc_blob_corr_matrix(params.num_blobs, blob_corr);
+
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
-            // pc_solver.solve();
+            // pc_solver.solve(blob_corr); // keep that one as reference implementation. 
             // pc_solver.solve_using_neighbours();
-            pc_solver.solve_using_neighbours_non_critical();
+            pc_solver.solve_using_neighbours_non_critical(blob_corr); // blob_corr == NULL if force_pbc = 0
         }
 
 #ifdef BENCHMARK
@@ -1956,10 +1951,7 @@ int World::run() {
         // Calculate the VdW forces:
         if (params.calc_vdw == 1) {
             if (params.force_pbc == 0) vdw_solver->solve();
-            else if (params.force_pbc == 1) {
-                calc_blob_corr_matrix(params.num_blobs, blob_corr);
-                vdw_solver->solve(blob_corr);
-            }
+            else if (params.force_pbc == 1) vdw_solver->solve(blob_corr);
         }
         if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
 
@@ -2185,7 +2177,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
     // Get interactions vector first, for later use
     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) {
-        systemreader->extract_block("interactions", 0, script_vector, &interactions_vector);
+        if (systemreader->extract_block("interactions", 0, script_vector, &interactions_vector) == FFEA_ERROR) return FFEA_ERROR;
     }
 
     // Get precomputed data first
@@ -2255,13 +2247,13 @@ int World::read_and_build_system(vector<string> script_vector) {
         blob_conf[i].set_rotation = 0;
 
         // Get blob data
-        systemreader->extract_block("blob", i, script_vector, &blob_vector);
+        if (systemreader->extract_block("blob", i, script_vector, &blob_vector) == FFEA_ERROR) return FFEA_ERROR;
 
         // Read all conformations
         for(j = 0; j < params.num_conformations[i]; ++j) {
 
             // Get conformation data
-            systemreader->extract_block("conformation", j, blob_vector, &conformation_vector);
+            if (systemreader->extract_block("conformation", j, blob_vector, &conformation_vector) == FFEA_ERROR) return FFEA_ERROR;
 
             // Error check
             if(conformation_vector.size() == 0) {
@@ -2390,13 +2382,13 @@ int World::read_and_build_system(vector<string> script_vector) {
         if(params.calc_kinetics == 1) {
 
             // Get kinetic data
-            systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector);
+            if (systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector) == FFEA_ERROR) return FFEA_ERROR;
 
             // Get map info if necessary
             if(params.num_conformations[i] > 1) {
 
                 // Get map data
-                systemreader->extract_block("maps", 0, kinetics_vector, &map_vector);
+                if (systemreader->extract_block("maps", 0, kinetics_vector, &map_vector) == FFEA_ERROR) return FFEA_ERROR;
 
                 // Parse map data
                 for(it = map_vector.begin(); it != map_vector.end(); ++it) {
@@ -2670,7 +2662,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 /// /// 
     // Finally, get springs
     if (params.calc_springs == 1)
-        systemreader->extract_block("springs", 0, interactions_vector, &spring_vector);
+        if (systemreader->extract_block("springs", 0, interactions_vector, &spring_vector) == FFEA_ERROR) return FFEA_ERROR;
 
     if (spring_vector.size() > 1) {
         FFEA_error_text();
@@ -3906,7 +3898,7 @@ void World::make_measurements() {
         kineticenergy += active_blob_array[i]->get_kinetic_energy();
         strainenergy += active_blob_array[i]->get_strain_energy();
         rmsd += (active_blob_array[i]->get_rmsd() * active_blob_array[i]->get_rmsd()) * active_blob_array[i]->get_num_nodes();
-        active_blob_array[i]->get_CoG(bCoG.data);
+        active_blob_array[i]->get_stored_centroid(bCoG.data);
         CoG.x += bCoG.x * active_blob_array[i]->get_num_nodes();
         CoG.y += bCoG.y * active_blob_array[i]->get_num_nodes();
         CoG.z += bCoG.z * active_blob_array[i]->get_num_nodes();
@@ -4065,20 +4057,19 @@ void World::print_static_trajectory(int step, scalar wtime, int blob_index) {
 
 
 void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr) {
-    //sets blob distance from itself to 0
+
+    //calculates blob corrections for periodic interactions
+    vector3 com,com2;
     for(int i = 0; i < num_blobs; ++i) {
+        //sets blob distance from itself to 0
         blob_corr[i*num_blobs*3 + i*3]= 0;
         blob_corr[i*num_blobs*3 + i*3+1]= 0;
         blob_corr[i*num_blobs*3 + i*3+2]= 0;
-    }
-
-    //calculates blob corrections for periodic interactions
-    for(int i = 0; i < num_blobs; ++i) {
+        
+        active_blob_array[i]->get_stored_centroid(com.data);
         for(int j = i+1; j < num_blobs; ++j) {
 
-            vector3 com,com2;
-            active_blob_array[i]->get_centroid(&com);
-            active_blob_array[j]->get_centroid(&com2);
+            active_blob_array[j]->get_stored_centroid(com2.data);
             blob_corr[i*num_blobs*3 + j*3]= box_dim.x*floor((com2.x-com.x+0.5*box_dim.x)/box_dim.x);
             blob_corr[i*num_blobs*3 + j*3+1]= box_dim.y*floor((com2.y-com.y+0.5*box_dim.y)/box_dim.y);
             blob_corr[i*num_blobs*3 + j*3+2]= box_dim.z*floor((com2.z-com.z+0.5*box_dim.z)/box_dim.z);
