@@ -21,14 +21,24 @@
 //  the research papers on the package.
 //
 
-#include "VdW_solver.h"
-#include <set>
+#ifndef FFEA_VERSION_H_INCLUDED
+#define FFEA_VERSION_H_INCLUDED
 
-class Steric_solverX: public VdW_solver {
+#include <string>
 
-private:
-  void do_interaction(Face *f1, Face *f2);
+using std::string;
 
-  void do_interaction(Face *f1, Face *f2, scalar *blob_corr);
 
-};
+static string FFEA_version = "@PACKAGE_VERSION@";
+#ifdef USE_CMAKECONF
+static string FFEA_commit = "@PACKAGE_COMMIT@";
+static string FFEA_branch = "@PACKAGE_BRANCH@";
+static string FFEA_date = "@PACKAGE_DATE@";
+#else
+static string FFEA_prev_commit = "dac9e94abfc5eaaff4042f73fd3dd3df8170bb11";
+static string FFEA_prev_branch = "master";
+static string FFEA_prev_date = "2017-04-26";
+#endif
+
+
+#endif

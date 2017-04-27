@@ -45,7 +45,8 @@ void print_mid(string s);
 void print_high(string s);
 void print_mania(string s);
 
-void print_preprocessor_flags();
+void print_ffea_version();
+void print_ffea_compilation_details();
 
 
 #endif

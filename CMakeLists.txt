@@ -30,6 +30,7 @@ set(PACKAGE_NAME "ffea")
 set(VERSION "1")
 set(MINOR   "0")
 set(PACKAGE_VERSION "${VERSION}.${MINOR}")
+set(FFEA_DEVEL "TRUE")
 
 
 option(USE_BOOST_INTERNAL "Use the sources we ship (ON) or your own boost (OFF)" ON)
@@ -261,8 +262,46 @@ if(DOXYGEN_FOUND)
                 share/ffea/ffeamodules OPTIONAL)
 endif(DOXYGEN_FOUND)
 
-# 9 ### DEBUG FLAGS ####
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+
+# 9 ### CONFIGURE VERSION: 
+find_package(Git 1.6)
+set(VERSION_CMAKECONF "")
+if (GIT_FOUND)
+  message(STATUS ${GIT_EXECUTABLE})
+  execute_process(
+     COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:'%H'
+     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+     OUTPUT_VARIABLE PACKAGE_COMMIT 
+     ERROR_VARIABLE PACKAGE_COMMIT_ERROR)
+
+  execute_process(
+     COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:'%ad' --date=short
+     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+     OUTPUT_VARIABLE PACKAGE_DATE
+     ERROR_VARIABLE PACKAGE_DATE_ERROR)
+
+  execute_process(
+     COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+     OUTPUT_VARIABLE PACKAGE_BRANCH
+     ERROR_VARIABLE PACKAGE_BRANCH_ERROR)
+
+  if (NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
+     add_definitions(-DUSE_CMAKECONF)
+     set(VERSION_CMAKECONF "TRUE")
+     string(STRIP ${PACKAGE_BRANCH} PACKAGE_BRANCH)
+  endif (NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
+
+endif(GIT_FOUND)
+
+configure_file("${PROJECT_SOURCE_DIR}/include/FFEA_version.h.in"
+               "${PROJECT_BINARY_DIR}/include/FFEA_version.h" @ONLY)
+include_directories(${PROJECT_BINARY_DIR}/include)
+
+if (FFEA_DEVEL STREQUAL "TRUE")
+  add_definitions(-DFFEA_DEVEL)
+endif (FFEA_DEVEL STREQUAL "TRUE")
+
 
 
 # 10 ### FAST! ##########

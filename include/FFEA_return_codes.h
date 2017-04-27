@@ -24,8 +24,8 @@
 #ifndef FFEA_RETURN_CODES_H_INCLUDED
 #define FFEA_RETURN_CODES_H_INCLUDED
 
-#define FFEA_VERSION "2.0"
-#define FFEA_MASCOT "Mega Walrus"
+// #define FFEA_VERSION "2.0"
+// #define FFEA_MASCOT "Mega Walrus"
 
 #define FFEA_DIRECT_SOLVER		0
 #define FFEA_ITERATIVE_SOLVER		1
