@@ -630,46 +630,54 @@ class Blob:
 					colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
 					#colgrad = [np.array([1.0,0.0,0.0]), np.array([1.0,1.0,0.0]), np.array([0.0,1.0,0.0]), np.array([0.0,0.0,1.0])]	# Red yellow green blue
 					num_cols = len(colgrad)
-					param = []
-	
-					for e in self.mat.element:
-						param.append(e[paramval])
-			
-					# Relative or absolute max / min here
-					maxval = max(param)
-					minval = min(param)
-					rangeval = maxval - minval
-	
+
+					# Get params
+					param = self.mat.element[:,paramval]
+
+					# Build color bins
+					Erange = max(param) - min(param)
+					binwidth = Erange / (num_cols - 1)
+					Ebin = [min(param) + j * binwidth for j in range(num_cols)]
+					Ebin[-1] = np.ceil(Ebin[-1])
+
+					# Cheat to catch the 0 / 0 below
+					if binwidth == 0.0:
+						binwidth = 1.0
+
 					# Now, draw each face
 					for f in self.surf.face:
-						
+						try:
+							paramfrac = (param[f.elindex] - Ebin[0]) / Erange
+						except:
+							paramfrac = 0.0
+	
+						# Get position data for viewer to draw
 						n1 = self.frames[i].pos[f.n[0]][0:3]
 						n2 = self.frames[i].pos[f.n[1]][0:3]
 						n3 = self.frames[i].pos[f.n[2]][0:3]
 						norm = self.calc_normal_2(n1, n2, n3)
-	
-						# Calc and add colour first
-						if rangeval == 0.0:
-							paramfrac = 1.0
-						else:
-							paramfrac = (param[f.elindex] - minval) / rangeval
 
-						# Which interval?
-						if paramfrac <= 0:
-							colpair = [0, 0]
-						elif paramfrac >= 1:
-							colpair = [num_cols - 1, num_cols - 1]
-						else:
-							colpair = [int(np.floor(paramfrac * num_cols)), int(np.floor(paramfrac * num_cols))]
+						# Get color bin
+						colpair = [0,1]
+						for j in range(num_cols - 1):
+							if param[f.elindex] >= Ebin[j] and param[f.elindex] <= Ebin[j + 1]:
+								colpair = [j, j + 1]
+								break
 
-						# Where in interval
-						col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * paramfrac + colgrad[colpair[0]]
+						# Get fraction through color bin (will raise error for homogeneity only)
+						try:
+							colfrac = (param[f.elindex] - Ebin[colpair[0]]) / binwidth
+
+						except(ZeroDivisionError):
+							colfrac = 0.0
+
+						# What color then?
+						col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * colfrac + colgrad[colpair[0]]
 						sol.extend([COLOR, col[0], col[1], col[2]])
 			                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
 			                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 			                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 			                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-
 
 				else: ## in that case, plot VdW! 
 					for f in range(self.surf.num_faces):
