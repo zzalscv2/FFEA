@@ -849,9 +849,14 @@ class Blob:
 			text = ""
 			if display_flags['load_sfa'] == "Onto Nodes":
 				sfa_name += "_nfa"
+				if (self.node.num_nodes > 10000):
+					print "Use (ATOM number -1) to identify the node"
 				for n in range(self.node.num_nodes):
 					pos = (self.frames[i].pos[n].tolist())[0:3]
-					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+					if n < 10000: 
+						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+					else:
+						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", 9999, pos[0], pos[1], pos[2]))
 
 
 			elif display_flags['load_sfa'] == 'Onto Linear Nodes':
@@ -862,8 +867,12 @@ class Blob:
 							print "Try editing the FFEA script, and changing motion state to DYNAMIC"
 
 				else:
+					sfa_name += "_lnfa"
 					for n in self.linear_node_list:
 						nn = (self.frames[i].pos[n])[0:3]
+						if n == 10000: 
+							print "Cannot load more than 10000 Supportive Fake Atoms"
+							break
 						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, nn[0], nn[1], nn[2]))
 	
 
@@ -871,6 +880,9 @@ class Blob:
 				sfa_name += "_ffa"
 				for f in range(self.surf.num_faces):
 					fn = self.surf.face[f].calc_centroid(self.frames[i])
+					if f == 10000: 
+						print "Cannot load more than 10000 Supportive Fake Atoms"
+						break
 					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (f, psa_name, "FEA", "A", f, fn[0], fn[1], fn[2]))
 
 
@@ -883,6 +895,9 @@ class Blob:
 				else:
 					for e in range(self.top.num_elements):
 						en = self.top.element[e].calc_centroid(self.frames[i])
+						if e == 10000: 
+							print "Cannot load more than 10000 Supportive Fake Atoms"
+							break
 						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e, psa_name, "FEA", "A", e, en[0], en[1], en[2]))
 						
 			# in any case:
