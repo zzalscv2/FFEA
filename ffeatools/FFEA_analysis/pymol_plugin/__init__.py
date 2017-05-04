@@ -491,7 +491,7 @@ class FFEA_viewer_control_window:
 		self.load_trajectory_thread.join()
 
 	# Requires knowledge of whole trajectory
-	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.display_flags["show_inverted"] == 1:
+	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.display_flags["show_inverted"] == 1 and self.wontLoadTraj != 1:
 		self.draw_inverted_elements()
 
 	try:
@@ -682,6 +682,8 @@ class FFEA_viewer_control_window:
 
 	# If necessary, stop now (broken traj or user asked for)
 	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or self.traj.num_blobs == 0:		
+		if failure == 1: 
+			print "Failed to load the trajectory: ", failure
 		self.wontLoadTraj = 1
 		return
 
