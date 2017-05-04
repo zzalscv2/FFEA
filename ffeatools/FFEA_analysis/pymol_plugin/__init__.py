@@ -600,6 +600,7 @@ class FFEA_viewer_control_window:
 		if (c.top == None):
 			if (c.motion_state != "STATIC"):
 				print("Cannot draw inverted elements for blob %d as there is not topology" % (bin))
+			bin += 1
 			continue
 
 		flast = self.traj.blob[bin][cin].frame[-1]
