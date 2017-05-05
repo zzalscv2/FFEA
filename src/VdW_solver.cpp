@@ -397,8 +397,8 @@ void VdW_solver::do_interaction(Face *f1, Face *f2) {
             // force_mag *= -1;
 
             force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
-            force_pair_matrix[k][l].y = force_mag * ((p[k].x - q[l].x) / mag_r);
-            force_pair_matrix[k][l].z = force_mag * ((p[k].x - q[l].x) / mag_r);
+            force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
+            force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
 
             force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
             force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
@@ -555,8 +555,8 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
             // force_mag *= -1;
 
             force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
-            force_pair_matrix[k][l].y = force_mag * ((p[k].x - q[l].x) / mag_r);
-            force_pair_matrix[k][l].z = force_mag * ((p[k].x - q[l].x) / mag_r);
+            force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
+            force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
 
             force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
             force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
