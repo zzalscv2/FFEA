@@ -482,6 +482,7 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 
     const struct tri_gauss_point gauss_points[num_tri_gauss_quad_points] = {
         // Weight, eta1, eta2, eta3
+	// Not just random numbers. Come from Gaussian quadrature approximation for the integrals
         {   0.333333333333333,
             {0.666666666666667, 0.166666666666667, 0.166666666666667}
         },
