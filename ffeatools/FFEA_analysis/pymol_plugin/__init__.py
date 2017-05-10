@@ -383,7 +383,6 @@ class FFEA_viewer_control_window:
 			if cindex == 0:
 		
 				c.set_nodes_as_frame()
-
 				x, y, z = c.calc_centroid(0)
 				world_centroid[0] += x * c.node.num_nodes
 				world_centroid[1] += y * c.node.num_nodes
