@@ -126,10 +126,11 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 
 	int count = -1;
 	output->clear();
+	//cout << "New" << endl << endl;
 	for(string_it = input.begin(); string_it != input.end(); ++string_it) {
-
 		buf_string = boost::erase_last_copy(boost::erase_first_copy(*string_it, "<"), ">");
 		boost::trim(buf_string);
+		//cout << buf_string << endl;
 		if(buf_string == block_title) {
 			
 			if(copying == 1) {
