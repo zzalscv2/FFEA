@@ -63,7 +63,7 @@ os.system(scriptdir + "/make_structure_map -i " + targetnode + " -t " + targetto
 # Remove the unneeded stuff
 #os.system("rm " + basenode + " " + targetnode + " " + basetotargetmap + " " + targettobasemap)
 #os.system("rm " + basetotargetmap + " " + targettobasemap)
-os.system("rm " + basenode + " " + targetnode)
+#os.system("rm " + basenode + " " + targetnode)
 
 # Finalise
 print("Maps created:")
