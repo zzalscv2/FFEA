@@ -211,7 +211,7 @@ int VdW_solver::solve(scalar * blob_corr) {
                 if (l_i->index < l_j->index) {
                     f_j = l_j->obj;
                     if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
-                        if((working_w_static_blobs == false) || (motion_state_i == FFEA_BLOB_IS_DYNAMIC and f_j->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC)) {
+                        if((working_w_static_blobs == false) || (motion_state_i == FFEA_BLOB_IS_DYNAMIC or f_j->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC)) {
                             do_interaction(f_i, f_j, blob_corr);
                         }
                     }
