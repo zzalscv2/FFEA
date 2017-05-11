@@ -464,7 +464,7 @@ class Blob:
 			print "=============================="
             
 			aframe.set_pos(self.init_centroid)
-			print aframe.calc_centroid()
+			#print aframe.calc_centroid(), self.init_centroid
 
 		if self.init_rotation != None:
 			print "=============================="

@@ -1762,7 +1762,6 @@ int World::run() {
 #endif
 
     for (long long step = step_initial; step < params.num_steps + 1; step++) {
-
 #ifdef BENCHMARK
         wtime0 = omp_get_wtime();
 #endif
@@ -1908,7 +1907,6 @@ int World::run() {
         // Apply springs directly to nodes
         apply_springs();
 
-
 #ifdef FFEA_PARALLEL_FUTURE
         // Get the thread updating the VdW-LinkedLists if it has finished.
         if (updatingPCLL_ready_to_swap() == true) {
@@ -1955,7 +1953,6 @@ int World::run() {
         }
         if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
 
-
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
 
 
@@ -1985,7 +1982,6 @@ int World::run() {
             print_trajectory_and_measurement_files(step, wtime);
             print_kinetic_files(step);
         }
-	
 
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
@@ -2378,9 +2374,9 @@ int World::read_and_build_system(vector<string> script_vector) {
             conformation_vector.clear();
         }
 
-        // Read kinetic info if necessary
-        if(params.calc_kinetics == 1) {
-
+        // Read kinetic info (if necessary)
+        if(params.calc_kinetics == 1 && params.num_states[i] != 1) {
+	    
             // Get kinetic data
             if (systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector) == FFEA_ERROR) return FFEA_ERROR;
 
@@ -3842,8 +3838,9 @@ void World::print_checkpoints() {
     rewind(checkpoint_out);
     // Header for the thermal stresses:
     int thermal_seeds = num_seeds;
-    if(params.calc_kinetics == 1) thermal_seeds += 1;
+    if(params.calc_kinetics == 1) thermal_seeds -= 1;
     fprintf(checkpoint_out, "RNGStreams dedicated to the thermal stress: %d\n", thermal_seeds);
+//cout << "hi" << endl << flush;
     unsigned long state[6];
     // First save the state of the running threads:
     for (int i=0; i<num_threads; i++) {
@@ -3855,8 +3852,10 @@ void World::print_checkpoints() {
       	 //}
          // cout << endl;
     }
+
     // If there were more threads running on the previous run, we'll save them too:
     int oldThreads = thermal_seeds - num_threads;
+//cout << oldThreads << " " << thermal_seeds << " " << num_threads << endl << flush;
     for (int i=0; i<oldThreads; i++) {
         fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i+num_threads][0],
                 Seeds[i+num_threads][1], Seeds[i+num_threads][2], Seeds[i+num_threads][3],
@@ -3866,6 +3865,7 @@ void World::print_checkpoints() {
      //     }
       //  cout << endl;
     }
+	//cout << "hi" << endl << flush;
     // If we're doing kinetics, we're saving the state of the extra RNG:
     if (params.calc_kinetics) {
         fprintf(checkpoint_out, "RNGStream dedicated to the kinetics:\n");
@@ -3874,7 +3874,8 @@ void World::print_checkpoints() {
                 state[3], state[4], state[5]);
 
     }
-    fflush(checkpoint_out);
+	//cout << "hi" << endl << flush;   
+	fflush(checkpoint_out);
     // Done with the checkpoint!
 }
 
