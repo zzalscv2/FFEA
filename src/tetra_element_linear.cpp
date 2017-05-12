@@ -327,6 +327,16 @@ void tetra_element_linear::create_viscosity_matrix() {
 /*
  *
  */
+void tetra_element_linear::print_structural_details() {
+
+	printf("Element %d\n\n", index);
+	printf("\tVolume = %5.2f angstroms\n", calc_volume() * 4.913);	// Making it into angstroms
+	printf("\n");
+}
+
+/*
+ *
+ */
 scalar tetra_element_linear::calc_volume() {
 
 	matrix3 J;
