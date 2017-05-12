@@ -944,11 +944,10 @@ class FFEA_viewer_control_window:
 	obj = [BEGIN, LINES]
 	
 	# If only outline, no need to loop over entire plane
+	#step = self.box
+	#step = [b for b in self.box]
 	if self.display_flags['show_box'] == "Simulation Box (outline)":
-		print "outline"
-		
 		step = self.box
-
 		# Loop over the three planes
 		for i in range(2):
 			for j in range(2):
@@ -978,35 +977,35 @@ class FFEA_viewer_control_window:
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 			
 	elif self.display_flags['show_box'] == "Simulation Box (whole)":
-		print "whole"
-
 		for i in range(3):
-			step[i] = self.box[i] / self.script.params.es_N[i]
+			step = [self.box[i] / self.script.params.es_N[i] for i in range(3)]
 
 		# Loop over the three planes
 		for i in range(self.script.params.es_N[0] + 1):
 			for j in range(self.script.params.es_N[1] + 1):
-				
+
 				# Get a pair of vertices
 				verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
+		# Loop over the three planes
 		for i in range(self.script.params.es_N[1] + 1):
 			for j in range(self.script.params.es_N[2] + 1):
-				
+
 				# Get a pair of vertices
 				verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-		for i in range(self.script.params.es_N[2] + 1):
-			for j in range(self.script.params.es_N[0] + 1):
-				
+		# Loop over the three planes
+		for i in range(self.script.params.es_N[0] + 1):
+			for j in range(self.script.params.es_N[2] + 1):
+
 				# Get a pair of vertices
-				verts = [[j * step[0], 0.0, i * step[2]], [j * step[0], self.box[1], i * step[2]]]
+				verts = [[i * step[0], 0.0, j * step[2]], [i * step[0], self.box[1], j * step[2]]]
 				
 				for l in range(2):
 					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
