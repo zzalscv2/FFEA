@@ -237,6 +237,11 @@ public:
     int calc_shape_function_derivatives_and_volume(matrix3 J);
 
     /** @brief
+     *  Prints a variety of structural details about the element to analyse it's configuration
+     */
+    void print_structural_details();
+
+    /** @brief
      *  Uses above functions to get volume. Easy
      */
     scalar calc_volume();

@@ -629,7 +629,8 @@ int Blob::update_internal_forces() {
             if (elem[n].calc_shape_function_derivatives_and_volume(J) == FFEA_ERROR) {
                 FFEA_error_text();
                 printf("Element %d has inverted during update\n", n);
-                num_inversions++;
+           	//elem[n].print_structural_details();
+	        num_inversions++;
             }
 
             // create viscosity matrix
