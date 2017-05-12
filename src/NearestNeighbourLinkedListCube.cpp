@@ -40,8 +40,8 @@ int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
 	}
 
 	// Do we have the correct centroid?? We do now!
-       // pool[i].obj->calc_area_normal_centroid();
-
+        //pool[i].obj->calc_area_normal_centroid();    // NOTE FROM BEN!! CENTROIDS ARE BEING CALCULATED INCORRECTLY. I DUNNO WHY, SORRY.
+	//fprintf(stdout, "%e %e %e\n", pool[i].obj->centroid.x, pool[i].obj->centroid.y, pool[i].obj->centroid.z);
         int x = (int) floor(pool[i].obj->centroid.x / h);
         int y = (int) floor(pool[i].obj->centroid.y / h);
         int z = (int) floor(pool[i].obj->centroid.z / h);
