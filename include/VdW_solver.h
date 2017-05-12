@@ -56,6 +56,7 @@ public:
     void reset_fieldenergy(); 
 
 protected:
+
     int total_num_surface_faces;
     NearestNeighbourLinkedListCube *surface_face_lookup;
 
@@ -71,20 +72,27 @@ protected:
         int ix, iy, iz;
     };
 
-    struct tri_gauss_point {
-        scalar W;
-        scalar eta[3];
-    };
-
-    virtual void do_interaction(Face *f1, Face *f2);
-
-    virtual void do_interaction(Face *f1, Face *f2, scalar * blob_corr);
-
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
     scalar steric_dr; ///< Constant to calculate the numerical derivative.
     // static const scalar phi_f[4]; ///< shape function for the center of the "element"
     static const int adjacent_cell_lookup_table[27][3];
 
+    static const int num_tri_gauss_quad_points; 
+    struct tri_gauss_point {
+        scalar W;
+        scalar eta[3];
+    };
+    // static const struct tri_gauss_point gauss_pointx[num_tri_gauss_quad_points];
+    static const tri_gauss_point gauss_points[];
+
+    bool consider_interaction(Face *f1, int l_index_i, int motion_state_i, LinkedListNode<Face> *l_j, scalar *blob_corr=NULL);
+
+    virtual void do_interaction(Face *f1, Face *f2);
+    virtual void do_interaction(Face *f1, Face *f2, scalar * blob_corr);
+
+    bool do_steric_interaction(Face *f1, Face *f2); 
+
+    void do_lj_interaction(Face *f1, Face *f2); 
 
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
 
