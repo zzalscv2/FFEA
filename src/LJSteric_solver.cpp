@@ -156,7 +156,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 
 			vdw_fac = mag_r * vdw_r_eqi;
 			vdw_fac_2 = vdw_fac * vdw_fac;
-			force_mag = 6 * vdw_eps * mag_ri * vdw_fac_2 * (vdw_fac - 1);
+			force_mag = 6 * vdw_eps * vdw_r_eqi * vdw_fac * (1 - vdw_fac);
 			energy += vdw_eps * vdw_fac_2 * (2 * vdw_fac - 3);
 
 			force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
