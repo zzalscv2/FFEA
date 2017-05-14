@@ -126,7 +126,8 @@ class FFEA_measurement:
 		line = fin.readline()
 		frames_read = 0
 		all_frames = 0
-		while(line != "" and frames_read < num_frames_to_read):
+		while(line != "" and all_frames < num_frames_to_read):
+			#print(all_frames, num_frames_to_read)
 			if line.strip() == "#==RESTART==":
 				line = fin.readline()
 				continue
@@ -217,7 +218,7 @@ class FFEA_measurement:
 		line = fin.readline()
 		frames_read = 0
 		all_frames = 0
-		while(line != "" and frames_read < num_frames_to_read):
+		while(line != "" and all_frames < num_frames_to_read):
 			if line.strip() == "#==RESTART==":
 				line = fin.readline()
 				continue
