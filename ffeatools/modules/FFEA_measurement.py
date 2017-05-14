@@ -340,10 +340,10 @@ class FFEA_measurement:
 			fout = open(blobfname, "w")
 			fout.write("FFEA Detailed Measurement File\n\nMeasurements:\n")
 
-			# We need a keys_to_write for each blob
+			# We need a keys_to_write for each blob (might be able to make these triangular arrays in future)
 			keys_to_write = [[] for i in range(self.num_blobs)]
-			pair_keys_to_write = [[[] for j in range(i, self.num_blobs)] for i in range(self.num_blobs)]
-			do_interblob = [[False for j in range(i, self.num_blobs)] for i in range(self.num_blobs)]
+			pair_keys_to_write = [[[] for j in range(self.num_blobs)] for i in range(self.num_blobs)]
+			do_interblob = [[False for j in range(self.num_blobs)] for i in range(self.num_blobs)]
 			for i in range(self.num_blobs):
 				if self.blob_meas[i]["KineticEnergy"] != None:
 					keys_to_write[i].append("KineticEnergy")
