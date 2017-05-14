@@ -148,6 +148,10 @@ class FFEA_spring:
 		except:
 			raise
 
+	def print_details(self):
+		print "\n\t k\t\tl\t\tblob\tconf\tnode"
+		print "%e\t%e\t%d %d\t%d %d\t%d %d" % (self.k, self.l, self.blob_index[0], self.blob_index[1], self.conformation_index[0], self.conformation_index[1], self.node_index[0], self.node_index[1])
+
 	def reset(self):
 		
 		self.k = 0
