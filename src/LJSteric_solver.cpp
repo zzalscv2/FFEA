@@ -103,7 +103,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
             // Get the interaction LJ parameters for these two face types
             scalar vdw_eps = 0.0, vdw_r_eq = 0.0;
       	    lj_matrix->get_LJ_params(f1->vdw_interaction_type, f2->vdw_interaction_type, &vdw_eps, &vdw_r_eq);
-
+	    fprintf(stdout, "%d %d %e %e\n", f1->vdw_interaction_type, f2->vdw_interaction_type, vdw_eps * mesoDimensions::Energy / (mesoDimensions::area * mesoDimensions::area), vdw_r_eq * mesoDimensions::length);
 	    const int num_tri_gauss_quad_points = 3;
 
 	    const struct tri_gauss_point gauss_points[num_tri_gauss_quad_points] ={
@@ -149,7 +149,7 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2){
 
 		    // Both parts need this
 		    mag_ri = 1./mag_r;
-
+		    fprintf(stdout, "%e %e\n", mag_r * mesoDimensions::length, vdw_r_eq * mesoDimensions::length);
 		    if(mag_r < vdw_r_eq) {
 
 			// Intermediatey stuff
