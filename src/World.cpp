@@ -1948,8 +1948,7 @@ int World::run() {
 
         // Calculate the VdW forces:
         if (params.calc_vdw == 1) {
-            if (params.force_pbc == 0) vdw_solver->solve();
-            else if (params.force_pbc == 1) vdw_solver->solve(blob_corr);
+           vdw_solver->solve(blob_corr); // blob_corr == NULL if force_pbc = 0.
         }
         if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
 
