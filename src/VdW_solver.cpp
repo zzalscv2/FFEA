@@ -58,8 +58,6 @@ const int VdW_solver::adjacent_cell_lookup_table[27][3] = {
     {+1, +1, +1}
 };
 
-// const int VdW_solver::num_tri_gauss_quad_points = 3;
-
 const VdW_solver::tri_gauss_point VdW_solver::gauss_points[] = {
     // Weight, eta1, eta2, eta3
     {   0.333333333333333,
@@ -162,7 +160,7 @@ void VdW_solver::reset_fieldenergy() {
 }
 
 /** Solve VdW */ 
-int VdW_solver::solve(scalar *blob_corr/*=NULL*/) {
+int VdW_solver::solve(scalar *blob_corr) {
 
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
@@ -231,8 +229,8 @@ int VdW_solver::solve_sticky_wall(scalar h) {
     return FFEA_OK;
 }
 
-void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr/*=NULL*/) {
- 
+void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
+
     int f1_daddy_blob_index = f1->daddy_blob->blob_index;
     int f2_daddy_blob_index = f2->daddy_blob->blob_index;
 
@@ -315,7 +313,7 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 
 }
 
-bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state_i, LinkedListNode<Face> *l_j, scalar *blob_corr/*=NULL*/) {
+bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state_i, LinkedListNode<Face> *l_j, scalar *blob_corr) {
 
     bool interaction_needed = false;
     if (l_index_i < l_j->index) {
@@ -434,7 +432,7 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
 
 }
 
-bool VdW_solver::do_steric_interaction(Face *f1, Face *f2, scalar *blob_corr/*=NULL*/) {
+bool VdW_solver::do_steric_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 
     int f1_daddy_blob_index = f1->daddy_blob->blob_index;
     int f2_daddy_blob_index = f2->daddy_blob->blob_index;
