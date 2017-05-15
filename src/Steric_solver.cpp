@@ -25,7 +25,7 @@
 
 
 /** do_volumeExclusion calculates the force (and not the energy, yet) of two tetrahedra */
-void Steric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr/*NULL*/){
+void Steric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
 
     if (blob_corr == NULL) {
        if (! f1->checkTetraIntersection(f2)) return;
