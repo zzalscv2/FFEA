@@ -77,7 +77,7 @@ protected:
     // static const scalar phi_f[4]; ///< shape function for the center of the "element"
     static const int adjacent_cell_lookup_table[27][3];
 
-    static const int num_tri_gauss_quad_points; 
+    static const int num_tri_gauss_quad_points = 3; 
     struct tri_gauss_point {
         scalar W;
         scalar eta[3];
@@ -95,6 +95,16 @@ protected:
     void do_lj_interaction(Face *f1, Face *f2); 
 
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
+
+    void calc_lj_force_pair_matrix(
+              vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
+              vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points], 
+              scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy);
+
+    void calc_ljinterpolated_force_pair_matrix(
+              vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
+              vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points], 
+              scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy);
 
     scalar distance2(vector3 *p, vector3 *q);
 

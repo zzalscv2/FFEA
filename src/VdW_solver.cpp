@@ -58,43 +58,43 @@ const int VdW_solver::adjacent_cell_lookup_table[27][3] = {
     {+1, +1, +1}
 };
 
-const int VdW_solver::num_tri_gauss_quad_points = 3;
+// const int VdW_solver::num_tri_gauss_quad_points = 3;
 
 const VdW_solver::tri_gauss_point VdW_solver::gauss_points[] = {
-        // Weight, eta1, eta2, eta3
-        {   0.333333333333333,
-            {0.666666666666667, 0.166666666666667, 0.166666666666667}
-        },
-        {   0.333333333333333,
-            {0.166666666666667, 0.666666666666667, 0.166666666666667}
-        },
-        {   0.333333333333333,
-            {0.166666666666667, 0.166666666666667, 0.666666666666667}
-        }
+    // Weight, eta1, eta2, eta3
+    {   0.333333333333333,
+        {0.666666666666667, 0.166666666666667, 0.166666666666667}
+    },
+    {   0.333333333333333,
+        {0.166666666666667, 0.666666666666667, 0.166666666666667}
+    },
+    {   0.333333333333333,
+        {0.166666666666667, 0.166666666666667, 0.666666666666667}
+    }
 
-        /*
-                                                {0.109951743655322,     {0.816847572980459, 0.091576213509771, 0.091576213509771}},
-                                                {0.109951743655322,     {0.091576213509771, 0.816847572980459, 0.091576213509771}},
-                                                {0.109951743655322,     {0.091576213509771, 0.091576213509771, 0.816847572980459}},
-                                                {0.223381589678011,     {0.108103018168070, 0.445948490915965, 0.445948490915965}},
-                                                {0.223381589678011,     {0.445948490915965, 0.108103018168070, 0.445948490915965}},
-                                                {0.223381589678011,     {0.445948490915965, 0.445948490915965, 0.108103018168070}}
-         */
+    /*
+                                            {0.109951743655322,     {0.816847572980459, 0.091576213509771, 0.091576213509771}},
+                                            {0.109951743655322,     {0.091576213509771, 0.816847572980459, 0.091576213509771}},
+                                            {0.109951743655322,     {0.091576213509771, 0.091576213509771, 0.816847572980459}},
+                                            {0.223381589678011,     {0.108103018168070, 0.445948490915965, 0.445948490915965}},
+                                            {0.223381589678011,     {0.445948490915965, 0.108103018168070, 0.445948490915965}},
+                                            {0.223381589678011,     {0.445948490915965, 0.445948490915965, 0.108103018168070}}
+     */
 
-        /*
-                                                {0.050844906370207,     {0.873821971016996, 0.063089014491502, 0.063089014491502}},
-                                                {0.050844906370207,     {0.063089014491502, 0.873821971016996, 0.063089014491502}},
-                                                {0.050844906370207,     {0.063089014491502, 0.063089014491502, 0.873821971016996}},
-                                                {0.116786275726379,     {0.501426509658179, 0.249286745170910, 0.249286745170910}},
-                                                {0.116786275726379,     {0.249286745170910, 0.501426509658179, 0.249286745170910}},
-                                                {0.116786275726379,     {0.249286745170910, 0.249286745170910, 0.501426509658179}},
-                                                {0.082851075618374,     {0.636502499121399, 0.310352451033785, 0.053145049844816}},
-                                                {0.082851075618374,     {0.310352451033785, 0.053145049844816, 0.636502499121399}},
-                                                {0.082851075618374,     {0.053145049844816, 0.636502499121399, 0.310352451033785}},
-                                                {0.082851075618374,     {0.636502499121399, 0.053145049844816, 0.310352451033785}},
-                                                {0.082851075618374,     {0.310352451033785, 0.636502499121399, 0.053145049844816}},
-                                                {0.082851075618374,     {0.053145049844816, 0.310352451033785, 0.636502499121399}}
-         */
+    /*
+                                            {0.050844906370207,     {0.873821971016996, 0.063089014491502, 0.063089014491502}},
+                                            {0.050844906370207,     {0.063089014491502, 0.873821971016996, 0.063089014491502}},
+                                            {0.050844906370207,     {0.063089014491502, 0.063089014491502, 0.873821971016996}},
+                                            {0.116786275726379,     {0.501426509658179, 0.249286745170910, 0.249286745170910}},
+                                            {0.116786275726379,     {0.249286745170910, 0.501426509658179, 0.249286745170910}},
+                                            {0.116786275726379,     {0.249286745170910, 0.249286745170910, 0.501426509658179}},
+                                            {0.082851075618374,     {0.636502499121399, 0.310352451033785, 0.053145049844816}},
+                                            {0.082851075618374,     {0.310352451033785, 0.053145049844816, 0.636502499121399}},
+                                            {0.082851075618374,     {0.053145049844816, 0.636502499121399, 0.310352451033785}},
+                                            {0.082851075618374,     {0.636502499121399, 0.053145049844816, 0.310352451033785}},
+                                            {0.082851075618374,     {0.310352451033785, 0.636502499121399, 0.053145049844816}},
+                                            {0.082851075618374,     {0.053145049844816, 0.310352451033785, 0.636502499121399}}
+     */
 };
 
 VdW_solver::VdW_solver() {
@@ -171,7 +171,7 @@ int VdW_solver::solve() {
     //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
     reset_fieldenergy();
-    int motion_state_i; 
+    int motion_state_i;
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
@@ -185,7 +185,7 @@ int VdW_solver::solve() {
             continue;
         }
         f_i = l_i->obj;
-        if (working_w_static_blobs) motion_state_i = f_i->daddy_blob->get_motion_state(); 
+        if (working_w_static_blobs) motion_state_i = f_i->daddy_blob->get_motion_state();
         int l_index_i = l_i->index;
 
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
@@ -197,8 +197,8 @@ int VdW_solver::solve() {
                       l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
                 if (consider_interaction(f_i, l_index_i, motion_state_i, l_j)) {
-                   do_interaction(f_i, l_j->obj);
-                } 
+                    do_interaction(f_i, l_j->obj);
+                }
                 l_j = l_j->next;
             }
         }
@@ -218,7 +218,7 @@ int VdW_solver::solve(scalar * blob_corr) {
     //total_num_surface_faces = surface_face_lookup->get_stack_size();
 
     reset_fieldenergy();
-    int motion_state_i; 
+    int motion_state_i;
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
@@ -232,7 +232,7 @@ int VdW_solver::solve(scalar * blob_corr) {
             continue;
         }
         f_i = l_i->obj;
-        if (working_w_static_blobs) motion_state_i = f_i->daddy_blob->get_motion_state(); 
+        if (working_w_static_blobs) motion_state_i = f_i->daddy_blob->get_motion_state();
         int l_index_i = l_i->index;
 
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
@@ -244,66 +244,66 @@ int VdW_solver::solve(scalar * blob_corr) {
                       l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
                 if (consider_interaction(f_i, l_index_i, motion_state_i, l_j)) {
-                   do_interaction(f_i, l_j->obj, blob_corr);
-                } 
-                l_j = l_j->next;
-            }
-        }
-    }
-
-/*
-    // double st, time1, time2, time3;
-
-    LinkedListNode<Face> *l_i = NULL;
-    LinkedListNode<Face> *l_j = NULL;
-    Face *f_i, *f_j;
-    int c;
-    total_num_surface_faces = surface_face_lookup->get_pool_size();
-    //total_num_surface_faces = surface_face_lookup->get_stack_size();
-
-    // Zero some measurement_ stuff
-    for(int i = 0; i < num_blobs; ++i) {
-        #pragma omp simd
-        for(int j = 0; j < num_blobs; ++j) {
-            fieldenergy[i][j] = 0.0;
-        }
-    }
-
-    // For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.
-#ifdef USE_OPENMP
-    #pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
-#endif
-    //st = MPI::Wtime();
-    for (int i = 0; i < total_num_surface_faces; i++) {
-
-        // get the ith face
-        l_i = surface_face_lookup->get_from_pool(i);
-        if(!l_i->obj->is_kinetic_active()) {
-            continue;
-        }
-        f_i = l_i->obj;
-
-        // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
-        // Remember to check that the face is not interacting with itself or connected faces
-        for (c = 0; c < 27; c++) {
-            l_j = surface_face_lookup->get_top_of_stack(
-                      l_i->x + adjacent_cell_lookup_table[c][0],
-                      l_i->y + adjacent_cell_lookup_table[c][1],
-                      l_i->z + adjacent_cell_lookup_table[c][2]);
-            while (l_j != NULL) {
-                if (l_i->index < l_j->index) {
-                    f_j = l_j->obj;
-                    if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
-                        // f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
-                        // f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
-                        do_interaction(f_i, f_j, blob_corr);
-                    }
+                    do_interaction(f_i, l_j->obj, blob_corr);
                 }
                 l_j = l_j->next;
             }
         }
-    }*/
-    
+    }
+
+    /*
+        // double st, time1, time2, time3;
+
+        LinkedListNode<Face> *l_i = NULL;
+        LinkedListNode<Face> *l_j = NULL;
+        Face *f_i, *f_j;
+        int c;
+        total_num_surface_faces = surface_face_lookup->get_pool_size();
+        //total_num_surface_faces = surface_face_lookup->get_stack_size();
+
+        // Zero some measurement_ stuff
+        for(int i = 0; i < num_blobs; ++i) {
+            #pragma omp simd
+            for(int j = 0; j < num_blobs; ++j) {
+                fieldenergy[i][j] = 0.0;
+            }
+        }
+
+        // For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.
+    #ifdef USE_OPENMP
+        #pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j) schedule(dynamic, 1) // OMP-GHL
+    #endif
+        //st = MPI::Wtime();
+        for (int i = 0; i < total_num_surface_faces; i++) {
+
+            // get the ith face
+            l_i = surface_face_lookup->get_from_pool(i);
+            if(!l_i->obj->is_kinetic_active()) {
+                continue;
+            }
+            f_i = l_i->obj;
+
+            // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
+            // Remember to check that the face is not interacting with itself or connected faces
+            for (c = 0; c < 27; c++) {
+                l_j = surface_face_lookup->get_top_of_stack(
+                          l_i->x + adjacent_cell_lookup_table[c][0],
+                          l_i->y + adjacent_cell_lookup_table[c][1],
+                          l_i->z + adjacent_cell_lookup_table[c][2]);
+                while (l_j != NULL) {
+                    if (l_i->index < l_j->index) {
+                        f_j = l_j->obj;
+                        if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != f_j->daddy_blob))) {
+                            // f_i->set_vdw_bb_interaction_flag(true, f_j->daddy_blob->blob_index);
+                            // f_j->set_vdw_bb_interaction_flag(true, f_i->daddy_blob->blob_index);
+                            do_interaction(f_i, f_j, blob_corr);
+                        }
+                    }
+                    l_j = l_j->next;
+                }
+            }
+        }*/
+
     return FFEA_OK;
 }
 
@@ -332,7 +332,7 @@ int VdW_solver::solve_sticky_wall(scalar h) {
 
 void VdW_solver::do_interaction(Face *f1, Face *f2) {
 
-     do_lj_interaction(f1, f2); 
+    do_lj_interaction(f1, f2);
 
 }
 
@@ -355,35 +355,11 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2) {
     // Construct the force pair matrix: f(p, q) where p and q are all the gauss points in each face
     // Also calculate energy whilst looping through face points
     scalar energy = 0.0;
-    scalar mag_r, mag_ri,  mag_ri_2, mag_ri_4, mag_ri_6, mag_ri_7;
-    scalar force_mag, vdw_fac_6;
-    scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
-    scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
-    scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
-    for(int k = 0; k < num_tri_gauss_quad_points; k++) {
-        for(int l = k; l < num_tri_gauss_quad_points; l++) {
-            mag_r = sqrt( (p[k].x - q[l].x) * (p[k].x - q[l].x) +
-                          (p[k].y - q[l].y) * (p[k].y - q[l].y) +
-                          (p[k].z - q[l].z) * (p[k].z - q[l].z) );
-            mag_ri = 1./mag_r;
-            mag_ri_2 = mag_ri * mag_ri;
-            mag_ri_4 = mag_ri_2 * mag_ri_2;
-            mag_ri_6 = mag_ri_4 * mag_ri_2;
-            mag_ri_7 = mag_ri_6 * mag_ri;
-            vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
-            force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (vdw_fac_6 - 1);
-            energy += vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
-            // force_mag *= -1;
 
-            force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
-            force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
-            force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
-
-            force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
-            force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
-            force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
-        }
-    }
+    if (vdw_type = VDW_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
+             p, q, vdw_r_eq, vdw_eps, energy);
+    else if (vdw_type == VDW_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
+             p, q, vdw_r_eq, vdw_eps, energy);
 
     scalar ApAq = f1->area * f2->area;
     energy *= ApAq;
@@ -535,13 +511,13 @@ void VdW_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 }
 
 bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state_i, LinkedListNode<Face> *l_j, scalar *blob_corr/*=NULL*/) {
-    
-    bool interaction_needed = false; 
+
+    bool interaction_needed = false;
     if (l_index_i < l_j->index) {
         if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != l_j->obj->daddy_blob))) {
 
             if((working_w_static_blobs == false) || (motion_state_i == FFEA_BLOB_IS_DYNAMIC or l_j->obj->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC)) {
-                interaction_needed = true; 
+                interaction_needed = true;
             }
         }
     }
@@ -551,45 +527,45 @@ bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state
         Face *f_j = l_j->obj;
         // 1 - Check that faces are facing each other, if not then they are not interacting
         if ( (f_i->normal[0]*f_j->normal[0] +
-              f_i->normal[1]*f_j->normal[1] +
-              f_i->normal[2]*f_j->normal[2]) > ffea_const::zero ) return false;
+                f_i->normal[1]*f_j->normal[1] +
+                f_i->normal[2]*f_j->normal[2]) > ffea_const::zero ) return false;
 
 
         if ( vdw_type != VDW_TYPE_LJ ) {
-           // 2 - Two more checks:
-           // 2.1 - Check that faces are in front of each other
-           //     - Robin suspected this was leading to unstabilities for the LJ case.
-           vector3 sep;
-           if (blob_corr == NULL) {
-             sep.assign ( f_j->centroid.x - f_i->centroid.x, f_j->centroid.y - f_i->centroid.y, f_j->centroid.z - f_i->centroid.z );
-           } else {
-             sep.assign ( f_j->centroid.x - f_i->centroid.x-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3],f_j->centroid.y - f_i->centroid.y-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3+1],f_j->centroid.z - f_i->centroid.z-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3+2] );
-           }
-           if ((arr3arr3DotProduct<scalar,arr3>(sep.data, f_i->normal.data) < 0) &&
-                arr3arr3DotProduct<scalar,arr3>(sep.data, f_j->normal.data) > 0) return false;
+            // 2 - Two more checks:
+            // 2.1 - Check that faces are in front of each other
+            //     - Robin suspected this was leading to unstabilities for the LJ case.
+            vector3 sep;
+            if (blob_corr == NULL) {
+                sep.assign ( f_j->centroid.x - f_i->centroid.x, f_j->centroid.y - f_i->centroid.y, f_j->centroid.z - f_i->centroid.z );
+            } else {
+                sep.assign ( f_j->centroid.x - f_i->centroid.x-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3],f_j->centroid.y - f_i->centroid.y-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3+1],f_j->centroid.z - f_i->centroid.z-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3+2] );
+            }
+            if ((arr3arr3DotProduct<scalar,arr3>(sep.data, f_i->normal.data) < 0) &&
+                    arr3arr3DotProduct<scalar,arr3>(sep.data, f_j->normal.data) > 0) return false;
 
 
-          // 2.2 - Check that no nodes are shared,
-          //     only in the case that faces belong to the same blob:
-          if ((inc_self_vdw == 1) && (f_i->daddy_blob == f_j->daddy_blob)) {
-             if (f_i->n[3] == f_j->n[3]) {
+            // 2.2 - Check that no nodes are shared,
+            //     only in the case that faces belong to the same blob:
+            if ((inc_self_vdw == 1) && (f_i->daddy_blob == f_j->daddy_blob)) {
+                if (f_i->n[3] == f_j->n[3]) {
                     return false;
-             }
-             for (int i=0; i<4; i++) {
-                int in_i = f_i->n[i]->index;
-                for (int j=0; j<4; j++) {
-                   if (f_j->n[j]->index == in_i){
-                       return false;
-                   }
                 }
-             }
-          }
-       }
+                for (int i=0; i<4; i++) {
+                    int in_i = f_i->n[i]->index;
+                    for (int j=0; j<4; j++) {
+                        if (f_j->n[j]->index == in_i) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     return interaction_needed;
 
-} 
+}
 
 void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y) {
 
@@ -668,21 +644,21 @@ bool VdW_solver::do_steric_interaction(Face *f1, Face *f2) {
     arr3Resize<geoscalar,grr3>(steric_factor, dVdr);
 
     grr3 ftmp1, ftmp2;
-    #pragma omp critical 
-    { 
-    // Store the measurement
-    fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
-    // Finally, apply the force onto the nodes:
-    for (int j = 0; j < 4; j++) {
-      arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
-      f1->add_force_to_node(j, ftmp1);
-      // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index); // DEPRECATED
+    #pragma omp critical
+    {
+        // Store the measurement
+        fieldenergy[f1->daddy_blob->blob_index][f2->daddy_blob->blob_index] += vol;
+        // Finally, apply the force onto the nodes:
+        for (int j = 0; j < 4; j++) {
+            arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
+            f1->add_force_to_node(j, ftmp1);
+            // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index); // DEPRECATED
 
-      arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
-      f2->add_force_to_node(j, ftmp2);
-      // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index); // DEPRECATED
+            arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
+            f2->add_force_to_node(j, ftmp2);
+            // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index); // DEPRECATED
+        }
     }
-    } 
 
     /* // //  Working version for F = k // //
     geoscalar vol, dVdr;
@@ -772,4 +748,102 @@ scalar VdW_solver::get_field_energy(int index0, int index1) {
         // Order of blob indices is unknown in the calculations, so must add
         return fieldenergy[index0][index1] + fieldenergy[index1][index0];
     }
+}
+
+void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
+        vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points],
+        scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy) {
+
+    scalar mag_r, mag_ri,  mag_ri_2, mag_ri_4, mag_ri_6, mag_ri_7;
+    scalar force_mag, vdw_fac_6;
+
+    scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
+    scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
+    scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
+
+    for(int k = 0; k < num_tri_gauss_quad_points; k++) {
+        for(int l = k; l < num_tri_gauss_quad_points; l++) {
+            mag_r = sqrt( (p[k].x - q[l].x) * (p[k].x - q[l].x) +
+                          (p[k].y - q[l].y) * (p[k].y - q[l].y) +
+                          (p[k].z - q[l].z) * (p[k].z - q[l].z) );
+            mag_ri = 1./mag_r;
+            mag_ri_2 = mag_ri * mag_ri;
+            mag_ri_4 = mag_ri_2 * mag_ri_2;
+            mag_ri_6 = mag_ri_4 * mag_ri_2;
+            mag_ri_7 = mag_ri_6 * mag_ri;
+            vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
+            force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (vdw_fac_6 - 1);
+            energy += vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
+
+            force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
+            force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
+            force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
+
+            force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
+            force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
+            force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
+        }
+    }
+}
+
+void VdW_solver::calc_ljinterpolated_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
+        vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points],
+        scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy) {
+
+    scalar mag_r, mag_ri,  mag_ri_2, mag_ri_4, mag_ri_6, mag_ri_7;
+    scalar force_mag, vdw_fac, vdw_fac_2, vdw_fac_6;
+    scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
+    scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
+    scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
+
+    scalar vdw_r_eqi = 1.0 / vdw_r_eq;
+    scalar vdw_r_eqi2 = vdw_r_eqi * vdw_r_eqi;
+
+    for(int k = 0; k < num_tri_gauss_quad_points; k++) {
+        for(int l = k; l < num_tri_gauss_quad_points; l++) {
+
+            mag_r = sqrt( (p[k].x - q[l].x) * (p[k].x - q[l].x) +
+                          (p[k].y - q[l].y) * (p[k].y - q[l].y) +
+                          (p[k].z - q[l].z) * (p[k].z - q[l].z) );
+
+            // Both parts need this
+            mag_ri = 1./mag_r;
+
+            if(mag_r < vdw_r_eq) {
+
+                // Intermediatey stuff
+
+                vdw_fac = mag_r * vdw_r_eqi;
+                vdw_fac_2 = vdw_fac * vdw_fac;
+                force_mag = 6 * vdw_eps * vdw_r_eqi * vdw_fac * (1 - vdw_fac);
+                energy += vdw_eps * vdw_fac_2 * (2 * vdw_fac - 3);
+
+                force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
+                force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
+                force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
+
+                force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
+                force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
+                force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
+
+            } else {
+                mag_ri_2 = mag_ri * mag_ri;
+                mag_ri_4 = mag_ri_2 * mag_ri_2;
+                mag_ri_6 = mag_ri_4 * mag_ri_2;
+                mag_ri_7 = mag_ri_6 * mag_ri;
+                vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
+                force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (vdw_fac_6 - 1);
+                energy += vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
+
+                force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
+                force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
+                force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
+
+                force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
+                force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
+                force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
+            }
+        }
+    }
+
 }
