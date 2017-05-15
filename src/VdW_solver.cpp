@@ -197,7 +197,7 @@ int VdW_solver::solve(scalar *blob_corr/*=NULL*/) {
                       l_i->y + adjacent_cell_lookup_table[c][1],
                       l_i->z + adjacent_cell_lookup_table[c][2]);
             while (l_j != NULL) {
-                if (consider_interaction(f_i, l_index_i, motion_state_i, l_j)) {
+                if (consider_interaction(f_i, l_index_i, motion_state_i, l_j, blob_corr)) {
                     do_interaction(f_i, l_j->obj, blob_corr);
                 }
                 l_j = l_j->next;
