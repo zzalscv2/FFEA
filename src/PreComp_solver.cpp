@@ -66,6 +66,10 @@ PreComp_solver::PreComp_solver() {
   msgc = 0;
   n_beads = 0;
   num_blobs = 0;
+  U = NULL;
+  F = NULL; 
+  isPairActive = NULL;
+  b_types = NULL;
   fieldenergy = NULL;
 } 
 

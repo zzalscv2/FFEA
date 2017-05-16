@@ -197,6 +197,7 @@ public:
 
 private:
     int stuff;
+    bool dealloc_n3;
 
 };
 
