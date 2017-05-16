@@ -382,9 +382,9 @@ class FFEA_trajectory:
 
 		# Kinetic Data
 		fout.write("*\nConformation Changes:\n")
-		bindex = -1
+		bindex = 0
 		for b in self.blob:
-			bindex += 1
+			next_conf = cur_conf[bindex]
 			cindex = -1
 			try:
 				for c in b:
@@ -396,6 +396,7 @@ class FFEA_trajectory:
 				next_conf = cur_conf[bindex]
 
 			fout.write("Blob %d: Conformation %d -> Conformation %d\n" % (bindex, cur_conf[bindex], next_conf))
+			bindex += 1
 		fout.write("*\n")		
 
 	def reset(self):
