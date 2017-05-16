@@ -1019,7 +1019,7 @@ class FFEA_viewer_control_window:
   def draw_springs(self, f):
 
       for s in self.springs.spring:
-
+	# print(self.springs.spring.index(s))
          # Get correct frames
          correct_frame = [-1 for i in range(self.script.params.num_blobs)]
          for i in range(self.script.params.num_blobs):
@@ -1029,8 +1029,11 @@ class FFEA_viewer_control_window:
 
          # Draw, because this spring exists
          try:
+	  # s.print_details()
            springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
+	   #print(springjoints)
          except(AttributeError):
+         #  print("Whut!")
            continue
          except:
            print "Something went wrong with this spring"
@@ -1056,7 +1059,7 @@ class FFEA_viewer_control_window:
          xax = xax / np.linalg.norm(xax)
          yax = yax / np.linalg.norm(yax)
 
-         # Radius of helix (let original radius be 5A, poisson ration = 0.01)
+         # Radius of helix (let original radius be 5A, poisson ratio = 0.01)
          r = 2 - 0.01 * (l - s.l)
 
          # We want 5 spins, say, so pitch:
