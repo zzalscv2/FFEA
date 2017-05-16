@@ -44,9 +44,7 @@ public:
 
     int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr, int calc_kinetics, bool working_w_static_blobs);
 
-    int solve();
-
-    int solve(scalar * blob_corr);
+    int solve(scalar *blob_corr);
 
     /** Allow protein VdW interactions along the top and bottom x-z planes */
     int solve_sticky_wall(scalar h);
@@ -56,6 +54,7 @@ public:
     void reset_fieldenergy(); 
 
 protected:
+
     int total_num_surface_faces;
     NearestNeighbourLinkedListCube *surface_face_lookup;
 
@@ -71,22 +70,38 @@ protected:
         int ix, iy, iz;
     };
 
-    struct tri_gauss_point {
-        scalar W;
-        scalar eta[3];
-    };
-
-    virtual void do_interaction(Face *f1, Face *f2);
-
-    virtual void do_interaction(Face *f1, Face *f2, scalar * blob_corr);
-
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
     scalar steric_dr; ///< Constant to calculate the numerical derivative.
     // static const scalar phi_f[4]; ///< shape function for the center of the "element"
     static const int adjacent_cell_lookup_table[27][3];
 
+    static const int num_tri_gauss_quad_points = 3; 
+    struct tri_gauss_point {
+        scalar W;
+        scalar eta[3];
+    };
+    // static const struct tri_gauss_point gauss_pointx[num_tri_gauss_quad_points];
+    static const tri_gauss_point gauss_points[];
+
+    bool consider_interaction(Face *f1, int l_index_i, int motion_state_i, LinkedListNode<Face> *l_j, scalar *blob_corr);
+
+    virtual void do_interaction(Face *f1, Face *f2, scalar *blob_corr);
+
+    bool do_steric_interaction(Face *f1, Face *f2, scalar *blob_corr);
+
+    void do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr); 
 
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
+
+    void calc_lj_force_pair_matrix(
+              vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
+              vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points], 
+              scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy);
+
+    void calc_ljinterpolated_force_pair_matrix(
+              vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
+              vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points], 
+              scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy);
 
     scalar distance2(vector3 *p, vector3 *q);
 

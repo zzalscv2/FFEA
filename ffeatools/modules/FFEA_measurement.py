@@ -126,7 +126,8 @@ class FFEA_measurement:
 		line = fin.readline()
 		frames_read = 0
 		all_frames = 0
-		while(line != "" and frames_read < num_frames_to_read):
+		while(line != "" and all_frames < num_frames_to_read):
+			#print(all_frames, num_frames_to_read)
 			if line.strip() == "#==RESTART==":
 				line = fin.readline()
 				continue
@@ -217,7 +218,7 @@ class FFEA_measurement:
 		line = fin.readline()
 		frames_read = 0
 		all_frames = 0
-		while(line != "" and frames_read < num_frames_to_read):
+		while(line != "" and all_frames < num_frames_to_read):
 			if line.strip() == "#==RESTART==":
 				line = fin.readline()
 				continue
@@ -340,10 +341,10 @@ class FFEA_measurement:
 			fout = open(blobfname, "w")
 			fout.write("FFEA Detailed Measurement File\n\nMeasurements:\n")
 
-			# We need a keys_to_write for each blob
+			# We need a keys_to_write for each blob (might be able to make these triangular arrays in future)
 			keys_to_write = [[] for i in range(self.num_blobs)]
-			pair_keys_to_write = [[[] for j in range(i, self.num_blobs)] for i in range(self.num_blobs)]
-			do_interblob = [[False for j in range(i, self.num_blobs)] for i in range(self.num_blobs)]
+			pair_keys_to_write = [[[] for j in range(self.num_blobs)] for i in range(self.num_blobs)]
+			do_interblob = [[False for j in range(self.num_blobs)] for i in range(self.num_blobs)]
 			for i in range(self.num_blobs):
 				if self.blob_meas[i]["KineticEnergy"] != None:
 					keys_to_write[i].append("KineticEnergy")
