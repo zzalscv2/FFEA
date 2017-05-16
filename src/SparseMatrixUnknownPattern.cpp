@@ -104,7 +104,7 @@ void SparseMatrixUnknownPattern::print() {
     for (int i = 0; i < num_rows; i++) {
         printf("Row %d:  ", i);
         printf("[%d %e] ", i, diagonal[i]);
-        for (vector<sparse_entry>::iterator it = row[i].begin(); it != row[i].end(); it++) {
+        for (vector<sparse_entry>::iterator it = row[i].begin(); it != row[i].end(); ++it) {
             printf("[%d %e] ", (*it).column_index, (*it).val);
         }
         printf("\n");

@@ -50,7 +50,7 @@ int SparsityPattern::init(int num_rows) {
 /* * */
 int SparsityPattern::register_contribution(int i, int j, scalar *contrib_memory_loc) {
     list<sparse_contribution_location*>::iterator it;
-    for (it = row[i].begin(); it != row[i].end(); it++) {
+    for (it = row[i].begin(); it != row[i].end(); ++it) {
 
         // If element already has sources, add the source to the list
         if ((*it)->column_index == j) {
@@ -78,7 +78,7 @@ int SparsityPattern::register_contribution(int i, int j, scalar *contrib_memory_
 
 bool SparsityPattern::check_for_contribution(int i, int j) {
     list<sparse_contribution_location*>::iterator it;
-    for (it = row[i].begin(); it != row[i].end(); it++) {
+    for (it = row[i].begin(); it != row[i].end(); ++it) {
         // If element already has sources, add the source to the list
         if ((*it)->column_index == j) {
             return true;
@@ -113,7 +113,7 @@ SparseMatrixFixedPattern * SparsityPattern::create_sparse_matrix() {
 
         // Dump the data serially, initialising values to zero and column indices to those
         // given by the sparsity pattern
-        for (list<sparse_contribution_location*>::iterator it = row[i].begin(); it != row[i].end(); it++) {
+        for (list<sparse_contribution_location*>::iterator it = row[i].begin(); it != row[i].end(); ++it) {
             entry[pos].val = 0;
             entry[pos].column_index = (*it)->column_index;
 
@@ -139,7 +139,7 @@ SparseMatrixFixedPattern * SparsityPattern::create_sparse_matrix() {
 void SparsityPattern::print() {
     for (int i = 0; i < num_rows; i++) {
         printf("= ");
-        for (list<sparse_contribution_location*>::iterator it = row[i].begin(); it != row[i].end(); it++) {
+        for (list<sparse_contribution_location*>::iterator it = row[i].begin(); it != row[i].end(); ++it) {
             printf("[%d %d] ", (*it)->column_index, (int) ((*it)->source_list.size()));
         }
         printf("\n");

@@ -158,6 +158,7 @@ int Face::build_opposite_node() {
     if(n[3] == NULL) {
         n[3] = new(std::nothrow) mesh_node();
         if (n[3] == NULL) FFEA_ERROR_MESSG("Couldn't find memory for an opposite node\n");
+        dealloc_n3 = true;
         n[3]->index = n[0]->index;
 
         // Calculate where to stick it
