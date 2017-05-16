@@ -85,6 +85,8 @@ SimulationParams::SimulationParams() {
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
     vdw_in_fname_set = 0;
+    trajbeads_fname_set = 0;
+
 
     trajectory_out_fname = "\n";
     kinetics_out_fname = "\n";
@@ -166,6 +168,7 @@ SimulationParams::~SimulationParams() {
     detailed_meas_out_fname = "\n";
     ctforces_fname = "\n";
     trajectory_beads_fname = "\n";
+
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
@@ -190,6 +193,8 @@ int SimulationParams::extract_params(vector<string> script_vector) {
             return FFEA_ERROR;
         }
     }
+
+    delete paramreader;
     return FFEA_OK;
 }
 

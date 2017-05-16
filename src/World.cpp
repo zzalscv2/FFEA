@@ -52,6 +52,8 @@ World::World() {
     kinetics_out = NULL;
     checkpoint_out = NULL;
     vdw_solver = NULL;
+    Seeds = NULL;
+    blob_corr = NULL;
 
     kineticenergy = 0.0;
     strainenergy = 0.0;
@@ -71,8 +73,13 @@ World::~World() {
     rng = NULL;
     num_threads = 0;
 
+    for (int i = 0; i < params.num_blobs; ++i) {
+        delete[] blob_array[i];
+    }
     delete[] blob_array;
     blob_array = NULL;
+    delete[] active_blob_array;
+    active_blob_array = NULL;
 
     delete[] spring_array;
     spring_array = NULL;
@@ -98,6 +105,11 @@ World::~World() {
 
     delete[] blob_corr;
 
+    for (int i=0; i<num_seeds; i++) {
+        delete[] Seeds[i];
+    }
+    delete[] Seeds;
+    Seeds = NULL;
 
     total_num_surface_faces = 0;
 
@@ -114,6 +126,7 @@ World::~World() {
     checkpoint_out = NULL;
 
     detailed_meas_out = NULL;
+    delete vdw_solver; 
     vdw_solver = NULL;
 
     kineticenergy = 0.0;
@@ -130,6 +143,7 @@ World::~World() {
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
     rmsd = 0.0;
+
 }
 
 /**
@@ -972,6 +986,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     et = MPI::Wtime() -st;
     cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
 #endif
+
+    delete ffeareader;
+
     return FFEA_OK;
 }
 
@@ -2673,6 +2690,8 @@ int World::read_and_build_system(vector<string> script_vector) {
             return FFEA_ERROR;
         }
     }
+
+    delete systemreader; 
 
     return FFEA_OK;
 }

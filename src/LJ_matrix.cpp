@@ -28,6 +28,14 @@ LJ_matrix::LJ_matrix() {
     num_vdw_face_types = 0;
 }
 
+
+LJ_matrix::~LJ_matrix() {
+    delete[] params; 
+    params = NULL;
+    num_vdw_face_types = 0;
+}
+
+
 int LJ_matrix::init(string vdw_params_fname, string vdw_type) {
 
     int err;

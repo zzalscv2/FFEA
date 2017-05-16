@@ -112,9 +112,12 @@ VdW_solver::~VdW_solver() {
     box_size.x = 0;
     box_size.y = 0;
     box_size.z = 0;
-    num_blobs = 0;
+    for(int i = 0; i < num_blobs; ++i) {
+        delete[] fieldenergy[i];
+    }
     delete[] fieldenergy;
     fieldenergy = NULL;
+    num_blobs = 0;
     vdw_type = VDW_TYPE_UNDEFINED;
 }
 

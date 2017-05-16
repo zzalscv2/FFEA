@@ -44,6 +44,7 @@ public:
 class LJ_matrix {
 public:
     LJ_matrix();
+    ~LJ_matrix(); 
 
     int init(string vdw_params_fname, string vdw_type);
 

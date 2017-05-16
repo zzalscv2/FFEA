@@ -194,6 +194,9 @@ Blob::~Blob() {
 
     delete[] toBePrinted_nodes;
     toBePrinted_nodes = NULL;
+
+    delete[] num_contributing_faces;
+    num_contributing_faces = NULL;
 }
 
 

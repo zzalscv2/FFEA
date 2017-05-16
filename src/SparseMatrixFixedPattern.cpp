@@ -153,6 +153,11 @@ void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
     scalar work_in[num_rows];
     scalar work_result[num_rows];
 
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+    #pragma omp parallel default(none) private(i, j) shared(result, work_result, in, work_in)
+    {
+    #pragma omp for 
+#endif
     for(i = 0; i < num_rows / 3; ++i) {
         work_in[3 * i] = in[i].x;
         work_in[3 * i + 1] = in[i].y;
@@ -160,7 +165,7 @@ void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
     }
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel for default(none) private(i, j) shared(result, work_result, in, work_in)
+    #pragma omp for 
 #endif
     for (i = 0; i < num_rows; i++) {
 
@@ -172,11 +177,17 @@ void SparseMatrixFixedPattern::apply(vector3 *in, vector3 *result) {
         }
     }
 
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+    #pragma omp for 
+#endif
     for(i = 0; i < num_rows / 3; ++i) {
         result[i].x = work_result[3 * i];
         result[i].y = work_result[3 * i + 1];
         result[i].z = work_result[3 * i + 2];
     }
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+    }
+#endif
 }
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'vector3's */
@@ -304,6 +315,9 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
     result_sparse->init(num_rows_result, num_entries_result, entries_result, key_result, col_indices_result);
 
     // Release big one
+    for(i = 0; i < num_rows_result; ++i) {
+        delete[] result_dense[i];
+    }
     delete[] result_dense;
     return result_sparse;
 }
