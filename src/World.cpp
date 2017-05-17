@@ -53,6 +53,7 @@ World::World() {
     checkpoint_out = NULL;
     vdw_solver = NULL;
     Seeds = NULL;
+    num_seeds = 0;
     blob_corr = NULL;
 
     kineticenergy = 0.0;
@@ -110,6 +111,7 @@ World::~World() {
     }
     delete[] Seeds;
     Seeds = NULL;
+    num_seeds = 0;
 
     total_num_surface_faces = 0;
 

@@ -48,6 +48,8 @@ Face::~Face() {
     n[0] = NULL;
     n[1] = NULL;
     n[2] = NULL;
+    if (dealloc_n3) delete n[3];
+    dealloc_n3 = false;
     n[3] = NULL;
     e = NULL;
     vdw_interaction_type = -1;
@@ -66,8 +68,6 @@ Face::~Face() {
     // vdw_xz_force = NULL; // DEPRECATED
     // vdw_xz_energy = 0.0; // DEPRECATED
     daddy_blob = NULL;
-    if (dealloc_n3) delete n[3];
-    dealloc_n3 = false;
 }
 
 int Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params) {
