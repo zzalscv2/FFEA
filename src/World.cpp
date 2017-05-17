@@ -3703,7 +3703,7 @@ void World::print_evecs_to_file(string fname, Eigen_MatrixX ev, int num_rows, in
     //    }
     //    fprintf(fout, "\n");
     //}
-    //fclose(fout);
+    fclose(fout);
 }
 
 void World::print_evals_to_file(string fname, Eigen_VectorX ev, int num_modes, scalar scale) {
