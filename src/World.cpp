@@ -2180,8 +2180,8 @@ int World::read_and_build_system(vector<string> script_vector) {
     // Reading variables
     FFEA_input_reader *systemreader = new FFEA_input_reader();
     int i, j;
-    string tag, lrvalue[2]; //, maplvalue[2];
-    vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, param_vector, spring_vector, binding_vector;
+    string lrvalue[2]; //, maplvalue[2];
+    vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, spring_vector;
     vector<string>::iterator it;
 
     vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, beads;
@@ -2191,7 +2191,6 @@ int World::read_and_build_system(vector<string> script_vector) {
     scalar scale = 1, compress = 1;
     int solver = FFEA_NOMASS_CG_SOLVER;
     vector<int> motion_state;
-    vector<int>::iterator maps_conf_ind_it;
 
     vector<Blob_conf> blob_conf;
 
