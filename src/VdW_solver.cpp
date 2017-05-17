@@ -240,7 +240,6 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // Get the interaction LJ parameters for these two face types
     scalar vdw_eps = 0.0, vdw_r_eq = 0.0;
     lj_matrix->get_LJ_params(f1->vdw_interaction_type, f2->vdw_interaction_type, &vdw_eps, &vdw_r_eq);
-
     vector3 p[num_tri_gauss_quad_points], q[num_tri_gauss_quad_points];
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
 
@@ -332,6 +331,7 @@ bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state
 
         Face *f_j = l_j->obj;
         // 1 - Check that faces are facing each other, if not then they are not interacting
+	//cout << f_i->normal[0]*f_j->normal[0] + f_i->normal[1]*f_j->normal[1] + f_i->normal[2]*f_j->normal[2] << endl;
         if ( (f_i->normal[0]*f_j->normal[0] +
                 f_i->normal[1]*f_j->normal[1] +
                 f_i->normal[2]*f_j->normal[2]) > ffea_const::zero ) return false;
@@ -597,6 +597,7 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
             force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
         }
     }
+    cout << mag_r * mesoDimensions::length << " " << vdw_r_eq * mesoDimensions::length << endl;
 }
 
 void VdW_solver::calc_ljinterpolated_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
@@ -658,5 +659,6 @@ void VdW_solver::calc_ljinterpolated_force_pair_matrix(vector3 (&force_pair_matr
             }
         }
     }
+   // cout << mag_r * mesoDimensions::length << " " << vdw_r_eq * mesoDimensions::length << endl;
 
 }
