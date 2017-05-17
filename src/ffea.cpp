@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
     }
 
     /* World is initialised. How shall we run FFEA? */
-    int myreturn;
+    int myreturn = FFEA_OK;
     if(mode == 0) {
 
         // Full FFEA
@@ -206,10 +206,8 @@ int main(int argc, char *argv[])
         cout << "\tFirstly, lets decide which blobs to analyse!" << endl << endl;
         set<int> blobs;
         int ablob;
-        int error;
         string buf;
         while(true) {
-            error = 0;
             try {
                 cout << "\t\tEnter an index for the blob you would like an elastic network model for, or type 'q' to finish?:";
 
