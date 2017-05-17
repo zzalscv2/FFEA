@@ -333,16 +333,20 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         int num_active_rng = num_threads;
         if (params.calc_kinetics) num_active_rng += 1;
         int nlines = checkpoint_v.size();
-        cout << nlines << endl;
 
         num_seeds = max(num_active_rng,num_seeds_read);
+
+        // Allocate Seeds:
         Seeds = new unsigned long *[num_seeds];
+        for (int i=0; i<num_seeds; ++i) {
+           Seeds[i] = new unsigned long [6]; 
+           fill_n(Seeds[i], 6, 0); // fill the array with zeroes.
+        }
         // RNG.1.4 - get Seeds :
         int cnt_seeds = 0;
         for(int i = 1; i < num_stress_seeds_read + 1; ++i) {
             vector <string> vline;
             boost::split(vline, checkpoint_v[i], boost::is_any_of(" "));
-            Seeds[cnt_seeds] = new unsigned long [6];
             // there must be 6 integers per line:
             if (vline.size() != 6) {
                 FFEA_ERROR_MESSG("ERROR reading seeds\n")
@@ -358,10 +362,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
 
         // If kinetics active, one more seed to get (on line num_threads + 2)
+        //   Trying to get this seed is essential: if we fail, it means that
+        //   the previous run did not use kinetics, which is assumed later 
+        //   when initialising the RngStream for the kinetics.
         if(params.calc_kinetics) {
             vector <string> vline;
             boost::split(vline, checkpoint_v[num_threads + 2], boost::is_any_of(" "));
-            Seeds[cnt_seeds] = new unsigned long [6];
             // there must be 6 integers per line:
             if (vline.size() != 6) {
                 FFEA_ERROR_MESSG("ERROR reading seeds\n")

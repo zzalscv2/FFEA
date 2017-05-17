@@ -35,6 +35,7 @@
 #include <vector>
 #include <omp.h>
 #include <ctime>
+#include <algorithm>
 
 #include <boost/algorithm/string.hpp>
 #include <typeinfo>
