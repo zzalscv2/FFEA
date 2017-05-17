@@ -28,7 +28,8 @@
 //if 0 < r < rm, intermediate soft core potential
 // if r > rm, lennard-jones
 
-/** do_volumeExclusion calculates the force (and not the energy, yet) of two tetrahedra */
+
+    /**Calculates LJSteric forces modified with periodic boundary correction in distance calculation*/
 void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
 
     bool lj = true;
