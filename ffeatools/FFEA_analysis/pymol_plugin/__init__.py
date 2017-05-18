@@ -25,8 +25,9 @@ import sys, os, time
 import numpy as np
 
 from pymol import cmd
-# if (cmd.get_version()[1] < 1.7):
-#   print "you need a newer version!!"
+if (cmd.get_version()[1] < 1.7):
+   print "You are running PyMOL v ", cmd.get_version()[1], " but the FFEAPlugin needs a version higher than 1.7"
+   raise Exception("FFEAPlugin --- You need a version higher than 1.7 to run the FFEAPlugin")
 
 from pymol.callback import Callback
 import warnings
