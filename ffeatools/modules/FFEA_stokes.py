@@ -21,7 +21,7 @@
 #  the research papers on the package.
 #
 
-from os import path
+import sys, os
 from time import sleep
 from numpy import pi
 
@@ -31,31 +31,48 @@ class FFEA_stokes:
 	
 		self.reset()
 
+		# Empty fname give an empty object
+		if fname == "":
+			return
+
 		try:
 			self.load(fname)
-		except:
-			return
+
+		except FFEAFormatError as e:
+			self.reset()
+			print_error()
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
+			raise
+
+		except FFEAIOError as e:
+			self.reset()
+			print_error()
+			print("Input error for file " + e.fname)
+			if e.fext != [""]:
+				print("       Acceptable file types:")
+				for ext in e.fext:
+					print("       " + ext)
+		except IOError:
+			raise
 
 	def load(self, fname):
 
-		print("Loading FFEA stokes file...")
+		sys.stdout.write("Loading FFEA stokes file...")
 
-		# Test file exists
-		if not path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
-			return
-	
 		# File format?
-		base, ext = path.splitext(fname)
-		if ext == ".stokes":
-			try:
+		base, ext = os.path.splitext(fname)
+		try:
+			if ext == ".stokes":
 				self.load_stokes(fname)
-    				self.valid = True
-			except:
-				print("\tUnable to load FFEA_stokes from " + fname + ". Returning empty object...")
+			else:
+				raise FFEAIOError(fname=fname, fext=[".stokes"])
 
-		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+		except:
+			raise
+
+		self.valid = True
+		sys.stdout.write("done!\n")
+
 
 	def load_stokes(self, fname):
 
@@ -63,8 +80,6 @@ class FFEA_stokes:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Test format

@@ -116,9 +116,18 @@ class Blob:
 		# Try to load
 		try:
 			self.node = FFEA_node.FFEA_node(c.nodes)
+		except:
+			print("\nERROR: '" + c.nodes + "' could not be loaded.")
+			raise
+		try:
 			self.surf = FFEA_surface.FFEA_surface(c.surface)
+		except:
+			print("\nERROR: '" + c.surface + "' could not be loaded.")
+			raise
+		try:
 			self.vdw = FFEA_vdw.FFEA_vdw(c.vdw)
 		except:
+			print("\nERROR: '" + c.vdw + "' could not be loaded.")
 			raise
 
 		# Successfully loaded, but structurally incorrect
@@ -132,10 +141,23 @@ class Blob:
 			# Try to load
 			try:
 				self.top = FFEA_topology.FFEA_topology(c.topology)
+			except:
+				print("\nERROR: '" + c.topology + "' could not be loaded.")
+				raise
+			try:
 				self.mat = FFEA_material.FFEA_material(c.material)
+			except:
+				print("\nERROR: '" + c.material + "' could not be loaded.")
+				raise
+			try:
 				self.stokes = FFEA_stokes.FFEA_stokes(c.stokes)
+			except:
+				print("\nERROR: '" + c.stokes + "' could not be loaded.")
+				raise
+			try:
 				self.pin = FFEA_pin.FFEA_pin(c.pin)
 			except:
+				print("\nERROR: '" + c.pin + "' could not be loaded.")
 				raise
 
 			# Successfully loaded, but structurally incorrect

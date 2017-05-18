@@ -333,7 +333,7 @@ class FFEA_viewer_control_window:
 			try:
 				new_blob.load(idnum, bindex, cindex, self.script)
 			except:
-				"Error loading Blob %d, conforamtion %d. Please try again." % (bindex, cindex)
+				print("ERROR: Could not load Blob %d, conforamtion %d. Please try again." % (bindex, cindex))
 				return
 
 			new_blob.set_num_loads(self.num_loads)
