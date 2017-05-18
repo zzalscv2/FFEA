@@ -79,11 +79,16 @@ Blob::Blob() {
     pinned_nodes_list = NULL;
     bsite_pinned_nodes_list.clear();
 
+    num_contributing_faces = NULL;
+
     pbc_count[0]= 0;
     pbc_count[1]= 0;
     pbc_count[2]= 0;
 
     toBePrinted_nodes = NULL;
+
+    poisson_surface_matrix = NULL;
+    poisson_interior_matrix = NULL;
 }
 
 Blob::~Blob() {
@@ -197,6 +202,11 @@ Blob::~Blob() {
 
     delete[] num_contributing_faces;
     num_contributing_faces = NULL;
+
+    delete poisson_surface_matrix;
+    delete poisson_interior_matrix;
+    poisson_surface_matrix = NULL;
+    poisson_interior_matrix = NULL;
 }
 
 
