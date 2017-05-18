@@ -21,7 +21,7 @@
 #  the research papers on the package.
 #
 
-from os import path
+import sys, os
 from time import sleep
 
 class FFEA_vdw:
@@ -30,32 +30,46 @@ class FFEA_vdw:
 	
 		self.reset()
 
-		if fname != "":
-			self.load(fname)
-		else:
-			print("No filename specified. Empty object created.")
+		if fname == "":
 			return
+
+		try:
+			self.load(fname)
+
+		except FFEAFormatError as e:
+			self.reset()
+			print_error()
+			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			raise
+
+		except FFEAIOError as e:
+			self.reset()
+			print_error()
+			print "Input error for file " + e.fname
+			if e.fext != [""]:
+				print "       Acceptable file types:"
+				for ext in e.fext:
+					print "       " + ext
+		except IOError:
+			raise
 
 	def load(self, fname):
 
-		print("Loading FFEA vdw file...")
+		sys.stdout.write("Loading FFEA vdw file...")
 
-		# Test file exists
-		if not path.exists(fname):
-			raise IOError("\tFile '" + fname + "' not found.")
-	
 		# File format?
-		base, ext = path.splitext(fname)
-		if ext == ".vdw":
-			try:
+		base, ext = os.path.splitext(fname)
+		try:
+			if ext == ".vdw":
 				self.load_vdw(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_vdw from " + fname + ".")
-				raise
+			else:
+				raise FFEAIOError(fname=fname, fext=[".vdw"])
 
-		else:
-			raise IOError("\tUnrecognised file extension '" + ext + "'.")
+		except:
+			raise
+	
+		self.valid = True
+		sys.stdout.write("done!\n")
 
 	def load_vdw(self, fname):
 
@@ -63,7 +77,6 @@ class FFEA_vdw:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found. Returning empty object...")
 			raise
 
 		# Test format

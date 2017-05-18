@@ -32,45 +32,50 @@ class FFEA_topology:
 	
 		self.reset()
 
+		if fname == "":
+			return
+
 		try:
 			self.load(fname)
-		except:
-			return
+
+		except FFEAFormatError as e:
+			self.reset()
+			print_error()
+			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			raise
+
+		except FFEAIOError as e:
+			self.reset()
+			print_error()
+			print "Input error for file " + e.fname
+			if e.fext != [""]:
+				print "       Acceptable file types:"
+				for ext in e.fext:
+					print "       " + ext
+		except IOError:
+			raise
 
 	def load(self, fname):
 
-		print("Loading FFEA topology file...")
+		sys.stdout.write("Loading FFEA topology file...")
 
-		# Test file exists
-		if not os.path.exists(fname):
-			print("\tFile '" + fname + "' not found. Returning empty object...")
-			return
-	
 		# File format?
 		base, ext = os.path.splitext(fname)
-		if ext == ".top":
-			try:
+		try:
+			if ext == ".top":
 				self.load_top(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
-
-		elif ext == ".ele":
-			try:
+			elif ext == ".ele":
 				self.load_ele(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
-
-		elif ext == ".vol":
-			try:
+			elif ext == ".vol":
 				self.load_vol(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_topology from " + fname + ". Returning empty object...")
+			else:
+				raise FFEAIOError(fname=fname, fext=[".top", ".ele", ".vol"])
 
-		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+		except:
+			raise
+
+		self.valid = True
+		sys.stdout.write("done!\n")
 
 	def load_top(self, fname):
 
@@ -78,8 +83,6 @@ class FFEA_topology:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Test format
@@ -124,8 +127,6 @@ class FFEA_topology:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Find start of elements
@@ -167,8 +168,6 @@ class FFEA_topology:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Test format

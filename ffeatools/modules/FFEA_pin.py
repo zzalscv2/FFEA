@@ -21,7 +21,7 @@
 #  the research papers on the package.
 #
 
-from os import path
+import sys, os
 from time import sleep
 import numpy as np
 
@@ -31,38 +31,47 @@ class FFEA_pin:
 	
 		self.reset()
 
+		# Empty fname give an empty object
+		if fname == "":
+			return
+
 		try:
 			self.load(fname)
-		except:
-			return
+
+		except FFEAFormatError as e:
+			self.reset()
+			print_error()
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
+			raise
+
+		except FFEAIOError as e:
+			self.reset()
+			print_error()
+			print("Input error for file " + e.fname)
+			if e.fext != [""]:
+				print("       Acceptable file types:")
+				for ext in e.fext:
+					print("       " + ext)
+		except IOError:
+			raise
 
 	def load(self, fname):
 
-		print("Loading FFEA pin file...")
+		sys.stdout.write("Loading FFEA pin file...")
 
-		# Test file exists
-		if not path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
-			return
-	
 		# File format?
-		base, ext = path.splitext(fname)
-		if ext == ".pin":
-			try:
+		base, ext = os.path.splitext(fname)
+		try:
+			if ext == ".pin":
 				self.load_pin(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_pin from " + fname + ". Returning empty object...")
+			else:
+				raise FFEAIOError(fname=fname, fext=[".pin"])
 
-		elif ext == ".bsites":
-			try:
-				self.load_bsites(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_pin from " + fname + ". Returning empty object...")
+		except:
+			raise
 
-		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+		self.valid = True
+		sys.stdout.write("done!\n")
 
 	def load_pin(self, fname):
 
@@ -70,8 +79,6 @@ class FFEA_pin:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Test format

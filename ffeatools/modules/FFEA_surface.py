@@ -21,9 +21,10 @@
 #  the research papers on the package.
 #
 
-import os
+import sys, os
 from time import sleep
 import numpy as np
+from FFEA_exceptions import *
 
 class FFEA_surface:
 
@@ -31,31 +32,52 @@ class FFEA_surface:
 	
 		self.reset()
 
-		self.load(fname)
+		if fname == "":
+			return
+
+		try:
+			self.load(fname)
+
+		except FFEAFormatError as e:
+			self.reset()
+			print_error()
+			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			raise
+
+		except FFEAIOError as e:
+			self.reset()
+			print_error()
+			print "Input error for file " + e.fname
+			if e.fext != [""]:
+				print "       Acceptable file types:"
+				for ext in e.fext:
+					print "       " + ext
+		except IOError:
+			raise
 
 	def load(self, fname=""):
 
-		print("Loading FFEA surface file...")
-
-		if fname=="":
-			print("\tCreating empty object...")
-			return
+		sys.stdout.write("Loading FFEA surface file...")
 	
 		# File format?
 		base, ext = os.path.splitext(fname)
-		if ext == ".surf":
-			self.load_surf(fname)
-		elif ext == ".face":
-			self.load_face(fname)
-		elif ext == ".stl":
-			self.load_stl(fname)
-		elif ext == ".vol":
-			self.load_vol(fname)
-		else:
-			raise IOError("Unrecognised file extension '" + ext + "'.")
+		try:
+			if ext == ".surf":
+				self.load_surf(fname)
+			elif ext == ".face":
+				self.load_face(fname)
+			elif ext == ".stl":
+				self.load_stl(fname)
+			elif ext == ".vol":
+				self.load_vol(fname)
+			else:
+				raise FFEAIOError(fname=fname, fext=[".surf", ".stl", ".face", ".vol"])
+
+		except:
+			raise
 
 		self.valid = True
-		return
+		sys.stdout.write("done!\n")
 
 	def load_surf(self, fname):
 
@@ -63,7 +85,7 @@ class FFEA_surface:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			raise IOError("File '" + fname + "' not found.")
+			raise
 
 		# Test format
 		line = fin.readline().strip()
@@ -115,8 +137,6 @@ class FFEA_surface:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found.")
-			self.reset()
 			raise
 
 		# Get all lines
@@ -169,8 +189,7 @@ class FFEA_surface:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			self.reset()
-			raise IOError("\tFile '" + fname + "' not found.")
+			raise
 
 		lines = fin.readlines()
 		fin.close()

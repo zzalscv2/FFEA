@@ -21,7 +21,7 @@
 #  the research papers on the package.
 #
 
-from os import path
+import sys, os
 from time import sleep
 import numpy as np
 from FFEA_topology import FFEA_topology
@@ -59,24 +59,21 @@ class FFEA_material:
 
 	def load(self, fname):
 
-		print("Loading FFEA material file...")
+		sys.stdout.write("Loading FFEA material file...")
 
-		# Test file exists
-		if not path.exists(fname):
-			print(fname + " not found.")
-			raise IOError
-	
 		# File format?
-		base, ext = path.splitext(fname)
-		if ext == ".mat":
-			try:
+		base, ext = os.path.splitext(fname)
+		try:
+			if ext == ".mat":
 				self.load_mat(fname)
-				self.valid = True
-			except:
-				raise IOError
+			else:
+				raise FFEAIOError(fname=fname, fext=[".mat"])
 
-		else:
-			raise FFEAIOError(fname=fname, fext=[".mat"])
+		except:
+			raise
+
+		self.valid = True
+		sys.stdout.write("done!\n")
 
 	def load_mat(self, fname):
 
