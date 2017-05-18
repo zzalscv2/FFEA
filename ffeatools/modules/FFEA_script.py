@@ -374,8 +374,8 @@ class FFEA_script:
 
 		# Default params, but change fnames
 		self.params = FFEA_script_params()
-		self.params.trajectory_out_fname = basename + "_trajectory.ftj"
-		self.params.measurement_out_fname = basename + "_measurement.fm"
+		self.params.trajectory_out_fname = basename + ".ftj"
+		self.params.measurement_out_fname = basename + ".fm"
 		self.params.vdw_forcefield_params = basename + ".lj"
 
 		# Default, single blob, containing 1 conformation and no kinetics
