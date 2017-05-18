@@ -38,6 +38,7 @@ using namespace std;
 typedef struct {
     int column_index;
     vector<scalar *> source_list;
+
 } sparse_contribution_location;
 
 class SparsityPattern {
