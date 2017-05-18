@@ -263,7 +263,7 @@ class FFEA_topology:
 			e = self.element[i]
 
 			if len(e.n) == 10:
-				print "Error. Functionality not yet available for 2nd order elements"
+				print("Error. Functionality not yet available for 2nd order elements")
 				return
 
 			for j in range(4):
@@ -306,7 +306,7 @@ class FFEA_topology:
 
 		# Don't continue without surface (we could do, but it's slow)
 		if surf == None:
-			print "Cannot calculate interior elements without an associated surface (currently)."
+			print("Cannot calculate interior elements without an associated surface (currently).")
 			return
 
 		# Don't continue if we're already done
@@ -365,7 +365,7 @@ class FFEA_topology:
 		try:
 			testEl = self.element[index]
 		except(IndexError):
-			print "Element ", index, " does not exist."
+			print("Element ", index, " does not exist.")
 			return False
 
 		# First, see if already calculated. Else, set default assumption
@@ -419,7 +419,7 @@ class FFEA_topology:
 		# Check current order (function currently only for 1st order - 2nd order)
 		for e in self.element:
 			if len(e.n) == 10:
-				print "Error. Increasing to order > 2 is currently not supported"
+				print("Error. Increasing to order > 2 is currently not supported")
 				return
 
 		# Get a unique edge list (edge is two nodes, and a potential 3rd node)
@@ -592,7 +592,6 @@ class FFEA_topology:
 					newnin = node.num_nodes - 1
 
 					# Now renumber all nodes (to new node if in old element, else, to the new position in the node list)
-					print nodestorenumber
 					for j in range(self.num_elements):
 						for k in range(len(self.element[j].n)):
 							if self.element[j].n[k] in nodestorenumber:
@@ -634,7 +633,7 @@ class FFEA_topology:
 					self.num_interior_elements -= 1
 					break
 					'''
-		print "Culled %d elements with volume < %e." % (culled_elements, limitvol)
+		print ("Culled %d elements with volume < %e." % (culled_elements, limitvol))
 
 	def get_smallest_lengthscale(self, node):
 
@@ -657,9 +656,9 @@ class FFEA_topology:
 
 	def print_details(self):
 
-		print "num_elements = %d" % (self.num_elements)
-		print "num_surface_elements = %d" % (self.num_surface_elements)
-		print "num_interior_elements = %d" % (self.num_interior_elements)
+		print ("num_elements = %d" % (self.num_elements))
+		print ("num_surface_elements = %d" % (self.num_surface_elements))
+		print ("num_interior_elements = %d" % (self.num_interior_elements))
 		sleep(1)
 
 		for e in self.element:
@@ -672,12 +671,12 @@ class FFEA_topology:
 			for n in e.n:
 				outline += str(n) + " "
 
-			print outline
+			print (outline)
 
 	def write_to_file(self, fname):
 
 
-		print "Writing to " + fname + "..."
+		print("Writing to " + fname + "...")
 
 		# Write differently depending on format
 		base, ext = os.path.splitext(fname)
@@ -707,12 +706,12 @@ class FFEA_topology:
 					fout.write("%d " % (n))
 				fout.write("\n")
 		else:
-			print "Extension not recognised"
+			print("Extension not recognised")
 			raise IOError
 
 
 		fout.close()
-		print "done!"
+		print("done!")
 
 	def calc_mass(self, mat, node, scale = 1.0):
 	
