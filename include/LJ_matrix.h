@@ -37,6 +37,8 @@ using namespace std;
 
 class LJ_pair {
 public:
+    LJ_pair();
+    ~LJ_pair();
     scalar vdw_eps;
     scalar vdw_r_eq;
 };

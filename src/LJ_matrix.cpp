@@ -22,6 +22,16 @@
 //
 
 #include "LJ_matrix.h"
+LJ_pair::LJ_pair() {
+    vdw_eps = 0;
+    vdw_r_eq = 0;
+}
+
+
+LJ_pair::~LJ_pair() {
+    vdw_eps = 0;
+    vdw_r_eq = 0;
+}
 
 LJ_matrix::LJ_matrix() {
     params = NULL;

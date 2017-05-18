@@ -30,6 +30,12 @@ SparsityPattern::SparsityPattern() {
 }
 
 SparsityPattern::~SparsityPattern() {
+    list<sparse_contribution_location*>::iterator it;
+    for(int i = 0; i < num_rows; ++i) {
+        for (it = row[i].begin(); it != row[i].end(); ++it) {
+	    delete (*it);
+	}	
+    }
     delete[] row;
     num_rows = 0;
     row = NULL;
