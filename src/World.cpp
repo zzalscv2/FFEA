@@ -49,6 +49,7 @@ World::World() {
     trajectory_out = NULL;
     measurement_out = NULL;
     detailed_meas_out = NULL;
+    writeDetailed = true;
     kinetics_out = NULL;
     checkpoint_out = NULL;
     vdw_solver = NULL;
@@ -56,6 +57,8 @@ World::World() {
     num_seeds = 0;
     blob_corr = NULL;
 
+    ffeareader = NULL;
+    systemreader = NULL;
     kineticenergy = 0.0;
     strainenergy = 0.0;
     springenergy = 0.0;
@@ -120,17 +123,30 @@ World::~World() {
     box_dim.z = 0;
     step_initial = 0;
 
+    fclose(trajectory_out);
+    fclose(measurement_out);
+    fclose(checkpoint_out);
+    if(writeDetailed) {
+	fclose(detailed_meas_out);
+    }
+    writeDetailed = false;
+    if(params.calc_kinetics == 1) {
+	fclose(kinetics_out);
+    }
     trajectory_out = NULL;
     measurement_out = NULL;
-
+    checkpoint_out = NULL;
+    detailed_meas_out = NULL;
     kinetics_out = NULL;
 
-    checkpoint_out = NULL;
 
-    detailed_meas_out = NULL;
     delete vdw_solver; 
     vdw_solver = NULL;
 
+    delete ffeareader;
+    delete systemreader;
+    ffeareader = NULL;
+    systemreader = NULL;
     kineticenergy = 0.0;
     strainenergy = 0.0;
     springenergy = 0.0;
@@ -161,13 +177,13 @@ World::~World() {
  * initialise BEM PBE solver
  * */
 
-int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeDetailed) {
+int World::init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeDetail) {
 
     // Set some constants and variables
+    this->writeDetailed = writeDetail;
     int i, j, k;
 
     string buf_string;
-    FFEA_input_reader *ffeareader;
     ffeareader = new FFEA_input_reader();
 #ifdef USE_MPI
     double st,et;
@@ -994,8 +1010,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     et = MPI::Wtime() -st;
     cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
 #endif
-
-    delete ffeareader;
 
     return FFEA_OK;
 }
@@ -2178,7 +2192,7 @@ int World::read_and_build_system(vector<string> script_vector) {
     if (params.force_pbc ==1) blob_corr = new scalar[params.num_blobs*params.num_blobs*3];
 
     // Reading variables
-    FFEA_input_reader *systemreader = new FFEA_input_reader();
+    systemreader = new FFEA_input_reader();
     int i, j;
     string lrvalue[2]; //, maplvalue[2];
     vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, spring_vector;
@@ -2697,8 +2711,6 @@ int World::read_and_build_system(vector<string> script_vector) {
             return FFEA_ERROR;
         }
     }
-
-    delete systemreader; 
 
     return FFEA_OK;
 }

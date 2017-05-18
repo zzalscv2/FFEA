@@ -34,6 +34,7 @@ NoMassCGSolver::NoMassCGSolver() {
     z = NULL;
     q = NULL;
     f = NULL;
+    V = NULL;
 }
 
 /* */
@@ -54,6 +55,8 @@ NoMassCGSolver::~NoMassCGSolver() {
     num_nodes = 0;
     epsilon2 = 0;
     i_max = 0;
+    delete V;
+    V = NULL;
 }
 
 /* */
@@ -138,7 +141,9 @@ int NoMassCGSolver::init(int num_nodes, int num_elements, mesh_node *node, tetra
     // Creating fixed pattern viscosity matrix, but not entering values! Just making the pattern for now
     //printf("\t\t\tBuilding Sparsity Pattern for Viscosity Matrix\n");
     V = sparsity_pattern_viscosity_matrix.create_sparse_matrix();
-
+    //V->build();
+    //delete V;
+    //return FFEA_ERROR;
     // create a preconditioner for solving in less iterations
     // Create the jacobi preconditioner matrix (diagonal)
     preconditioner = new(std::nothrow) scalar[num_rows];
