@@ -239,7 +239,7 @@ class FFEA_surface:
 
 			if success != 1:
 				print("Face " + str(index) + " could not be found in the topology structure. This topology cannot be paired with this surface. Regenerating surface...")
-				print "Face in error = ", self.face[index].n
+				print("Face in error = ", self.face[index].n)
 				for f in self.face:
 					f.elindex = None
 				return -1
@@ -302,7 +302,7 @@ class FFEA_surface:
 
 	def print_details(self):
 
-		print "num_faces = %d" % (self.num_faces)
+		print ("num_faces = %d" % (self.num_faces))
 		sleep(1)
 
 		index = -1
@@ -316,11 +316,11 @@ class FFEA_surface:
 			if f.elindex != None:
 				outline += ", Parent Element = %d" % (f.elindex)
 
-			print outline
+			print (outline)
 	
 	def write_to_file(self, fname, node=None):
 
-		print "Writing to " + fname + "..."
+		print ("Writing to " + fname + "...")
 
 		# Write differently depending on format
 		base, ext = os.path.splitext(fname)
@@ -351,7 +351,7 @@ class FFEA_surface:
 
 		elif ext == ".obj":
 			if node == None:
-				print "Error. Cannot write to '.obj' format without an associated 'node' object"
+				print ("Error. Cannot write to '.obj' format without an associated 'node' object")
 				raise IOError
 			
 			fout=open(fname, "w")
@@ -362,11 +362,11 @@ class FFEA_surface:
 				fout.write("f %d %d %d\n" % (f.n[0], f.n[1], f.n[2]))
 			
 		else:
-			print "Extension not recognised"
+			print ("Extension not recognised")
 			raise IOError
 
 		fout.close()
-		print "done!"
+		print ("done!")
 
 	def reset(self):
 
@@ -384,7 +384,7 @@ class FFEA_face:
 
 		# Test for correct number of nodes
 		if len(alist) != len(self.n):
-			print "Incorrect number of nodes for assignment to this face type."
+			print ("Incorrect number of nodes for assignment to this face type.")
 			return
 
 		for i in range(len(self.n)):

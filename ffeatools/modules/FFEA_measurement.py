@@ -28,13 +28,13 @@ import numpy as np
 # MatPlotLib conflicts with PyMOL horribly:
 plt = False
 modules = sys.modules.keys()
-if modules.count("pymol") == 0:
+if not "pymol" in modules:
   try:
     import matplotlib.pyplot as plt
   except:
     pass
 else:
-  print "FFEA_measurement will not load matplotlib, as it conflicts with PyMOL"
+  print("FFEA_measurement will not load matplotlib, as it conflicts with PyMOL")
 
 class FFEA_measurement:
 
@@ -285,9 +285,9 @@ class FFEA_measurement:
 		globalfname = fname
 		blobfname = path.splitext(fname)[0] + ".fdm"
 
-		print "Writing Measurements to file:\n\tGlobal Will be written to %s" % (globalfname)
+		print("Writing Measurements to file:\n\tGlobal Will be written to %s" % (globalfname))
 		if self.blob_meas != []:
-			print "\tDetailed will be written to %s\n" % (blobfname)
+			print("\tDetailed will be written to %s\n" % (blobfname))
 
 
 		#
