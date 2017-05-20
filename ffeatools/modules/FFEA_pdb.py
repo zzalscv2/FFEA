@@ -43,17 +43,17 @@ class FFEA_pdb:
 		except FFEAFormatError as e:
 			self.reset()
 			print_error()
-			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
 			raise
 
 		except FFEAIOError as e:
 			self.reset()
 			print_error()
-			print "Input error for file " + e.fname
+			print("Input error for file " + e.fname)
 			if e.fext != [""]:
-				print "       Acceptable file types:"
+				print("       Acceptable file types:")
 				for ext in e.fext:
-					print "       " + ext
+					print("       " + ext)
 		except IOError:
 			raise
 
@@ -224,7 +224,7 @@ class FFEA_pdb:
 
 	def write_to_file(self, fname):
 
-		print "Writing to " + fname + "..."
+		print("Writing to " + fname + "...")
 
 		# Write differently depending on format
 		base, ext = os.path.splitext(fname)
@@ -253,7 +253,7 @@ class FFEA_pdb:
 			fout.write("ENDMDL\n")
 		fout.write("END\n")
 		sys.stdout.write("\r\r100%% of frames written\n")
-		print "...done"
+		print("...done")
 		fout.close()
 	
 	def build_from_traj(self, traj, scale = 1.0):

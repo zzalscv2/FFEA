@@ -39,17 +39,17 @@ class FFEA_vdw:
 		except FFEAFormatError as e:
 			self.reset()
 			print_error()
-			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
 			raise
 
 		except FFEAIOError as e:
 			self.reset()
 			print_error()
-			print "Input error for file " + e.fname
+			print("Input error for file " + e.fname)
 			if e.fext != [""]:
-				print "       Acceptable file types:"
+				print("       Acceptable file types:")
 				for ext in e.fext:
-					print "       " + ext
+					print("       " + ext)
 		except IOError:
 			raise
 
@@ -116,14 +116,14 @@ class FFEA_vdw:
 	
 	def print_details(self):
 
-		print "num_faces = %d" % (self.num_faces)
+		print("num_faces = %d" % (self.num_faces))
 		sleep(1)
 
 		outline = ""
 		for i in self.index:
 			outline += "%d " % (i)
 			
-		print outline
+		print(outline)
 
 	def write_to_file(self, fname):
 		

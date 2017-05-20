@@ -41,19 +41,18 @@ class FFEA_node:
 		except FFEAFormatError as e:
 			self.reset()
 			print_error()
-			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
 			raise
 
 		except FFEAIOError as e:
 			self.reset()
 			print_error()
-			print "Input error for file " + e.fname
+			print("Input error for file " + e.fname)
 			if e.fext != [""]:
-				print "       Acceptable file types:"
+				print("       Acceptable file types:")
 				for ext in e.fext:
-					print "       " + ext
+					print("       " + ext)
 		except IOError:
-			print("hi")
 			raise
 
 	def load(self, fname, findex = 0):
@@ -248,7 +247,7 @@ class FFEA_node:
 				self.pos.append(n)
 			else:
 				self.pos = np.append(self.pos, [n], axis=0)
-		except IndexError, ValueError:
+		except(IndexError, ValueError):
 			raise
 
 		self.num_nodes += 1
@@ -264,7 +263,7 @@ class FFEA_node:
 
 		# We must have a topology and an associated surface, otherwise interior makes no sense
 		if top == None or surf == None:
-			print "Error. Cannot proceed without both a topology and a surface."
+			print("Error. Cannot proceed without both a topology and a surface.")
 			return
 		
 		# Don't continue if we're already done
@@ -300,7 +299,7 @@ class FFEA_node:
 
 		# Alter order of nodes
 		oldpos = self.pos
- 		self.pos = [None for i in range(self.num_nodes)]
+		self.pos = [None for i in range(self.num_nodes)]
 
 		for n in range(len(amap)):
 			self.pos[amap[n]] = oldpos[n]
@@ -345,9 +344,9 @@ class FFEA_node:
 
 	def print_details(self):
 
-		print "num_nodes = %d" % (self.num_nodes)
-		print "num_surface_nodes = %d" % (self.num_surface_nodes)
-		print "num_interior_nodes = %d" % (self.num_interior_nodes)
+		print("num_nodes = %d" % (self.num_nodes))
+		print("num_surface_nodes = %d" % (self.num_surface_nodes))
+		print("num_interior_nodes = %d" % (self.num_interior_nodes))
 		sleep(1)
 
 		index = -1
@@ -361,11 +360,11 @@ class FFEA_node:
 			for xyz in n:
 				outline += "%6.3e " % (xyz)
 			
-			print outline
+			print(outline)
 	
 	def write_to_file(self, fname, surf=None):
 
-		print "Writing to " + fname + "..."
+		print("Writing to " + fname + "...")
 
 		# Write differently depending on format
 		base, ext = os.path.splitext(fname)
@@ -394,16 +393,16 @@ class FFEA_node:
 
 		elif ext == ".obj":
 			if surf == None:
-				print "Error. Cannot write to '.obj' format without an associated 'surf' object"
+				print("Error. Cannot write to '.obj' format without an associated 'surf' object")
 				raise IOError
 			else:
 				surf.write_to_file(fname, node=self)
 		else:
-			print "Extension not recognised"
+			print("Extension not recognised")
 			raise IOError
 
 		fout.close()
-		print "done!"
+		print("done!")
 
 	def scale(self, factor):
 		
@@ -454,7 +453,6 @@ class FFEA_node:
 	def rotate(self, rot):
 		
 		rot = np.array(rot)
-		print rot
 		
 		# Translate to origin
 		origin_trans = np.array([0.0,0.0,0.0]) - self.calc_centroid()

@@ -41,17 +41,17 @@ class FFEA_surface:
 		except FFEAFormatError as e:
 			self.reset()
 			print_error()
-			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
 			raise
 
 		except FFEAIOError as e:
 			self.reset()
 			print_error()
-			print "Input error for file " + e.fname
+			print("Input error for file " + e.fname)
 			if e.fext != [""]:
-				print "       Acceptable file types:"
+				print("       Acceptable file types:")
 				for ext in e.fext:
-					print "       " + ext
+					print("       " + ext)
 		except IOError:
 			raise
 
@@ -420,6 +420,12 @@ class FFEA_face:
 		e2 = node.pos[self.n[2]] - node.pos[self.n[0]]
 		norm = np.cross(e1, e2)
 		return norm * (1.0 / np.linalg.norm(norm))
+
+	def calc_area(self, node):
+
+		e1 = node.pos[self.n[1]] - node.pos[self.n[0]]
+		e2 = node.pos[self.n[2]] - node.pos[self.n[0]]
+		return 0.5 * np.linalg.norm(np.cross(e1,e2))
 
 	def calc_centroid(self, node):
 	
