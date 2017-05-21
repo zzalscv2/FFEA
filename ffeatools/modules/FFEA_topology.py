@@ -41,17 +41,17 @@ class FFEA_topology:
 		except FFEAFormatError as e:
 			self.reset()
 			print_error()
-			print "Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
 			raise
 
 		except FFEAIOError as e:
 			self.reset()
 			print_error()
-			print "Input error for file " + e.fname
+			print("Input error for file " + e.fname)
 			if e.fext != [""]:
-				print "       Acceptable file types:"
+				print("       Acceptable file types:")
 				for ext in e.fext:
-					print "       " + ext
+					print("       " + ext)
 		except IOError:
 			raise
 

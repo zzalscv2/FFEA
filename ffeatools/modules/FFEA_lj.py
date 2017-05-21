@@ -21,7 +21,7 @@
 #  the research papers on the package.
 #
 
-from os import path
+import sys, os
 
 class FFEA_lj:
 
@@ -29,31 +29,46 @@ class FFEA_lj:
 	
 		self.reset()
 
+		if fname == "":
+			return
+
 		try:
 			self.load(fname)
-		except:
-			return
+
+		except FFEAFormatError as e:
+			self.reset()
+			print_error()
+			print("Formatting error at line " + e.lin + "\nLine(s) should be formatted as follows:\n\n" + e.lstr)
+			raise
+
+		except FFEAIOError as e:
+			self.reset()
+			print_error()
+			print("Input error for file " + e.fname)
+			if e.fext != [""]:
+				print("       Acceptable file types:")
+				for ext in e.fext:
+					print("       " + ext)
+		except IOError:
+			raise
 
 	def load(self, fname):
 
-		print("Loading FFEA lj file...")
-
-		# Test file exists
-		if not path.exists(fname):
-			print("\tFile '" + fname + "' not found.")
-			return
+		sys.stdout.write("Loading FFEA LJ file...")
 	
 		# File format?
-		base, ext = path.splitext(fname)
-		if ext == ".lj":
-			try:
+		base, ext = os.path.splitext(fname)
+		try:
+			if ext == ".lj":
 				self.load_lj(fname)
-				self.valid = True
-			except:
-				print("\tUnable to load FFEA_lj from " + fname + ". Returning empty object...")
+			else:
+				raise FFEAIOError(fname=fname, fext=[".lj"])
 
-		else:
-			print("\tUnrecognised file extension '" + ext + "'.")
+		except:
+			raise
+
+		self.valid = True
+		sys.stdout.write("done!\n")
 
 	
 	def load_lj(self, fname):
@@ -109,6 +124,7 @@ class FFEA_lj:
 
 		self.num_face_types = 7
 		self.interaction = []
+		self.valid = False
 
 class FFEA_lj_pair:
 
@@ -120,3 +136,4 @@ class FFEA_lj_pair:
 
 		self.r = 0.0
 		self.eps = 0.0
+		

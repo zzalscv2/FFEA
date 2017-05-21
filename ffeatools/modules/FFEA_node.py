@@ -53,7 +53,6 @@ class FFEA_node:
 				for ext in e.fext:
 					print "       " + ext
 		except IOError:
-			print("hi")
 			raise
 
 	def load(self, fname, findex = 0):
