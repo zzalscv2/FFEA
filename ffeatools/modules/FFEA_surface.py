@@ -421,6 +421,12 @@ class FFEA_face:
 		norm = np.cross(e1, e2)
 		return norm * (1.0 / np.linalg.norm(norm))
 
+	def calc_area(self, node):
+
+		e1 = node.pos[self.n[1]] - node.pos[self.n[0]]
+		e2 = node.pos[self.n[2]] - node.pos[self.n[0]]
+		return 0.5 * np.linalg.norm(np.cross(e1,e2))
+
 	def calc_centroid(self, node):
 	
 		centroid = np.array([0.0,0.0,0.0])

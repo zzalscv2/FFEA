@@ -84,7 +84,6 @@ class FFEA_frame(FFEA_node.FFEA_node):
 				self.normal[n] += norm
 
 		for n in self.normal:
-			print n
 			n /= np.linalg.norm(n)
 
 	def set_step(self, step):
