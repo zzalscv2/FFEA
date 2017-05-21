@@ -441,6 +441,9 @@ class FFEA_script:
 	def load_measurement(self, num_frames=100000000):
 		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_fname, num_frames_to_read = num_frames)
 
+	def load_lj(self):
+		return FFEA_lj.FFEA_lj(self.params.vdw_forcefield_params)
+
 class FFEA_script_params():
 	
 	def __init__(self):
