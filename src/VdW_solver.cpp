@@ -260,7 +260,7 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // Also calculate energy whilst looping through face points
     scalar energy = 0.0;
 
-    if (vdw_type = VDW_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
+    if (vdw_type == VDW_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
              p, q, vdw_r_eq, vdw_eps, energy);
     else if (vdw_type == VDW_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
              p, q, vdw_r_eq, vdw_eps, energy);
