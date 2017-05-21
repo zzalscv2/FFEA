@@ -323,7 +323,7 @@ class FFEA_trajectory:
 	
 	def write_to_file(self, fname, frames=None, frame_rate = 1):
 
-		print "Writing trajectory to file\n\tData will be written to %s\n" % (fname)
+		print("Writing trajectory to file\n\tData will be written to %s\n" % (fname))
 
 		# Get a file object
 		fout = open(fname, "w")
@@ -421,21 +421,21 @@ class FFEA_traj_blob:
 		self.frame.append(frame)
 	
 	def set_subblob(self, pin):
-     		"""
-     		Create a subblob from a pin object.
-     		In: self, the pin object
-     		Out: the ID of the generated subblob.
-     		"""
+		"""
+		Create a subblob from a pin object.
+		In: self, the pin object
+		Out: the ID of the generated subblob.
+		"""
 
 		if max(pin.index) >= self.num_nodes:
 			raise IndexError("Error. Pinned node index %d is larger than num_nodes, %d." % (max(pin.index), self.num_nodes))
-			
+
 		self.subblob.append(pin.index)
 		self.num_subblobs += 1
 		return self.num_subblobs # let the user assign a nice friendly name to their subblob
 	
 	def calc_centroid_trajectory(self, subblob_index = -1):
-     		"""
+		"""
 		Calculate the centroid (average position of all the nodes) of a
 		given blob. You can also specify the index of a sub-blob, and get
 		the centroid of that sub-blob.
