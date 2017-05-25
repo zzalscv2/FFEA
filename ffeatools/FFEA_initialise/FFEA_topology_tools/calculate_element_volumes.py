@@ -49,38 +49,61 @@ def calculate_element_volumes(top_fname, node_fname, out_fname):
 	index = 0
 	tups = []
 	for e in top.element:
-		tups.append((index, e.calc_volume(node)))
+		tups.append((index, e.calc_volume(node), e.get_smallest_lengthscale(node)))
 		index += 1
 
 	# Sort
-	sorted_tups = sorted(tups, key=lambda tup: tup[1])
+	sorted_tupsvol = sorted(tups, key=lambda tup: tup[1])
+	sorted_tupslen = sorted(tups, key=lambda tup: tup[2])
 
 	# Write
 	if out_fname == None:
 		out_fname = os.path.splitext(top_fname)[0] + ".dat"
-	if os.path.exists(out_fname):
-		print("Output file already exists\n")
-		raise IOError
+#	if os.path.exists(out_fname):
+#		print("Output file already exists\n")
+#		raise IOError
 
 	with open(out_fname, "w") as fout:
-		fout.write("Index\tVolume\n\n")
-		x = []
-		y = []
-		for t in sorted_tups:
-			x.append(t[0])
-			y.append(t[1])
-			fout.write("%d\t%e\n" % (t[0], t[1]))
+		fout.write("Index\tVolume\t\t\tIndex\tLength\n\n")
+		x1 = []
+		y1 = []
+		x2 = []
+		y2 = []
+		for t1,t2 in zip(sorted_tupsvol, sorted_tupslen):
+			x1.append(t1[0])
+			y1.append(t1[1])
+			x2.append(t2[0])
+			y2.append(t2[2])
+			fout.write("%d\t%e\t\t%d\t%e\n" % (t1[0], t1[1], t2[0], t2[2]))
+
+	# Write important stuff
+	print("\nElement Volume Details for '" + top_fname + "':\n")
+	print("\tSmallest: Index=%d, Volume=%f, Length=%f" % (x1[0], y1[0], top.element[x1[0]].get_smallest_lengthscale(node)))
+	print("\tLargest: Index=%d, Volume=%f, Length=%f" % (x1[-1], y1[-1], top.element[x1[-1]].get_smallest_lengthscale(node)))
+	print("\tAverage: %f +/- %f" % (np.mean(y1), np.std(y1)))
+	
+	print("\n\nElement Length Details for '" + top_fname + "':\n")
+	print("\tSmallest: Index=%d, Length=%f, Volume=%f" % (x2[0], y2[0], top.element[x2[0]].calc_volume(node)))
+	print("\tLargest: Index=%d, Volume=%f, Length=%f" % (x2[-1], y2[-1], top.element[x2[-1]].calc_volume(node)))
+	print("\tAverage: %f +/- %f" % (np.mean(y2), np.std(y2)))
 
 	# Plot
-	plt.plot(y)
+	plt.figure()
+	plt.plot(y1)
 	plt.ylabel("Element Volumes")
 	plt.title("Element Volume Range")
-	plt.savefig(os.path.splitext(out_fname)[0] + ".png") 
+	plt.savefig(os.path.splitext(out_fname)[0] + "_vols.png")
+
+	plt.figure()
+	plt.plot(y2)
+	plt.ylabel("Element Lengths")
+	plt.title("Element Length Range")
+	plt.savefig(os.path.splitext(out_fname)[0] + "_lengths.png") 
 
 if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     try:
-	calculate_element_volumes(args.i[0], args.n[0], args.o[0])
+        calculate_element_volumes(args.i[0], args.n[0], args.o[0])
     except IOError:
 	parser.print_help()
     except TypeError:
