@@ -112,6 +112,7 @@ class FFEA_viewer_control_window:
      self.do_load_trajectory = StringVar(self.root, value=self.display_flags['load_trajectory'])
      self.show_box = StringVar(self.root, value=self.display_flags['show_box'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
+     self.show_danger = IntVar(self.root, value=self.display_flags['show_danger'])
      self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
      self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
@@ -152,7 +153,10 @@ class FFEA_viewer_control_window:
      # show inverted_elements: 
      check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
      check_button_show_inverted.grid(row=2, column=2, sticky=W)
- 
+
+     # show danger_elements: 
+     check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
+     check_button_show_danger.grid(row=3, column=2, sticky=W)
 
      # # show solid:
      label_solid = Label(display_flags_frame, text="Show Solid:")
@@ -862,6 +866,7 @@ class FFEA_viewer_control_window:
 		'show_mesh': "No Mesh",
 		'show_numbers': "No Indices", ## PYMOL OK
 		'show_pinned': 1,
+		'show_danger': 0,
 		'show_inverted': 1,
 		'show_vdw': 0,
 		'show_shortest_edge': 0,
