@@ -404,6 +404,17 @@ class FFEA_node:
 		fout.close()
 		print("done!")
 
+	def linearise_system(self, top):
+		
+		for e in top.element:
+			#for n in e.n[4:]:
+				#node.pos[n]
+			sindex = 4
+			for i in range(0,3,1):
+				for j in range(i + 1,4,1):
+					self.pos[e.n[sindex]] = 0.5 * (self.pos[e.n[i]] + self.pos[e.n[j]])
+					sindex += 1	
+
 	def scale(self, factor):
 		
 		self.pos *= factor
