@@ -103,7 +103,13 @@ protected:
               vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points], 
               scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy);
 
-    scalar distance2(vector3 *p, vector3 *q);
+    void calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar &vdw_eps, scalar &vdw_r_eq_6,
+                                 scalar &force_mag, scalar &e);
+
+    void calc_ljinterpolated_factors(scalar &mag_r, int index_k, int index_l, scalar &vdw_eps, scalar &vdw_r_eqi,
+                                 scalar &force_mag, scalar &e);
+
+    scalar distance2(vector3 &p, vector3 &q);
 
     scalar dot(vector3 *p, vector3 *q);
 

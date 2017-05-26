@@ -520,8 +520,8 @@ bool VdW_solver::do_steric_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 }
 
 
-scalar VdW_solver::distance2(vector3 *p, vector3 *q) {
-    scalar dx = p->x - q->x, dy = p->y - q->y, dz = p->z - q->z;
+scalar VdW_solver::distance2(vector3 &p, vector3 &q) {
+    scalar dx = p[0] - q[0], dy = p[1] - q[1], dz = p[2] - q[2];
     return dx * dx + dy * dy + dz * dz;
 }
 
@@ -567,26 +567,25 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
         vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points],
         scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy) {
 
-    scalar mag_r, mag_ri,  mag_ri_2, mag_ri_4, mag_ri_6, mag_ri_7;
-    scalar force_mag, vdw_fac_6;
+    scalar mag_r, force_mag, e;
 
     scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
     scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
     scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
-
+   
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
-        for(int l = k; l < num_tri_gauss_quad_points; l++) {
-            mag_r = sqrt( (p[k].x - q[l].x) * (p[k].x - q[l].x) +
-                          (p[k].y - q[l].y) * (p[k].y - q[l].y) +
-                          (p[k].z - q[l].z) * (p[k].z - q[l].z) );
-            mag_ri = 1./mag_r;
-            mag_ri_2 = mag_ri * mag_ri;
-            mag_ri_4 = mag_ri_2 * mag_ri_2;
-            mag_ri_6 = mag_ri_4 * mag_ri_2;
-            mag_ri_7 = mag_ri_6 * mag_ri;
-            vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
-            force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (vdw_fac_6 - 1);
-            energy += vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
+        mag_r = sqrt(distance2(p[k], q[k])); 
+        calc_lj_factors(mag_r, k, k, vdw_eps, vdw_r_eq_6, force_mag, e); 
+        energy += e; 
+        force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
+        force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);
+        force_pair_matrix[k][k].z = force_mag * ((p[k].z - q[k].z) / mag_r);
+
+        for(int l = k+1; l < num_tri_gauss_quad_points; l++) {
+            mag_r = sqrt(distance2(p[k], q[l])); 
+            calc_lj_factors(mag_r, k, l, vdw_eps, vdw_r_eq_6, force_mag, e); 
+
+            energy += 2*e;
 
             force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
             force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
@@ -597,68 +596,83 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
             force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
         }
     }
-    cout << mag_r * mesoDimensions::length << " " << vdw_r_eq * mesoDimensions::length << endl;
+    // cout << "E after: " << energy * mesoDimensions::Energy << endl; 
+}
+
+/** Given (mag_r), get LJ force magnitude (force_mag) and energy (e) */
+void VdW_solver::calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar &vdw_eps, scalar &vdw_r_eq_6,
+                                 scalar &force_mag, scalar &e) {
+
+    scalar mag_ri,  mag_ri_2, mag_ri_4, mag_ri_6, mag_ri_7;
+    scalar vdw_fac_6;
+
+    mag_ri = 1./mag_r;
+    mag_ri_2 = mag_ri * mag_ri;
+    mag_ri_4 = mag_ri_2 * mag_ri_2;
+    mag_ri_6 = mag_ri_4 * mag_ri_2;
+    mag_ri_7 = mag_ri_6 * mag_ri;
+    vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
+    force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (vdw_fac_6 - 1);
+    e = gauss_points[index_k].W * gauss_points[index_l].W *
+                   vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
+
+}
+
+/** Given (mag_r), get LJ_interpolated force magnitude (force_mag) and energy (e) */
+void VdW_solver::calc_ljinterpolated_factors(scalar &mag_r, int index_k, int index_l, scalar &vdw_eps, scalar &vdw_r_eqi,
+                                 scalar &force_mag, scalar &e) {
+
+    scalar vdw_fac = mag_r * vdw_r_eqi;
+    scalar vdw_fac_2 = vdw_fac * vdw_fac;
+
+    e = gauss_points[index_k].W * gauss_points[index_l].W *
+                    vdw_eps * vdw_fac_2 * (2 * vdw_fac - 3);
+    force_mag = 6 * vdw_eps * vdw_r_eqi * vdw_fac * (1 - vdw_fac);
+
 }
 
 void VdW_solver::calc_ljinterpolated_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
         vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points],
         scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy) {
 
-    scalar mag_r, mag_ri,  mag_ri_2, mag_ri_4, mag_ri_6, mag_ri_7;
-    scalar force_mag, vdw_fac, vdw_fac_2, vdw_fac_6;
+    scalar mag_r, e, force_mag;
+
     scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
     scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
     scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
 
     scalar vdw_r_eqi = 1.0 / vdw_r_eq;
-    scalar vdw_r_eqi2 = vdw_r_eqi * vdw_r_eqi;
 
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
-        for(int l = k; l < num_tri_gauss_quad_points; l++) {
+        mag_r = sqrt(distance2(p[k], q[k]));
+        if(mag_r < vdw_r_eq) 
+           calc_ljinterpolated_factors(mag_r, k, k, vdw_eps, vdw_r_eqi, force_mag, e);
+        else 
+           calc_lj_factors(mag_r, k, k, vdw_eps, vdw_r_eq_6, force_mag, e);
+        energy += e;
+        force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
+        force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);
+        force_pair_matrix[k][k].z = force_mag * ((p[k].z - q[k].z) / mag_r);
 
-            mag_r = sqrt( (p[k].x - q[l].x) * (p[k].x - q[l].x) +
-                          (p[k].y - q[l].y) * (p[k].y - q[l].y) +
-                          (p[k].z - q[l].z) * (p[k].z - q[l].z) );
+        for(int l = k+1; l < num_tri_gauss_quad_points; l++) {
 
-            // Both parts need this
-            mag_ri = 1./mag_r;
+            mag_r = sqrt(distance2(p[k], q[l]));
 
-            if(mag_r < vdw_r_eq) {
+            if(mag_r < vdw_r_eq) 
+                calc_ljinterpolated_factors(mag_r, k, l, vdw_eps, vdw_r_eqi, force_mag, e);
+            else
+                calc_lj_factors(mag_r, k, l, vdw_eps, vdw_r_eq_6, force_mag, e);
 
-                // Intermediatey stuff
+            energy += 2*e;
 
-                vdw_fac = mag_r * vdw_r_eqi;
-                vdw_fac_2 = vdw_fac * vdw_fac;
-                force_mag = 6 * vdw_eps * vdw_r_eqi * vdw_fac * (1 - vdw_fac);
-                energy += vdw_eps * vdw_fac_2 * (2 * vdw_fac - 3);
+            force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
+            force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
+            force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
 
-                force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
-                force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
-                force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
-
-                force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
-                force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
-                force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
-
-            } else {
-                mag_ri_2 = mag_ri * mag_ri;
-                mag_ri_4 = mag_ri_2 * mag_ri_2;
-                mag_ri_6 = mag_ri_4 * mag_ri_2;
-                mag_ri_7 = mag_ri_6 * mag_ri;
-                vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
-                force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (vdw_fac_6 - 1);
-                energy += vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
-
-                force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
-                force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
-                force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
-
-                force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
-                force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
-                force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
-            }
+            force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
+            force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
+            force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
         }
     }
-   // cout << mag_r * mesoDimensions::length << " " << vdw_r_eq * mesoDimensions::length << endl;
 
 }
