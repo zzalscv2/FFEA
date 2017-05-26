@@ -588,7 +588,9 @@ class Blob:
 			i = self.num_frames - 1
 		
 		sol = []
-		mes = []	
+		mes = []
+		dan = []
+		dantxt = []	
 		numtxt = []
 		pinsphere = []
 
@@ -771,7 +773,7 @@ class Blob:
 			elif display_flags['show_mesh'] == "Surface Mesh":
 
 				# Loop over surface
-				mes.extend([COLOR, 0.33, 0.33, 0.33])
+				#mes.extend([COLOR, 0.33, 0.33, 0.33])
 				for f in xrange(self.surf.num_faces):
 					n1 = self.frames[i].pos[self.surf.face[f].n[0]]
 					n2 = self.frames[i].pos[self.surf.face[f].n[1]]
@@ -858,7 +860,60 @@ class Blob:
 				cmd.show("spheres", pin_name)
 				cmd.color("red", pin_name)
 				
+		#
+		# Danger Elements! Elements that will probably invert because they have <5A lengths in them. Only draw on first frame (takes ages)
+		#
+		if frameLabel == 1 and display_flags['show_danger'] == 1 and self.top != None:
+			#danger_name = pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads)
 
+			# Calculate the element lengthscales and draw all < 5A
+			eindex = 0
+			dindex = []
+			for e in self.top.element:
+				if e.get_smallest_lengthscale(self.frames[i]) / self.global_scale < 5e-10:
+					dindex.append(eindex)
+				eindex += 1
+
+			# Draw the mesh
+			dan.extend( [BEGIN, LINES] )
+			dan.extend([COLOR, 1.0, 0.0, 0.0])
+			for e in dindex:
+				n1 = self.frames[i].pos[self.top.element[e].n[0]]
+				n2 = self.frames[i].pos[self.top.element[e].n[1]]
+				n3 = self.frames[i].pos[self.top.element[e].n[2]]
+				n4 = self.frames[i].pos[self.top.element[e].n[3]]
+
+				dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+				dan.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+
+				dan.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+				dan.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+
+				dan.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+				dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+
+				dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+	                        dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+
+	                        dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+				dan.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+
+				dan.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+	                        dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+
+			dan.append(END)
+			cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads), frameLabel)
+
+			axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
+			scale = 0.1
+			
+			# And the indices
+			for e in dindex:
+				en = self.top.element[e].calc_centroid(self.frames[i])
+				cyl_text(dantxt, plain, en, str(e), scale, axes=axes * scale)
+
+			if len(dantxt) != 0:
+				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum_" + str(self.num_loads), frameLabel)
 
 		#
 		#  Load SFA: Supportive Fake Atoms #
