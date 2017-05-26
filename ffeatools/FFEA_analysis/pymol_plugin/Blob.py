@@ -800,16 +800,15 @@ class Blob:
 			# Only first frame
 			if frameLabel == 1:
 					
-				axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
+				axes = np.array([[5.0,0.0,0.0],[0.0,5.0,0.0],[0.0,0.0,5.0]])
 				#scale = 0.1	 # * self.scale * self.global_scale	# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
                          # No, the clever function should be a function of the shortest edge.
 			 # Oh yeah right, I concur
-	
 				if display_flags['show_numbers'] == 'Node Indices':
 					for n in range(self.node.num_nodes):
-						nn = self.frames[i].pos[n][0:3]
-						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
-	
+						nn = copy.copy(self.frames[i].pos[n][0:3])
+						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes)
+				
 				elif display_flags['show_numbers'] == 'Node Indices (Linear)':
 					if len(self.linear_node_list) == 0: 
 						if frameLabel == 1:
@@ -819,9 +818,9 @@ class Blob:
 
 					else:
 						for n in self.linear_node_list:
-							nn = self.frames[i].pos[n][0:3]
-							cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
-	
+							nn = copy.copy(self.frames[i].pos[n][0:3])
+							cyl_text(numtxt,plain,nn,str(n), scale, axes = axes)
+
 				elif display_flags['show_numbers'] == "Element Indicies":
 						
 					# Catch elements (but don't mislead i.e. no numbers
@@ -830,12 +829,12 @@ class Blob:
 					else:
 						for e in range(self.top.num_elements):
 							en = self.top.element[e].calc_centroid(self.frames[i])
-							cyl_text(numtxt, plain, en, str(e), scale, axes=axes * scale)
+							cyl_text(numtxt, plain, en, str(e), scale, axes=axes)
 						
 				elif display_flags['show_numbers'] == "Face Indices":
 					for f in range(self.surf.num_faces):
 						fn = self.surf.face[f].calc_centroid(self.frames[i])
-						cyl_text(numtxt, plain, fn, str(f), scale, axes=axes * scale)
+						cyl_text(numtxt, plain, fn, str(f), scale, axes=axes)
 				
 				# Only create object if something exists to draw (some of these above routines do nothing
 				if len(numtxt) != 0:
@@ -852,7 +851,7 @@ class Blob:
 			psa_b = 20
 			text = ""
 			for n in self.pin.index:
-				pos = self.frames[i].pos[n]
+				pos = copy.copy(self.frames[i].pos[n])
 				text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
 
 			# load, if it's not an empty object:
@@ -883,7 +882,7 @@ class Blob:
 				n2 = self.frames[i].pos[self.top.element[e].n[1]]
 				n3 = self.frames[i].pos[self.top.element[e].n[2]]
 				n4 = self.frames[i].pos[self.top.element[e].n[3]]
-
+				
 				dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 				dan.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 
@@ -905,13 +904,12 @@ class Blob:
 			dan.append(END)
 			cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads), frameLabel)
 
-			axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
-			scale = 0.1
+			axes = np.array([[5.0,0.0,0.0],[0.0,5.0,0.0],[0.0,0.0,5.0]])
 			
 			# And the indices
 			for e in dindex:
 				en = self.top.element[e].calc_centroid(self.frames[i])
-				cyl_text(dantxt, plain, en, str(e), scale, axes=axes * scale)
+				cyl_text(dantxt, plain, en, str(e), scale, axes=axes)
 
 			if len(dantxt) != 0:
 				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum_" + str(self.num_loads), frameLabel)
