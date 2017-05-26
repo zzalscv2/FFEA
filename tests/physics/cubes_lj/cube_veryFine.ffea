@@ -1,0 +1,76 @@
+<param>
+	<restart = 0>
+	<dt = 1.00e-14>
+	<kT = 4.11e-21>
+	<num_steps = 1>
+	<check = 1>
+	<!-- <check = 1000>
+	<num_steps = 100000> --> 
+	<rng_seed = time>
+	<trajectory_out_fname = veryFinefine1face1face.ftj>
+	<measurement_out_fname = veryFinefine1face1face.fm>
+	<vdw_forcefield_params = ../fine_cube_structure/veryFine.lj>
+	<epsilon = 1.00e-02>
+	<max_iterations_cg = 1000>
+	<kappa = 1.00e+09>
+	<epsilon_0 = 1.00e+00>
+	<dielec_ext = 1.00e+00>
+	<calc_stokes = 1>
+	<stokes_visc = 1.00e-03>
+	<calc_vdw = 1>
+	<inc_self_vdw = 0>
+	<vdw_type = lennard-jones>
+	<vdw_steric_factor = 0.010000>
+	<calc_springs = 0>
+	<calc_noise = 0>
+	<calc_es = 0>
+	<es_update = 1>
+	<es_N_x = 10>
+	<es_N_y = 10>
+	<es_N_z = 10>
+	<move_into_box = 1>
+	<sticky_wall_xz = 0>
+	<wall_x_1 = PBC>
+	<wall_x_2 = PBC>
+	<wall_y_1 = PBC>
+	<wall_y_2 = PBC>
+	<wall_z_1 = PBC>
+	<wall_z_2 = PBC>
+	<es_h = 1>
+	<num_blobs = 2>
+	<num_conformations = (1,1)>
+</param>
+
+<system>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../fine_cube_structure/veryFine.top>
+			<material = ../fine_cube_structure/veryFine.mat>
+			<stokes = ../fine_cube_structure/veryFine.stokes>
+			<pin = ../fine_cube_structure/veryFine.pin>
+			<nodes = ../fine_cube_structure/veryFine.node>
+			<surface = ../fine_cube_structure/veryFine.surf>
+			<vdw = ../fine_cube_structure/veryFine_topface0.vdw>
+		</conformation>
+		<centroid = (0.0,0.0,0.0)>
+		<solver = CG_nomass>
+		<scale = 1.00e-9>
+	</blob>
+	<blob>
+		<conformation>
+			<motion_state = DYNAMIC>
+			<topology = ../fine_cube_structure/veryFine.top>
+			<material = ../fine_cube_structure/veryFine.mat>
+			<stokes = ../fine_cube_structure/veryFine.stokes>
+			<pin = ../fine_cube_structure/veryFine.pin>
+			<nodes = ../fine_cube_structure/veryFine.node>
+			<surface = ../fine_cube_structure/veryFine.surf>
+			<vdw = ../fine_cube_structure/veryFine_topface0.vdw>
+		</conformation>
+		<centroid = (0.0,2.0,0.0)>
+		<rotation = (0.0,0.0,180)>
+		<solver = CG_nomass>
+		<scale = 1.00e-9>
+	</blob>
+</system>
