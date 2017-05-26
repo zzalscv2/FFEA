@@ -562,7 +562,7 @@ class Blob:
 		f = self.frames[i]
 		return f.calc_centroid()
 
-	def draw_frame(self, i, frameLabel, display_flags):
+	def draw_frame(self, i, frameLabel, display_flags, scale = 1.0):
 
 		# Make a copy of the display flags so the user input one doesn't change!
 		
@@ -801,12 +801,13 @@ class Blob:
 			if frameLabel == 1:
 					
 				axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
-				scale = 0.1	 # * self.scale * self.global_scale	# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
+				#scale = 0.1	 # * self.scale * self.global_scale	# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
                          # No, the clever function should be a function of the shortest edge.
+			 # Oh yeah right, I concur
 	
 				if display_flags['show_numbers'] == 'Node Indices':
 					for n in range(self.node.num_nodes):
-						nn = (self.frames[i].pos[n])[0:3]
+						nn = self.frames[i].pos[n][0:3]
 						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
 	
 				elif display_flags['show_numbers'] == 'Node Indices (Linear)':
@@ -818,7 +819,7 @@ class Blob:
 
 					else:
 						for n in self.linear_node_list:
-							nn = (self.frames[i].pos[n])[0:3]
+							nn = self.frames[i].pos[n][0:3]
 							cyl_text(numtxt,plain,nn,str(n), scale, axes=axes * scale)
 	
 				elif display_flags['show_numbers'] == "Element Indicies":
