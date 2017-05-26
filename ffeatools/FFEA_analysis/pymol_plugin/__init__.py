@@ -680,9 +680,17 @@ class FFEA_viewer_control_window:
 	except(IOError):
 		failure = 1	
 
+	# Get smallest edge in system
+	lmin = float("inf")
+	for b in self.blob_list:
+		for f in b[0].surf.face:
+			l = 2 * f.calc_area(b[0].frames[0])**0.5
+			if l < lmin:
+				lmin = l
+
 	# Draw first frame
 	self.num_frames = 1
-	self.draw_frame(self.num_frames - 1)
+	self.draw_frame(self.num_frames - 1, scale = lmin / 20.0)
 
 	# If necessary, stop now (broken traj or user asked for)
 	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or self.traj.num_blobs == 0:		
@@ -707,7 +715,7 @@ class FFEA_viewer_control_window:
 			self.num_frames += 1
 
 			# Draw whole frame (if above worked, these should work no problem...)
-			self.draw_frame(self.num_frames - 1)
+			self.draw_frame(self.num_frames - 1, scale = lmin)
 
 			# Delete frames from memory
 			if(self.num_frames > 3):
@@ -920,7 +928,7 @@ class FFEA_viewer_control_window:
 	cent *= 1.0 / total_num_nodes
 	return cent
 
-  def draw_frame(self, index):
+  def draw_frame(self, index, scale = 1.0):
 
 	# Blobs should only ever have at most 2 frames on them, the initial one and the currently loaded one. So...
 	frame_real_index = index
@@ -942,7 +950,7 @@ class FFEA_viewer_control_window:
 
 	for i in range(self.script.params.num_blobs):
 		for j in range(self.script.params.num_conformations[i]):
-			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags)
+			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags, scale = scale)
 
   def draw_box(self, f):
 	
