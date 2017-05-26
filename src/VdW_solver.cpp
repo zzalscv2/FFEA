@@ -205,7 +205,7 @@ int VdW_solver::solve(scalar *blob_corr) {
             }
         }
     }
-
+   // exit(0);
     return FFEA_OK;
 }
 
@@ -237,9 +237,14 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     int f1_daddy_blob_index = f1->daddy_blob->blob_index;
     int f2_daddy_blob_index = f2->daddy_blob->blob_index;
 
+    //printf("Centroid 1: %f %f %f\n", f1->centroid.x * (mesoDimensions::length / 1e-9), f1->centroid.y * (mesoDimensions::length / 1e-9), f1->centroid.z * (mesoDimensions::length / 1e-9));
+    //printf("Centroid 2: %f %f %f\n", f2->centroid.x * (mesoDimensions::length / 1e-9), f2->centroid.y * (mesoDimensions::length / 1e-9), f2->centroid.z * (mesoDimensions::length / 1e-9));
+    //printf("Separation: %f %f %f\n", (f1->centroid.x - f2->centroid.x) * (mesoDimensions::length / 1e-9), (f1->centroid.y - f2->centroid.y) * (mesoDimensions::length / 1e-9), (f1->centroid.z - f2->centroid.z) * (mesoDimensions::length / 1e-9));
+
     // Get the interaction LJ parameters for these two face types
     scalar vdw_eps = 0.0, vdw_r_eq = 0.0;
     lj_matrix->get_LJ_params(f1->vdw_interaction_type, f2->vdw_interaction_type, &vdw_eps, &vdw_r_eq);
+    //printf("VdW Params: %f nm %e \n", vdw_r_eq * (mesoDimensions::length / 1e-9), vdw_eps * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
     vector3 p[num_tri_gauss_quad_points], q[num_tri_gauss_quad_points];
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
 
@@ -269,6 +274,13 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     energy *= ApAq;
 
     // Store the measurement
+	/*for (int k = 0; k < num_tri_gauss_quad_points; k++) {
+		for (int l = 0; l < num_tri_gauss_quad_points; l++) {
+			printf("%e  ", force_pair_matrix[k][l].z);
+		}
+		printf("\n");
+	}
+	exit(0);*/
     #pragma omp critical
     {
         fieldenergy[f1_daddy_blob_index][f2_daddy_blob_index] += energy;
@@ -295,7 +307,8 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
             force1.z *= ApAq;
             f1->add_force_to_node(j, &force1);
             // f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index); // DEPRECATED
-            //				printf("1:: %d %e %e %e\n", j, force1.x, force1.y, force1.z);
+            			//	printf("1:: %d %e %e %e\n", f1->index, force1.x, force1.y, force1.z);
+					//printf("2:: %d %e %e %e\n", f2->index, force2.x, force2.y, force2.z);
 
             force2.x *= ApAq;
             force2.y *= ApAq;
@@ -596,7 +609,6 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
             force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
         }
     }
-    // cout << "E after: " << energy * mesoDimensions::Energy << endl; 
 }
 
 /** Given (mag_r), get LJ force magnitude (force_mag) and energy (e) */
