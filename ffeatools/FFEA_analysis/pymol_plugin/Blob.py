@@ -725,7 +725,7 @@ class Blob:
 
 
 
-			sol.append(END)
+			sol.extend([END])
 			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid_" + str(self.num_loads), frameLabel)
 
 		#
@@ -788,7 +788,7 @@ class Blob:
 		                        mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
-			mes.append(END)
+			mes.extend([END])
 			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh_" + str(self.num_loads), frameLabel)
 
 		#
@@ -901,8 +901,9 @@ class Blob:
 				dan.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 	                        dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
-			dan.append(END)
-			cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads), frameLabel)
+			dan.extend([END])
+			if len(dan) != 7:
+				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads), frameLabel)
 
 			axes = np.array([[5.0,0.0,0.0],[0.0,5.0,0.0],[0.0,0.0,5.0]])
 			
