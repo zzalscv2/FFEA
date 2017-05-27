@@ -31,6 +31,7 @@ file (COPY sphere_63_120_structure sphere_63_120_mass
                   cube_springs_structure steric_cubes_w_springs
                   squidgy_steric sphere_diffusion
                   cyl_160_fine EI_cyl_160_fine E_cyl_160_fine
+                  cubes_lj fine_cube_structure
                   DESTINATION ${TPHYSICS})
 
 # and run the tests. 
@@ -43,3 +44,4 @@ add_subdirectory(squidgy_steric)
 add_subdirectory(sphere_diffusion)
 add_subdirectory(E_cyl_160_fine)
 add_subdirectory(EI_cyl_160_fine)
+add_subdirectory(cubes_lj)

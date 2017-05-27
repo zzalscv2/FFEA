@@ -2,10 +2,8 @@
 	<restart = 0>
 	<dt = 1.00e-14>
 	<kT = 4.11e-21>
-	<num_steps = 1>
+	<num_steps = 0>
 	<check = 1>
-	<!-- <check = 1000>
-	<num_steps = 100000> --> 
 	<rng_seed = time>
 	<trajectory_out_fname = veryFinefine1face1face.ftj>
 	<measurement_out_fname = veryFinefine1face1face.fm>
