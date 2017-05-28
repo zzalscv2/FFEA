@@ -500,7 +500,6 @@ int tetra_element_linear::what_node_is_this(int index) {
             return i;
         }
     }
-
     FFEA_ERROR_MESSG("Specified node index does not belong to this element\n")
 }
 
