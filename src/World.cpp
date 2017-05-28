@@ -122,10 +122,16 @@ World::~World() {
     box_dim.y = 0;
     box_dim.z = 0;
     step_initial = 0;
-
-    fclose(trajectory_out);
-    fclose(measurement_out);
-    fclose(checkpoint_out);
+    
+    if(trajectory_out != NULL) {
+	    fclose(trajectory_out);
+    }
+    if(trajectory_out != NULL) {
+	    fclose(measurement_out);
+    }
+    if(trajectory_out != NULL) {
+	    fclose(checkpoint_out);
+    }
     if(writeDetailed) {
 	fclose(detailed_meas_out);
     }
