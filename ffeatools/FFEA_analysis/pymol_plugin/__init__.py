@@ -690,7 +690,7 @@ class FFEA_viewer_control_window:
 
 	# Draw first frame
 	self.num_frames = 1
-	self.draw_frame(self.num_frames - 1, scale = lmin / 10.0)
+	self.draw_frame(self.num_frames - 1, scale = lmin / 20.0)
 
 	# If necessary, stop now (broken traj or user asked for)
 	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or self.traj.num_blobs == 0:		

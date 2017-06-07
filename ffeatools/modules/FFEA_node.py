@@ -77,10 +77,13 @@ class FFEA_node:
 			elif ext == ".out" or ext == ".traj" or ext == ".ftj":
 				self.load_traj(fname, findex)
 
+			elif ext == ".obj":
+				self.load_obj(fname)
+
 			elif ext == ".vol":
 				self.load_vol(fname)
 			else:
-				raise FFEAIOError(fname=fname, fext=[".node", ".out", ".traj", ".ftj", ".vol"])
+				raise FFEAIOError(fname=fname, fext=[".node", ".out", ".traj", ".ftj", ".vol", ".obj"])
 
 		except:
 			raise
@@ -193,6 +196,39 @@ class FFEA_node:
 
 
 		fin.close()
+
+		# Numpy it up, for speed
+		self.pos = np.array(self.pos)
+
+	def load_obj(self, fname):
+
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			raise
+
+		lines = fin.readlines()
+		fin.close()
+		
+		# Test format
+		start_index = -1
+		for i in range(100):
+			if (lines[i][0] == "v" or lines[i][0] == "f") and lines[i][1] == " ":
+				start_index = i
+				break
+
+		if start_index == -1:
+			raise FFEAFormatError(lstr="v \%f \%f \%f")
+
+		lines = lines[start_index:]
+
+		for line in lines:
+			if line[0] != "v":
+				continue
+
+			sline = line.split()[1:4]
+			self.add_node([float(sline[0]), float(sline[1]), float(sline[2])])
 
 		# Numpy it up, for speed
 		self.pos = np.array(self.pos)
