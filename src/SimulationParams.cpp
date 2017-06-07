@@ -569,10 +569,6 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("\tRequired: Number of Blobs, 'num_blobs', must be greater than 0.\n");
     }
 
-    if (conformation_array_size != num_blobs) {
-        FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations', must have 'num_blobs' elements. We read %d elements but only %d blobs\n", conformation_array_size, num_blobs);
-    }
-
     if (kappa < 0) {
         FFEA_ERROR_MESSG("Required: Inverse Debye Screening length, 'kappa', cannot be negative.\n");
     }
@@ -711,6 +707,9 @@ int SimulationParams::validate(int sim_mode) {
     }
 
     if (calc_kinetics == 1) {
+	if (conformation_array_size != num_blobs) {
+		FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations', must have 'num_blobs' elements. We read %d elements but only %d blobs\n", conformation_array_size, num_blobs);
+	}
         if(kinetics_update <= 0) {
             //FFEA_ERROR_MESSG("\tRequired: If 'calc_kinetics' = 1, then 'kinetics_update' must be greater than 0.\n");
             cout << "\tDefaulting 'kinetics_update' to " << check << endl;
@@ -724,6 +723,19 @@ int SimulationParams::validate(int sim_mode) {
         // num_conformations[i] can be > num_states[i], so long as none of the states reference an out of bounds conformation
 
     } else {
+	if(num_conformations == NULL) {
+
+		// Default num_conformations array
+		conformation_array_size = num_blobs;
+		num_conformations = new(std::nothrow) int[conformation_array_size];
+		for(int i = 0; i < num_blobs; ++i) {
+			num_conformations[i] = 0;
+		}
+		if (num_conformations == NULL) {
+			FFEA_ERROR_MESSG("Failed to allocate meory for the number of conformations in SimulationParams\n");
+		}
+	}
+
         for(int i = 0; i < num_blobs; ++i) {
             if(num_conformations[i] != 1) {
                 FFEA_CAUTION_MESSG("\tNumber of Conformations, 'num_conformations[%d]', not equal to 1. Only first conformation will be loaded.\n", i);
