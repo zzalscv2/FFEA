@@ -52,7 +52,7 @@ ffea_tools = 	{
       "maptosparse": "FFEA_initialise/FFEA_mapping_tools/FFEA_convert_kinetic_map_to_sparse.py",
       "maptraj": "FFEA_initialise/FFEA_mapping_tools/Kinetic_FFEA_map_apply_to_FFEA_traj.py",
       "automodel": "FFEA_initialise/FFEA_automodel.py",
-      "pyPCAbuild": "FFEA_analysis/FFEA_pyPca/FFEA_convert_to_PCAsystem.py",
+      "makepseudopdb": "FFEA_analysis/FFEA_pyPca/FFEA_convert_to_PCAsystem.py",
       "pyPCAanim": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_animations.py",
       "pyPCAeigen": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_eigensystem.py",
       "pyPCAproj": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_projections.py"
