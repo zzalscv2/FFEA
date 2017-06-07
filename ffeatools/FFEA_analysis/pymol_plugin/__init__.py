@@ -536,7 +536,8 @@ class FFEA_viewer_control_window:
 	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.display_flags["show_inverted"] == 1 and self.wontLoadTraj != 1:
 		self.draw_inverted_elements()
 
-	FFEA_interactive_measurements(self)
+	if self.display_flags["load_sfa"] != "None":
+		FFEA_interactive_measurements(self)
 
 	try:
 		self.root.destroy()
