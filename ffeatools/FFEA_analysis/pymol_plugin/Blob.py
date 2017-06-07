@@ -800,7 +800,7 @@ class Blob:
 			# Only first frame
 			if frameLabel == 1:
 					
-				axes = np.array([[5.0,0.0,0.0],[0.0,5.0,0.0],[0.0,0.0,5.0]])
+				axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
 				#scale = 0.1	 # * self.scale * self.global_scale	# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
                          # No, the clever function should be a function of the shortest edge.
 			 # Oh yeah right, I concur
@@ -905,7 +905,7 @@ class Blob:
 			if len(dan) != 7:
 				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads), frameLabel)
 
-			axes = np.array([[5.0,0.0,0.0],[0.0,5.0,0.0],[0.0,0.0,5.0]])
+			axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
 			
 			# And the indices
 			for e in dindex:

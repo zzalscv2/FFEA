@@ -68,10 +68,12 @@ class FFEA_surface:
 				self.load_face(fname)
 			elif ext == ".stl":
 				self.load_stl(fname)
+			elif ext == ".obj":
+				self.load_obj(fname)	
 			elif ext == ".vol":
 				self.load_vol(fname)
 			else:
-				raise FFEAIOError(fname=fname, fext=[".surf", ".stl", ".face", ".vol"])
+				raise FFEAIOError(fname=fname, fext=[".surf", ".obj", ".stl", ".face", ".vol"])
 
 		except:
 			raise
@@ -149,7 +151,40 @@ class FFEA_surface:
 
 		# Read all faces
 		#while True:
-			
+	
+	def load_obj(self, fname):
+
+		# Open file
+		try:
+			fin = open(fname, "r")
+		except(IOError):
+			raise
+
+		lines = fin.readlines()
+		fin.close()
+		
+		# Test format
+		start_index = -1
+		for i in range(100):
+			if (lines[i][0] == "v" or lines[i][0] == "f") and lines[i][1] == " ":
+				start_index = i
+				break
+
+		if start_index == -1:
+			raise FFEAFormatError(lstr="v \%f \%f \%f")
+
+		lines = lines[start_index:]
+
+		for line in lines:
+			if line[0] != "f":
+				continue
+
+			sline = line.split()[1:4]
+			sline = [int(s) - 1 for s in sline]
+			f = FFEA_face_tri_lin()
+			f.set_indices(sline)
+			self.add_face(f)
+
 	def load_face(self, fname):
 
 		# Open file
@@ -379,7 +414,21 @@ class FFEA_surface:
 
 			for f in self.face:
 				fout.write("f %d %d %d\n" % (f.n[0], f.n[1], f.n[2]))
-			
+		
+		elif ext == ".stl":
+			if node == None:
+				print ("Error. Cannot write to '.obj' format without an associated 'node' object")
+				raise IOError
+			fout = open(fname, "w")
+			fout.write("solid")
+			for f in self.face:
+				norm = f.calc_normal(node)
+				fout.write("facet normal %f %f %f\n" % (norm[0], norm[1], norm[2]))
+				fout.write("outer loop\n")
+				for n in f.n[0:3]:
+					fout.write("vertex %f %f %f\n" % (node.pos[n][0], node.pos[n][1], node.pos[n][2]))
+				fout.write("endloop\nendfacet\n")
+			fout.write("endsolid")
 		else:
 			print ("Extension not recognised")
 			raise IOError
