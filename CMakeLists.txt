@@ -27,8 +27,8 @@ cmake_policy(VERSION 2.8)
 
 # set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 set(PACKAGE_NAME "ffea")
-set(VERSION "1")
-set(MINOR   "0")
+set(VERSION "2")
+set(MINOR   "3")
 set(PACKAGE_VERSION "${VERSION}.${MINOR}")
 set(FFEA_DEVEL "TRUE")
 
