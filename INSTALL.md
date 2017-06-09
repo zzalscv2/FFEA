@@ -13,7 +13,7 @@ To install FFEA you need:
    * C and C++ compilers.   
      There is some C++ code written using 
        the C++11 standard, and so CMake will ensure that you have a 
-       recent enough compiler. FFEA will compile with GCC 4.4 or Intel 15
+       recent enough compiler. FFEA will compile with GCC 4.8 or Intel 15
        but we recommend to use an up to date compiler to get the best performance.
 
    * [CMake](https://cmake.org) (>=2.8.11).   

@@ -46,7 +46,8 @@ try_compile(RESULT_VAR
 if (RESULT_VAR)
   message(STATUS "Checking C++11 support for stoi - Success")
 else ()
-  message(FATAL_ERROR "Checking C++11 support for stoi - Failed")
+  message(STATUS "Checking C++11 support for stoi - Failed")
+  message(FATAL_ERROR "You need a more recent C++ compiler")
 endif ()
 
 
@@ -62,12 +63,33 @@ try_compile(RESULT_VAR
 if (RESULT_VAR)
   message(STATUS "Checking C++11 support for fstream-string - Success")
 else ()
-  message(FATAL_ERROR "Checking C++11 support for fstream-string - Failed")
+  message(STATUS "Checking C++11 support for fstream-string - Failed")
+  message(FATAL_ERROR "You need a more recent C++ compiler")
 endif ()
 
 
 ##############################
-# CHECK 3 #### Check for future threads: 
+# CHECK 3 #### Check that vector3, temporary class, works: 
+message(STATUS "Checking C++11 support for FFEA vectors")
+set(CHECK_REQUIRED_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+try_compile(RESULT_VAR 
+            "${CMAKE_CURRENT_BINARY_DIR}/cxx11_vector3"
+            "${PROJECT_SOURCE_DIR}/cmake/tests_compilation/cxx11-test-vector3.cpp"
+            COMPILE_DEFINITIONS "${CXX11_COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}"
+            CMAKE_FLAGS "-DLINK_LIBRARIES:STRING=${CHECK_REQUIRED_LIBRARIES}"
+            OUTPUT_VARIABLE OUTPUT)
+
+if (RESULT_VAR)
+  message(STATUS "Checking C++11 support for FFEA vectors - Success")
+else ()
+  message(STATUS "Checking C++11 support for FFEA vectors - Failed")
+  message(FATAL_ERROR "You need a more recent C++ compiler")
+endif ()
+
+
+
+##############################
+# CHECK 4 #### Check for future threads: 
 message(STATUS "Checking C++11 support for future threads")
 set(CHECK_REQUIRED_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 try_compile(RESULT_VAR 
@@ -84,3 +106,5 @@ else ()
   message(WARNING "Checking C++11 support for future threads - Failed")
   set(HAS_CXX11_FUTURE FALSE)
 endif ()
+
+
