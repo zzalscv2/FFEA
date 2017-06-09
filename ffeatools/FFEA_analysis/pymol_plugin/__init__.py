@@ -66,6 +66,7 @@ import FFEA_script
 import FFEA_trajectory
 import FFEA_turbotrajectory
 import FFEA_surface
+import FFEA_pin
 
 from numpy.random import randint as rint
 
@@ -77,6 +78,40 @@ def __init__(self):
   self.menuBar.addmenuitem('Plugin', 'command', 
                            'FFEA Loader', label = 'FFEA Loader...', 
                            command = lambda s=self: FFEA_viewer_control_window(s))
+
+class FFEA_interactive_measurements:
+
+    def __init__(self, app):
+        self.parent = app.root
+        self.root = Tk()
+        self.root.geometry("200x50")
+        self.root.title("FFEA Measurements")
+        the_frame = Frame(self.root)
+        the_frame.pack(anchor=CENTER, expand=True)
+
+        create_pin = Button(the_frame, text="Create pin from selection", command=lambda:self.create_pin());
+        create_pin.grid(row=0, column=0, sticky=E)
+        
+    def create_pin(self):
+        num_atoms = cmd.count_atoms("sele")
+        area = cmd.get_area("sele")
+        pdbstr = cmd.get_pdbstr("sele")
+        coords = cmd.get_coords("sele")
+        f = tkFileDialog.asksaveasfile(mode='w', defaultextension=".pin")
+        if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+        filename = f.name
+        f.close()
+        
+        pin = FFEA_pin.FFEA_pin()
+        for line in pdbstr.split("\n"):
+            try:
+                pin.add_pinned_node(int(line[22:29]))
+            except ValueError:
+                pass # end line
+
+        pin.write_to_file(filename)
+        print("Pinfile written to "+filename)
 
 
 class FFEA_viewer_control_window:
@@ -204,6 +239,9 @@ class FFEA_viewer_control_window:
      label_sfa.grid(row=7, column=0, sticky=E)
      om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
      om_load_sfa.grid(row=7, column=1, sticky=W)
+     
+#     int_label = Label(display_flags_frame, text="Interactive Tools")
+#     int_label.grid(row=8, column=0, sticky=E)
 
 
      # # # Element highlighting 
@@ -498,10 +536,13 @@ class FFEA_viewer_control_window:
 	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.display_flags["show_inverted"] == 1 and self.wontLoadTraj != 1:
 		self.draw_inverted_elements()
 
+	if self.display_flags["load_sfa"] != "None":
+		FFEA_interactive_measurements(self)
+
 	try:
 		self.root.destroy()
 	except:
-		pass
+		raise 
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]
