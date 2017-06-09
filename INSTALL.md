@@ -85,6 +85,14 @@ Additional specific FFEA flags include:
     - 1 uses all the threads within blobs. The only option to get OMP parallism if simulating a single body. 
     - 2 uses one thread per blob. Performs significantly better if there is more than a single body.
 
+  * `BUILD_DOC`    (default TRY) where:
+
+    - `NO` will not build the documentation.
+    - `TRY` will try to find Doxygen and build the documentation. 
+    - `YES` will try to find Doxygen (raising an error if not found) and build the documentation. 
+    - `ONLY` will try to find Doxygen (raising an error if not found) and only build the documentation.
+
+
 Thus, for production runs, one could configure the package typing:
 
     cmake $FFEA_SRC -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea
