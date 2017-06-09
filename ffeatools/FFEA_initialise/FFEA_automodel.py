@@ -166,6 +166,14 @@ def check_obj(obj_out):
                 return False
             else:
                 return True
+            
+def check_danger_elements():
+	eindex = 0
+	dindex = []
+	for e in self.top.element:
+		if e.get_smallest_lengthscale(self.frames[i]) / self.global_scale < 5e-10:
+			dindex.append(eindex)
+		eindex += 1
         
 def automodel(args):
     """
