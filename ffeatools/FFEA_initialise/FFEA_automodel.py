@@ -23,7 +23,7 @@
 
 import subprocess
 import argparse as _argparse
-#import FFEA_node as _FFEA_node, FFEA_topology as _FFEA_topology, FFEA_surface as _FFEA_surface
+import FFEA_node as _FFEA_node, FFEA_topology as _FFEA_topology, FFEA_surface as _FFEA_surface
 import sys
 try:
     import __builtin__
@@ -167,13 +167,27 @@ def check_obj(obj_out):
             else:
                 return True
             
-def check_danger_elements():
-	eindex = 0
-	dindex = []
-	for e in self.top.element:
-		if e.get_smallest_lengthscale(self.frames[i]) / self.global_scale < 5e-10:
-			dindex.append(eindex)
-		eindex += 1
+def check_danger_elements(vol):
+    """
+    From the volume data file, this function tells the user if there
+    are any extremely long, thin elements in the simulation. If so, it returns
+    True, if not, false.
+    """
+    top = _FFEA_topology.FFEA_topology()
+    top.load_vol(vol)
+    node = _FFEA_node.FFEA_node()
+    node.load_vol(vol)
+    
+    eindex = 0
+    dindex = []
+    for e in top.element:
+        if e.get_smallest_lengthscale(node) < 0.5 #assuming .vol in nm:
+            print e.get_smallest_lengthscale(node)
+            dindex.append(eindex)
+        eindex += 1
+    if len(dindex)>0:
+        return False
+    return True
         
 def automodel(args):
     """
@@ -208,18 +222,32 @@ def automodel(args):
         raise IOError("\n---Incorrect scale for the ISO level.")
     
     attempts = 1
-    properly_grained = False
+    stl_correct = False
+    no_danger_elements = False
     current_granularity = float(args.granularity)
     
-    while properly_grained == False:
+    while stl_correct == False or no_danger_elements == False:
         print("Coarse graining (attempt "+str(attempts)+" at granularity "+str(current_granularity)+"A)...")
         grain_code, grain_out, grain_err = get_exitcode_stdout_stderr(["ffeatools", "surftocgsurf", name+".obj", name+".stl", str(current_granularity), "y", "y"])
         check_error(grain_code, grain_out, grain_err)
         if check_stl(name+".stl", args.threshold):
-            properly_grained = True
-        else:
-            attempts+=1
-            current_granularity+=1.
+            stl_correct = True
+        
+        print("Filling in tetrahedra with tetgen...")
+        tet_code, tet_out, tet_err = get_exitcode_stdout_stderr(["tetgen", "-Y", name+".stl"])
+        check_error(tet_code, tet_out, tet_err)
+    
+        print("Converting to .vol format...")
+        vol_code, vol_out, vol_err = get_exitcode_stdout_stderr(["ffeatools", "tettonet", "-i", name+".1.ele", name+".1.face", name+".1.node", "-o", name+".vol"])
+        check_error(vol_code, vol_out, vol_err)
+        
+        
+        no_danger_elements = check_danger_elements(name+".vol")
+        
+        print("AT THE END OF THAT, NO DANGER ELEMENTS ="+str(no_danger_elements)+" and stl_correct = "+str(stl_correct))
+        
+        attempts+=1
+        current_granularity+=1.
     
     try:
         import random
@@ -228,13 +256,7 @@ def automodel(args):
     except:
         pass
     
-    print("Filling in tetrahedra with tetgen...")
-    tet_code, tet_out, tet_err = get_exitcode_stdout_stderr(["tetgen", "-Y", name+".stl"])
-    check_error(tet_code, tet_out, tet_err)
 
-    print("Converting to .vol format...")
-    vol_code, vol_out, vol_err = get_exitcode_stdout_stderr(["ffeatools", "tettonet", "-i", name+".1.ele", name+".1.face", name+".1.node", "-o", name+".vol"])
-    check_error(vol_code, vol_out, vol_err)
     
     print("Creating FFEA script file...")
     
