@@ -35,9 +35,9 @@ static string FFEA_commit = "@PACKAGE_COMMIT@";
 static string FFEA_branch = "@PACKAGE_BRANCH@";
 static string FFEA_date = "@PACKAGE_DATE@";
 #else
-static string FFEA_prev_commit = "e33ada1dfec1adf6184bd795fa19a1a6655073e5";
+static string FFEA_prev_commit = "b779f11d7a0a98bc9bc44e64057d98d6b0de7d89";
 static string FFEA_prev_branch = "master";
-static string FFEA_prev_date = "2017-06-08";
+static string FFEA_prev_date = "2017-06-09";
 
 
 #endif
