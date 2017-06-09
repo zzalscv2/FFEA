@@ -31,6 +31,9 @@ set(VERSION "2")
 set(MINOR   "3")
 set(PACKAGE_VERSION "${VERSION}.${MINOR}")
 set(FFEA_DEVEL "TRUE")
+if (FFEA_DEVEL STREQUAL "TRUE")
+  add_definitions(-DFFEA_DEVEL)
+endif (FFEA_DEVEL STREQUAL "TRUE")
 
 
 option(USE_BOOST_INTERNAL "Use the sources we ship (ON) or your own boost (OFF)" ON)
@@ -54,6 +57,8 @@ mark_as_advanced(USE_PACK)
 set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
 
+set(BUILD_DOC "TRY" CACHE STRING "ONLY; YES; TRY; NO")
+
 set (LIBS_TO_LINK)
 #################################
 #### LIBRARIES AND CFLAGS #######
@@ -67,6 +72,7 @@ if (USE_MPI)
   include_directories(${MPI_INCLUDE_PATH})
   set(LIBS_TO_LINK ${LIBS_TO_LINK} ${MPI_LIBRARIES}) 
 endif(USE_MPI)
+
 
 
 # 0 #### PRECISION ###
@@ -85,7 +91,82 @@ else(USE_PRECISION EQUAL "1")
 endif(USE_PRECISION EQUAL "1")
     
 
-# 1 #### OPENMP #####
+
+# 1 ### CONFIGURE VERSION: 
+find_package(Git 1.6)
+set(VERSION_CMAKECONF "")
+if (GIT_FOUND)
+  message(STATUS ${GIT_EXECUTABLE})
+  execute_process(
+     COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:'%H'
+     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+     OUTPUT_VARIABLE PACKAGE_COMMIT 
+     ERROR_VARIABLE PACKAGE_COMMIT_ERROR)
+
+  execute_process(
+     COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:'%ad' --date=short
+     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+     OUTPUT_VARIABLE PACKAGE_DATE
+     ERROR_VARIABLE PACKAGE_DATE_ERROR)
+
+  execute_process(
+     COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+     OUTPUT_VARIABLE PACKAGE_BRANCH
+     ERROR_VARIABLE PACKAGE_BRANCH_ERROR)
+
+  if (NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
+     add_definitions(-DUSE_CMAKECONF)
+     set(VERSION_CMAKECONF "TRUE")
+     string(STRIP ${PACKAGE_BRANCH} PACKAGE_BRANCH)
+  endif (NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
+
+endif(GIT_FOUND)
+
+configure_file("${PROJECT_SOURCE_DIR}/include/FFEA_version.h.in"
+               "${PROJECT_BINARY_DIR}/include/FFEA_version.h" @ONLY)
+include_directories(${PROJECT_BINARY_DIR}/include)
+
+
+# 2 ### DOXYGEN ##### 
+if ((${BUILD_DOC} STREQUAL "ONLY") OR (${BUILD_DOC} STREQUAL "YES"))
+  message(STATUS "Requested to build the documentation")
+  find_package(Doxygen 1.8 REQUIRED)
+endif ((${BUILD_DOC} STREQUAL "ONLY") OR (${BUILD_DOC} STREQUAL "YES"))
+if (${BUILD_DOC} STREQUAL "TRY")
+  find_package(Doxygen 1.8)
+endif (${BUILD_DOC} STREQUAL "TRY")
+
+if(DOXYGEN_FOUND)
+  file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/doc")
+  configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
+                 "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/DoxygenPyM.in"
+                 "${PROJECT_BINARY_DIR}/DoxyfilePyM" @ONLY)
+  add_custom_target(doc ALL ${DOXYGEN_EXECUTABLE}
+                        ${PROJECT_BINARY_DIR}/DoxyfilePyM
+                        DEPENDS docrunner
+                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/doc"
+                        COMMENT "Generating documentation for developers"
+                        VERBATIM)
+  add_custom_target(docrunner ALL ${DOXYGEN_EXECUTABLE}
+                        ${PROJECT_BINARY_DIR}/Doxyfile
+                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/doc"
+                        COMMENT "Generating documentation for developers"
+                        VERBATIM)
+  install(DIRECTORY "${PROJECT_BINARY_DIR}/doc/doc/html" DESTINATION
+                share/ffea/doc OPTIONAL)
+  install(DIRECTORY "${PROJECT_BINARY_DIR}/doc/ffeamodules/html" DESTINATION
+                share/ffea/ffeamodules OPTIONAL)
+endif(DOXYGEN_FOUND)
+
+if (${BUILD_DOC} STREQUAL "ONLY")
+  return()
+endif (${BUILD_DOC} STREQUAL "ONLY")
+
+
+
+# 3 #### OPENMP #####
 if (USE_OPENMP)
   add_definitions(-DUSE_OPENMP)
 endif(USE_OPENMP)
@@ -106,7 +187,8 @@ solutions:
     endif (USE_OPENMP)
 endif(OPENMP_FOUND)
 
-# 2 #### PARALLEL MODE #########
+
+# 4 #### PARALLEL MODE #########
 if (USE_OMP_MODE EQUAL "0")
   if (USE_OPENMP) 
     message(FATAL_ERROR "OMP was enabled, but USE_OMP_MODE set to 0. Possible solutions: 
@@ -125,7 +207,8 @@ else ()
   endif()
 endif()
 
-# 3 #### USE C++11 ############ 
+
+# 5 #### USE C++11 ############ 
 # g++: -std=c++0x / -std=c++11
 # icpc: -std=c++0x / -std=c++11 on LINUX, OS X and WINDOWS 
 # pg++: 13.2 crashes with flag -std=c++0x, besides it does not support
@@ -143,13 +226,13 @@ if (USE_FUTURE)
 endif(USE_FUTURE)
 
 
-
-# 4 ### MATH ######
+# 6 ### MATH ######
 if (UNIX)
   set(LIBS_TO_LINK ${LIBS_TO_LINK} "m") 
 endif(UNIX)
 
-# 5 ### BOOST #####
+
+# 7 ### BOOST #####
 # set (Boost_NO_SYSTEM_PATHS ON)
 if (USE_BOOST_INTERNAL) 
 
@@ -181,8 +264,7 @@ set(LIBS_TO_LINK ${LIBS_TO_LINK} ${Boost_LIBRARIES})
 
 
 
-
-# 6 ### EIGEN3 #####
+# 8 ### EIGEN3 #####
 if (USE_EIGEN3_INTERNAL) 
 
    message(STATUS "Configuring internal Eigen")
@@ -223,7 +305,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 
 
-# 7 ### PYTHON ######
+# 9 ### PYTHON ######
 find_package(PythonInterp REQUIRED)
 # python will be used to run some tests.
 # Now look for NumPy
@@ -237,70 +319,6 @@ if  ("${NUMPY_FOUND}" STREQUAL "OK")
   message(STATUS "Found NumPy")
 endif  ("${NUMPY_FOUND}" STREQUAL "OK")
 
-
-# 8 ### DOXYGEN ##### 
-find_package(Doxygen 1.8)
-if(DOXYGEN_FOUND)
-  configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
-                 "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
-  configure_file("${PROJECT_SOURCE_DIR}/DoxygenPyM.in"
-                 "${PROJECT_BINARY_DIR}/DoxyfilePyM" @ONLY)
-  add_custom_target(doc ALL ${DOXYGEN_EXECUTABLE}
-                        ${PROJECT_BINARY_DIR}/DoxyfilePyM
-                        DEPENDS docrunner
-                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
-                        COMMENT "Generating documentation for developers"
-                        VERBATIM)
-  add_custom_target(docrunner ALL ${DOXYGEN_EXECUTABLE}
-                        ${PROJECT_BINARY_DIR}/Doxyfile
-                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/src"
-                        COMMENT "Generating documentation for developers"
-                        VERBATIM)
-  install(DIRECTORY "${PROJECT_BINARY_DIR}/src/doc/html" DESTINATION
-                share/ffea/doc OPTIONAL)
-  install(DIRECTORY "${PROJECT_BINARY_DIR}/src/ffeamodules/html" DESTINATION
-                share/ffea/ffeamodules OPTIONAL)
-endif(DOXYGEN_FOUND)
-
-
-# 9 ### CONFIGURE VERSION: 
-find_package(Git 1.6)
-set(VERSION_CMAKECONF "")
-if (GIT_FOUND)
-  message(STATUS ${GIT_EXECUTABLE})
-  execute_process(
-     COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:'%H'
-     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-     OUTPUT_VARIABLE PACKAGE_COMMIT 
-     ERROR_VARIABLE PACKAGE_COMMIT_ERROR)
-
-  execute_process(
-     COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:'%ad' --date=short
-     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-     OUTPUT_VARIABLE PACKAGE_DATE
-     ERROR_VARIABLE PACKAGE_DATE_ERROR)
-
-  execute_process(
-     COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
-     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-     OUTPUT_VARIABLE PACKAGE_BRANCH
-     ERROR_VARIABLE PACKAGE_BRANCH_ERROR)
-
-  if (NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
-     add_definitions(-DUSE_CMAKECONF)
-     set(VERSION_CMAKECONF "TRUE")
-     string(STRIP ${PACKAGE_BRANCH} PACKAGE_BRANCH)
-  endif (NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
-
-endif(GIT_FOUND)
-
-configure_file("${PROJECT_SOURCE_DIR}/include/FFEA_version.h.in"
-               "${PROJECT_BINARY_DIR}/include/FFEA_version.h" @ONLY)
-include_directories(${PROJECT_BINARY_DIR}/include)
-
-if (FFEA_DEVEL STREQUAL "TRUE")
-  add_definitions(-DFFEA_DEVEL)
-endif (FFEA_DEVEL STREQUAL "TRUE")
 
 
 
