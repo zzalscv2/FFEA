@@ -32,5 +32,5 @@ install(TARGETS FFEA_convert_traj_to_mdcrd
 install(FILES 
         FFEA_compare_modes.py FFEA_convert_to_PCAsystem.py FFEA_get_PCA_animations.py FFEA_test_projection_convergence.py
         FFEA_get_PCA_eigensystem.py FFEA_get_PCA_projections.py FFEA_test_convergence.py plot_eigensystem_comparison.py
-        DESTINATION "${PYTHONSTUFF}/FFEA_analysis/FFEA_traj_tools")
+        DESTINATION "${PYTHONSTUFF}/FFEA_analysis/FFEA_pyPca")
 
