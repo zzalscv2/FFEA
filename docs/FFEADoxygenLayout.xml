@@ -53,8 +53,8 @@
         <tab type="user" url="file:../../ffeamodules/html/namespacemembers.html" title="Namespace Members"/>
       </tab>
   </tab> --> 
-  <tab type="user" url="https://bitbucket.org/sohpc-ffea/ffea" title="Download"/>
-  <tab type="user" url="https://bitbucket.org/sohpc-ffea/ffea/issues" title="Issue Tracker"/>
+  <tab type="user" url="https://bitbucket.org/FFEA/ffea/downloads/?tab=tags" title="Download"/>
+  <tab type="user" url="https://bitbucket.org/FFEA/ffea/issues?status=new&status=open" title="Issue Tracker"/>
 
   </navindex>
 
