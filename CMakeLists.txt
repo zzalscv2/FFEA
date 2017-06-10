@@ -138,7 +138,7 @@ if (${BUILD_DOC} STREQUAL "TRY")
 endif (${BUILD_DOC} STREQUAL "TRY")
 
 if(DOXYGEN_FOUND)
-  file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/doc")
+  file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/doc/doc/html")
   configure_file("${PROJECT_SOURCE_DIR}/Doxygen.in"
                  "${PROJECT_BINARY_DIR}/Doxyfile" @ONLY)
   configure_file("${PROJECT_SOURCE_DIR}/DoxygenPyM.in"
@@ -146,7 +146,7 @@ if(DOXYGEN_FOUND)
   add_custom_target(doc ALL ${DOXYGEN_EXECUTABLE}
                         ${PROJECT_BINARY_DIR}/DoxyfilePyM
                         DEPENDS docrunner
-                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/doc"
+                        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/doc/doc/html"
                         COMMENT "Generating documentation for developers"
                         VERBATIM)
   add_custom_target(docrunner ALL ${DOXYGEN_EXECUTABLE}
@@ -156,8 +156,6 @@ if(DOXYGEN_FOUND)
                         VERBATIM)
   install(DIRECTORY "${PROJECT_BINARY_DIR}/doc/doc/html" DESTINATION
                 share/ffea/doc OPTIONAL)
-  install(DIRECTORY "${PROJECT_BINARY_DIR}/doc/ffeamodules/html" DESTINATION
-                share/ffea/ffeamodules OPTIONAL)
 endif(DOXYGEN_FOUND)
 
 if (${BUILD_DOC} STREQUAL "ONLY")

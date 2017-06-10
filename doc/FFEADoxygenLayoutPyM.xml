@@ -43,7 +43,7 @@
         <tab type="globals" visible="yes" title="" intro=""/>
       </tab>
   </tab>
-  <tab type="user" title="FFEA main page" url="../../doc/html/index.html"/>
+  <tab type="user" title="FFEA main page" url="../../index.html"/>
   <tab type="user" url="http://ffea.bitbucket.org" title="Download"/>
   <tab type="user" url="https://bitbucket.org/sohpc-ffea/ffea/issues" title="Issue Tracker"/>
 
