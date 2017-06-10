@@ -44,8 +44,8 @@
       </tab>
   </tab>
   <tab type="user" title="FFEA main page" url="../../index.html"/>
-  <tab type="user" url="http://ffea.bitbucket.org" title="Download"/>
-  <tab type="user" url="https://bitbucket.org/sohpc-ffea/ffea/issues" title="Issue Tracker"/>
+  <tab type="user" url="https://bitbucket.org/FFEA/ffea/downloads/?tab=tags" title="Download"/>
+  <tab type="user" url="https://bitbucket.org/FFEA/ffea/issues?status=new&status=open" title="Issue Tracker"/>
 
   </navindex>
 
