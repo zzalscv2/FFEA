@@ -14,9 +14,60 @@
 
 import sys
 import os
-import subprocess
 
-subprocess.call('cd ../ ; cmake -DBUILD_DOC=ONLY ; make', shell=True)
+# FFEA stuff: 
+import subprocess
+import re
+
+def parseCMakeVars(iFile):
+  sta = open(iFile, 'r')
+  STA = sta.readlines()
+  sta.close()
+
+  CMakeVars = {}
+  for i in STA:
+    l = i.strip()
+    if l[0:3].upper() == "SET": 
+      l = l.split("(")[1]
+      l = l.split(")")[0]
+      l = l.split()
+      if len(l) > 1: 
+        CMakeVars[l[0]] = l[1]
+
+  return CMakeVars
+
+def cmake_configure_file(ifile, ofile, CMakeVars):
+  sta = open(ifile,'r') 
+  STA = sta.readlines()
+  sta.close()
+
+  sta = open(ofile, 'w')
+  for i in STA:
+    txt = i
+    if i.count("@") == 2:
+      l = i.split("@")
+      txt = l[0] + CMakeVars[l[1]] + l[2]
+    sta.write(txt)
+
+  sta.close()
+  
+
+      
+# get a CMakeVars dictionary:    
+CMakeVars = parseCMakeVars("../CMakeLists.txt")
+
+# and polish it a bit:
+CMakeVars["PACKAGE_VERSION"] = CMakeVars["VERSION"] + "." + CMakeVars["MINOR"]
+CMakeVars["PACKAGE_VERSION"] = re.sub('"','', CMakeVars["PACKAGE_VERSION"])
+CMakeVars["CMAKE_CURRENT_SOURCE_DIR"] = "."
+
+# configure the files:
+cmake_configure_file("../Doxygen.in", "../Doxyfile", CMakeVars)
+cmake_configure_file("../DoxygenPyM.in", "../DoxyfilePyM", CMakeVars)
+
+
+# and build the documentation:
+subprocess.call('cd ../ ; doxygen Doxyfile ; doxygen DoxyfilePyM ; mv ffeamodules doc/html/ ', shell=True)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -144,7 +195,8 @@ html_static_path = ['_static']
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
 # directly to the root of the documentation.
-html_extra_path = ['../doc/doc/html']
+# html_extra_path = []
+html_extra_path = ['../doc/html']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
