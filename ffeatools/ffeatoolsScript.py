@@ -55,7 +55,8 @@ ffea_tools = 	{
       "makepseudopdb": "FFEA_analysis/FFEA_pyPca/FFEA_convert_to_PCAsystem.py",
       "pyPCAanim": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_animations.py",
       "pyPCAeigen": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_eigensystem.py",
-      "pyPCAproj": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_projections.py"
+      "pyPCAproj": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_projections.py",
+      "pintovdw": "FFEA_initialise/FFEA_vdw_tools/FFEA_pin_to_vdw.py"
 		}
 
 if len(sys.argv) == 1:
