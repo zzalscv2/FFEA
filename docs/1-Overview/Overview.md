@@ -29,6 +29,7 @@ Publications  {#publications}
 ============
 
    * Methodology
+       * Solernou A., Hanson B. S., Richardson R. A., Welch R., Harris S. A., Read D. J., Harlen O. G. "Fluctuating Finite Element Analysis (FFEA): A continuum mechanics software tool for mesoscale simulation of biomolecules" (2017) *Submitted*.
        * Oliver R., Read D. J., Harlen O. G. & Harris S. A. ["A Stochastic finite element model for the dynamics of globular macromolecules"](http://www.sciencedirect.com/science/article/pii/S0021999112007589) (2013) J. Comp. Phys. 239, 147-165.
        * Patargias G. N., Harris S. A. & Harding J. ["A demonstration of the inhomogeneity of the local dielectric response of proteins by molecular dynamics simulations."](https://www.ncbi.nlm.nih.gov/pubmed/20572740) (2010) J. Chem. Phys. 132, 235103.
    * Applications
@@ -133,5 +134,8 @@ We want to thank everybody who has helped in making FFEA possible, from
    * Jonathan Boyle
    * Mike Croucher
    * Christopher Woods
+   * Katrina Goldman
+   * Matthew Faulkner 
+   * Ashley Fenton
 
 

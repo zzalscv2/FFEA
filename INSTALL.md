@@ -121,7 +121,7 @@ or concurrently:
 
   
 
-Install {#install} 
+Install {#makeinstall} 
 =======
 The following command will install FFEA:
 
