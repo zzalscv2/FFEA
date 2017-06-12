@@ -780,12 +780,10 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@ \
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/docs/1-Overview/README.md \
                          @CMAKE_CURRENT_SOURCE_DIR@/src \
                          @CMAKE_CURRENT_SOURCE_DIR@/include \
-                         @CMAKE_CURRENT_SOURCE_DIR@/docs \
                          @CMAKE_CURRENT_SOURCE_DIR@/INSTALL.md \
-                         @CMAKE_CURRENT_SOURCE_DIR@/docs \
                          @CMAKE_CURRENT_SOURCE_DIR@/docs/4-Tutorial \
                          @CMAKE_CURRENT_SOURCE_DIR@/docs/2-UserManual \
                          @CMAKE_CURRENT_SOURCE_DIR@/docs/5-DevManual \
@@ -938,7 +936,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = README.md
+USE_MDFILE_AS_MAINPAGE =  @CMAKE_CURRENT_SOURCE_DIR@/docs/1-Overview/Overview.md
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
