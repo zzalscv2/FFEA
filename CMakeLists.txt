@@ -74,6 +74,7 @@ if (USE_MPI)
 endif(USE_MPI)
 
 
+include(cmake/Colour.cmake)
 
 # 0 #### PRECISION ###
 if (USE_PRECISION EQUAL "1")
@@ -85,7 +86,7 @@ else(USE_PRECISION EQUAL "1")
     if (USE_PRECISION EQUAL "3") 
       add_definitions(-DUSE_DOUBLE_PLUS)
     else (USE_PRECISION EQUAL "3")
-      message(FATAL_ERROR "USE_PRECISION has to be set to either 1, 2 or 3.")
+      mymessage(FATAL_ERROR "USE_PRECISION has to be set to either 1, 2 or 3.")
     endif(USE_PRECISION EQUAL "3")
   endif(USE_PRECISION EQUAL "2")
 endif(USE_PRECISION EQUAL "1")
@@ -173,12 +174,12 @@ if (OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 else(OPENMP_FOUND)
     if (USE_OPENMP)
-      message(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP. Possible
+      mymessage(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP. Possible
 solutions:
   -- Disable OPENMP option (-DUSE_OPENMP=0)
   -- Provide valid compiler flags for variable: OpenMP_CXX_FLAGS")
     else (USE_OPENMP)
-      message(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP.  Possible
+      mymessage(FATAL_ERROR "Could not find a CXX_FLAG for OpenMP.  Possible
 solutions:
   -- Provide valid compiler flags for variable: OpenMP_CXX_FLAGS
   -- Submit a request to the developers suggesting to change omp_get_wtime to something else")
@@ -189,7 +190,7 @@ endif(OPENMP_FOUND)
 # 4 #### PARALLEL MODE #########
 if (USE_OMP_MODE EQUAL "0")
   if (USE_OPENMP) 
-    message(FATAL_ERROR "OMP was enabled, but USE_OMP_MODE set to 0. Possible solutions: 
+    mymessage(FATAL_ERROR "OMP was enabled, but USE_OMP_MODE set to 0. Possible solutions: 
     -- Disable OPENMP option (-DUSE_OPENMP=0) or
     -- Set USE_OMP_MODE either to 1 or 2")
   endif (USE_OPENMP)
@@ -200,7 +201,7 @@ else ()
     if (USE_OMP_MODE EQUAL "2")
       add_definitions(-DFFEA_PARALLEL_PER_BLOB)
     else ()
-      message(FATAL_ERROR "invalid value for USE_OMP_MODE")
+      mymessage(FATAL_ERROR "invalid value for USE_OMP_MODE")
     endif ()
   endif()
 endif()
@@ -238,7 +239,7 @@ if (USE_BOOST_INTERNAL)
    if (UNIX) 
       include(cmake/GetBoost.cmake)
    else (UNIX) 
-      message(FATAL_ERROR "Some day my prince will come.")
+      mymessage(FATAL_ERROR "Some day my prince will come. So far Windows is not supported.")
    endif(UNIX)
 
 else(USE_BOOST_INTERNAL) 
@@ -247,7 +248,7 @@ else(USE_BOOST_INTERNAL)
    # Check version:
    find_package( Boost 1.54.0 REQUIRED COMPONENTS program_options filesystem system  )
    if (NOT Boost_FOUND)
-     message(FATAL_ERROR "You could provide valid paths through either:
+     mymessage(FATAL_ERROR "You could provide valid paths through either:
       -- BOOST_ROOT or
       -- BOOST_INCLUDEDIR and BOOST_LIBRARYDIR or
 try reconfiguring with -DUSE_BOOST_INTERNAL")
@@ -291,7 +292,7 @@ else (USE_EIGEN3_INTERNAL)
      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
        if (${EIGEN3_VERSION} VERSION_LESS "3.3") 
          if (NOT ${EIGEN3_VERSION} VERSION_EQUAL "3.2.10")
-           message(FATAL_ERROR "\n Found Eigen3 ${EIGEN3_VERSION}, but GCC 5.0 and higher need Eigen version 3.2.10, or > 3.3. Release candidates for 3.3 (internally known as 3.2.91 and higher) are known to fail.")
+           mymessage(FATAL_ERROR "\n Found Eigen3 ${EIGEN3_VERSION}, but GCC 5.0 and higher need Eigen version 3.2.10, or > 3.3. Release candidates for 3.3 (internally known as 3.2.91 and higher) are known to fail.")
          endif (NOT ${EIGEN3_VERSION} VERSION_EQUAL "3.2.10")
        endif (${EIGEN3_VERSION} VERSION_LESS "3.3") 
      endif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.0")
@@ -342,7 +343,7 @@ else (NOT USE_PACK)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -fipa-pta -mtune=generic")
   else()
-      message(FATAL_ERROR "No packaging without GNU compilers")
+      mymessage(FATAL_ERROR "No packaging without GNU compilers")
   endif()
   if (USE_FAST)
       message(STATUS "USE_FAST changed to USE_PACK!")
