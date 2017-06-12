@@ -6,7 +6,7 @@ Analysis, and FFEA tools {#FFEAanalysistut}
 In previous parts of this tutorial, we have employed several python scripts by invoking `ffeatools` at the terminal. These scripts all make use of a set of core FFEA python modules. Each module corresponds to a different FFEA data file - the trajectory (``.ftj``), pin files (``.pin``), the stokes file (``.stokes``), et cetera. These are all unified and linked by the FFEA script file (``.ffea``).
 
 In addition to a few basic analysis tools that can be run from the terminal, these core Python modules are provided as part of a Python package, which allows them to be imported into a Python interpreter. Full description of the API has been generated automatically 
- using Doxygen and can be read [here](../../ffeamodules/html/usergroup0.html). 
+ using Doxygen and can be read [here](ffeamodules/html/usergroup0.html). 
 
 In our interactive python session we first
 ```python

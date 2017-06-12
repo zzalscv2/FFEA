@@ -20,7 +20,8 @@ To install FFEA you need:
      Required for building FFEA.
 
    * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL]   
-     It will be used to build the documentation.
+     It will be used to build the documentation. Some mathematical formulae 
+     will not render correctly if [LaTeX](https://www.tug.org/texlive/) is not found.
 
    * [Python](https://www.python.org/) (>= 2.6), is used to run some tests to verify that the FFEA runner was correctly built, as well as in the FFEA tools.
 
@@ -108,16 +109,7 @@ After configuring you will be able to build FFEA typing:
 
      make 
 
-Optionally, if Doxygen was found at configure time, 
- you can build the documentation typing:
-
-     make doc 
-
-There are some mathematical formulae that will not render correctly if latex
-  and ghostview are not found.
-
-
-Finally you may want to check your installation running a provided suite of tests, 
+You may want to check your installation running a provided suite of tests, 
  either sequentially:
   
      make test
@@ -141,7 +133,7 @@ either to the folder specified through ` -DCMAKE_INSTALL_PREFIX `
 
 The FFEA_runner, ` ffea `, as well as the ffeatools, ` ffeatools ` will be found 
  in ` $FFEA_HOME/bin `. Instructions on how to use them can be read 
- [here](\ref userManual) and [here](../../ffeamodules/html/index.html) respectively. 
+ [here](\ref userManual) and [here](ffeamodules/html/index.html) respectively. 
  In addition, the ` ffeatools ` Python package will be found in 
  ` $FFEA_HOME/lib/python<version>/site-packages `
 
