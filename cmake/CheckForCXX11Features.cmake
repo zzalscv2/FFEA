@@ -47,7 +47,7 @@ if (RESULT_VAR)
   message(STATUS "Checking C++11 support for stoi - Success")
 else ()
   message(STATUS "Checking C++11 support for stoi - Failed")
-  message(FATAL_ERROR "You need a more recent C++ compiler")
+  mymessage(FATAL_ERROR "You need a more recent C++ compiler")
 endif ()
 
 
@@ -64,7 +64,7 @@ if (RESULT_VAR)
   message(STATUS "Checking C++11 support for fstream-string - Success")
 else ()
   message(STATUS "Checking C++11 support for fstream-string - Failed")
-  message(FATAL_ERROR "You need a more recent C++ compiler")
+  mymessage(FATAL_ERROR "You need a more recent C++ compiler")
 endif ()
 
 
@@ -83,7 +83,7 @@ if (RESULT_VAR)
   message(STATUS "Checking C++11 support for FFEA vectors - Success")
 else ()
   message(STATUS "Checking C++11 support for FFEA vectors - Failed")
-  message(FATAL_ERROR "You need a more recent C++ compiler")
+  mymessage(FATAL_ERROR "You need a more recent C++ compiler")
 endif ()
 
 
