@@ -112,7 +112,7 @@ FFEA Team  {#FFEAteam}
    * Albert Solernou
    * Ben Hanson
    * Robin Richardson
-	* Robin Oliver
+   * Robin Oliver
 
 
 Thanks {#thanks}
