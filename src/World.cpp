@@ -2289,10 +2289,20 @@ int World::read_and_build_system(vector<string> script_vector) {
         if (systemreader->extract_block("blob", i, script_vector, &blob_vector) == FFEA_ERROR) return FFEA_ERROR;
 
         // Read all conformations
+        bool enforce_conf_blocks = false; 
+        bool read_blob_as_conf = false;
+        if ( (params.calc_kinetics == 1) && (params.num_conformations[i] > 1) ) enforce_conf_blocks = true;
         for(j = 0; j < params.num_conformations[i]; ++j) {
 
             // Get conformation data
-            if (systemreader->extract_block("conformation", j, blob_vector, &conformation_vector) == FFEA_ERROR) return FFEA_ERROR;
+            int read_conf_err = systemreader->extract_block("conformation", j, blob_vector, &conformation_vector);
+            if (read_conf_err == FFEA_ERROR) {
+                if (enforce_conf_blocks == true) return FFEA_ERROR;
+                else {
+                    read_blob_as_conf = true;
+                    conformation_vector = blob_vector;
+                }
+            }
 
             // Error check
             if(conformation_vector.size() == 0) {
@@ -2355,9 +2365,13 @@ int World::read_and_build_system(vector<string> script_vector) {
                     beads.push_back(auxpath.string());
                     set_preComp = 1;
                 } else {
-                    FFEA_error_text();
-                    cout << "Unrecognised conformation lvalue: '" << lrvalue[0] << "'" << endl;
-                    return FFEA_ERROR;
+                    bool forgive_unrecognised = false;
+                    if ( (read_blob_as_conf == true) && ( (lrvalue[0] == "centroid") || (lrvalue[0] == "rotation") || (lrvalue[0] == "solver") || (lrvalue[0] == "scale") || (lrvalue[0] == "translate") || (lrvalue[0] == "velocity") || (lrvalue[0] == "calc_compress") || (lrvalue[0] == "compress") ) ) forgive_unrecognised = true; 
+                    if (forgive_unrecognised == false) {
+                       FFEA_error_text();
+                       cout << "Unrecognised conformation lvalue: '" << lrvalue[0] << "'" << endl;
+                       return FFEA_ERROR;
+                    }
                 }
             }
 
