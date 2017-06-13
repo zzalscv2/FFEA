@@ -132,7 +132,7 @@ World::~World() {
     if(trajectory_out != NULL) {
 	    fclose(checkpoint_out);
     }
-    if(writeDetailed) {
+    if ((writeDetailed) && (detailed_meas_out != NULL)) {
 	fclose(detailed_meas_out);
     }
     writeDetailed = false;
