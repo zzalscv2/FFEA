@@ -114,7 +114,7 @@ int FFEA_input_reader::file_to_lines(string script_fname, vector<string> *script
 	return FFEA_OK;
 }
 
-int FFEA_input_reader::extract_block(string block_title, int block_index, vector<string> input, vector<string> *output) {
+int FFEA_input_reader::extract_block(string block_title, int block_index, vector<string> input, vector<string> *output, bool mandatory/*=true*/) {
 
 	// Immediate error checking
 	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs" && block_title != "precomp" && block_title != "ctforces") {
@@ -161,8 +161,10 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 		cout << "Never found closing tag '/" << block_title << "'." << endl;
 		return FFEA_ERROR;
 	} else {
-		FFEA_error_text();
-		cout << "Specified block_index " << block_index << " for block '" << block_title << "' not found." << endl;
+		if (mandatory) {
+			FFEA_error_text();
+			cout << "Specified block_index " << block_index << " for block '" << block_title << "' not found." << endl;
+		}
 		return FFEA_ERROR;
 	}
 	

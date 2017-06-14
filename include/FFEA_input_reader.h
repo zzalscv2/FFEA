@@ -46,7 +46,7 @@ class FFEA_input_reader {
 		int file_to_lines(string script_fname, vector<string> *output);
 
 		/** Extract any block from the current block */ 
-		int extract_block(string block_title, int block_index, vector<string> input, vector<string> *output);
+		int extract_block(string block_title, int block_index, vector<string> input, vector<string> *output, bool mandatory=true); 
 
 		/** Get rvalue from block */ 
 		int parse_tag(string input, string *output);
