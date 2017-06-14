@@ -2295,7 +2295,7 @@ int World::read_and_build_system(vector<string> script_vector) {
         for(j = 0; j < params.num_conformations[i]; ++j) {
 
             // Get conformation data
-            int read_conf_err = systemreader->extract_block("conformation", j, blob_vector, &conformation_vector);
+            int read_conf_err = systemreader->extract_block("conformation", j, blob_vector, &conformation_vector, enforce_conf_blocks);
             if (read_conf_err == FFEA_ERROR) {
                 if (enforce_conf_blocks == true) return FFEA_ERROR;
                 else {
