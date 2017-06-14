@@ -41,21 +41,18 @@ It's plain text, so open in your favourite text editor. You should see something
        <wall_z_2 = PBC>
        <es_h = 3>
        <num_blobs = 1>
-       <num_conformations = (1)>
     </param>
     
     <system>
        <blob>
-          <conformation>
-             <motion_state = DYNAMIC>
-             <topology = emd_5043_8ang.top>
-             <material = emd_5043_8ang.mat>
-             <stokes = emd_5043_8ang.stokes>
-             <pin = emd_5043_8ang.pin>
-             <nodes = emd_5043_8ang.node>
-             <surface = emd_5043_8ang.surf>
-             <vdw = emd_5043_8ang.vdw>
-          </conformation>
+          <motion_state = DYNAMIC>
+          <topology = emd_5043_8ang.top>
+          <material = emd_5043_8ang.mat>
+          <stokes = emd_5043_8ang.stokes>
+          <pin = emd_5043_8ang.pin>
+          <nodes = emd_5043_8ang.node>
+          <surface = emd_5043_8ang.surf>
+          <vdw = emd_5043_8ang.vdw>
           <solver = CG_nomass>
           <scale = 1.00e-10>
        </blob>

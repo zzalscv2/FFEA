@@ -640,10 +640,12 @@ class FFEA_script_params():
 
 	def write_to_file(self, fout, fname, verbose=False):
 		
+		write_num_conformations_string = False 
 		num_conformations_string = ""
 		num_states_string = ""
 		for i in range(self.num_blobs):
 			num_conformations_string += str(self.num_conformations[i]) + ","
+			if (self.num_conformations[i]) > 1: write_num_conformations_string = True
 			#num_states_string += str(self.num_states[i]) + ","
 
 		num_conformations_string = num_conformations_string[0:-1]
@@ -656,7 +658,7 @@ class FFEA_script_params():
 			astr += "\t<dt = %5.2e>\n" % (self.dt)
 			astr += "\t<kT = %5.2e>\n" % (self.kT)
 			astr += "\t<check = %d>\n" % (self.check)
-			astr += "\t<num_steps = %1.6e>\n" % (self.num_steps)
+			astr += "\t<num_steps = %5.2e>\n" % (self.num_steps)
 			astr += "\t<rng_seed = time>\n"
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
@@ -670,37 +672,43 @@ class FFEA_script_params():
 			astr += "\t<checkpoint_in = %s>\n" % (os.path.relpath(self.checkpoint_in, os.path.dirname(os.path.abspath(fname))))
 		if self.checkpoint_out != "":
 			astr += "\t<checkpoint_out = %s>\n" % (os.path.relpath(self.checkpoint_out, os.path.dirname(os.path.abspath(fname))))
-		if verbose:
-			astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
-			astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
-			astr += "\t<kappa = %5.2e>\n" % (self.kappa)
+
+		if (self.calc_es == 1):
 			astr += "\t<epsilon_0 = %5.2e>\n" % (self.epsilon_0)
 			astr += "\t<dielec_ext = %5.2e>\n" % (self.dielec_ext)
+			astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
+		if verbose:
+			astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
 			astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
 			astr += "\t<stokes_visc = %5.2e>\n" % (self.stokes_visc)
 			astr += "\t<calc_vdw = %d>\n" % (self.calc_vdw)
 			if self.calc_vdw == 1:
 				astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
 				if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
-					astr += "\t<vdw_steric_factor = %f>\n" % (self.vdw_steric_factor)
+					astr += "\t<vdw_steric_factor = %5.2e>\n" % (self.vdw_steric_factor)
 			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
 			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
 			astr += "\t<calc_es = %d>\n" % (self.calc_es)
-			astr += "\t<es_update = %d>\n" % (self.es_update)
+			astr += "\t<kappa = %5.2e>\n" % (self.kappa)
+			astr += "\t<es_h = %d>\n" % (self.es_h)
+		if ((self.es_N[0] != -1) or (self.es_N[1] != -1) or (self.es_N[2] != -1)):
 			astr += "\t<es_N_x = %d>\n" % (self.es_N[0])
 			astr += "\t<es_N_y = %d>\n" % (self.es_N[1])
 			astr += "\t<es_N_z = %d>\n" % (self.es_N[2])
-			astr += "\t<move_into_box = %d>\n" % (self.move_into_box)
-			astr += "\t<sticky_wall_xz = %d>\n" % (self.sticky_wall_xz)
-			astr += "\t<wall_x_1 = %s>\n" % (self.wall_x_1)
-			astr += "\t<wall_x_2 = %s>\n" % (self.wall_x_2)
-			astr += "\t<wall_y_1 = %s>\n" % (self.wall_y_1)
-			astr += "\t<wall_y_2 = %s>\n" % (self.wall_y_2)
-			astr += "\t<wall_z_1 = %s>\n" % (self.wall_z_1)
-			astr += "\t<wall_z_2 = %s>\n" % (self.wall_z_2)
-			astr += "\t<es_h = %d>\n" % (self.es_h)
+			# astr += "\t<move_into_box = %d>\n" % (self.move_into_box)
+			# astr += "\t<sticky_wall_xz = %d>\n" % (self.sticky_wall_xz)
+			# astr += "\t<wall_x_1 = %s>\n" % (self.wall_x_1)
+			# astr += "\t<wall_x_2 = %s>\n" % (self.wall_x_2)
+			# astr += "\t<wall_y_1 = %s>\n" % (self.wall_y_1)
+			# astr += "\t<wall_y_2 = %s>\n" % (self.wall_y_2)
+			# astr += "\t<wall_z_1 = %s>\n" % (self.wall_z_1)
+			# astr += "\t<wall_z_2 = %s>\n" % (self.wall_z_2)
+		if verbose:
+			astr += "\t<es_update = %d>\n" % (self.es_update)
+			
 		astr += "\t<num_blobs = %d>\n" % (self.num_blobs)
-		astr += "\t<num_conformations = (%s)>\n" % (num_conformations_string)
+		if (write_num_conformations_string):
+			astr += "\t<num_conformations = (%s)>\n" % (num_conformations_string)
 		#astr += "\t<num_states = (%s)>\n" % (num_states_string)
 		astr += "</param>\n\n"	
 		fout.write(astr)
