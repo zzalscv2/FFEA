@@ -45,8 +45,14 @@ FFEA uses Boost and Eigen. To make your life easier, **the code is shipped whih
 Configure {#configure}
 =========
 
-It is generally advisable to configure and compile FFEA outside of the source tree. 
-Therefore, to configure FFEA, we would recommend to:
+FFEA uses CMake to find the compile, dependencies and to configure files and Makefiles 
+ automatically for you. After the first run, CMake stores some information
+ such as your compiler, so that on a second run it will not look for it again. 
+ If you wanted to change the compiler on a second round you would need 
+ to either change its value explicitly or to start from a clean folder
+ (a short introduction to CMake can be read [here](https://cmake.org/runningcmake)). 
+ Therefore, it is generally advisable to configure and compile 
+ FFEA outside of the source tree, so we would recommend to:
 
     mkdir $FFEA_BUILD
     cd $FFEA_BUILD 
