@@ -16,8 +16,8 @@ The input file has two main blocks:
   * param: describing global parameters of the system
   * system: describing the system itself.
 
-Blocks open with: ` <block> ` and closed with ` </block> `. Therefore a valid input file
- will look like:
+Blocks open with: ` <block> ` and closed with ` </block> `, and the structure of a minimal
+ valid ` .ffea ` file looks like:
 
 
     <param>
@@ -26,27 +26,14 @@ Blocks open with: ` <block> ` and closed with ` </block> `. Therefore a valid in
 
     <system>
         <blob>
-            <conformation>
-             ...
-            </conformation>
-	    <kinetics>
-	     ...
-	    </kinetics>
+         ... 
         </blob>
-
-        <interactions> 
-           ...
-        </interactions>
-
     </system>     
 
 where:
+  * the `<param>` block contains parameters affecting the whole `system`.
+  * the `<system>` block contain subblocks describing the blobs and possibly their interactions.
   * each ` blob ` block defines a protein in the simulation
-  * each ` conformation ` describes structurally a stable conformation of a protein
-  * each ` kinetic ` block defines the how multiple structural states can kinetically switch between one another
-  * ` interactions ` is an optional block where interactions between blobs are defined, containing at least one of the following blocks:
-      - ` springs ` where springs between nodes are defined or 
-      - ` precomp ` where precomputed potentials are given in look-up tables.
 
 Attributes within blocks are defined between ` < ` `  > `, using International System Units. 
  For example, temperature is set to 300K using kT, as:
@@ -62,7 +49,13 @@ or giving an absolute path:
 
     <trajectory_out_fname = /path/to/your/file/trajectory.out>
 
-Finally, comments are allowed when enclosed between ` &lt;!-- ` and ` --> ` signs, 
+Comments are allowed when enclosed between ` &lt;!-- ` and ` --> ` signs, 
   e. g. <!-- this is a comment that does not show off in the HTML version :) --> 
   ` &lt;!--  this is a comment :) --> `.
 
+A minimal input file is generated automatically through [voltoffea](\ref voltoffeatut),
+ the next sections describe how to set up more complex systems, and all the 
+ keywords and blocks are listed and described in the [reference site](\ref keywordReference). 
+
+ 
+ 

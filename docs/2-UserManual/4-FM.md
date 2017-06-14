@@ -29,7 +29,8 @@ where the only fields that are taken into account are
    ` B1 `, ` B2 `, ... standing for the bead type (single word, no further restrictions)
  and the position of each bead ` x `, `y`, `z` 
  (using the same units as the ` nodes ` file). 
- This file is entered as ` beads ` within block ` <conformation> `:
+ This file is entered as ` beads ` within block ` <blob> ` 
+ (or within ` <conformation> `, if multiple conformations are defined):
 
      <beads = beadsForBlobXConfY.pdb> 
 
@@ -53,7 +54,8 @@ At the beginning of the simulation, each bead is assigned onto a tetrahedron, an
 
 where the directive ` nodes ` ensures that no accidental confusion arises with
  B-factors or other information after the position of the beads. Note that 
- ` nodes ` belongs to the ` <conformation> ` block, and therefore, the coordinates 
+ ` nodes ` belongs to the ` <blob> ` block (or to the ` <conformation> ` block, 
+ if multiple conformations are defined) and therefore, the coordinates 
  given will be rescaled according to ` <blob> ` ` scale `, as well as 
  possibly rotated and translated if ` rotation ` and ` centroid ` are set, too.
 
@@ -71,11 +73,37 @@ Details on how to use these keywords can be found in the
   [corresponding subsection](\ref preCompBlock) of the FFEA input file.
 
 
-The trajectory for the beads can be saved in a `.pdb` formatted file if ` beads_out_fname ` 
- is set in the ` .ffea ` input file. Because beads will stay bound to the elements where 
+Optionally, the trajectory for the beads can be saved in a `.pdb` formatted file if ` beads_out_fname ` 
+ is set in the `<params> ` block of the  ` .ffea ` input file.
+ Because beads will stay bound to the elements where 
  they have been assigned to, this feature aims to proof whether the system has been 
  configured correctly, so once the user is sure, it can be unset. Restarts are currently 
  not supported. 
+
+In summary the structure of a ` .ffea ` file with two blobs would interacting through pre-computed 
+ potentials would look like:
+
+
+    <param>
+      ...
+    </param>
+
+    <system>
+        <blob>
+          ... 
+        </blob>
+        <blob>
+          ... 
+        </blob>
+
+        <interactions>
+          <precomp>
+            ... 
+          </precomp>
+          ... 
+        </interactions>
+
+    </system>
 
 
 Implementation details {#fm_implementation}

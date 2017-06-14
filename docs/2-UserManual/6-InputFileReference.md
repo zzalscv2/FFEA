@@ -6,7 +6,8 @@ FFEA Input File Reference {#keywordReference}
 
 Param Block {#paramBlock}
 =======================
-  The param block starts with the line ` <param> ` and ends with the line ` </param> `. 
+  The param block is mandatory, and 
+  starts with the line ` <param> ` and ends with the line ` </param> `. 
 In between it can take the following parameters: 
 
 
@@ -196,14 +197,14 @@ In between it can take the following parameters:
 System Block {#systemBlock}
 =======================
 
-  The system block starts with the line ` <system> ` and ends with the line ` </system> `. 
-It only contains other blocks, and no 'system' parameters.
+  The system block is mandatory starts with the line ` <system> ` and ends with the line ` </system> `. 
+It only contains other blocks, without any 'system' parameters.
 
 Blob Block {#blobBlock}
 -----------------------
 
-  The blob block starts with the line ` <blob> ` and ends with the line ` </blob> `. 
-It has both it's own parameters and a set of sub-blocks:
+  The blob block starts with the line ` <blob> ` and ends with the line ` </blob> `. At least a `<blob>`
+  block is expected. It has both it's own parameters and a set of sub-blocks:
 
 
    * ` solver ` <string> (CG_nomass) <BR>
@@ -242,6 +243,11 @@ It has both it's own parameters and a set of sub-blocks:
       Set factor to compress (or expand) blob by. Multiplies all node postions in this blob by this value in all 
       x,y,z during initialisation without changing equilibrium form of blob. Required if calc_compress set to 1.
 
+   * Block `<blob>` expects at least a valid conformation. In the case of multiple conformations for the blob, 
+      they have to be defined using multiple `<conformation>` blocks. In the case of a single conformation, 
+      the user can choose to use a single `<conformation>` subblock, or to directly include the relevant values 
+      in the `<blob>` block. 
+
 ### Conformation Block {#conformationBlock} ###
 
   The conformation block starts with the line ` <conformation> ` and ends with the line ` </conformation> `. 
@@ -256,30 +262,35 @@ It contains mostly structural information:
    * ` nodes ` <string> <BR>
      The file name specifying the node positions
 
-   * ` topology ` <string> <BR>
-     The file name specifying the node connectivities (how they form elements)
+   * ` topology ` <string> [OPTIONAL] <BR>
+     The file name specifying the node connectivities (how they form elements). `topology` is only needed if 
+     `motion_state` is set to `DYNAMIC`.
 
    * ` surface ` <string> <BR>
      The file name specifying the surface node connectivities (how they form faces)
 
-   * ` material ` <string> <BR>
-     The file name specifying the material properties of each element
+   * ` material ` <string> [OPTIONAL] <BR>
+     The file name specifying the material properties of each element. 
+     ` material ` is only needed if `motion_state` is set to `DYNAMIC`.
 
-   * ` vdw ` <string> <BR>
+   * ` vdw ` <string> [OPTIONAL] <BR>
      The file name specifying the type of vdw interaction for each surface face
+     ` vdw ` is only needed if `calc_vdw` is set to 1.
 
-   * ` stokes ` <string> <BR>
+   * ` stokes ` <string> [OPTIONAL] <BR>
      The file name specifying the 'radius' of each node, to calculate local hydrodynamics
+     ` material ` is only needed if `motion_state` is set to `DYNAMIC`.
 
    * ` pin ` <string> <BR>
      The file name specifying which, if any, nodes are pinned in place (to simulate permanent binding, for example)
 
-   * ` binding_sites ` <string> <BR>
+   * ` binding_sites ` <string> [OPTIONAL] <BR>
      The file name specifying the sets of faces which constitute kinetic binding sites, and the type of site
+     ` material ` is only needed if binding sites are being used (read the [kinetics section](\ref kffea_inputfile))
 
-   * ` beads ` <string> <BR>
-     The file name specifying the position of every bead in the system. The formatting 
- of this file can be found [here](\ref fm_inputfile).
+   * ` beads ` <string> [OPTIONAL] <BR>
+     The file name specifying the position of every bead in the system. This is only needed on those blobs that 
+      use beads for pre-computed potentials, the formatting of this file can be found [here](\ref fm_inputfile).
 
 #### Kinetics Block {#kineticsBlock} ####
 
