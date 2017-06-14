@@ -202,7 +202,6 @@ class FFEA_script:
 
 	def read_blob_from_script_lines(self, script_lines, scriptdir, index, num_conformations):
 
-
 		# Get relevent blob block
 		blob_lines = extract_block_from_lines('blob', index, script_lines)
 
@@ -210,12 +209,23 @@ class FFEA_script:
 		blob = FFEA_script_blob()
 
 		# Get conformations first
+		enforce_conf_blocks = False
+		if (num_conformations > 1): enforce_conf_blocks = True
 		for i in range(num_conformations):
 
 			# Get a conformation
 			conformation = FFEA_script_conformation()
 			
 			conformation_lines = extract_block_from_lines('conformation', i, blob_lines)
+			read_blob_as_conf = False
+			if len(conformation_lines) == 0:
+				if enforce_conf_blocks == True: 
+					print "Error. Couldn't parse conformation tag '" + line + "'"
+					return None
+				else:
+					conformation_lines = blob_lines[:]
+					read_blob_as_conf = True
+
 			for line in conformation_lines:
 				try:
 					line = line.strip().replace("<", "").replace(">", "")
@@ -247,8 +257,13 @@ class FFEA_script:
 					elif lvalue == "beads":
 						conformation.beads = get_path_from_script(rvalue, scriptdir)
 					else:
-						print "Unrecognised conformation tag '" + line + "'. Ignoring..."
-						continue
+						if ((read_blob_as_conf == True) and ( (lvalue == "centroid") or \
+							(lvalue == "rotation") or (lvalue == "solver") or (lvalue == "scale") or \
+							(lvalue == "translate") or (lvalue == "velocity") or (lvalue == "velocity") or \
+                   	(lvalue == "calc_compress") or (lvalue == "compres"))): continue
+						else: 
+							print "Unrecognised conformation tag '" + line + "'. Ignoring..."
+							continue
 
 				except(IndexError, ValueError):
 					print "Error. Couldn't parse conformation tag '" + line + "'"
@@ -836,3 +851,27 @@ def extract_block_from_lines(title, index, lines):
 			return []
 
 	return block	
+
+def check_if_block_in_lines(title, index, lines):
+
+	block_index = 0
+	block_in_lines = False
+
+	for line in lines:
+		try:
+			if in_block == 0:
+				if line.strip().replace("<", "").replace(">", "") == title:
+
+					block_index += 1
+					if block_index <= index:
+						continue
+					else:
+						block_in_lines = True
+						break
+
+		except:
+			
+			print "Error. Could not parse line " + line
+			break
+
+	return block_in_lines
