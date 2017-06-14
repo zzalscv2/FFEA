@@ -724,8 +724,10 @@ class FFEA_script_blob:
 
 		fout.write("\t<blob>\n")
 		need_solver = 0;
+		need_conformations = False
+		if (self.num_conformations > 1): need_conformations = True
 		for conformation in self.conformation:
-			conformation.write_to_file(fout, fname, calc_kinetics, calc_preComp)
+			conformation.write_to_file(fout, fname, calc_kinetics, calc_preComp, need_conformations)
 			if conformation.motion_state == "DYNAMIC":
 				need_solver = 1
 		
@@ -802,25 +804,35 @@ class FFEA_script_conformation:
 		self.vdw = basename + ".vdw"
 		self.pin = basename + ".pin"	
 
-	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp):
+	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp, need_conformations=True):
 
 		astr = ""
-		astr += "\t\t<conformation>\n"
-		astr += "\t\t\t<motion_state = %s>\n" % (self.motion_state)
-		if self.motion_state != "STATIC":
-			astr += "\t\t\t<topology = %s>\n" % (os.path.relpath(self.topology, os.path.dirname(os.path.abspath(fname))))
-			astr += "\t\t\t<material = %s>\n" % (os.path.relpath(self.material, os.path.dirname(os.path.abspath(fname))))
-			astr += "\t\t\t<stokes = %s>\n" % (os.path.relpath(self.stokes, os.path.dirname(os.path.abspath(fname))))
-			astr += "\t\t\t<pin = %s>\n" % (os.path.relpath(self.pin, os.path.dirname(os.path.abspath(fname))))
+		if (need_conformations):
+			astr += "\t\t<conformation>\n"
+			tabs = "\t\t\t"
+		else:
+			tabs = "\t\t"
 
-		astr += "\t\t\t<nodes = %s>\n" % (os.path.relpath(self.nodes, os.path.dirname(os.path.abspath(fname))))
-		astr += "\t\t\t<surface = %s>\n" % (os.path.relpath(self.surface, os.path.dirname(os.path.abspath(fname))))
-		astr += "\t\t\t<vdw = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
+		astr += tabs + "<motion_state = %s>\n" % (self.motion_state)
+		if self.motion_state != "STATIC":
+			astr += tabs + "<topology = %s>\n" % (os.path.relpath(self.topology, os.path.dirname(os.path.abspath(fname))))
+			astr += tabs + "<material = %s>\n" % (os.path.relpath(self.material, os.path.dirname(os.path.abspath(fname))))
+			astr += tabs + "<stokes = %s>\n" % (os.path.relpath(self.stokes, os.path.dirname(os.path.abspath(fname))))
+			astr += tabs + "<pin = %s>\n" % (os.path.relpath(self.pin, os.path.dirname(os.path.abspath(fname))))
+
+		astr += tabs + "<nodes = %s>\n" % (os.path.relpath(self.nodes, os.path.dirname(os.path.abspath(fname))))
+		astr += tabs + "<surface = %s>\n" % (os.path.relpath(self.surface, os.path.dirname(os.path.abspath(fname))))
+		astr += tabs + "<vdw = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
+
 		if(calc_kinetics == 1 and self.bsites != ""):
-			astr += "\t\t\t<binding_sites = %s>\n" % (os.path.relpath(self.bsites, os.path.dirname(os.path.abspath(fname))))
+			astr += tabs + "<binding_sites = %s>\n" % (os.path.relpath(self.bsites, os.path.dirname(os.path.abspath(fname))))
+
 		if(calc_preComp == 1):
-			astr += "\t\t\t<beads = %s>\n" % (os.path.relpath(self.beads, os.path.dirname(os.path.abspath(fname))))
-		astr += "\t\t</conformation>\n"
+			astr += tabs + "<beads = %s>\n" % (os.path.relpath(self.beads, os.path.dirname(os.path.abspath(fname))))
+
+		if (need_conformations):
+			astr += "\t\t</conformation>\n"
+
 		fout.write(astr)
 
 def extract_block_from_lines(title, index, lines):
