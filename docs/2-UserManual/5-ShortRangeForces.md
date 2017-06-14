@@ -21,7 +21,8 @@ to turn them on. In addition, these short ranged forces are acting between
      < vdw = my-system.vdw >
 
 where "my-system" is whatever the file you have, and this field is 
- included into the ` <conformation> ` block in the input .ffea file.
+ included in the `<blob>` block (or in the ` <conformation> ` block, 
+ if multiple conformations are defined) in the input .ffea file.
  The ` vdw ` file is a text file that starts with the lines:
 
      ffea vdw file

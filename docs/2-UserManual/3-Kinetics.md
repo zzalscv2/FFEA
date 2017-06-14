@@ -65,6 +65,29 @@ In order to implement kinetics, the following extra data is required by the simu
          <map (conf_index_B, conf_index_A) = BtoA.map>
      </maps>
 
+
+Summing up, a valid FFEA input file for a single blob with two conformations could look like:
+
+
+    <param>
+      ...
+    </param>
+
+    <system>
+        <blob>
+            <conformation>
+               ...
+            </conformation>
+            <conformation>
+               ...
+            </conformation>
+       <kinetics>
+        ...
+       </kinetics>
+        </blob>
+    </system>
+
+
 Implementation details {#kffea_implementation}
 ----------------------
 In order to generate the maps between structures, a script is provided within the FFEA toolkit:
