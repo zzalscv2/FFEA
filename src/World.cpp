@@ -2291,7 +2291,7 @@ int World::read_and_build_system(vector<string> script_vector) {
         // Read all conformations
         bool enforce_conf_blocks = false; 
         bool read_blob_as_conf = false;
-        if ( (params.calc_kinetics == 1) && (params.num_conformations[i] > 1) ) enforce_conf_blocks = true;
+        if (params.num_conformations[i] > 1) enforce_conf_blocks = true;
         for(j = 0; j < params.num_conformations[i]; ++j) {
 
             // Get conformation data
