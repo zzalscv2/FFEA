@@ -99,7 +99,6 @@ endif(USE_PRECISION EQUAL "1")
 find_package(Git 1.6)
 set(VERSION_CMAKECONF "")
 if (GIT_FOUND)
-  message(STATUS ${GIT_EXECUTABLE})
   execute_process(
      COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:'%H'
      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
