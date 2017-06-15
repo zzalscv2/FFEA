@@ -320,7 +320,8 @@ int Blob::init(){
         FFEA_ERROR_MESSG("Error when loading binding sites file.\n")
     }
 
-    if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
+    // This can be defaulted by leaving it out of the script
+    if (blob_state == FFEA_BLOB_IS_DYNAMIC && s_pin_filename != "") {
         if (load_pinned_nodes(s_pin_filename.c_str()) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob pinned nodes file.\n");
         }
