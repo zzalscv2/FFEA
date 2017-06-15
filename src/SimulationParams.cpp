@@ -39,6 +39,7 @@ SimulationParams::SimulationParams() {
     inc_self_vdw = 1;
     sticky_wall_xz = 0;
     vdw_type = "steric";
+    vdw_cutoff = 3e-9 / mesoDimensions::length; 
     vdw_steric_factor = 1e-2;
     vdw_steric_dr = 5e-3;
     move_into_box = 1;
@@ -129,6 +130,7 @@ SimulationParams::~SimulationParams() {
     calc_vdw = -1;
     inc_self_vdw = 0;
     vdw_type = "";
+    vdw_cutoff = 0; 
     calc_es = 0;
     calc_noise = 0;
     calc_preComp = 0;
@@ -382,6 +384,11 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << stokes_visc << endl;
         stokes_visc /= mesoDimensions::pressure * mesoDimensions::time;
 
+    } else if (lvalue == "vdw_cutoff") {
+        vdw_cutoff = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_cutoff << endl;
+        vdw_cutoff /= mesoDimensions::length;
+
     } else if (lvalue == "vdw_steric_factor") {
         vdw_steric_factor = atof(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_steric_factor << endl;
@@ -589,6 +596,10 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("Required: 'inc_self_vdw', must be 0 (no) or 1 (yes).\n");
     }
 
+    if (vdw_cutoff <= 0) {
+        FFEA_ERROR_MESSG("'vdw_cutoff' must be positive and larger than zero.\n");
+    }
+
     if (calc_vdw == 1) {
 
         if (vdw_type != "lennard-jones" && vdw_type != "steric" && vdw_type != "ljsteric") {
@@ -780,6 +791,7 @@ int SimulationParams::validate(int sim_mode) {
     printf("\tdielec_ext = %e\n", dielec_ext);
     printf("\tcalc_vdw = %d\n", calc_vdw);
     printf("\tvdw_type = %s\n", vdw_type.c_str());
+    printf("\tvdw_cutoff = %e\n", vdw_cutoff * mesoDimensions::length);
     printf("\tinc_self_vdw = %d\n", inc_self_vdw);
     printf("\tcalc_es = %d\n", calc_es);
     printf("\tcalc_noise = %d\n", calc_noise);
@@ -837,6 +849,7 @@ void SimulationParams::write_to_file(FILE *fout) {
     fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
     fprintf(fout, "\tstokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
 
+    fprintf(fout, "\tvdw_cutoff = %e\n", vdw_cutoff*mesoDimensions::length);
     fprintf(fout, "\tes_update = %d\n", es_update);
     fprintf(fout, "\tes_N_x = %d\n", es_N_x);
     fprintf(fout, "\tes_N_y = %d\n", es_N_y);

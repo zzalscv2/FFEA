@@ -113,6 +113,7 @@ public:
     scalar stokes_visc;
 
     scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
+    scalar vdw_cutoff; ///< Cutoff distance for the VdW interactions. 
     geoscalar vdw_steric_dr; ///< used to calculate the numerical derivative.
 
     string FFEA_script_filename;

@@ -444,18 +444,18 @@ class FFEA_viewer_control_window:
 		self.box_exists = False
 		self.box = np.array([0.0,0.0,0.0])
 	else:
-		try:
+		#try:
 
 			# Do we need to calculate the box? Double the rounded up size of the system
 			for i in range(3):
 				if p.es_N[i] < 1:
 					dims = self.get_system_dimensions(0)
 					for j in range(3):
-						p.es_N[j] = 2 * int(np.ceil(dims[j] * (p.kappa / (p.es_h * self.global_scale))))
+						p.es_N[j] = 2 * int(np.ceil(dims[j] / (self.global_scale*p.vdw_cutoff)))
 					break
 
 			self.box_exists = True
-			self.box = (1.0 / p.kappa) * p.es_h * p.es_N
+			self.box = p.vdw_cutoff * p.es_N
 	
 			# Does it exist? Realllllly?? If it's this small, it doesn't. OK?!!
 			for i in self.box:
@@ -463,9 +463,9 @@ class FFEA_viewer_control_window:
 					self.box_exists = False
 					break
 
-		except:
-			self.box_exists = False
-			self.box = np.array([0.0,0.0,0.0])
+		#except:
+			#self.box_exists = False
+			#self.box = np.array([0.0,0.0,0.0])
 
 		
 	# Rescale box
