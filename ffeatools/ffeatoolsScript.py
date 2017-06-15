@@ -53,6 +53,7 @@ ffea_tools = 	{
       "maptraj": "FFEA_initialise/FFEA_mapping_tools/Kinetic_FFEA_map_apply_to_FFEA_traj.py",
       "automodel": "FFEA_initialise/FFEA_automodel.py",
       "makepseudopdb": "FFEA_analysis/FFEA_pyPca/FFEA_convert_to_PCAsystem.py",
+      "makevdwfromface": "FFEA_initialise/FFEA_vdw_tools/FFEA_vdw_activation_radially_from_face.py",
       "pyPCAanim": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_animations.py",
       "pyPCAeigen": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_eigensystem.py",
       "pyPCAproj": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_projections.py",
