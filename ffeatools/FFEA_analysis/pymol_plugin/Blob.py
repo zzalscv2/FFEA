@@ -154,18 +154,23 @@ class Blob:
 			except:
 				print("\nERROR: '" + c.stokes + "' could not be loaded.")
 				raise
+
+
+			# Successfully loaded, but structurally incorrect
+			if (not self.top.valid): raise IOError('Something went wrong initialising topology')
+			if (not self.mat.valid): raise IOError('Something went wrong initialising material')
+			if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
+		
+		# Pin can be defaulted
+		if c.pin != "":
 			try:
 				self.pin = FFEA_pin.FFEA_pin(c.pin)
 			except:
 				print("\nERROR: '" + c.pin + "' could not be loaded.")
 				raise
 
-			# Successfully loaded, but structurally incorrect
-			if (not self.top.valid): raise IOError('Something went wrong initialising topology')
-			if (not self.mat.valid): raise IOError('Something went wrong initialising material')
-			if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
 			if (not self.pin.valid): raise IOError('Something went wrong initialising pinned nodes')
-		
+
 		# Only necessary if kinetics are active
 		if script.params.calc_kinetics == 1 and c.bsites != "":
 			self.bsites = FFEA_binding_sites.FFEA_binding_sites(c.bsites)

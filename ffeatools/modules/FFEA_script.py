@@ -34,7 +34,7 @@ def get_path_from_script(path, scriptdir):
 
 class FFEA_script:
 
-	def __init__(self, fname = "", fix=False):
+	def __init__(self, fname = "", fix=True):
 
 		self.reset()
 
@@ -397,13 +397,13 @@ class FFEA_script:
 		self.add_empty_blob()
 		self.blob[-1].default(basename)
 
-	def write_to_file(self, fname, verbose=True):
+	def write_to_file(self, fname, verbose=False):
 
 		fout = open(fname, "w")
 		self.params.write_to_file(fout, fname, verbose=verbose)
 		fout.write("<system>\n")
 		for blob in self.blob:
-			blob.write_to_file(fout, fname, self.params.calc_kinetics, self.params.calc_preComp)
+			blob.write_to_file(fout, fname, self.params.calc_kinetics, self.params.calc_preComp, verbose = verbose)
 
 		if self.spring != "":
 			fout.write("\t<interactions>\n\t\t<springs>\n")
@@ -467,6 +467,7 @@ class FFEA_script_params():
 		self.restart = 0
 		self.dt = 1e-14
 		self.kT = 4.11e-21
+		self.kt = self.kT
 		self.check = 10000
 		self.num_steps = 1e11
 		self.trajectory_out_fname = ""
@@ -732,14 +733,14 @@ class FFEA_script_blob:
 		self.centroid = None
 		self.rotation = None
 
-	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp):
+	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp, verbose = False):
 
 		fout.write("\t<blob>\n")
 		need_solver = 0;
 		need_conformations = False
 		if (self.num_conformations > 1): need_conformations = True
 		for conformation in self.conformation:
-			conformation.write_to_file(fout, fname, calc_kinetics, calc_preComp, need_conformations)
+			conformation.write_to_file(fout, fname, calc_kinetics, calc_preComp, need_conformations, verbose = verbose)
 			if conformation.motion_state == "DYNAMIC":
 				need_solver = 1
 		
@@ -755,7 +756,7 @@ class FFEA_script_blob:
 			fout.write("\t\t\t<rates = %s>\n" % (os.path.relpath(self.rates, os.path.dirname(os.path.abspath(fname)))))
 			fout.write("\t\t</kinetics>\n")
 
-		if need_solver == 1:
+		if need_solver == 1 and verbose:
 			fout.write("\t\t<solver = %s>\n" % (self.solver))
 
 		fout.write("\t\t<scale = %5.2e>\n" % (self.scale))
@@ -816,7 +817,7 @@ class FFEA_script_conformation:
 		self.vdw = basename + ".vdw"
 		self.pin = basename + ".pin"	
 
-	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp, need_conformations=True):
+	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp, need_conformations=True, verbose = False):
 
 		astr = ""
 		if (need_conformations):
@@ -830,7 +831,8 @@ class FFEA_script_conformation:
 			astr += tabs + "<topology = %s>\n" % (os.path.relpath(self.topology, os.path.dirname(os.path.abspath(fname))))
 			astr += tabs + "<material = %s>\n" % (os.path.relpath(self.material, os.path.dirname(os.path.abspath(fname))))
 			astr += tabs + "<stokes = %s>\n" % (os.path.relpath(self.stokes, os.path.dirname(os.path.abspath(fname))))
-			astr += tabs + "<pin = %s>\n" % (os.path.relpath(self.pin, os.path.dirname(os.path.abspath(fname))))
+			if verbose:
+				astr += tabs + "<pin = %s>\n" % (os.path.relpath(self.pin, os.path.dirname(os.path.abspath(fname))))
 
 		astr += tabs + "<nodes = %s>\n" % (os.path.relpath(self.nodes, os.path.dirname(os.path.abspath(fname))))
 		astr += tabs + "<surface = %s>\n" % (os.path.relpath(self.surface, os.path.dirname(os.path.abspath(fname))))
