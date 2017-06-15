@@ -127,6 +127,8 @@ In between it can take the following parameters:
         The value should only be changed for experienced users trying to use FFEA with 
         elements larger than tens of nm. 
 
+   * ` vdw_cutoff ` see box configuration.
+
    * ` inc_self_vdw ` <int> <BR>
         Enter either 1 or 0 to enable or disable short range interactions 
          between faces within the same blob.
@@ -162,21 +164,26 @@ In between it can take the following parameters:
          The inverse of the Debye length in \f$m^{-1}\f$. ` 1e9 ` is a reasonable 
          value for water.
 
+   * ` es_h ` <int> (3) <BR> 
+         Number of Debye lengths for which the electrostatic interaction is considered.
+
+
 
 #### Simulation box configuration #### 
 
 
-   * ` es_N_x ` <int> <BR>
-        Number of cells or voxels that the simulation box has in the x direction. 
+   * ` es_N_x ` <int> (-1) <BR>
+        Number of cells or voxels that the simulation box has in the x direction. If ` es_N_x ` is -1, FFEA will calculate a large enough value to store the system.
 
-   * ` es_N_y ` <int> <BR>
-        Number of cells or voxels that the simulation box has in the y direction. 
+   * ` es_N_y ` <int> (-1) <BR>
+        Number of cells or voxels that the simulation box has in the y direction. If ` es_N_y ` is -1, FFEA will calculate a large enough value to store the system.
 
-   * ` es_N_z ` <int> <BR>
-        Number of cells or voxels that the simulation box has in the z direction. 
+   * ` es_N_z ` <int> (-1) <BR>
+        Number of cells or voxels that the simulation box has in the z direction. If ` es_N_z ` is -1, FFEA will calculate a large enough value to store the system.
 
-   * ` es_h ` <int> (3) <BR> 
-         The size of a voxel, calculated as ` es_h / kappa` i.e. number of Debye lengths.
+   * ` vdw_cutoff ` <float> (3e-9) <BR> 
+        Length of the side of the voxel.
+
 
    * ` sticky_wall_xz ` <int> (0) <BR>
          Either 0 or 1, depending on whether the ` xz ` wall, at \f$y=0\f$ is 
