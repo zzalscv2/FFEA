@@ -34,7 +34,7 @@ def get_path_from_script(path, scriptdir):
 
 class FFEA_script:
 
-	def __init__(self, fname = "", fix=False):
+	def __init__(self, fname = "", fix=True):
 
 		self.reset()
 
@@ -467,6 +467,7 @@ class FFEA_script_params():
 		self.restart = 0
 		self.dt = 1e-14
 		self.kT = 4.11e-21
+		self.kt = self.kT
 		self.check = 10000
 		self.num_steps = 1e11
 		self.trajectory_out_fname = ""
