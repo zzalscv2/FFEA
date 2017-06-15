@@ -78,46 +78,8 @@ def __init__(self):
   self.menuBar.addmenuitem('Plugin', 'command', 
                            'FFEA Loader', label = 'FFEA Loader...', 
                            command = lambda s=self: FFEA_viewer_control_window(s))
+      
 
-class FFEA_interactive_measurements:
-
-    def __init__(self, app):
-        self.parent = app.root
-        self.root = Tk()
-        self.root.geometry("200x50")
-        self.root.title("FFEA Tools")
-        the_frame = Frame(self.root)
-        the_frame.pack(anchor=CENTER, expand=True)
-
-        create_pin = Button(the_frame, text="Create pin from selection 'sele'", command=lambda:self.create_pin());
-        create_pin.grid(row=0, column=0, sticky=E)
-
-        edit_vdw_button = Button(the_frame, text="Edit vdw file", command=lambda:self.edit_vdw())
-        edit_vdw_button.grid(row=1, column=0, sticky=E)
-        
-    def edit_vdw(self):
-        print "edit_vdw"
-
-    def create_pin(self):
-        num_atoms = cmd.count_atoms("sele")
-        area = cmd.get_area("sele")
-        pdbstr = cmd.get_pdbstr("sele")
-        coords = cmd.get_coords("sele")
-        f = tkFileDialog.asksaveasfile(mode='w', defaultextension=".pin")
-        if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
-            return
-        filename = f.name
-        f.close()
-        
-        pin = FFEA_pin.FFEA_pin()
-        for line in pdbstr.split("\n"):
-            try:
-                pin.add_pinned_node(int(line[22:29]))
-            except ValueError:
-                pass # end line
-
-        pin.write_to_file(filename)
-        print("Pinfile written to "+filename)
 
 
 class FFEA_viewer_control_window:
@@ -128,20 +90,24 @@ class FFEA_viewer_control_window:
      self.parent = app.root
 
      self.root = Tk()
+     
+     Pmw.initialise(self.root)
 
-     self.root.geometry("600x225")
-
+     self.root.geometry("460x325")
+     
      self.root.title("FFEA Loader")
 
      top_frame = Frame(self.root)
      top_frame.pack()
+     
 
-     menubar = Menu(top_frame)
 
-     filemenu = Menu(menubar, tearoff=0)
-     filemenu.add_command(label="Load 'ffea' file", command=self.choose_ffea_file_to_load)
-     menubar.add_cascade(label="File", menu=filemenu)
-     self.root.config(menu=menubar)
+#     menubar = Menu(top_frame)
+
+#     filemenu = Menu(menubar, tearoff=0)
+#     filemenu.add_command(label="Load 'ffea' file", command=self.choose_ffea_file_to_load)
+#     menubar.add_cascade(label="File", menu=filemenu)
+#     self.root.config(menu=menubar)
 
      # PLUGIN (separated into mutually exclusive sets. Devs take note!)
 
@@ -166,7 +132,14 @@ class FFEA_viewer_control_window:
 
  
      # # Display flags frame
-     display_flags_frame = Frame(self.root)
+     
+     self.notebook = Pmw.NoteBook(self.root)
+     self.notebook.pack(fill = 'both', expand = 1, padx = 10, pady = 10)
+     page = self.notebook.add('Loader')
+     self.notebook.tab('Loader').focus_set()
+
+     
+     display_flags_frame = Frame(page)
      display_flags_frame.pack(anchor=CENTER, expand=True)
 
 
@@ -246,6 +219,9 @@ class FFEA_viewer_control_window:
      self.om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
      self.om_load_sfa.grid(row=7, column=1, sticky=W)
      
+     self.load_button = Button(display_flags_frame, text="Load ffea file", command=lambda:self.choose_ffea_file_to_load() )
+     self.load_button.grid(row=8, column=0, columnspan=4, sticky=W+E+N+S, pady=20)
+     
 #     int_label = Label(display_flags_frame, text="Interactive Tools")
 #     int_label.grid(row=8, column=0, sticky=E)
 
@@ -270,8 +246,51 @@ class FFEA_viewer_control_window:
 
      self.num_frames_to_read = float("inf")
 
+     page = self.notebook.add('Editor')
+     self.notebook.tab('Editor').focus_set()
 
-    
+     
+     editor_frame = Frame(page)
+     editor_frame.pack(anchor=CENTER, expand=True)
+     
+     edit_vdw_button = Label(editor_frame, text="Create a pinfile from:")
+     edit_vdw_button.grid(row=0, column=0, sticky=E)
+     
+     create_pin = Button(editor_frame, text="Currently selected nodes", command=lambda:self.create_pin());
+     create_pin.grid(row=0, column=1, sticky=W)
+
+     edit_vdw_button = Label(editor_frame, text="Set selection to VDW type")
+     edit_vdw_button.grid(row=1, column=0, sticky=E)
+     
+     self.vdw_type = StringVar(self.root, value="-1 (no vdw)")
+     
+     self.spinbox_vdw_type = OptionMenu(editor_frame, self.vdw_type, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.edit_vdw(self.vdw_type) )
+     self.spinbox_vdw_type.grid(row=1, column=1, sticky=W)
+     
+  def edit_vdw(self, vdw_type):
+      print "edit_vdw"
+
+  def create_pin(self):
+      num_atoms = cmd.count_atoms("sele")
+      area = cmd.get_area("sele")
+      pdbstr = cmd.get_pdbstr("sele")
+      coords = cmd.get_coords("sele")
+      f = tkFileDialog.asksaveasfile(mode='w', defaultextension=".pin")
+      if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+      filename = f.name
+      f.close()
+        
+      pin = FFEA_pin.FFEA_pin()
+      for line in pdbstr.split("\n"):
+          try:
+              pin.add_pinned_node(int(line[22:29]))
+          except ValueError:
+              pass # end line
+
+      pin.write_to_file(filename)
+      print("Pinfile written to "+filename)
+     
  #################################################
   # # # # Update display_flags from buttons # # # 
   # # use val = -2 for strings (Entries)
@@ -314,6 +333,9 @@ class FFEA_viewer_control_window:
              return
 
      # load the file
+     
+
+     
      self.load_ffea(ffea_fname)
 
 
@@ -322,6 +344,9 @@ class FFEA_viewer_control_window:
   # # # # # # Load the FFEA file # # # # # # 
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
+      
+    if self.display_flags["load_sfa"] != "None":
+        self.notebook.selectpage("Editor")
   	
 	# Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
 	self.display_flags['matparam'] = self.matparam.get()
@@ -542,8 +567,7 @@ class FFEA_viewer_control_window:
 	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.display_flags["show_inverted"] == 1 and self.wontLoadTraj != 1:
 		self.draw_inverted_elements()
 
-	if self.display_flags["load_sfa"] != "None":
-		FFEA_interactive_measurements(self)
+
    
 
 	# deactivate load options:
