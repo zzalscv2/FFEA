@@ -488,6 +488,7 @@ class FFEA_script_params():
 		self.calc_springs = 0
 		self.calc_ctforces = 0
 		self.inc_self_vdw = 1
+		self.vdw_cutoff = 3e-9
 		self.calc_preComp = 0
 		self.calc_es = 0
 		self.calc_kinetics = 0
@@ -567,6 +568,8 @@ class FFEA_script_params():
 			self.vdw_type = rvalue
 		elif lvalue == "inc_self_vdw":
 			self.inc_self_vdw = float(rvalue)
+		elif lvalue == "vdw_cutoff":
+			self.vdw_cutoff == float(rvalue)
 		elif lvalue == "vdw_steric_factor":
 			self.vdw_steric_factor = float(rvalue)
 		elif lvalue == "calc_noise":
@@ -677,6 +680,8 @@ class FFEA_script_params():
 			astr += "\t<epsilon_0 = %5.2e>\n" % (self.epsilon_0)
 			astr += "\t<dielec_ext = %5.2e>\n" % (self.dielec_ext)
 			astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
+			astr += "\t<kappa = %5.2e>\n" % (self.kappa)
+			astr += "\t<es_h = %d>\n" % (self.es_h)
 		if verbose:
 			astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
 			astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
@@ -689,8 +694,7 @@ class FFEA_script_params():
 			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
 			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
 			astr += "\t<calc_es = %d>\n" % (self.calc_es)
-			astr += "\t<kappa = %5.2e>\n" % (self.kappa)
-			astr += "\t<es_h = %d>\n" % (self.es_h)
+			astr += "\t<vdw_cutoff = %5.2e>\n" % (self.vdw_cutoff)
 		if ((self.es_N[0] != -1) or (self.es_N[1] != -1) or (self.es_N[2] != -1)):
 			astr += "\t<es_N_x = %d>\n" % (self.es_N[0])
 			astr += "\t<es_N_y = %d>\n" % (self.es_N[1])
