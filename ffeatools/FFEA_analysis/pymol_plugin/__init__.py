@@ -85,13 +85,19 @@ class FFEA_interactive_measurements:
         self.parent = app.root
         self.root = Tk()
         self.root.geometry("200x50")
-        self.root.title("FFEA Measurements")
+        self.root.title("FFEA Tools")
         the_frame = Frame(self.root)
         the_frame.pack(anchor=CENTER, expand=True)
 
-        create_pin = Button(the_frame, text="Create pin from selection", command=lambda:self.create_pin());
+        create_pin = Button(the_frame, text="Create pin from selection 'sele'", command=lambda:self.create_pin());
         create_pin.grid(row=0, column=0, sticky=E)
+
+        edit_vdw_button = Button(the_frame, text="Edit vdw file", command=lambda:self.edit_vdw())
+        edit_vdw_button.grid(row=1, column=0, sticky=E)
         
+    def edit_vdw(self):
+        print "edit_vdw"
+
     def create_pin(self):
         num_atoms = cmd.count_atoms("sele")
         area = cmd.get_area("sele")
@@ -167,52 +173,52 @@ class FFEA_viewer_control_window:
      # propose a system name:
      label_system_name = Label(display_flags_frame, text="System name:")
      label_system_name.grid(row=0, column=0, sticky=E)
-     text_button_system_name = Entry(display_flags_frame, text="load as:", textvariable=self.system_name, validate="focus", validatecommand=lambda:self.update_display_flags("system_name", val=-2, text=self.system_name.get()))
-     text_button_system_name.grid(row=0, column=1, sticky=W)
+     self.text_button_system_name = Entry(display_flags_frame, text="load as:", textvariable=self.system_name, validate="focus", validatecommand=lambda:self.update_display_flags("system_name", val=-2, text=self.system_name.get()))
+     self.text_button_system_name.grid(row=0, column=1, sticky=W)
      
-     random_name_button = Button(display_flags_frame, text="Random Name", command=lambda:self.new_system_name());
-     random_name_button.grid(row=0, column=2, sticky=W)
+     self.random_name_button = Button(display_flags_frame, text="Random Name", command=lambda:self.new_system_name());
+     self.random_name_button.grid(row=0, column=2, sticky=W)
 
      label_display = Label(display_flags_frame, text="Display:")
      label_display.grid(row=1, column=0, sticky=E)
 
      # show springs: 
-     check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
-     check_button_show_springs.grid(row=1, column=1, sticky=W)
+     self.check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
+     self.check_button_show_springs.grid(row=1, column=1, sticky=W)
 
 
      # show pinned_nodes: 
-     check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
-     check_button_show_pinned.grid(row=1, column=2, sticky=W)
+     self.check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
+     self.check_button_show_pinned.grid(row=1, column=2, sticky=W)
 
      # show inverted_elements: 
-     check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
-     check_button_show_inverted.grid(row=2, column=2, sticky=W)
+     self.check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
+     self.check_button_show_inverted.grid(row=2, column=2, sticky=W)
 
      # show danger_elements: 
-     check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
-     check_button_show_danger.grid(row=3, column=2, sticky=W)
+     self.check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
+     self.check_button_show_danger.grid(row=3, column=2, sticky=W)
 
      # # show solid:
      label_solid = Label(display_flags_frame, text="Show Solid:")
      label_solid.grid(row=2, column=0, sticky=E)
      # Selectable box for material param, i. e., show solid:
-     spinbox_material_param = OptionMenu(display_flags_frame, self.matparam, "Plain Solid", "Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW", "No Solid", command=lambda x:self.update_display_flags("matparam", val=self.matparam.get()) )
-     spinbox_material_param.grid(row=2, column=1, sticky=W)
+     self.spinbox_material_param = OptionMenu(display_flags_frame, self.matparam, "Plain Solid", "Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW", "No Solid", command=lambda x:self.update_display_flags("matparam", val=self.matparam.get()) )
+     self.spinbox_material_param.grid(row=2, column=1, sticky=W)
 
 
      # # show mesh:
      label_mesh = Label(display_flags_frame, text="Show Mesh:")
      label_mesh.grid(row=3, column=0, sticky=E)
-     om_show_mesh = OptionMenu(display_flags_frame, self.show_mesh, "Surface Mesh", "Whole Mesh", "No Mesh", command=lambda x:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
-     om_show_mesh.grid(row=3, column=1, sticky=W)
+     self.om_show_mesh = OptionMenu(display_flags_frame, self.show_mesh, "Surface Mesh", "Whole Mesh", "No Mesh", command=lambda x:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
+     self.om_show_mesh.grid(row=3, column=1, sticky=W)
 
 
      # # show Numbers:
      label_mesh= Label(display_flags_frame, text="Show Indices:")
      label_mesh.grid(row=4, column=0, sticky=E)
-     index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
-     index_option.grid(row=4, column=1, sticky=W)
+     self.index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
+     self.index_option.grid(row=4, column=1, sticky=W)
      
     
      # # Pseudoatoms onto nodes
@@ -223,22 +229,22 @@ class FFEA_viewer_control_window:
      # Outer simulation box
      label_box= Label(display_flags_frame, text="Show Box:")
      label_box.grid(row=5, column=0, sticky=E)
-     om_show_box = OptionMenu(display_flags_frame, self.show_box, "Simulation Box (outline)", "Simulation Box (whole)", "No Box", command=lambda x:self.update_display_flags("show_box", val=self.show_box.get()))
-     om_show_box.grid(row=5, column=1, sticky=W)
+     self.om_show_box = OptionMenu(display_flags_frame, self.show_box, "Simulation Box (outline)", "Simulation Box (whole)", "No Box", command=lambda x:self.update_display_flags("show_box", val=self.show_box.get()))
+     self.om_show_box.grid(row=5, column=1, sticky=W)
 
 
      ## # Trajectory Radiobutton # #
      label_traj= Label(display_flags_frame, text="Load:")
      label_traj.grid(row=6, column=0, sticky=E)
-     om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
-     om_do_load_trajectory.grid(row=6, column=1, sticky=W)
+     self.om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
+     self.om_do_load_trajectory.grid(row=6, column=1, sticky=W)
 
 
      ## # Add Supportive Fake Atoms (SFA) box # #
      label_sfa = Label(display_flags_frame, text="Add Atoms:")
      label_sfa.grid(row=7, column=0, sticky=E)
-     om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
-     om_load_sfa.grid(row=7, column=1, sticky=W)
+     self.om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
+     self.om_load_sfa.grid(row=7, column=1, sticky=W)
      
 #     int_label = Label(display_flags_frame, text="Interactive Tools")
 #     int_label.grid(row=8, column=0, sticky=E)
@@ -538,11 +544,26 @@ class FFEA_viewer_control_window:
 
 	if self.display_flags["load_sfa"] != "None":
 		FFEA_interactive_measurements(self)
+   
 
-	try:
-		self.root.destroy()
-	except:
-		raise 
+	# deactivate load options:
+	self.check_button_show_springs.config(state=DISABLED)
+	self.check_button_show_pinned.config(state=DISABLED)
+	self.check_button_show_inverted.config(state=DISABLED)
+	self.check_button_show_danger.config(state=DISABLED)
+
+	self.text_button_system_name.config(state=DISABLED)
+	self.random_name_button.config(state=DISABLED)
+	self.spinbox_material_param.config(state=DISABLED)
+	self.om_show_mesh.config(state=DISABLED)
+	self.index_option.config(state=DISABLED)
+	self.om_show_box.config(state=DISABLED)
+	self.om_load_sfa.config(state=DISABLED)
+	self.om_do_load_trajectory.config(state=DISABLED)
+	# try:
+	# 	self.root.destroy()
+	# except:
+	# 	raise 
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]
