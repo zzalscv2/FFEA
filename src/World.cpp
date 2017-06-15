@@ -450,34 +450,32 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
     }
 
-    // Initialise the Van der Waals solver
-    if(params.calc_vdw == 1 || params.calc_es == 1) {
-        vector3 world_centroid, shift;
-        get_system_centroid(&world_centroid);
-        if(params.es_N_x < 1 || params.es_N_y < 1 || params.es_N_z < 1) {
-            vector3 dimension_vector;
-            get_system_dimensions(&dimension_vector);
+    // Set up a Box:
+    vector3 world_centroid, shift;
+    get_system_centroid(&world_centroid);
+    if(params.es_N_x < 1 || params.es_N_y < 1 || params.es_N_z < 1) {
+        vector3 dimension_vector;
+        get_system_dimensions(&dimension_vector);
 
-            // Calculate decent box size
-            params.es_N_x = 2 * (int)ceil(dimension_vector.x * (params.kappa / params.es_h));
-            params.es_N_y = 2 * (int)ceil(dimension_vector.y * (params.kappa / params.es_h));
-            params.es_N_z = 2 * (int)ceil(dimension_vector.z * (params.kappa / params.es_h));
-        }
+        // Calculate decent box size
+        params.es_N_x = 2 * (int)ceil(dimension_vector.x / params.vdw_cutoff);
+        params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.vdw_cutoff);
+        params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.vdw_cutoff);
+    }
 
-        // Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
-        box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
-        box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
-        box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
+    // Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
+    box_dim.x = params.vdw_cutoff * params.es_N_x;
+    box_dim.y = params.vdw_cutoff * params.es_N_y;
+    box_dim.z = params.vdw_cutoff * params.es_N_z;
 
-        shift.x = box_dim.x / 2.0 - world_centroid.x;
-        shift.y = box_dim.y / 2.0 - world_centroid.y;
-        shift.z = box_dim.z / 2.0 - world_centroid.z;
-        if(params.move_into_box == 1) {// && params.restart == 0)
-            for (i = 0; i < params.num_blobs; i++) {
-                //active_blob_array[i]->get_centroid(&world_centroid);
-                active_blob_array[i]->move(shift.x, shift.y, shift.z);
-                active_blob_array[i]->calc_all_centroids();
-            }
+    shift.x = box_dim.x / 2.0 - world_centroid.x;
+    shift.y = box_dim.y / 2.0 - world_centroid.y;
+    shift.z = box_dim.z / 2.0 - world_centroid.z;
+    if(params.move_into_box == 1) {// && params.restart == 0)
+        for (i = 0; i < params.num_blobs; i++) {
+            //active_blob_array[i]->get_centroid(&world_centroid);
+            active_blob_array[i]->move(shift.x, shift.y, shift.z);
+            active_blob_array[i]->calc_all_centroids();
         }
     }
     // Now everything has been moved into boxes etc, save all initial positions
@@ -604,21 +602,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                if ((trajbeads_out = fopen(params.trajectory_beads_fname.c_str(), "w")) == NULL) {
                  FFEA_FILE_ERROR_MESSG(params.trajectory_beads_fname.c_str())
                }
-               /* attempt to write a cif file:
-               // ATOM 2 CA GLN A 23.581 -26.768 24.416  1 1
-               fprintf(trajbeads_out, "data_ffea\n"); 
-               fprintf(trajbeads_out, "loop_\n"); 
-               fprintf(trajbeads_out, "_atom_site.group_PDB\n");  // "ATOM"
-               fprintf(trajbeads_out, "_atom_site.id\n");         //  bead_id (atomnum)
-               fprintf(trajbeads_out, "_atom_site.auth_atom_id\n"); // CA
-               fprintf(trajbeads_out, "_atom_site.auth_comp_id\n"); // GLN
-               fprintf(trajbeads_out, "_atom_site.auth_asym_id\n"); // A (Chain) 
-               fprintf(trajbeads_out, "_atom_site.auth_seq_id\n"); // elem_id (resid)
-               fprintf(trajbeads_out, "_atom_site.Cartn_x\n_atom_site.Cartn_y\n_atom_site.Cartn_z\n"); // x y z
-               fprintf(trajbeads_out, "_atom_type.number_in_cell\n"); // elem where bead is assoc
-               fprintf(trajbeads_out, "_entity.id"); // molecule number aka blobid
-               fprintf(trajbeads_out, "_atom_site.pdbx_PDB_model_num\n"); // timestep. */ 
-
             }
 
             // Open the kinetics output file for writing (if neccessary) and write initial stuff
@@ -874,10 +857,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
     }
 
-    box_dim.x = params.es_h * (1.0 / params.kappa) * params.es_N_x;
-    box_dim.y = params.es_h * (1.0 / params.kappa) * params.es_N_y;
-    box_dim.z = params.es_h * (1.0 / params.kappa) * params.es_N_z;
-
     // Check if there are static blobs: 
     bool there_are_static_blobs = false;
     for (i = 0; i < params.num_blobs; i++) {
@@ -909,7 +888,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
     }
     printf("Total number of surface faces in system: %d\n", total_num_surface_faces);
-    if (params.es_N_x > 0 && params.es_N_y > 0 && params.es_N_z > 0) {
+    // Initialise the face-face neighbour list for vdw or es:
+    if(params.calc_vdw == 1 || params.calc_es == 1) {
 
         // Allocate memory for an NxNxN grid, with a 'pool' for the required number of surface faces
         printf("Allocating memory for nearest neighbour lookup grid...\n");
@@ -954,53 +934,48 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 #ifdef FFEA_PARALLEL_FUTURE
         // And build the lookup table for the first time:
-        thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.es_h*(1.0 / params.kappa));
+        thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.vdw_cutoff);
 #endif
 
-
-        // pc_solver has already allocated its own neighbour list.
-        // Still it had to wait until everything was put into box,
-        //   to place the beads onto the voxels.
-        // We now calculate the bead positions
-        //    to be able to build_pc_nearest_neighbour_lookup()
-        if (params.calc_preComp == 1)  {
-            pc_solver.compute_bead_positions();
-#ifdef FFEA_PARALLEL_FUTURE
-            thread_updatingPCLL = std::async(std::launch::async, &PreComp_solver::prebuild_pc_nearest_neighbour_lookup, &pc_solver);
-#endif
-        }
-
-
-
-        // Initialise the BEM PBE solver
-        if (params.calc_es == 1) {
-            printf("Initialising Boundary Element Poisson Boltzmann Solver...\n");
-            PB_solver.init(&lookup);
-            PB_solver.set_kappa(params.kappa);
-
-            // Initialise the nonsymmetric matrix solver
-            nonsymmetric_solver.init(total_num_surface_faces, params.epsilon2, params.max_iterations_cg);
-
-            // Allocate memory for surface potential vector
-            phi_Gamma = new scalar[total_num_surface_faces];
-            for (i = 0; i < total_num_surface_faces; i++)
-                phi_Gamma[i] = 0;
-
-            work_vec = new scalar[total_num_surface_faces];
-            for (i = 0; i < total_num_surface_faces; i++)
-                work_vec[i] = 0;
-
-            J_Gamma = new scalar[total_num_surface_faces];
-            for (i = 0; i < total_num_surface_faces; i++)
-                J_Gamma[i] = 0;
-        }
     }
 
-  //  if (params.restart == 0 && mode == 0) {
-  //      // Carry out measurements on the system before carrying out any updates (if this is step 0)
-    //    print_trajectory_and_measurement_files(0, omp_get_wtime());
-  //      print_kinetic_files(0);
-  //  }
+    // pc_solver has already allocated memory for  its own neighbour list.
+    // Still it had to wait until everything was put into box,
+    //   to place the beads onto the voxels.
+    // We now calculate the bead positions
+    //    to be able to build_pc_nearest_neighbour_lookup()
+    if (params.calc_preComp == 1)  {
+        pc_solver.compute_bead_positions();
+#ifdef FFEA_PARALLEL_FUTURE
+        thread_updatingPCLL = std::async(std::launch::async, &PreComp_solver::prebuild_pc_nearest_neighbour_lookup, &pc_solver);
+#endif
+    }
+
+
+    // Initialise the BEM PBE solver
+    if (params.calc_es == 1) {
+        printf("Initialising Boundary Element Poisson Boltzmann Solver...\n");
+        PB_solver.init(&lookup);
+        PB_solver.set_kappa(params.kappa);
+
+        // Initialise the nonsymmetric matrix solver
+        nonsymmetric_solver.init(total_num_surface_faces, params.epsilon2, params.max_iterations_cg);
+
+        // Allocate memory for surface potential vector
+        phi_Gamma = new scalar[total_num_surface_faces];
+        for (i = 0; i < total_num_surface_faces; i++)
+            phi_Gamma[i] = 0;
+
+        work_vec = new scalar[total_num_surface_faces];
+        for (i = 0; i < total_num_surface_faces; i++)
+            work_vec[i] = 0;
+
+        J_Gamma = new scalar[total_num_surface_faces];
+        for (i = 0; i < total_num_surface_faces; i++)
+            J_Gamma[i] = 0;
+    }
+
+
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
 #endif
@@ -1008,9 +983,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 #ifdef FFEA_PARALLEL_PER_BLOB
     printf("Now initialised with 'per-blob parallelisation' (FFEA_PARALLEL_PER_BLOB) on %d threads.\n", num_threads);
 #endif
-
-    // Log file the params
-    //params.write_to_file(userInfo::log_out);
 
 #ifdef USE_MPI
     et = MPI::Wtime() -st;
@@ -1919,10 +1891,10 @@ int World::run() {
             // Catching up the thread should be done through catch_thread_updatingVdWLL,
             //   which will to lookup.safely_swap_layers().
             if (updatingVdWLL() == false) {
-                thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.es_h*(1.0 / params.kappa));
+                thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.vdw_cutoff);
             } else // die with dignity
 #else
-            if (lookup.build_nearest_neighbour_lookup(params.es_h * (1.0 / params.kappa)) == FFEA_ERROR)
+            if (lookup.build_nearest_neighbour_lookup(params.vdw_cutoff) == FFEA_ERROR)
 #endif
             {
                 return die_with_dignity(step, wtime);
@@ -1995,7 +1967,7 @@ int World::run() {
         if (params.calc_vdw == 1) {
            vdw_solver->solve(blob_corr); // blob_corr == NULL if force_pbc = 0.
         }
-        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.es_h * (1.0 / params.kappa));
+        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.vdw_cutoff);
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
 

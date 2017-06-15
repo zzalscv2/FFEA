@@ -55,12 +55,12 @@ Another keyword ` inc_self_vdw ` will determine whether interactions due
  to interacting faces within the same blob are taken into account (default, 1) or not (0). 
 
 The next thing you need is to put a box in your system. This means giving values for
- ` es_h `, ` es_N_x `, ` es_N_y ` and ` es_N_z `, as well as for ` kappa `. 
+ ` es_N_x `, ` es_N_y ` and ` es_N_z `, as well as for ` vdw_cutoff `. 
  Even if [keyword reference](\ref paramBlock) define these keywords, we introduce 
  them here, because FFEA will only compute face-face interactions that fall into 
  the same or adjacent cells. The number of voxels that the simulation box has in each 
  direction is defined through ` es_N_x `, ` es_N_y ` and ` es_N_z `, and the size of each voxel 
- is ` es_h ` / ` kappa `, where ` kappa ` is the inverse Debye length.
+ is ` vdw_cutoff `.
 
     
 
