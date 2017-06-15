@@ -2361,9 +2361,9 @@ int World::read_and_build_system(vector<string> script_vector) {
                 }
 
                 if(motion_state.back() == FFEA_BLOB_IS_DYNAMIC) {
-                    if(set_top == 0 || set_mat == 0 || set_stokes == 0 || set_pin == 0) {
+                    if(set_top == 0 || set_mat == 0 || set_stokes == 0) {
                         FFEA_error_text();
-                        cout << "In blob " << i << ", conformation " << j << ":\nFor a DYNAMIC blob conformation, 'topology', 'material', 'stokes' and 'pin' must be set." << endl;
+                        cout << "In blob " << i << ", conformation " << j << ":\nFor a DYNAMIC blob conformation, 'topology', 'material', and 'stokes' must be set." << endl;
                         return FFEA_ERROR;
                     }
                 } else {
@@ -2387,6 +2387,11 @@ int World::read_and_build_system(vector<string> script_vector) {
                     binding.push_back("");
                     set_binding = 1;
                 }
+
+		if(set_pin == 0) {
+		    pin.push_back("");
+		    set_pin = 1;
+		}
             }
 
 

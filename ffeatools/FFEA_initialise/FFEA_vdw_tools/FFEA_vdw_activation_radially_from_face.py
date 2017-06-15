@@ -36,7 +36,7 @@ parser.add_argument("-s", action="store", nargs=1, help="Input Surf file (.surf)
 parser.add_argument("-o", action="store", nargs=1, help="Output VdW file (.vdw).")
 parser.add_argument("-r", action="store", help="Radius of activation")
 parser.add_argument("-find", action="store", help="Central Face Index")
-parser.add_argument("-ind", action="store", help="VdW Face Index")
+parser.add_argument("-ind", action="store", help="VdW Face Type (-1 -> 7)")
 
 def activation_radially_from_face(vdw_fname, node_fname, surf_fname, output_fname, rad, findex, index):
 
@@ -74,3 +74,4 @@ if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
         parser.print_help()
     except TypeError:
         parser.print_help()
+	raise IOError("Likely missing argument. Please try again :)")
