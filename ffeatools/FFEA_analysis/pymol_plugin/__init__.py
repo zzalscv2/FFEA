@@ -223,6 +223,8 @@ class FFEA_viewer_control_window:
      self.om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
      self.om_load_sfa.grid(row=7, column=1, sticky=W)
      
+     
+     ## # Finally the Load Button! # #
      self.load_button = Button(display_flags_frame, text="Load ffea file", command=lambda:self.choose_ffea_file_to_load() )
      self.load_button.grid(row=8, column=0, columnspan=4, sticky=W+E+N+S, pady=20)
      
@@ -238,18 +240,6 @@ class FFEA_viewer_control_window:
      # highlight_entry_box.grid(row=8, column=1, sticky=W)
 
 
-     # flags
-     self.animate = False
-     self.display_window_exists = False
-     self.there_is_something_to_send_to_display_window = False
-     self.change_frame_to = -1
-     	
-     self.selected_index = 0
-     self.selected_blob = 0
-     self.selected_conformation = 0
-
-     self.num_frames_to_read = float("inf")
-
 
      # # # # EDITOR TAB # # # # # 
      page = self.notebook.add('Editor')
@@ -262,8 +252,9 @@ class FFEA_viewer_control_window:
      # # # # Create Pinfile from selection button:
      create_pin_label = Label(editor_frame, text="Create a pinfile from:")
      create_pin_label.grid(row=0, column=0, sticky=E)
-     create_pin = Button(editor_frame, text="nodes selected in \"sele\"", command=lambda:self.create_pin());
-     create_pin.grid(row=0, column=1, sticky=W)
+     self.create_pin = Button(editor_frame, text="nodes selected in \"sele\"", command=lambda:self.create_pin());
+     self.create_pin.grid(row=0, column=1, sticky=W)
+     self.create_pin.config(state=DISABLED)
 
      ## ## ## VdW Box ## ## ##
      vdw_group = Pmw.Group(page,tag_text='Set selection to VdW type')
@@ -274,16 +265,19 @@ class FFEA_viewer_control_window:
      label_vdwsele_name.grid(row=1, column=0, sticky=E)
      self.text_button_vdwsele_name = Entry(vdw_group.interior(), text="sele", textvariable=self.vdwsele_name, validate="focus", validatecommand=lambda:self.update_display_flags("vdwsele_name", val=-2, text=self.vdwsele_name.get()))
      self.text_button_vdwsele_name.grid(row=1, column=1, sticky=W)
+     self.text_button_vdwsele_name.config(state=DISABLED)
 
      # define a vdw face type:
      label_vdw_type = Label(vdw_group.interior(), text="van der Waals type:")
      label_vdw_type.grid(row=2, column=0, sticky=E)
      self.spinbox_vdw_type = OptionMenu(vdw_group.interior(), self.vdw_type, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.update_display_flags("vdw_type", val=self.vdw_type.get()) )
      self.spinbox_vdw_type.grid(row=2, column=1, sticky=W)
+     self.spinbox_vdw_type.config(state=DISABLED)
 
      # choose a vdw file to set up 
-     self.load_button = Button(vdw_group.interior(), text="output vdw file", command=lambda:self.choose_vdw_file_to_setup() )
-     self.load_button.grid(row=3, column=0, columnspan=2, sticky=W+E+N+S, pady=20)
+     self.load_vdw_button = Button(vdw_group.interior(), text="output vdw file", command=lambda:self.choose_vdw_file_to_setup() )
+     self.load_vdw_button.grid(row=3, column=0, columnspan=3, sticky=W, pady=20)
+     self.load_vdw_button.config(state=DISABLED)
      
 
      ## ## ## To be called after using Pmw.Group:
@@ -384,9 +378,7 @@ class FFEA_viewer_control_window:
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
       
-   print "load_ffea: ", ffea_fname
-   if self.display_flags["load_sfa"] != "None":
-        self.notebook.selectpage("Editor")
+	self.notebook.selectpage("Editor")
   	
 	# Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
 	self.display_flags['matparam'] = self.matparam.get()
@@ -624,10 +616,15 @@ class FFEA_viewer_control_window:
 	self.om_show_box.config(state=DISABLED)
 	self.om_load_sfa.config(state=DISABLED)
 	self.om_do_load_trajectory.config(state=DISABLED)
-	# try:
-	# 	self.root.destroy()
-	# except:
-	# 	raise 
+	self.load_button.config(state=DISABLED)
+
+	# activate Editor options:
+	self.create_pin.config(state="normal")
+	self.text_button_vdwsele_name.config(state="normal")
+	self.spinbox_vdw_type.config(state="normal")
+	self.load_vdw_button.config(state="normal")
+
+
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]
