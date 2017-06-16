@@ -93,7 +93,7 @@ class FFEA_viewer_control_window:
      
      Pmw.initialise(self.root)
 
-     self.root.geometry("460x325")
+     self.root.geometry("460x350")
      
      self.root.title("FFEA Loader")
 
@@ -128,6 +128,10 @@ class FFEA_viewer_control_window:
      self.show_shortest_edge = IntVar(self.root, value=self.display_flags['show_shortest_edge'])
      self.load_sfa = StringVar(self.root, value=self.display_flags['load_sfa'])
      self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
+
+     self.vdwsele_name = StringVar(self.root, value=self.display_flags['vdwsele_name'])
+     self.vdw_type = IntVar(self.root, value=self.display_flags['vdw_type'])
+     self.vdw_fname = StringVar(self.root, value=self.display_flags['vdw_fname'])
 
 
  
@@ -246,26 +250,51 @@ class FFEA_viewer_control_window:
 
      self.num_frames_to_read = float("inf")
 
+
+     # # # # EDITOR TAB # # # # # 
      page = self.notebook.add('Editor')
      self.notebook.tab('Editor').focus_set()
-
      
      editor_frame = Frame(page)
      editor_frame.pack(anchor=CENTER, expand=True)
-     
-     edit_vdw_button = Label(editor_frame, text="Create a pinfile from:")
-     edit_vdw_button.grid(row=0, column=0, sticky=E)
-     
-     create_pin = Button(editor_frame, text="Currently selected nodes", command=lambda:self.create_pin());
+
+
+     # # # # Create Pinfile from selection button:
+     create_pin_label = Label(editor_frame, text="Create a pinfile from:")
+     create_pin_label.grid(row=0, column=0, sticky=E)
+     create_pin = Button(editor_frame, text="nodes selected in \"sele\"", command=lambda:self.create_pin());
      create_pin.grid(row=0, column=1, sticky=W)
 
-     edit_vdw_button = Label(editor_frame, text="Set selection to VDW type")
-     edit_vdw_button.grid(row=1, column=0, sticky=E)
+     ## ## ## VdW Box ## ## ##
+     vdw_group = Pmw.Group(page,tag_text='Set selection to VdW type')
+     vdw_group.pack(fill='both',expand=1, padx=3, pady=4)
+     # vdw_group.grid(column=0, row=1,columnspan=3)
+     # propose a selection name:
+     label_vdwsele_name = Label(vdw_group.interior(), text="Selection name:")
+     label_vdwsele_name.grid(row=1, column=0, sticky=E)
+     self.text_button_vdwsele_name = Entry(vdw_group.interior(), text="sele", textvariable=self.vdwsele_name, validate="focus", validatecommand=lambda:self.update_display_flags("vdwsele_name", val=-2, text=self.vdwsele_name.get()))
+     self.text_button_vdwsele_name.grid(row=1, column=1, sticky=W)
+
+     # define a vdw face type:
+     label_vdw_type = Label(vdw_group.interior(), text="van der Waals type:")
+     label_vdw_type.grid(row=2, column=0, sticky=E)
+     self.spinbox_vdw_type = OptionMenu(vdw_group.interior(), self.vdw_type, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.update_display_flags("vdw_type", val=self.vdw_type.get()) )
+     self.spinbox_vdw_type.grid(row=2, column=1, sticky=W)
+
+     # choose a vdw file to set up 
+     self.load_button = Button(vdw_group.interior(), text="output vdw file", command=lambda:self.choose_vdw_file_to_setup() )
+     self.load_button.grid(row=3, column=0, columnspan=2, sticky=W+E+N+S, pady=20)
      
-     self.vdw_type = StringVar(self.root, value="-1 (no vdw)")
+
+     ## ## ## To be called after using Pmw.Group:
+     self.notebook.setnaturalsize()
+
+
+
+     # edit_vdw_button = Label(editor_frame, text="Set selection to VDW type")
+     # edit_vdw_button.grid(row=1, column=0, sticky=E)
+     # self.vdw_type = StringVar(self.root, value="-1 (no vdw)")
      
-     self.spinbox_vdw_type = OptionMenu(editor_frame, self.vdw_type, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.edit_vdw(self.vdw_type) )
-     self.spinbox_vdw_type.grid(row=1, column=1, sticky=W)
      
   def edit_vdw(self, vdw_type):
       print "edit_vdw"
@@ -329,15 +358,25 @@ class FFEA_viewer_control_window:
 
      # Ask user to select a file
      ffea_fname = tkFileDialog.askopenfilename(**options)
+     print "ffea_fname: ", ffea_fname
      if len(ffea_fname) == 0:
              return
 
      # load the file
-     
-
-     
      self.load_ffea(ffea_fname)
 
+
+  def choose_vdw_file_to_setup(self):
+     # set up the options for the open file dialog box
+     options = {}
+     options['defaultextension'] = '.vdw'
+     options['filetypes'] = [('vdw files', '.vdw'), ('all files', '.*')]
+     options['initialdir'] = os.getcwd()
+     options['title'] = 'Choose vdw file'
+
+     # Ask user to select a file
+     self.vdw_fname = tkFileDialog.askopenfilename(**options)
+     print "vdw_fname: ", self.vdw_fname
 
 
   # # # # # # # # # # # # # # # # # # # # # #
@@ -345,7 +384,8 @@ class FFEA_viewer_control_window:
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
       
-    if self.display_flags["load_sfa"] != "None":
+   print "load_ffea: ", ffea_fname
+   if self.display_flags["load_sfa"] != "None":
         self.notebook.selectpage("Editor")
   	
 	# Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
@@ -969,7 +1009,10 @@ class FFEA_viewer_control_window:
 		'load_trajectory': "Trajectory", ## PYMOL OK
 		'highlight': '',
 		'load_sfa': 'None',
-      'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
+      'system_name': self.system_names[rint(0, len(self.system_names) - 1)],
+      'vdwsele_name': "sele",
+      'vdw_type': -1,
+      'vdw_fname': ''}
 
 	self.selected_index = 0
 	self.selected_blob = 0
