@@ -276,22 +276,23 @@ class FFEA_viewer_control_window:
 
      # choose a vdw file to set up 
      self.load_vdw_button = Button(vdw_group.interior(), text="output vdw file", command=lambda:self.choose_vdw_file_to_setup() )
-     self.load_vdw_button.grid(row=3, column=0, columnspan=3, sticky=W, pady=20)
+     self.load_vdw_button.grid(row=3, column=0, columnspan=3)
      self.load_vdw_button.config(state=DISABLED)
+
      
 
      ## ## ## To be called after using Pmw.Group:
      self.notebook.setnaturalsize()
 
-
-
-     # edit_vdw_button = Label(editor_frame, text="Set selection to VDW type")
-     # edit_vdw_button.grid(row=1, column=0, sticky=E)
-     # self.vdw_type = StringVar(self.root, value="-1 (no vdw)")
      
      
-  def edit_vdw(self, vdw_type):
+  def edit_vdw(self):
       print "edit_vdw"
+      print "set to vdw_type: ", self.display_flags["vdw_type"]
+      print "pymol selection: ", self.display_flags["vdwsele_name"]
+      print "output vdw file: ", self.display_flags["vdw_fname"]
+
+
 
   def create_pin(self):
       num_atoms = cmd.count_atoms("sele")
@@ -370,7 +371,9 @@ class FFEA_viewer_control_window:
 
      # Ask user to select a file
      self.vdw_fname = tkFileDialog.askopenfilename(**options)
-     print "vdw_fname: ", self.vdw_fname
+     self.update_display_flags("vdw_fname", -2, self.vdw_fname)
+
+     self.edit_vdw()
 
 
   # # # # # # # # # # # # # # # # # # # # # #
