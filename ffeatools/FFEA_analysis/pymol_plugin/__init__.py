@@ -57,7 +57,7 @@ import StringIO
 import FFEA_springs
 
 # PyMOL stuff:
-from pymol import cmd
+from pymol import CmdException, stored
 from pymol.cgo import *
 from pymol.vfont import plain
 
@@ -279,8 +279,6 @@ class FFEA_viewer_control_window:
      self.load_vdw_button.grid(row=3, column=0, columnspan=3)
      self.load_vdw_button.config(state=DISABLED)
 
-     
-
      ## ## ## To be called after using Pmw.Group:
      self.notebook.setnaturalsize()
 
@@ -291,6 +289,50 @@ class FFEA_viewer_control_window:
       print "set to vdw_type: ", self.display_flags["vdw_type"]
       print "pymol selection: ", self.display_flags["vdwsele_name"]
       print "output vdw file: ", self.display_flags["vdw_fname"]
+
+      print "dir(blob_list[0][0]): ", dir(self.blob_list[0][0].vdw)
+
+      
+      ## ## SOME CHECKS ## ## 
+      stored.blob_IDs = []
+      stored.faceNumbers = []
+      aborting = "ABORTING: "
+      ## Check 0 - the selection does not exist:
+      try:
+         cmd.count_atoms(self.display_flags["vdwsele_name"])
+      except CmdException:
+         print aborting, self.display_flags["vdwsele_name"], " does not exist!"
+         return
+      
+      ## Check 1 - the selection is not empty:
+      if cmd.count_atoms(self.display_flags["vdwsele_name"]) == 0: 
+         print aborting, self.display_flags["vdwsele_name"], " is an empty selection!"
+         return
+
+      ## Check 2 - all the beads correspond to the same blob:
+      cmd.iterate(self.display_flags["vdwsele_name"], "stored.blob_IDs.append(model)")
+      if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
+         print aborting, self.display_flags["vdwsele_name"], " contains face beads from different blobs!"
+         return 
+
+      ## Check 3 - the beads correspond to faces:
+      if stored.blob_IDs[0].split("_")[2] != "ffa": 
+         print aborting, self.display_flags["vdwsele_name"], " is not a set of fake face atoms"
+         return
+      ## ## END OF CHECKS ## ## 
+
+      blob_ID = int(stored.blob_IDs[0].split("_")[1])
+      cmd.iterate(self.display_flags["vdwsele_name"], "stored.faceNumbers.append(resi)")
+
+      for i in stored.faceNumbers: 
+         self.blob_list[blob_ID][0].vdw.set_index(int(i), self.display_flags["vdw_type"])
+
+      self.blob_list[blob_ID][0].vdw.write_header(self.display_flags["vdw_fname"])
+      for i in self.blob_list[blob_ID][0].vdw.index:
+         self.display_flags["vdw_fname"].write("%d\n" % (i))
+
+      self.display_flags["vdw_fname"].close()
+
 
 
 
@@ -370,7 +412,7 @@ class FFEA_viewer_control_window:
      options['title'] = 'Choose vdw file'
 
      # Ask user to select a file
-     self.vdw_fname = tkFileDialog.askopenfilename(**options)
+     self.vdw_fname = tkFileDialog.asksaveasfile(**options)
      self.update_display_flags("vdw_fname", -2, self.vdw_fname)
 
      self.edit_vdw()
