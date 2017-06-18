@@ -252,9 +252,9 @@ class FFEA_viewer_control_window:
      # # # # Create Pinfile from selection button:
      create_pin_label = Label(editor_frame, text="Create a pinfile from:")
      create_pin_label.grid(row=0, column=0, sticky=E)
-     self.create_pin = Button(editor_frame, text="nodes selected in \"sele\"", command=lambda:self.create_pin());
-     self.create_pin.grid(row=0, column=1, sticky=W)
-     self.create_pin.config(state=DISABLED)
+     self.create_pin_button = Button(editor_frame, text="nodes selected in \'sele\'", command=lambda:self.create_pin());
+     self.create_pin_button.grid(row=0, column=1, sticky=W)
+     self.create_pin_button.config(state=DISABLED)
 
      ## ## ## VdW Box ## ## ##
      vdw_group = Pmw.Group(page,tag_text='Set selection to VdW type')
@@ -315,14 +315,34 @@ class FFEA_viewer_control_window:
          print aborting, self.display_flags["vdwsele_name"], " contains face beads from different blobs!"
          return 
 
-      ## Check 3 - the beads correspond to faces:
-      if stored.blob_IDs[0].split("_")[2] != "ffa": 
-         print aborting, self.display_flags["vdwsele_name"], " is not a set of fake face atoms"
-         return
-      ## ## END OF CHECKS ## ## 
-
+      ## Get 'face' indices
       blob_ID = int(stored.blob_IDs[0].split("_")[1])
       cmd.iterate(self.display_flags["vdwsele_name"], "stored.faceNumbers.append(resi)")
+
+      ## Check 3 - the beads correspond to faces:
+      if stored.blob_IDs[0].split("_")[2] != "ffa":
+
+	 # They don't! So they're nodes or elements.
+         findex = []
+	 if stored.blob_IDs[0].split("_")[2] == "efa":
+             # There's a way to extract a surface from a topology, but it's slow. So I've just put a return 
+	     print aborting, self.display_flags["vdwsele_name"], " is not a set of fake face or node atoms"
+             return
+             #for eindex in stored.faceNumbers: 
+
+	 elif stored.blob_IDs[0].split("_")[2] == "nfa" or stored.blob_IDs[0].split("_")[2] == "lnfa":
+	     stored.faceNumbers = set([int(i) for i in stored.faceNumbers])
+	     for i in range(self.blob_list[blob_ID][0].surf.num_faces):
+		aface = self.blob_list[blob_ID][0].surf.face[i]
+		print aface.n, stored.faceNumbers
+		if len(stored.faceNumbers & set(aface.n)) != 0:
+		    findex.append(i)
+	     stored.faceNumbers = findex
+
+         #print aborting, self.display_flags["vdwsele_name"], " is not a set of fake face atoms"
+         #return
+	 
+      ## ## END OF CHECKS ## ## 
 
       for i in stored.faceNumbers: 
          self.blob_list[blob_ID][0].vdw.set_index(int(i), self.display_flags["vdw_type"])
@@ -337,23 +357,73 @@ class FFEA_viewer_control_window:
 
 
   def create_pin(self):
+
+      # Get pseudo-atom selection details
       num_atoms = cmd.count_atoms("sele")
       area = cmd.get_area("sele")
       pdbstr = cmd.get_pdbstr("sele")
       coords = cmd.get_coords("sele")
+      names = cmd.get_names(selection="sele")
+
+      # Filename and return condition
       f = tkFileDialog.asksaveasfile(mode='w', defaultextension=".pin")
       if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
             return
       filename = f.name
       f.close()
         
+      # Initialise pin
       pin = FFEA_pin.FFEA_pin()
-      for line in pdbstr.split("\n"):
-          try:
-              pin.add_pinned_node(int(line[22:29]))
-          except ValueError:
-              pass # end line
 
+      # If node indices, straight into pin file
+      if names[0].split("_")[-1] == "nfa" or names[0].split("_")[-1] == "lnfa":
+          for line in pdbstr.split("\n"):
+              try:
+                  pin.add_pinned_node(int(line[22:29]))
+              except ValueError:
+                  pass # end line
+
+      elif names[0].split("_")[-1] == "ffa":
+	    
+          # Gotta turn face list into a node list. Easy because of FFEA modules! Thanks Ben :) no problem Ben, anytime. Here, have a PhD. Oh thanks, don't mind if I do...
+	  try:
+	      bindex = int(names[0].split("_")[1])
+          except:
+	      print("Could not locate blob index for selection.")
+
+	  to_pin = []
+	  for line in pdbstr.split("\n"):
+	      try:
+	          findex = int(line[22:29])
+	      except ValueError:
+	          pass	
+	      to_pin.extend(self.blob_list[bindex][0].surf.face[findex].n)
+       
+	  # No multiple pinned nodes
+          to_pin = list(set(to_pin))
+	  for i in to_pin:
+		pin.add_pinned_node(i)
+
+      elif names[0].split("_")[-1] == "efa":
+
+          # Gotta turn element list into a node list.
+	  try:
+	      bindex = int(names[0].split("_")[1])
+          except:
+	      print("Could not locate blob index for selection.")
+
+	  to_pin = []
+	  for line in pdbstr.split("\n"):
+	      try:
+	          eindex = int(line[22:29])
+	      except ValueError:
+	          pass	
+	      to_pin.extend(self.blob_list[bindex][0].top.element[eindex].n[0:4])
+       
+	  # No multiple pinned nodes
+          to_pin = list(set(to_pin))
+	  for i in to_pin:
+		pin.add_pinned_node(i)
       pin.write_to_file(filename)
       print("Pinfile written to "+filename)
      
@@ -664,7 +734,7 @@ class FFEA_viewer_control_window:
 	self.load_button.config(state=DISABLED)
 
 	# activate Editor options:
-	self.create_pin.config(state="normal")
+	self.create_pin_button.config(state="normal")
 	self.text_button_vdwsele_name.config(state="normal")
 	self.spinbox_vdw_type.config(state="normal")
 	self.load_vdw_button.config(state="normal")
