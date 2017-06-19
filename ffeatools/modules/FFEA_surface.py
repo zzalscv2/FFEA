@@ -449,10 +449,14 @@ class FFEA_surface:
 				if len(inindex & set(self.face[i].n)) >= limit:
 		   			outindex.append(i)
 
-		elif (intype.lower() == "topology" or intype.lower() == "top" or intype.lower() == "element" or intype.lower() == "elem") and top != None:
+		elif intype.lower() == "topology" or intype.lower() == "top" or intype.lower() == "element" or intype.lower() == "elem":
 			
 			# Check if elindex in face
-			for i in self.num_faces:
+			for i in range(self.num_faces):
+				if self.face[i].elindex == None:
+					print("Cannot link surface to mesh. Will fix in future...")
+					raise IOError
+
 				if self.face[i].elindex in inindex:
 					outindex.append(i)
 
