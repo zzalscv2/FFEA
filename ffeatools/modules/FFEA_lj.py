@@ -106,9 +106,19 @@ class FFEA_lj:
 		# Default to steric (ish) params only
 		self.interaction = [[FFEA_lj_pair() for i in range(self.num_face_types)] for j in range(self.num_face_types)]
 		for i in range(self.num_face_types):
-			for j in range(self.num_face_types):
+			for j in range(i, self.num_face_types):
 				self.interaction[i][j].eps = 1e-15
 				self.interaction[i][j].r = 1e-10
+
+				# Symmetric
+				self.interaction[j][i] = self.interaction[i][j]
+
+	def set_interaction_pair(self, i, j, eps, r0):
+		self.interaction[i][j].eps = eps
+		self.interaction[i][j].r = r0
+
+		# Symmetric
+		self.interaction[j][i] = self.interaction[i][j]
 
 	def write_to_file(self, fname):
 

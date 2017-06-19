@@ -721,6 +721,28 @@ class FFEA_topology:
 			index += 1
 		return mass
 
+	# Takes index list of type intype ("node", "surf" etc) and returns the element list corresponding to those
+	def index_switch(self, inindex, intype, limit=1, surf=None):
+		
+		outindex = []
+		inindex = set(inindex)
+
+		if intype.lower() == "node" or intype.lower() == "nodes":
+			# Check if at least 'limit' nodes are in element
+			for i in range(self.num_elements):
+				if len(inindex & set(self.element[i].n)) >= limit:
+		   			outindex.append(i)
+
+		elif (intype.lower() == "surf" or intype.lower() == "surface" or intype.lower() == "face") and surf != None:
+			
+			# Check if face is on element
+			outindex = [surf.face[i].elindex for i in inindex]
+
+		else:
+			raise IndexError
+
+		return outindex
+
 	def reset(self):
 
 		self.CoM = None
