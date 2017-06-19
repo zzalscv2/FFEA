@@ -409,6 +409,7 @@ class FFEA_viewer_control_window:
 	# Get indices and index type
 	stored.baseindices = []
 	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
 	indextype = stored.blob_IDs[0].split("_")[2]
 
 	# Different things depending on index type
@@ -427,7 +428,7 @@ class FFEA_viewer_control_window:
 			print("Could not make material file as correct indices could not be extracted from topology using node selection")
 			return
 
-	elif indextype == "sfa":
+	elif indextype == "sfa" or indextype == "ffa":
 
 		# Surface indices. Get elements with surface face present
 		try:
@@ -436,6 +437,9 @@ class FFEA_viewer_control_window:
 			print("Could not make material file as correct indices could not be extracted from topology using face selection")
 			return
 
+		except(IOError):
+			print("Could not make material file as there was a problem linking topology to surface")
+
 	# Get a new material file and copy relevent stuff
 	mat = FFEA_material.FFEA_material()
 	mat.element = self.blob_list[blob_ID][0].mat.element
@@ -443,7 +447,7 @@ class FFEA_viewer_control_window:
 
 	# Update stuff
 	for i in indices:
-		mat.set_params(self, i, self.display_flags["mat_d"], self.display_flags["mat_sv"], self.display_flags["mat_bv"], self.display_flags["mat_sm"], self.display_flags["mat_bm"], 1.0)
+		mat.set_params(i, self.display_flags["mat_d"], self.display_flags["mat_sv"], self.display_flags["mat_bv"], self.display_flags["mat_sm"], self.display_flags["mat_bm"], 1.0)
 
 	# Write out
 	mat.write_to_file(self.display_flags["mat_fname"])
@@ -479,11 +483,12 @@ class FFEA_viewer_control_window:
 	# Get indices and index type
 	stored.baseindices = []
 	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
 	indextype = stored.blob_IDs[0].split("_")[2]
 
 	# Different things depending on index type
 	indices = []
-	if indextype == indextype == "nfa" or indextype == "lnfa":
+	if indextype == "nfa" or indextype == "lnfa":
 
 		# Node indices. Great!
 		indices = stored.baseindices
@@ -497,9 +502,9 @@ class FFEA_viewer_control_window:
 			print("Could not make pin file as correct indices could not be extracted from nodes using topology selection")
 			return
 
-	elif indextype == "sfa":
+	elif indextype == "sfa" or indextype == "ffa":
 
-		# Element indices. Get all (linear) nodes on each element
+		# Surface indices. Get all nodes on each face
 		try:
 			indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "surface", surf = self.blob_list[blob_ID][0].surf)
 		except(IndexError):
@@ -551,11 +556,12 @@ class FFEA_viewer_control_window:
 	# Get indices and index type
 	stored.baseindices = []
 	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
 	indextype = stored.blob_IDs[0].split("_")[2]
 
 	# Different things depending on index type
 	indices = []
-	if indextype == "sfa":
+	if indextype == "sfa" or indextype == "ffa":
 
 		# Surface indices. Great!
 		indices = stored.baseindices
