@@ -535,6 +535,28 @@ class FFEA_node:
 		# Translate back
 		self.translate(-1 * origin_trans)
 
+	# Takes index list of type intype ("node", "surf" etc) and returns the element list corresponding to those
+	def index_switch(self, inindex, intype, limit=1, surf=None, top = None):
+		
+		outindex = []
+		inindex = set(inindex)
+
+		if (intype.lower() == "topology" or intype.lower() == "top" or intype.lower() == "element" or intype.lower() == "elem") and top != None:
+
+			# If node in a face, add all nodes on face to list
+			for i in inindex:
+		   		outindex.extend(top.element[i].n[0:4])
+
+		elif (intype.lower() == "surf" or intype.lower() == "surface" or intype.lower() == "face") and surf != None:
+			
+			for i in inindex:
+		   		outindex.extend(surf.face[i].n)
+
+		else:
+			raise IndexError
+
+		return outindex
+
 	def reset(self):
 
 		self.valid = False

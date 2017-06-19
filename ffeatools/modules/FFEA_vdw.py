@@ -128,7 +128,7 @@ class FFEA_vdw:
 	def write_to_file(self, fname):
 		
 		with open(fname, "w") as f:
-			write_header(f)
+			self.write_header(f)
 			# f.write("ffea vdw file\nnum_faces %d\nvdw params:\n" % (self.num_faces))
 			for i in self.index:
 				f.write("%d\n" % (i))

@@ -436,6 +436,31 @@ class FFEA_surface:
 		fout.close()
 		print ("done!")
 
+	# Takes index list of type intype ("node", "surf" etc) and returns the element list corresponding to those
+	def index_switch(self, inindex, intype, limit=1):
+		
+		outindex = []
+		inindex = set(inindex)
+
+		if intype.lower() == "node" or intype.lower() == "nodes":
+
+			# Check if at least 'limit' nodes are in face
+			for i in range(self.num_faces):
+				if len(inindex & set(self.face[i].n)) >= limit:
+		   			outindex.append(i)
+
+		elif (intype.lower() == "topology" or intype.lower() == "top" or intype.lower() == "element" or intype.lower() == "elem") and top != None:
+			
+			# Check if elindex in face
+			for i in self.num_faces:
+				if self.face[i].elindex in inindex:
+					outindex.append(i)
+
+		else:
+			raise IndexError
+
+		return outindex
+
 	def reset(self):
 
 		self.face = []
