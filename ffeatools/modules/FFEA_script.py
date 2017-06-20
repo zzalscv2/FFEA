@@ -678,7 +678,7 @@ class FFEA_script_params():
 			astr += "\t<rng_seed = time>\n"
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
-		astr += "\t<vdw_forcefield_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
+		astr += "\t<lj_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
 		if self.kinetics_out_fname != "":
 			astr += "\t<kinetics_out_fname = %s>\n" % (os.path.relpath(self.kinetics_out_fname, os.path.dirname(os.path.abspath(fname))))
 
