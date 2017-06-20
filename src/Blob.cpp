@@ -215,8 +215,8 @@ int Blob::config(const int blob_index, const int conformation_index, string node
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string vdw_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress, int linear_solver, int blob_state, SimulationParams *params, 
-             PreComp_params *pc_params, LJ_matrix *lj_matrix, 
+             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
+             PreComp_params *pc_params, LJ_matrix *lj_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]){
 
     // Which blob and conformation am i?
@@ -224,28 +224,28 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->conformation_index = conformation_index;
 
     // Input files:
-    this->s_node_filename = node_filename; 
+    this->s_node_filename = node_filename;
     this->s_topology_filename = topology_filename;
     this->s_surface_filename = surface_filename;
     this->s_material_params_filename = material_params_filename;
-    this->s_stokes_filename = stokes_filename;      
+    this->s_stokes_filename = stokes_filename;
     this->s_vdw_filename = vdw_filename;
     this->s_beads_filename = beads_filename;
     this->s_binding_filename = binding_filename;
     this->s_pin_filename = pin_filename;
-    
+
     // scaling coordinates:
     this->scale = scale;
 
-    // compressing: 
-    this->calc_compress = calc_compress; 
+    // compressing:
+    this->calc_compress = calc_compress;
     this->compress = compress;
 
-    // precomputed configuration: 
+    // precomputed configuration:
     this->pc_params = pc_params;
 
     // BindingSite_matrix:
-    this->binding_matrix = binding_matrix; 
+    this->binding_matrix = binding_matrix;
 
     // lennard-jones interaction matrix:
     this->lj_matrix = lj_matrix;
@@ -264,7 +264,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->linear_solver = linear_solver;
 
 
-    return FFEA_OK; 
+    return FFEA_OK;
 }
 
 int Blob::init(){
@@ -776,8 +776,8 @@ void Blob::rotate(float xang, float yang, float zang, bool beads) {
     r[2][2] = cos(xang) * cos(yang);
 
     rotate(r[0][0], r[0][1], r[0][2],
-           r[1][0], r[1][1], r[1][2], 
-           r[2][0], r[2][1], r[2][2], beads); 
+           r[1][0], r[1][1], r[1][2],
+           r[2][0], r[2][1], r[2][2], beads);
 
 }
 
@@ -938,11 +938,11 @@ void Blob::get_centroid(vector3 *com) {
 
 void Blob::calc_and_store_centroid(vector3 &com) {
 
-    get_centroid(&com); 
+    get_centroid(&com);
 
     CoG[0] = com[0];
     CoG[1] = com[1];
-    CoG[2] = com[2]; 
+    CoG[2] = com[2];
 
 }
 
@@ -1029,7 +1029,7 @@ void Blob::linearise_force() {
            force[nIdx[1]][j] += 0.5 * ( force[nIdx[4]][j] + force[nIdx[7]][j] + force[nIdx[8]][j]);
            force[nIdx[2]][j] += 0.5 * ( force[nIdx[5]][j] + force[nIdx[7]][j] + force[nIdx[9]][j]);
            force[nIdx[3]][j] += 0.5 * ( force[nIdx[6]][j] + force[nIdx[8]][j] + force[nIdx[9]][j]);
-        } 
+        }
         for (int j=4; j<NUM_NODES_QUADRATIC_TET; j++) {
             force[nIdx[j]][0]   = 0.;
             force[nIdx[j]][1]   = 0.;
@@ -1256,6 +1256,18 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
         }
 
     }
+    return FFEA_OK;
+}
+
+int Blob::read_pbc_count_from_file(FILE *mini_meas_out,int b) {
+    char state_str[20];
+    char *result = NULL;
+    double trash;
+
+    if (fscanf(mini_meas_out, "%le%le%le%d%d%d%le%le%le%le%le%le",&trash, &trash, &trash,&pbc_count[0],&pbc_count[1],&pbc_count[2],&trash,&trash,&trash,&trash,&trash,&trash) != 12) {
+            FFEA_ERROR_MESSG("(When restarting) Error reading from mini_meas file, for blob %d\n",b)
+        }
+
     return FFEA_OK;
 }
 
@@ -1615,7 +1627,7 @@ int Blob::get_num_beads() {
 
 bool Blob::is_using_beads() {
     if (num_beads > 0) return true;
-    else return false; 
+    else return false;
 }
 
 /*
@@ -1639,7 +1651,7 @@ arr3 Blob::get_CoG() {
 }
  */
 void Blob::get_stored_centroid(arr3 &cog){
-    arr3Store<scalar,arr3>(CoG.data, cog); 
+    arr3Store<scalar,arr3>(CoG.data, cog);
 }
 
 /*
@@ -2199,7 +2211,7 @@ void Blob::add_force_to_node(vector3 f, int index) {
     for (int i = 0; i < num_surface_faces; ++i) {
         surface[i].zero_vdw_bb_measurement_data();
     }
-}*/ 
+}*/
 
 /* void Blob::zero_vdw_xz_measurement_data() {
     for (int i = 0; i < num_surface_faces; ++i) {
@@ -2348,11 +2360,11 @@ int Blob::get_motion_state() {
 }
 
 scalar Blob::get_scale() {
-    return scale; 
+    return scale;
 }
 
 scalar Blob::get_RandU01() {
-    return rng->RandU01(); 
+    return rng->RandU01();
 }
 
 int Blob::get_num_linear_nodes() {
@@ -3583,7 +3595,7 @@ int Blob::load_binding_sites() {
     int num_binding_site_types = binding_matrix->get_num_interaction_types();
 
     // Return successful as params.calc_kinetics == 0 or no sites are required
-    if (s_binding_filename.empty()) return FFEA_OK; 
+    if (s_binding_filename.empty()) return FFEA_OK;
     // Open file
     ifstream fin;
     fin.open(s_binding_filename.c_str());
@@ -3943,7 +3955,7 @@ void Blob::euler_integrate() {
             node[i].vel[0] = force[i][0];
             node[i].vel[1] = force[i][1];
             node[i].vel[2] = force[i][2];
-        
+
             node[i].pos[0] += force[i][0] * params->dt; // really meaning v * dt
             node[i].pos[1] += force[i][1] * params->dt;
             node[i].pos[2] += force[i][2] * params->dt;
@@ -4146,3 +4158,14 @@ bool Blob::there_are_beads() {
     return beads_on_blob;
 }
 
+int Blob::get_pbc_count(int ind){
+    return pbc_count[ind];
+}
+
+void Blob::inc_pbc_count(int ind){
+    pbc_count[ind]++;
+}
+
+void Blob::dec_pbc_count(int ind){
+    pbc_count[ind]--;
+}
