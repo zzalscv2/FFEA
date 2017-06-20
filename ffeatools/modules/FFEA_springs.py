@@ -107,16 +107,16 @@ class FFEA_springs:
 
 	def print_details(self):
 
-		print "num_springs = %d" % (self.num_springs)
+		print("num_springs = %d" % (self.num_springs))
 		sleep(1)
 
-		print "\n\t k\t\tl\t\tblob\tconf\tnode"
+		print("\n\t k\t\tl\t\tblob\tconf\tnode")
 		for s in self.spring:
 			index = self.spring.index(s)
 			outline = "Spring " + str(index) + " "
 			outline += "%e\t%e\t%d %d\t%d %d\t%d %d" % (s.k, s.l, s.blob_index[0], s.blob_index[1], s.conformation_index[0], s.conformation_index[1], s.node_index[0], s.node_index[1])
 
-			print outline
+			print(outline)
 
 	def write_to_file(self, fname):
 		
@@ -149,8 +149,8 @@ class FFEA_spring:
 			raise
 
 	def print_details(self):
-		print "\n\t k\t\tl\t\tblob\tconf\tnode"
-		print "%e\t%e\t%d %d\t%d %d\t%d %d" % (self.k, self.l, self.blob_index[0], self.blob_index[1], self.conformation_index[0], self.conformation_index[1], self.node_index[0], self.node_index[1])
+		print("\n\t k\t\tl\t\tblob\tconf\tnode")
+		print("%e\t%e\t%d %d\t%d %d\t%d %d" % (self.k, self.l, self.blob_index[0], self.blob_index[1], self.conformation_index[0], self.conformation_index[1], self.node_index[0], self.node_index[1]))
 
 	def reset(self):
 		
