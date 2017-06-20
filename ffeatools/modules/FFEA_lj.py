@@ -119,6 +119,10 @@ class FFEA_lj:
 				self.interaction[j][i] = self.interaction[i][j]
 
 	def set_interaction_pair(self, i, j, eps, r0):
+		if i == -1 or j == -1:
+			print("No lj params corresponding to vdw_indices (-1,-1)")
+			return
+
 		self.interaction[i][j].eps = eps
 		self.interaction[i][j].r = r0
 
