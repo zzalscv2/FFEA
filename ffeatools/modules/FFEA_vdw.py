@@ -23,6 +23,7 @@
 
 import sys, os
 from time import sleep
+from FFEA_exceptions import *
 
 class FFEA_vdw:
 

@@ -24,6 +24,7 @@
 import sys, os
 from time import sleep
 from numpy import pi
+from FFEA_exceptions import *
 
 class FFEA_stokes:
 

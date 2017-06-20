@@ -22,6 +22,7 @@
 #
 
 import sys, os
+from FFEA_exceptions import *
 
 class FFEA_lj:
 
@@ -138,6 +139,8 @@ class FFEA_lj:
 
 		self.num_face_types = 7
 		self.interaction = []
+		self.default()
+
 		self.valid = False
 		self.empty = True
 

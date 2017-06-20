@@ -156,7 +156,7 @@ class Blob:
 				print("\nERROR: '" + c.pin + "' could not be loaded.")
 				raise
 
-		# Successfully loaded, but structurally incorrect
+		# Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
 		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
 		if (not self.surf.valid): raise IOError('Something went wrong initialising surface')
 		if (not self.vdw.valid): raise IOError('Something went wrong initialising vdw')
