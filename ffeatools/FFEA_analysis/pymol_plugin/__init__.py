@@ -677,6 +677,8 @@ class FFEA_viewer_control_window:
 
      # Ask user to select a file
      self.mat_fname.set(tkFileDialog.asksaveasfilename(**options))
+     if self.mat_fname.get() == None or self.mat_fname.get().strip() == "":
+	return
      self.update_display_flags("mat_fname", -2, self.mat_fname.get())
      self.update_material()
 
@@ -690,6 +692,8 @@ class FFEA_viewer_control_window:
 
      # Ask user to select a file
      self.pin_fname.set(tkFileDialog.asksaveasfilename(**options))
+     if self.pin_fname.get() == None or self.pin_fname.get().strip() == "":
+	return
      self.update_display_flags("pin_fname", -2, self.pin_fname.get())
      self.update_pin()
 
@@ -703,6 +707,8 @@ class FFEA_viewer_control_window:
 
      # Ask user to select a file
      self.vdw_fname.set(tkFileDialog.asksaveasfilename(**options))
+     if self.vdw_fname.get() == None or self.vdw_fname.get().strip() == "":
+	return
      self.update_display_flags("vdw_fname", -2, self.vdw_fname.get())
      self.update_vdw(atype)
 
@@ -716,6 +722,9 @@ class FFEA_viewer_control_window:
 
      # Ask user to select a file
      self.lj_fname.set(tkFileDialog.asksaveasfilename(**options))
+
+     if self.lj_fname.get() == None or self.lj_fname.get().strip() == "":
+	return
      self.update_display_flags("lj_fname", -2, self.lj_fname.get())
      self.update_lj()
 
