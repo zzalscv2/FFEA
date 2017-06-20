@@ -24,6 +24,7 @@
 import sys, os
 from time import sleep
 import numpy as np
+from FFEA_exceptions import *
 
 class FFEA_pin:
 

@@ -25,6 +25,7 @@ import os, sys
 from time import sleep
 import numpy as np
 import FFEA_surface
+from FFEA_exceptions import *
 
 class FFEA_topology:
 
