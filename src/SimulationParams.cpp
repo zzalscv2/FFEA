@@ -486,7 +486,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         kinetics_out_fname_set = 1;
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
 
-    } else if (lvalue == "vdw_in_fname" || lvalue == "vdw_forcefield_params") {
+    } else if (lvalue == "vdw_in_fname" || lvalue == "vdw_forcefield_params" || lvalue == "ljparams" || lvalue == "lj_params") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         vdw_in_fname = auxpath.string();
         vdw_in_fname_set = 1;
