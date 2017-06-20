@@ -74,17 +74,17 @@ struct Blob_conf {
    // initial placement, orientation and velocity:
    int set_centroid;
    scalar centroid[3];
-   int set_velocity; 
+   int set_velocity;
    scalar velocity[3];
-   int set_rotation; 
+   int set_rotation;
    int rotation_type;
    scalar rotation[9];
 
    // kinetics:
    string states, rates;
-   vector<string> maps; 
-   vector<int> maps_conf_index_to, maps_conf_index_from; 
-   
+   vector<string> maps;
+   vector<int> maps_conf_index_to, maps_conf_index_from;
+
 };
 
 
@@ -114,9 +114,9 @@ public:
      * substitution) and 1 for iterative (preconditioned gonjugate gradient).
      * Also takes the simulation parameters and the array of RNGs (for multiprocessor runs).
      */
-    int config(const int blob_index, const int conformation_index, string node_filename, 
+    int config(const int blob_index, const int conformation_index, string node_filename,
              string topology_filename, string surface_filename, string material_params_filename,
-             string stokes_filename, string vdw_filename, string pin_filename, 
+             string stokes_filename, string vdw_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
              scalar compress, int linear_solver, int blob_state, SimulationParams *params,
              PreComp_params *pc_params, LJ_matrix *lj_matrix,
@@ -406,8 +406,8 @@ public:
     int get_motion_state();
 
     scalar get_scale();
-    
-    scalar get_RandU01(); 
+
+    scalar get_RandU01();
 
     int get_num_linear_nodes();
 
@@ -420,7 +420,7 @@ public:
 
     // std::array<scalar,3> get_CoG();
     // arr3 get_CoG();
-    void get_stored_centroid(arr3 &cog); 
+    void get_stored_centroid(arr3 &cog);
 
     int get_conformation_index();
     int get_previous_conformation_index();
@@ -467,9 +467,15 @@ public:
     scalar get_kinetic_energy();
     scalar get_strain_energy();
 
-    int pbc_count[3];
+    int get_pbc_count(int ind);
+    void inc_pbc_count(int ind);
+    void dec_pbc_count(int ind);
+    int read_pbc_count_from_file(FILE *mini_meas_out, int b);
 
 private:
+
+    int pbc_count[3];
+
 
     /** Total number of nodes in Blob */
     int num_nodes;
@@ -576,8 +582,8 @@ private:
     scalar *ctf_sl_forces;
 
     /** Strings of all the files that contain input data: */
-    string s_node_filename, s_topology_filename, s_surface_filename, 
-          s_material_params_filename, s_stokes_filename, s_vdw_filename, 
+    string s_node_filename, s_topology_filename, s_surface_filename,
+          s_material_params_filename, s_stokes_filename, s_vdw_filename,
           s_pin_filename, s_binding_filename, s_beads_filename;
 
 
@@ -585,13 +591,13 @@ private:
     scalar scale;
 
     /** Compression stuff: */
-    scalar calc_compress, compress; 
+    scalar calc_compress, compress;
 
     /** A pointer to a class containing simulation parameters, such as the time step, dt */
     SimulationParams *params;
     PreComp_params *pc_params;
 
-    /** A pointer to the same binding matrix configured in World */ 
+    /** A pointer to the same binding matrix configured in World */
     BindingSite_matrix *binding_matrix;
 
     /** pointer to the vdw forcefield parameters (for some energy calcs) */
