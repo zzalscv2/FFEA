@@ -82,8 +82,7 @@ class FFEA_lj:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found. Returning empty object...")
-			self.reset()
+			raise
 
 		# Test format
 		line = fin.readline().strip()
