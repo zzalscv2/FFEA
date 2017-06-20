@@ -134,7 +134,7 @@ class FFEA_lj:
 		fout.write("ffea vdw forcefield params file\nnum_vdw_face_types %d\n" % (self.num_face_types))
 		for i in self.interaction:
 			for j in i:
-				fout.write("(%3.2e, %3.2e) " % (j.eps, j.r))
+				fout.write("(%3.2e,%3.2e) " % (j.eps, j.r))
 			fout.write("\n")
 		fout.close()
 
