@@ -129,13 +129,8 @@ class Blob:
 		except:
 			print("\nERROR: '" + c.vdw + "' could not be loaded.")
 			raise
-
-		# Successfully loaded, but structurally incorrect
-		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
-		if (not self.surf.valid): raise IOError('Something went wrong initialising surface')
-		if (not self.vdw.valid): raise IOError('Something went wrong initialising vdw')
 		
-		# only necessary for dynamic blobs
+		# Only necessary for dynamic blobs
 		if self.motion_state == "DYNAMIC":
 
 			# Try to load
@@ -155,21 +150,25 @@ class Blob:
 				print("\nERROR: '" + c.stokes + "' could not be loaded.")
 				raise
 
-
-			# Successfully loaded, but structurally incorrect
-			if (not self.top.valid): raise IOError('Something went wrong initialising topology')
-			if (not self.mat.valid): raise IOError('Something went wrong initialising material')
-			if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
-		
-		# Pin can be defaulted
-		if c.pin != "":
 			try:
 				self.pin = FFEA_pin.FFEA_pin(c.pin)
 			except:
 				print("\nERROR: '" + c.pin + "' could not be loaded.")
 				raise
 
-			if (not self.pin.valid): raise IOError('Something went wrong initialising pinned nodes')
+		# Successfully loaded, but structurally incorrect
+		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
+		if (not self.surf.valid): raise IOError('Something went wrong initialising surface')
+		if (not self.vdw.valid): raise IOError('Something went wrong initialising vdw')
+		if (not self.top.valid): raise IOError('Something went wrong initialising topology')
+		if (not self.mat.valid): raise IOError('Something went wrong initialising material')
+		if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
+		if (not self.pin.valid): raise IOError('Something went wrong initialising pinned nodes')
+
+		#
+		# If certain things are not loaded, we could have reduced functionality. For example, if node.valid == False, you're screwed but if top.valid == False, you could still draw the nodes and surface
+		# if self.pin == False or self.stokes == False, basically no problem whatsoever
+		#
 
 		# Only necessary if kinetics are active
 		if script.params.calc_kinetics == 1 and c.bsites != "":
@@ -216,83 +215,6 @@ class Blob:
 			
 		# Calculate stuff that needs calculating
 	
-	'''	
-	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, blob_mat, binding_fname, blob_centroid_pos, blob_rotation, ffea_fpath = "."):
-		self.idnum = idnum
-		self.bindex = blob_index
-		self.cindex = conformation_index
-                if os.path.isabs(nodes_fname) == False:
-                     self.nodes_fname = os.path.join(ffea_fpath, nodes_fname)
-                else:
-		     self.nodes_fname = nodes_fname
-		self.scale = scale
-                self.ffea_fpath = ffea_fpath
-		
-		if blob_centroid_pos != None:
-			self.init_centroid = blob_centroid_pos
-			self.offset = blob_centroid_pos
-			
-		if blob_rotation != None:
-			self.init_rot = blob_rotation
-
-		self.state = blob_state
-		print self.state
-		if top_fname == "":
-			print "No topology file provided."
-			self.no_topology = True
-		else:
-                        if os.path.isabs(top_fname) == False:
-                             top_fname = os.path.join(ffea_fpath, top_fname)
-
-			self.load_topology(top_fname)
-			self.no_topology = False
-
-                if os.path.isabs(surf_fname) == False:
-                     surf_fname = os.path.join(ffea_fpath, surf_fname)
-		self.load_surface(surf_fname)
-
-		if self.state == "DYNAMIC":
-			self.mat = FFEA_material.FFEA_material(blob_mat)
-		else:
-			self.mat = None
-
-		if vdw_fname == "":
-			print "No vdw file provided. Creating a zero array."
-			self.vdw = [-1 for i in xrange(self.surf.num_faces)]
-		else:
-                        if os.path.isabs(vdw_fname) == False:
-                             vdw_fname = os.path.join(ffea_fpath, vdw_fname)
-			try:
-				self.load_vdw(vdw_fname)
-			except(IOError):
-				print "Vdw file '" + vdw_fname + "' not found. Creating a zero array."
-				self.vdw = [-1 for i in xrange(self.surf.num_faces)]
-			except:
-				print "Unknow error in 'self.load_vdw()'. Creating a zero array."
-				self.vdw = [-1 for i in xrange(self.surf.num_faces)]
-
-		self.hidden_face = [-1 for i in xrange(self.surf.num_faces)]
-		for i in xrange(self.surf.num_faces):
-			if self.vdw[i] == -2:
-				self.hidden_face[i] = 1
-
-		if blob_pinned == "":
-			print "No pinned nodes file provided."
-			self.num_pinned_nodes = 0
-		else:
-                        if os.path.isabs(blob_pinned) == False:
-                             blob_pinned = os.path.join(ffea_fpath, blob_pinned)
-
-			self.load_pinned_nodes(blob_pinned)
-
-		if binding_fname == "":
-			print "No binding sites will be loaded."
-		
-		else:
-                        if os.path.isabs(binding_fname) == False:
-                             binding_fname = os.path.join(ffea_fpath, binding_fname)
-			self.load_binding_sites(binding_fname)
-	'''
 	def load_topology(self, top_fname):
 		print "Reading in topology file " + top_fname
        

@@ -33,6 +33,8 @@ class FFEA_pin:
 
 		# Empty fname give an empty object
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -71,6 +73,7 @@ class FFEA_pin:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	def load_pin(self, fname):
@@ -173,3 +176,4 @@ class FFEA_pin:
 		self.index = []
 		self.num_pinned_nodes = 0
 		self.valid = False
+		self.empty = True

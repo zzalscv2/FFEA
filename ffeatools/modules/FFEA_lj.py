@@ -29,7 +29,10 @@ class FFEA_lj:
 	
 		self.reset()
 
+		# Return empty object if fname not initialised
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -68,6 +71,7 @@ class FFEA_lj:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	
@@ -135,6 +139,7 @@ class FFEA_lj:
 		self.num_face_types = 7
 		self.interaction = []
 		self.valid = False
+		self.empty = True
 
 class FFEA_lj_pair:
 

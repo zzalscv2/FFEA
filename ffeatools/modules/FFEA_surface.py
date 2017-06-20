@@ -33,6 +33,8 @@ class FFEA_surface:
 		self.reset()
 
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -79,6 +81,7 @@ class FFEA_surface:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	def load_surf(self, fname):
@@ -470,6 +473,7 @@ class FFEA_surface:
 		self.face = []
 		self.num_faces = 0
 		self.valid = False
+		self.empty = True
 
 class FFEA_face:
 

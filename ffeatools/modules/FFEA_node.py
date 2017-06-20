@@ -33,6 +33,8 @@ class FFEA_node:
 		self.reset()
 
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -89,6 +91,7 @@ class FFEA_node:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	def load_FFEA_node(self, fname):
@@ -560,6 +563,7 @@ class FFEA_node:
 	def reset(self):
 
 		self.valid = False
+		self.empty = True
 
 		self.pos = []
 		self.centroid = None

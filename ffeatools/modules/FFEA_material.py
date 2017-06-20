@@ -35,6 +35,8 @@ class FFEA_material:
 
 		# Empty fname give an empty object
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -73,6 +75,7 @@ class FFEA_material:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	def load_mat(self, fname):
@@ -189,4 +192,5 @@ class FFEA_material:
 
 		self.element = []
 		self.num_elements = 0
-		self.valid = False 
+		self.valid = False
+		self.empty = True

@@ -33,6 +33,8 @@ class FFEA_stokes:
 
 		# Empty fname give an empty object
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -71,6 +73,7 @@ class FFEA_stokes:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 
@@ -148,3 +151,5 @@ class FFEA_stokes:
 
 		self.radius = []
 		self.num_nodes = 0
+		self.valid = False
+		self.empty = True
