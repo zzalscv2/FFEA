@@ -123,7 +123,7 @@ World::~World() {
     box_dim.y = 0;
     box_dim.z = 0;
     step_initial = 0;
-    
+
     if(trajectory_out != NULL) {
 	    fclose(trajectory_out);
     }
@@ -147,7 +147,7 @@ World::~World() {
     kinetics_out = NULL;
 
 
-    delete vdw_solver; 
+    delete vdw_solver;
     mini_meas_out = NULL;
     vdw_solver = NULL;
 
@@ -278,7 +278,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
     // detect how many threads we have for openmp
 #ifdef USE_OPENMP
-    num_threads = omp_get_max_threads(); 
+    num_threads = omp_get_max_threads();
     printf("\n\tNumber of threads detected: %d\n\n", num_threads);
 #else
     num_threads = 1;
@@ -363,7 +363,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         // Allocate Seeds:
         Seeds = new unsigned long *[num_seeds];
         for (int i=0; i<num_seeds; ++i) {
-           Seeds[i] = new unsigned long [6]; 
+           Seeds[i] = new unsigned long [6];
            fill_n(Seeds[i], 6, 0); // fill the array with zeroes.
         }
         // RNG.1.4 - get Seeds :
@@ -387,7 +387,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
         // If kinetics active, one more seed to get (on line num_threads + 2)
         //   Trying to get this seed is essential: if we fail, it means that
-        //   the previous run did not use kinetics, which is assumed later 
+        //   the previous run did not use kinetics, which is assumed later
         //   when initialising the RngStream for the kinetics.
         if(params.calc_kinetics) {
             vector <string> vline;
@@ -607,12 +607,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
             }
             if(params.mini_meas!=0){
-                        printf("before we open the file\n");
                 mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "w");
-                printf("We've opened the file\n");
-                printf("%d\n", strlen(params.mini_meas_out_fname.c_str()));
-				fprintf(mini_meas_out, "FFEA Mini Measurement File\n\nMeasurements:\n%-14s", "Time");
-				    printf("we tried to print\n");
+                fprintf(mini_meas_out, "FFEA Mini Measurement File\n\nMeasurements:\n%-14s", "Time");
 				for(i = 0; i < params.num_blobs; ++i) {
 					fprintf(mini_meas_out, "| B%d ", i);
 					fprintf(mini_meas_out, "%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s","Centroid.x", "Centroid.y", "Centroid.z","PBC_count.x","PBC_count.y","PBC_count.z", "FFt11","FFt12","FFt13","FFt22","FFt23","FFt33");
@@ -829,8 +825,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
                 last_asterisk_pos = ftello(detailed_meas_out);
 
-                // Truncate the measurement file up to the point of the last newline
                 printf("Truncating the detailed measurement file to the appropriate line...\n");
+                // Truncate the measurement file up to the point of the last newline
                 if (truncate(params.detailed_meas_out_fname.c_str(), last_asterisk_pos) != 0) {
                     FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.detailed_meas_out_fname.c_str())
                 }
@@ -853,11 +849,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				last_asterisk_pos = ftello(mini_meas_out);
 
 				num_asterisks = 0;
-				num_asterisks_to_find = (frames_to_delete) +1; // 3 to get to top of last frame, then two for every subsequent frame. Final 1 to find ending conformations of last step
+                num_asterisks_to_find = (frames_to_delete)+1; // 1 to get to top of last frame, one to delete the previous
 			    while (num_asterisks != num_asterisks_to_find) {
 			        if (fseek(mini_meas_out, -2, SEEK_CUR) != 0) {
 				//perror(NULL);
-				//FFEA_ERROR_MESSG("It is likely we have reached the begininng of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
+				//FFEA_ERROR_MESSG("It is likely we have reached the beginning of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
 				    printf("Found beginning of file. Searching forwards for next asterisk...");
 				    singleframe = true;
 
@@ -874,7 +870,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			        c = fgetc(mini_meas_out);
 			        if (c == '*') {
                     num_asterisks++;
-				printf("Found %d\n", num_asterisks);
+                    printf("Found %d\n", num_asterisks);
 
 				// get the position in the file of this last asterisk
 				//if (num_asterisks == num_asterisks_to_find - 2) {
@@ -886,12 +882,28 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             if ((c = fgetc(mini_meas_out)) != '\n') {
 			    ungetc(c, mini_meas_out);
 			} else {
-				last_asterisk_pos = ftello(mini_meas_out);
+				last_asterisk_pos = ftello(mini_meas_out)-2;//-2 removes asterisk so restart files are identical
 			}
+
+            printf("Loading Blob PBC relocation counts matching last completely written snapshot \n");
+            int temp_pbc_count;
+            double trash;
+            if (fscanf(mini_meas_out, "%le", &trash) != 1) {
+                    FFEA_ERROR_MESSG("(When restarting) Error reading from fmm file, for time)")
+            }
+            cout<<"Mini-Measurement restart step is "<<trash/(params.dt*mesoDimensions::time)<<endl;
+            for (int b = 0; b < params.num_blobs; b++) {
+                printf("Loading Blob PBC relocation counts matching last completely written snapshot, for blob %d\n", b);
+                if (active_blob_array[b]->read_pbc_count_from_file(mini_meas_out,b) == FFEA_ERROR) {
+                    FFEA_ERROR_MESSG("Error restarting blob %d\n", b)
+                }
+            }
+
+
 			printf("Truncating the mini_meas file to the last asterisk...\n");
 			if (truncate(params.mini_meas_out_fname.c_str(), last_asterisk_pos) != 0) {
-			    FFEA_ERROR_MESSG("Error when trying to truncate mini_meas file %s\n", params.mini_meas_out_fname.c_str())
-			}
+                    FFEA_ERROR_MESSG("Error when trying to truncate mini_meas file %s\n", params.mini_meas_out_fname.c_str())
+                }
 			}
 
             // Open trajectory and measurment files for appending
@@ -939,16 +951,16 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
     }
 
-    // Check if there are static blobs: 
+    // Check if there are static blobs:
     bool there_are_static_blobs = false;
     for (i = 0; i < params.num_blobs; i++) {
         for(j = 0; j < params.num_conformations[i]; ++j) {
             if (blob_array[i][j].get_motion_state() != FFEA_BLOB_IS_DYNAMIC) {
-              there_are_static_blobs = true; 
-              break; 
+              there_are_static_blobs = true;
+              break;
             }
         }
-        if (there_are_static_blobs == true) break; 
+        if (there_are_static_blobs == true) break;
     }
 
     if (params.vdw_type == "lennard-jones")
@@ -1058,13 +1070,13 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     }
 
 
-    if (params.restart == 0 && mode == 0) {
+    /*if (params.restart == 0 && mode == 0) {
         // Carry out measurements on the system before carrying out any updates (if this is step 0)
         if (params.mini_meas!=0){
 		    print_mini_meas_file(0,omp_get_wtime());
 		    fprintf(mini_meas_out,"*\n");
 		}
-    }
+    }*/
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
@@ -1906,7 +1918,7 @@ int World::run() {
             active_blob_array[i]->zero_force();
             /* if ((step+1) % params.check == 0) { // we only do measurements if we need so.
                 // if (params.calc_vdw == 1) active_blob_array[i]->zero_vdw_bb_measurement_data(); // DEPRECATED
-                // if (params.sticky_wall_xz == 1) active_blob_array[i]->zero_vdw_xz_measurement_data(); // DEPRECATED 
+                // if (params.sticky_wall_xz == 1) active_blob_array[i]->zero_vdw_xz_measurement_data(); // DEPRECATED
             } */
 
             // If blob centre of mass moves outside simulation box, apply PBC to it
@@ -1915,49 +1927,48 @@ int World::run() {
 
             scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
-
             if (com.x < 0) {
                 if (params.wall_x_1 == WALL_TYPE_PBC) {
                     dx += box_dim.x;
-                    active_blob_array[i]->pbc_count[0]-=1;
+                    active_blob_array[i]->inc_pbc_count(0);
                     check_move = 1;
                 }
             } else if (com.x > box_dim.x) {
                 if (params.wall_x_2 == WALL_TYPE_PBC) {
                     dx -= box_dim.x;
-                    active_blob_array[i]->pbc_count[0]+=1;
+                    active_blob_array[i]->dec_pbc_count(0);
                     check_move = 1;
                 }
             }
             if (com.y < 0) {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
-                    active_blob_array[i]->pbc_count[1]-=1;
+                    active_blob_array[i]->inc_pbc_count(1);
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
-                    active_blob_array[i]->pbc_count[1]+=1;
+                    active_blob_array[i]->dec_pbc_count(1);
                     check_move = 1;
                 }
             }
             if (com.z < 0) {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
-                    active_blob_array[i]->pbc_count[2]-=1;
+                    active_blob_array[i]->inc_pbc_count(2);
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
-                    active_blob_array[i]->pbc_count[2]+=1;
+                    active_blob_array[i]->dec_pbc_count(2);
                     check_move = 1;
                 }
             }
             // So if it has to move, do so and update its centroid.
-            if (check_move == 1) { 
-                active_blob_array[i]->move(dx, dy, dz); 
+            if (check_move == 1) {
+                active_blob_array[i]->move(dx, dy, dz);
                 active_blob_array[i]->calc_and_store_centroid(com);
             }
 
@@ -2031,7 +2042,7 @@ int World::run() {
 
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
-            // pc_solver.solve(blob_corr); // keep that one as reference implementation. 
+            // pc_solver.solve(blob_corr); // keep that one as reference implementation.
             // pc_solver.solve_using_neighbours();
             pc_solver.solve_using_neighbours_non_critical(blob_corr); // blob_corr == NULL if force_pbc = 0
         }
@@ -2089,8 +2100,8 @@ int World::run() {
             print_kinetic_files(step);
         }
         if (params.mini_meas!=0){
-            if ((step + 1) % params.mini_meas == 0) {
-                print_mini_meas_file(step + 1, wtime);
+            if ((step) % params.mini_meas == 0) {
+                print_mini_meas_file(step, wtime);
         }
         }
 
@@ -2376,7 +2387,7 @@ int World::read_and_build_system(vector<string> script_vector) {
         if (systemreader->extract_block("blob", i, script_vector, &blob_vector) == FFEA_ERROR) return FFEA_ERROR;
 
         // Read all conformations
-        bool enforce_conf_blocks = false; 
+        bool enforce_conf_blocks = false;
         bool read_blob_as_conf = false;
         if (params.num_conformations[i] > 1) enforce_conf_blocks = true;
         for(j = 0; j < params.num_conformations[i]; ++j) {
@@ -2453,7 +2464,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                     set_preComp = 1;
                 } else {
                     bool forgive_unrecognised = false;
-                    if ( (read_blob_as_conf == true) && ( (lrvalue[0] == "centroid") || (lrvalue[0] == "rotation") || (lrvalue[0] == "solver") || (lrvalue[0] == "scale") || (lrvalue[0] == "translate") || (lrvalue[0] == "velocity") || (lrvalue[0] == "calc_compress") || (lrvalue[0] == "compress") ) ) forgive_unrecognised = true; 
+                    if ( (read_blob_as_conf == true) && ( (lrvalue[0] == "centroid") || (lrvalue[0] == "rotation") || (lrvalue[0] == "solver") || (lrvalue[0] == "scale") || (lrvalue[0] == "translate") || (lrvalue[0] == "velocity") || (lrvalue[0] == "calc_compress") || (lrvalue[0] == "compress") ) ) forgive_unrecognised = true;
                     if (forgive_unrecognised == false) {
                        FFEA_error_text();
                        cout << "Unrecognised conformation lvalue: '" << lrvalue[0] << "'" << endl;
@@ -2525,7 +2536,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
         // Read kinetic info (if necessary)
         if(params.calc_kinetics == 1 && params.num_states[i] != 1) {
-	    
+
             // Get kinetic data
             if (systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector) == FFEA_ERROR) return FFEA_ERROR;
 
@@ -4022,7 +4033,7 @@ void World::print_checkpoints() {
                 state[3], state[4], state[5]);
 
     }
-	//cout << "hi" << endl << flush;   
+	//cout << "hi" << endl << flush;
 	fflush(checkpoint_out);
     // Done with the checkpoint!
 }
@@ -4232,7 +4243,7 @@ void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr) {
         blob_corr[i*num_blobs*3 + i*3]= 0;
         blob_corr[i*num_blobs*3 + i*3+1]= 0;
         blob_corr[i*num_blobs*3 + i*3+2]= 0;
-        
+
         active_blob_array[i]->get_stored_centroid(com.data);
         for(int j = i+1; j < num_blobs; ++j) {
 
