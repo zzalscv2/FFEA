@@ -798,7 +798,17 @@ class FFEA_viewer_control_window:
                  
 
 	# Load some lj
-	self.lj = self.script.load_lj()
+	try:
+		self.lj = self.script.load_lj()
+	except:
+		print("\nERROR: '" + self.script.params.vdw_forcefield_params + "' could not be loaded.")
+		print("\nERROR: Could not load system. Please try again.")
+		return
+
+	if (not self.lj.valid): 
+		print('Something went wrong initialising lennard-jones (lj) parameters')
+		print("\nERROR: Could not load system. Please try again.")
+		return
 
 	# Load some springs
 	if self.display_flags['show_springs'] == 1:
