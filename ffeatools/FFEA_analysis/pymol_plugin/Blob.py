@@ -160,10 +160,11 @@ class Blob:
 		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
 		if (not self.surf.valid): raise IOError('Something went wrong initialising surface')
 		if (not self.vdw.valid): raise IOError('Something went wrong initialising vdw')
-		if (not self.top.valid): raise IOError('Something went wrong initialising topology')
-		if (not self.mat.valid): raise IOError('Something went wrong initialising material')
-		if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
-		if (not self.pin.valid): raise IOError('Something went wrong initialising pinned nodes')
+		if self.motion_state == "DYNAMIC":
+			if (not self.top.valid): raise IOError('Something went wrong initialising topology')
+			if (not self.mat.valid): raise IOError('Something went wrong initialising material')
+			if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
+			if (not self.pin.valid): raise IOError('Something went wrong initialising pinned nodes')
 
 		#
 		# If certain things are not loaded, we could have reduced functionality. For example, if node.valid == False, you're screwed but if top.valid == False, you could still draw the nodes and surface
