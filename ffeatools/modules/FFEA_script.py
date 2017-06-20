@@ -38,6 +38,12 @@ class FFEA_script:
 
 		self.reset()
 
+		# Return empty object if fname not initialised
+		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
+			return
+
 		# Start reading to test
 		try:
 			fin = open(fname, "r")	
@@ -88,6 +94,10 @@ class FFEA_script:
 			print "Error. Failed to load <spring>...</spring> "
 			self.reset()
 			return
+
+		self.valid = True
+		self.empty = False
+		sys.stdout.write("done!\n")
 
 	# # # # # # # # # # # # # # # # # # # # # #
 	# we will take the comments out of iFile,
@@ -155,11 +165,6 @@ class FFEA_script:
 
 		ffea_in.seek(0,0)   
 		return ffea_in
-     
-	def reset(self):
-		self.params = None
-		self.blob = []
-		self.spring = ""
 
 	def remove_blob(self, index=-1):
 		
@@ -427,6 +432,13 @@ class FFEA_script:
 		self.blob.append(FFEA_script_blob())
 		self.params.num_blobs += 1
 		self.params.num_conformations.append(1)
+
+	def reset(self):
+		self.valid = False
+		self.empty = True
+		self.params = None
+		self.blob = []
+		self.spring = ""
 
 	# Loading other FFEA objects
 	def load_node(self, bindex, cindex=0):

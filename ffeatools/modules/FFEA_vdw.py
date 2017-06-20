@@ -31,6 +31,8 @@ class FFEA_vdw:
 		self.reset()
 
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -69,6 +71,7 @@ class FFEA_vdw:
 			raise
 	
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	def load_vdw(self, fname):
@@ -141,3 +144,4 @@ class FFEA_vdw:
 		self.index = []
 		self.num_faces = 0
 		self.valid = False
+		self.empty = True

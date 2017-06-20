@@ -33,6 +33,8 @@ class FFEA_topology:
 		self.reset()
 
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -75,6 +77,7 @@ class FFEA_topology:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	def load_top(self, fname):
@@ -750,6 +753,8 @@ class FFEA_topology:
 		self.num_elements = 0
 		self.num_surface_elements = 0
 		self.num_interior_elements = 0
+		self.valid = False
+		self.empty = True
 
 class FFEA_element:
 
