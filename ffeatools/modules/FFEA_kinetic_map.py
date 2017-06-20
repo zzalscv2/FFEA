@@ -37,7 +37,7 @@ class FFEA_kinetic_map:
 			fin = open(fname, "r")
 		
 		except(IOError):
-			print "Error. Map File " + fname  + " not found."
+			print("Error. Map File " + fname  + " not found.")
 			return
 
 		# Header
@@ -120,7 +120,7 @@ class FFEA_kinetic_map:
 						for j in range(self.key[i], self.key[i + 1]):
 							new_nodes[i] += self.entry[j] * f.pos[self.col[j]]
 							
-					print str(count) + " frames calculated"
+					print(str(count) + " frames calculated")
 					total_new_nodes.append(new_nodes)
 						
 			return total_new_nodes

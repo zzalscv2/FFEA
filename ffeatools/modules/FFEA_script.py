@@ -21,7 +21,12 @@
 #  the research papers on the package.
 #
 
-import sys, os, StringIO
+import sys, os
+if sys.version_info[0] < 3:
+	from StringIO import StringIO
+else:
+	from io import StringIO
+
 from numpy import array as nparray
 
 from FFEA_universe import *
@@ -48,9 +53,7 @@ class FFEA_script:
 		try:
 			fin = open(fname, "r")	
 		except(IOError):
-			print "File " + fname  + " not found. Returning empty object..."
-			self.reset()
-			return
+			raise
 
 		# Get rid of all of the comments, if there are any
 		fin = self.remove_all_comments(fin)
@@ -59,7 +62,7 @@ class FFEA_script:
 
 		# Check for params block		
 		if "<param>\n" not in script_lines:
-			print "Error. File " + fname  + " not an FFEA script file."
+			print("Error. File " + fname  + " not an FFEA script file.")
 			self.reset()
 			return
 
@@ -70,7 +73,7 @@ class FFEA_script:
 		try:
 		  self.params = self.read_params_from_script_lines(script_lines, scriptdir)
 		except:
-			print "Error. Couldn't load <params>...</params>"
+			print("Error. Couldn't load <params>...</params>")
 			self.reset()
 			return
 
@@ -83,7 +86,7 @@ class FFEA_script:
 			try:
 				self.blob.append(self.read_blob_from_script_lines(script_lines, scriptdir, i, self.params.num_conformations[i]))
 			except:
-				print "Error. Couldn't load <blob>...</blob> " + str(i)
+				print("Error. Couldn't load <blob>...</blob> " + str(i))
 				self.reset()
 				return
 
@@ -91,7 +94,7 @@ class FFEA_script:
 		try:
 			self.read_springs_from_script_lines(script_lines, scriptdir)
 		except:
-			print "Error. Failed to load <spring>...</spring> "
+			print("Error. Failed to load <spring>...</spring> ")
 			self.reset()
 			return
 
@@ -108,7 +111,7 @@ class FFEA_script:
 		STA = fin.readlines()
 		fin.close()
 
-		ffea_in = StringIO.StringIO()
+		ffea_in = StringIO()
 
 		# and some variables to take the comments out: 
 		comment = 0
@@ -196,7 +199,7 @@ class FFEA_script:
 				rvalue = line.split("=")[1].strip()
 				
 			except:
-				print "Error. Could not parse line '" + param + "'"
+				print("Error. Could not parse line '" + param + "'")
 				continue
 
 			
@@ -225,7 +228,7 @@ class FFEA_script:
 			read_blob_as_conf = False
 			if len(conformation_lines) == 0:
 				if enforce_conf_blocks == True: 
-					print "Error. Couldn't parse conformation tag '" + line + "'"
+					print("Error. Couldn't parse conformation tag '" + line + "'")
 					return None
 				else:
 					conformation_lines = blob_lines[:]
@@ -237,7 +240,7 @@ class FFEA_script:
 					lvalue = line.split("=")[0].strip()
 					rvalue = line.split("=")[1].strip()
 				except:
-					print "Error. Could not parse conformation tag '" + line + "'"
+					print("Error. Could not parse conformation tag '" + line + "'")
 					return None
 		
 				try:
@@ -267,11 +270,11 @@ class FFEA_script:
 							(lvalue == "translate") or (lvalue == "velocity") or (lvalue == "velocity") or \
                    	(lvalue == "calc_compress") or (lvalue == "compres"))): continue
 						else: 
-							print "Unrecognised conformation tag '" + line + "'. Ignoring..."
+							print("Unrecognised conformation tag '" + line + "'. Ignoring...")
 							continue
 
 				except(IndexError, ValueError):
-					print "Error. Couldn't parse conformation tag '" + line + "'"
+					print("Error. Couldn't parse conformation tag '" + line + "'")
 					return None
 			
 			blob.conformation.append(conformation)
@@ -289,7 +292,7 @@ class FFEA_script:
 			except(IndexError):
 				continue
 			except:
-				print "Error. Could not parse blob tag '" + line + "'"
+				print("Error. Could not parse blob tag '" + line + "'")
 				return None
 
 			try:
@@ -301,7 +304,7 @@ class FFEA_script:
 					continue
 
 			except(IndexError, ValueError):
-				print "Error. Couldn't parse blob tag '" + line + "'"
+				print("Error. Couldn't parse blob tag '" + line + "'")
 				return None
 
 		# Now maps
@@ -316,7 +319,7 @@ class FFEA_script:
 				rvalue = line.split("=")[1].strip()
 
 			except:
-				print "Error. Could not parse blob tag '" + line + "'"
+				print("Error. Could not parse blob tag '" + line + "'")
 				return None
 
 			try:
@@ -325,7 +328,7 @@ class FFEA_script:
 				blob.map.append(rvalue)
 
 			except:
-				print "Error. Could not parse blob tag '" + line + "'"
+				print("Error. Could not parse blob tag '" + line + "'")
 				return None
 
 		# Now blob general stuff
@@ -337,7 +340,7 @@ class FFEA_script:
 			except(IndexError):
 				continue
 			except:
-				print "Error. Could not parse blob tag '" + line + "'"
+				print("Error. Could not parse blob tag '" + line + "'")
 				return None
 
 			try:
@@ -353,7 +356,7 @@ class FFEA_script:
 					continue
 
 			except(IndexError, ValueError):
-				print "Error. Couldn't parse blob tag '" + line + "'"
+				print("Error. Couldn't parse blob tag '" + line + "'")
 				return None
 
 		return blob
@@ -368,7 +371,7 @@ class FFEA_script:
 				return
 
 		if len(spring_lines) != 1:
-			print "Error. Expected only one filename."
+			print("Error. Expected only one filename.")
 			return
 
 		line = spring_lines[0]
@@ -379,7 +382,7 @@ class FFEA_script:
 			rvalue = line.split("=")[1].strip()
 
 		except(IndexError, ValueError):
-			print "Error. Couldn't parse spring tag '" + line + "'"
+			print("Error. Couldn't parse spring tag '" + line + "'")
 			return
 
 		if lvalue == "springs_fname" or lvalue == "spring_fname":
@@ -418,13 +421,13 @@ class FFEA_script:
 		fout.close()
 
 	def print_details(self):
-			print "traj = ", self.params.trajectory_out_fname
-			print "num_blobs = ", self.params.num_blobs
-			print "num_conformations = ", self.params.num_conformations
+			print("traj = ", self.params.trajectory_out_fname)
+			print("num_blobs = ", self.params.num_blobs)
+			print("num_conformations = ", self.params.num_conformations)
 			
 			for i in range(self.params.num_blobs):
 				for j in range(self.params.num_conformations[i]):
-					print "Node fname = ", self.blob[i].conformation[j].nodes
+					print("Node fname = ", self.blob[i].conformation[j].nodes)
 					
 
 	def add_empty_blob(self):
@@ -622,7 +625,7 @@ class FFEA_script_params():
 		elif lvalue == "num_states":
 			self.num_states = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
 		else:
-			print "Unrecognised parameter '" + lvalue + "'. Ignoring..."
+			print("Unrecognised parameter '" + lvalue + "'. Ignoring...")
 
 	# This simply returns an error if something is incompatible. For fixes, use fix_params
 	def check_params(self):
@@ -885,7 +888,7 @@ def extract_block_from_lines(title, index, lines):
 					block.append(line)
 		except:
 			
-			print "Error. Could not parse line " + line
+			print("Error. Could not parse line " + line)
 			return []
 
 	return block	
@@ -909,7 +912,7 @@ def check_if_block_in_lines(title, index, lines):
 
 		except:
 			
-			print "Error. Could not parse line " + line
+			print("Error. Could not parse line " + line)
 			break
 
 	return block_in_lines

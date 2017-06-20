@@ -106,7 +106,7 @@ class FFEA_binding_sites:
 		
 	def print_details(self):
 
-		print "num_binding_sites = %d" % (self.num_binding_sites)
+		print("num_binding_sites = %d" % (self.num_binding_sites))
 		sleep(1)
 
 		i = -1
@@ -116,7 +116,7 @@ class FFEA_binding_sites:
 			for f in s.index:
 				outline += " %d" % (f)
 			
-			print outline
+			print(outline)
 	
 	def reset(self):
 

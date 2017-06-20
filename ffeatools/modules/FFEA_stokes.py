@@ -131,14 +131,14 @@ class FFEA_stokes:
 	
 	def print_details(self):
 
-		print "num_nodes = %d" % (self.num_nodes)
+		print("num_nodes = %d" % (self.num_nodes))
 		sleep(1)
 
 		outline = ""
 		for rad in self.radius:
 			outline += "%6.3f\n" % (rad)
 			
-		print outline
+		print(outline)
 	
 	def calc_drag(self, viscosity, scale = 1.0):
 		
