@@ -960,22 +960,23 @@ class FFEA_viewer_control_window:
 
 
    
-	if self.load_sfa.get() != "None":
-		# deactivate load options:
-		self.check_button_show_springs.config(state=DISABLED)
-		self.check_button_show_pinned.config(state=DISABLED)
-		self.check_button_show_inverted.config(state=DISABLED)
-		self.check_button_show_danger.config(state=DISABLED)
+	# deactivate load options:
+	self.check_button_show_springs.config(state=DISABLED)
+	self.check_button_show_pinned.config(state=DISABLED)
+	self.check_button_show_inverted.config(state=DISABLED)
+	self.check_button_show_danger.config(state=DISABLED)
 
-		self.text_button_system_name.config(state=DISABLED)
-		self.random_name_button.config(state=DISABLED)
-		self.spinbox_material_param.config(state=DISABLED)
-		self.om_show_mesh.config(state=DISABLED)
-		self.index_option.config(state=DISABLED)
-		self.om_show_box.config(state=DISABLED)
-		self.om_load_sfa.config(state=DISABLED)
-		self.om_do_load_trajectory.config(state=DISABLED)
-		self.load_button.config(state=DISABLED)
+	self.text_button_system_name.config(state=DISABLED)
+	self.random_name_button.config(state=DISABLED)
+	self.spinbox_material_param.config(state=DISABLED)
+	self.om_show_mesh.config(state=DISABLED)
+	self.index_option.config(state=DISABLED)
+	self.om_show_box.config(state=DISABLED)
+	self.om_load_sfa.config(state=DISABLED)
+	self.om_do_load_trajectory.config(state=DISABLED)
+	self.load_button.config(state=DISABLED)
+
+	if self.load_sfa.get() != "None":
 
 		# activate Editor options:
 		self.text_button_sele_name.config(state="normal")
@@ -999,6 +1000,8 @@ class FFEA_viewer_control_window:
 		self.text_button_lj_r0.config(state="normal")
 
 		self.load_lj_button.config(state="normal")
+	else:
+		self.root.destroy()
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]
