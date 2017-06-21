@@ -132,6 +132,7 @@ class FFEA_viewer_control_window:
      self.sele_name = StringVar(self.root, value=self.display_flags['sele_name'])
      self.pin_fname = StringVar(self.root, value=self.display_flags['pin_fname'])
      self.mat_fname = StringVar(self.root, value=self.display_flags['mat_fname'])
+     self.which_vdw_type = IntVar(self.root, value=self.display_flags['which_vdw_type'])
      self.vdw_type0 = IntVar(self.root, value=self.display_flags['vdw_type0'])
      self.vdw_type1 = IntVar(self.root, value=self.display_flags['vdw_type1'])
      self.vdw_fname = StringVar(self.root, value=self.display_flags['vdw_fname'])
@@ -219,7 +220,7 @@ class FFEA_viewer_control_window:
      self.om_show_box.grid(row=5, column=1, sticky=W)
 
 
-     ## # Trajectory Radiobutton # #
+     ## # Trajectory Dropdown Menu # #
      label_traj= Label(display_flags_frame, text="Load:")
      label_traj.grid(row=6, column=0, sticky=E)
      self.om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
@@ -321,18 +322,22 @@ class FFEA_viewer_control_window:
      vdwtype_frame = Frame(vdwlj_group.interior())
      vdwtype_frame.pack(fill=X, side=TOP)
 
-     # Define vdw face types:
+     # Define vdw face types and a radio button to switch between them:
+     self.radio_vdw_type0 = Radiobutton(vdwtype_frame, variable=self.which_vdw_type, value=0, command=lambda:self.update_display_flags("which_vdw_type", val=0))
+     self.radio_vdw_type0.pack(side=LEFT, fill=X)
      label_vdw_type0 = Label(vdwtype_frame, text="VdW type 1:")
-     label_vdw_type0.pack(side=LEFT, fill=X)
-     self.spinbox_vdw_type0 = OptionMenu(vdwtype_frame, self.vdw_type0, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.update_display_flags("vdw_type0", val=self.vdw_type0.get()) )
+     label_vdw_type0.pack(side=LEFT)
+     self.spinbox_vdw_type0 = OptionMenu(vdwtype_frame, self.vdw_type0, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.update_display_flags("vdw_type0", val=self.vdw_type0.get()))
      self.spinbox_vdw_type0.pack(side=LEFT)
      self.spinbox_vdw_type0.config(state=DISABLED)
 
-     self.spinbox_vdw_type1 = OptionMenu(vdwtype_frame, self.vdw_type1, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.update_display_flags("vdw_type1", val=self.vdw_type1.get()) )
+     self.spinbox_vdw_type1 = OptionMenu(vdwtype_frame, self.vdw_type1, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.update_display_flags("vdw_type1", val=self.vdw_type1.get()))
      self.spinbox_vdw_type1.pack(side=RIGHT)
      self.spinbox_vdw_type1.config(state=DISABLED)
      label_vdw_type1 = Label(vdwtype_frame, text="VdW type 2:")
-     label_vdw_type1.pack(side=RIGHT, fill=X)
+     label_vdw_type1.pack(side=RIGHT)
+     self.radio_vdw_type1 = Radiobutton(vdwtype_frame, variable=self.which_vdw_type, value=1, command=lambda:self.update_display_flags("which_vdw_type", val=1))
+     self.radio_vdw_type1.pack(side=RIGHT, fill=X)
 
      ## ## ## VdW Box ## ## ##
      vdw_group = Pmw.Group(vdwlj_group.interior(),tag_text='VdW Files')
@@ -341,12 +346,9 @@ class FFEA_viewer_control_window:
      ## Contents
      
      # choose a vdw file to set up 
-     self.load_vdw_button0 = Button(vdw_group.interior(), text="Update VdW file (t1)", command=lambda:self.choose_vdw_file_to_setup(0) )
-     self.load_vdw_button0.pack(side=TOP)
-     self.load_vdw_button0.config(state=DISABLED)
-     self.load_vdw_button1 = Button(vdw_group.interior(), text="Update VdW file (t2)", command=lambda:self.choose_vdw_file_to_setup(1) )
-     self.load_vdw_button1.pack(side=TOP)
-     self.load_vdw_button1.config(state=DISABLED)
+     self.load_vdw_button = Button(vdw_group.interior(), text="Update VdW file", command=lambda:self.choose_vdw_file_to_setup() )
+     self.load_vdw_button.pack(anchor=CENTER)
+     self.load_vdw_button.config(state=DISABLED)
 
      ## ## ## LJ Box ## ## ##
      lj_group = Pmw.Group(vdwlj_group.interior(),tag_text='LJ Files')
@@ -526,7 +528,7 @@ class FFEA_viewer_control_window:
 	pin.write_to_file(self.display_flags["pin_fname"])
 	print("...done!\n")
 
-  def update_vdw(self, atype):
+  def update_vdw(self):
 
 	print("Updating VdW File...\n")
 
@@ -590,8 +592,9 @@ class FFEA_viewer_control_window:
 	newvdw.index = self.blob_list[blob_ID][0].vdw.index
 
 	# Update list
+	vdwindex = self.display_flags["vdw_type" + str(self.display_flags["which_vdw_type"])]
 	for i in indices: 
-		newvdw.set_index(int(i), self.display_flags["vdw_type" + str(atype)])
+		newvdw.set_index(int(i), vdwindex)
 
 	# Write
 	newvdw.write_to_file(self.display_flags["vdw_fname"])
@@ -697,7 +700,7 @@ class FFEA_viewer_control_window:
      self.update_display_flags("pin_fname", -2, self.pin_fname.get())
      self.update_pin()
 
-  def choose_vdw_file_to_setup(self, atype):
+  def choose_vdw_file_to_setup(self):
      # set up the options for the open file dialog box
      options = {}
      options['defaultextension'] = '.vdw'
@@ -710,7 +713,7 @@ class FFEA_viewer_control_window:
      if self.vdw_fname.get() == None or self.vdw_fname.get().strip() == "":
 	return
      self.update_display_flags("vdw_fname", -2, self.vdw_fname.get())
-     self.update_vdw(atype)
+     self.update_vdw()
 
   def choose_lj_file_to_setup(self):
      # set up the options for the open file dialog box
@@ -1002,8 +1005,7 @@ class FFEA_viewer_control_window:
 		self.spinbox_vdw_type0.config(state="normal")
 		self.spinbox_vdw_type1.config(state="normal")
 
-		self.load_vdw_button0.config(state="normal")
-		self.load_vdw_button1.config(state="normal")
+		self.load_vdw_button.config(state="normal")
 
 		self.text_button_lj_eps.config(state="normal")
 		self.text_button_lj_r0.config(state="normal")
@@ -1396,6 +1398,7 @@ class FFEA_viewer_control_window:
       'sele_name': "sele",
       'pin_fname': "",
       'mat_fname': "",
+      'which_vdw_type': 0,
       'vdw_type0': -1,
       'vdw_type1': -1,
       'vdw_fname': '',
