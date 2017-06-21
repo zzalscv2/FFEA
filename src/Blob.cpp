@@ -3849,6 +3849,9 @@ int Blob::aggregate_forces_and_solve() {
         }
     }
 
+    // Take forces off of second order nodes onto linear ones 
+    linearise_force();
+
     // Set to zero any forces on the pinned nodes
     for (n = 0; n < num_pinned_nodes; n++) {
         int pn_index = pinned_nodes_list[n];
@@ -3862,8 +3865,6 @@ int Blob::aggregate_forces_and_solve() {
         force[*it].y = 0;
         force[*it].z = 0;
     }
-
-    linearise_force();
 
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix,
     // or Kv = f where K is the viscosity matrix for the system
