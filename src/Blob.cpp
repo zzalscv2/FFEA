@@ -1511,6 +1511,7 @@ void Blob::calc_and_write_mini_meas_to_file(FILE *fout) {
     for(i=0;i<6;i++){
             F_ij_store[i]=0;
     }
+    matrix3 J;
 	matrix3 F_ij_calc;
 
 	scalar cogx = 0.0, cogy = 0.0, cogz = 0.0;
@@ -1529,6 +1530,23 @@ void Blob::calc_and_write_mini_meas_to_file(FILE *fout) {
 	CoG.y = cogy / num_nodes;
 	CoG.z = cogz / num_nodes;
 
+/*  Removed as appears this doesn't need to be recalculated
+	 for (int n = 0; n < num_elements; n++) {
+
+        // calculate jacobian for this element
+        elem[n].calculate_jacobian(J);
+
+        // get the 12 derivatives of the shape functions (by inverting the jacobian)
+        // and also get the element volume. The function returns an error in the
+        // case of an element inverting itself (determinant changing sign since last step)
+        elem[n].calc_shape_function_derivatives_and_volume(J);
+
+        // And F_ij
+        elem[n].calc_deformation(J);
+	 }*/
+
+	 double vol_test=0;
+
 	for(i=0;i< num_elements;i++){
         mat3_set_zero(F_ij_calc);
         mat3_mult_transpose(elem[i].F_ij, elem[i].F_ij, F_ij_calc);
@@ -1540,11 +1558,16 @@ void Blob::calc_and_write_mini_meas_to_file(FILE *fout) {
         F_ij_store[3] += F_ij_calc[1][1];
         F_ij_store[4] += F_ij_calc[1][2];
         F_ij_store[5] += F_ij_calc[2][2];
+        //vol_test +=elem[i].vol_0;
+
 	}
 
 	    for(int i=0;i<6;i++){
-                F_ij_store[i]=F_ij_store[i]/(num_elements*total_vol);
+                F_ij_store[i]=F_ij_store[i]/total_vol;
         }
+
+        calculate_deformation();
+        //cout<< "vol_test = "<<vol_test<<" total_vol is "<<total_vol<<endl;
 
 
 	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14d%-14d%-14d%-14.6e%-14.6e%-14.6e%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length,pbc_count[0],pbc_count[1],pbc_count[2],F_ij_store[0],F_ij_store[1],F_ij_store[2],F_ij_store[3],F_ij_store[4],F_ij_store[5]);
