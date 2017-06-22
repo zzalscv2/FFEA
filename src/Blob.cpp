@@ -1549,6 +1549,9 @@ void Blob::calc_and_write_mini_meas_to_file(FILE *fout) {
                 F_ij_store[i]=F_ij_store[i]/total_vol;
         }
 
+        calculate_deformation();
+        //cout<< "vol_test = "<<vol_test<<" total_vol is "<<total_vol<<endl;
+
 
 
 	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14d%-14d%-14d%-14.6e%-14.6e%-14.6e%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length,pbc_count[0],pbc_count[1],pbc_count[2],F_ij_store[0],F_ij_store[1],F_ij_store[2],F_ij_store[3],F_ij_store[4],F_ij_store[5]);
