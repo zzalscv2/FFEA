@@ -95,13 +95,14 @@ class FFEA_lj:
 
 		# Read interaction matrix now
 		for i in range(self.num_face_types):
-			sline = fin.readline().split()
+			sline = fin.readline().strip().split(")")
+			sline.pop()
 			self.interaction.append([])
 			for s in sline:
-				intline = s.strip()[1:-1].split(",")
+				intline = s.strip().split(",")
 				self.interaction[-1].append(FFEA_lj_pair())
-				self.interaction[-1][-1].eps = float(intline[0])
-				self.interaction[-1][-1].r = float(intline[0])
+				self.interaction[-1][-1].eps = float(intline[0][1:])
+				self.interaction[-1][-1].r = float(intline[1])
 
 		fin.close()
 
