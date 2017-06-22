@@ -592,8 +592,6 @@ int Blob::init(){
             toBePrinted_nodes = new scalar[4*num_nodes];
         }
     }
-
-
     // Return FFEA_OK to indicate "success"
     return FFEA_OK;
 }
@@ -1513,7 +1511,6 @@ void Blob::calc_and_write_mini_meas_to_file(FILE *fout) {
     for(i=0;i<6;i++){
             F_ij_store[i]=0;
     }
-    matrix3 J;
 	matrix3 F_ij_calc;
 
 	scalar cogx = 0.0, cogy = 0.0, cogz = 0.0;
@@ -2195,9 +2192,9 @@ void Blob::set_forces_to_zero() {
 }
 
 void Blob::get_node(int index, arr3 &v) {
-    
-    arr3Store<scalar,arr3>(node[index].pos.data, v); 
-    
+
+    arr3Store<scalar,arr3>(node[index].pos.data, v);
+
 }
 
 void Blob::add_force_to_node(vector3 f, int index) {
@@ -3778,7 +3775,6 @@ void Blob::calc_rest_state_info() {
     scalar longest_surface_edge = 0;
     int min_vol_elem = 0;
     mass = 0;
-    scalar total_vol = 0;
     for (int i = 0; i < num_elements; i++) {
         // Get jacobian matrix for this element
         elem[i].calculate_jacobian(J);
@@ -3808,7 +3804,7 @@ void Blob::calc_rest_state_info() {
 
     for (int i=0; i<num_surface_faces; i++) {
         scalar longest_surface_edge_i = surface[i].length_of_longest_edge();
-        if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i; 
+        if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i;
     }
 
     if (blob_state == FFEA_BLOB_IS_STATIC) {
