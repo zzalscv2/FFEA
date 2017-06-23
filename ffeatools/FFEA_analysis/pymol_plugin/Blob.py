@@ -904,6 +904,7 @@ class Blob:
 			# in any case:
  			if len(text) > 0: 
  				cmd.read_pdbstr(text, sfa_name, frameLabel)
+				cmd.hide("everything", sfa_name)
 				cmd.show("spheres", sfa_name)
 	
 
