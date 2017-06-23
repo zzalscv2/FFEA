@@ -467,9 +467,6 @@ class Blob:
                 # n = math.sqrt(vx * vx + vy * vy + vz * vz) 
                 # return ( vx/n, vy/n, vz/n )
  
-	def set_num_loads(self, i):
-		self.num_loads = i
-
 	def calc_centroid(self, i):
 
 		if self.motion_state == "STATIC":
@@ -654,7 +651,7 @@ class Blob:
 
 
 			sol.extend([END])
-			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid_" + str(self.num_loads), frameLabel)
+			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid", frameLabel)
 
 		#
 		#  Mesh      (doable usually. catch if there's no topology i.e. STATIC blob)
@@ -713,7 +710,7 @@ class Blob:
 		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
 			mes.extend([END])
-			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh_" + str(self.num_loads), frameLabel)
+			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh", frameLabel)
 
 		#
 		#  Numbers       (again, can't always do elements)
@@ -762,7 +759,7 @@ class Blob:
 				
 				# Only create object if something exists to draw (some of these above routines do nothing
 				if len(numtxt) != 0:
-					cmd.load_cgo(numtxt, display_flags['system_name'] + "_" + str(self.idnum) + "_numbers_" + str(self.num_loads), frameLabel)               
+					cmd.load_cgo(numtxt, display_flags['system_name'] + "_" + str(self.idnum) + "_numbers", frameLabel)               
 
 
 		#
@@ -770,7 +767,7 @@ class Blob:
 		#
 
 		if display_flags['show_pinned'] == 1 and self.pin != None and self.pin.num_pinned_nodes != 0:
-			pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_" + str(self.num_loads)
+			pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_pinned"
 			psa_name = "CA"
 			psa_b = 20
 			text = ""
@@ -788,7 +785,6 @@ class Blob:
 		# Danger Elements! Elements that will probably invert because they have <5A lengths in them. Only draw on first frame (takes ages)
 		#
 		if frameLabel == 1 and display_flags['show_danger'] == 1 and self.top != None:
-			#danger_name = pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads)
 
 			# Calculate the element lengthscales and draw all < 5A
 			eindex = 0
@@ -827,7 +823,7 @@ class Blob:
 
 			dan.extend([END])
 			if len(dan) != 7:
-				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads), frameLabel)
+				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
 
 			axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
 			
@@ -837,7 +833,7 @@ class Blob:
 				cyl_text(dantxt, plain, en, str(e), scale, axes=axes)
 
 			if len(dantxt) != 0:
-				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum_" + str(self.num_loads), frameLabel)
+				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum", frameLabel)
 
 		#
 		#  Load SFA: Supportive Fake Atoms #

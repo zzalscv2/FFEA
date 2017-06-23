@@ -764,7 +764,6 @@ class FFEA_viewer_control_window:
 
 	# Try to reset previous system and update
 	self.num_frames = 0
-	self.num_loads += 1
 
 	# Check if given file exists
 	if os.path.isfile(ffea_fname) == False:
@@ -819,8 +818,6 @@ class FFEA_viewer_control_window:
 				print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
 				return
 
-			new_blob.set_num_loads(self.num_loads)
-     
 			self.blob_list[bindex][cindex] = new_blob
 			new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
 			info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + c.motion_state + "\n"
@@ -1190,8 +1187,8 @@ class FFEA_viewer_control_window:
 		invele.append(END)
 
 		if len(invele) > 3:
-			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted_" + str(c.num_loads), self.num_frames)
-			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex_" + str(c.num_loads), self.num_frames)
+			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted", self.num_frames)
+			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex", self.num_frames)
 		bin += 1
 
   def load_trajectory(self, trajectory_out_fname):
@@ -1365,9 +1362,6 @@ class FFEA_viewer_control_window:
 	
   def init_vars(self):
 
-	# num times loaded
-	self.num_loads = 0
-	
 	# Empty traj object
 	self.traj = None
 
