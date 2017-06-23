@@ -1238,6 +1238,9 @@ class FFEA_viewer_control_window:
 	# Finally show the "progress bar":
 	if self.num_frames > 1:
 		cmd.mset("1-"+str(self.num_frames))
+	# If the trajectory was a single frame, then we loaded nothing:
+	else: self.wontLoadTraj = 1
+
 
   def get_system_dimensions(self, findex):
 	maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])	
