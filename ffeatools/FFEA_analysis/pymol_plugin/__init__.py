@@ -238,16 +238,6 @@ class FFEA_viewer_control_window:
      self.load_button = Button(display_flags_frame, text="Load ffea file", command=lambda:self.choose_ffea_file_to_load() )
      self.load_button.grid(row=8, column=0, columnspan=4, sticky=W+E+N+S, pady=20)
      
-#     int_label = Label(display_flags_frame, text="Interactive Tools")
-#     int_label.grid(row=8, column=0, sticky=E)
-
-
-     # # # Element highlighting 
-     # label_elem= Label(display_flags_frame, text="Highlight element(s):")
-     # label_elem.grid(row=8, column=0, sticky=E)
-
-     # highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
-     # highlight_entry_box.grid(row=8, column=1, sticky=W)
 
 
 
@@ -473,8 +463,15 @@ class FFEA_viewer_control_window:
 		return
 
 	# Are they all in the same blob?
+	# # get the list of names:
 	stored.blob_IDs = []
 	cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
+	# # ignore those coming from "pinned" selections:
+	ndx = len(stored.blob_IDs) - 1
+	for i in reversed(stored.blob_IDs):
+		if i.split("_")[2] == "pinned": stored.blob_IDs.pop(ndx)
+		ndx -= 1
+	# # check if they are all equal:
 	if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
 		print("Cannot make pin file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
 		return
@@ -490,10 +487,21 @@ class FFEA_viewer_control_window:
 
 	# Different things depending on index type
 	indices = []
-	if indextype == "nfa" or indextype == "lnfa":
-
+	if indextype == "lnfa":
 		# Node indices. Great!
 		indices = stored.baseindices
+
+	elif indextype == "nfa":
+		# try to remove the non-linear nodes, if the blob is DYNAMIC:
+		if self.blob_list[blob_ID][0].motion_state == 'DYNAMIC':
+			snfa = []
+			for i in stored.baseindices:
+				if self.blob_list[blob_ID][0].linear_node_list.count(i):
+					indices.append(i)
+				else:
+					snfa.append(i)
+			if len(snfa) > 0:
+				print "Only linear nodes can be pinned, but nodes: ", snfa, " are auxilliary, and adding them in the .pin node file has no effect"
 
 	elif indextype == "efa":
 

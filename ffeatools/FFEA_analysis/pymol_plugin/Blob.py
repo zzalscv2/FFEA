@@ -189,7 +189,7 @@ class Blob:
 			# Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
 			print "Linear nodes cannot be known without a topology."
 
-		self.linear_node_list = set(self.linear_node_list)
+		self.linear_node_list = list(set(self.linear_node_list))
 		
 		# Any initialisation done in ffea?
 		if b.centroid != None:
