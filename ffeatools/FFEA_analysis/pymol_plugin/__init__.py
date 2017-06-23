@@ -394,7 +394,14 @@ class FFEA_viewer_control_window:
 		print("Cannot make material file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
 		return
 
+	# Get the blob_ID, to identify the blob within self.blob_list
 	blob_ID = int(stored.blob_IDs[0].split("_")[1])
+
+	# If the blob is not DYNAMIC, abort:
+	if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
+		print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Because of being static, material parameters would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
+		return
+
 
 	## Ok, we're ready!
 	
@@ -477,6 +484,12 @@ class FFEA_viewer_control_window:
 		return
 	blob_ID = int(stored.blob_IDs[0].split("_")[1])
 
+	# If the blob is not DYNAMIC, abort:
+	if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
+		print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Pinning nodes in this case would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
+		return
+
+
 	## Ok, we're ready!
 	
 	# Get indices and index type
@@ -492,16 +505,16 @@ class FFEA_viewer_control_window:
 		indices = stored.baseindices
 
 	elif indextype == "nfa":
-		# try to remove the non-linear nodes, if the blob is DYNAMIC:
-		if self.blob_list[blob_ID][0].motion_state == 'DYNAMIC':
-			snfa = []
-			for i in stored.baseindices:
-				if self.blob_list[blob_ID][0].linear_node_list.count(i):
-					indices.append(i)
-				else:
-					snfa.append(i)
-			if len(snfa) > 0:
-				print "Only linear nodes can be pinned, but nodes: ", snfa, " are auxilliary, and adding them in the .pin node file has no effect"
+		# try to remove the non-linear nodes:
+		snfa = []
+		for i in stored.baseindices:
+			# store only linear nodes
+			if self.blob_list[blob_ID][0].linear_node_list.count(i):
+				indices.append(i)
+			else:
+				snfa.append(i)
+		if len(snfa) > 0:
+			print "Only linear nodes can be pinned, but nodes: ", snfa, " are auxilliary, and adding them in the .pin node file has no effect"
 
 	elif indextype == "efa":
 
