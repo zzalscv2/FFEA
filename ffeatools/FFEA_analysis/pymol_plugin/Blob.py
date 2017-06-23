@@ -850,14 +850,16 @@ class Blob:
 			text = ""
 			if display_flags['load_sfa'] == "Onto Nodes":
 				sfa_name += "_nfa"
-				if (self.node.num_nodes > 10000):
-					print "Use (ATOM number -1) to identify the node"
+				#if (self.node.num_nodes > 10000):
+				#	print "Use (ATOM number -1) instead of (RESI) to identify the node"
 				for n in range(self.node.num_nodes):
+					if n == 10000: 
+						print "Cannot load more than 10000 Supportive Fake Atoms"
+						break
 					pos = (self.frames[i].pos[n].tolist())[0:3]
-					if n < 10000: 
-						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
-					else:
-						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", 9999, pos[0], pos[1], pos[2]))
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+					#if n > 10000 - use ATOM -1 ? 
+					#	text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", 9999, pos[0], pos[1], pos[2]))
 
 
 			elif display_flags['load_sfa'] == 'Onto Linear Nodes':
