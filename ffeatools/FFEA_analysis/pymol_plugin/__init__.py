@@ -238,16 +238,6 @@ class FFEA_viewer_control_window:
      self.load_button = Button(display_flags_frame, text="Load ffea file", command=lambda:self.choose_ffea_file_to_load() )
      self.load_button.grid(row=8, column=0, columnspan=4, sticky=W+E+N+S, pady=20)
      
-#     int_label = Label(display_flags_frame, text="Interactive Tools")
-#     int_label.grid(row=8, column=0, sticky=E)
-
-
-     # # # Element highlighting 
-     # label_elem= Label(display_flags_frame, text="Highlight element(s):")
-     # label_elem.grid(row=8, column=0, sticky=E)
-
-     # highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
-     # highlight_entry_box.grid(row=8, column=1, sticky=W)
 
 
 
@@ -404,7 +394,14 @@ class FFEA_viewer_control_window:
 		print("Cannot make material file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
 		return
 
+	# Get the blob_ID, to identify the blob within self.blob_list
 	blob_ID = int(stored.blob_IDs[0].split("_")[1])
+
+	# If the blob is not DYNAMIC, abort:
+	if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
+		print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Because of being static, material parameters would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
+		return
+
 
 	## Ok, we're ready!
 	
@@ -473,12 +470,25 @@ class FFEA_viewer_control_window:
 		return
 
 	# Are they all in the same blob?
+	# # get the list of names:
 	stored.blob_IDs = []
 	cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
+	# # ignore those coming from "pinned" selections:
+	ndx = len(stored.blob_IDs) - 1
+	for i in reversed(stored.blob_IDs):
+		if i.split("_")[2] == "pinned": stored.blob_IDs.pop(ndx)
+		ndx -= 1
+	# # check if they are all equal:
 	if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
 		print("Cannot make pin file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
 		return
 	blob_ID = int(stored.blob_IDs[0].split("_")[1])
+
+	# If the blob is not DYNAMIC, abort:
+	if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
+		print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Pinning nodes in this case would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
+		return
+
 
 	## Ok, we're ready!
 	
@@ -490,10 +500,21 @@ class FFEA_viewer_control_window:
 
 	# Different things depending on index type
 	indices = []
-	if indextype == "nfa" or indextype == "lnfa":
-
+	if indextype == "lnfa":
 		# Node indices. Great!
 		indices = stored.baseindices
+
+	elif indextype == "nfa":
+		# try to remove the non-linear nodes:
+		snfa = []
+		for i in stored.baseindices:
+			# store only linear nodes
+			if self.blob_list[blob_ID][0].linear_node_list.count(i):
+				indices.append(i)
+			else:
+				snfa.append(i)
+		if len(snfa) > 0:
+			print "Only linear nodes can be pinned, but nodes: ", snfa, " are auxilliary, and adding them in the .pin node file has no effect"
 
 	elif indextype == "efa":
 
@@ -743,7 +764,6 @@ class FFEA_viewer_control_window:
 
 	# Try to reset previous system and update
 	self.num_frames = 0
-	self.num_loads += 1
 
 	# Check if given file exists
 	if os.path.isfile(ffea_fname) == False:
@@ -798,8 +818,6 @@ class FFEA_viewer_control_window:
 				print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
 				return
 
-			new_blob.set_num_loads(self.num_loads)
-     
 			self.blob_list[bindex][cindex] = new_blob
 			new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
 			info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + c.motion_state + "\n"
@@ -1169,8 +1187,8 @@ class FFEA_viewer_control_window:
 		invele.append(END)
 
 		if len(invele) > 3:
-			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted_" + str(c.num_loads), self.num_frames)
-			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex_" + str(c.num_loads), self.num_frames)
+			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted", self.num_frames)
+			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex", self.num_frames)
 		bin += 1
 
   def load_trajectory(self, trajectory_out_fname):
@@ -1238,6 +1256,9 @@ class FFEA_viewer_control_window:
 	# Finally show the "progress bar":
 	if self.num_frames > 1:
 		cmd.mset("1-"+str(self.num_frames))
+	# If the trajectory was a single frame, then we loaded nothing:
+	else: self.wontLoadTraj = 1
+
 
   def get_system_dimensions(self, findex):
 	maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])	
@@ -1341,9 +1362,6 @@ class FFEA_viewer_control_window:
 	
   def init_vars(self):
 
-	# num times loaded
-	self.num_loads = 0
-	
 	# Empty traj object
 	self.traj = None
 

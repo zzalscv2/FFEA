@@ -189,7 +189,7 @@ class Blob:
 			# Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
 			print "Linear nodes cannot be known without a topology."
 
-		self.linear_node_list = set(self.linear_node_list)
+		self.linear_node_list = list(set(self.linear_node_list))
 		
 		# Any initialisation done in ffea?
 		if b.centroid != None:
@@ -467,9 +467,6 @@ class Blob:
                 # n = math.sqrt(vx * vx + vy * vy + vz * vz) 
                 # return ( vx/n, vy/n, vz/n )
  
-	def set_num_loads(self, i):
-		self.num_loads = i
-
 	def calc_centroid(self, i):
 
 		if self.motion_state == "STATIC":
@@ -654,7 +651,7 @@ class Blob:
 
 
 			sol.extend([END])
-			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid_" + str(self.num_loads), frameLabel)
+			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid", frameLabel)
 
 		#
 		#  Mesh      (doable usually. catch if there's no topology i.e. STATIC blob)
@@ -713,7 +710,7 @@ class Blob:
 		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
 			mes.extend([END])
-			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh_" + str(self.num_loads), frameLabel)
+			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh", frameLabel)
 
 		#
 		#  Numbers       (again, can't always do elements)
@@ -762,7 +759,7 @@ class Blob:
 				
 				# Only create object if something exists to draw (some of these above routines do nothing
 				if len(numtxt) != 0:
-					cmd.load_cgo(numtxt, display_flags['system_name'] + "_" + str(self.idnum) + "_numbers_" + str(self.num_loads), frameLabel)               
+					cmd.load_cgo(numtxt, display_flags['system_name'] + "_" + str(self.idnum) + "_numbers", frameLabel)               
 
 
 		#
@@ -770,7 +767,7 @@ class Blob:
 		#
 
 		if display_flags['show_pinned'] == 1 and self.pin != None and self.pin.num_pinned_nodes != 0:
-			pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_" + str(self.num_loads)
+			pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_pinned"
 			psa_name = "CA"
 			psa_b = 20
 			text = ""
@@ -788,7 +785,6 @@ class Blob:
 		# Danger Elements! Elements that will probably invert because they have <5A lengths in them. Only draw on first frame (takes ages)
 		#
 		if frameLabel == 1 and display_flags['show_danger'] == 1 and self.top != None:
-			#danger_name = pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads)
 
 			# Calculate the element lengthscales and draw all < 5A
 			eindex = 0
@@ -827,7 +823,7 @@ class Blob:
 
 			dan.extend([END])
 			if len(dan) != 7:
-				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads), frameLabel)
+				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
 
 			axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
 			
@@ -837,7 +833,7 @@ class Blob:
 				cyl_text(dantxt, plain, en, str(e), scale, axes=axes)
 
 			if len(dantxt) != 0:
-				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum_" + str(self.num_loads), frameLabel)
+				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum", frameLabel)
 
 		#
 		#  Load SFA: Supportive Fake Atoms #
@@ -850,14 +846,16 @@ class Blob:
 			text = ""
 			if display_flags['load_sfa'] == "Onto Nodes":
 				sfa_name += "_nfa"
-				if (self.node.num_nodes > 10000):
-					print "Use (ATOM number -1) to identify the node"
+				#if (self.node.num_nodes > 10000):
+				#	print "Use (ATOM number -1) instead of (RESI) to identify the node"
 				for n in range(self.node.num_nodes):
+					if n == 10000: 
+						print "Cannot load more than 10000 Supportive Fake Atoms"
+						break
 					pos = (self.frames[i].pos[n].tolist())[0:3]
-					if n < 10000: 
-						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
-					else:
-						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", 9999, pos[0], pos[1], pos[2]))
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+					#if n > 10000 - use ATOM -1 ? 
+					#	text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", 9999, pos[0], pos[1], pos[2]))
 
 
 			elif display_flags['load_sfa'] == 'Onto Linear Nodes':
@@ -904,6 +902,7 @@ class Blob:
 			# in any case:
  			if len(text) > 0: 
  				cmd.read_pdbstr(text, sfa_name, frameLabel)
+				cmd.hide("everything", sfa_name)
 				cmd.show("spheres", sfa_name)
 	
 
