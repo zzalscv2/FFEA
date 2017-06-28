@@ -5,7 +5,12 @@ We have a volumetric mesh! This is almost all of the required data needed for an
 
 	ffeatools voltoffea --mesh [INPUT .vol fname] --density [INPUT density] --shear-visc [INPUT shear viscosity] --bulk-visc [INPUT bulk viscosity] --shear-mod [INPUT shear modulus] --bulk-mod [INPUT bulk modulus] --stokes-radius [INPUT effective node hydrodynamic radius] --dielectric [INPUT dielectric constant] --make-script
 
-As you can see, this program needs the structural detail of the mesh together with the material properties of our protein in order to generate the file set for FFEA. Let us parametrise GroEL as though it was water, simply for testing purposes (very approximate values obtained from...wikipedia. For testing purposes only!).
+or alternatively:
+
+	ffeatools voltoffea --mesh [INPUT .ele fname] [INPUT .node fname] [INPUT .face fname] --density [INPUT density] --shear-visc [INPUT shear viscosity] --bulk-visc [INPUT bulk viscosity] --shear-mod [INPUT shear modulus] --bulk-mod [INPUT bulk modulus] --stokes-radius [INPUT effective node hydrodynamic radius] --dielectric [INPUT dielectric constant] --make-script
+
+
+As you can see, this program needs the structural detail of the mesh (coming either from a Netgen .vol file, or from three Tetgen .ele, .face, and .vol files) together with the material properties of our protein in order to generate the file set for FFEA. Let us parametrise GroEL as though it was water, simply for testing purposes (very approximate values obtained from...wikipedia. For testing purposes only!).
 
 Firstly, create a directory called 'simulation' and move into it, and move the .vol file as well:
 
