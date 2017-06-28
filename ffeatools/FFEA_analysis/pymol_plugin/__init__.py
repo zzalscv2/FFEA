@@ -652,7 +652,7 @@ class FFEA_viewer_control_window:
 	    self.display_flags[key] = float(text)
 	    return True
 	except(ValueError):
-	    raise
+	    return False
 
      elif val == -2:
        self.display_flags[key] = text
