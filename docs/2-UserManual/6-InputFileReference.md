@@ -151,9 +151,9 @@ In between it can take the following parameters:
  
 #### Electrostatics ####
 
-   * ` es_update ` <int> <BR>
-        Number of steps after which the electrostatics energy and the neighbour list
-          is refreshed.
+   * ` es_update `  see box configuration <BR>
+        Number of steps after which both the electrostatics energy (if `calc_es`) 
+          and the neighbour list are updated.
 
    * ` dielect_ext ` <float> (1) <BR>
  
@@ -183,6 +183,9 @@ In between it can take the following parameters:
 
    * ` vdw_cutoff ` <float> (3e-9) <BR> 
         Length of the side of the voxel.
+
+   * ` es_update ` <int> (10) <BR>
+        Number of steps after which the neighbour list is refreshed.
 
 
    * ` sticky_wall_xz ` <int> (0) <BR>
