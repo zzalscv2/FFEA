@@ -43,7 +43,7 @@ SimulationParams::SimulationParams() {
     vdw_steric_factor = 1e-2;
     vdw_steric_dr = 5e-3;
     move_into_box = 1;
-    es_update = 1;
+    es_update = 10;
     kappa = 1e9 * mesoDimensions::length;
     es_h = 3;
 
