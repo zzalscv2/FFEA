@@ -390,10 +390,11 @@ class FFEA_script:
 			
 		return
 
-	def default(self, basename):
+	def default(self, basename, checkBasename=True):
 		
-		# Just in case it's not a basename...
-		basename = os.path.splitext(basename)[0]
+		if checkBasename:
+			# Just in case it's not a basename...
+			basename = os.path.splitext(basename)[0]
 
 		# Default params, but change fnames
 		self.params = FFEA_script_params()

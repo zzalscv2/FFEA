@@ -71,7 +71,6 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
             if extension == '.node': nodefname = f
             if extension == '.ele': topfname = f
             if extension == '.face': surffname = f
-            print 
             B.append(basename)
             B = list(set(B))
             if (len(B) > 1): print "Using basename: ", B[0]
@@ -82,6 +81,7 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
             print "top: ", topfname
             print "surf: ", surffname
             raise IOError("Could not assign names to .ele (topology) .face (surface) and .node files")
+        print "basename: ", basename
        
 
     elif len(mesh) == 1:
@@ -154,7 +154,7 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     # Script will be defaulted
     if make_script:
         script = FFEA_script.FFEA_script()
-        script.default(basename)
+        script.default(basename, False)
     
     # Now, print them all out!
     node.write_to_file(basename + ".node")
