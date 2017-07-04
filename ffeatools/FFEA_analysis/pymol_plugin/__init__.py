@@ -988,7 +988,10 @@ class FFEA_viewer_control_window:
 		self.draw_inverted_elements()
 
 
-   
+   	# Center everything, zoom and sort clipping plane
+	cmd.center()
+ 	cmd.zoom()
+
 	# deactivate load options:
 	self.check_button_show_springs.config(state=DISABLED)
 	self.check_button_show_pinned.config(state=DISABLED)
