@@ -35,9 +35,9 @@ static string FFEA_commit = "@PACKAGE_COMMIT@";
 static string FFEA_branch = "@PACKAGE_BRANCH@";
 static string FFEA_date = "@PACKAGE_DATE@";
 #else
-static string FFEA_prev_commit = "a1e03df782150b69cf9e4d5e26ba14aabb90863c";
+static string FFEA_prev_commit = "7ddfcf45c97e441953e9e6abeef737d399f8d0d1";
 static string FFEA_prev_branch = "pymolTabs";
-static string FFEA_prev_date = "2017-06-28";
+static string FFEA_prev_date = "2017-06-29";
 
 
 #endif
