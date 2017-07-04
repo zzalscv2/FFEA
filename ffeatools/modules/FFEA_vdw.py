@@ -23,6 +23,7 @@
 
 import sys, os
 from time import sleep
+from FFEA_exceptions import *
 
 class FFEA_vdw:
 
@@ -31,6 +32,8 @@ class FFEA_vdw:
 		self.reset()
 
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -69,6 +72,7 @@ class FFEA_vdw:
 			raise
 	
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	def load_vdw(self, fname):
@@ -128,12 +132,17 @@ class FFEA_vdw:
 	def write_to_file(self, fname):
 		
 		with open(fname, "w") as f:
-			f.write("ffea vdw file\nnum_faces %d\nvdw params:\n" % (self.num_faces))
+			self.write_header(f)
+			# f.write("ffea vdw file\nnum_faces %d\nvdw params:\n" % (self.num_faces))
 			for i in self.index:
 				f.write("%d\n" % (i))
+
+	def write_header(self, openfile):
+		openfile.write("ffea vdw file\nnum_faces %d\nvdw params:\n" % (self.num_faces))
 
 	def reset(self):
 
 		self.index = []
 		self.num_faces = 0
 		self.valid = False
+		self.empty = True

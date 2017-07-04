@@ -129,13 +129,8 @@ class Blob:
 		except:
 			print("\nERROR: '" + c.vdw + "' could not be loaded.")
 			raise
-
-		# Successfully loaded, but structurally incorrect
-		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
-		if (not self.surf.valid): raise IOError('Something went wrong initialising surface')
-		if (not self.vdw.valid): raise IOError('Something went wrong initialising vdw')
 		
-		# only necessary for dynamic blobs
+		# Only necessary for dynamic blobs
 		if self.motion_state == "DYNAMIC":
 
 			# Try to load
@@ -155,21 +150,26 @@ class Blob:
 				print("\nERROR: '" + c.stokes + "' could not be loaded.")
 				raise
 
-
-			# Successfully loaded, but structurally incorrect
-			if (not self.top.valid): raise IOError('Something went wrong initialising topology')
-			if (not self.mat.valid): raise IOError('Something went wrong initialising material')
-			if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
-		
-		# Pin can be defaulted
-		if c.pin != "":
 			try:
 				self.pin = FFEA_pin.FFEA_pin(c.pin)
 			except:
 				print("\nERROR: '" + c.pin + "' could not be loaded.")
 				raise
 
+		# Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
+		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
+		if (not self.surf.valid): raise IOError('Something went wrong initialising surface')
+		if (not self.vdw.valid): raise IOError('Something went wrong initialising vdw')
+		if self.motion_state == "DYNAMIC":
+			if (not self.top.valid): raise IOError('Something went wrong initialising topology')
+			if (not self.mat.valid): raise IOError('Something went wrong initialising material')
+			if (not self.stokes.valid): raise IOError('Something went wrong initialising stokes')
 			if (not self.pin.valid): raise IOError('Something went wrong initialising pinned nodes')
+
+		#
+		# If certain things are not loaded, we could have reduced functionality. For example, if node.valid == False, you're screwed but if top.valid == False, you could still draw the nodes and surface
+		# if self.pin == False or self.stokes == False, basically no problem whatsoever
+		#
 
 		# Only necessary if kinetics are active
 		if script.params.calc_kinetics == 1 and c.bsites != "":
@@ -189,7 +189,7 @@ class Blob:
 			# Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
 			print "Linear nodes cannot be known without a topology."
 
-		self.linear_node_list = set(self.linear_node_list)
+		self.linear_node_list = list(set(self.linear_node_list))
 		
 		# Any initialisation done in ffea?
 		if b.centroid != None:
@@ -216,83 +216,6 @@ class Blob:
 			
 		# Calculate stuff that needs calculating
 	
-	'''	
-	def load(self, idnum, blob_index, conformation_index, nodes_fname, top_fname, surf_fname, vdw_fname, scale, blob_state, blob_pinned, blob_mat, binding_fname, blob_centroid_pos, blob_rotation, ffea_fpath = "."):
-		self.idnum = idnum
-		self.bindex = blob_index
-		self.cindex = conformation_index
-                if os.path.isabs(nodes_fname) == False:
-                     self.nodes_fname = os.path.join(ffea_fpath, nodes_fname)
-                else:
-		     self.nodes_fname = nodes_fname
-		self.scale = scale
-                self.ffea_fpath = ffea_fpath
-		
-		if blob_centroid_pos != None:
-			self.init_centroid = blob_centroid_pos
-			self.offset = blob_centroid_pos
-			
-		if blob_rotation != None:
-			self.init_rot = blob_rotation
-
-		self.state = blob_state
-		print self.state
-		if top_fname == "":
-			print "No topology file provided."
-			self.no_topology = True
-		else:
-                        if os.path.isabs(top_fname) == False:
-                             top_fname = os.path.join(ffea_fpath, top_fname)
-
-			self.load_topology(top_fname)
-			self.no_topology = False
-
-                if os.path.isabs(surf_fname) == False:
-                     surf_fname = os.path.join(ffea_fpath, surf_fname)
-		self.load_surface(surf_fname)
-
-		if self.state == "DYNAMIC":
-			self.mat = FFEA_material.FFEA_material(blob_mat)
-		else:
-			self.mat = None
-
-		if vdw_fname == "":
-			print "No vdw file provided. Creating a zero array."
-			self.vdw = [-1 for i in xrange(self.surf.num_faces)]
-		else:
-                        if os.path.isabs(vdw_fname) == False:
-                             vdw_fname = os.path.join(ffea_fpath, vdw_fname)
-			try:
-				self.load_vdw(vdw_fname)
-			except(IOError):
-				print "Vdw file '" + vdw_fname + "' not found. Creating a zero array."
-				self.vdw = [-1 for i in xrange(self.surf.num_faces)]
-			except:
-				print "Unknow error in 'self.load_vdw()'. Creating a zero array."
-				self.vdw = [-1 for i in xrange(self.surf.num_faces)]
-
-		self.hidden_face = [-1 for i in xrange(self.surf.num_faces)]
-		for i in xrange(self.surf.num_faces):
-			if self.vdw[i] == -2:
-				self.hidden_face[i] = 1
-
-		if blob_pinned == "":
-			print "No pinned nodes file provided."
-			self.num_pinned_nodes = 0
-		else:
-                        if os.path.isabs(blob_pinned) == False:
-                             blob_pinned = os.path.join(ffea_fpath, blob_pinned)
-
-			self.load_pinned_nodes(blob_pinned)
-
-		if binding_fname == "":
-			print "No binding sites will be loaded."
-		
-		else:
-                        if os.path.isabs(binding_fname) == False:
-                             binding_fname = os.path.join(ffea_fpath, binding_fname)
-			self.load_binding_sites(binding_fname)
-	'''
 	def load_topology(self, top_fname):
 		print "Reading in topology file " + top_fname
        
@@ -544,9 +467,6 @@ class Blob:
                 # n = math.sqrt(vx * vx + vy * vy + vz * vz) 
                 # return ( vx/n, vy/n, vz/n )
  
-	def set_num_loads(self, i):
-		self.num_loads = i
-
 	def calc_centroid(self, i):
 
 		if self.motion_state == "STATIC":
@@ -731,24 +651,20 @@ class Blob:
 
 
 			sol.extend([END])
-			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid_" + str(self.num_loads), frameLabel)
+			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid", frameLabel)
 
 		#
 		#  Mesh      (doable usually. catch if there's no topology i.e. STATIC blob)
 		#
 
 		if display_flags['show_mesh'] != "No Mesh":
-	
-			# Check for topology
-			if self.top == None:
-				 display_flags['show_mesh'] = "Surface Mesh"
 
 			mes.extend( [BEGIN, LINES] )
 			#mes.extend([COLOR, 1.0, 1.0, 1.0])
 			#mes.extend([COLOR, 0.0, 0.0, 1.0])
 
 			# If surface mesh, draw lines for surface only, else for entire element structure
-			if display_flags['show_mesh'] == "Whole Mesh":
+			if display_flags['show_mesh'] == "Whole Mesh" and self.top != None:
 			
 				# Loop through elements
 				for e in xrange(self.top.num_elements):
@@ -775,7 +691,7 @@ class Blob:
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 		                        mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
-			elif display_flags['show_mesh'] == "Surface Mesh":
+			elif display_flags['show_mesh'] == "Surface Mesh" or self.top == None:
 
 				# Loop over surface
 				#mes.extend([COLOR, 0.33, 0.33, 0.33])
@@ -794,7 +710,7 @@ class Blob:
 		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
 			mes.extend([END])
-			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh_" + str(self.num_loads), frameLabel)
+			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh", frameLabel)
 
 		#
 		#  Numbers       (again, can't always do elements)
@@ -843,7 +759,7 @@ class Blob:
 				
 				# Only create object if something exists to draw (some of these above routines do nothing
 				if len(numtxt) != 0:
-					cmd.load_cgo(numtxt, display_flags['system_name'] + "_" + str(self.idnum) + "_numbers_" + str(self.num_loads), frameLabel)               
+					cmd.load_cgo(numtxt, display_flags['system_name'] + "_" + str(self.idnum) + "_numbers", frameLabel)               
 
 
 		#
@@ -851,7 +767,7 @@ class Blob:
 		#
 
 		if display_flags['show_pinned'] == 1 and self.pin != None and self.pin.num_pinned_nodes != 0:
-			pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_pinned_" + str(self.num_loads)
+			pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_pinned"
 			psa_name = "CA"
 			psa_b = 20
 			text = ""
@@ -869,7 +785,6 @@ class Blob:
 		# Danger Elements! Elements that will probably invert because they have <5A lengths in them. Only draw on first frame (takes ages)
 		#
 		if frameLabel == 1 and display_flags['show_danger'] == 1 and self.top != None:
-			#danger_name = pin_name = display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads)
 
 			# Calculate the element lengthscales and draw all < 5A
 			eindex = 0
@@ -908,7 +823,7 @@ class Blob:
 
 			dan.extend([END])
 			if len(dan) != 7:
-				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger_" + str(self.num_loads), frameLabel)
+				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
 
 			axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
 			
@@ -918,7 +833,7 @@ class Blob:
 				cyl_text(dantxt, plain, en, str(e), scale, axes=axes)
 
 			if len(dantxt) != 0:
-				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum_" + str(self.num_loads), frameLabel)
+				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum", frameLabel)
 
 		#
 		#  Load SFA: Supportive Fake Atoms #
@@ -931,14 +846,16 @@ class Blob:
 			text = ""
 			if display_flags['load_sfa'] == "Onto Nodes":
 				sfa_name += "_nfa"
-				if (self.node.num_nodes > 10000):
-					print "Use (ATOM number -1) to identify the node"
+				#if (self.node.num_nodes > 10000):
+				#	print "Use (ATOM number -1) instead of (RESI) to identify the node"
 				for n in range(self.node.num_nodes):
+					if n == 10000: 
+						print "Cannot load more than 10000 Supportive Fake Atoms"
+						break
 					pos = (self.frames[i].pos[n].tolist())[0:3]
-					if n < 10000: 
-						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
-					else:
-						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", 9999, pos[0], pos[1], pos[2]))
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+					#if n > 10000 - use ATOM -1 ? 
+					#	text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", 9999, pos[0], pos[1], pos[2]))
 
 
 			elif display_flags['load_sfa'] == 'Onto Linear Nodes':
@@ -985,6 +902,7 @@ class Blob:
 			# in any case:
  			if len(text) > 0: 
  				cmd.read_pdbstr(text, sfa_name, frameLabel)
+				cmd.hide("everything", sfa_name)
 				cmd.show("spheres", sfa_name)
 	
 

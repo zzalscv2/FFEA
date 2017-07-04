@@ -42,6 +42,12 @@ class FFEA_measurement:
 
 		self.reset()
 
+		# Return empty object if fname not initialised
+		if fname == "" or fname == None:
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
+			return
+
 		# Test what type of file it is
 		if not path.exists(fname):
 			print("\tFile '" + fname + "' not found.")
@@ -67,6 +73,10 @@ class FFEA_measurement:
 		except:
 			raise
 	
+		self.valid = True
+		self.empty = False
+		sys.stdout.write("done!\n")
+
 	def load_global(self, fname, frame_rate = 1, num_frames_to_read = 1000000):
 
 		print("Loading FFEA Global Measurement file...")
@@ -407,7 +417,8 @@ class FFEA_measurement:
 			fout.close()
 
 	def reset(self):
-
+		self.valid = False
+		self.empty = True
 		self.date = None
 		self.time = None
 		self.script_fname = ""

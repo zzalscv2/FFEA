@@ -30,7 +30,7 @@ import argparse as _argparse
 
 # Set up argparse
 parser = _argparse.ArgumentParser(description="Convert .vol files to the standard gamut of FFEA files (.ffea, .top, .surf, .mat, etc)")
-parser.add_argument("--mesh", action="store", help="Input mesh file in .vol format")
+parser.add_argument("--mesh", action="store", nargs="+", help="Input mesh, through eithersingle .vol file, or through 3 tetgen files: .ele (topology) .face (surface) and .node")
 parser.add_argument("--density", action="store", type=float, default=1.5e3, help="Density of material (kg/m^3)")
 parser.add_argument("--shear-visc", action="store", dest='shear_visc', type=float, default=1e-3, help="Shear viscosity of material (Pa.s)")
 parser.add_argument("--bulk-visc", action="store", dest='bulk_visc', type=float, default=1e-3, help="Bulk viscosity of material (Pa.s)")
@@ -58,22 +58,59 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     # Bsites - N/A or 2nd order (linked to surf)
     # beads - N/A
     """    
-    # Get args
-    volfname = mesh
     
     # Test args
-    if volfname == None:
-        raise IOError("You must specify a .vol filename with '--mesh'. Run this script with the -h flag to get help.")
-    
-    if outfname == None:
-	    basename = os.path.splitext(os.path.abspath(volfname))[0]
-    else:
-	    basename = os.path.splitext(os.path.abspath(outfname))[0]
+    if len(mesh) == 3:
+        nodefname = '' 
+        topfname = ''
+        surffname = ''
+        B = []
+        for f in mesh:
+            basename, extension = os.path.splitext(f)
+            print basename, extension
+            if extension == '.node': nodefname = f
+            if extension == '.ele': topfname = f
+            if extension == '.face': surffname = f
+            B.append(basename)
+            B = list(set(B))
+            if (len(B) > 1): print "Using basename: ", B[0]
+            basename = B[0]
 
-    # Get initial stuff from .vol file!
-    node = FFEA_node.FFEA_node(volfname)
-    top = FFEA_topology.FFEA_topology(volfname)
-    surf = FFEA_surface.FFEA_surface(volfname)
+        if (len(nodefname) == 0) or (len(topfname) == 0) or (len(surffname) == 0):
+            print "node: ", nodefname
+            print "top: ", topfname
+            print "surf: ", surffname
+            raise IOError("Could not assign names to .ele (topology) .face (surface) and .node files")
+        print "basename: ", basename
+       
+
+    elif len(mesh) == 1:
+        volfname = mesh[0]
+
+        # Get args
+        if volfname == None:
+            raise IOError("You must specify a .vol filename with '--mesh'. Run this script with the -h flag to get help.")
+        
+        if outfname == None:
+	        basename = os.path.splitext(os.path.abspath(volfname))[0]
+        else:
+	        basename = os.path.splitext(os.path.abspath(outfname))[0]
+
+        # everything can be read from a .vol file:
+        topfname = volfname
+        nodefname = volfname
+        surffname = volfname
+
+    else:
+       print ("Wrong number of arguments for --mesh:")
+       return 1
+
+
+
+    # Get initial stuff from input files!
+    node = FFEA_node.FFEA_node(nodefname)
+    top = FFEA_topology.FFEA_topology(topfname)
+    surf = FFEA_surface.FFEA_surface(surffname)
     
     # Let each surface face know which element it is connected to (if this is slow, just load surface from topology instead)
     if surf.get_element_indices(top) == -1:
@@ -117,7 +154,7 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     # Script will be defaulted
     if make_script:
         script = FFEA_script.FFEA_script()
-        script.default(basename)
+        script.default(basename, False)
     
     # Now, print them all out!
     node.write_to_file(basename + ".node")
@@ -131,7 +168,12 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     
     if make_script:
 	script.write_to_file(basename + ".ffea")
+
+    return 0
 		
 if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
-    convert_from_volumetric_mesh(args.mesh, args.stokes_radius, args.cull, args.density, args.shear_visc, args.bulk_visc, args.shear_mod, args.bulk_mod, args.dielec, args.make_script, args.out)
+    err = convert_from_volumetric_mesh(args.mesh, args.stokes_radius, args.cull, args.density, args.shear_visc, args.bulk_visc, args.shear_mod, args.bulk_mod, args.dielec, args.make_script, args.out)
+    if (err == 1):
+       parser.print_help()
+

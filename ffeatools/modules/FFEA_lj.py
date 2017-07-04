@@ -22,6 +22,7 @@
 #
 
 import sys, os
+from FFEA_exceptions import *
 
 class FFEA_lj:
 
@@ -29,7 +30,10 @@ class FFEA_lj:
 	
 		self.reset()
 
+		# Return empty object if fname not initialised
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -68,6 +72,7 @@ class FFEA_lj:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	
@@ -77,8 +82,7 @@ class FFEA_lj:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			print("\tFile '" + fname + "' not found. Returning empty object...")
-			self.reset()
+			raise
 
 		# Test format
 		line = fin.readline().strip()
@@ -91,13 +95,14 @@ class FFEA_lj:
 
 		# Read interaction matrix now
 		for i in range(self.num_face_types):
-			sline = fin.readline().split()
+			sline = fin.readline().strip().split(")")
+			sline.pop()
 			self.interaction.append([])
 			for s in sline:
-				intline = s.strip()[1:-1].split(",")
+				intline = s.strip().split(",")
 				self.interaction[-1].append(FFEA_lj_pair())
-				self.interaction[-1][-1].eps = float(intline[0])
-				self.interaction[-1][-1].r = float(intline[0])
+				self.interaction[-1][-1].eps = float(intline[0][1:])
+				self.interaction[-1][-1].r = float(intline[1])
 
 		fin.close()
 
@@ -106,9 +111,23 @@ class FFEA_lj:
 		# Default to steric (ish) params only
 		self.interaction = [[FFEA_lj_pair() for i in range(self.num_face_types)] for j in range(self.num_face_types)]
 		for i in range(self.num_face_types):
-			for j in range(self.num_face_types):
+			for j in range(i, self.num_face_types):
 				self.interaction[i][j].eps = 1e-15
 				self.interaction[i][j].r = 1e-10
+
+				# Symmetric
+				self.interaction[j][i] = self.interaction[i][j]
+
+	def set_interaction_pair(self, i, j, eps, r0):
+		if i == -1 or j == -1:
+			print("No lj params corresponding to vdw_indices (-1,-1)")
+			return
+
+		self.interaction[i][j].eps = eps
+		self.interaction[i][j].r = r0
+
+		# Symmetric
+		self.interaction[j][i] = self.interaction[i][j]
 
 	def write_to_file(self, fname):
 
@@ -116,7 +135,7 @@ class FFEA_lj:
 		fout.write("ffea vdw forcefield params file\nnum_vdw_face_types %d\n" % (self.num_face_types))
 		for i in self.interaction:
 			for j in i:
-				fout.write("(%e, %e) " % (j.eps, j.r))
+				fout.write("(%3.2e,%3.2e) " % (j.eps, j.r))
 			fout.write("\n")
 		fout.close()
 
@@ -124,7 +143,10 @@ class FFEA_lj:
 
 		self.num_face_types = 7
 		self.interaction = []
+		self.default()
+
 		self.valid = False
+		self.empty = True
 
 class FFEA_lj_pair:
 
