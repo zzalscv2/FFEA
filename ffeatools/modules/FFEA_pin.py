@@ -24,6 +24,7 @@
 import sys, os
 from time import sleep
 import numpy as np
+from FFEA_exceptions import *
 
 class FFEA_pin:
 
@@ -33,6 +34,8 @@ class FFEA_pin:
 
 		# Empty fname give an empty object
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -71,6 +74,7 @@ class FFEA_pin:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 	def load_pin(self, fname):
@@ -119,14 +123,14 @@ class FFEA_pin:
 
 	def print_details(self):
 
-		print "num_pinned_nodes = %d" % (self.num_pinned_nodes)
+		print("num_pinned_nodes = %d" % (self.num_pinned_nodes))
 		sleep(1)
 
 		outline = ""
 		for i in self.index:
 			outline += str(i) + " "
 			
-		print outline
+		print(outline)
 	
 	def write_to_file(self, fname):
 		
@@ -151,7 +155,7 @@ class FFEA_pin:
 			indices = range(node.num_nodes)
 		else:
 			if top == None:
-				print "Linear indices cannot be found without a topology. Defaulting to all nodes..."
+				print("Linear indices cannot be found without a topology. Defaulting to all nodes...")
 				range(node.num_nodes)
 			else:
 				indices = []
@@ -173,3 +177,4 @@ class FFEA_pin:
 		self.index = []
 		self.num_pinned_nodes = 0
 		self.valid = False
+		self.empty = True

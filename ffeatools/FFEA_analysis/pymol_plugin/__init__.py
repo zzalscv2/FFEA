@@ -57,7 +57,7 @@ import StringIO
 import FFEA_springs
 
 # PyMOL stuff:
-from pymol import cmd
+from pymol import CmdException, stored
 from pymol.cgo import *
 from pymol.vfont import plain
 
@@ -66,7 +66,7 @@ import FFEA_script
 import FFEA_trajectory
 import FFEA_turbotrajectory
 import FFEA_surface
-import FFEA_pin
+import FFEA_pin, FFEA_vdw, FFEA_lj
 
 from numpy.random import randint as rint
 
@@ -78,40 +78,8 @@ def __init__(self):
   self.menuBar.addmenuitem('Plugin', 'command', 
                            'FFEA Loader', label = 'FFEA Loader...', 
                            command = lambda s=self: FFEA_viewer_control_window(s))
+      
 
-class FFEA_interactive_measurements:
-
-    def __init__(self, app):
-        self.parent = app.root
-        self.root = Tk()
-        self.root.geometry("200x50")
-        self.root.title("FFEA Measurements")
-        the_frame = Frame(self.root)
-        the_frame.pack(anchor=CENTER, expand=True)
-
-        create_pin = Button(the_frame, text="Create pin from selection", command=lambda:self.create_pin());
-        create_pin.grid(row=0, column=0, sticky=E)
-        
-    def create_pin(self):
-        num_atoms = cmd.count_atoms("sele")
-        area = cmd.get_area("sele")
-        pdbstr = cmd.get_pdbstr("sele")
-        coords = cmd.get_coords("sele")
-        f = tkFileDialog.asksaveasfile(mode='w', defaultextension=".pin")
-        if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
-            return
-        filename = f.name
-        f.close()
-        
-        pin = FFEA_pin.FFEA_pin()
-        for line in pdbstr.split("\n"):
-            try:
-                pin.add_pinned_node(int(line[22:29]))
-            except ValueError:
-                pass # end line
-
-        pin.write_to_file(filename)
-        print("Pinfile written to "+filename)
 
 
 class FFEA_viewer_control_window:
@@ -122,20 +90,24 @@ class FFEA_viewer_control_window:
      self.parent = app.root
 
      self.root = Tk()
+     
+     Pmw.initialise(self.root)
 
-     self.root.geometry("600x225")
-
+     self.root.geometry("500x400")
+     
      self.root.title("FFEA Loader")
 
      top_frame = Frame(self.root)
      top_frame.pack()
+     
 
-     menubar = Menu(top_frame)
 
-     filemenu = Menu(menubar, tearoff=0)
-     filemenu.add_command(label="Load 'ffea' file", command=self.choose_ffea_file_to_load)
-     menubar.add_cascade(label="File", menu=filemenu)
-     self.root.config(menu=menubar)
+#     menubar = Menu(top_frame)
+
+#     filemenu = Menu(menubar, tearoff=0)
+#     filemenu.add_command(label="Load 'ffea' file", command=self.choose_ffea_file_to_load)
+#     menubar.add_cascade(label="File", menu=filemenu)
+#     self.root.config(menu=menubar)
 
      # PLUGIN (separated into mutually exclusive sets. Devs take note!)
 
@@ -157,62 +129,83 @@ class FFEA_viewer_control_window:
      self.load_sfa = StringVar(self.root, value=self.display_flags['load_sfa'])
      self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
 
-
+     self.sele_name = StringVar(self.root, value=self.display_flags['sele_name'])
+     self.pin_fname = StringVar(self.root, value=self.display_flags['pin_fname'])
+     self.mat_fname = StringVar(self.root, value=self.display_flags['mat_fname'])
+     self.which_vdw_type = IntVar(self.root, value=self.display_flags['which_vdw_type'])
+     self.vdw_type0 = IntVar(self.root, value=self.display_flags['vdw_type0'])
+     self.vdw_type1 = IntVar(self.root, value=self.display_flags['vdw_type1'])
+     self.vdw_fname = StringVar(self.root, value=self.display_flags['vdw_fname'])
+     self.lj_fname = StringVar(self.root, value=self.display_flags['lj_fname'])
+     self.lj_eps = StringVar(self.root, value=str(self.display_flags['lj_eps']))
+     self.lj_r0 = StringVar(self.root, value=str(self.display_flags['lj_r0']))
+     self.mat_d = StringVar(self.root, value=str(self.display_flags['mat_d']))
+     self.mat_sm = StringVar(self.root, value=str(self.display_flags['mat_sm']))
+     self.mat_bm = StringVar(self.root, value=str(self.display_flags['mat_bm']))
+     self.mat_sv = StringVar(self.root, value=str(self.display_flags['mat_sv']))
+     self.mat_bv = StringVar(self.root, value=str(self.display_flags['mat_bv']))
  
      # # Display flags frame
-     display_flags_frame = Frame(self.root)
+     
+     self.notebook = Pmw.NoteBook(self.root)
+     self.notebook.pack(fill = 'both', expand = 1, padx = 10, pady = 10)
+     page = self.notebook.add('Loader')
+     self.notebook.tab('Loader').focus_set()
+
+     
+     display_flags_frame = Frame(page)
      display_flags_frame.pack(anchor=CENTER, expand=True)
 
 
      # propose a system name:
      label_system_name = Label(display_flags_frame, text="System name:")
      label_system_name.grid(row=0, column=0, sticky=E)
-     text_button_system_name = Entry(display_flags_frame, text="load as:", textvariable=self.system_name, validate="focus", validatecommand=lambda:self.update_display_flags("system_name", val=-2, text=self.system_name.get()))
-     text_button_system_name.grid(row=0, column=1, sticky=W)
+     self.text_button_system_name = Entry(display_flags_frame, text="load as:", textvariable=self.system_name, validate="focus", validatecommand=lambda:self.update_display_flags("system_name", val=-2, text=self.system_name.get()))
+     self.text_button_system_name.grid(row=0, column=1, sticky=W)
      
-     random_name_button = Button(display_flags_frame, text="Random Name", command=lambda:self.new_system_name());
-     random_name_button.grid(row=0, column=2, sticky=W)
+     self.random_name_button = Button(display_flags_frame, text="Random Name", command=lambda:self.new_system_name());
+     self.random_name_button.grid(row=0, column=2, sticky=W)
 
      label_display = Label(display_flags_frame, text="Display:")
      label_display.grid(row=1, column=0, sticky=E)
 
      # show springs: 
-     check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
-     check_button_show_springs.grid(row=1, column=1, sticky=W)
+     self.check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
+     self.check_button_show_springs.grid(row=1, column=1, sticky=W)
 
 
      # show pinned_nodes: 
-     check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
-     check_button_show_pinned.grid(row=1, column=2, sticky=W)
+     self.check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
+     self.check_button_show_pinned.grid(row=1, column=2, sticky=W)
 
      # show inverted_elements: 
-     check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
-     check_button_show_inverted.grid(row=2, column=2, sticky=W)
+     self.check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
+     self.check_button_show_inverted.grid(row=2, column=2, sticky=W)
 
      # show danger_elements: 
-     check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
-     check_button_show_danger.grid(row=3, column=2, sticky=W)
+     self.check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
+     self.check_button_show_danger.grid(row=3, column=2, sticky=W)
 
      # # show solid:
      label_solid = Label(display_flags_frame, text="Show Solid:")
      label_solid.grid(row=2, column=0, sticky=E)
      # Selectable box for material param, i. e., show solid:
-     spinbox_material_param = OptionMenu(display_flags_frame, self.matparam, "Plain Solid", "Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW", "No Solid", command=lambda x:self.update_display_flags("matparam", val=self.matparam.get()) )
-     spinbox_material_param.grid(row=2, column=1, sticky=W)
+     self.spinbox_material_param = OptionMenu(display_flags_frame, self.matparam, "Plain Solid", "Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW", "No Solid", command=lambda x:self.update_display_flags("matparam", val=self.matparam.get()) )
+     self.spinbox_material_param.grid(row=2, column=1, sticky=W)
 
 
      # # show mesh:
      label_mesh = Label(display_flags_frame, text="Show Mesh:")
      label_mesh.grid(row=3, column=0, sticky=E)
-     om_show_mesh = OptionMenu(display_flags_frame, self.show_mesh, "Surface Mesh", "Whole Mesh", "No Mesh", command=lambda x:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
-     om_show_mesh.grid(row=3, column=1, sticky=W)
+     self.om_show_mesh = OptionMenu(display_flags_frame, self.show_mesh, "Surface Mesh", "Whole Mesh", "No Mesh", command=lambda x:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
+     self.om_show_mesh.grid(row=3, column=1, sticky=W)
 
 
      # # show Numbers:
      label_mesh= Label(display_flags_frame, text="Show Indices:")
      label_mesh.grid(row=4, column=0, sticky=E)
-     index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
-     index_option.grid(row=4, column=1, sticky=W)
+     self.index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
+     self.index_option.grid(row=4, column=1, sticky=W)
      
     
      # # Pseudoatoms onto nodes
@@ -223,59 +216,445 @@ class FFEA_viewer_control_window:
      # Outer simulation box
      label_box= Label(display_flags_frame, text="Show Box:")
      label_box.grid(row=5, column=0, sticky=E)
-     om_show_box = OptionMenu(display_flags_frame, self.show_box, "Simulation Box (outline)", "Simulation Box (whole)", "No Box", command=lambda x:self.update_display_flags("show_box", val=self.show_box.get()))
-     om_show_box.grid(row=5, column=1, sticky=W)
+     self.om_show_box = OptionMenu(display_flags_frame, self.show_box, "Simulation Box (outline)", "Simulation Box (whole)", "No Box", command=lambda x:self.update_display_flags("show_box", val=self.show_box.get()))
+     self.om_show_box.grid(row=5, column=1, sticky=W)
 
 
-     ## # Trajectory Radiobutton # #
+     ## # Trajectory Dropdown Menu # #
      label_traj= Label(display_flags_frame, text="Load:")
      label_traj.grid(row=6, column=0, sticky=E)
-     om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
-     om_do_load_trajectory.grid(row=6, column=1, sticky=W)
+     self.om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
+     self.om_do_load_trajectory.grid(row=6, column=1, sticky=W)
 
 
      ## # Add Supportive Fake Atoms (SFA) box # #
      label_sfa = Label(display_flags_frame, text="Add Atoms:")
      label_sfa.grid(row=7, column=0, sticky=E)
-     om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
-     om_load_sfa.grid(row=7, column=1, sticky=W)
+     self.om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
+     self.om_load_sfa.grid(row=7, column=1, sticky=W)
      
-#     int_label = Label(display_flags_frame, text="Interactive Tools")
-#     int_label.grid(row=8, column=0, sticky=E)
+     
+     ## # Finally the Load Button! # #
+     self.load_button = Button(display_flags_frame, text="Load ffea file", command=lambda:self.choose_ffea_file_to_load() )
+     self.load_button.grid(row=8, column=0, columnspan=4, sticky=W+E+N+S, pady=20)
+     
 
 
-     # # # Element highlighting 
-     # label_elem= Label(display_flags_frame, text="Highlight element(s):")
-     # label_elem.grid(row=8, column=0, sticky=E)
 
-     # highlight_entry_box = Entry(display_flags_frame, textvariable=self.highlight, validate="focus", validatecommand=lambda:self.update_display_flags("highlight", val=-2, text=self.highlight.get()))
-     # highlight_entry_box.grid(row=8, column=1, sticky=W)
+     # # # # EDITOR TAB # # # # # 
+     page = self.notebook.add('Editor')
+     self.notebook.tab('Editor').focus_set()
+     
+     editor_frame = Frame(page)
+     editor_frame.pack(anchor=CENTER, fill='both',expand=True)
 
+     ## ## ## Selection Frame and Box ## ## ##
+     sele_frame = Frame(editor_frame)
+     sele_frame.pack(fill=X, side=TOP)
 
-     # flags
-     self.animate = False
-     self.display_window_exists = False
-     self.there_is_something_to_send_to_display_window = False
-     self.change_frame_to = -1
-     	
-     self.selected_index = 0
-     self.selected_blob = 0
-     self.selected_conformation = 0
-
-     self.num_frames_to_read = float("inf")
-
-
+     sele_label = Label(sele_frame, text="Selection:")
+     sele_label.pack(side=LEFT)
+     self.text_button_sele_name = Entry(sele_frame, text="sele", textvariable=self.sele_name, validate="focus", validatecommand=lambda:self.update_display_flags("sele_name", val=-2, text=self.sele_name.get()))
+     self.text_button_sele_name.pack(side=LEFT)
+     self.text_button_sele_name.config(state=DISABLED)
     
+     ## ## ## Material Box ## ## ##
+     mat_group = Pmw.Group(editor_frame,tag_text='Material Parameters')
+     mat_group.pack(fill='both' ,side=TOP)
+
+     ## Contents
+     # Mat Params
+     label_mat_d = Label(mat_group.interior(), text="Density:")
+     label_mat_d.grid(row=0,column=0)
+     self.text_button_mat_d = Entry(mat_group.interior(), width=12, text="1.5e3", textvariable=self.mat_d, validate="focus", validatecommand=lambda:self.update_display_flags("mat_d", val=-3, text=self.mat_d.get()))
+     self.text_button_mat_d.grid(row=0,column=1)
+     self.text_button_mat_d.config(state=DISABLED)
+     label_mat_sm = Label(mat_group.interior(), text="Shear Modulus:")
+     label_mat_sm.grid(row=1,column=0)
+     self.text_button_mat_sm = Entry(mat_group.interior(), width=12, text="370.37e6", textvariable=self.mat_sm, validate="focus", validatecommand=lambda:self.update_display_flags("mat_sm", val=-3, text=self.mat_sm.get()))
+     self.text_button_mat_sm.grid(row=1,column=1)
+     self.text_button_mat_sm.config(state=DISABLED)
+     label_mat_bm = Label(mat_group.interior(), text="Bulk Modulus:")
+     label_mat_bm.grid(row=2,column=0)
+     self.text_button_mat_bm = Entry(mat_group.interior(), width=12, text="111.11e7", textvariable=self.mat_bm, validate="focus", validatecommand=lambda:self.update_display_flags("mat_bm", val=-3, text=self.mat_bm.get()))
+     self.text_button_mat_bm.grid(row=2,column=1)
+     self.text_button_mat_bm.config(state=DISABLED)
+     label_mat_sv = Label(mat_group.interior(), text="Shear Viscosity:")
+     label_mat_sv.grid(row=3,column=0)
+     self.text_button_mat_sv = Entry(mat_group.interior(), width=12, text="1e-3", textvariable=self.mat_sv, validate="focus", validatecommand=lambda:self.update_display_flags("mat_sv", val=-3, text=self.mat_sv.get()))
+     self.text_button_mat_sv.grid(row=3,column=1)
+     self.text_button_mat_sv.config(state=DISABLED)
+     label_mat_bv = Label(mat_group.interior(), text="Bulk Viscosity:")
+     label_mat_bv.grid(row=4,column=0)
+     self.text_button_mat_bv = Entry(mat_group.interior(), width=12, text="1e-3", textvariable=self.mat_bv, validate="focus", validatecommand=lambda:self.update_display_flags("mat_bv", val=-3, text=self.mat_bv.get()))
+     self.text_button_mat_bv.grid(row=4,column=1)
+     self.text_button_mat_bv.config(state=DISABLED)
+
+     self.load_mat_button = Button(mat_group.interior(), text="Update Material file", command=lambda:self.choose_mat_file_to_setup() )
+     self.load_mat_button.grid(column=3, row=2)
+     self.load_mat_button.config(state=DISABLED)   
+
+     ## ## ## Pin Box ## ## ## 
+     pin_group = Pmw.Group(editor_frame,tag_text='Pinned Nodes')
+     pin_group.pack(fill='both' ,side=TOP)
+
+     ## Contents
+     self.load_pin_button = Button(pin_group.interior(), text="Update Pin file", command=lambda:self.choose_pin_file_to_setup());
+     self.load_pin_button.pack(side=LEFT)
+     self.load_pin_button.config(state=DISABLED)
+
+     ## ## ## VdW & LJ Box ## ## ##
+     vdwlj_group = Pmw.Group(editor_frame,tag_text='Van der Waals Interactions')
+     vdwlj_group.pack(fill='both', side=TOP)
+
+     ## Contents
+     # VdW Type frame
+     vdwtype_frame = Frame(vdwlj_group.interior())
+     vdwtype_frame.pack(fill=X, side=TOP)
+
+     # Define vdw face types and a radio button to switch between them:
+     self.radio_vdw_type0 = Radiobutton(vdwtype_frame, variable=self.which_vdw_type, value=0, command=lambda:self.update_display_flags("which_vdw_type", val=0))
+     self.radio_vdw_type0.pack(side=LEFT, fill=X)
+     label_vdw_type0 = Label(vdwtype_frame, text="VdW type 1:")
+     label_vdw_type0.pack(side=LEFT)
+     self.spinbox_vdw_type0 = OptionMenu(vdwtype_frame, self.vdw_type0, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.update_display_flags("vdw_type0", val=self.vdw_type0.get()))
+     self.spinbox_vdw_type0.pack(side=LEFT)
+     self.spinbox_vdw_type0.config(state=DISABLED)
+
+     self.spinbox_vdw_type1 = OptionMenu(vdwtype_frame, self.vdw_type1, "-1 (no vdw)", "0", "1", "2", "3", "4", "5", "6", "7", command=lambda x: self.update_display_flags("vdw_type1", val=self.vdw_type1.get()))
+     self.spinbox_vdw_type1.pack(side=RIGHT)
+     self.spinbox_vdw_type1.config(state=DISABLED)
+     label_vdw_type1 = Label(vdwtype_frame, text="VdW type 2:")
+     label_vdw_type1.pack(side=RIGHT)
+     self.radio_vdw_type1 = Radiobutton(vdwtype_frame, variable=self.which_vdw_type, value=1, command=lambda:self.update_display_flags("which_vdw_type", val=1))
+     self.radio_vdw_type1.pack(side=RIGHT, fill=X)
+
+     ## ## ## VdW Box ## ## ##
+     vdw_group = Pmw.Group(vdwlj_group.interior(),tag_text='VdW Files')
+     vdw_group.pack(fill='both', expand=1, side=LEFT)
+
+     ## Contents
+     
+     # choose a vdw file to set up 
+     self.load_vdw_button = Button(vdw_group.interior(), text="Update VdW file", command=lambda:self.choose_vdw_file_to_setup() )
+     self.load_vdw_button.pack(anchor=CENTER)
+     self.load_vdw_button.config(state=DISABLED)
+
+     ## ## ## LJ Box ## ## ##
+     lj_group = Pmw.Group(vdwlj_group.interior(),tag_text='LJ Files')
+     lj_group.pack(fill='both', expand=1, side=LEFT)
+
+     ## Contents
+     # LJ Params frame
+     ljparams_frame = Frame(lj_group.interior())
+     ljparams_frame.pack(fill=X, side=TOP)
+
+     # Define lj params:
+     label_lj_eps = Label(ljparams_frame, text="LJ Epsilon:")
+     label_lj_eps.pack(side=LEFT, fill=X)
+     self.text_button_lj_eps = Entry(ljparams_frame, width=12, text="1e15", textvariable=self.lj_eps, validate="focus", validatecommand=lambda:self.update_display_flags("lj_eps", val=-3, text=self.lj_eps.get()))
+     self.text_button_lj_eps.pack(side=LEFT)
+     self.text_button_lj_eps.config(state=DISABLED)
+
+     self.text_button_lj_r0 = Entry(ljparams_frame, width=12, text="1e-9", textvariable=self.lj_r0, validate="focus", validatecommand=lambda:self.update_display_flags("lj_r0", val=-3, text=self.lj_r0.get()))
+     self.text_button_lj_r0.pack(side=RIGHT)
+     self.text_button_lj_r0.config(state=DISABLED)
+     label_lj_r0 = Label(ljparams_frame, text="LJ r0:")
+     label_lj_r0.pack(side=RIGHT, fill=X)
+
+     self.load_lj_button = Button(lj_group.interior(), text="Update LJ file", command=lambda:self.choose_lj_file_to_setup() )
+     self.load_lj_button.pack(side=TOP)
+     self.load_lj_button.config(state=DISABLED)
+
+     ## ## ## To be called after using Pmw.Group:
+     self.notebook.setnaturalsize()
+
+ 
+  def update_material(self):
+
+	print("Updating Material File...\n")
+
+	## Check we're ok and ready to go
+	# Is there a selection?
+	try:
+		num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
+	except CmdException:
+		print("Cannot make material file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
+		return
+
+	# Does it have atoms?
+	if num_atoms == 0:
+		print("Will not make material file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
+		return
+
+	# Are they all in the same blob?
+	stored.blob_IDs = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
+	if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
+		print("Cannot make material file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
+		return
+
+	# Get the blob_ID, to identify the blob within self.blob_list
+	blob_ID = int(stored.blob_IDs[0].split("_")[1])
+
+	# If the blob is not DYNAMIC, abort:
+	if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
+		print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Because of being static, material parameters would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
+		return
+
+
+	## Ok, we're ready!
+	
+	# Get indices and index type
+	stored.baseindices = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
+	indextype = stored.blob_IDs[0].split("_")[2]
+
+	# Different things depending on index type
+	indices = []
+	if indextype == "efa":
+
+		# Element indices. Great!
+		indices = stored.baseindices
+
+	elif indextype == "nfa" or indextype == "lnfa":
+
+		# Node indices. Get elements with 1 or more indices present
+		try:
+			indices = self.blob_list[blob_ID][0].top.index_switch(stored.baseindices, "node", limit=1)
+		except(IndexError):
+			print("Could not make material file as correct indices could not be extracted from topology using node selection")
+			return
+
+	elif indextype == "sfa" or indextype == "ffa":
+
+		# Surface indices. Get elements with surface face present
+		try:
+			indices = self.blob_list[blob_ID][0].top.index_switch(stored.baseindices, "surf", limit=1, surf=self.blob_list[blob_ID][0].surf)
+		except(IndexError):
+			print("Could not make material file as correct indices could not be extracted from topology using face selection")
+			return
+
+		except(IOError):
+			print("Could not make material file as there was a problem linking topology to surface")
+
+	# Get a new material file and copy relevent stuff
+	mat = FFEA_material.FFEA_material()
+	mat.element = self.blob_list[blob_ID][0].mat.element
+	mat.num_elements = self.blob_list[blob_ID][0].mat.num_elements
+
+	# Update stuff
+	for i in indices:
+		mat.set_params(i, self.display_flags["mat_d"], self.display_flags["mat_sv"], self.display_flags["mat_bv"], self.display_flags["mat_sm"], self.display_flags["mat_bm"], 1.0)
+
+	# Write out
+	mat.write_to_file(self.display_flags["mat_fname"])
+	print("...done!\n")
+
+  def update_pin(self):
+
+	print("Updating Pin File...\n")
+
+	## Check we're ok and ready to go
+	# Is there a selection?
+	try:
+		num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
+	except CmdException:
+		print("Cannot make pin file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
+		return
+
+	# Does it have atoms?
+	if num_atoms == 0:
+		print("Will not make pin file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
+		return
+
+	# Are they all in the same blob?
+	# # get the list of names:
+	stored.blob_IDs = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
+	# # ignore those coming from "pinned" selections:
+	ndx = len(stored.blob_IDs) - 1
+	for i in reversed(stored.blob_IDs):
+		if i.split("_")[2] == "pinned": stored.blob_IDs.pop(ndx)
+		ndx -= 1
+	# # check if they are all equal:
+	if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
+		print("Cannot make pin file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
+		return
+	blob_ID = int(stored.blob_IDs[0].split("_")[1])
+
+	# If the blob is not DYNAMIC, abort:
+	if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
+		print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Pinning nodes in this case would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
+		return
+
+
+	## Ok, we're ready!
+	
+	# Get indices and index type
+	stored.baseindices = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
+	indextype = stored.blob_IDs[0].split("_")[2]
+
+	# Different things depending on index type
+	indices = []
+	if indextype == "lnfa":
+		# Node indices. Great!
+		indices = stored.baseindices
+
+	elif indextype == "nfa":
+		# try to remove the non-linear nodes:
+		snfa = []
+		for i in stored.baseindices:
+			# store only linear nodes
+			if self.blob_list[blob_ID][0].linear_node_list.count(i):
+				indices.append(i)
+			else:
+				snfa.append(i)
+		if len(snfa) > 0:
+			print "Only linear nodes can be pinned, but nodes: ", snfa, " are auxilliary, and adding them in the .pin node file has no effect"
+
+	elif indextype == "efa":
+
+		# Element indices. Get all (linear) nodes on each element
+		try:
+			indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "topology", top = self.blob_list[blob_ID][0].top)
+		except(IndexError):
+			print("Could not make pin file as correct indices could not be extracted from nodes using topology selection")
+			return
+
+	elif indextype == "sfa" or indextype == "ffa":
+
+		# Surface indices. Get all nodes on each face
+		try:
+			indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "surface", surf = self.blob_list[blob_ID][0].surf)
+		except(IndexError):
+			print("Could not make pin file as correct indices could not be extracted from nodes using surface selection")
+			return
+
+	# Add already pinned stuff
+	indices.extend(self.blob_list[blob_ID][0].pin.index)
+
+	# Make unique entries
+	indices = list(set(indices))
+
+	# Get a new pin file and copy relevent stuff
+	pin = FFEA_pin.FFEA_pin()
+	for i in indices:
+		pin.add_pinned_node(i) 
+
+	# Write out
+	pin.write_to_file(self.display_flags["pin_fname"])
+	print("...done!\n")
+
+  def update_vdw(self):
+
+	print("Updating VdW File...\n")
+
+	## Check we're ok and ready to go
+	# Is there a selection?
+	try:
+		num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
+	except CmdException:
+		print("Cannot make VdW file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
+		return
+
+	# Does it have atoms?
+	if num_atoms == 0:
+		print("Will not make VdW file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
+		return
+
+	# Are they all in the same blob?
+	stored.blob_IDs = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
+	if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
+		print("Cannot make VdW file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
+		return
+	blob_ID = int(stored.blob_IDs[0].split("_")[1])
+
+	## Ok, we're ready!
+	
+	# Get indices and index type
+	stored.baseindices = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
+	indextype = stored.blob_IDs[0].split("_")[2]
+
+	# Different things depending on index type
+	indices = []
+	if indextype == "sfa" or indextype == "ffa":
+
+		# Surface indices. Great!
+		indices = stored.baseindices
+
+	elif indextype == "nfa" or indextype == "lnfa":
+
+		# Node indices. Get all (linear) nodes on each element
+		try:
+			indices = self.blob_list[blob_ID][0].surf.index_switch(stored.baseindices, "node", limit=1)
+		except(IndexError):
+			print("Could not make VdW file as correct indices could not be extracted from surface using node selection")
+			return
+
+	elif indextype == "efa":
+
+		# Element indices. Get all (linear) nodes on each element
+		try:
+			indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "element", surf = self.blob_list[blob_ID][0].surf)
+		except(IndexError):
+			print("Could not make VdW file as correct indices could not be extracted from surface using element selection")
+			return
+
+	# Get a vdw file
+	newvdw = FFEA_vdw.FFEA_vdw()
+	newvdw.num_faces = self.blob_list[blob_ID][0].vdw.num_faces
+	newvdw.index = self.blob_list[blob_ID][0].vdw.index
+
+	# Update list
+	vdwindex = self.display_flags["vdw_type" + str(self.display_flags["which_vdw_type"])]
+	for i in indices: 
+		newvdw.set_index(int(i), vdwindex)
+
+	# Write
+	newvdw.write_to_file(self.display_flags["vdw_fname"])
+	print("...done!\n")
+
+  def update_lj(self):
+
+	print("Updating LJ File...\n")
+
+	# No need to check for selections
+
+	# Load an LJ file and copy stuff
+	lj = FFEA_lj.FFEA_lj()
+	lj.interaction = self.lj.interaction
+
+	# Update stuff
+	lj.set_interaction_pair(self.display_flags["vdw_type0"], self.display_flags["vdw_type1"], self.display_flags["lj_eps"], self.display_flags["lj_r0"])
+
+	# Write out
+	lj.write_to_file(self.display_flags["lj_fname"])
+ 	print("...done!\n")
+
  #################################################
-  # # # # Update display_flags from buttons # # # 
-  # # use val = -2 for strings (Entries)
+  # # # # Update display_flags from buttons # # #
+  # # use val = -3 for floats (Entries)
+  # #     val = -2 for strings (Entries)
   # #     val = -1 for binary choices (Checkboxes)
   # #     val > 0, integer, for Radiobuttons 
  #################################################
   def update_display_flags(self, key, val=-1, text=""):
-
      # If unset (i.e. checkbutton)
-     if val == -2:
+     if val == -3:
+	try:
+	    self.display_flags[key] = float(text)
+	    return True
+	except(ValueError):
+	    return False
+
+     elif val == -2:
        self.display_flags[key] = text
        return True
      elif val == -1:
@@ -304,6 +683,7 @@ class FFEA_viewer_control_window:
 
      # Ask user to select a file
      ffea_fname = tkFileDialog.askopenfilename(**options)
+     print "ffea_fname: ", ffea_fname
      if len(ffea_fname) == 0:
              return
 
@@ -311,18 +691,79 @@ class FFEA_viewer_control_window:
      self.load_ffea(ffea_fname)
 
 
+  def choose_mat_file_to_setup(self):
+     # set up the options for the open file dialog box
+     options = {}
+     options['defaultextension'] = '.mat'
+     options['filetypes'] = [('mat files', '.mat'), ('all files', '.*')]
+     options['initialdir'] = os.getcwd()
+     options['title'] = 'Choose material file'
+
+     # Ask user to select a file
+     self.mat_fname.set(tkFileDialog.asksaveasfilename(**options))
+     if self.mat_fname.get() == None or self.mat_fname.get().strip() == "":
+	return
+     self.update_display_flags("mat_fname", -2, self.mat_fname.get())
+     self.update_material()
+
+  def choose_pin_file_to_setup(self):
+     # set up the options for the open file dialog box
+     options = {}
+     options['defaultextension'] = '.pin'
+     options['filetypes'] = [('pin files', '.pin'), ('all files', '.*')]
+     options['initialdir'] = os.getcwd()
+     options['title'] = 'Choose pin file'
+
+     # Ask user to select a file
+     self.pin_fname.set(tkFileDialog.asksaveasfilename(**options))
+     if self.pin_fname.get() == None or self.pin_fname.get().strip() == "":
+	return
+     self.update_display_flags("pin_fname", -2, self.pin_fname.get())
+     self.update_pin()
+
+  def choose_vdw_file_to_setup(self):
+     # set up the options for the open file dialog box
+     options = {}
+     options['defaultextension'] = '.vdw'
+     options['filetypes'] = [('vdw files', '.vdw'), ('all files', '.*')]
+     options['initialdir'] = os.getcwd()
+     options['title'] = 'Choose vdw file'
+
+     # Ask user to select a file
+     self.vdw_fname.set(tkFileDialog.asksaveasfilename(**options))
+     if self.vdw_fname.get() == None or self.vdw_fname.get().strip() == "":
+	return
+     self.update_display_flags("vdw_fname", -2, self.vdw_fname.get())
+     self.update_vdw()
+
+  def choose_lj_file_to_setup(self):
+     # set up the options for the open file dialog box
+     options = {}
+     options['defaultextension'] = '.lj'
+     options['filetypes'] = [('lj files', '.lj'), ('all files', '.*')]
+     options['initialdir'] = os.getcwd()
+     options['title'] = 'Choose lj file'
+
+     # Ask user to select a file
+     self.lj_fname.set(tkFileDialog.asksaveasfilename(**options))
+
+     if self.lj_fname.get() == None or self.lj_fname.get().strip() == "":
+	return
+     self.update_display_flags("lj_fname", -2, self.lj_fname.get())
+     self.update_lj()
 
   # # # # # # # # # # # # # # # # # # # # # #
   # # # # # # Load the FFEA file # # # # # # 
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
+      
+	self.notebook.selectpage("Editor")
   	
 	# Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
 	self.display_flags['matparam'] = self.matparam.get()
 
 	# Try to reset previous system and update
 	self.num_frames = 0
-	self.num_loads += 1
 
 	# Check if given file exists
 	if os.path.isfile(ffea_fname) == False:
@@ -371,15 +812,12 @@ class FFEA_viewer_control_window:
 			ffea_id_string = "lol"
 			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
 			new_blob = Blob.Blob()
-			#new_blob.load(blob_number, blob_index, conformation_index, blob_nodes[i], blob_top[i], blob_surface[i], blob_vdw[i], scale, blob_motion_state[i], blob_pin[i], blob_mat[i], blob_binding[i], blob_centroid_pos, blob_rotation, ffea_path)
 			try:
 				new_blob.load(idnum, bindex, cindex, self.script)
 			except:
-				print("ERROR: Could not load Blob %d, conforamtion %d. Please try again." % (bindex, cindex))
+				print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
 				return
 
-			new_blob.set_num_loads(self.num_loads)
-     
 			self.blob_list[bindex][cindex] = new_blob
 			new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
 			info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + c.motion_state + "\n"
@@ -387,7 +825,20 @@ class FFEA_viewer_control_window:
 			
 			idnum += 1
                  
-    
+
+	# Load some lj
+	try:
+		self.lj = self.script.load_lj()
+	except:
+		print("\nERROR: '" + self.script.params.vdw_forcefield_params + "' could not be loaded.")
+		print("\nERROR: Could not load system. Please try again.")
+		return
+
+	if (not self.lj.valid): 
+		print('Something went wrong initialising lennard-jones (lj) parameters')
+		print("\nERROR: Could not load system. Please try again.")
+		return
+
 	# Load some springs
 	if self.display_flags['show_springs'] == 1:
 		try:
@@ -536,13 +987,49 @@ class FFEA_viewer_control_window:
 	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.display_flags["show_inverted"] == 1 and self.wontLoadTraj != 1:
 		self.draw_inverted_elements()
 
-	if self.display_flags["load_sfa"] != "None":
-		FFEA_interactive_measurements(self)
 
-	try:
+   
+	# deactivate load options:
+	self.check_button_show_springs.config(state=DISABLED)
+	self.check_button_show_pinned.config(state=DISABLED)
+	self.check_button_show_inverted.config(state=DISABLED)
+	self.check_button_show_danger.config(state=DISABLED)
+
+	self.text_button_system_name.config(state=DISABLED)
+	self.random_name_button.config(state=DISABLED)
+	self.spinbox_material_param.config(state=DISABLED)
+	self.om_show_mesh.config(state=DISABLED)
+	self.index_option.config(state=DISABLED)
+	self.om_show_box.config(state=DISABLED)
+	self.om_load_sfa.config(state=DISABLED)
+	self.om_do_load_trajectory.config(state=DISABLED)
+	self.load_button.config(state=DISABLED)
+
+	if self.load_sfa.get() != "None":
+
+		# activate Editor options:
+		self.text_button_sele_name.config(state="normal")
+
+		self.text_button_mat_d.config(state="normal")
+		self.text_button_mat_sm.config(state="normal")
+		self.text_button_mat_bm.config(state="normal")
+		self.text_button_mat_sv.config(state="normal")
+		self.text_button_mat_bv.config(state="normal")
+		self.load_mat_button.config(state="normal")
+
+		self.load_pin_button.config(state="normal")
+
+		self.spinbox_vdw_type0.config(state="normal")
+		self.spinbox_vdw_type1.config(state="normal")
+
+		self.load_vdw_button.config(state="normal")
+
+		self.text_button_lj_eps.config(state="normal")
+		self.text_button_lj_r0.config(state="normal")
+
+		self.load_lj_button.config(state="normal")
+	else:
 		self.root.destroy()
-	except:
-		raise 
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]
@@ -700,8 +1187,8 @@ class FFEA_viewer_control_window:
 		invele.append(END)
 
 		if len(invele) > 3:
-			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted_" + str(c.num_loads), self.num_frames)
-			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex_" + str(c.num_loads), self.num_frames)
+			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted", self.num_frames)
+			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex", self.num_frames)
 		bin += 1
 
   def load_trajectory(self, trajectory_out_fname):
@@ -769,6 +1256,9 @@ class FFEA_viewer_control_window:
 	# Finally show the "progress bar":
 	if self.num_frames > 1:
 		cmd.mset("1-"+str(self.num_frames))
+	# If the trajectory was a single frame, then we loaded nothing:
+	else: self.wontLoadTraj = 1
+
 
   def get_system_dimensions(self, findex):
 	maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])	
@@ -872,9 +1362,6 @@ class FFEA_viewer_control_window:
 	
   def init_vars(self):
 
-	# num times loaded
-	self.num_loads = 0
-	
 	# Empty traj object
 	self.traj = None
 
@@ -924,7 +1411,22 @@ class FFEA_viewer_control_window:
 		'load_trajectory': "Trajectory", ## PYMOL OK
 		'highlight': '',
 		'load_sfa': 'None',
-      'system_name': self.system_names[rint(0, len(self.system_names) - 1)]}
+      'system_name': self.system_names[rint(0, len(self.system_names) - 1)],
+      'sele_name': "sele",
+      'pin_fname': "",
+      'mat_fname': "",
+      'which_vdw_type': 0,
+      'vdw_type0': -1,
+      'vdw_type1': -1,
+      'vdw_fname': '',
+      'lj_fname': '',
+      'lj_eps': 1e15,
+      'lj_r0': 1e-9,
+      'mat_d': 1.5e3,
+      'mat_sm': 370.37e6,
+      'mat_bm': 111.11e7,
+      'mat_sv': 1e-3,
+      'mat_bv': 1e-3}
 
 	self.selected_index = 0
 	self.selected_blob = 0
@@ -940,6 +1442,7 @@ class FFEA_viewer_control_window:
 	self.box_exists = True
 	self.box = np.array([-1.0,-1.0,-1.0])
 	self.springs = None
+	self.lj = None
 
 	self.modifying_frame = False
 

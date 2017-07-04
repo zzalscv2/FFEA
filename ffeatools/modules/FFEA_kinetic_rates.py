@@ -103,7 +103,7 @@ class FFEA_kinetic_rates:
 		
 	def print_details(self):
 
-		print "num_states = %d" % (self.num_states)
+		print("num_states = %d" % (self.num_states))
 		sleep(1)
 
 
@@ -120,7 +120,7 @@ class FFEA_kinetic_rates:
 			for j in range(self.num_states):
 				outline += "%6.3e\t" % (self.rate[i][j])
 
-			print outline
+			print(outline)
 	
 	def reset(self):
 

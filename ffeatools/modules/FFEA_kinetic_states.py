@@ -95,7 +95,7 @@ class FFEA_kinetic_states:
 		
 	def print_details(self):
 
-		print "num_states = %d" % (self.num_states)
+		print("num_states = %d" % (self.num_states))
 		sleep(1)
 
 
@@ -110,7 +110,7 @@ class FFEA_kinetic_states:
 			if s.bound:
 				outline += "\n\tBound from site type " + str(s.site[0]) + " to type " + str(s.site[1]) + "\n"
 
-			print outline
+			print(outline)
 	
 	def reset(self):
 

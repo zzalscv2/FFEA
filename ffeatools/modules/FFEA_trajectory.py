@@ -34,6 +34,8 @@ class FFEA_trajectory:
 
 		# Return empty object if fname not initialised
 		if fname == "" or fname == None:
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read, start = start)
@@ -81,6 +83,10 @@ class FFEA_trajectory:
 
 				sys.stdout.write("\rFrames read = %d, Frames skipped = %d" % (self.num_frames, all_frames - self.num_frames))
 				sys.stdout.flush()
+
+		self.valid = True
+		self.empty = False
+		sys.stdout.write("done!\n")
 
 	def load_header(self, fname):
 
@@ -408,6 +414,7 @@ class FFEA_trajectory:
 		self.num_nodes = []
 		self.blob = []
 		self.valid = False
+		self.empty = True
 
 class FFEA_traj_blob:
 

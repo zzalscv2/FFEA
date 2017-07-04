@@ -24,6 +24,7 @@
 import sys, os
 from time import sleep
 from numpy import pi
+from FFEA_exceptions import *
 
 class FFEA_stokes:
 
@@ -33,6 +34,8 @@ class FFEA_stokes:
 
 		# Empty fname give an empty object
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("done! Empty object initialised.\n")
 			return
 
 		try:
@@ -71,6 +74,7 @@ class FFEA_stokes:
 			raise
 
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("done!\n")
 
 
@@ -127,14 +131,14 @@ class FFEA_stokes:
 	
 	def print_details(self):
 
-		print "num_nodes = %d" % (self.num_nodes)
+		print("num_nodes = %d" % (self.num_nodes))
 		sleep(1)
 
 		outline = ""
 		for rad in self.radius:
 			outline += "%6.3f\n" % (rad)
 			
-		print outline
+		print(outline)
 	
 	def calc_drag(self, viscosity, scale = 1.0):
 		
@@ -148,3 +152,5 @@ class FFEA_stokes:
 
 		self.radius = []
 		self.num_nodes = 0
+		self.valid = False
+		self.empty = True
