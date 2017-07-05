@@ -66,6 +66,7 @@ World::World() {
     vdwenergy = 0.0;
     preCompenergy = 0.0;
 
+
     vector3_set_zero(L);
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
