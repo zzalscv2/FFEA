@@ -277,7 +277,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     // detect how many threads we have for openmp
 #ifdef USE_OPENMP
     num_threads = omp_get_max_threads(); 
-    printf("\n\tNumber of threads detected: %d\n\n", num_threads);
+    printf("\tNumber of threads detected: %d\n\n", num_threads);
 #else
     num_threads = 1;
 #endif
@@ -2153,22 +2153,7 @@ int World::change_kinetic_state(int blob_index, int target_state) {
  */
 int World::read_and_build_system(vector<string> script_vector) {
 
-    // Create some blobs based on params
-    cout << "\tCreating blob array..." << endl;
-    blob_array = new Blob*[params.num_blobs];
-    active_blob_array = new Blob*[params.num_blobs];
-
-#ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none) schedule(static) // shared(blob_array, active_blob_array)
-#endif
-    for (int i = 0; i < params.num_blobs; ++i) {
-        blob_array[i] = new Blob[params.num_conformations[i]];
-        active_blob_array[i] = &blob_array[i][0];
-    }
-
-    //creates blob correction array if specified in input file
-    if (params.force_pbc ==1) blob_corr = new scalar[params.num_blobs*params.num_blobs*3];
-
+    // READ and parse more
     // Reading variables
     systemreader = new FFEA_input_reader();
     int i, j;
@@ -2186,6 +2171,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
     vector<Blob_conf> blob_conf;
 
+    // Read the INTERACTIONS block: 
     // Get interactions vector first, for later use
     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) {
         if (systemreader->extract_block("interactions", 0, script_vector, &interactions_vector) == FFEA_ERROR) return FFEA_ERROR;
@@ -2221,6 +2207,13 @@ int World::read_and_build_system(vector<string> script_vector) {
                 pc_params.E_to_J = stod(lrvalue[1]);
             }
         }
+        printf("\tPrecomputed potentials parameters:\n");
+        printf("\tinputData = %d\n", pc_params.inputData); 
+        printf("\tfolder = %s\n", pc_params.folder.c_str());
+        printf("\tdist_to_m = %e\n", pc_params.dist_to_m);
+        printf("\tE_to_J = %e\n", pc_params.E_to_J); 
+        printf("\n"); 
+
     }
 
     if (params.calc_ctforces == 1) {
@@ -2244,7 +2237,48 @@ int World::read_and_build_system(vector<string> script_vector) {
         if (! b_fs::exists(params.ctforces_fname) ) {
             FFEA_ERROR_MESSG("ctforces_fname: %s could not be open\n", params.ctforces_fname.c_str());
         }
+
+        printf("\tConstant forces:\n");
+        printf("\tctforces_fname = %s\n", params.ctforces_fname.c_str()); 
+        printf("\n");
     }
+
+    if (params.calc_springs == 1) {
+        if (systemreader->extract_block("springs", 0, interactions_vector, &spring_vector) == FFEA_ERROR) return FFEA_ERROR;
+
+        if (spring_vector.size() > 1) {
+            FFEA_error_text();
+            cout << "'Spring' block should only have 1 file." << endl;
+            return FFEA_ERROR;
+        } else if (spring_vector.size() == 1) {
+            systemreader->parse_tag(spring_vector.at(0), lrvalue);
+            b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
+            params.springs_fname = auxpath.string(); 
+        } 
+
+        printf("\tSprings parameters:\n");
+        printf("\tsprings_fname = %s\n", params.springs_fname.c_str());
+        printf("\n");
+
+    }
+
+
+    // DONE
+    // Create some blobs based on params
+    cout << "\tCreating blob array..." << endl;
+    blob_array = new Blob*[params.num_blobs];
+    active_blob_array = new Blob*[params.num_blobs];
+
+#ifdef FFEA_PARALLEL_PER_BLOB
+    #pragma omp parallel for default(none) schedule(static) // shared(blob_array, active_blob_array)
+#endif
+    for (int i = 0; i < params.num_blobs; ++i) {
+        blob_array[i] = new Blob[params.num_conformations[i]];
+        active_blob_array[i] = &blob_array[i][0];
+    }
+
+    //creates blob correction array if specified in input file
+    if (params.force_pbc ==1) blob_corr = new scalar[params.num_blobs*params.num_blobs*3];
 
 
 
@@ -2691,17 +2725,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 /// /// 
     // Finally, get springs
-    if (params.calc_springs == 1)
-        if (systemreader->extract_block("springs", 0, interactions_vector, &spring_vector) == FFEA_ERROR) return FFEA_ERROR;
-
-    if (spring_vector.size() > 1) {
-        FFEA_error_text();
-        cout << "'Spring' block should only have 1 file." << endl;
-        return FFEA_ERROR;
-    } else if (spring_vector.size() == 1) {
-        systemreader->parse_tag(spring_vector.at(0), lrvalue);
-        b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
-        if(load_springs(auxpath.string().c_str()) != 0) {
+    if (params.calc_springs == 1) {
+        if(load_springs(params.springs_fname.c_str()) != 0) {
+            //if(load_springs(auxpath.string().c_str()) != 0) {
             //if(load_springs(lrvalue[1].c_str()) != 0) {
             FFEA_error_text();
             cout << "Problem loading springs from " << lrvalue[1] << "." << endl;
