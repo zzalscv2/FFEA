@@ -127,6 +127,7 @@ public:
     string icheckpoint_fname;  ///< Input Checkpoint file name
     string ocheckpoint_fname;  ///< Output Checkpoint file name
     string ctforces_fname; ///< Input file containing constant forces onto a list of nodes.
+    string springs_fname; ///< Input file containing the springs details.
     string trajectory_beads_fname; ///< Output optional file.
 
     SimulationParams();
