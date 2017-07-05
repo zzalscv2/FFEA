@@ -56,6 +56,22 @@
 using namespace std;
 namespace b_fs = boost::filesystem;
 
+/**
+ * @detail 
+ * vector<string> types: types of beads present. \n
+ * string folder: folder containing the tables. It can be either absolute or relative.\n
+ * int inputData: 1 means read .force and .pot files,
+ *                 while 2 means read .pot and calculate the forces \n
+ */
+struct PreComp_params {
+  vector<string> types; ///< types of beads present 
+  string folder; ///< folder containing the tables. It can be either absolute or relative to the folder containing the ffea input file .
+  int inputData; ///< 1 means read .force and .pot files, while 2 means read .pot and calculate the forces
+  scalar dist_to_m;
+  scalar E_to_J;
+};
+
+
 class SimulationParams {
 public:
     scalar dt; ///< time step
@@ -159,7 +175,7 @@ public:
     int trajbeads_fname_set; 
 
     /** Writes all params to params_out_fname for user's info */
-    void write_to_file(FILE *fout);
+    void write_to_file(FILE *fout, PreComp_params &pc_params);
 
 private:
     int trajectory_out_fname_set;
