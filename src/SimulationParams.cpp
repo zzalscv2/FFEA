@@ -739,11 +739,11 @@ int SimulationParams::validate(int sim_mode) {
             // Default num_conformations array
             conformation_array_size = num_blobs;
             num_conformations = new(std::nothrow) int[conformation_array_size];
-            for(int i = 0; i < num_blobs; ++i) {
-                num_conformations[i] = 0;
-            }
             if (num_conformations == NULL) {
-                FFEA_ERROR_MESSG("Failed to allocate meory for the number of conformations in SimulationParams\n");
+                FFEA_ERROR_MESSG("Failed to allocate memory for the number of conformations in SimulationParams\n");
+            }
+            for(int i = 0; i < num_blobs; ++i) {
+                num_conformations[i] = 1;
             }
         }
 
