@@ -40,7 +40,7 @@ SimulationParams::SimulationParams() {
     sticky_wall_xz = 0;
     vdw_type = "steric";
     vdw_cutoff = 3e-9 / mesoDimensions::length;
-    vdw_steric_factor = 1e-2;
+    vdw_steric_factor = 1;
     vdw_steric_dr = 5e-3;
     move_into_box = 1;
     es_update = 10;
