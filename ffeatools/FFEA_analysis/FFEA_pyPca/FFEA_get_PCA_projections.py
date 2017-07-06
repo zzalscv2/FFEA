@@ -99,6 +99,9 @@ def FFEA_get_PCA_projections(infile, outfile, num_modes):
 	fout.close()
 	print("done!")
 
+	# Remove temp files
+	subprocess.call(["rm", outfiletemp])
+
 if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     try:
 	    args = parser.parse_args()
