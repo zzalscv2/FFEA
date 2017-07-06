@@ -21,57 +21,134 @@
 #  the research papers on the package.
 #
 
-import sys, os
-import numpy as np
+import sys, os, subprocess
 import FFEA_topology
+import numpy as np
+import __builtin__
 
-if len(sys.argv) < 4:
-	sys.exit("Usage: python FFEA_get_eigensystem.py [INPUT .pcz file] [INPUT .top file] [num_modes] OPTIONAL {[OUTPUT fname]}")
+import argparse as _argparse
 
-# Get args
-infile = sys.argv[1]
-if len(sys.argv) == 5:
-	base, ext = os.path.splitext(os.path.abspath(sys.argv[4]))
-else:
-	base, ext = os.path.splitext(os.path.abspath(infile))
+# Set up argparse
+parser = _argparse.ArgumentParser(description="Convert an FFEA trajectory to a pseudo-pdb system for PCA analysis")
+#parser.add_argument("-i", action="store", nargs=1, help="Input file (.ffea / .ftj)")
+parser.add_argument("i", help="Input PCZ file (.pcz)")
+parser.add_argument("t", help="Input FFEA topology file (.top)")
+parser.add_argument("-n", action="store", nargs='?', default = '10', help="Number of Modes to Analyse")
+parser.add_argument("-o", action="store", nargs='?', help="Output filename.")
 
-top = FFEA_topology.FFEA_topology(sys.argv[2])
-num_modes = int(sys.argv[3])
-eigvalfname = base + ".evals"
-tempeigvecfname = base + "_temp.evecs"
-eigvecfname = base + ".evecs"
+def FFEA_get_PCA_eigensystem(infile, topfile, outfile, num_modes):
 
-lin = top.get_linear_nodes()
+	# Check for problems
+	base, ext = os.path.splitext(infile)
 
-# Send eigenvalues to file (easy)
-print("Calculating Eigenvalues: Writing to " + os.path.basename(eigvalfname) + "...")
-os.system("pyPczdump -i %s -l -o %s" % (infile, eigvalfname))
-print("done!")
+	if outfile == None:
+		outfile = base + "_PCAeigensys"
+	else:
+		outfile = os.path.splitext(outfile)[0]
 
-# Assemble eigenvectors and eigenvalues into arrays. Must only be the first order nodes! Therefore, must renormalise
-fout = open(eigvecfname, "w")
-print("Calculating Eigenvectors: Writing to " + os.path.basename(eigvecfname) + "...")
+	try:
+		num_modes = int(num_modes)
+	except(ValueError):
+		raise
 
-for i in range(num_modes):
-	eigvec = []
-	print("\tEigenvector " + str(i) + "...")
-	os.system("pyPczdump -i %s -e %d -o %s" % (infile, i, tempeigvecfname))
-	fin = open(tempeigvecfname, "r")
-	lines = fin.readlines()
-	num_nodes = len(lines) / 3
-	for j in range(num_nodes):
-		for k in range(3):
-			if j in lin:
-				eigvec.append(float(lines[3 * j + k]))			
+	outfilevec = outfile + ".evecs"
+	outfileval = outfile + ".evals"
+	tempoutfilevec = outfile + "_temp.evecs"
+	if os.path.exists(outfilevec) or os.path.exists(outfilevec):
+		print("Default output file ('" + outfilevec + "') or ('" + outfileval + "') already exists.\n")
+		raise IOError
 
-	eigvec = np.array(eigvec)
-	eigvec /= np.linalg.norm(eigvec)
+	# Read topology file
+	try:
+		top = FFEA_topology.FFEA_topology(topfile)
+	except:
+		print("Could not read topology file.")
+		raise IOError
+	lin = top.get_linear_nodes()
 
-	for elem in eigvec:
-		fout.write("%6.3f " % (elem))
-	fout.write("\n")
-	print("\tdone!")
-	fin.close()
-fout.close()
-print("done!")
-os.system("rm " + tempeigvecfname)
+	# Do some PCZ analysis
+	# Print help to file and hack your way to num_evecs
+	try:
+		num_avail_modes = int(subprocess.check_output(["pyPczdump", "-i", infile, "-n"]).split("\n")[8][:-1].split()[-1])
+	except OSError as e:
+		if e.errno == os.errno.ENOENT:
+			raise OSError
+		else:
+			print("Unknown problem running 'pyPczdump. Perhaps conflicting versions (before and after 2.0)")
+			raise IOError
+	
+	if num_modes > num_avail_modes:
+		print("Too many modes requested. Defaulting to maximum (%d modes)" % (num_avail_modes))
+		num_modes = num_avail_modes
+
+	# Evals
+	print("Getting Eigenvalues...")
+	try:
+		subprocess.call(["pyPczdump", "-i", infile, "-l", "-o", outfileval])
+	except OSError as e:
+		if e.errno == os.errno.ENOENT:
+			raise OSError
+		else:
+			print("Unknown problem running 'pyPczdump. Perhaps conflicting versions (before and after 2.0)")
+			raise IOError
+	print("...done!\n")
+
+	# Evecs
+	print("Getting Eigenvectors...\n")
+	fout = open(outfilevec, "w")
+	for i in range(int(num_modes)):
+		sys.stdout.write("\rEigenvector %d" % (i + 1))
+		sys.stdout.flush()
+		evec = []
+		try:
+			subprocess.call(["pyPczdump", "-i", infile, "-e", str(i + 1), "-o", tempoutfilevec])
+		except OSError as e:
+			if e.errno == os.errno.ENOENT:
+				raise OSError
+			else:
+				print("Unknown problem running 'pyPczdump. Perhaps conflicting versions (before and after 2.0)")
+				raise IOError
+
+		with open(tempoutfilevec, "r") as fin:
+			lines = fin.readlines()
+
+		num_nodes = len(lines) / 3
+		for j in range(num_nodes):
+			for k in range(3):
+				if j in lin:
+					evec.append(float(lines[3 * j + k]))			
+
+		evec = np.array(evec)
+		evec /= np.linalg.norm(evec)
+
+		for elem in evec:
+			fout.write("%6.3f " % (elem))
+		fout.write("\n")
+
+	print("\n...done!")
+	fout.close()
+
+	# Remove temp files
+	subprocess.call(["rm", tempoutfilevec])
+
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
+    try:
+	    args = parser.parse_args()
+    except:
+	somehelp = parser.format_help().split("\n", 1)[1]
+	print somehelp
+	sys.exit()
+
+    try:
+	FFEA_get_PCA_eigensystem(args.i, args.t, args.o, args.n)
+    except IOError:
+        parser.print_help()
+    except ValueError:
+	print("'-n' must be an integer")
+        parser.print_help()
+    except TypeError:
+        parser.print_help()
+	print("\nLikely missing argument. Please try again :)\n")
+    except OSError:
+	print("\n'pyPczdump' program not found. Please add to your $PATH")
+        parser.print_help()

@@ -109,7 +109,8 @@ if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     try:
 	    args = parser.parse_args()
     except:
-	parser.print_help()
+	somehelp = parser.format_help().split("\n", 1)[1]
+	print somehelp
 	sys.exit()
 
     try:
