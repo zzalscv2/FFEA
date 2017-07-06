@@ -178,7 +178,7 @@ class FFEA_pdb:
 					fin.seek(-len(line), 1)
 					break
 
-				if line[0:3] == "END" or line.strip() == "":
+				if (line[0:3] == "END" and len(line) == 3) or line.strip() == "":
 					completed = True
 					break
 			
@@ -218,7 +218,7 @@ class FFEA_pdb:
 
 			# Check finish condition
 			if self.num_frames == num_frames_to_read:
-				completed == True
+				completed = True
 
 		# Finish
 		sys.stdout.write("\r\t\tFrames Read %d" % (self.num_frames))

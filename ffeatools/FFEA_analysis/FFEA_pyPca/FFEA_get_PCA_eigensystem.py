@@ -34,7 +34,7 @@ parser = _argparse.ArgumentParser(description="Convert an FFEA trajectory to a p
 parser.add_argument("i", help="Input PCZ file (.pcz)")
 parser.add_argument("t", help="Input FFEA topology file (.top)")
 parser.add_argument("-n", action="store", nargs='?', default = '10', help="Number of Modes to Analyse")
-parser.add_argument("-o", action="store", nargs='?', help="Output filename.")
+parser.add_argument("-o", action="store", nargs='?', help="Output filename")
 
 def FFEA_get_PCA_eigensystem(infile, topfile, outfile, num_modes):
 
@@ -46,17 +46,17 @@ def FFEA_get_PCA_eigensystem(infile, topfile, outfile, num_modes):
 	else:
 		outfile = os.path.splitext(outfile)[0]
 
-	try:
-		num_modes = int(num_modes)
-	except(ValueError):
-		raise
-
 	outfilevec = outfile + ".evecs"
 	outfileval = outfile + ".evals"
 	tempoutfilevec = outfile + "_temp.evecs"
 	if os.path.exists(outfilevec) or os.path.exists(outfilevec):
 		print("Default output file ('" + outfilevec + "') or ('" + outfileval + "') already exists.\n")
 		raise IOError
+
+	try:
+		num_modes = int(num_modes)
+	except(ValueError):
+		raise
 
 	# Read topology file
 	try:
