@@ -33,8 +33,9 @@ class FFEA_pdb:
 	
 		self.reset()
 
-		# Empty fname give an empty object
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("Empty pdb object initialised.\n")
 			return
 
 		try:
@@ -63,15 +64,17 @@ class FFEA_pdb:
 
 		# File format?
 		base, ext = os.path.splitext(fname)
-		if (ext == ".pdb"):
-			try:
+		try:
+			if (ext == ".pdb"):
 				self.load_pdb(fname, num_frames_to_read = num_frames)
-			except:
-				raise	
-		else:
-			raise FFEAIOError(fname=fname, fext=[".pdb"]) 
+			else:
+				raise FFEAIOError(fname=fname, fext=[".pdb"])
+
+		except:
+			raise
 		
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("...done!\n")
 
 	def load_pdb(self, fname, num_frames_to_read = 100000):
@@ -80,7 +83,7 @@ class FFEA_pdb:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			raise IOError("File '" + fname + "' not found.")
+			raise IOError
 
 		#
 		# Try to make robust against dodgy formating by the user
@@ -222,7 +225,7 @@ class FFEA_pdb:
 		sys.stdout.write("\n\n\t...done! Read %d frames from file.\n" % (self.num_frames))
 		fin.close()
 
-	def write_to_file(self, fname):
+	def write_to_file(self, fname, frames = None, frame_rate = 1):
 
 		print("Writing to " + fname + "...")
 
@@ -236,10 +239,13 @@ class FFEA_pdb:
 		try:
 			fout = open(fname, "w")
 		except(IOError):
-			"Cannot open " + fname + " for writing."
-			raise
+			raise IOError
 		
-		for i in range(self.num_frames):
+		# Write frames
+		if frames == None:
+			frames = [0,self.num_frames]
+
+		for i in range(frames[0], frames[1], frame_rate):
 			sys.stdout.write("\r\r%d frames written (%d%%)" % (i, (i * 100) / self.num_frames))
 			sys.stdout.flush()
 			fout.write("MODEL     %4d\n" % (i + 1))
@@ -252,11 +258,11 @@ class FFEA_pdb:
 				fout.write("TER\n")
 			fout.write("ENDMDL\n")
 		fout.write("END\n")
-		sys.stdout.write("\r\r100%% of frames written\n")
+		sys.stdout.write("\r\r100% of frames written    \n")
 		print("...done")
 		fout.close()
 	
-	def build_from_traj(self, traj, scale = 1.0):
+	def build_from_traj(self, traj, scale = 1e10):
 
 		# Reset	
 		self.reset()
@@ -297,6 +303,7 @@ class FFEA_pdb:
 
 		self.num_frames = traj.num_frames
 		self.valid = True
+		self.empty = False
 
 	def clear_position_data(self):
 		
@@ -338,6 +345,7 @@ class FFEA_pdb:
 	def reset(self):
 
 		self.valid = False
+		self.empty = True
 		self.num_frames = 0
 		self.num_chains = 0
 		self.num_atoms = []
