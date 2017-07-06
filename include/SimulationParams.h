@@ -174,7 +174,7 @@ public:
     int kinetics_out_fname_set;
     int trajbeads_fname_set; 
 
-    /** Writes all params to params_out_fname for user's info */
+    /** Writes all params to fout (either a file or stdout) for user's info */
     void write_to_file(FILE *fout, PreComp_params &pc_params);
 
 private:

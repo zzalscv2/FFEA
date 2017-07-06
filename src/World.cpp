@@ -277,7 +277,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     // detect how many threads we have for openmp
 #ifdef USE_OPENMP
     num_threads = omp_get_max_threads(); 
-    printf("\tNumber of threads detected: %d\n\n", num_threads);
+    printf("\n\tNumber of threads detected: %d\n\n", num_threads);
 #else
     num_threads = 1;
 #endif
@@ -2207,13 +2207,6 @@ int World::read_and_build_system(vector<string> script_vector) {
                 pc_params.E_to_J = stod(lrvalue[1]);
             }
         }
-        printf("\tPrecomputed potentials parameters:\n");
-        printf("\tinputData = %d\n", pc_params.inputData); 
-        printf("\tfolder = %s\n", pc_params.folder.c_str());
-        printf("\tdist_to_m = %e\n", pc_params.dist_to_m);
-        printf("\tE_to_J = %e\n", pc_params.E_to_J); 
-        printf("\n"); 
-
     }
 
     if (params.calc_ctforces == 1) {
@@ -2237,10 +2230,6 @@ int World::read_and_build_system(vector<string> script_vector) {
         if (! b_fs::exists(params.ctforces_fname) ) {
             FFEA_ERROR_MESSG("ctforces_fname: %s could not be open\n", params.ctforces_fname.c_str());
         }
-
-        printf("\tConstant forces:\n");
-        printf("\tctforces_fname = %s\n", params.ctforces_fname.c_str()); 
-        printf("\n");
     }
 
     if (params.calc_springs == 1) {
@@ -2255,12 +2244,9 @@ int World::read_and_build_system(vector<string> script_vector) {
             b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
             params.springs_fname = auxpath.string(); 
         } 
-
-        printf("\tSprings parameters:\n");
-        printf("\tsprings_fname = %s\n", params.springs_fname.c_str());
-        printf("\n");
-
     }
+
+    params.write_to_file(stdout, pc_params); 
 
 
     // DONE
