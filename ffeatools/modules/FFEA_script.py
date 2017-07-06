@@ -42,11 +42,12 @@ class FFEA_script:
 	def __init__(self, fname = "", fix=True):
 
 		self.reset()
+		sys.stdout.write("Loading FFEA script file...")
 
 		# Return empty object if fname not initialised
 		if fname == "":
 			self.valid = True
-			sys.stdout.write("done! Empty object initialised.\n")
+			sys.stdout.write("Empty script object initialised.\n")
 			return
 
 		# Start reading to test
@@ -545,7 +546,7 @@ class FFEA_script_params():
 			self.trajectory_out_fname = get_path_from_script(rvalue, scriptdir)
 		elif lvalue == "measurement_out_fname":
 			self.measurement_out_fname = get_path_from_script(rvalue, scriptdir)
-		elif lvalue == "vdw_forcefield_params":
+		elif lvalue == "vdw_forcefield_params" or lvalue == "vdw_in_fname" or lvalue == "lj_params" or lvalue == "ljparams":
 			self.vdw_forcefield_params = get_path_from_script(rvalue, scriptdir)
 		elif lvalue == "kinetics_out_fname":
 			self.kinetics_out_fname = get_path_from_script(rvalue, scriptdir)

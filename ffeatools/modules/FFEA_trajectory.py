@@ -35,7 +35,7 @@ class FFEA_trajectory:
 		# Return empty object if fname not initialised
 		if fname == "" or fname == None:
 			self.valid = True
-			sys.stdout.write("done! Empty object initialised.\n")
+			sys.stdout.write("Empty trajectory object initialised.\n")
 			return
 
 		self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read, start = start)
@@ -81,12 +81,11 @@ class FFEA_trajectory:
 				#if self.num_frames % 100 == 0:
 				#	print "Frames parsed = ", str(all_frames)
 
-				sys.stdout.write("\rFrames read = %d, Frames skipped = %d" % (self.num_frames, all_frames - self.num_frames))
+				sys.stdout.write("\r\tFrames read = %d, Frames skipped = %d" % (self.num_frames, all_frames - self.num_frames))
 				sys.stdout.flush()
 
 		self.valid = True
 		self.empty = False
-		sys.stdout.write("done!\n")
 
 	def load_header(self, fname):
 
@@ -284,7 +283,9 @@ class FFEA_trajectory:
 		except:
 			raise
 			
-	def build_from_pdb(self, pdb, scale = 1):
+	def build_from_pdb(self, pdb, scale = 1e-10):
+
+		self.reset()
 
 		# Single blob single conf
 		self.set_header(1, [1], [[pdb.chain[0].num_atoms]])
@@ -300,6 +301,8 @@ class FFEA_trajectory:
 			index += 1
 
 		self.num_frames = pdb.chain[0].num_frames
+		self.valid = True
+		self.empty = False
 
 	# Manually set a single frame
 	def set_single_frame(self, node, surf = None, step = 0):
@@ -327,6 +330,30 @@ class FFEA_trajectory:
 		
 		self.num_frames = 1
 	
+	def set_single_blob(self, bindex):
+		
+		if bindex >= self.num_blobs:
+			print("\nBlob index '" + str(bindex) + "' greater than number of blobs, '" + str(traj.num_blobs))
+			raise IndexError
+
+		# Get rid of stuff we don't need and move everything to blob[0]
+		self.num_blobs = 1
+		self.num_conformations = [self.num_conformations[bindex]]
+		self.num_nodes = [self.num_nodes[bindex]]
+		self.blob = [self.blob[bindex]]
+
+
+	def reset(self):
+
+		self.traj = None
+		self.num_frames = 0
+		self.num_blobs = 0
+		self.num_conformations = []
+		self.num_nodes = []
+		self.blob = []
+		self.valid = False
+		self.empty = True
+		
 	def write_to_file(self, fname, frames=None, frame_rate = 1):
 
 		print("Writing trajectory to file\n\tData will be written to %s\n" % (fname))

@@ -34,8 +34,8 @@ class FFEA_node:
 
 		if fname == "":
 			self.valid = True
-			if not "pymol" in sys.modules.keys():
-				sys.stdout.write("a3 - done! Empty object initialised.\n")
+			if not "pymol" in sys.modules.keys() and not "FFEA_trajectory" in sys.modules.keys():
+				sys.stdout.write("Empty node object initialised.\n")
 			return
 
 		try:

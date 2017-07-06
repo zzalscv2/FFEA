@@ -35,7 +35,7 @@ class FFEA_topology:
 
 		if fname == "":
 			self.valid = True
-			sys.stdout.write("done! Empty object initialised.\n")
+			sys.stdout.write("Empty topology object initialised.\n")
 			return
 
 		try:
