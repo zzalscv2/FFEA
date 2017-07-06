@@ -57,10 +57,11 @@ void print_mania(string s) {
 	}
 }
 
-void print_ffea_compilation_details() {
+void print_ffea_compilation_details(FILE *fout) {
    
-   cout << "FFEA was compiled in " __DATE__ " at " << __TIME__ << endl;
-   cout << "     using: "
+   stringstream ss;
+   ss << "\tFFEA was compiled on " __DATE__ " at " << __TIME__ << endl;
+   ss << "\t     using: "
    #ifdef USE_OPENMP
         << "-DUSE_OPENMP " 
    #endif
@@ -83,22 +84,25 @@ void print_ffea_compilation_details() {
         << "-DUSE_DOUBLE_LESS "
    #endif
    << endl; 
+   fprintf(fout, "%s", ss.str().c_str());
    
 }
 
-void print_ffea_version() {
+void print_ffea_version(FILE *fout) {
 
-   cout << "FFEA Version: " << FFEA_version << endl;
+   stringstream ss; 
+   ss << "\tFFEA version: " << FFEA_version << endl;
    #ifdef FFEA_DEVEL
    #ifdef USE_CMAKECONF
-   cout << "FFEA commit " << FFEA_commit << endl;
-   cout << "     branch " << FFEA_branch << endl;
-   cout << "     date " << FFEA_date << endl;
+   ss << "\tFFEA commit " << FFEA_commit << endl;
+   ss << "\t     branch " << FFEA_branch << endl;
+   ss << "\t     date " << FFEA_date << endl;
    #else
-   cout << "PREVIOUS FFEA commit " << FFEA_prev_commit << endl;
-   cout << "              branch " << FFEA_prev_branch << endl;
-   cout << "              date " << FFEA_prev_date << endl;
+   ss << "\tPREVIOUS FFEA commit " << FFEA_prev_commit << endl;
+   ss << "\t              branch " << FFEA_prev_branch << endl;
+   ss << "\t              date " << FFEA_prev_date << endl;
    #endif 
    #endif
+   fprintf(fout, "%s", ss.str().c_str());
 
 }

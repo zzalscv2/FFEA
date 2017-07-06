@@ -25,6 +25,7 @@
 #define FFEA_USER_INFO_H_INCLUDED
 
 #include <iostream>
+#include <sstream> 
 #include <string>
 
 using namespace std;
@@ -45,8 +46,8 @@ void print_mid(string s);
 void print_high(string s);
 void print_mania(string s);
 
-void print_ffea_version();
-void print_ffea_compilation_details();
+void print_ffea_version(FILE *fout);
+void print_ffea_compilation_details(FILE *fout);
 
 
 #endif
