@@ -30,7 +30,6 @@ import argparse as _argparse
 
 # Set up argparse
 parser = _argparse.ArgumentParser(description="Convert an FFEA trajectory to a pseudo-pdb system for PCA analysis")
-#parser.add_argument("-i", action="store", nargs=1, help="Input file (.ffea / .ftj)")
 parser.add_argument("i", help="Input PCZ file (.pcz)")
 parser.add_argument("t", help="Input FFEA topology file (.top)")
 parser.add_argument("-n", action="store", nargs='?', default = '10', help="Number of Modes to Analyse")

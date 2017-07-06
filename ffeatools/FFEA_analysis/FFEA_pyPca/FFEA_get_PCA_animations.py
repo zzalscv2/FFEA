@@ -28,7 +28,6 @@ import argparse as _argparse
 
 # Set up argparse
 parser = _argparse.ArgumentParser(description="Convert an FFEA trajectory to a pseudo-pdb system for PCA analysis")
-#parser.add_argument("-i", action="store", nargs=1, help="Input file (.ffea / .ftj)")
 parser.add_argument("i", help="Input PCZ file (.pcz)")
 parser.add_argument("t", help="Input PDB topology file (_frame0.pdb)")
 parser.add_argument("-n", action="store", nargs='?', default = '10', help="Number of Modes to Analyse")
@@ -84,8 +83,6 @@ def FFEA_get_PCA_animations(infile, topfile, outfile, num_modes, scale):
 			else:
 				print("Unknown problem running 'pyPczdump. Perhaps conflicting versions (before and after 2.0)")
 				raise IOError
-
-		#print scriptdir + "/../../FFEA_analysis/FFEA_traj_tools/PDB_convert_to_FFEA_trajectory.py"
 		subprocess.call(["python", scriptdir + "/../../FFEA_analysis/FFEA_traj_tools/PDB_convert_to_FFEA_trajectory.py", anim_outfname, anim_outfname_ffea, str(scale)])
 
 	print("\ndone!")
@@ -98,16 +95,16 @@ if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
 	print somehelp
 	sys.exit()
 
-#    try:
-    FFEA_get_PCA_animations(args.i, args.t, args.o, args.n, args.s)
-#    except IOError:
-#        parser.print_help()
-#    except ValueError:
-#	print("'-n' must be an integer")
-#        parser.print_help()
-#    except TypeError:
-#        parser.print_help()
-#	print("\nLikely missing argument. Please try again :)\n")
-#    except OSError:
-#	print("\n'pyPczdump' program not found. Please add to your $PATH")
-#        parser.print_help()
+    try:
+	FFEA_get_PCA_animations(args.i, args.t, args.o, args.n, args.s)
+    except IOError:
+        parser.print_help()
+    except ValueError:
+	print("'-n' must be an integer")
+        parser.print_help()
+    except TypeError:
+        parser.print_help()
+	print("\nLikely missing argument. Please try again :)\n")
+    except OSError:
+	print("\n'pyPczdump' program not found. Please add to your $PATH")
+        parser.print_help()

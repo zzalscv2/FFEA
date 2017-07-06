@@ -29,7 +29,6 @@ import argparse as _argparse
 
 # Set up argparse
 parser = _argparse.ArgumentParser(description="Convert an FFEA trajectory to a pseudo-pdb system for PCA analysis")
-#parser.add_argument("-i", action="store", nargs=1, help="Input file (.ffea / .ftj)")
 parser.add_argument("i", help="Input file (.ffea / .ftj)")
 parser.add_argument("-o", action="store", nargs='?', help="Output file (.pdb).")
 parser.add_argument("-ind", action="store", nargs='?', default = '0', help="Blob index")
