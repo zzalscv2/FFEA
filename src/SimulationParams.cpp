@@ -98,6 +98,7 @@ SimulationParams::SimulationParams() {
     ocheckpoint_fname = "\n";
     detailed_meas_out_fname = "\n";
     ctforces_fname = "\n";
+    springs_fname = "\n";
     trajectory_beads_fname = "\n";
 }
 
@@ -169,6 +170,7 @@ SimulationParams::~SimulationParams() {
     vdw_in_fname = "\n";
     detailed_meas_out_fname = "\n";
     ctforces_fname = "\n";
+    springs_fname = "\n";
     trajectory_beads_fname = "\n";
 
 }
@@ -717,6 +719,7 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("vdw_steric_dr can only be >=0.\n");
     }
 
+    bool using_conformations = true;
     if (calc_kinetics == 1) {
         if (conformation_array_size != num_blobs) {
             FFEA_ERROR_MESSG("\tRequired: Number of Conformations, 'num_conformations', must have 'num_blobs' elements. We read %d elements but only %d blobs\n", conformation_array_size, num_blobs);
@@ -736,6 +739,7 @@ int SimulationParams::validate(int sim_mode) {
     } else {
         if(num_conformations == NULL) {
 
+            using_conformations = false;
             // Default num_conformations array
             conformation_array_size = num_blobs;
             num_conformations = new(std::nothrow) int[conformation_array_size];
@@ -745,6 +749,7 @@ int SimulationParams::validate(int sim_mode) {
             for(int i = 0; i < num_blobs; ++i) {
                 num_conformations[i] = 1;
             }
+
         }
 
         for(int i = 0; i < num_blobs; ++i) {
@@ -756,60 +761,6 @@ int SimulationParams::validate(int sim_mode) {
     }
     printf("...done\n");
 
-    printf("Parameters:\n");
-    printf("\trestart = %d\n", restart);
-    printf("\tdt = %e\n", dt*mesoDimensions::time);
-    printf("\tnum_steps = %lld\n", num_steps);
-    printf("\tcheck = %d\n", check);
-    printf("\tnum_blobs = %d\n", num_blobs);
-    for (int i = 0; i < num_blobs; ++i) {
-        printf("\tBlob %d:\n", i);
-        printf("\t\tnum_conformations = %d\n", num_conformations[i]);
-        if (calc_kinetics == 1) {
-            printf("\t\tnum_states = %d\n", num_states[i]);
-        }
-    }
-    printf("\trng_seed = %d\n", rng_seed);
-    printf("\tkT = %e\n", kT*mesoDimensions::Energy);
-    printf("\ttrajectory_out_fname = %s\n", trajectory_out_fname.c_str());
-    printf("\tmeasurement_out_fname = %s\n", measurement_out_fname.c_str());
-    printf("\tkinetics_out_fname = %s\n", kinetics_out_fname.c_str());
-    if (icheckpoint_fname_set == 1) {
-        printf("\tcheckpoint_in = %s\n", icheckpoint_fname.c_str());
-    }
-    printf("\tcheckpoint_out = %s\n", ocheckpoint_fname.c_str());
-    printf("\tvdw_forcefield_params = %s\n", vdw_in_fname.c_str());
-    printf("\tmax_iterations_cg = %d\n", max_iterations_cg);
-    printf("\tepsilon2 = %e\n", epsilon2);
-    printf("\tes_update = %d\n", es_update);
-    printf("\tes_N_x = %d\n", es_N_x);
-    printf("\tes_N_y = %d\n", es_N_y);
-    printf("\tes_N_z = %d\n", es_N_z);
-    printf("\tes_h = %e x inverse kappa\n", es_h);
-    printf("\tkappa = %e\n", kappa/mesoDimensions::length);
-    printf("\tepsilon_0 = %e\n", epsilon_0);
-    printf("\tdielec_ext = %e\n", dielec_ext);
-    printf("\tcalc_vdw = %d\n", calc_vdw);
-    printf("\tvdw_type = %s\n", vdw_type.c_str());
-    printf("\tvdw_cutoff = %e\n", vdw_cutoff * mesoDimensions::length);
-    printf("\tinc_self_vdw = %d\n", inc_self_vdw);
-    printf("\tcalc_es = %d\n", calc_es);
-    printf("\tcalc_noise = %d\n", calc_noise);
-    printf("\tcalc_kinetics = %d\n", calc_kinetics);
-    printf("\tcalc_preComp = %d\n", calc_preComp);
-    printf("\tcalc_springs = %d\n", calc_springs);
-    printf("\tforce_pbc = %d\n", force_pbc);
-    printf("\tcalc_stokes = %d\n", calc_stokes);
-    printf("\tstokes_visc = %f\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
-    printf("\tcalc_kinetics = %d\n", calc_kinetics);
-
-    if(calc_kinetics == 1 && bsite_in_fname_set == 1) {
-        printf("\tbsite_in_fname = %s\n", bsite_in_fname.c_str());
-    }
-    if(calc_vdw == 1 && (vdw_type == "steric" || vdw_type == "ljsteric")) {
-        printf("\tvdw_steric_factor = %e\n", vdw_steric_factor);
-    }
-    if (trajbeads_fname_set == 1) printf("\tbeads_out_fname = %s\n", trajectory_beads_fname.c_str());
     return FFEA_OK;
 }
 
@@ -824,56 +775,44 @@ int SimulationParams::get_max_num_states() {
     return max_num_states;
 }
 
-void SimulationParams::write_to_file(FILE *fout) {
+void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params) {
 
     // This should be getting added to the top of the measurement file!!
 
     // Then, every parameter (if anyone hates this goddamn class in the future, please make a Param struct / dictionary / vector / list thing so we can just loop over all parameters)
     fprintf(fout, "Parameters:\n");
+    fprintf(fout, "\tSystem parameters:\n");
     fprintf(fout, "\trestart = %d\n", restart);
     fprintf(fout, "\tdt = %e\n", dt*mesoDimensions::time);
     fprintf(fout, "\tnum_steps = %lld\n", num_steps);
     fprintf(fout, "\tcheck = %d\n", check);
     fprintf(fout, "\trng_seed = %d\n", rng_seed);
     fprintf(fout, "\tkT = %e\n", kT*mesoDimensions::Energy);
-
-    fprintf(fout, "\tcalc_vdw = %d\n", calc_vdw);
-    fprintf(fout, "\tvdw_type = %s\n", vdw_type.c_str());
-    fprintf(fout, "\tinc_self_vdw = %d\n", inc_self_vdw);
-    fprintf(fout, "\tcalc_es = %d\n", calc_es);
-    fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
-    fprintf(fout, "\tcalc_kinetics = %d\n", calc_kinetics);
-    fprintf(fout, "\tcalc_preComp = %d\n", calc_preComp);
-    fprintf(fout, "\tcalc_springs = %d\n", calc_springs);
-    fprintf(fout, "\tforce_pbc = %d\n", force_pbc);
-    fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
-    fprintf(fout, "\tstokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
-
-    fprintf(fout, "\tvdw_cutoff = %e\n", vdw_cutoff*mesoDimensions::length);
-    fprintf(fout, "\tes_update = %d\n", es_update);
-    fprintf(fout, "\tes_N_x = %d\n", es_N_x);
-    fprintf(fout, "\tes_N_y = %d\n", es_N_y);
-    fprintf(fout, "\tes_N_z = %d\n", es_N_z);
-    fprintf(fout, "\tes_h = %f\n", es_h);
-    fprintf(fout, "\tmove_into_box = %d\n", move_into_box);
-
-    fprintf(fout, "\tkappa = %e\n", kappa/mesoDimensions::length);
-    fprintf(fout, "\tepsilon_0 = %e\n", epsilon_0);
-    fprintf(fout, "\tdielec_ext = %e\n", dielec_ext);
-
     fprintf(fout, "\tmax_iterations_cg = %d\n", max_iterations_cg);
-    fprintf(fout, "\tepsilon2 = %e\n", epsilon2);
+    fprintf(fout, "\tepsilon = %e\n", sqrt(epsilon2));
+    if (calc_stokes == 1) {
+        fprintf(fout, "\tstokes_visc = %e\n", stokes_visc*mesoDimensions::pressure*mesoDimensions::time);
+    } 
+
     fprintf(fout, "\tnum_blobs = %d\n", num_blobs);
-    fprintf(fout, "\tnum_conformations = (");
-    for (int i = 0; i < num_blobs; ++i) {
-        fprintf(fout, "%d", num_conformations[i]);
-        if(i == num_blobs - 1) {
-            fprintf(fout, ")");
-        } else {
-            fprintf(fout, ",");
+    bool print_conformations = false;
+    for (int i=0; i<num_blobs; i++) {
+        if (num_conformations[i] > 1) {
+            print_conformations = true;
+            break;
         }
     }
-    fprintf(fout, "\n");
+    if (print_conformations == true) {
+        fprintf(fout, "\tnum_conformations = (");
+        for (int i = 0; i < num_blobs; ++i) {
+            fprintf(fout, "%d", num_conformations[i]);
+            if(i == num_blobs - 1) {
+                fprintf(fout, ")");
+            } else {
+                fprintf(fout, ",");
+            }
+        }
+    } 
 
     if (calc_kinetics == 1) {
         fprintf(fout, "num_states = (");
@@ -885,8 +824,81 @@ void SimulationParams::write_to_file(FILE *fout) {
                 fprintf(fout, ",");
             }
         }
+    }
+
+    fprintf(fout, "\n\tCalculations enabled:\n");
+    fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
+    fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
+    fprintf(fout, "\tcalc_vdw = %d\n", calc_vdw);
+    fprintf(fout, "\tcalc_preComp = %d\n", calc_preComp);
+    fprintf(fout, "\tcalc_springs = %d\n", calc_springs);
+    fprintf(fout, "\tcalc_ctforces = %d\n", calc_ctforces);
+    fprintf(fout, "\tcalc_kinetics = %d\n", calc_kinetics);
+    fprintf(fout, "\tcalc_es = %d\n", calc_es);
+
+    if (calc_vdw == 1) {
+        fprintf(fout, "\n\tShort range parameters:\n");
+        fprintf(fout, "\tvdw_type = %s\n", vdw_type.c_str());
+        fprintf(fout, "\tinc_self_vdw = %d\n", inc_self_vdw);
+        fprintf(fout, "\tvdw_cutoff = %e\n", vdw_cutoff*mesoDimensions::length);
+
+        if (vdw_type == "lennard-jones" || vdw_type == "ljsteric") {
+            fprintf(fout, "\tvdw_forcefield_params = %s\n", vdw_in_fname.c_str());
+        }
+        if (vdw_type == "steric" || vdw_type == "ljsteric") {
+            fprintf(fout, "\tvdw_steric_factor = %e\n", vdw_steric_factor);
+        }
+    }
+
+
+    fprintf(fout, "\n\tSimulation box configuration:\n");
+    fprintf(fout, "\tes_update = %d\n", es_update);
+    fprintf(fout, "\tes_N_x = %d\n", es_N_x);
+    fprintf(fout, "\tes_N_y = %d\n", es_N_y);
+    fprintf(fout, "\tes_N_z = %d\n", es_N_z);
+    fprintf(fout, "\tforce_pbc = %d\n", force_pbc);
+    fprintf(fout, "\tmove_into_box = %d\n", move_into_box);
+
+    if (calc_preComp == 1) {
+        fprintf(fout, "\n\tPrecomputed potentials parameters:\n");
+        fprintf(fout, "\tinputData = %d\n", pc_params.inputData);
+        fprintf(fout, "\tfolder = %s\n", pc_params.folder.c_str());
+        fprintf(fout, "\tdist_to_m = %e\n", pc_params.dist_to_m);
+        fprintf(fout, "\tE_to_J = %e\n", pc_params.E_to_J);
         fprintf(fout, "\n");
     }
+
+    if (calc_ctforces == 1) { 
+        fprintf(fout, "\n\tConstant forces:\n");
+        fprintf(fout, "\tctforces_fname = %s\n", ctforces_fname.c_str());
+        fprintf(fout, "\n");
+    } 
+
+    if (calc_springs == 1) {
+        fprintf(fout, "\n\tSprings parameters:\n");
+        fprintf(fout, "\tsprings_fname = %s\n", springs_fname.c_str());
+        fprintf(fout, "\n");
+    }
+
+    if (calc_kinetics == 1) {
+        fprintf(fout, "\n\tKinetics parameters:\n");
+        if(bsite_in_fname_set == 1) {
+            fprintf(fout, "\tbsite_in_fname = %s\n", bsite_in_fname.c_str());
+        }
+        fprintf(fout, "\tkinetics_update = %d\n", kinetics_update);
+        fprintf(fout, "\n");
+    }
+
+
+    if (calc_es == 1) {
+        fprintf(fout, "\n\tElectrostatics parameters:\n");
+        fprintf(fout, "\tes_h = %e x inverse kappa\n", es_h);
+        fprintf(fout, "\tkappa = %e\n", kappa/mesoDimensions::length);
+        fprintf(fout, "\tepsilon_0 = %e\n", epsilon_0);
+        fprintf(fout, "\tdielec_ext = %e\n", dielec_ext);
+        fprintf(fout, "\n");
+    }
+
 
     fprintf(fout, "\n\n");
 }
