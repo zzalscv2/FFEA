@@ -538,6 +538,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             // Write params to this output file
             params.write_to_file(measurement_out, pc_params);
 
+
             // Get ready to write the measurements (this is the order things must be written later. There will be no floating zeroes!)
             fprintf(measurement_out, "Measurements:\n");
             fprintf(measurement_out, "%-14s", "Time");
@@ -3746,6 +3747,10 @@ void World::write_output_header(FILE *fout, string fname) {
 
     // Write all header data. script fname, time and date etc
     fprintf(fout, "FFEA Global Measurement File\n\nSimulation Details:\n");
+
+    print_ffea_version(measurement_out); 
+    print_ffea_compilation_details(measurement_out); 
+
     time_t now = time(0);
     tm *ltm = localtime(&now);
     fprintf(fout, "\tSimulation Began on %d/%d/%d at %d:%d:%d\n", ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
