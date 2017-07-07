@@ -21,7 +21,7 @@
 #  the research papers on the package.
 #
 
-import sys, os
+import sys, os, copy
 import numpy as np
 import FFEA_trajectory, FFEA_kinetic_map, FFEA_pdb
 
@@ -70,7 +70,7 @@ output_nodes = []   # output_nodes[blob][frame][pos]
 for b in traj.blob:
 	if b[0].num_nodes == kinetic_map.num_columns:
 	
-		print "Applying to blob ", traj.blob.index(b)
+		print("Applying to blob " + str(traj.blob.index(b)))
 		output_nodes.append([])
 		count = 0
 		for f in b[0].frame:
@@ -79,6 +79,7 @@ for b in traj.blob:
 			count += 1
 			sys.stdout.write("\r\t%d frames made out of %d" % (count, len(b[0].frame)))
 			sys.stdout.flush()
+		print("\n")
 			
 # Print to file
 
@@ -119,17 +120,43 @@ if ext == ".pdb":
 	outpdb = pdbtop
 	outpdb.clear_position_data()
 
-	for bnodes in output_nodes:
+	# We need a copy for every blob in FFEA_traj
+	num_blobs = len(output_nodes)
+	outpdb.num_chains *= num_blobs
+	outpdb.num_atoms.extend(copy.copy(outpdb.num_atoms))
+	outpdb.chain.extend(copy.deepcopy(outpdb.chain))
 
-		findex = -1
+#	for bnodes in output_nodes:
+#
+#		findex = -1
+#		for f in bnodes:
+#			findex += 1
+#			end = 0
+#			for i in range(outpdb.num_chains):
+#				start = end
+#				end = start + outpdb.num_atoms[i]
+#				outpdb.chain[i].add_empty_frame()
+#				outpdb.chain[i].frame[findex].pos = f[start:end] * 1e10
+
+
+	for i in range(num_blobs):
+		bnodes = output_nodes[i]
+		startchain = i * (outpdb.num_chains / num_blobs)
+		endchain = (i + 1) * (outpdb.num_chains / num_blobs)
+
+		findex = 0
 		for f in bnodes:
+			endatom = 0
+			for j in range(startchain, endchain):
+				startatom = endatom
+				endatom = startatom + outpdb.num_atoms[j]
+				outpdb.chain[j].add_empty_frame()
+				outpdb.chain[j].frame[findex].pos = f[startatom:endatom] * 1e10
 			findex += 1
-			end = 0
-			for i in range(outpdb.num_chains):
-				start = end
-				end = start + outpdb.num_atoms[i]
-				outpdb.chain[i].add_empty_frame()
-				outpdb.chain[i].frame[findex].pos = f[start:end] * 1e10
+
+	#for i in range(outpdb.num_chains):
+#		for bnodes in output_nodes:
+			
 	outpdb.num_frames = outpdb.chain[i].num_frames
 	outpdb.write_to_file(outtraj)
 

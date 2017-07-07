@@ -125,8 +125,25 @@ class FFEA_pdb:
 
 				num_atoms[-1] += 1
 
+			elif line[0:3] == "TER":
+
+				# See if next line gives a new chain. If not, register a new chain
+				check_pos = fin.tell()
+				line = fin.readline()
+				
+				## Any failure to read next line constitues the end of the frame
+				try:
+					if line[21] == cID:
+						num_chains += 1
+						num_atoms.append(0)
+				except:
+					break
+
+				fin.seek(check_pos)
+
 			elif line[0:3] == "END" or line.strip() == "":
 				break
+
 		sys.stdout.write("\tdone!\n")
 
 		#
@@ -139,7 +156,7 @@ class FFEA_pdb:
 		self.num_chains = num_chains
 		self.num_atoms = num_atoms
 		self.chain = [FFEA_pdb_chain(num_atoms = num_atoms[i]) for i in range(num_chains)]
-		
+
 		# Read atom structures
 		for c in range(self.num_chains):
 			
@@ -208,6 +225,7 @@ class FFEA_pdb:
 				# Read ATOM positions like a boss
 				for j in range(self.chain[c].num_atoms):
 					line = fin.readline()
+					#print line
 					frame.pos[j][0] = float(line[30:38])
 					frame.pos[j][1] = float(line[38:46])
 					frame.pos[j][2] = float(line[46:54])
