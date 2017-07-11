@@ -3999,7 +3999,7 @@ void World::write_measurements_to_file(FILE *fout, int step) {
     }
     fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
     fprintf(fout, "%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length);
-    fprintf(fout, "%-14.6e ", rmsd * mesoDimensions::length);
+    fprintf(fout, "%-14.6e", rmsd * mesoDimensions::length);
     if(params.calc_springs != 0) {
         fprintf(fout, "%-14.6e", springenergy * mesoDimensions::Energy);
     }

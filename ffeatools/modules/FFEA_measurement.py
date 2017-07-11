@@ -115,12 +115,14 @@ class FFEA_measurement:
 		else:
 			self.simtype = "Full"
 
-		line = fin.readline().strip()
-		while(line != "Measurements:"):
+		line = fin.readline()
+		line = fin.readline()
+		while(line.strip() != "Measurements:"):
 			if "num_blobs" in line:
 				self.num_blobs = int(line.split("=")[1])
 
-			line = fin.readline().strip()
+			self.param_string += line
+			line = fin.readline()
 
 		# Build a dictionary of possible variables and a map to those
 		self.global_meas = {'Time': None, 'KineticEnergy': None, 'StrainEnergy': None, 'SpringEnergy': None, 'VdWEnergy': None, 'PreCompEnergy': None, 'Centroid.x': None, 'Centroid.y': None, 'Centroid.z': None, 'Centroid': None, 'RMSD': None}
@@ -190,7 +192,7 @@ class FFEA_measurement:
 		sline = line.split("|")[1:]
 		localsline = sline[:self.num_blobs]
 		globalsline = sline[self.num_blobs:]
-		
+
 		# Build dictionaries ans maps to variables
 		
 		# Local to blobs first
@@ -218,7 +220,6 @@ class FFEA_measurement:
 			ssline = globalsline[i].split()
 			indexpair = [int(j) for j in ssline[0][1:].split("B")]
 			ssline = ssline[1:]
-			
 			for title in ssline:
 				iindexmap.append(indexpair)
 				imeasmap.append(title.strip())
@@ -306,28 +307,33 @@ class FFEA_measurement:
 		
 		fout = open(globalfname, "w")
 		fout.write("FFEA Global Measurement File\n\nSimulation Details:\n")
-		fout.write("Simulation Began on %d/%d/%d at %d:%d:%d\n" % (self.date[0],self.date[1], self.date[2], self.time[0], self.time[1], self.time[2]))
-		fout.write("Script Filename = %s\n" % (self.script_fname))
-		fout.write("Simulation Type = %s\n\n" % (self.simtype))
+		fout.write("\tSimulation Began on %d/%d/%d at %d:%d:%d\n" % (self.date[0],self.date[1], self.date[2], self.time[0], self.time[1], self.time[2]))
+		fout.write("\tScript Filename = %s\n" % (self.script_fname))
+		fout.write("\tSimulation Type = %s\n\n" % (self.simtype))
 
 		# Params, maybe		
-		if script != None:
-			script.params.write_to_file(fout, self.script_fname)
-
+		#if script != None:
+		#	script.params.write_to_file(fout, self.script_fname)
+		fout.write(self.param_string)
+			
+		#
 		# Measurements
+		#
+
+		# These params are written in the same order as they are written out in the main code. They don't have to be for this module to work, but consistency is nice
 		keys_to_write = ["Time"]
 		if self.global_meas["KineticEnergy"] != None:
 			keys_to_write.append("KineticEnergy")
 		keys_to_write.append("StrainEnergy")
+		keys_to_write.append("Centroid")
+		keys_to_write.append("RMSD")
 		if self.global_meas["SpringEnergy"] != None:
 			keys_to_write.append("SpringEnergy")
 		if self.global_meas["VdWEnergy"] != None:
 			keys_to_write.append("VdWEnergy")
 		if self.global_meas["PreCompEnergy"] != None:
 			keys_to_write.append("PreCompEnergy")
-		keys_to_write.append("Centroid")
-		keys_to_write.append("RMSD")
-		fout.write("\nMeasurements:\n")
+		fout.write("Measurements:\n")
 		for key in keys_to_write:
 			if key == "Centroid":
 				fout.write("%-14s%-14s%-14s" % ("Centroid.x", "Centroid.y", "Centroid.z"))
@@ -409,7 +415,7 @@ class FFEA_measurement:
 				for j in range(self.num_blobs):
 					for k in range(j, self.num_blobs):
 						if do_interblob[j][k]:
-							fout.write("      ")
+							fout.write("       ")
 							for key in pair_keys_to_write[j][k]:
 								fout.write("%-14.6e" % (self.interblob_meas[j][k][key][i]))
 				fout.write("\n")
@@ -422,6 +428,7 @@ class FFEA_measurement:
 		self.date = None
 		self.time = None
 		self.script_fname = ""
+		self.param_string = ""	# Use this in future perhaps? Just store for now
 		self.num_blobs = 0
 		self.num_frames = 0
 		self.global_meas = None
