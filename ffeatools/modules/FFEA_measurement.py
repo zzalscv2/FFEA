@@ -90,33 +90,15 @@ class FFEA_measurement:
 			raise
 		
 		# Details first
-		line = fin.readline().strip()
-		while(line != "Simulation Details:"):	
-			line = fin.readline().strip()
-
-		# Sim time
-		line = fin.readline().split()
-		self.date = [int(i) for i in line[3].split("/")]
-		self.time = [int(i) for i in line[5].split(":")]
-
-		# Script fname
-		line = fin.readline().strip()
-		line = line.split("=")
-		if len(line) != 1:
-			self.script_fname = line[1].strip()
-		else:
-			self.script_fname = ""
-
-		# Sim type
-		line = fin.readline().strip()
-		line = line.split("=")
-		if len(line) != 1:
-			self.simtype = line[1].strip()
-		else:
-			self.simtype = "Full"
-
 		line = fin.readline()
-		line = fin.readline()
+		while(line.strip() != "Simulation Details:"):	
+			line = fin.readline()
+
+		while(line.strip() != "Parameters:"):
+			self.detail_string += line
+			line = fin.readline()
+
+		# Now params
 		while(line.strip() != "Measurements:"):
 			if "num_blobs" in line:
 				self.num_blobs = int(line.split("=")[1])
@@ -307,9 +289,11 @@ class FFEA_measurement:
 		
 		fout = open(globalfname, "w")
 		fout.write("FFEA Global Measurement File\n\nSimulation Details:\n")
-		fout.write("\tSimulation Began on %d/%d/%d at %d:%d:%d\n" % (self.date[0],self.date[1], self.date[2], self.time[0], self.time[1], self.time[2]))
-		fout.write("\tScript Filename = %s\n" % (self.script_fname))
-		fout.write("\tSimulation Type = %s\n\n" % (self.simtype))
+		#fout.write("\tSimulation Began on %d/%d/%d at %d:%d:%d\n" % (self.date[0],self.date[1], self.date[2], self.time[0], self.time[1], self.time[2]))
+		#fout.write("\tScript Filename = %s\n" % (self.script_fname))
+		#fout.write("\tSimulation Type = %s\n\n" % (self.simtype))
+		fout.write(self.detail_string)
+		fout.write("Parameters:\n")
 
 		# Params, maybe		
 		#if script != None:
@@ -425,9 +409,7 @@ class FFEA_measurement:
 	def reset(self):
 		self.valid = False
 		self.empty = True
-		self.date = None
-		self.time = None
-		self.script_fname = ""
+		self.detail_string = ""
 		self.param_string = ""	# Use this in future perhaps? Just store for now
 		self.num_blobs = 0
 		self.num_frames = 0
