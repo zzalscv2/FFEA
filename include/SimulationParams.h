@@ -57,14 +57,14 @@ using namespace std;
 namespace b_fs = boost::filesystem;
 
 /**
- * @detail 
+ * @detail
  * vector<string> types: types of beads present. \n
  * string folder: folder containing the tables. It can be either absolute or relative.\n
  * int inputData: 1 means read .force and .pot files,
  *                 while 2 means read .pot and calculate the forces \n
  */
 struct PreComp_params {
-  vector<string> types; ///< types of beads present 
+  vector<string> types; ///< types of beads present
   string folder; ///< folder containing the tables. It can be either absolute or relative to the folder containing the ffea input file .
   int inputData; ///< 1 means read .force and .pot files, while 2 means read .pot and calculate the forces
   scalar dist_to_m;
@@ -130,7 +130,7 @@ public:
     scalar stokes_visc;
 
     scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
-    scalar vdw_cutoff; ///< Cutoff distance for the VdW interactions. 
+    scalar vdw_cutoff; ///< Cutoff distance for the VdW interactions.
     geoscalar vdw_steric_dr; ///< used to calculate the numerical derivative.
 
     string FFEA_script_filename;
@@ -174,12 +174,10 @@ public:
 
     /** These set parameters are not private because the World needs them!! */
     int kinetics_out_fname_set;
-    int trajbeads_fname_set; 
+    int trajbeads_fname_set;
 
     /** Writes all params to fout (either a file or stdout) for user's info */
     void write_to_file(FILE *fout, PreComp_params &pc_params);
-
-    int check_ratio;
 
     int check_ratio;
 
