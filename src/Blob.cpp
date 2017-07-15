@@ -1511,6 +1511,7 @@ void Blob::calc_and_write_mini_meas_to_file(FILE *fout) {
     for(i=0;i<6;i++){
             F_ij_store[i]=0;
     }
+    matrix3 J;
 	matrix3 F_ij_calc;
 
 	scalar cogx = 0.0, cogy = 0.0, cogz = 0.0;
@@ -1680,7 +1681,7 @@ tetra_element_linear *Blob::get_element(int i) {
  **/
 void Blob::get_bead_position(int i, arr3 &v) {
 
-    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v); 
+    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v);
 }
 
 /**
