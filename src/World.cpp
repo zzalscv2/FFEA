@@ -148,7 +148,7 @@ World::~World() {
     mini_meas_out = NULL;
 
 
-    delete vdw_solver; 
+    delete vdw_solver;
     vdw_solver = NULL;
 
     delete ffeareader;
@@ -537,7 +537,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             write_output_header(measurement_out, FFEA_script_filename);
 
             // Write params to this output file
-            params.write_to_file(measurement_out);
+            params.write_to_file(measurement_out,pc_params);
 
             // Get ready to write the measurements (this is the order things must be written later. There will be no floating zeroes!)
             fprintf(measurement_out, "Measurements:\n");
