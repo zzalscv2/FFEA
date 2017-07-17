@@ -57,11 +57,11 @@ int main(int argc, char *argv[])
     cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
     //cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
     // cout << " Version:\tSuper Saiyan " << FFEA_MASCOT << " " << FFEA_VERSION << "(Version " << FFEA_VERSION << ")" << endl;
-    cout << "  Coding:\tAlbert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk),\n" << endl;
-    cout << "  Theory:\tOliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou\n" << endl;
+    cout << "\tCoding:   Albert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk),\n" << endl;
+    cout << "\tTheory:   Oliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou\n" << endl;
 
-    print_ffea_version();
-    print_ffea_compilation_details();
+    print_ffea_version(stdout);
+    print_ffea_compilation_details(stdout);
 
     // Get some arguments using boost
     b_po::options_description desc("Allowed options");
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
     b_fs::path canonicalPath = b_fs::canonical(fs_script_fname.parent_path());
     fs_script_fname = canonicalPath / fs_script_fname.filename();
     script_fname = fs_script_fname.string();
-    cout << "Input FFEA script - " << script_fname << "\n";
+    cout << "\tInput FFEA script - " << script_fname << "\n\n";
 
     //The system of all proteins, electrostatics and water
     World *world;

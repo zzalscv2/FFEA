@@ -715,52 +715,72 @@ class Blob:
 		#
 		#  Numbers       (again, can't always do elements)
 		#
-
 		if display_flags['show_numbers'] != "No Indices":
+			ndx_name = display_flags['system_name'] + "_" + str(self.idnum)
+			psa_name = "CA"
+			psa_b = 20
+			text = ""
+			if display_flags['show_numbers'] == 'Node Indices':
+				ndx_name += "_nI"
+				#if (self.node.num_nodes > 10000):
+				#	print "Use (ATOM number -1) instead of (RESI) to identify the node"
+				for n in range(self.node.num_nodes):
+					if n == 10000: 
+						print "Cannot load more than 10000 Supportive Fake Atoms"
+						break
+					pos = (self.frames[i].pos[n].tolist())[0:3]
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+					#if n > 10000 - use ATOM -1 ? 
+					#	text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", 9999, pos[0], pos[1], pos[2]))
 
-			# Only first frame
-			if frameLabel == 1:
-					
-				axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
-				#scale = 0.1	 # * self.scale * self.global_scale	# Maybe change me in the future to some clever function to do with the global scale? Or get rid of global scale...
-                         # No, the clever function should be a function of the shortest edge.
-			 # Oh yeah right, I concur
-				if display_flags['show_numbers'] == 'Node Indices':
-					for n in range(self.node.num_nodes):
-						nn = copy.copy(self.frames[i].pos[n][0:3])
-						cyl_text(numtxt,plain,nn,str(n), scale, axes=axes)
-				
-				elif display_flags['show_numbers'] == 'Node Indices (Linear)':
-					if len(self.linear_node_list) == 0: 
-						if frameLabel == 1:
-							print "Linear node indices cannot be loaded onto blob ", self.idnum, " as no topology was loaded."
-							if  self.motion_state != "DYNAMIC":
-								print "Try editing the FFEA script, and changing motion state to DYNAMIC"
 
-					else:
-						for n in self.linear_node_list:
-							nn = copy.copy(self.frames[i].pos[n][0:3])
-							cyl_text(numtxt,plain,nn,str(n), scale, axes = axes)
+			elif display_flags['show_numbers'] == 'Node Indices (Linear)':
+				if len(self.linear_node_list) == 0: 
+					if frameLabel == 1:
+						print "Atoms cannot be loaded onto blob ", self.idnum, " as no topology was loaded."
+						if  self.motion_state != "DYNAMIC":
+							print "Try editing the FFEA script, and changing motion state to DYNAMIC"
 
-				elif display_flags['show_numbers'] == "Element Indicies":
+				else:
+					ndx_name += "_lnI"
+					for n in self.linear_node_list:
+						nn = (self.frames[i].pos[n])[0:3]
+						if n == 10000: 
+							print "Cannot load more than 10000 Supportive Fake Atoms"
+							break
+						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, nn[0], nn[1], nn[2]))
+	
+
+			elif display_flags['show_numbers'] == "Face Indices":
+				ndx_name += "_fI"
+				for f in range(self.surf.num_faces):
+					fn = self.surf.face[f].calc_centroid(self.frames[i])
+					if f == 10000: 
+						print "Cannot load more than 10000 Supportive Fake Atoms"
+						break
+					text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (f, psa_name, "FEA", "A", f, fn[0], fn[1], fn[2]))
+
+
+			
+			elif display_flags['show_numbers'] == "Element Indices":
+				ndx_name += "_eI"
+				# Catch elements (but don't mislead i.e. no numbers
+				if self.top == None:
+					print "No topology! Can't add atoms on elements for Blob ", self.bindex
+				else:
+					for e in range(self.top.num_elements):
+						en = self.top.element[e].calc_centroid(self.frames[i])
+						if e == 10000: 
+							print "Cannot load more than 10000 Supportive Fake Atoms"
+							break
+						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e, psa_name, "FEA", "A", e, en[0], en[1], en[2]))
 						
-					# Catch elements (but don't mislead i.e. no numbers
-					if self.top == None:
-						print "No topology! Can't show element numbers for Blob ", self.bindex
-					else:
-						for e in range(self.top.num_elements):
-							en = self.top.element[e].calc_centroid(self.frames[i])
-							cyl_text(numtxt, plain, en, str(e), scale, axes=axes)
-						
-				elif display_flags['show_numbers'] == "Face Indices":
-					for f in range(self.surf.num_faces):
-						fn = self.surf.face[f].calc_centroid(self.frames[i])
-						cyl_text(numtxt, plain, fn, str(f), scale, axes=axes)
-				
-				# Only create object if something exists to draw (some of these above routines do nothing
-				if len(numtxt) != 0:
-					cmd.load_cgo(numtxt, display_flags['system_name'] + "_" + str(self.idnum) + "_numbers", frameLabel)               
-
+			# in any case:
+ 			if len(text) > 0: 
+ 				cmd.read_pdbstr(text, ndx_name, frameLabel)
+				cmd.hide("everything", ndx_name)
+				cmd.label(ndx_name,"resi")
+	
 
 		#
 		#  Pinned Nodes (if no pinned nodes file specified, 'break')

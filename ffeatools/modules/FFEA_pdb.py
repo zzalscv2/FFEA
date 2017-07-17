@@ -33,8 +33,9 @@ class FFEA_pdb:
 	
 		self.reset()
 
-		# Empty fname give an empty object
 		if fname == "":
+			self.valid = True
+			sys.stdout.write("Empty pdb object initialised.\n")
 			return
 
 		try:
@@ -63,15 +64,17 @@ class FFEA_pdb:
 
 		# File format?
 		base, ext = os.path.splitext(fname)
-		if (ext == ".pdb"):
-			try:
+		try:
+			if (ext == ".pdb"):
 				self.load_pdb(fname, num_frames_to_read = num_frames)
-			except:
-				raise	
-		else:
-			raise FFEAIOError(fname=fname, fext=[".pdb"]) 
+			else:
+				raise FFEAIOError(fname=fname, fext=[".pdb"])
+
+		except:
+			raise
 		
 		self.valid = True
+		self.empty = False
 		sys.stdout.write("...done!\n")
 
 	def load_pdb(self, fname, num_frames_to_read = 100000):
@@ -80,7 +83,7 @@ class FFEA_pdb:
 		try:
 			fin = open(fname, "r")
 		except(IOError):
-			raise IOError("File '" + fname + "' not found.")
+			raise IOError
 
 		#
 		# Try to make robust against dodgy formating by the user
@@ -122,8 +125,25 @@ class FFEA_pdb:
 
 				num_atoms[-1] += 1
 
+			elif line[0:3] == "TER":
+
+				# See if next line gives a new chain. If not, register a new chain
+				check_pos = fin.tell()
+				line = fin.readline()
+				
+				## Any failure to read next line constitues the end of the frame
+				try:
+					if line[21] == cID:
+						num_chains += 1
+						num_atoms.append(0)
+				except:
+					break
+
+				fin.seek(check_pos)
+
 			elif line[0:3] == "END" or line.strip() == "":
 				break
+
 		sys.stdout.write("\tdone!\n")
 
 		#
@@ -136,7 +156,7 @@ class FFEA_pdb:
 		self.num_chains = num_chains
 		self.num_atoms = num_atoms
 		self.chain = [FFEA_pdb_chain(num_atoms = num_atoms[i]) for i in range(num_chains)]
-		
+
 		# Read atom structures
 		for c in range(self.num_chains):
 			
@@ -175,7 +195,7 @@ class FFEA_pdb:
 					fin.seek(-len(line), 1)
 					break
 
-				if line[0:3] == "END" or line.strip() == "":
+				if (line[0:3] == "END" and len(line) == 3) or line.strip() == "":
 					completed = True
 					break
 			
@@ -205,6 +225,7 @@ class FFEA_pdb:
 				# Read ATOM positions like a boss
 				for j in range(self.chain[c].num_atoms):
 					line = fin.readline()
+					#print line
 					frame.pos[j][0] = float(line[30:38])
 					frame.pos[j][1] = float(line[38:46])
 					frame.pos[j][2] = float(line[46:54])
@@ -215,14 +236,14 @@ class FFEA_pdb:
 
 			# Check finish condition
 			if self.num_frames == num_frames_to_read:
-				completed == True
+				completed = True
 
 		# Finish
 		sys.stdout.write("\r\t\tFrames Read %d" % (self.num_frames))
 		sys.stdout.write("\n\n\t...done! Read %d frames from file.\n" % (self.num_frames))
 		fin.close()
 
-	def write_to_file(self, fname):
+	def write_to_file(self, fname, frames = None, frame_rate = 1):
 
 		print("Writing to " + fname + "...")
 
@@ -236,10 +257,13 @@ class FFEA_pdb:
 		try:
 			fout = open(fname, "w")
 		except(IOError):
-			"Cannot open " + fname + " for writing."
-			raise
+			raise IOError
 		
-		for i in range(self.num_frames):
+		# Write frames
+		if frames == None:
+			frames = [0,self.num_frames]
+
+		for i in range(frames[0], frames[1], frame_rate):
 			sys.stdout.write("\r\r%d frames written (%d%%)" % (i, (i * 100) / self.num_frames))
 			sys.stdout.flush()
 			fout.write("MODEL     %4d\n" % (i + 1))
@@ -252,11 +276,11 @@ class FFEA_pdb:
 				fout.write("TER\n")
 			fout.write("ENDMDL\n")
 		fout.write("END\n")
-		sys.stdout.write("\r\r100%% of frames written\n")
+		sys.stdout.write("\r\r100% of frames written    \n")
 		print("...done")
 		fout.close()
 	
-	def build_from_traj(self, traj, scale = 1.0):
+	def build_from_traj(self, traj, scale = 1e10):
 
 		# Reset	
 		self.reset()
@@ -297,6 +321,7 @@ class FFEA_pdb:
 
 		self.num_frames = traj.num_frames
 		self.valid = True
+		self.empty = False
 
 	def clear_position_data(self):
 		
@@ -338,6 +363,7 @@ class FFEA_pdb:
 	def reset(self):
 
 		self.valid = False
+		self.empty = True
 		self.num_frames = 0
 		self.num_chains = 0
 		self.num_atoms = []
