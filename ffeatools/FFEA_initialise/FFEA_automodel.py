@@ -181,7 +181,7 @@ def check_danger_elements(vol):
     eindex = 0
     dindex = []
     for e in top.element:
-        if e.get_smallest_lengthscale(node) < 0.5 #assuming .vol in nm:
+        if e.get_smallest_lengthscale(node) < 0.5: #assuming .vol in nm
             print e.get_smallest_lengthscale(node)
             dindex.append(eindex)
         eindex += 1

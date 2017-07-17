@@ -38,25 +38,11 @@
 #include "FFEA_user_info.h"
 #include "mat_vec_types.h"
 #include "LinkedListCube.h"
+#include "SimulationParams.h"
 
 // WARNING: Blob.h will be included after defining PreComp_params! 
 
 using namespace std;
-/**
- * @detail 
- * vector<string> types: types of beads present. \n
- * string folder: folder containing the tables. It can be either absolute or relative.\n
- * int inputData: 1 means read .force and .pot files,
- *                 while 2 means read .pot and calculate the forces \n
- */
-struct PreComp_params {
-  vector<string> types; ///< types of beads present 
-  string folder; ///< folder containing the tables. It can be either absolute or relative to the folder containing the ffea input file .
-  int inputData; ///< 1 means read .force and .pot files, while 2 means read .pot and calculate the forces
-  scalar dist_to_m;
-  scalar E_to_J;
-};
-
 
 #include "Blob.h"
 

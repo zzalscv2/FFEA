@@ -536,7 +536,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             write_output_header(measurement_out, FFEA_script_filename);
 
             // Write params to this output file
-            params.write_to_file(measurement_out);
+            params.write_to_file(measurement_out, pc_params);
+
 
             // Get ready to write the measurements (this is the order things must be written later. There will be no floating zeroes!)
             fprintf(measurement_out, "Measurements:\n");
@@ -2153,22 +2154,7 @@ int World::change_kinetic_state(int blob_index, int target_state) {
  */
 int World::read_and_build_system(vector<string> script_vector) {
 
-    // Create some blobs based on params
-    cout << "\tCreating blob array..." << endl;
-    blob_array = new Blob*[params.num_blobs];
-    active_blob_array = new Blob*[params.num_blobs];
-
-#ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none) schedule(static) // shared(blob_array, active_blob_array)
-#endif
-    for (int i = 0; i < params.num_blobs; ++i) {
-        blob_array[i] = new Blob[params.num_conformations[i]];
-        active_blob_array[i] = &blob_array[i][0];
-    }
-
-    //creates blob correction array if specified in input file
-    if (params.force_pbc ==1) blob_corr = new scalar[params.num_blobs*params.num_blobs*3];
-
+    // READ and parse more
     // Reading variables
     systemreader = new FFEA_input_reader();
     int i, j;
@@ -2186,6 +2172,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
     vector<Blob_conf> blob_conf;
 
+    // Read the INTERACTIONS block: 
     // Get interactions vector first, for later use
     if ((params.calc_preComp == 1) or (params.calc_springs == 1) or (params.calc_ctforces == 1)) {
         if (systemreader->extract_block("interactions", 0, script_vector, &interactions_vector) == FFEA_ERROR) return FFEA_ERROR;
@@ -2245,6 +2232,40 @@ int World::read_and_build_system(vector<string> script_vector) {
             FFEA_ERROR_MESSG("ctforces_fname: %s could not be open\n", params.ctforces_fname.c_str());
         }
     }
+
+    if (params.calc_springs == 1) {
+        if (systemreader->extract_block("springs", 0, interactions_vector, &spring_vector) == FFEA_ERROR) return FFEA_ERROR;
+
+        if (spring_vector.size() > 1) {
+            FFEA_error_text();
+            cout << "'Spring' block should only have 1 file." << endl;
+            return FFEA_ERROR;
+        } else if (spring_vector.size() == 1) {
+            systemreader->parse_tag(spring_vector.at(0), lrvalue);
+            b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
+            params.springs_fname = auxpath.string(); 
+        } 
+    }
+
+    params.write_to_file(stdout, pc_params); 
+
+
+    // DONE
+    // Create some blobs based on params
+    cout << "\tCreating blob array..." << endl;
+    blob_array = new Blob*[params.num_blobs];
+    active_blob_array = new Blob*[params.num_blobs];
+
+#ifdef FFEA_PARALLEL_PER_BLOB
+    #pragma omp parallel for default(none) schedule(static) // shared(blob_array, active_blob_array)
+#endif
+    for (int i = 0; i < params.num_blobs; ++i) {
+        blob_array[i] = new Blob[params.num_conformations[i]];
+        active_blob_array[i] = &blob_array[i][0];
+    }
+
+    //creates blob correction array if specified in input file
+    if (params.force_pbc ==1) blob_corr = new scalar[params.num_blobs*params.num_blobs*3];
 
 
 
@@ -2691,17 +2712,9 @@ int World::read_and_build_system(vector<string> script_vector) {
 
 /// /// 
     // Finally, get springs
-    if (params.calc_springs == 1)
-        if (systemreader->extract_block("springs", 0, interactions_vector, &spring_vector) == FFEA_ERROR) return FFEA_ERROR;
-
-    if (spring_vector.size() > 1) {
-        FFEA_error_text();
-        cout << "'Spring' block should only have 1 file." << endl;
-        return FFEA_ERROR;
-    } else if (spring_vector.size() == 1) {
-        systemreader->parse_tag(spring_vector.at(0), lrvalue);
-        b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
-        if(load_springs(auxpath.string().c_str()) != 0) {
+    if (params.calc_springs == 1) {
+        if(load_springs(params.springs_fname.c_str()) != 0) {
+            //if(load_springs(auxpath.string().c_str()) != 0) {
             //if(load_springs(lrvalue[1].c_str()) != 0) {
             FFEA_error_text();
             cout << "Problem loading springs from " << lrvalue[1] << "." << endl;
@@ -3734,6 +3747,10 @@ void World::write_output_header(FILE *fout, string fname) {
 
     // Write all header data. script fname, time and date etc
     fprintf(fout, "FFEA Global Measurement File\n\nSimulation Details:\n");
+
+    print_ffea_version(measurement_out); 
+    print_ffea_compilation_details(measurement_out); 
+
     time_t now = time(0);
     tm *ltm = localtime(&now);
     fprintf(fout, "\tSimulation Began on %d/%d/%d at %d:%d:%d\n", ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
@@ -3982,7 +3999,7 @@ void World::write_measurements_to_file(FILE *fout, int step) {
     }
     fprintf(fout, "%-14.6e", strainenergy * mesoDimensions::Energy);
     fprintf(fout, "%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length);
-    fprintf(fout, "%-14.6e ", rmsd * mesoDimensions::length);
+    fprintf(fout, "%-14.6e", rmsd * mesoDimensions::length);
     if(params.calc_springs != 0) {
         fprintf(fout, "%-14.6e", springenergy * mesoDimensions::Energy);
     }

@@ -29,7 +29,7 @@ import __builtin__
 import argparse as _argparse
 
 # Set up argparse
-parser = _argparse.ArgumentParser(description="Activate the vdw faces based on distance from a predefined face)")
+parser = _argparse.ArgumentParser(description="Activate the vdw faces based on distance from a predefined face")
 parser.add_argument("-i", action="store", nargs=1, help="Input VdW file (.vdw).")
 parser.add_argument("-n", action="store", nargs=1, help="Input Node file (.node).")
 parser.add_argument("-s", action="store", nargs=1, help="Input Surf file (.surf).")
@@ -74,4 +74,4 @@ if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
         parser.print_help()
     except TypeError:
         parser.print_help()
-	raise IOError("Likely missing argument. Please try again :)")
+	print("Likely missing argument. Please try again :)")

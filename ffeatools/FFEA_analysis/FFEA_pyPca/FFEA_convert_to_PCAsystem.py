@@ -22,83 +22,100 @@
 #
 
 import sys, os
-import FFEA_trajectory, FFEA_pdb
+import FFEA_script, FFEA_trajectory, FFEA_pdb
+import __builtin__
 
-if len(sys.argv) < 6:
-	sys.exit("Usage: python " + sys.argv[0] + " -traj [FFEA trajectory (.ftj)] -out [Output fname] -format[mdcrd/pdb] -blob [blob_number (optional)] -frames [num_frames (optional)]")
+import argparse as _argparse
 
-# Get arguments
-scriptdir = os.path.dirname(os.path.abspath(sys.argv[0])) + "/"
-traj_fname_set = 0
-out_fname_set = 0
-format_set = 0
-blob_num = -1
-num_frames = 100000
-for i in range(1, len(sys.argv), 2):
-	if sys.argv[i].strip() == "-traj":
-		traj_fname = os.path.abspath(sys.argv[i + 1])
-		traj_fname_set = 1
-		print("traj_fname = " + traj_fname)
-	elif sys.argv[i].strip() == "-out":
-		out_fname = os.path.abspath(sys.argv[i + 1])
-		out_fname_set = 1
-		print("out_fname = " + out_fname)
-	elif sys.argv[i].strip() == "-format":
-		format = sys.argv[i + 1]
-		if format != "pdb" and format != "mdcrd":
-			sys.exit("Error. Unexpected format '" + format + "'\nAccepted formats:\nmdcrd\npdb\n")
-		format_set = 1
-		print("format = " + format)
-	elif sys.argv[i].strip() == "-blob":
-		blob_num = int(sys.argv[i + 1])
-		print("blob_num = " + str(blob_num))
-	elif sys.argv[i].strip() == "-frames":
-		num_frames = int(sys.argv[i + 1])
-		print("num_frames = " + str(num_frames))
-	else:
-		sys.exit("Error. Unexpected argument '" + sys.argv[i] + "'\n")
+# Set up argparse
+parser = _argparse.ArgumentParser(description="Convert an FFEA trajectory to a pseudo-pdb system for PCA analysis")
+parser.add_argument("i", help="Input file (.ffea / .ftj)")
+parser.add_argument("-o", action="store", nargs='?', help="Output file (.pdb).")
+parser.add_argument("-ind", action="store", nargs='?', default = '0', help="Blob index")
+parser.add_argument("-frames", action="store", nargs='?', default = None, help="Number of frames to read")
 
+def FFEA_convert_to_PCAsystem(infile, outfile, frames, bindex):
 
-scale = 1e-10
-if traj_fname_set == 0 or out_fname_set == 0 or format_set == 0:
-	sys.exit("Error. '-traj', '-out' and 'format' must all be set.\n")
+	# Check for problems
+	base, ext = os.path.splitext(infile)
 
-if len(out_fname.split(".")) == 2:
-	out_basename = os.path.splitext(out_fname)[0]
-else:
-	out_basename = out_fname
+	if outfile == None:
+		outfile = base + "_PCAready.pdb"
+		if os.path.exists(outfile):
+			print("Default output file '" + outfile + "' already exists.\n")
+			raise IOError
 
-final_traj_fname = traj_fname
-traj = FFEA_trajectory.FFEA_trajectory(final_traj_fname, num_frames_to_read = num_frames)
+	# Get an input file
+	try:
+		if ext == ".ffea":
+			script = FFEA_script.FFEA_script(infile)
+			if frames == None:
+				traj = script.load_trajectory()
+			else:
+				traj = script.load_trajectory(int(frames))
 
-# Remove all trajectory except for blob in question, if required
-if blob_num != -1:
-	traj.set_single_blob(blob_num)
+		elif ext == ".ftj":
+			if frames == None:
+				traj = FFEA_trajectory.FFEA_trajectory(infile)
+			else:
+				traj = FFEA_trajectory.FFEA_trajectory(infile, num_frames_to_read = int(frames))
+	except:
+		print("Could not read from input file.")
+		raise IOError
+	
+	# Make traj into a single blob traj
+	while(True):
+		try:
+			if traj.blob[int(bindex)][0].motion_state != "DYNAMIC":
+				print("Selected a STATIC blob. Unable to process.")
+				raise IndexError
 
-# Extract first frame from trajectory
-first_frame_fname = out_basename + "_frame0.ftj"
-traj.write_to_file(first_frame_fname, frames=[0,1])
+			traj.set_single_blob(int(bindex))
+			break
 
-# Convert first frame to a pseudo .pdb file
-first_frame_fname_pdb = first_frame_fname.split(".")[0] + ".pdb"
+		except(IndexError):
+			print("\nIncorrect blob index chosen.")
+			try:
+				bindex = input("Please enter a new blob index (less than " + str(traj.num_blobs) + "):")
+			except:
+				print("Could not read blob index")
+				raise IndexError
 
-os.system("python " + scriptdir + "../../FFEA_analysis/FFEA_traj_tools/FFEA_convert_traj_to_pdb.py " + first_frame_fname + " " + first_frame_fname_pdb + " " + str(num_frames) + " " + str(scale))
-
-# Convert entire trajectory to a pdb trajectory
-if format == "mdcrd":
-	final_traj_fname_pdb = out_basename + ".mdcrd"
-	os.system(scriptdir + "../../FFEA_analysis/FFEA_pyPca/FFEA_convert_traj_to_mdcrd " + final_traj_fname + " " + final_traj_fname_pdb + " " + str(num_frames) + " " + str(scale))
-elif format == "pdb":
-	final_traj_fname_pdb = out_basename + ".pdb"
+	# Make the thing into a pdb
 	pdb = FFEA_pdb.FFEA_pdb("")
-	pdb.build_from_traj(traj, scale = 1.0 / scale)
-	pdb.write_to_file(final_traj_fname_pdb)
+	pdb.build_from_traj(traj)
 
-# Tell the user what they have
-print("\nOrignal trajectory - " + traj_fname)
-if blob_num != -1:
-	print("NEW Single blob trajectory - " + final_traj_fname)
-print("NEW first frame trajectory - " + first_frame_fname)
-print("NEW first frame pdb (send to pcazip as topology)- " + first_frame_fname_pdb)
-print("NEW trajectory (send to pcazip as trajectory)- " + final_traj_fname_pdb)
-print("\n")
+	# Write first frame to a file (for a PCA topology file)
+	base, ext = os.path.splitext(outfile)
+	outfilef0 = base + "_frame0" + ext
+	pdb.write_to_file(outfilef0, frames = [0,1])
+
+	# Now write whole lot to a file
+	pdb.write_to_file(outfile)
+
+	base, ext = os.path.splitext(infile)
+	if ext == ".ffea":
+		print("\nScript Filename - " + infile)
+		print("Original Traj Filename - " + script.params.trajectory_out_fname)
+	else:
+		print("Original Traj Filename - " + infile)	
+
+	print("NEW first frame pdb (send to pcazip as topology)- " + outfilef0)
+	print("NEW pdb trajectory (send to pcazip as trajectory)- " + outfile)
+	print("\n")
+
+if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
+    try:
+	    args = parser.parse_args()
+    except:
+	somehelp = parser.format_help().split("\n", 1)[1]
+	print somehelp
+	sys.exit()
+
+    try:
+        FFEA_convert_to_PCAsystem(args.i, args.o, args.frames, args.ind)
+    except IOError:
+        parser.print_help()
+    except TypeError:
+        parser.print_help()
+	print("\nLikely missing argument. Please try again :)\n")
