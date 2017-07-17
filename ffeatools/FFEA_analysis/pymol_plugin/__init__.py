@@ -890,47 +890,33 @@ class FFEA_viewer_control_window:
 	# Calculate global centroid
 	world_centroid *= 1.0 / total_num_nodes	
 
-	# Build box object if necessary
-	if p.calc_vdw == 0:
-		self.box_exists = False
-		self.box = np.array([0.0,0.0,0.0])
-	else:
-		#try:
+	# Build the box:
+	# Do we need to calculate the size of the box? Double the rounded up size of the system
+	for i in range(3):
+		if p.es_N[i] < 1:
+			dims = self.get_system_dimensions(0)
+			for j in range(3):
+				p.es_N[j] = 2 * int(np.ceil(dims[j] / (self.global_scale*p.vdw_cutoff)))
+			break
 
-			# Do we need to calculate the box? Double the rounded up size of the system
-			for i in range(3):
-				if p.es_N[i] < 1:
-					dims = self.get_system_dimensions(0)
-					for j in range(3):
-						p.es_N[j] = 2 * int(np.ceil(dims[j] / (self.global_scale*p.vdw_cutoff)))
-					break
-
-			self.box_exists = True
-			self.box = p.vdw_cutoff * p.es_N
+	self.box = p.vdw_cutoff * p.es_N
+	self.box_exists = True
 	
-			# Does it exist? Realllllly?? If it's this small, it doesn't. OK?!!
-			for i in self.box:
-				if i <= 1e-10:
-					self.box_exists = False
-					break
-
-		#except:
-			#self.box_exists = False
-			#self.box = np.array([0.0,0.0,0.0])
-
 		
 	# Rescale box
 	self.box *= self.global_scale
 
 	# Shift all blobs to center of box if necessary
 	shift = 0.5 * self.box - world_centroid
-	if p.calc_vdw == 1 and p.move_into_box == 1:
+	# if p.calc_vdw == 1 and p.move_into_box == 1:
+	if p.move_into_box == 1:
 		for b in self.blob_list:
 			b[0].frames[0].translate(shift)
     		
 
 	# Now, apply PBC if necessary
-	if p.calc_vdw == 1 and self.display_flags['load_trajectory'] != "System (Plainly)":
+	# if p.calc_vdw == 1 and self.display_flags['load_trajectory'] != "System (Plainly)":
+	if self.display_flags['load_trajectory'] != "System (Plainly)":
 		for b in self.blob_list:
 			trans = np.array([0.0,0.0,0.0])
 			cent = b[0].frames[0].calc_centroid()
