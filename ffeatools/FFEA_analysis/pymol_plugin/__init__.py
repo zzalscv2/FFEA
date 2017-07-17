@@ -204,7 +204,7 @@ class FFEA_viewer_control_window:
      # # show Numbers:
      label_mesh= Label(display_flags_frame, text="Show Indices:")
      label_mesh.grid(row=4, column=0, sticky=E)
-     self.index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indicies", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
+     self.index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indices", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
      self.index_option.grid(row=4, column=1, sticky=W)
      
     
