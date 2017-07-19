@@ -79,6 +79,6 @@ if ffea_tools[action][-3:] == ".py":
 else:
   command = FFEA_TOOLS_PATH + ffea_tools[action] + " " + args
 
-print "ACTION = '" + action + "' => Using command '" + command + "'\n"
+print("ACTION = '" + action + "' => Using command '" + command + "'\n")
 
 os.system(command + "\n")
