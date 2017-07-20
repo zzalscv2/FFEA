@@ -30,7 +30,7 @@ import numpy as np
 import StringIO, tempfile
 import FFEA_node, FFEA_surface, FFEA_topology, FFEA_material
 import FFEA_stokes, FFEA_vdw, FFEA_pin, FFEA_binding_sites
-import FFEA_frame, FFEA_pdb
+import FFEA_frame, FFEA_pdb, FFEA_beads
 
 from pymol import cmd
 from pymol.cgo import *
@@ -130,8 +130,6 @@ class Blob:
 		except:
 			print("\nERROR: '" + c.vdw + "' could not be loaded.")
 			raise
-		if (len(c.beads)):
-			self.beads = FFEA_pdb.FFEA_pdb(c.beads)
 		
 		# Only necessary for dynamic blobs
 		if self.motion_state == "DYNAMIC":
@@ -158,6 +156,10 @@ class Blob:
 			except:
 				print("\nERROR: '" + c.pin + "' could not be loaded.")
 				raise
+
+		# beads for active blobs need to know of the elements. 
+		if (len(c.beads)):
+			self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.top, self.node)
 
 		# Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
 		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
@@ -418,7 +420,7 @@ class Blob:
             
 			aframe.set_pos(self.init_centroid)
 			#print aframe.calc_centroid(), self.init_centroid
-			self.beads.translate(self.init_centroid) # translate the beads too
+			self.beads.pdb.translate(self.init_centroid) # translate the beads too
 
 		if self.init_rotation != None:
 			print "=============================="
@@ -427,7 +429,7 @@ class Blob:
 			origin = aframe.calc_centroid() # store Blob's CM
 			aframe.rotate(self.init_rotation)
 			# self.beads.rotate_full_system(self.init_rotation, aframe.get_centroid(), 0) # rotate the beads too
-			self.beads.rotate_full_system(self.init_rotation, cent=origin, findex=0) # rotate the beads too
+			self.beads.pdb.rotate_full_system(self.init_rotation, cent=origin, findex=0) # rotate the beads too
 
 		# Now scale
 		aframe.scale(self.scale * self.global_scale)
@@ -816,12 +818,32 @@ class Blob:
 		#
 		if display_flags['show_beads'] == 1:
 			if frameLabel == 1: # only load it for the first frame
-				beads_name = display_flags['system_name'] + "_" + str(self.idnum) + "_beads"
-				text = self.beads.write_to_text()
+				# load the beads:
+				beads_name = display_flags['system_name'] + "_" + str(self.idnum) + "_b"
+				text = self.beads.pdb.write_to_text()
 				cmd.read_pdbstr(text, beads_name, frameLabel)
 				cmd.hide("everything", beads_name)
 				cmd.show("spheres", beads_name)
-				
+
+				be_name = display_flags['system_name'] + "_" + str(self.idnum) + "_b-be"
+				b_elem_name = display_flags['system_name'] + "_" + str(self.idnum) + "_be"
+				# load the affected elements and the connections:
+				obj = []
+				text = ""
+				for c in range(self.beads.pdb.num_chains):
+					for j, a in enumerate(self.beads.pdb.chain[c].atom):
+						e_ndx = self.beads.b_elems[c][j]
+						e = self.top.element[e_ndx].calc_centroid(self.frames[i])
+						b = self.beads.pdb.chain[c].frame[0].pos[j]
+						obj.extend( [ LINEWIDTH, 2.0 ] )
+						obj.extend( [ BEGIN, LINES, VERTEX, b[0], b[1], b[2], VERTEX, e[0], e[1], e[2], END ] )
+						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e_ndx, "CA", "FEA", "A", e_ndx, e[0], e[1], e[2]))
+
+				cmd.load_cgo(obj, be_name, frameLabel)
+				cmd.read_pdbstr(text, b_elem_name, frameLabel)
+				cmd.hide("everything", b_elem_name)
+				cmd.show("spheres", b_elem_name)
+
 
 		#
 		# Danger Elements! Elements that will probably invert because they have <5A lengths in them. Only draw on first frame (takes ages)

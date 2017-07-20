@@ -173,7 +173,7 @@ class FFEA_pdb:
 			for j in range(self.chain[c].num_atoms):
 				line = fin.readline()
 				self.chain[c].chainID = line[21]
-				self.chain[c].atom[j].set_structure(atomID=line[6:12], name=line[12:16], res=line[17:20], resID=line[22:26], occupancy=line[54:60], temperature=line[60:66], segID=line[72:76], element=line[76:78], charge=line[78:80].strip())
+				self.chain[c].atom[j].set_structure(atomID=line[6:12], name=line[12:16], res=line[17:20], resID=line[22:26], occupancy=line[54:60], temperature=line[60:66], segID=line[72:76], element=line[76:78], charge=line[78:80].strip(), ffea_comment=self.get_ffea_comment(line))
 
 		sys.stdout.write("\tdone!\n")
 
@@ -242,6 +242,19 @@ class FFEA_pdb:
 		sys.stdout.write("\r\t\tFrames Read %d" % (self.num_frames))
 		sys.stdout.write("\n\n\t...done! Read %d frames from file.\n" % (self.num_frames))
 		fin.close()
+
+	def get_ffea_comment(self, line):
+		t = line.split("<")
+		found_comment = False
+		if len(t) == 2:
+			t = t[1]
+			if t.count(">"):
+				t = t.split(">")[0]
+				found_comment = True
+		if found_comment:
+			return t
+		else:
+			return ""
 
 
 	def write_to_text(self, frames = None, frame_rate = 1):
@@ -483,7 +496,7 @@ class FFEA_pdb_atom:
 
 		self.reset()
 	
-	def set_structure(self, atomID=0, name="C", res="ARG", resID=0, occupancy=1.0, temperature=0.0, segID="A", element="C", charge="0"):
+	def set_structure(self, atomID=0, name="C", res="ARG", resID=0, occupancy=1.0, temperature=0.0, segID="A", element="C", charge="0", ffea_comment = ""):
 
 		self.atomID = int(atomID)
 		self.name = name
@@ -502,6 +515,8 @@ class FFEA_pdb_atom:
 		self.segID = segID
 		self.element = element
 		self.charge = charge
+
+		self.ffea_comment = ffea_comment
 		
 	def reset(self):
 
@@ -514,6 +529,7 @@ class FFEA_pdb_atom:
 		self.segID = "A"
 		self.element = "C"
 		self.charge = "0"
+		self.ffea_comment = ""
 
 class FFEA_pdb_frame:
 
