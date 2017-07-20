@@ -243,6 +243,29 @@ class FFEA_pdb:
 		sys.stdout.write("\n\n\t...done! Read %d frames from file.\n" % (self.num_frames))
 		fin.close()
 
+
+	def write_to_text(self, frames = None, frame_rate = 1):
+		# Write frames
+		if frames == None:
+			frames = [0,self.num_frames]
+
+		text = ""
+		for i in range(frames[0], frames[1], frame_rate):
+			#sys.stdout.write("\r\r%d frames written (%d%%)" % (i, (i * 100) / self.num_frames))
+			sys.stdout.flush()
+			text += ("MODEL     %4d\n" % (i + 1))
+			for j in range(self.num_chains):
+				for k in range(self.num_atoms[j]):
+					#print j, self.num_chains, len(self.chain), k, self.num_atoms[j], len(self.chain[j].atom)
+					a = self.chain[j].atom[k]
+					text += ("%6s%5d %4s %3s %c%4d    %8.3f%8.3f%8.3f%6.2f%6.2f      %4s%2s%2s\n" % ("ATOM  ", a.atomID, a.name, a.res, self.chain[j].chainID, a.resID, self.chain[j].frame[i].pos[k][0], self.chain[j].frame[i].pos[k][1], self.chain[j].frame[i].pos[k][2], a.occupancy, a.temperature, a.segID ,a.element, a.charge))
+
+				text += ("TER\n")
+			text+= ("ENDMDL\n")
+		text += ("END\n")
+		return text 
+
+
 	def write_to_file(self, fname, frames = None, frame_rate = 1):
 
 		print("Writing to " + fname + "...")
@@ -258,25 +281,12 @@ class FFEA_pdb:
 			fout = open(fname, "w")
 		except(IOError):
 			raise IOError
+
+		text = self.write_to_text(frames, frame_rate)
 		
-		# Write frames
-		if frames == None:
-			frames = [0,self.num_frames]
-
-		for i in range(frames[0], frames[1], frame_rate):
-			sys.stdout.write("\r\r%d frames written (%d%%)" % (i, (i * 100) / self.num_frames))
-			sys.stdout.flush()
-			fout.write("MODEL     %4d\n" % (i + 1))
-			for j in range(self.num_chains):
-				for k in range(self.num_atoms[j]):
-					#print j, self.num_chains, len(self.chain), k, self.num_atoms[j], len(self.chain[j].atom)
-					a = self.chain[j].atom[k]
-					fout.write("%6s%5d %4s %3s %c%4d    %8.3f%8.3f%8.3f%6.2f%6.2f      %4s%2s%2s\n" % ("ATOM  ", a.atomID, a.name, a.res, self.chain[j].chainID, a.resID, self.chain[j].frame[i].pos[k][0], self.chain[j].frame[i].pos[k][1], self.chain[j].frame[i].pos[k][2], a.occupancy, a.temperature, a.segID ,a.element, a.charge))
-
-				fout.write("TER\n")
-			fout.write("ENDMDL\n")
-		fout.write("END\n")
-		sys.stdout.write("\r\r100% of frames written    \n")
+		fout.write(text)
+		# sys.stdout.write("\r\r100% of frames written    \n")
+		sys.stdout.write("flushing...")
 		print("...done")
 		fout.close()
 	
@@ -347,8 +357,68 @@ class FFEA_pdb:
 					print("Could not translate, likely due to formatting error in the translation vector provided")
 					raise
 
-	def set_pos(self, pos, findex = 0):
+	def rotate_chains_individually(self, rot):
 
+		for i in range(self.num_chains):
+			for j in range(self.num_frames):
+				try:
+					self.chain[i].frame[j].rotate(rot)
+				except:
+					print("Could not translate, likely due to formatting error in the translation vector provided")
+					raise
+
+	# rotate the full system according to rot, around origin_trans (default CM),
+   #        but just frame findex (default 0)
+	def rotate_full_system(self, rot, cent = None, findex = 0):
+		# findex is which frame we move to pos
+		if findex >= self.num_frames:
+			print("Frame " + findex + " does not exist. Please specifiy a correct index")
+			raise IndexError
+		
+		if cent == None:
+			cent = np.array([0.0,0.0,0.0])
+			for i in range(self.num_chains):
+				cent += self.chain[i].frame[findex].calc_centroid() * self.num_atoms[i]
+			cent *= 1.0 / sum(self.num_atoms)
+
+		origin_trans = np.array([0.,0.,0.]) - cent
+		self.translate(origin_trans)
+
+		rot = np.array(rot)
+		if rot.size == 3:
+			# Rotate in x, then y, then z
+			c = np.cos
+			s = np.sin
+			x = np.radians(rot[0])
+			y = np.radians(rot[1])
+			z = np.radians(rot[2])
+			Rx = np.array([[1, 0, 0],[0,c(x),-s(x)],[0,s(x),c(x)]])
+			Ry = np.array([[c(y), 0, s(y)],[0,1,0],[-s(y),0,c(y)]])
+			Rz = np.array([[c(z),-s(z),0],[s(z),c(z),0], [0,0,1]])
+			
+			# x, y, z. Change if you want
+			R = np.dot(Rz, np.dot(Ry, Rx))
+
+		elif rot.size == 9:
+			R = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
+			for i in range(3):
+				for j in range(3):
+					R[i][j] = rot[3 * i + j]
+
+		else:
+			return
+
+		for i in range(self.num_chains):
+			for j in range(len(self.chain[i].frame[findex].pos)):
+				self.chain[i].frame[findex].pos[j] = np.dot(R, self.chain[i].frame[findex].pos[j])
+
+		# Translate back
+		self.translate(-1 * origin_trans)
+
+
+
+
+	def set_pos(self, pos, findex = 0):
 		# findex is which frame we move to pos
 		if findex >= self.num_frames:
 			print("Frame " + findex + " does not exist. Please specifiy a correct index")
@@ -467,6 +537,43 @@ class FFEA_pdb_frame:
 		except:
 			raise
 	
+	def rotate(self, rot):
+		# Translate to origin
+		origin_trans = np.array([0.0,0.0,0.0]) - self.calc_centroid()
+		self.translate(origin_trans)
+
+		rot = np.array(rot)
+		if rot.size == 3:
+			# Rotate in x, then y, then z
+			c = np.cos
+			s = np.sin
+			x = np.radians(rot[0])
+			y = np.radians(rot[1])
+			z = np.radians(rot[2])
+			Rx = np.array([[1, 0, 0],[0,c(x),-s(x)],[0,s(x),c(x)]])
+			Ry = np.array([[c(y), 0, s(y)],[0,1,0],[-s(y),0,c(y)]])
+			Rz = np.array([[c(z),-s(z),0],[s(z),c(z),0], [0,0,1]])
+			
+			# x, y, z. Change if you want
+			R = np.dot(Rz, np.dot(Ry, Rx))
+
+		elif rot.size == 9:
+			R = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]])
+			for i in range(3):
+				for j in range(3):
+					R[i][j] = rot[3 * i + j]
+
+		else:
+			return
+
+		for i in range(len(self.pos)):
+			self.pos[i] = np.dot(R, self.pos[i])
+
+		# Translate back
+		self.translate(-1 * origin_trans)
+
+
+
 	def set_step(self, step):
 		self.step = step
 

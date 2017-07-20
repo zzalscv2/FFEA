@@ -119,6 +119,7 @@ class FFEA_viewer_control_window:
      self.do_load_trajectory = StringVar(self.root, value=self.display_flags['load_trajectory'])
      self.show_box = StringVar(self.root, value=self.display_flags['show_box'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
+     self.show_beads = IntVar(self.root, value=self.display_flags['show_beads'])
      self.show_danger = IntVar(self.root, value=self.display_flags['show_danger'])
      self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
@@ -178,13 +179,19 @@ class FFEA_viewer_control_window:
      self.check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
      self.check_button_show_pinned.grid(row=1, column=2, sticky=W)
 
+
+     # show beads: 
+     self.check_button_show_beads = Checkbutton(display_flags_frame, text="CG Beads", variable=self.show_beads, command=lambda:self.update_display_flags("show_beads"))
+     self.check_button_show_beads.grid(row=2, column=2, sticky=W)
+
+
      # show inverted_elements: 
      self.check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
-     self.check_button_show_inverted.grid(row=2, column=2, sticky=W)
+     self.check_button_show_inverted.grid(row=3, column=2, sticky=W)
 
      # show danger_elements: 
      self.check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
-     self.check_button_show_danger.grid(row=3, column=2, sticky=W)
+     self.check_button_show_danger.grid(row=4, column=2, sticky=W)
 
      # # show solid:
      label_solid = Label(display_flags_frame, text="Show Solid:")
@@ -912,6 +919,7 @@ class FFEA_viewer_control_window:
 	if p.move_into_box == 1:
 		for b in self.blob_list:
 			b[0].frames[0].translate(shift)
+			b[0].beads.translate(shift) # beads only work for conf 0
     		
 
 	# Now, apply PBC if necessary
@@ -1391,6 +1399,7 @@ class FFEA_viewer_control_window:
 		'show_mesh': "No Mesh",
 		'show_numbers': "No Indices", ## PYMOL OK
 		'show_pinned': 1,
+		'show_beads': 1,
 		'show_danger': 0,
 		'show_inverted': 1,
 		'show_vdw': 0,
