@@ -30,7 +30,7 @@ import numpy as np
 import StringIO, tempfile
 import FFEA_node, FFEA_surface, FFEA_topology, FFEA_material
 import FFEA_stokes, FFEA_vdw, FFEA_pin, FFEA_binding_sites
-import FFEA_frame
+import FFEA_frame, FFEA_pdb
 
 from pymol import cmd
 from pymol.cgo import *
@@ -88,6 +88,7 @@ class Blob:
 		self.stokes = None
 		self.pin = None
 		self.bsites = None
+		self.beads = None
 		self.init_centroid = None
 		self.init_rotation = None
 		self.offset = np.array([0.0,0.0,0.0])
@@ -129,6 +130,8 @@ class Blob:
 		except:
 			print("\nERROR: '" + c.vdw + "' could not be loaded.")
 			raise
+		if (len(c.beads)):
+			self.beads = FFEA_pdb.FFEA_pdb(c.beads)
 		
 		# Only necessary for dynamic blobs
 		if self.motion_state == "DYNAMIC":
@@ -415,12 +418,16 @@ class Blob:
             
 			aframe.set_pos(self.init_centroid)
 			#print aframe.calc_centroid(), self.init_centroid
+			self.beads.translate(self.init_centroid) # translate the beads too
 
 		if self.init_rotation != None:
 			print "=============================="
 			print "Rotating to starting orientation..."
 			print "=============================="
+			origin = aframe.calc_centroid() # store Blob's CM
 			aframe.rotate(self.init_rotation)
+			# self.beads.rotate_full_system(self.init_rotation, aframe.get_centroid(), 0) # rotate the beads too
+			self.beads.rotate_full_system(self.init_rotation, cent=origin, findex=0) # rotate the beads too
 
 		# Now scale
 		aframe.scale(self.scale * self.global_scale)
@@ -428,6 +435,8 @@ class Blob:
 		# Append it to the list
 		self.frames.append(aframe)
 		self.num_frames += 1
+
+
 	
 	def set_scale(self, scale):
 		self.scale = scale
@@ -801,6 +810,19 @@ class Blob:
 				cmd.show("spheres", pin_name)
 				cmd.color("red", pin_name)
 				
+
+		#
+		#  CG Beads
+		#
+		if display_flags['show_beads'] == 1:
+			if frameLabel == 1: # only load it for the first frame
+				beads_name = display_flags['system_name'] + "_" + str(self.idnum) + "_beads"
+				text = self.beads.write_to_text()
+				cmd.read_pdbstr(text, beads_name, frameLabel)
+				cmd.hide("everything", beads_name)
+				cmd.show("spheres", beads_name)
+				
+
 		#
 		# Danger Elements! Elements that will probably invert because they have <5A lengths in them. Only draw on first frame (takes ages)
 		#
