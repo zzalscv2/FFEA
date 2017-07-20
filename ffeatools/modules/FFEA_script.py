@@ -492,6 +492,7 @@ class FFEA_script_params():
 		self.vdw_forcefield_params = ""
 		self.kinetics_out_fname = ""
 		self.binding_site_params = ""
+		self.beads_out_fname = ""
 		self.checkpoint_in = ""
 		self.checkpoint_out = ""
 		self.epsilon = 0.01
@@ -552,6 +553,8 @@ class FFEA_script_params():
 			self.kinetics_out_fname = get_path_from_script(rvalue, scriptdir)
 		elif lvalue == "binding_site_params":
 			self.binding_site_params = get_path_from_script(rvalue, scriptdir)
+		elif lvalue == "beads_out_fname":
+			self.beads_out_fname = get_path_from_script(rvalue, scriptdir)
 		elif lvalue == "checkpoint_in":
 			self.checkpoint_in = get_path_from_script(rvalue, scriptdir)
 		elif lvalue == "checkpoint_out":

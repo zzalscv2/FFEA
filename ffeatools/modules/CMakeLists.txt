@@ -28,5 +28,6 @@ install (FILES __init__.py wrap.py FFEA_meta.py
          FFEA_pdb.py FFEA_pin.py FFEA_script.py FFEA_springs.py
          FFEA_stokes.py FFEA_surface.py FFEA_topology.py FFEA_turbotrajectory.py
          FFEA_vdw.py FFEA_universe.py FFEA_lj.py FFEA_exceptions.py
+         FFEA_beads.py
          DESTINATION "${PYTHONSTUFF}/modules")
 

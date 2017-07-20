@@ -36,9 +36,9 @@ static string FFEA_branch = "@PACKAGE_BRANCH@";
 static string FFEA_date = "@PACKAGE_DATE@";
 #else
 
-static string FFEA_prev_commit = "e1c5caeb218e632bfd74fc33b8c3f6f98de1dcbc";
-static string FFEA_prev_branch = "superdev";
-static string FFEA_prev_date = "2017-07-19";
+static string FFEA_prev_commit = "9acf4953406d9ebd9efb375f4084b166712d5489";
+static string FFEA_prev_branch = "pymolBeads";
+static string FFEA_prev_date = "2017-07-20";
 
 
 

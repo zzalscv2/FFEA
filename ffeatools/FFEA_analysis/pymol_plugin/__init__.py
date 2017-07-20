@@ -168,7 +168,7 @@ class FFEA_viewer_control_window:
      self.random_name_button.grid(row=0, column=2, sticky=W)
 
      label_display = Label(display_flags_frame, text="Display:")
-     label_display.grid(row=1, column=0, sticky=E)
+     label_display.grid(row=1, column=1, sticky=E)
 
      # show springs: 
      self.check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
@@ -819,11 +819,11 @@ class FFEA_viewer_control_window:
 			ffea_id_string = "lol"
 			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
 			new_blob = Blob.Blob()
-			try:
-				new_blob.load(idnum, bindex, cindex, self.script)
-			except:
-				print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
-				return
+			# try:
+			new_blob.load(idnum, bindex, cindex, self.script)
+			# except:
+				# print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
+				# return
 
 			self.blob_list[bindex][cindex] = new_blob
 			new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
@@ -919,7 +919,7 @@ class FFEA_viewer_control_window:
 	if p.move_into_box == 1:
 		for b in self.blob_list:
 			b[0].frames[0].translate(shift)
-			b[0].beads.translate(shift) # beads only work for conf 0
+			b[0].beads.pdb.translate(shift) # beads only work for conf 0
     		
 
 	# Now, apply PBC if necessary
