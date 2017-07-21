@@ -119,7 +119,7 @@ class FFEA_viewer_control_window:
      self.do_load_trajectory = StringVar(self.root, value=self.display_flags['load_trajectory'])
      self.show_box = StringVar(self.root, value=self.display_flags['show_box'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
-     self.show_beads = IntVar(self.root, value=self.display_flags['show_beads'])
+     self.show_beads = StringVar(self.root, value=self.display_flags['show_beads'])
      self.show_danger = IntVar(self.root, value=self.display_flags['show_danger'])
      self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
@@ -168,67 +168,64 @@ class FFEA_viewer_control_window:
      self.random_name_button.grid(row=0, column=2, sticky=W)
 
      label_display = Label(display_flags_frame, text="Display:")
-     label_display.grid(row=1, column=1, sticky=E)
+     label_display.grid(row=2, column=2, sticky=W)
 
      # show springs: 
      self.check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
-     self.check_button_show_springs.grid(row=1, column=1, sticky=W)
+     self.check_button_show_springs.grid(row=3, column=2, sticky=W)
 
 
      # show pinned_nodes: 
      self.check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
-     self.check_button_show_pinned.grid(row=1, column=2, sticky=W)
-
-
-     # show beads: 
-     self.check_button_show_beads = Checkbutton(display_flags_frame, text="CG Beads", variable=self.show_beads, command=lambda:self.update_display_flags("show_beads"))
-     self.check_button_show_beads.grid(row=2, column=2, sticky=W)
+     self.check_button_show_pinned.grid(row=4, column=2, sticky=W)
 
 
      # show inverted_elements: 
      self.check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
-     self.check_button_show_inverted.grid(row=3, column=2, sticky=W)
+     self.check_button_show_inverted.grid(row=5, column=2, sticky=W)
 
      # show danger_elements: 
      self.check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
-     self.check_button_show_danger.grid(row=4, column=2, sticky=W)
+     self.check_button_show_danger.grid(row=6, column=2, sticky=W)
 
      # # show solid:
      label_solid = Label(display_flags_frame, text="Show Solid:")
-     label_solid.grid(row=2, column=0, sticky=E)
+     label_solid.grid(row=1, column=0, sticky=E)
      # Selectable box for material param, i. e., show solid:
      self.spinbox_material_param = OptionMenu(display_flags_frame, self.matparam, "Plain Solid", "Density", "Shear Viscosity", "Bulk Viscosity", "Shear Modulus", "Bulk Modulus", "VdW", "No Solid", command=lambda x:self.update_display_flags("matparam", val=self.matparam.get()) )
-     self.spinbox_material_param.grid(row=2, column=1, sticky=W)
+     self.spinbox_material_param.grid(row=1, column=1, sticky=W)
 
 
      # # show mesh:
      label_mesh = Label(display_flags_frame, text="Show Mesh:")
-     label_mesh.grid(row=3, column=0, sticky=E)
+     label_mesh.grid(row=2, column=0, sticky=E)
      self.om_show_mesh = OptionMenu(display_flags_frame, self.show_mesh, "Surface Mesh", "Whole Mesh", "No Mesh", command=lambda x:self.update_display_flags("show_mesh", val=self.show_mesh.get()))
-     self.om_show_mesh.grid(row=3, column=1, sticky=W)
+     self.om_show_mesh.grid(row=2, column=1, sticky=W)
 
 
      # # show Numbers:
-     label_mesh= Label(display_flags_frame, text="Show Indices:")
-     label_mesh.grid(row=4, column=0, sticky=E)
+     label_mesh = Label(display_flags_frame, text="Show Indices:")
+     label_mesh.grid(row=3, column=0, sticky=E)
      self.index_option = OptionMenu(display_flags_frame, self.show_numbers, "Node Indices", "Node Indices (Linear)", "Element Indices", "Face Indices", "No Indices", command=lambda x:self.update_display_flags("show_numbers", val=self.show_numbers.get()) )
-     self.index_option.grid(row=4, column=1, sticky=W)
+     self.index_option.grid(row=3, column=1, sticky=W)
      
     
-     # # Pseudoatoms onto nodes
-     # button_node_indices_pseudoatoms = Button(display_flags_frame, text="Add node pseudoatoms", command=lambda:self.call_add_node_pseudoatoms())
-     # button_node_indices_pseudoatoms.grid(row=4, column=2, sticky=W)
-
-
      # Outer simulation box
-     label_box= Label(display_flags_frame, text="Show Box:")
-     label_box.grid(row=5, column=0, sticky=E)
+     label_box = Label(display_flags_frame, text="Show Box:")
+     label_box.grid(row=4, column=0, sticky=E)
      self.om_show_box = OptionMenu(display_flags_frame, self.show_box, "Simulation Box (outline)", "Simulation Box (whole)", "No Box", command=lambda x:self.update_display_flags("show_box", val=self.show_box.get()))
-     self.om_show_box.grid(row=5, column=1, sticky=W)
+     self.om_show_box.grid(row=4, column=1, sticky=W)
+
+
+     # CG Beads:
+     label_beads = Label(display_flags_frame, text="Show Beads:")
+     label_beads.grid(row=5, column=0, sticky=E)
+     self.om_show_beads = OptionMenu(display_flags_frame, self.show_beads, "Configuration", "Configuration & Assignments", "Trajectory", "No Beads", command=lambda x:self.update_display_flags("show_beads", val=self.show_beads.get()))
+     self.om_show_beads.grid(row=5, column=1, sticky=W)
 
 
      ## # Trajectory Dropdown Menu # #
-     label_traj= Label(display_flags_frame, text="Load:")
+     label_traj = Label(display_flags_frame, text="Load:")
      label_traj.grid(row=6, column=0, sticky=E)
      self.om_do_load_trajectory = OptionMenu(display_flags_frame, self.do_load_trajectory, "Trajectory", "System (Into box)", "System (Plainly)", "CGO", command=lambda x:self.update_display_flags("load_trajectory", val=self.do_load_trajectory.get())) 
      self.om_do_load_trajectory.grid(row=6, column=1, sticky=W)
@@ -978,8 +975,17 @@ class FFEA_viewer_control_window:
 		self.load_trajectory_thread.join()
 
 	# Requires knowledge of whole trajectory
-	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.display_flags["show_inverted"] == 1 and self.wontLoadTraj != 1:
-		self.draw_inverted_elements()
+	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
+		if self.display_flags["show_inverted"] == 1:  # Show inverted elements
+			self.draw_inverted_elements()
+		if self.display_flags["show_beads"] == "Trajectory": # Load the trajectory of the beads.
+			if self.script.params.beads_out_fname != "":
+				beads_traj_name = self.display_flags['system_name'] + "_b"
+				cmd.load(self.script.params.beads_out_fname, beads_traj_name)
+				cmd.hide("everything", beads_traj_name)
+				cmd.show("spheres", beads_traj_name)
+			else:
+				print "Beads trajectory won't load: beads_out_fname was not defined in the .ffea input file"
 
 
    	# Center everything, zoom and sort clipping plane
@@ -1399,7 +1405,7 @@ class FFEA_viewer_control_window:
 		'show_mesh': "No Mesh",
 		'show_numbers': "No Indices", ## PYMOL OK
 		'show_pinned': 1,
-		'show_beads': 1,
+		'show_beads': "No Beads",
 		'show_danger': 0,
 		'show_inverted': 1,
 		'show_vdw': 0,

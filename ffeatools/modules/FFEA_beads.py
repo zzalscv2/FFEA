@@ -110,8 +110,8 @@ class FFEA_beads:
 						d2_0 = d2
 						self.b_elems[i][j] = e_ndx
 
-				print a.name, a.res, self.pdb.chain[i].frame[0].pos[j][0:3],\
-                  a.ffea_comment, self.b_elems[i][j]
+				#print a.name, a.res, self.pdb.chain[i].frame[0].pos[j][0:3],\
+                  #a.ffea_comment, self.b_elems[i][j]
 				if self.b_elems[i][j] == -1: 
 					raise
 

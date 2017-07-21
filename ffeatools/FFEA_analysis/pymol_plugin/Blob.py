@@ -816,28 +816,32 @@ class Blob:
 		#
 		#  CG Beads
 		#
-		if display_flags['show_beads'] == 1:
+		if display_flags['show_beads'].count("Configuration"):
+			# load the beads:
+			beads_name = display_flags['system_name'] + "_" + str(self.idnum) + "_b"
+			text = ""
 			if frameLabel == 1: # only load it for the first frame
-				# load the beads:
-				beads_name = display_flags['system_name'] + "_" + str(self.idnum) + "_b"
 				text = self.beads.pdb.write_to_text()
-				cmd.read_pdbstr(text, beads_name, frameLabel)
-				cmd.hide("everything", beads_name)
-				cmd.show("spheres", beads_name)
+			cmd.read_pdbstr(text, beads_name, frameLabel)
+			cmd.hide("everything", beads_name)
+			cmd.show("spheres", beads_name)
 
+		if display_flags['show_beads'] == "Configuration & Assignments":
+			if (self.motion_state == "DYNAMIC"):
 				be_name = display_flags['system_name'] + "_" + str(self.idnum) + "_b-be"
 				b_elem_name = display_flags['system_name'] + "_" + str(self.idnum) + "_be"
 				# load the affected elements and the connections:
 				obj = []
 				text = ""
-				for c in range(self.beads.pdb.num_chains):
-					for j, a in enumerate(self.beads.pdb.chain[c].atom):
-						e_ndx = self.beads.b_elems[c][j]
-						e = self.top.element[e_ndx].calc_centroid(self.frames[i])
-						b = self.beads.pdb.chain[c].frame[0].pos[j]
-						obj.extend( [ LINEWIDTH, 2.0 ] )
-						obj.extend( [ BEGIN, LINES, VERTEX, b[0], b[1], b[2], VERTEX, e[0], e[1], e[2], END ] )
-						text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e_ndx, "CA", "FEA", "A", e_ndx, e[0], e[1], e[2]))
+				if frameLabel == 1: # only load it for the first frame
+					for c in range(self.beads.pdb.num_chains):
+						for j, a in enumerate(self.beads.pdb.chain[c].atom):
+							e_ndx = self.beads.b_elems[c][j]
+							e = self.top.element[e_ndx].calc_centroid(self.frames[i])
+							b = self.beads.pdb.chain[c].frame[0].pos[j]
+							obj.extend( [ LINEWIDTH, 2.0 ] )
+							obj.extend( [ BEGIN, LINES, VERTEX, b[0], b[1], b[2], VERTEX, e[0], e[1], e[2], END ] )
+							text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e_ndx, "CA", "FEA", "A", e_ndx, e[0], e[1], e[2]))
 
 				cmd.load_cgo(obj, be_name, frameLabel)
 				cmd.read_pdbstr(text, b_elem_name, frameLabel)
