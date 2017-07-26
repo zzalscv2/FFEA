@@ -484,6 +484,7 @@ class FFEA_script_params():
 		self.restart = 0
 		self.dt = 1e-14
 		self.kT = 4.11e-21
+		self.rng_seed = "" # string
 		self.kt = self.kT
 		self.check = 10000
 		self.num_steps = 1e11
@@ -536,7 +537,7 @@ class FFEA_script_params():
 		elif lvalue == "dt":
 			self.dt = float(rvalue)
 		elif lvalue == "rng_seed":
-			pass
+			self.rng_seed = rvalue
 		elif lvalue == "kT":
 			self.kT = float(rvalue)
 		elif lvalue == "check":
@@ -683,7 +684,7 @@ class FFEA_script_params():
 			astr += "\t<kT = %5.2e>\n" % (self.kT)
 			astr += "\t<check = %d>\n" % (self.check)
 			astr += "\t<num_steps = %5.2e>\n" % (self.num_steps)
-			astr += "\t<rng_seed = time>\n"
+			astr += "\t<rng_seed = %s>\n" % (self.rng_seed)
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<lj_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
@@ -696,8 +697,11 @@ class FFEA_script_params():
 			astr += "\t<checkpoint_in = %s>\n" % (os.path.relpath(self.checkpoint_in, os.path.dirname(os.path.abspath(fname))))
 		if self.checkpoint_out != "":
 			astr += "\t<checkpoint_out = %s>\n" % (os.path.relpath(self.checkpoint_out, os.path.dirname(os.path.abspath(fname))))
+		if self.beads_out_fname != "":
+			astr += "\t<beads_out_fname = %s>\n" % (os.path.relpath(self.beads_out_fname, os.path.dirname(os.path.abspath(fname))))
 
 		if (self.calc_es == 1):
+			astr += "\t<calc_es = %d>\n" % (self.calc_es)
 			astr += "\t<epsilon_0 = %5.2e>\n" % (self.epsilon_0)
 			astr += "\t<dielec_ext = %5.2e>\n" % (self.dielec_ext)
 			astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
@@ -705,17 +709,19 @@ class FFEA_script_params():
 			astr += "\t<es_h = %d>\n" % (self.es_h)
 		if verbose:
 			astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
+		if (self.calc_stokes == 1):
 			astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
 			astr += "\t<stokes_visc = %5.2e>\n" % (self.stokes_visc)
+		if (self.calc_vdw == 1):
 			astr += "\t<calc_vdw = %d>\n" % (self.calc_vdw)
-			if self.calc_vdw == 1:
-				astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
-				if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
-					astr += "\t<vdw_steric_factor = %5.2e>\n" % (self.vdw_steric_factor)
-			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
-			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
-			astr += "\t<calc_es = %d>\n" % (self.calc_es)
+			astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
+			if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
+				astr += "\t<vdw_steric_factor = %5.2e>\n" % (self.vdw_steric_factor)
 			astr += "\t<vdw_cutoff = %5.2e>\n" % (self.vdw_cutoff)
+		if (self.calc_springs == 1):
+			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
+		if (self.calc_springs == 1):
+			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
 		if ((self.es_N[0] != -1) or (self.es_N[1] != -1) or (self.es_N[2] != -1)):
 			astr += "\t<es_N_x = %d>\n" % (self.es_N[0])
 			astr += "\t<es_N_y = %d>\n" % (self.es_N[1])
