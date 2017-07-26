@@ -2,11 +2,18 @@ FFEA runner {#userManual}
 =========================
 
 The FFEA runner is the program that will compute a FFEA trajectory given 
- an initial system under a set of conditions, all contained in the
- ` FFEA Input File `. The program is meant to run from the command line 
- typing:
+ an initial system under a set of conditions, as described in the
+ ` FFEA Input File `. The program is compiled in two flavours: ` ffea ` 
+ and ` ffea_mb ` and is meant to run from the command line typing:
  
       ffea <myInputFile.ffea>
+
+Both ` ffea ` and ` ffea_mb ` are parallel programs using OpenMP. The 
+ former, ` ffea ` uses all the threads within every blob, while the later, 
+ ` ffea_mb ` assigns one (or more) blobs to every thread. Ideally, 
+ ` ffea ` is to be used in systems where there is a single enormous blob
+ (in terms of number of nodes), while ` ffea_mb ` performs much better in 
+ a system with many blobs.
 
 
 A number of optional arguments are available:

@@ -40,14 +40,6 @@
 #define FFEA_ERROR_MESSG(...) {FFEA_error_text(); printf(__VA_ARGS__); return FFEA_ERROR;}
 #define FFEA_CAUTION_MESSG(...) {FFEA_caution_text(); printf(__VA_ARGS__);}
 
-#ifdef FFEA_PARALLEL_PER_BLOB
-#define LABEL_PARALLEL_WITHIN_BLOB 0
-#define LABEL_PARALLEL_PER_BLOB 1
-#elif FFEA_PARALLEL_WITHIN_BLOB
-#define LABEL_PARALLEL_WITHIN_BLOB 1 
-#define LABEL_PARALLEL_PER_BLOB 0
-#endif 
-
 #define FFEA_BLOB_IS_STATIC	0
 #define FFEA_BLOB_IS_DYNAMIC	1
 #define FFEA_BLOB_IS_FROZEN	2
