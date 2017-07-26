@@ -79,4 +79,6 @@ Now, let's run ffea!
 Once the simulation has finished (which should take less than 5 minutes), we can have a look at the structure in the [viewer](\ref FFEAviewertut), and also [perform some analysis](\ref FFEAanalysistut).
 A small note; if a simulation crashes with an error talking about elements inverting, not to worry! The simulation time step has been set just a little high. Set ` dt ` to a smaller value, and rerun.
 
-
+Using ` ffea ` as FFEA_runner was the most appropriate binary this time because 
+ we were simulating a single blob. Alternatively ` ffea_mb ` would perform better 
+ when using [many blobs](\ref userManual).

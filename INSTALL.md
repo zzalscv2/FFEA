@@ -86,11 +86,6 @@ Additional specific FFEA flags include:
 
   * `USE_FAST`    (default ON) will try to find the best compiler flags in terms of performance.
   * `USE_OPENMP`  (default ON) will enable OpenMP parallel calculations.
-  * `USE_OMP_MODE` (default 1) where:
-
-    - 0 is for ` USE_OPENMP=OFF `.
-    - 1 uses all the threads within blobs. The only option to get OMP parallism if simulating a single body. 
-    - 2 uses one thread per blob. Performs significantly better if there is more than a single body.
 
   * `BUILD_DOC`    (default TRY) where:
 
@@ -137,7 +132,8 @@ either to the folder specified through ` -DCMAKE_INSTALL_PREFIX `
   or into a default folder (where you may need administrative privileges).
 
 
-The FFEA_runner, ` ffea `, as well as the ffeatools, ` ffeatools ` will be found 
+Two parallel versions of the FFEA_runner, ` ffea ` and ` ffea_mb `, 
+ as well as the ffeatools, ` ffeatools ` will be found 
  in ` $FFEA_HOME/bin `. Instructions on how to use them can be read 
  [here](\ref userManual) and [here](ffeamodules/html/index.html) respectively. 
  In addition, the ` ffeatools ` Python package will be found in 
@@ -173,7 +169,7 @@ In order to use it, one would need to run PyMOL (>=1.6), and then click on
 Working environment {#workingEnvironment}
 ===================
 
-Executing ` ffea ` and ` ffeatools ` is probably what most users will wish, so 
+Executing ` ffea `, ` ffea_mb ` and ` ffeatools ` is probably what most users will wish, so 
  UNIX users may find convenient to add the install folder in the ` PATH `:
 
       export PATH=$FFEA_HOME/bin:$PATH
@@ -218,6 +214,4 @@ Once FFEA has been installed, users may want to provide themselves with some
 Some notes on how to use these tools in relation to FFEA can be found
  in the [Tutorial](\ref Tutorial). However, mastering these tools
  may imply consulting the documentation provided by the packages themselves.
-
-
 
