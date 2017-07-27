@@ -1,14 +1,19 @@
 Installation {#install}
 ============
 
-This document gives instructions to build and install the FFEA package,
- consisting of the FFEA runner and the FFEA tools. 
+This document gives instructions on how to build and install the FFEA package,
+ consisting of the FFEA runner and the FFEA tools. Compiling FFEA is very 
+ easy, and essentially consists of three commands: "cmake", "make", 
+ and "make install". If you don't want to do so, you can download 
+ the program [here](https://bitbucket.org/FFEA/ffea/downloads/). 
+ In that case, read the Prerequisites section, and then jump
+ to [install](\ref makeinstall).
 
 
 Prerequisites {#prerequisites}
 =============
 
-To install FFEA you need:
+**To compile** FFEA you need:
 
    * C and C++ compilers.   
      There is some C++ code written using 
@@ -23,14 +28,9 @@ To install FFEA you need:
      It will be used to build the documentation. Some mathematical formulae 
      will not render correctly if [LaTeX](https://www.tug.org/texlive/) is not found.
 
-   * [Python](https://www.python.org/) (>= 2.6), is used to run some tests to verify that the FFEA runner was correctly built, as well as in the FFEA tools.
-
-   * [NumPy](http://www.numpy.org/) is needed to run some tests as well as in 
-        several FFEAtools.
-
 
 FFEA uses Boost and Eigen. To make your life easier, **the code is shipped whih 
- a subset of Boost (v. 1.63), and Eigen (v 3.3.2)** will be downloaded
+ a subset of Boost (v. 1.63), and Eigen (v 3.3.4)** will be downloaded by CMake
  at configure time. Still, you are welcome to use your own versions of the libraries.
 
    * [Boost](http://www.boost.org) (>=1.54.0) [OPTIONAL]   
@@ -41,6 +41,15 @@ FFEA uses Boost and Eigen. To make your life easier, **the code is shipped whih
 
    > Warning - GCC >= 5 will require version 3.2.10 or higher for Eigen. Earlier versions (including 3.3 release candidates, marked internally as 3.2.91 and higher) did prove to be incompatible with GCC >= 5 and using C++11 standard. You may also need a newer version of Boost. 
      
+
+**To use** FFEA, or more specifically the FFEA tools, you will need:
+
+   * [Python](https://www.python.org/) (>= 2.6), is used to run some tests to verify that the FFEA runner was correctly built, as well as in the FFEA tools.
+
+   * [NumPy](http://www.numpy.org/) is needed to run some tests as well as in 
+        several FFEAtools.
+
+
 
 Configure {#configure}
 =========
@@ -67,7 +76,7 @@ Several ` [OPTIONS] ` can be added to `cmake`, being the most important ones:
   * `-DCMAKE_CXX_COMPILER=<program>`     -  (default g++)  C++ compiler.
 
 By default, CMake will use the subset of Boost we bundled, and will download 
- Eigen 3.3.2. If you want to use your own installations you can still do so
+ Eigen 3.3.4. If you want to use your own installations you can still do so
  through:
   
   * `-DUSE_BOOST_INTERNAL=<ON|OFF>` - default ` ON `
