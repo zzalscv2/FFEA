@@ -885,14 +885,11 @@ class FFEA_script_conformation:
 		astr += tabs + "<surface = %s>\n" % (os.path.relpath(self.surface, os.path.dirname(os.path.abspath(fname))))
 		astr += tabs + "<vdw = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
 		if (self.beads != ""):
-			astr += tabs + "<beads = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
+			astr += tabs + "<beads = %s>\n" % (os.path.relpath(self.beads, os.path.dirname(os.path.abspath(fname))))
 
 
 		if(calc_kinetics == 1 and self.bsites != ""):
 			astr += tabs + "<binding_sites = %s>\n" % (os.path.relpath(self.bsites, os.path.dirname(os.path.abspath(fname))))
-
-		if(calc_preComp == 1):
-			astr += tabs + "<beads = %s>\n" % (os.path.relpath(self.beads, os.path.dirname(os.path.abspath(fname))))
 
 		if (need_conformations):
 			astr += "\t\t</conformation>\n"
