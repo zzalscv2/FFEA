@@ -916,7 +916,7 @@ class FFEA_viewer_control_window:
 	if p.move_into_box == 1:
 		for b in self.blob_list:
 			b[0].frames[0].translate(shift)
-			b[0].beads.pdb.translate(shift) # beads only work for conf 0
+			if b[0].beads.pdb != None: b[0].beads.pdb.translate(shift) # beads only work for conf 0
     		
 
 	# Now, apply PBC if necessary
