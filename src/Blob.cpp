@@ -3860,6 +3860,7 @@ int Blob::aggregate_forces_and_solve() {
         force[pn_index].z = 0;
     }
 
+    // This should have a similar way of making the solver matrix become the identity matrix as the pinned nodes do
     for(set<int>::iterator it = bsite_pinned_nodes_list.begin(); it != bsite_pinned_nodes_list.end(); ++it) {
         force[*it].x = 0;
         force[*it].y = 0;

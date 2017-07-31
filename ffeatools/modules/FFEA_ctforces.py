@@ -344,7 +344,8 @@ class FFEA_ctforces:
 
 		# Test force params
 		if fmag < 0:
-			raise IndexError
+			print("Error: Specified force < 0")
+			raise TypeError
 		
 		if bin < 0 or cin < 0:
 			raise IndexError
