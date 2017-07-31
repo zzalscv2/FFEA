@@ -99,6 +99,14 @@ class FFEA_script:
 			self.reset()
 			return
 
+		# And forces
+		try:
+			self.read_ctforces_from_script_lines(script_lines, scriptdir)
+		except:
+			print("Error. Failed to load <ctforces>...</ctforces> ")
+			self.reset()
+			return
+
 		self.valid = True
 		self.empty = False
 		sys.stdout.write("done!\n")
@@ -388,6 +396,36 @@ class FFEA_script:
 
 		if lvalue == "springs_fname" or lvalue == "spring_fname":
 			self.spring = get_path_from_script(rvalue, scriptdir)
+
+			
+		return
+
+	def read_ctforces_from_script_lines(self, script_lines, scriptdir):
+
+		ctforce_lines = extract_block_from_lines("ctforces", 0, script_lines)
+
+		if len(ctforce_lines) == 0:
+			ctforce_lines = extract_block_from_lines("ctforce", 0, script_lines)
+			if len(ctforce_lines) == 0:
+				return
+
+		if len(ctforce_lines) != 1:
+			print("Error. Expected only one filename.")
+			return
+
+		line = ctforce_lines[0]
+
+		try:
+			line = line.strip().replace("<", "").replace(">", "")
+			lvalue = line.split("=")[0].strip()
+			rvalue = line.split("=")[1].strip()
+
+		except(IndexError, ValueError):
+			print("Error. Couldn't parse ctforce tag '" + line + "'")
+			return
+
+		if lvalue == "ctforce_fname" or lvalue == "ctforces_fname":
+			self.ctforces = get_path_from_script(rvalue, scriptdir)
 			
 		return
 
@@ -415,10 +453,18 @@ class FFEA_script:
 		for blob in self.blob:
 			blob.write_to_file(fout, fname, self.params.calc_kinetics, self.params.calc_preComp, verbose = verbose)
 
-		if self.spring != "":
-			fout.write("\t<interactions>\n\t\t<springs>\n")
-			fout.write("\t\t\t<spring_fname = %s>\n" % (os.path.relpath(self.spring, os.path.dirname(os.path.abspath(fname)))))
-			fout.write("\t\t</springs>\n\t</interactions>\n")
+		if self.spring != "" or self.ctforces != "":
+			fout.write("\t<interactions>\n")
+			if self.spring != "":
+				fout.write("\t\t<springs>\n")
+				fout.write("\t\t\t<spring_fname = %s>\n" % (os.path.relpath(self.spring, os.path.dirname(os.path.abspath(fname)))))
+				fout.write("\t\t</springs>\n")
+			if self.ctforces != "":
+				fout.write("\t\t<ctforces>\n")
+				fout.write("\t\t\t<ctforces_fname = %s>\n" % (os.path.relpath(self.ctforces, os.path.dirname(os.path.abspath(fname)))))
+				fout.write("\t\t</ctforces>\n")
+
+			fout.write("\t</interactions>\n")
 		fout.write("</system>")
 		fout.close()
 
@@ -444,6 +490,7 @@ class FFEA_script:
 		self.params = None
 		self.blob = []
 		self.spring = ""
+		self.ctforces = ""
 
 	# Loading other FFEA objects
 	def load_node(self, bindex, cindex=0):
@@ -467,14 +514,17 @@ class FFEA_script:
 	def load_material(self, bindex, cindex=0):
 		return FFEA_material.FFEA_material(self.blob[bindex].conformation[cindex].material)
 
-	def load_trajectory(self, num_frames=100000000, start=0):
-		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname, num_frames_to_read = num_frames, start=start)
+	def load_trajectory(self, num_frames=100000000, start=0, frame_rate = 1):
+		return FFEA_trajectory.FFEA_trajectory(self.params.trajectory_out_fname, num_frames_to_read = num_frames, start=start, frame_rate = frame_rate)
 
 	def load_measurement(self, num_frames=100000000):
 		return FFEA_measurement.FFEA_measurement(self.params.measurement_out_fname, num_frames_to_read = num_frames)
 
 	def load_lj(self):
 		return FFEA_lj.FFEA_lj(self.params.vdw_forcefield_params)
+
+	def load_ctforces(self):
+		return FFEA_ctforces.FFEA_ctforces(self.ctforces)
 
 class FFEA_script_params():
 	
