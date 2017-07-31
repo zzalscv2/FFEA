@@ -850,8 +850,8 @@ there.
 .doxygen-header{
 	background-color:#0E83A4 !important;
 	width:100% !important;
-	padding-top:50px !important;
-	padding-bottom:20px !important;
+	padding-top:20px !important;
+	padding-bottom:0px !important;
 	color:white;!important;
 	background-image:url("http://ffea.bitbucket.io/images/bg.jpg") !important;
 	padding-left:50px !important;
@@ -859,7 +859,7 @@ there.
 
 .doxygen-header h1{
 	margin-bottom:0;
-	font-size:5rem;
+	font-size:4rem;
 }
 
 a h1,  a p{
