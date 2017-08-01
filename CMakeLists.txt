@@ -29,7 +29,8 @@ cmake_policy(VERSION 2.8)
 set(PACKAGE_NAME "ffea")
 set(VERSION "2")
 set(MINOR   "5")
-set(PACKAGE_VERSION "${VERSION}.${MINOR}")
+set(PATCH   "1")
+set(PACKAGE_VERSION "${VERSION}.${MINOR}.${PATCH}")
 set(FFEA_DEVEL "TRUE")
 if (FFEA_DEVEL STREQUAL "TRUE")
   add_definitions(-DFFEA_DEVEL)
@@ -42,7 +43,6 @@ option(USE_EIGEN3_INTERNAL "Build Eigen automatically as building FFEA (ON) or u
 mark_as_advanced(USE_EIGEN3_INTERNAL)
 
 option(USE_OPENMP "Build with OpenMP support" ON)
-set(USE_OMP_MODE 1 CACHE STRING "0: disabled; 1: threads within blob; 2: threads per blob")
 option(USE_FAST "Add automatic compiler flags" ON)
 mark_as_advanced(USE_FAST)
 option(USE_FUTURE "Use C++11 <future> tasking threads" OFF)
@@ -52,7 +52,7 @@ mark_as_advanced(USE_PRECISION)
 
 option(USE_MPI "Use MPI parallelisation: EXPERIMENTAL!" OFF)
 mark_as_advanced(USE_MPI)
-option(USE_PACK "Add genereic automatic compiler flags" OFF)
+option(USE_PACK "Add generic automatic compiler flags" OFF)
 mark_as_advanced(USE_PACK)
 set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
@@ -78,7 +78,7 @@ endif(USE_MPI)
 
 include(cmake/Colour.cmake)
 
-# 0 #### PRECISION ###
+# 1 #### PRECISION ###
 if (USE_PRECISION EQUAL "1")
   add_definitions(-DUSE_DOUBLE_LESS)
 else(USE_PRECISION EQUAL "1")
@@ -95,7 +95,7 @@ endif(USE_PRECISION EQUAL "1")
     
 
 
-# 1 ### CONFIGURE VERSION: 
+# 2 ### CONFIGURE VERSION: 
 find_package(Git 1.6)
 set(VERSION_CMAKECONF "")
 if (GIT_FOUND)
@@ -130,7 +130,7 @@ configure_file("${PROJECT_SOURCE_DIR}/include/FFEA_version.h.in"
 include_directories(${PROJECT_BINARY_DIR}/include)
 
 
-# 2 ### DOXYGEN ##### 
+# 3 ### DOXYGEN ##### 
 if ((${BUILD_DOC} STREQUAL "ONLY") OR (${BUILD_DOC} STREQUAL "YES"))
   message(STATUS "Requested to build the documentation")
   find_package(Doxygen 1.8 REQUIRED)
@@ -166,7 +166,7 @@ endif (${BUILD_DOC} STREQUAL "ONLY")
 
 
 
-# 3 #### OPENMP #####
+# 4 #### OPENMP #####
 if (USE_OPENMP)
   add_definitions(-DUSE_OPENMP)
 endif(USE_OPENMP)
@@ -186,26 +186,6 @@ solutions:
   -- Submit a request to the developers suggesting to change omp_get_wtime to something else")
     endif (USE_OPENMP)
 endif(OPENMP_FOUND)
-
-
-# 4 #### PARALLEL MODE #########
-if (USE_OMP_MODE EQUAL "0")
-  if (USE_OPENMP) 
-    mymessage(FATAL_ERROR "OMP was enabled, but USE_OMP_MODE set to 0. Possible solutions: 
-    -- Disable OPENMP option (-DUSE_OPENMP=0) or
-    -- Set USE_OMP_MODE either to 1 or 2")
-  endif (USE_OPENMP)
-else ()
-  if (USE_OMP_MODE EQUAL "1")
-   add_definitions(-DFFEA_PARALLEL_WITHIN_BLOB)
-  else ()
-    if (USE_OMP_MODE EQUAL "2")
-      add_definitions(-DFFEA_PARALLEL_PER_BLOB)
-    else ()
-      mymessage(FATAL_ERROR "invalid value for USE_OMP_MODE")
-    endif ()
-  endif()
-endif()
 
 
 # 5 #### USE C++11 ############ 
@@ -342,7 +322,7 @@ if (NOT USE_PACK)
   endif(USE_FAST)
 else (NOT USE_PACK)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -fipa-pta -mtune=generic")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=generic -static -static-libgcc -static-libstdc++")
   else()
       mymessage(FATAL_ERROR "No packaging without GNU compilers")
   endif()
@@ -432,7 +412,7 @@ set(CPACK_PACKAGE_VENDOR "University of Leeds, UK.")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "FFEA - a toolkit for molecular simulation using Fluctuating Finite Element Method")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
-set(CPACK_PACKAGE_CONTACT "contact-us@leeds.ac.uk")
+set(CPACK_PACKAGE_CONTACT "ffea@leeds.ac.uk")
 
 # # # CPACK: DEB or RPM # # # 
 if (USE_PACK_DIST STREQUAL "DEB") 
@@ -440,6 +420,7 @@ if (USE_PACK_DIST STREQUAL "DEB")
   set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_amd64")
 elseif (USE_PACK_DIST STREQUAL "RPM")
   set(CPACK_GENERATOR "TBZ2" "RPM")
+  # set(CPACK_GENERATOR "TXZ" "RPM")
 endif()
 
 # # # CPACK: DEB attributes # # # 

@@ -29,7 +29,7 @@ else:
 
 from numpy import array as nparray
 
-from FFEA_universe import *
+# from FFEA_universe import *
 
 def get_path_from_script(path, scriptdir):
 	if os.path.isabs(path):
@@ -106,6 +106,16 @@ class FFEA_script:
 			print("Error. Failed to load <ctforces>...</ctforces> ")
 			self.reset()
 			return
+
+		# Get precomp-stuff
+		self.precomp = FFEA_script_precomp()
+		try:
+			self.precomp.read_precomp_from_script_lines(script_lines, scriptdir)
+		except:
+			print("Error. Failed to load <precomp>...</precomp> ")
+			self.reset()
+			return
+
 
 		self.valid = True
 		self.empty = False
@@ -429,6 +439,8 @@ class FFEA_script:
 			
 		return
 
+
+
 	def default(self, basename, checkBasename=True):
 		
 		if checkBasename:
@@ -453,7 +465,9 @@ class FFEA_script:
 		for blob in self.blob:
 			blob.write_to_file(fout, fname, self.params.calc_kinetics, self.params.calc_preComp, verbose = verbose)
 
-		if self.spring != "" or self.ctforces != "":
+
+		# I think we should put all of this in an 'interactions' object. Then we can have 'if interactions == None' or something. I can't though, no time, writing my thesis :D
+		if self.spring != "" or self.precomp != None or self.ctforces != "":
 			fout.write("\t<interactions>\n")
 			if self.spring != "":
 				fout.write("\t\t<springs>\n")
@@ -463,6 +477,9 @@ class FFEA_script:
 				fout.write("\t\t<ctforces>\n")
 				fout.write("\t\t\t<ctforces_fname = %s>\n" % (os.path.relpath(self.ctforces, os.path.dirname(os.path.abspath(fname)))))
 				fout.write("\t\t</ctforces>\n")
+
+			if self.precomp != None:
+				self.precomp.write_to_file(fout)
 
 			fout.write("\t</interactions>\n")
 		fout.write("</system>")
@@ -491,6 +508,7 @@ class FFEA_script:
 		self.blob = []
 		self.spring = ""
 		self.ctforces = ""
+		self.precomp = None
 
 	# Loading other FFEA objects
 	def load_node(self, bindex, cindex=0):
@@ -534,6 +552,7 @@ class FFEA_script_params():
 		self.restart = 0
 		self.dt = 1e-14
 		self.kT = 4.11e-21
+		self.rng_seed = "" # string
 		self.kt = self.kT
 		self.check = 10000
 		self.num_steps = 1e11
@@ -586,7 +605,7 @@ class FFEA_script_params():
 		elif lvalue == "dt":
 			self.dt = float(rvalue)
 		elif lvalue == "rng_seed":
-			pass
+			self.rng_seed = rvalue
 		elif lvalue == "kT":
 			self.kT = float(rvalue)
 		elif lvalue == "check":
@@ -638,9 +657,9 @@ class FFEA_script_params():
 		elif lvalue == "vdw_type":
 			self.vdw_type = rvalue
 		elif lvalue == "inc_self_vdw":
-			self.inc_self_vdw = float(rvalue)
+			self.inc_self_vdw = int(rvalue)
 		elif lvalue == "vdw_cutoff":
-			self.vdw_cutoff == float(rvalue)
+			self.vdw_cutoff = float(rvalue)
 		elif lvalue == "vdw_steric_factor":
 			self.vdw_steric_factor = float(rvalue)
 		elif lvalue == "calc_noise":
@@ -729,11 +748,11 @@ class FFEA_script_params():
 		astr += "<param>\n"
 		astr += "\t<restart = %d>\n" % (self.restart)
 		if verbose:
-			astr += "\t<dt = %5.2e>\n" % (self.dt)
-			astr += "\t<kT = %5.2e>\n" % (self.kT)
+			astr += "\t<dt = %6.2e>\n" % (self.dt)
+			astr += "\t<kT = %6.2e>\n" % (self.kT)
 			astr += "\t<check = %d>\n" % (self.check)
-			astr += "\t<num_steps = %5.2e>\n" % (self.num_steps)
-			astr += "\t<rng_seed = time>\n"
+			astr += "\t<num_steps = %6.2e>\n" % (self.num_steps)
+			astr += "\t<rng_seed = %s>\n" % (self.rng_seed)
 		astr += "\t<trajectory_out_fname = %s>\n" % (os.path.relpath(self.trajectory_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<measurement_out_fname = %s>\n" % (os.path.relpath(self.measurement_out_fname, os.path.dirname(os.path.abspath(fname))))
 		astr += "\t<lj_params = %s>\n" % (os.path.relpath(self.vdw_forcefield_params, os.path.dirname(os.path.abspath(fname))))
@@ -746,26 +765,34 @@ class FFEA_script_params():
 			astr += "\t<checkpoint_in = %s>\n" % (os.path.relpath(self.checkpoint_in, os.path.dirname(os.path.abspath(fname))))
 		if self.checkpoint_out != "":
 			astr += "\t<checkpoint_out = %s>\n" % (os.path.relpath(self.checkpoint_out, os.path.dirname(os.path.abspath(fname))))
+		if self.beads_out_fname != "":
+			astr += "\t<beads_out_fname = %s>\n" % (os.path.relpath(self.beads_out_fname, os.path.dirname(os.path.abspath(fname))))
 
 		if (self.calc_es == 1):
-			astr += "\t<epsilon_0 = %5.2e>\n" % (self.epsilon_0)
-			astr += "\t<dielec_ext = %5.2e>\n" % (self.dielec_ext)
-			astr += "\t<epsilon = %5.2e>\n" % (self.epsilon)
-			astr += "\t<kappa = %5.2e>\n" % (self.kappa)
+			astr += "\t<calc_es = %d>\n" % (self.calc_es)
+			astr += "\t<epsilon_0 = %6.2e>\n" % (self.epsilon_0)
+			astr += "\t<dielec_ext = %6.2e>\n" % (self.dielec_ext)
+			astr += "\t<kappa = %6.2e>\n" % (self.kappa)
 			astr += "\t<es_h = %d>\n" % (self.es_h)
 		if verbose:
 			astr += "\t<max_iterations_cg = %d>\n" % (self.max_iterations_cg)
+			astr += "\t<epsilon = %6.2e>\n" % (self.epsilon)
+		if (self.calc_stokes == 1):
 			astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
-			astr += "\t<stokes_visc = %5.2e>\n" % (self.stokes_visc)
+			astr += "\t<stokes_visc = %6.2e>\n" % (self.stokes_visc)
+		if (self.calc_vdw == 1):
 			astr += "\t<calc_vdw = %d>\n" % (self.calc_vdw)
-			if self.calc_vdw == 1:
-				astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
-				if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
-					astr += "\t<vdw_steric_factor = %5.2e>\n" % (self.vdw_steric_factor)
+			astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
+			if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
+				astr += "\t<vdw_steric_factor = %6.2e>\n" % (self.vdw_steric_factor)
+			astr += "\t<vdw_cutoff = %6.2e>\n" % (self.vdw_cutoff)
+			astr += "\t<inc_self_vdw = %d>\n" % (self.inc_self_vdw)
+		if (self.calc_springs == 1):
 			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
+		if (self.calc_noise == 1):
 			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
-			astr += "\t<calc_es = %d>\n" % (self.calc_es)
-			astr += "\t<vdw_cutoff = %5.2e>\n" % (self.vdw_cutoff)
+		if (self.calc_preComp == 1):
+			astr += "\t<calc_preComp = %d>\n" % (self.calc_preComp)
 		if ((self.es_N[0] != -1) or (self.es_N[1] != -1) or (self.es_N[2] != -1)):
 			astr += "\t<es_N_x = %d>\n" % (self.es_N[0])
 			astr += "\t<es_N_y = %d>\n" % (self.es_N[1])
@@ -829,11 +856,11 @@ class FFEA_script_blob:
 		if need_solver == 1 and verbose:
 			fout.write("\t\t<solver = %s>\n" % (self.solver))
 
-		fout.write("\t\t<scale = %5.2e>\n" % (self.scale))
+		fout.write("\t\t<scale = %6.2e>\n" % (self.scale))
 		if self.rotation != None:
 			fout.write("\t\t<rotation = (")
 			for i in range(len(self.rotation)):
-				fout.write("%5.2f" % (self.rotation[i]))
+				fout.write("%6.2f" % (self.rotation[i]))
 				if i != len(self.rotation) - 1:
 					fout.write(",")
 
@@ -841,7 +868,7 @@ class FFEA_script_blob:
 		if self.centroid != None:
 			fout.write("\t\t<centroid = (")
 			for i in range(len(self.centroid)):
-				fout.write("%5.2f" % (self.centroid[i]))
+				fout.write("%6.2f" % (self.centroid[i]))
 				if i != len(self.centroid) - 1:
 					fout.write(",")
 
@@ -907,17 +934,88 @@ class FFEA_script_conformation:
 		astr += tabs + "<nodes = %s>\n" % (os.path.relpath(self.nodes, os.path.dirname(os.path.abspath(fname))))
 		astr += tabs + "<surface = %s>\n" % (os.path.relpath(self.surface, os.path.dirname(os.path.abspath(fname))))
 		astr += tabs + "<vdw = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
+		if (self.beads != ""):
+			astr += tabs + "<beads = %s>\n" % (os.path.relpath(self.beads, os.path.dirname(os.path.abspath(fname))))
+
 
 		if(calc_kinetics == 1 and self.bsites != ""):
 			astr += tabs + "<binding_sites = %s>\n" % (os.path.relpath(self.bsites, os.path.dirname(os.path.abspath(fname))))
-
-		if(calc_preComp == 1):
-			astr += tabs + "<beads = %s>\n" % (os.path.relpath(self.beads, os.path.dirname(os.path.abspath(fname))))
 
 		if (need_conformations):
 			astr += "\t\t</conformation>\n"
 
 		fout.write(astr)
+
+
+class FFEA_script_precomp():
+	
+	def __init__(self):
+
+		# Must have same default values as main ffea so can load defaulted scripts
+		self.types = []
+		self.inputData = 1
+		self.folder = ""
+		self.dist_to_m = 1
+		self.E_to_J = 1
+
+
+	def read_precomp_from_script_lines(self, script_lines, scriptdir):
+
+		precomp_lines = extract_block_from_lines("precomp", 0, script_lines)
+
+		if len(precomp_lines) == 0:
+			return
+
+		done = 0
+		for l in precomp_lines:
+			try:
+				l = l.strip().replace("<", "").replace(">", "")
+				lvalue = l.split("=")[0].strip()
+				rvalue = l.split("=")[1].strip()
+	
+			except(IndexError, ValueError):
+				print("Error. Couldn't parse precomp tag '" + l + "'")
+				return
+
+			if lvalue == "types":
+				self.types = [r.strip() for r in rvalue.replace("(", "").replace(")", "").split(",")]
+				done += 1
+			if lvalue == "inputData":
+				self.inputData = int(rvalue)
+				done += 1
+			if lvalue == "folder":
+				self.folder = rvalue
+				done += 1
+			if lvalue == "dist_to_m":
+				self.dist_to_m = float(rvalue)
+				done += 1
+			if lvalue == "E_to_J":
+				self.E_to_J = float(rvalue)
+				done += 1
+			
+		if done != 5 : 
+			print("Error. Could not parse all the PreComp fields.")
+			return
+
+		return
+
+	def write_to_file(self, fout):
+		fout.write("\t\t<precomp>\n")
+
+		txt_types = "("
+		for t in self.types:
+			txt_types += t + ", "
+		txt_types = txt_types[:-2] + ")"
+		fout.write("\t\t\t<types = %s>\n" % (txt_types))
+
+		fout.write("\t\t\t<inputData = %d>\n" % (self.inputData))
+		fout.write("\t\t\t<folder = %s>\n" % (self.folder))
+		fout.write("\t\t\t<dist_to_m = %e>\n" % (self.dist_to_m))
+		fout.write("\t\t\t<E_to_J = %e>\n" % (self.E_to_J))
+
+		fout.write("\t\t</precomp>\n")
+		return
+
 
 def extract_block_from_lines(title, index, lines):
 

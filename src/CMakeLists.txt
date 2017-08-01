@@ -23,32 +23,53 @@
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
-add_executable(ffea ffea.cpp
+add_library(ffea_lib
     FFEA_return_codes.cpp FFEA_input_reader.cpp 
     BEM_Poisson_Boltzmann.cpp mesh_node.cpp 
     SimulationParams.cpp tetra_element_linear.cpp 
-    SparseSubstitutionSolver.cpp Face.cpp Blob.cpp
-    BiCGSTAB_solver.cpp CG_solver.cpp ConjugateGradientSolver.cpp 
+    SparseSubstitutionSolver.cpp Face.cpp BiCGSTAB_solver.cpp 
     GaussianQuadrature_1d.cpp GaussianQuadrature_tri.cpp 
-    MassLumpedSolver.cpp MassMatrixLinear.cpp MassMatrixQuadratic.cpp MatrixFixedSparsityPattern.cpp 
-    LJ_matrix.cpp BindingSite.cpp mat_vec_fns.cpp mat_vec_fns_II.cpp
-    NearestNeighbourLinkedListCube.cpp NoMassCGSolver.cpp 
-    PoissonMatrixQuadratic.cpp SparseMatrixFixedPattern.cpp 
-    SparseMatrixTypes.cpp SparseMatrixUnknownPattern.cpp SparsityPattern.cpp 
-    Spring.cpp World.cpp VdW_solver.cpp 
-    Steric_solver.cpp LJSteric_solver.cpp KineticState.cpp PreComp_solver.cpp 
-    CheckTetrahedraOverlap.cpp VolumeIntersection.cpp
-    FFEA_user_info.cpp RngStream.cpp )
+    MassLumpedSolver.cpp MassMatrixLinear.cpp MassMatrixQuadratic.cpp 
+    MatrixFixedSparsityPattern.cpp LJ_matrix.cpp BindingSite.cpp 
+    mat_vec_fns_II.cpp NearestNeighbourLinkedListCube.cpp 
+    PoissonMatrixQuadratic.cpp SparseMatrixTypes.cpp 
+    SparseMatrixUnknownPattern.cpp SparsityPattern.cpp 
+    Spring.cpp VdW_solver.cpp Steric_solver.cpp LJSteric_solver.cpp 
+    KineticState.cpp PreComp_solver.cpp CheckTetrahedraOverlap.cpp 
+    VolumeIntersection.cpp RngStream.cpp )
     
+add_executable(ffea ffea.cpp CG_solver.cpp ConjugateGradientSolver.cpp
+    FFEA_user_info.cpp mat_vec_fns.cpp NoMassCGSolver.cpp 
+    SparseMatrixFixedPattern.cpp World.cpp Blob.cpp)
+if (USE_OPENMP)
+  target_compile_definitions(ffea PRIVATE -DFFEA_PARALLEL_WITHIN_BLOB)
+endif (USE_OPENMP)
+
+if (USE_OPENMP)
+  add_executable(ffea_mb ffea.cpp CG_solver.cpp ConjugateGradientSolver.cpp
+    FFEA_user_info.cpp mat_vec_fns.cpp NoMassCGSolver.cpp 
+    SparseMatrixFixedPattern.cpp World.cpp Blob.cpp)
+  target_compile_definitions(ffea_mb PRIVATE -DFFEA_PARALLEL_PER_BLOB)
+endif(USE_OPENMP)
+
+add_dependencies(ffea ffea_lib)
+if (USE_OPENMP)
+  add_dependencies(ffea_mb ffea_lib)
+endif(USE_OPENMP)
+
 if (USE_BOOST_INTERNAL)
-   add_dependencies(ffea ourboost)
+   add_dependencies(ffea_lib ourboost)
 endif(USE_BOOST_INTERNAL)
 if (USE_EIGEN3_INTERNAL)
-   add_dependencies(ffea getEigen)
+   add_dependencies(ffea_lib getEigen)
 endif(USE_EIGEN3_INTERNAL)
 
 
-target_link_libraries(ffea ${LIBS_TO_LINK} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(ffea ffea_lib ${LIBS_TO_LINK} ${CMAKE_THREAD_LIBS_INIT})
+install (TARGETS ffea ffea_mb RUNTIME DESTINATION bin)
 
-install (TARGETS ffea RUNTIME DESTINATION bin)
+if(USE_OPENMP)
+    target_link_libraries(ffea_mb ffea_lib ${LIBS_TO_LINK} ${CMAKE_THREAD_LIBS_INIT})
+    install (TARGETS ffea RUNTIME DESTINATION bin)
+endif(USE_OPENMP)
 
