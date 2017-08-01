@@ -4,8 +4,8 @@ Installation {#install}
 This document gives instructions on how to build and install the FFEA package,
  consisting of the FFEA runner and the FFEA tools. Compiling FFEA is very 
  easy, and essentially consists of three commands: "cmake", "make", 
- and "make install". If you don't want to do so, you can download 
- the program [here](https://bitbucket.org/FFEA/ffea/downloads/). 
+ and "make install". If you don't want to perform the cmake and make steps, then
+ you can download the program [here](https://bitbucket.org/FFEA/ffea/downloads/). 
  In that case, read the Prerequisites section [on using FFEA](\ref prerequisitesU),
  and then jump to [install](\ref makeinstall).
 
@@ -30,7 +30,7 @@ To compile FFEA   {#prerequisitesC}
      will not render correctly if [LaTeX](https://www.tug.org/texlive/) is not found.
 
 
-FFEA uses Boost and Eigen. To make your life easier, **the code is shipped whih 
+FFEA uses Boost and Eigen. To make your life easier, **the code is shipped with 
  a subset of Boost (v. 1.63), and Eigen (v 3.3.4)** will be downloaded by CMake
  at configure time. Still, you are welcome to use your own versions of the libraries.
 
@@ -57,7 +57,7 @@ To use FFEA  {#prerequisitesU}
 Configure {#configure}
 =========
 
-FFEA uses CMake to find the compile, dependencies and to configure files and Makefiles 
+FFEA uses CMake to find the compiler, dependencies and to configure files and Makefiles 
  automatically for you. After the first run, CMake stores some information
  such as your compiler, so that on a second run it will not look for it again. 
  If you wanted to change the compiler on a second round you would need 
@@ -81,7 +81,7 @@ where ` $FFEA_SRC ` denotes the directory with the FFEA sources while
 
 where $HOME/softw/ffea can be replaced with an installation directory of your choice.
  CMake default options seeks to build FFEA for production, and will suit most of the users.
- The following subsection go to higher detail, but if you are happy with defaults,
+ The following subsection gives greater detail, but if you are happy with defaults,
  you can jump to [build](\ref build).
  
 
