@@ -6,14 +6,15 @@ This document gives instructions on how to build and install the FFEA package,
  easy, and essentially consists of three commands: "cmake", "make", 
  and "make install". If you don't want to do so, you can download 
  the program [here](https://bitbucket.org/FFEA/ffea/downloads/). 
- In that case, read the Prerequisites section, and then jump
- to [install](\ref makeinstall).
+ In that case, read the Prerequisites section [on using FFEA](\ref prerequisitesU),
+ and then jump to [install](\ref makeinstall).
 
 
 Prerequisites {#prerequisites}
 =============
 
-**To compile** FFEA you need:
+To compile FFEA   {#prerequisitesC}
+----------------
 
    * C and C++ compilers.   
      There is some C++ code written using 
@@ -42,6 +43,8 @@ FFEA uses Boost and Eigen. To make your life easier, **the code is shipped whih
    > Warning - GCC >= 5 will require version 3.2.10 or higher for Eigen. Earlier versions (including 3.3 release candidates, marked internally as 3.2.91 and higher) did prove to be incompatible with GCC >= 5 and using C++11 standard. You may also need a newer version of Boost. 
      
 
+To use FFEA  {#prerequisitesU}
+----------------
 **To use** FFEA, or more specifically the FFEA tools, you will need:
 
    * [Python](https://www.python.org/) (>= 2.6), is used to run some tests to verify that the FFEA runner was correctly built, as well as in the FFEA tools.
@@ -63,13 +66,30 @@ FFEA uses CMake to find the compile, dependencies and to configure files and Mak
  Therefore, it is generally advisable to configure and compile 
  FFEA outside of the source tree, so we would recommend to:
 
-    mkdir $FFEA_BUILD
-    cd $FFEA_BUILD 
-    cmake $FFEA_SRC [OPTIONS]
+     mkdir $FFEA_BUILD
+     cd $FFEA_BUILD 
+     cmake $FFEA_SRC [OPTIONS]
 
 where ` $FFEA_SRC ` denotes the directory with the FFEA sources while 
-  ` $FFEA_BUILD` is an arbitrary folder where the generated files will be placed.
-Several ` [OPTIONS] ` can be added to `cmake`, being the most important ones:
+  ` $FFEA_BUILD` is an arbitrary working folder where the generated files will be placed.
+  There is a list of ` cmake ` ` [OPTIONS] ` later in this section. Our favourite option
+  is to specify the installation directory, since the default (/usr/local/) 
+  may not be available if you do not have administrator privileges.  
+ To do this, use something like:
+
+    cmake $FFEA_SRC -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea
+
+where $HOME/softw/ffea can be replaced with an installation directory of your choice.
+ CMake default options seeks to build FFEA for production, and will suit most of the users.
+ The following subsection go to higher detail, but if you are happy with defaults,
+ you can jump to [build](\ref build).
+ 
+
+  
+CMake options
+-------------
+
+The following configuration flags are either fundamental to CMake or specific to FFEA:
 
   * `-DCMAKE_INSTALL_PREFIX=<install_dir>`       -  (default /usr/local) installation directory
   * `-DCMAKE_BUILD_TYPE=<Debug|Release>` -  (default Release) build type
@@ -94,6 +114,7 @@ If you decide to do so, CMake will look for the required Boost and/or Eigen libr
 Additional specific FFEA flags include:
 
   * `USE_FAST`    (default ON) will try to find the best compiler flags in terms of performance.
+                               Disable ` USE_FAST ` if you intend to debug the code.
   * `USE_OPENMP`  (default ON) will enable OpenMP parallel calculations.
 
   * `BUILD_DOC`    (default TRY) where:
@@ -104,13 +125,6 @@ Additional specific FFEA flags include:
     - `ONLY` will try to find Doxygen (raising an error if not found) and only build the documentation.
 
 
-Thus, for production runs, one could configure the package typing:
-
-    cmake $FFEA_SRC -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea
-
-
-
-
 
 
 Build {#build} 
@@ -119,12 +133,13 @@ After configuring you will be able to build FFEA typing:
 
      make 
 
-You may want to check your installation running a provided suite of tests, 
- either sequentially:
+Before installing, you may now want to check that the code was correctly compiled. 
+ Do so running the provided suite of tests, either sequentially (using a single processor, 
+ one tests after the other):
   
      make test
 
-or concurrently:
+or concurrently (multiple tests running independently on different processors):
 
      ctest -j <number-of-processes> 
 
@@ -156,22 +171,22 @@ If you built the documentation you will be able to read it with a web browser,
 
 
 
-Finally, a plugin to visualise systems and trajectories in 
- [PyMOL](https://www.pymol.org) should be found in:
+Finally, install a plugin to visualise systems and trajectories in 
+ [PyMOL](https://www.pymol.org). The plugin should be found in:
 
-     $FFEA_HOME/share/ffea/plugins/pymol/ffea.tar.gz
+     $FFEA_HOME/share/ffea/plugins/pymol/FFEAplugin.tar.gz
 
 
-In order to use it, one would need to run PyMOL (>=1.6), and then click on
+and in order to install it, one would need to run PyMOL (>=1.6), and then click on
   ` Plugin ` -> ` Plugin Manager `, and on the new window, go to tab 
   ` Install New Plugin `, click ` Choose file... ` and finally find and 
-  select ` ffea.tar.gz ` from your disk. You will be asked to install the 
+  select ` FFEAplugin.tar.gz ` from your disk. You will be asked to install the 
   plugin either into a local folder or a global folder. If the 
   folder does not exist, PyMOL will ask your permission on creating the folder, 
-  and will install the plugin properly. However, just in this case,
-  it but will bump ` Plugin FFEAplugin has
-  been installed but initialization failed `, and you'll need to restart PyMOL
-  to use the plugin.
+  and will install the plugin properly. However, and just in this case,
+  it will bump ` Plugin FFEAplugin has
+  been installed but initialization failed `. All you need to do is 
+  to restart PyMOL to use the plugin.
 
 
 
@@ -195,12 +210,15 @@ Useful packages
 ===============
 
 Once FFEA has been installed, users may want to provide themselves with some
- extra packages that have proved to be useful at setting up the system
- to simulate, as well as at analysing the results:
+ extra packages that have proved to be useful for setting up the system
+ to simulate, as well as for analysing the results:
 
    * [PyMOL](https://www.pymol.org) (>=1.7) can
         be used to visualise FFEA systems and trajectories
         once the plugin has been installed.
+
+   * [Meshlab](http://www.meshlab.net) [OPTIONAL]. An open soure 
+        system for processing and editing 3D triangular meshes.
 
 
    * [GTS](http://gts.sourceforge.net) (>=0.7.6)[OPTIONAL]. The
