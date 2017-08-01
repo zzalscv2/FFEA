@@ -2600,7 +2600,7 @@ int World::read_and_build_system(vector<string> script_vector) {
     //    leaves us with schedule static.
     int fatal_errors = 0; 
 #ifdef FFEA_PARALLEL_PER_BLOB
-    #pragma omp parallel for default(none) schedule(static) private(i,j) reduction(+: fatal_errors) shared(blob_conf, systemreader) // shared(params, blob_array, systemreader, blob_conf)
+    #pragma omp parallel for default(none) schedule(static) private(i,j) reduction(+: fatal_errors) shared(blob_conf) // shared(params, blob_array, systemreader, blob_conf)
 
 #endif
     for(i = 0; i < params.num_blobs; ++i) {
