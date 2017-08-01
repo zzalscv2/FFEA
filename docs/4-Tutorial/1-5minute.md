@@ -29,7 +29,7 @@ ffea [your .ffea script filename]
 ```
 To run FFEA. FFEA should load up and start producing output immediately, and then terminate after 1000 steps and 100 frames.
 
-That's it! You've now run your first simulation. To take a look at the results, install PyMOL (using [Anaconda](https://www.continuum.io/downloads) and `conda install pymol` is our preferred way to do it), [install the FFEA viewer](\ref FFEAanalysistut), and open up the .ffea script file.
+That's it! You've now run your first simulation. To take a look at the results, install PyMOL (you could do so using [Anaconda](https://www.continuum.io/downloads) and `conda install pymol`), [install the FFEA viewer](\ref FFEAanalysistut), and open up the .ffea script file.
 
 This tutorial, and FFEA automodel, only represent the most basic FFEA features. To see more, please [check out the full tutorial](\ref Tutorial), and the [FFEA runner documentation](\ref userManual).
 

@@ -158,8 +158,8 @@ class Blob:
 				raise
 
 		# beads for active blobs need to know of the elements. 
-		if (len(c.beads)):
-			self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.top, self.node)
+		#if (len(c.beads)):
+		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.top, self.node)
 
 		# Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
 		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	

@@ -469,8 +469,12 @@ class FFEA_node:
 
 		return mass
 
-	def calc_centroid(self):
-		self.centroid = (1.0 / self.num_nodes) * np.sum(self.pos, axis = 0)
+	def calc_centroid(self, subset=None):
+		if subset == None:
+			pos = self.pos
+		else:
+			pos = np.array([self.pos[i] for i in subset])
+		self.centroid = (1.0 / self.num_nodes) * np.sum(pos, axis = 0)
 		return self.centroid
 	
 	def calc_CoM(self, top, mat):
