@@ -60,6 +60,7 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     """    
     
     # Test args
+    if mesh == None: return 1
     if len(mesh) == 3:
         nodefname = '' 
         topfname = ''
