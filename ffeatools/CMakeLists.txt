@@ -66,6 +66,7 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 modules/FFEA_lj.py 
                 modules/FFEA_pdb.py 
                 modules/FFEA_beads.py 
+                modules/FFEA_ctforces.py 
                 modules/FFEA_exceptions.py 
                 modules/FFEA_kinetic_map.py
                 modules/FFEA_kinetic_rates.py
