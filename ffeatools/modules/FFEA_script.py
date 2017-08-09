@@ -29,7 +29,7 @@ else:
 
 from numpy import array as nparray
 
-# from FFEA_universe import *
+from FFEA_universe import *
 
 def get_path_from_script(path, scriptdir):
 	if os.path.isabs(path):

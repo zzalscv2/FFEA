@@ -60,28 +60,28 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     """    
     
     # Test args
+    if mesh == None: return 1
     if len(mesh) == 3:
         nodefname = '' 
         topfname = ''
         surffname = ''
         B = []
         for f in mesh:
-            basename, extension = os.path.splitext(f)
-            print basename, extension
+            b_name, extension = os.path.splitext(f)
+            print b_name, extension
             if extension == '.node': nodefname = f
             if extension == '.ele': topfname = f
             if extension == '.face': surffname = f
-            B.append(basename)
+            B.append(b_name)
             B = list(set(B))
-            if (len(B) > 1): print "Using basename: ", B[0]
-            basename = B[0]
+            # if (len(B) > 1): print "Using b_name: ", B[0]
+            volfname = B[0]
 
         if (len(nodefname) == 0) or (len(topfname) == 0) or (len(surffname) == 0):
             print "node: ", nodefname
             print "top: ", topfname
             print "surf: ", surffname
             raise IOError("Could not assign names to .ele (topology) .face (surface) and .node files")
-        print "basename: ", basename
        
 
     elif len(mesh) == 1:
@@ -91,11 +91,6 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
         if volfname == None:
             raise IOError("You must specify a .vol filename with '--mesh'. Run this script with the -h flag to get help.")
         
-        if outfname == None:
-	        basename = os.path.splitext(os.path.abspath(volfname))[0]
-        else:
-	        basename = os.path.splitext(os.path.abspath(outfname))[0]
-
         # everything can be read from a .vol file:
         topfname = volfname
         nodefname = volfname
@@ -104,6 +99,11 @@ def convert_from_volumetric_mesh(mesh, stokes_radius=None, cull=[False, 0.0], de
     else:
        print ("Wrong number of arguments for --mesh:")
        return 1
+
+    if outfname == None:
+        basename = os.path.splitext(os.path.abspath(volfname))[0]
+    else:
+        basename = os.path.splitext(os.path.abspath(outfname))[0]
 
 
 
