@@ -260,7 +260,7 @@ class FFEA_surface:
 						zeroindexing = True
 						break
  
-				face.set_indices(sline)
+				face.set_indices(sline[:3])
 				self.add_face(face)
 
 			except:

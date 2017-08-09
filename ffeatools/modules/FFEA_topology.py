@@ -515,25 +515,6 @@ class FFEA_topology:
 		self.element.insert(index, e)
 		self.element.pop(index + 1)
 
-	#def check_normals(self, node, surf=None):
-	#	
-	#	# Get all faces on all elements and check that the normals are correctly oriented (pointing outwards)
-	#	# Keep interior nodes interior!
-#
-#		num_elements_checked = 0
-#		num_elements_correct = 0
-#		while num_elements_correct != self.num_interior_elements:
-#			num_elements_correct = 0
-#			num_elements_checked = 0
-#	
-#			for i in range(self.num_interior_elements):
-#				
-#				# Get the 4 faces
-#				efaces = [self.element[i].get_linear_face[n] for n in range(4)]
-#
-#				# For each face, check normal. If any one normal is wrong, they are all wrong. A switch of two indices will fix it.
-#				# Trust me on this, or do some index permutations on a piece of paper :)
-
 	def cull_interior(self, limitvol, node, surf=None):
 
 		# First, get the interior stuff sorted, if we can
@@ -647,6 +628,12 @@ class FFEA_topology:
 				length = new_length
 
 		return length
+
+	def calculate_volume(self, node):
+		vol = 0.0
+		for e in self.element:
+			vol += e.calc_volume(node)
+		return vol
 
 	def calculate_strain_energy(self, frame, frame0, mat):
 		
