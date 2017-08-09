@@ -895,13 +895,35 @@ class Blob:
 
 			axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
 			
+
+			#if display_flags['show_numbers'] == 'Node Indices':
+			#	ndx_name += "_nI"
+			#	for n in range(self.node.num_nodes):
+			#		if n == 10000: 
+			#			print "Cannot load more than 10000 Supportive Fake Atoms"
+			#			break
+			#		pos = (self.frames[i].pos[n].tolist())[0:3]
+			#		text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+
+
 			# And the indices
+			danbnum = ""
+			danbnum_name = display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum"
+			plotDanB = True
 			for e in dindex:
 				en = self.top.element[e].calc_centroid(self.frames[i])
 				cyl_text(dantxt, plain, en, str(e), scale, axes=axes)
+				danbnum += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e, "CA", "FEA", "A", e, en[0], en[1], en[2]))
+				if e > 10000: plotDanB = False 
+				
 
 			if len(dantxt) != 0:
-				cmd.load_cgo(dantxt, display_flags['system_name'] + "_" + str(self.idnum) + "_dangernum", frameLabel)
+				if plotDanB == True:
+					cmd.read_pdbstr(danbnum, danbnum_name, frameLabel)
+					cmd.hide("everything", danbnum_name)
+					cmd.label(danbnum_name,"resi")
+				else:
+					cmd.load_cgo(dantxt, danbnum_name, frameLabel)
 
 		#
 		#  Load SFA: Supportive Fake Atoms #
