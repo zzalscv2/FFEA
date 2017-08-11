@@ -80,12 +80,12 @@ def FFEA_get_PCA_animations(infile, topfile, outfile, num_modes, scale):
 
 	print("Calculating Eigenvector Animations...")
 	for i in range(num_modes):
-		anim_outfname = outfile + "_anim" + str(i) + ".pdb"
-		anim_outfname_ffea = outfile + "_anim" + str(i) + ".ftj"
+		anim_outfname = outfile + "_anim" + str(i + 1) + ".pdb"
+		anim_outfname_ffea = outfile + "_anim" + str(i + 1) + ".ftj"
 		sys.stdout.write("\rEigenvector %d" % (i + 1))
 		if(pyPczver[0] >= 2):
 			try:
-				subprocess.call(["pyPczdump", "-i", infile, "-m", str(i), "-o", anim_outfname])
+				subprocess.call(["pyPczdump", "-i", infile, "-m", str(i + 1), "-o", anim_outfname])
 			except OSError as e:
 				if e.errno == os.errno.ENOENT:
 					raise OSError
