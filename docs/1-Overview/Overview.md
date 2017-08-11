@@ -72,17 +72,17 @@ Technology  {#technology}
    or [TETGEN](http://wias-berlin.de/software/tetgen/) [OPTIONAL]. 
      Programs which convert surface profile into volumetric meshes 
         to be used by FFEA.
-   * [pyPcazip](https://pypi.python.org/pypi/pyPcazip) [OPTIONAL]
-     Some of the Python FFEA analysis tools interact with these 
-     Principal Component Analysis library in order to generate the standard
-     PCA output (eigensystems, projections, animations etc)
-     obtained from standard from equivalent MD simulations.
-
+   * [pyPcazip](https://pypi.python.org/pypi/pyPcazip)<sup>[4](#pyPCApaper)</sup>  [OPTIONAL]
+     Some of the Python FFEA analysis tools interact with the pyPcazip 
+     Principal Component Analysis libraries in order to generate standard
+     PCA output(eigensystems, projections, animations etc)
+     equivalent to those obtained from equivalent MD simulations.
+     See [here](https://bitbucket.org/ramonbsc/pypcazip/wiki/Home) for their wiki.
 
 <a name="RngStreams1">1</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators", (1999) Oper Res, 47(1):159-164. <br> 
 <a name="RngStreams2">2</a>: P L'Ecuyer et al. "An Objected-Oriented Random-Number Package with Many Long Streams and Substreams", (2002) Oper Res, 50(6):1073-1075. <br>
-<a name="tetatetpaper">3</a>:  F Ganovelli, et al. "Fast tetrahedron-tetrahedron overlap algorithm", (2002) J.Graphics Tools. 7(2):17-25.
-
+<a name="tetatetpaper">3</a>:  F Ganovelli, et al. "Fast tetrahedron-tetrahedron overlap algorithm", (2002) J.Graphics Tools. 7(2):17-25. <br>
+<a name="pyPCApaper">3</a>:  A Shkurti, et al. "pyPcazip: A PCA-based toolkit for compression and analysis of molecular simulation data", (2016) SoftwareX. 7:44-50.
 
 
 Contribute
