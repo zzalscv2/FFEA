@@ -28,7 +28,7 @@ import __builtin__
 
 parser = _argparse.ArgumentParser(description="FFEA Thin Trajectory")
 parser.add_argument("script_fname", action="store", help="Input script file (.ffea)")
-parser.add_argument("out_fname", action="store", help="Output trajectory/measurement file (.ftj/.fm/.fdm)")
+parser.add_argument("out_fname", action="store", help="Output script fname (.ffea)")
 parser.add_argument("frames_to_read", action="store", type=int, help="Number of frames to read")
 parser.add_argument("thin_percent", action="store", type=float, help="Percentage to keep")
 
@@ -56,18 +56,41 @@ def thin_system(script_fname, frames_to_read, thin_percent):
     script = FFEA_script.FFEA_script(script_fname)
     traj = FFEA_trajectory.FFEA_trajectory(script.params.trajectory_out_fname, frame_rate = frame_rate, num_frames_to_read = frames_to_read)
     meas = FFEA_measurement.FFEA_measurement(script.params.measurement_out_fname, frame_rate = frame_rate, num_frames_to_read = frames_to_read)
-    return traj, meas
+    return script, traj, meas
     
 if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     # Get args and build objects
     if not os.path.exists(args.script_fname):
         raise IOError("Script file specified doesn't exist.")
-    out_traj, out_meas = thin_system(args.script_fname, args.frames_to_read, args.thin_percent, )
+    out_script, out_traj, out_meas = thin_system(args.script_fname, args.frames_to_read, args.thin_percent, )
 
     # Get output_fnames and write out
     out_bfname = os.path.splitext(args.out_fname)[0]
+
     out_tfname = out_bfname + ".ftj"
+    index = 1
+    while os.path.exists(out_tfname):
+	out_tfname = out_bfname + "_" + str(index) + ".ftj"
+	index += 1
+
     out_mfname = out_bfname + ".fm"
+    index = 1
+    while os.path.exists(out_tfname):
+	out_tfname = out_bfname + "_" + str(index) + ".ftj"
+	index += 1
+
+    out_sfname = out_bfname + ".ffea"
+    index = 1
+    while os.path.exists(out_tfname):
+	out_tfname = out_bfname + "_" + str(index) + ".ftj"
+	index += 1
+
     out_traj.write_to_file(out_tfname)
     out_meas.write_to_file(out_mfname)
+
+    out_script.params.measurement_out_fname = out_mfname
+    out_script.params.trajectory_out_fname = out_tfname
+    out_script.write_to_file(out_sfname)
+
+    print("\nSystem successfully thinned out!\n\tScript - %s\n\tTrajectory - %s\n\tMeasurement - %s/.fdm\n" % (out_sfname, out_tfname, out_mfname))
