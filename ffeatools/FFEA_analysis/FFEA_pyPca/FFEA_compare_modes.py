@@ -96,6 +96,8 @@ if eig_switch != []:
 # Do some dot products!
 print("Building the Eigenvectors Dot Product Matrix...")
 num_modes = len(evecs[0])
+num_modes = 20
+print(num_modes)
 dot_prod = np.array([[0.0 for i in range(num_modes)] for j in range(num_modes)])
 
 for i in range(num_modes):
@@ -163,7 +165,7 @@ else:
 
 
 # Plot data
-data = range(dot_prod.shape[0])
+data = [i for i in range(dot_prod.shape[0])]
 for i in range(num_modes):
 	data[i] = dot_prod[(num_modes - 1) - i]
 
@@ -206,12 +208,11 @@ print("Visualising eigenvalues as a histogram...")
 fig, ax = plt.subplots(figsize=(13,10))
 #ax = fig.add_subplot(1,2,2)
 
-evals[0] = np.array(evals[0])
-evals[1] = np.array(evals[1])
+evals[0] = np.array(evals[0][0:num_modes])
+evals[1] = np.array(evals[1][0:num_modes])
 
 width = 0.35
 ind = np.arange(evals[0].size) + width / 2.0  # the x locations for the groups
-
 eva = ax.bar(ind, evals[0], width, color='r')
 evb = ax.bar(ind + width, evals[1], width, color='g')
 ax.set_xticks(ind + width)

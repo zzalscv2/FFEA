@@ -90,6 +90,16 @@ def FFEA_get_PCA_eigensystem(infile, topfile, outfile, num_modes):
 		else:
 			print("Unknown problem running 'pyPczdump. Perhaps conflicting versions (before and after 2.0)")
 			raise IOError
+
+	# Reduce to number of evals requested
+	fin = open(outfileval, "r")
+	lines = fin.readlines()
+	fin.close()
+	
+	fin = open(outfileval, "w")
+	for i in range(num_modes):
+		fin.write(lines[i])
+	fin.close()
 	print("...done!\n")
 
 	# Evecs
@@ -132,22 +142,22 @@ def FFEA_get_PCA_eigensystem(infile, topfile, outfile, num_modes):
 
 if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     try:
-	    args = parser.parse_args()
+        args = parser.parse_args()
     except:
-	somehelp = parser.format_help().split("\n", 1)[1]
-	print somehelp
-	sys.exit()
+        somehelp = parser.format_help().split("\n", 1)[1]
+        print(somehelp)
+        sys.exit()
 
     try:
-	FFEA_get_PCA_eigensystem(args.i, args.t, args.o, args.n)
+        FFEA_get_PCA_eigensystem(args.i, args.t, args.o, args.n)
     except IOError:
         parser.print_help()
     except ValueError:
-	print("'-n' must be an integer")
+        print("'-n' must be an integer")
         parser.print_help()
     except TypeError:
         parser.print_help()
-	print("\nLikely missing argument. Please try again :)\n")
+        print("\nLikely missing argument. Please try again :)\n")
     except OSError:
-	print("\n'pyPczdump' program not found. Please add to your $PATH")
+        print("\n'pyPczdump' program not found. Please add to your $PATH")
         parser.print_help()
