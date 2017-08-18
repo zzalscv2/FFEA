@@ -37,7 +37,7 @@ intop = ""
 if len(sys.argv) > 4:
 	intop = sys.argv[4]
 
-num_frames_to_read = 10000
+num_frames_to_read = 100000
 if len(sys.argv) > 5:
 	num_frames_to_read = int(sys.argv[5])
 
@@ -176,6 +176,18 @@ if ext == ".pdb":
 	#outpdb.num_frames = len(bnodes[0])
 	#outpdb.write_to_file(outtraj)
 		
-elif ext == ".out":
+elif ext == ".ftj":
 		
-	print "Currently unavailable. Sorry about that. Fix me if you're a developer!"
+	# Build a trajectory object with some blobs and the right number of nodes and what not
+	# Input trajectory is spot on except for the number of nodes on each blob. Lets fix that
+	num_frames = len(output_nodes[0])
+	traj.num_frames = num_frames
+	for i in range(traj.num_blobs):
+		traj.num_nodes[i][0] = len(output_nodes[i])
+		traj.blob[i][0].num_nodes = len(output_nodes[i])
+
+		traj.blob[i][0].frame = traj.blob[i][0].frame[:num_frames]
+		for j in range(num_frames):
+			traj.blob[i][0].frame[j].pos = np.array(output_nodes[i][j])
+
+	traj.write_to_file(outtraj)

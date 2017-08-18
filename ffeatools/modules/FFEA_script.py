@@ -116,6 +116,8 @@ class FFEA_script:
 			self.reset()
 			return
 
+		if self.precomp.types == [] or self.precomp.types[0] == "":
+			self.precomp = None
 
 		self.valid = True
 		self.empty = False
@@ -364,7 +366,8 @@ class FFEA_script:
 
 			try:
 				if lvalue == "solver":
-					blob.solver = rvalue
+					if(rvalue.strip() != ""):
+						blob.solver = rvalue
 				elif lvalue == "scale":
 					blob.scale = float(rvalue)
 				elif lvalue == "centroid" or lvalue == "centroid_pos":
@@ -482,7 +485,7 @@ class FFEA_script:
 				self.precomp.write_to_file(fout)
 
 			fout.write("\t</interactions>\n")
-		fout.write("</system>")
+		fout.write("</system>\n")
 		fout.close()
 
 	def print_details(self):
@@ -825,7 +828,7 @@ class FFEA_script_blob:
 		self.rates = ""
 		self.map = []
 		self.map_indices = []
-		self.solver = ""
+		self.solver = "CG_nomass"
 		self.scale = 1.0
 		self.centroid = None
 		self.rotation = None
@@ -928,7 +931,7 @@ class FFEA_script_conformation:
 			astr += tabs + "<topology = %s>\n" % (os.path.relpath(self.topology, os.path.dirname(os.path.abspath(fname))))
 			astr += tabs + "<material = %s>\n" % (os.path.relpath(self.material, os.path.dirname(os.path.abspath(fname))))
 			astr += tabs + "<stokes = %s>\n" % (os.path.relpath(self.stokes, os.path.dirname(os.path.abspath(fname))))
-			if verbose:
+			if verbose and self.pin != "":
 				astr += tabs + "<pin = %s>\n" % (os.path.relpath(self.pin, os.path.dirname(os.path.abspath(fname))))
 
 		astr += tabs + "<nodes = %s>\n" % (os.path.relpath(self.nodes, os.path.dirname(os.path.abspath(fname))))
