@@ -77,7 +77,7 @@ class FFEA_springs:
 			raise FFEAFormatError(lin="2", lstr="num_springs %d")
 
 		if fin.readline().strip() != "springs:":
-			raise FFEAFormatError(lin="5", lstr="surface nodes:")
+			raise FFEAFormatError(lin="5", lstr="springs:")
 
 		# Read springs now
 		try:

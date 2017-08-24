@@ -420,7 +420,6 @@ class Blob:
             
 			aframe.set_pos(self.init_centroid)
 			#print aframe.calc_centroid(), self.init_centroid
-			print(self.beads)
 			if not self.beads.empty:
 				self.beads.pdb.translate(self.init_centroid) # translate the beads too
 
