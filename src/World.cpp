@@ -1391,7 +1391,7 @@ int World::lem(set<int> blob_indices, int num_modes) {
             dx = max.z - min.z;
         }
 
-        dx /= 20.0;
+        dx /= 5.0;
 
 	// Sort evals into correct units (N/m)
 	scalar unitscaler = mesoDimensions::force / mesoDimensions::length;

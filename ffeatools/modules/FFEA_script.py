@@ -409,7 +409,7 @@ class FFEA_script:
 
 		if lvalue == "springs_fname" or lvalue == "spring_fname":
 			self.spring = get_path_from_script(rvalue, scriptdir)
-
+			print(self.spring)
 			
 		return
 
