@@ -474,7 +474,7 @@ class FFEA_node:
 			pos = self.pos
 		else:
 			pos = np.array([self.pos[i] for i in subset])
-		self.centroid = (1.0 / self.num_nodes) * np.sum(pos, axis = 0)
+		self.centroid = (1.0 / (pos.size / 3)) * np.sum(pos, axis = 0)
 		return self.centroid
 	
 	def calc_CoM(self, top, mat):
