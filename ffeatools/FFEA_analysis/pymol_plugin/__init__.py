@@ -848,8 +848,10 @@ class FFEA_viewer_control_window:
 		try:
 			self.springs = FFEA_springs.FFEA_springs(self.script.spring)
 		except:
+			sys.stdout.write("Springs could not be loaded. Continuing...")
+			sys.stdout.flush()
 			self.springs = None
-
+			
 	# Send binding sites to control
 	binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
 	for i in range(self.script.params.num_blobs):

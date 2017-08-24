@@ -420,7 +420,8 @@ class Blob:
             
 			aframe.set_pos(self.init_centroid)
 			#print aframe.calc_centroid(), self.init_centroid
-			self.beads.pdb.translate(self.init_centroid) # translate the beads too
+			if not self.beads.empty:
+				self.beads.pdb.translate(self.init_centroid) # translate the beads too
 
 		if self.init_rotation != None:
 			print "=============================="
@@ -429,7 +430,8 @@ class Blob:
 			origin = aframe.calc_centroid() # store Blob's CM
 			aframe.rotate(self.init_rotation)
 			# self.beads.rotate_full_system(self.init_rotation, aframe.get_centroid(), 0) # rotate the beads too
-			self.beads.pdb.rotate_full_system(self.init_rotation, cent=origin, findex=0) # rotate the beads too
+			if not self.beads.empty:
+				self.beads.pdb.rotate_full_system(self.init_rotation, cent=origin, findex=0) # rotate the beads too
 
 		# Now scale
 		aframe.scale(self.scale * self.global_scale)

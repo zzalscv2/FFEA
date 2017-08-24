@@ -116,6 +116,8 @@ class FFEA_beads:
 					raise
 
 	def reset(self):
+		self.valid = False
+		self.empty = True
 		self.pdb = None
 		self.b_elems = [] # element indices, double list for [chain][atom].
 
