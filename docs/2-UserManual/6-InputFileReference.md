@@ -118,7 +118,7 @@ In between it can take the following parameters:
           either ` lennard-jones ` or ` ljsteric `. More details can be found 
           [here](\ref ljPotential).
 
-   * ` vdw_steric_factor ` <float> (1e-2) <BR>
+   * ` vdw_steric_factor ` <float> (1) <BR>
         Proportionality factor for the steric repulsion approach. More details 
          can be found [here](\ref sPotential).
 
