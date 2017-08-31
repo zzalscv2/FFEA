@@ -191,7 +191,7 @@ Specifically, a springs file with 3 springs could look like:
     1e-2 3e-9 0 1 0 0 66 83
 
 
-Springs file: .pin   {#ifpin}
+Pinned nodes file: .pin   {#ifpin}
 ----------------------
 
 This file provides a list of nodes for the corresponding blob that will remain fixed 
