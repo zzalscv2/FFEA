@@ -121,7 +121,7 @@ We want to thank everybody who has helped in making FFEA possible, from
  summer students, to experimental professors, we would not be here without you:
    * Stan Burgess
    * Stephen Muench
-	* Tom Ridley
+   * Tom Ridley
    * Kerrie Smith
    * Joanna Leng
    * Thijs van der Heijden
