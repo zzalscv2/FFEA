@@ -56,6 +56,13 @@ def FFEA_get_PCA_projections(infile, outfile, num_modes):
 		raise
 
 	# Do some PCZ analysis
+	# Check version (for some reason, it's written to stderr :/)
+	p = subprocess.Popen(["pyPczdump", "--version"], stderr=subprocess.PIPE)
+	sys.stderr.flush()
+	pyPczver = p.communicate()[1].strip()
+	sys.stdout.write("Found pyPczdump version " + pyPczver + "\n\n")
+	pyPczver = [int(bit) for bit in pyPczver.split(".")]
+
 	# Print help to file and hack your way to num_evecs
 	try:
 		num_avail_modes = int(subprocess.check_output(["pyPczdump", "-i", infile, "-n"]).split("\n")[8][:-1].split()[-1])
@@ -76,14 +83,24 @@ def FFEA_get_PCA_projections(infile, outfile, num_modes):
 	for i in range(num_modes):
 		proj = []
 		sys.stdout.write("\r\tProjection " + str(i) + "...")
-		try:
-			subprocess.call(["pyPczdump", "-i", infile, "-p", str(i + 1), "-o", outfiletemp])
-		except OSError as e:
-			if e.errno == os.errno.ENOENT:
-				raise OSError
-			else:
-				print("Unknown problem running 'pyPczdump. Perhaps conflicting versions (before and after 2.0)")
-				raise IOError
+		if(pyPczver[0] >= 2):
+			try:
+				subprocess.call(["pyPczdump", "-i", infile, "-p", str(i + 1), "-o", outfiletemp])
+			except OSError as e:
+				if e.errno == os.errno.ENOENT:
+					raise OSError
+				else:
+					print("Unknown problem running 'pyPczdump. Perhaps conflicting versions (before and after 2.0)")
+					raise IOError
+		else:
+			try:
+				subprocess.call(["pyPczdump", "-i", infile, "-p", str(i), "-o", outfiletemp])
+			except OSError as e:
+				if e.errno == os.errno.ENOENT:
+					raise OSError
+				else:
+					print("Unknown problem running 'pyPczdump. Perhaps conflicting versions (before and after 2.0)")
+					raise IOError
 
 		fin = open(outfiletemp, "r")
 		lines = fin.readlines()

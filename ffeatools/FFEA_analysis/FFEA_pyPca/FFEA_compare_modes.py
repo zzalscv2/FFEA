@@ -58,10 +58,10 @@ for i in range(2):
 		conversion = True
 	else:
 		conversion = False
+
 	if conversion:
 		for j in range(len(evals[i])):
 			evals[i][j] = 5 * 0.411 / evals[i][j]	# Converted to angstroms	
-
 
 print("done!")
 
@@ -96,8 +96,6 @@ if eig_switch != []:
 # Do some dot products!
 print("Building the Eigenvectors Dot Product Matrix...")
 num_modes = len(evecs[0])
-num_modes = 20
-print(num_modes)
 dot_prod = np.array([[0.0 for i in range(num_modes)] for j in range(num_modes)])
 
 for i in range(num_modes):
@@ -185,19 +183,19 @@ else:
 	ax.set_yticks(np.array([int((1 - (i / 10.0)) * num_modes) for i in range(11)]), minor=False)
 
 # Labels
-ax.set_yticklabels(row_labels, fontsize=18)
-ax.set_xticklabels(column_labels, fontsize=18)
+ax.set_yticklabels(row_labels, fontsize=24)
+ax.set_xticklabels(column_labels, fontsize=24)
 
 # And now titles and stuff
 ax.set_xlim(0, num_modes)
 ax.set_ylim(0, num_modes)
 
-ax.set_title("Eigenvector Inner Product Matrix", fontsize=24)
-ax.set_xlabel("Eigensystem A Modes", fontsize=18)
-ax.set_ylabel("Eigensystem B Modes", fontsize=18)
+ax.set_title("Eigenvector Inner Product Matrix", fontsize=30)
+ax.set_xlabel("Eigensystem A Modes", fontsize=24)
+ax.set_ylabel("Eigensystem B Modes", fontsize=24)
 
-cbar.ax.set_yticklabels(["%2.1f" % (i / 10.0) for i in range(11)], fontsize=18)
-cbar.set_label('Normalised Dot Product Values', fontsize=18)
+cbar.ax.set_yticklabels(["%2.1f" % (i / 10.0) for i in range(11)], fontsize=24)
+cbar.set_label('Normalised Dot Product Values', fontsize=24)
 
 plt.show()
 
@@ -216,7 +214,19 @@ ind = np.arange(evals[0].size) + width / 2.0  # the x locations for the groups
 eva = ax.bar(ind, evals[0], width, color='r')
 evb = ax.bar(ind + width, evals[1], width, color='g')
 ax.set_xticks(ind + width)
-ax.set_xticklabels((str(int(i + 1)) for i in ind), fontsize = 14)
+if num_modes > 20:
+	tlabs = []
+	for i in range(evals[0].size):
+		if (i + 1) % 10 == 0 or i == 0:
+			tlabs.append(str(int(i + 1)))
+		else:
+			tlabs.append("")
+
+	#ax.set_xticklabels((str(int(i + 1)) for i in ind[::int(num_modes / 10)]), fontsize = 14)
+	ax.set_xticklabels(tlabs)
+else:
+	ax.set_xticklabels((str(int(i + 1)) for i in ind), fontsize = 14)
+
 for label in ax.get_yticklabels():
 	label.set_fontsize(14)
 
@@ -224,7 +234,7 @@ for label in ax.get_yticklabels():
 ax.set_title("Eigenvalue Bar Chart Comparison", fontsize=24)
 ax.set_ylabel("Eigenvalue " + r"$(\AA ^2)$", fontsize=18)
 ax.set_xlabel("Eigenmode", fontsize=18)
-ax.legend([eva,evb], ['Eigensystem A', 'Eigensystem B'], loc = 0, fontsize=12)
+ax.legend([eva,evb], ['Eigensystem A', 'Eigensystem B'], loc = 0, fontsize=18)
 
 #base, ext = os.path.splitext(out_fname)
 #plt.savefig(base + ".png")

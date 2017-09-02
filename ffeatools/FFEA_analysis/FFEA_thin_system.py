@@ -53,7 +53,11 @@ def thin_system(script_fname, frames_to_read, thin_percent):
             thin_percent *= 100
     
     frame_rate = int(round(100 / thin_percent))
+
+    # Change output data
     script = FFEA_script.FFEA_script(script_fname)
+    script.params.check *= frame_rate
+
     traj = FFEA_trajectory.FFEA_trajectory(script.params.trajectory_out_fname, frame_rate = frame_rate, num_frames_to_read = frames_to_read)
     meas = FFEA_measurement.FFEA_measurement(script.params.measurement_out_fname, frame_rate = frame_rate, num_frames_to_read = frames_to_read)
     return script, traj, meas
@@ -91,6 +95,6 @@ if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
 
     out_script.params.measurement_out_fname = out_mfname
     out_script.params.trajectory_out_fname = out_tfname
-    out_script.write_to_file(out_sfname)
+    out_script.write_to_file(out_sfname, verbose=True)
 
     print("\nSystem successfully thinned out!\n\tScript - %s\n\tTrajectory - %s\n\tMeasurement - %s/.fdm\n" % (out_sfname, out_tfname, out_mfname))

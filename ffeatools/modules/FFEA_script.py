@@ -587,7 +587,7 @@ class FFEA_script_params():
 		self.es_update = 1
 		self.es_N = nparray([-1,-1,-1])
 		self.vdw_type = "steric"
-		self.vdw_steric_factor = 1e-2
+		self.vdw_steric_factor = 1
 		self.move_into_box = 1
 		self.sticky_wall_xz = 0
 		self.wall_x_1 = "PBC"
