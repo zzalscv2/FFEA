@@ -28,9 +28,10 @@ from FFEA_exceptions import *
 
 class FFEA_node:
 
-	def __init__(self, fname = "", frame = 0):
+	def __init__(self, fname = "", scale = 1.0, frame = 0):
 	
 		self.reset()
+		self.scale = scale
 
 		if fname == "":
 			self.valid = True
@@ -125,7 +126,8 @@ class FFEA_node:
 			j = 0
 			for i in range(num_surface_nodes):
 				sline = fin.readline().split()
-				n = [float(sline[0]), float(sline[1]), float(sline[2])]
+				n = [self.scale * float(sline[0]), self.scale * float(sline[1]), self.scale * float(sline[2])]
+				print n
 				self.add_node(n, nodetype = 0)
 
 			if fin.readline().strip() != "interior nodes:":
@@ -135,7 +137,8 @@ class FFEA_node:
 			i = num_surface_nodes
 			for j in range(num_interior_nodes):
 				sline = fin.readline().split()
-				n = [float(sline[0]), float(sline[1]), float(sline[2])]
+				n = [self.scale * float(sline[0]), self.scale * float(sline[1]), self.scale * float(sline[2])]
+				print n
 				self.add_node(n, nodetype = 1)
 
 		except (IndexError, ValueError):
@@ -455,7 +458,7 @@ class FFEA_node:
 					self.pos[e.n[sindex]] = 0.5 * (self.pos[e.n[i]] + self.pos[e.n[j]])
 					sindex += 1	
 
-	def scale(self, factor):
+	def rescale(self, factor):
 		
 		self.pos *= factor
 
@@ -504,7 +507,9 @@ class FFEA_node:
 		self.pos += np.array(trans)
 	
 	def set_pos(self, pos):
-		self.translate(np.array(pos) - self.calc_centroid())
+		v = np.array(pos) - self.calc_centroid()
+		self.translate(v)
+		return v
 
 	def rotate(self, rot):
 		
@@ -577,3 +582,4 @@ class FFEA_node:
 		self.num_nodes = 0
 		self.num_surface_nodes = 0
 		self.num_interior_nodes = 0
+		self.scale = 1.0
