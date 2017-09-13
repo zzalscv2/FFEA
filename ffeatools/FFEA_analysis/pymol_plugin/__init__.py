@@ -1241,7 +1241,7 @@ class FFEA_viewer_control_window:
 		if self.traj.load_frame() == 0:
 
 			# Scale traj frame
-			self.traj.scale(self.global_scale, -1)
+			self.traj.rescale(self.global_scale, -1)
 			
 			# Load into blob objects asnd increment frame count
 			self.add_frame_to_blobs(self.traj)
