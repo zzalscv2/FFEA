@@ -127,7 +127,6 @@ class FFEA_node:
 			for i in range(num_surface_nodes):
 				sline = fin.readline().split()
 				n = [self.scale * float(sline[0]), self.scale * float(sline[1]), self.scale * float(sline[2])]
-				print n
 				self.add_node(n, nodetype = 0)
 
 			if fin.readline().strip() != "interior nodes:":
@@ -138,7 +137,6 @@ class FFEA_node:
 			for j in range(num_interior_nodes):
 				sline = fin.readline().split()
 				n = [self.scale * float(sline[0]), self.scale * float(sline[1]), self.scale * float(sline[2])]
-				print n
 				self.add_node(n, nodetype = 1)
 
 		except (IndexError, ValueError):

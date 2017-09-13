@@ -435,7 +435,7 @@ class Blob:
 
 		# Now scale to PyMOL's scale.
 		aframe.rescale(self.global_scale)
-		self.beads.rescale(self.global_scale)
+		if not self.beads.empty: self.beads.rescale(self.global_scale)
 
 
 		# Append it to the list
