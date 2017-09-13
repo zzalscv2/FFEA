@@ -243,12 +243,12 @@ class FFEA_trajectory:
 		else:
 			self.traj.seek(self.fpos)
 
-	def scale(self, factor, frame_index):
+	def rescale(self, factor, frame_index):
 
 		for b in range(self.num_blobs):
 			for c in range(self.num_conformations[b]):
 				try:
-					self.blob[b][c].frame[frame_index].scale(factor)
+					self.blob[b][c].frame[frame_index].rescale(factor)
 				except:
 					continue
 

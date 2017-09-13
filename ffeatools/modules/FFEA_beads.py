@@ -28,9 +28,10 @@ import FFEA_pdb
 
 class FFEA_beads:
  
-	def __init__(self, fname = "", motion_state = "STATIC", topology = None, node = None):
+	def __init__(self, fname = "", motion_state = "STATIC", scale = 1.0, topology = None, node = None):
 
 		self.reset()
+		self.scale = scale
 		if fname == "":
 			self.valid = True
 			sys.stdout.write("Empty beads object initialised\n")
@@ -54,6 +55,9 @@ class FFEA_beads:
 
 		except:
 			raise
+
+		# and rescale the positions:
+		self.rescale(self.scale)
 
 		# now assign beads to elements... but we only have 
 		#  elements if motion_state == DYNAMIC
@@ -115,11 +119,20 @@ class FFEA_beads:
 				if self.b_elems[i][j] == -1: 
 					raise
 
+
+	def rescale(self, factor):
+		for i in range(self.pdb.num_chains):
+			for j, a in enumerate(self.pdb.chain[i].atom):
+				for d in range(3):
+					self.pdb.chain[i].frame[0].pos[j][d] *= factor
+
+
 	def reset(self):
 		self.valid = False
 		self.empty = True
 		self.pdb = None
 		self.b_elems = [] # element indices, double list for [chain][atom].
+		self.scale = 1.0
 
 
 		

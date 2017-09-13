@@ -111,12 +111,18 @@ class Blob:
 		c = b.conformation[cindex]
 		
 		self.motion_state = c.motion_state
+
+		try:
+			self.scale = b.scale
+		except:
+			self.scale = 1.0
+		
 		
 		# All will be present
 
 		# Try to load
 		try:
-			self.node = FFEA_node.FFEA_node(c.nodes)
+			self.node = FFEA_node.FFEA_node(c.nodes, scale = self.scale)
 		except:
 			print("\nERROR: '" + c.nodes + "' could not be loaded.")
 			raise
@@ -159,7 +165,7 @@ class Blob:
 
 		# beads for active blobs need to know of the elements. 
 		#if (len(c.beads)):
-		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.top, self.node)
+		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.scale, self.top, self.node)
 
 		# Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
 		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
@@ -209,11 +215,6 @@ class Blob:
 			except:
 				self.init_rotation = None
 				
-		try:
-			self.scale = b.scale
-		except:
-			self.scale = 1.0
-		
 		# Initialise stuff that we didn't get
 		self.hidden_face = [-1 for i in range(self.surf.num_faces)]
 		if self.vdw != None and self.vdw.num_faces == 0:
@@ -418,10 +419,9 @@ class Blob:
 			print "Moving to starting position..."
 			print "=============================="
             
-			aframe.set_pos(self.init_centroid)
-			#print aframe.calc_centroid(), self.init_centroid
+			dx = aframe.set_pos(self.init_centroid * self.scale)
 			if not self.beads.empty:
-				self.beads.pdb.translate(self.init_centroid) # translate the beads too
+				self.beads.pdb.translate(dx) # translate the beads too
 
 		if self.init_rotation != None:
 			print "=============================="
@@ -433,8 +433,10 @@ class Blob:
 			if not self.beads.empty:
 				self.beads.pdb.rotate_full_system(self.init_rotation, cent=origin, findex=0) # rotate the beads too
 
-		# Now scale
-		aframe.scale(self.scale * self.global_scale)
+		# Now scale to PyMOL's scale.
+		aframe.rescale(self.global_scale)
+		self.beads.rescale(self.global_scale)
+
 
 		# Append it to the list
 		self.frames.append(aframe)
