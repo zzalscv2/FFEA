@@ -824,11 +824,12 @@ class Blob:
 			# load the beads:
 			beads_name = display_flags['system_name'] + "_" + str(self.idnum) + "_b"
 			text = ""
-			if frameLabel == 1: # only load it for the first frame
+			if (frameLabel == 1) and (not self.beads.empty): # only load it for the first frame
 				text = self.beads.pdb.write_to_text()
-			cmd.read_pdbstr(text, beads_name, frameLabel)
-			cmd.hide("everything", beads_name)
-			cmd.show("spheres", beads_name)
+			if text != "":
+				cmd.read_pdbstr(text, beads_name, frameLabel)
+				cmd.hide("everything", beads_name)
+				cmd.show("spheres", beads_name)
 
 		if display_flags['show_beads'] == "Configuration & Assignments":
 			if (self.motion_state == "DYNAMIC"):
@@ -837,7 +838,7 @@ class Blob:
 				# load the affected elements and the connections:
 				obj = []
 				text = ""
-				if frameLabel == 1: # only load it for the first frame
+				if (frameLabel == 1) and (not self.beads.empty): # only load it for the first frame
 					for c in range(self.beads.pdb.num_chains):
 						for j, a in enumerate(self.beads.pdb.chain[c].atom):
 							e_ndx = self.beads.b_elems[c][j]
@@ -847,10 +848,11 @@ class Blob:
 							obj.extend( [ BEGIN, LINES, VERTEX, b[0], b[1], b[2], VERTEX, e[0], e[1], e[2], END ] )
 							text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e_ndx, "CA", "FEA", "A", e_ndx, e[0], e[1], e[2]))
 
-				cmd.load_cgo(obj, be_name, frameLabel)
-				cmd.read_pdbstr(text, b_elem_name, frameLabel)
-				cmd.hide("everything", b_elem_name)
-				cmd.show("spheres", b_elem_name)
+				if text != "":
+					cmd.load_cgo(obj, be_name, frameLabel)
+					cmd.read_pdbstr(text, b_elem_name, frameLabel)
+					cmd.hide("everything", b_elem_name)
+					cmd.show("spheres", b_elem_name)
 
 
 		#
