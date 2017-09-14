@@ -271,7 +271,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
      return FFEA_ERROR;
    }
    Dx = Dx * pc_params->dist_to_m / mesoDimensions::length ;
-   x_range[0] /= mesoDimensions::length; 
+   x_range[0] = x_range[0] * pc_params->dist_to_m / mesoDimensions::length; 
    x_range[1] = x_range[0] + Dx * n_values;
    x_range2[0] = x_range[0]*x_range[0]; 
    x_range2[1] = x_range[1]*x_range[1]; 
