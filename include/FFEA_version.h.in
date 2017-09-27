@@ -37,12 +37,12 @@ static string FFEA_date = "@PACKAGE_DATE@";
 #else
 
 <<<<<<< HEAD
-static string FFEA_prev_commit = "b2d48b7ec533a315476e72743913d928171b383a";
-static string FFEA_prev_branch = "superdev";
+static string FFEA_prev_commit = "4f2fafafc70ece61fae43ec08f136d6bf196e2ba";
+static string FFEA_prev_branch = "master";
 static string FFEA_prev_date = "2017-09-14";
 =======
-static string FFEA_prev_commit = "b2d48b7ec533a315476e72743913d928171b383a";
-static string FFEA_prev_branch = "superdev";
+static string FFEA_prev_commit = "4f2fafafc70ece61fae43ec08f136d6bf196e2ba";
+static string FFEA_prev_branch = "master";
 static string FFEA_prev_date = "2017-09-14";
 >>>>>>> master
 
