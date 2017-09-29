@@ -52,7 +52,7 @@ public:
     tetra_element_linear *e;
 
     /** Van der Waals interaction type **/
-    int vdw_interaction_type;
+    int ssint_interaction_type;
 
     /** Initial, equilibrium area of this face **/
     scalar area_0;
@@ -75,8 +75,8 @@ public:
     /** Stores the natural (shape function) coords of the centroid of this face in the parent element **/
     SecondOrderFunctions::stu centroid_stu;
 
-    bool vdw_xz_interaction_flag;
-    // bool *vdw_bb_interaction_flag; // DEPRECATED
+    bool ssint_xz_interaction_flag;
+    // bool *ssint_bb_interaction_flag; // DEPRECATED
     bool kinetically_active;
 
     //@{
@@ -143,7 +143,7 @@ public:
 
     int init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params);
 
-    void set_vdw_interaction_type(int vdw_interaction_type);
+    void set_ssint_interaction_type(int ssint_interaction_type);
 
     int build_opposite_node();
 
@@ -184,13 +184,13 @@ public:
 
     // void zero_vdw_xz_measurement_data(); // DEPRECATED
 
-    void set_vdw_xz_interaction_flag(bool state);
+    void set_ssint_xz_interaction_flag(bool state);
 
     // void set_vdw_bb_interaction_flag(bool state, int other_blob_index); // DEPRECATED
 
     template <class brr3> void vec3Vec3SubsToArr3Mod(Face *f2, brr3 (&w), scalar *blob_corr,int f1_daddy_blob_index,int f2_daddy_blob_index);
 
-    bool is_vdw_active();
+    bool is_ssint_active();
     bool is_kinetic_active();
 
     scalar length_of_longest_edge(); 

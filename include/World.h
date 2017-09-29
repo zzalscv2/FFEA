@@ -212,7 +212,7 @@ private:
     
     //@{
     /** Energies */
-    scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, vdwenergy, preCompenergy;
+    scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, ssintenergy, preCompenergy;
     //@}
 
     /** Momenta */

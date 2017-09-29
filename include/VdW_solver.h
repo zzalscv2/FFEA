@@ -31,10 +31,10 @@
 #include "LJ_matrix.h"
 #include "Blob.h"
 
-#define VDW_TYPE_UNDEFINED 0
-#define VDW_TYPE_STERIC 1
-#define VDW_TYPE_LJSTERIC 2
-#define VDW_TYPE_LJ 3
+#define SSINT_TYPE_UNDEFINED 0
+#define SSINT_TYPE_STERIC 1
+#define SSINT_TYPE_LJSTERIC 2
+#define SSINT_TYPE_LJ 3
 
 class VdW_solver {
 public:
@@ -42,7 +42,7 @@ public:
 
     ~VdW_solver();
 
-    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr, int calc_kinetics, bool working_w_static_blobs);
+    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &steric_factor, int num_blobs, int inc_self_ssint, string ssint_type_string, scalar &steric_dr, int calc_kinetics, bool working_w_static_blobs);
 
     int solve(scalar *blob_corr);
 
@@ -63,7 +63,7 @@ protected:
 
     scalar **fieldenergy;
     int num_blobs;
-    int inc_self_vdw;  ///< whether to include interactions between faces within the same blob, or not.
+    int inc_self_ssint;  ///< whether to include interactions between faces within the same blob, or not.
     int calc_kinetics; 
     bool working_w_static_blobs;
     struct adjacent_cell_lookup_table_entry {
@@ -96,17 +96,17 @@ protected:
     void calc_lj_force_pair_matrix(
               vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
               vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points], 
-              scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy);
+              scalar &Rmin, scalar &Emin, scalar &energy);
 
     void calc_ljinterpolated_force_pair_matrix(
               vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
               vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points], 
-              scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy);
+              scalar &Rmin, scalar &Emin, scalar &energy);
 
-    void calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar &vdw_eps, scalar &vdw_r_eq_6,
+    void calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmin_6,
                                  scalar &force_mag, scalar &e);
 
-    void calc_ljinterpolated_factors(scalar &mag_r, int index_k, int index_l, scalar &vdw_eps, scalar &vdw_r_eqi,
+    void calc_ljinterpolated_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmini,
                                  scalar &force_mag, scalar &e);
 
     scalar distance2(vector3 &p, vector3 &q);
@@ -117,7 +117,7 @@ protected:
 
     scalar minimum_image(scalar delta, scalar size);
 
-    int vdw_type;
+    int ssint_type;
 };
 
 #endif

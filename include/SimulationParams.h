@@ -105,9 +105,9 @@ public:
 
     int restart; ///< Whether or not to restart the simulation from the last available time step
 
-    int calc_vdw; ///< Whether or not to simulate van der waals interactions between surfaces
-    int inc_self_vdw; ///< Whether or not to include van der Waals interactions derived from faces in the same blob.
-    string vdw_type;  ///<Possible values: "lennard-jones" (default) or "steric".
+    int calc_ssint; ///< Whether or not to simulate surface-surface interactions between surfaces
+    int inc_self_ssint; ///< Whether or not to include surface-surface interactions derived from faces in the same blob.
+    string ssint_type;  ///<Current possible values: "lennard-jones" (default) or "steric".
     int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins
     int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique
     int calc_stokes; ///< Whether or not to include local action of the external fluid
@@ -128,9 +128,10 @@ public:
 
     scalar stokes_visc;
 
-    scalar vdw_steric_factor; ///< Proportionality factor to the Steric repulsion.
-    scalar vdw_cutoff; ///< Cutoff distance for the VdW interactions. 
-    geoscalar vdw_steric_dr; ///< used to calculate the numerical derivative.
+    int calc_steric; ///< Calculate steric interactions? 
+    scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
+    scalar ssint_cutoff; ///< Cutoff distance for the surface-surface interactions. 
+    geoscalar steric_dr; ///< used to calculate the numerical derivative.
 
     string FFEA_script_filename;
     b_fs::path FFEA_script_path, FFEA_script_basename;
@@ -138,7 +139,7 @@ public:
     string kinetics_out_fname;
     string measurement_out_fname;
     string detailed_meas_out_fname;
-    string vdw_in_fname;
+    string ssint_in_fname;
     string bsite_in_fname;
     string icheckpoint_fname;  ///< Input Checkpoint file name
     string ocheckpoint_fname;  ///< Output Checkpoint file name
@@ -182,7 +183,7 @@ private:
     int measurement_out_fname_set;
     int icheckpoint_fname_set;
     int ocheckpoint_fname_set;
-    int vdw_in_fname_set;
+    int ssint_in_fname_set;
     int bsite_in_fname_set;
 
 /** Check if the file oFile exists, and if so

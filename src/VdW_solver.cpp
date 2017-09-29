@@ -103,7 +103,7 @@ VdW_solver::VdW_solver() {
     box_size.z = 0;
     num_blobs = 0;
     fieldenergy = NULL;
-    vdw_type = VDW_TYPE_UNDEFINED;
+    ssint_type = SSINT_TYPE_UNDEFINED;
 }
 
 VdW_solver::~VdW_solver() {
@@ -118,10 +118,10 @@ VdW_solver::~VdW_solver() {
     delete[] fieldenergy;
     fieldenergy = NULL;
     num_blobs = 0;
-    vdw_type = VDW_TYPE_UNDEFINED;
+    ssint_type = SSINT_TYPE_UNDEFINED;
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &vdw_steric_factor, int num_blobs, int inc_self_vdw, string vdw_type_string, scalar &vdw_steric_dr, int calc_kinetics, bool working_w_static_blobs) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &steric_factor, int num_blobs, int inc_self_ssint, string ssint_type_string, scalar &steric_dr, int calc_kinetics, bool working_w_static_blobs) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
@@ -129,15 +129,15 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
 
     this->lj_matrix = lj_matrix;
 
-    this->inc_self_vdw = inc_self_vdw;
-    this->steric_factor = vdw_steric_factor;
-    this->steric_dr = vdw_steric_dr;
-    if (vdw_type_string == "lennard-jones")
-        vdw_type = VDW_TYPE_LJ;
-    else if (vdw_type_string == "steric")
-        vdw_type = VDW_TYPE_STERIC;
-    else if (vdw_type_string == "ljsteric")
-        vdw_type = VDW_TYPE_LJSTERIC;
+    this->inc_self_ssint = inc_self_ssint;
+    this->steric_factor = steric_factor;
+    this->steric_dr = steric_dr;
+    if (ssint_type_string == "lennard-jones")
+        ssint_type = SSINT_TYPE_LJ;
+    else if (ssint_type_string == "steric")
+        ssint_type = SSINT_TYPE_STERIC;
+    else if (ssint_type_string == "ljsteric")
+        ssint_type = SSINT_TYPE_LJSTERIC;
 
 
     // And some measurement stuff it should know about
@@ -222,7 +222,7 @@ int VdW_solver::solve_sticky_wall(scalar h) {
                 l_j = surface_face_lookup->get_top_of_stack(x, y, z);
                 while (l_j != NULL) {
                     f_j = l_j->obj;
-                    f_j->set_vdw_xz_interaction_flag(true);
+                    f_j->set_ssint_xz_interaction_flag(true);
                     do_sticky_xz_interaction(f_j, (y == 0), h * Ny);
                     l_j = l_j->next;
                 }
@@ -242,9 +242,9 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     //printf("Separation: %f %f %f\n", (f1->centroid.x - f2->centroid.x) * (mesoDimensions::length / 1e-9), (f1->centroid.y - f2->centroid.y) * (mesoDimensions::length / 1e-9), (f1->centroid.z - f2->centroid.z) * (mesoDimensions::length / 1e-9));
 
     // Get the interaction LJ parameters for these two face types
-    scalar vdw_eps = 0.0, vdw_r_eq = 0.0;
-    lj_matrix->get_LJ_params(f1->vdw_interaction_type, f2->vdw_interaction_type, &vdw_eps, &vdw_r_eq);
-    //printf("VdW Params: %f nm %e \n", vdw_r_eq * (mesoDimensions::length / 1e-9), vdw_eps * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
+    scalar Emin = 0.0, Rmin = 0.0;
+    lj_matrix->get_LJ_params(f1->ssint_interaction_type, f2->ssint_interaction_type, &Emin, &Rmin);
+    //printf("VdW Params: %f nm %e \n", Rmin * (mesoDimensions::length / 1e-9), Emin * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
     vector3 p[num_tri_gauss_quad_points], q[num_tri_gauss_quad_points];
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
 
@@ -265,10 +265,10 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // Also calculate energy whilst looping through face points
     scalar energy = 0.0;
 
-    if (vdw_type == VDW_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
-             p, q, vdw_r_eq, vdw_eps, energy);
-    else if (vdw_type == VDW_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
-             p, q, vdw_r_eq, vdw_eps, energy);
+    if (ssint_type == SSINT_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
+             p, q, Rmin, Emin, energy);
+    else if (ssint_type == SSINT_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
+             p, q, Rmin, Emin, energy);
 
     scalar ApAq = f1->area * f2->area;
     energy *= ApAq;
@@ -332,7 +332,7 @@ bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state
 
     bool interaction_needed = false;
     if (l_index_i < l_j->index) {
-        if ((inc_self_vdw == 1) or ( (inc_self_vdw == 0 ) and (f_i->daddy_blob != l_j->obj->daddy_blob))) {
+        if ((inc_self_ssint == 1) or ( (inc_self_ssint == 0 ) and (f_i->daddy_blob != l_j->obj->daddy_blob))) {
 
             if((working_w_static_blobs == false) || (motion_state_i == FFEA_BLOB_IS_DYNAMIC or l_j->obj->daddy_blob->get_motion_state() == FFEA_BLOB_IS_DYNAMIC)) {
                 interaction_needed = true;
@@ -350,7 +350,7 @@ bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state
                 f_i->normal[2]*f_j->normal[2]) > ffea_const::zero ) return false;
 
 
-        if ( vdw_type != VDW_TYPE_LJ ) {
+        if ( ssint_type != SSINT_TYPE_LJ ) {
             // 2 - Two more checks:
             // 2.1 - Check that faces are in front of each other
             //     - Robin suspected this was leading to unstabilities for the LJ case.
@@ -366,7 +366,7 @@ bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state
 
             // 2.2 - Check that no nodes are shared,
             //     only in the case that faces belong to the same blob:
-            if ((inc_self_vdw == 1) && (f_i->daddy_blob == f_j->daddy_blob)) {
+            if ((inc_self_ssint == 1) && (f_i->daddy_blob == f_j->daddy_blob)) {
                 if (f_i->n[3] == f_j->n[3]) {
                     return false;
                 }
@@ -388,9 +388,9 @@ bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state
 
 void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y) {
 
-    scalar y_wall = 0; //-vdw_r_eq;
+    scalar y_wall = 0; //-Rmin;
     if (bottom_wall == false) {
-        y_wall = dim_y; // + vdw_r_eq;
+        y_wall = dim_y; // + Rmin;
     }
 
     // Check that face is facing wall, if not then it should not be interacting
@@ -399,8 +399,8 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
     }
 
     // Get the interaction LJ parameters for these two face types
-    scalar vdw_eps = 0.0, vdw_r_eq = 0.0;
-    lj_matrix->get_LJ_params(f->vdw_interaction_type, f->vdw_interaction_type, &vdw_eps, &vdw_r_eq);
+    scalar Emin = 0.0, Rmin = 0.0;
+    lj_matrix->get_LJ_params(f->ssint_interaction_type, f->ssint_interaction_type, &Emin, &Rmin);
 
 
     vector3 p[num_tri_gauss_quad_points];
@@ -418,8 +418,8 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
         for (int l = k; l < num_tri_gauss_quad_points; l++) {
             scalar mag_r = p[k].y - y_wall;
 
-            scalar force_mag = 12 * pow(vdw_r_eq, 6) * vdw_eps * (pow(mag_r, -7) - pow(vdw_r_eq, 6) * pow(mag_r, -13));
-            energy += pow(vdw_r_eq, 6) * vdw_eps * (pow(vdw_r_eq, 6) * pow(mag_r, -12) - 2 * pow(mag_r, -6));
+            scalar force_mag = 12 * pow(Rmin, 6) * Emin * (pow(mag_r, -7) - pow(Rmin, 6) * pow(mag_r, -13));
+            energy += pow(Rmin, 6) * Emin * (pow(Rmin, 6) * pow(mag_r, -12) - 2 * pow(mag_r, -6));
             force_mag *= -1;
 
             force_pair_matrix[k][l] = force_mag;
@@ -578,17 +578,17 @@ scalar VdW_solver::get_field_energy(int index0, int index1) {
 
 void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
         vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points],
-        scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy) {
+        scalar &Rmin, scalar &Emin, scalar &energy) {
 
     scalar mag_r, force_mag, e;
 
-    scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
-    scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
-    scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
+    scalar Rmin_2 = Rmin * Rmin;
+    scalar Rmin_4 = Rmin_2 * Rmin_2;
+    scalar Rmin_6 = Rmin_4 * Rmin_2;
    
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
         mag_r = sqrt(distance2(p[k], q[k])); 
-        calc_lj_factors(mag_r, k, k, vdw_eps, vdw_r_eq_6, force_mag, e); 
+        calc_lj_factors(mag_r, k, k, Emin, Rmin_6, force_mag, e); 
         energy += e; 
         force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
         force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);
@@ -596,7 +596,7 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
 
         for(int l = k+1; l < num_tri_gauss_quad_points; l++) {
             mag_r = sqrt(distance2(p[k], q[l])); 
-            calc_lj_factors(mag_r, k, l, vdw_eps, vdw_r_eq_6, force_mag, e); 
+            calc_lj_factors(mag_r, k, l, Emin, Rmin_6, force_mag, e); 
 
             energy += 2*e;
 
@@ -612,7 +612,7 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
 }
 
 /** Given (mag_r), get LJ force magnitude (force_mag) and energy (e) */
-void VdW_solver::calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar &vdw_eps, scalar &vdw_r_eq_6,
+void VdW_solver::calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmin_6,
                                  scalar &force_mag, scalar &e) {
 
     scalar mag_ri,  mag_ri_2, mag_ri_4, mag_ri_6, mag_ri_7;
@@ -623,44 +623,44 @@ void VdW_solver::calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar
     mag_ri_4 = mag_ri_2 * mag_ri_2;
     mag_ri_6 = mag_ri_4 * mag_ri_2;
     mag_ri_7 = mag_ri_6 * mag_ri;
-    vdw_fac_6 = vdw_r_eq_6 * mag_ri_6;
-    force_mag = 12 * mag_ri_7 * vdw_r_eq_6 * vdw_eps * (vdw_fac_6 - 1);
+    vdw_fac_6 = Rmin_6 * mag_ri_6;
+    force_mag = 12 * mag_ri_7 * Rmin_6 * Emin * (vdw_fac_6 - 1);
     e = gauss_points[index_k].W * gauss_points[index_l].W *
-                   vdw_eps * vdw_fac_6 * (vdw_fac_6 - 2 );
+                   Emin * vdw_fac_6 * (vdw_fac_6 - 2 );
 
 }
 
 /** Given (mag_r), get LJ_interpolated force magnitude (force_mag) and energy (e) */
-void VdW_solver::calc_ljinterpolated_factors(scalar &mag_r, int index_k, int index_l, scalar &vdw_eps, scalar &vdw_r_eqi,
+void VdW_solver::calc_ljinterpolated_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmini,
                                  scalar &force_mag, scalar &e) {
 
-    scalar vdw_fac = mag_r * vdw_r_eqi;
+    scalar vdw_fac = mag_r * Rmini;
     scalar vdw_fac_2 = vdw_fac * vdw_fac;
 
     e = gauss_points[index_k].W * gauss_points[index_l].W *
-                    vdw_eps * vdw_fac_2 * (2 * vdw_fac - 3);
-    force_mag = 6 * vdw_eps * vdw_r_eqi * vdw_fac * (1 - vdw_fac);
+                    Emin * vdw_fac_2 * (2 * vdw_fac - 3);
+    force_mag = 6 * Emin * Rmini * vdw_fac * (1 - vdw_fac);
 
 }
 
 void VdW_solver::calc_ljinterpolated_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
         vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points],
-        scalar &vdw_r_eq, scalar &vdw_eps, scalar &energy) {
+        scalar &Rmin, scalar &Emin, scalar &energy) {
 
     scalar mag_r, e, force_mag;
 
-    scalar vdw_r_eq_2 = vdw_r_eq * vdw_r_eq;
-    scalar vdw_r_eq_4 = vdw_r_eq_2 * vdw_r_eq_2;
-    scalar vdw_r_eq_6 = vdw_r_eq_4 * vdw_r_eq_2;
+    scalar Rmin_2 = Rmin * Rmin;
+    scalar Rmin_4 = Rmin_2 * Rmin_2;
+    scalar Rmin_6 = Rmin_4 * Rmin_2;
 
-    scalar vdw_r_eqi = 1.0 / vdw_r_eq;
+    scalar Rmini = 1.0 / Rmin;
 
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
         mag_r = sqrt(distance2(p[k], q[k]));
-        if(mag_r < vdw_r_eq) 
-           calc_ljinterpolated_factors(mag_r, k, k, vdw_eps, vdw_r_eqi, force_mag, e);
+        if(mag_r < Rmin) 
+           calc_ljinterpolated_factors(mag_r, k, k, Emin, Rmini, force_mag, e);
         else 
-           calc_lj_factors(mag_r, k, k, vdw_eps, vdw_r_eq_6, force_mag, e);
+           calc_lj_factors(mag_r, k, k, Emin, Rmin_6, force_mag, e);
         energy += e;
         force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
         force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);
@@ -670,10 +670,10 @@ void VdW_solver::calc_ljinterpolated_force_pair_matrix(vector3 (&force_pair_matr
 
             mag_r = sqrt(distance2(p[k], q[l]));
 
-            if(mag_r < vdw_r_eq) 
-                calc_ljinterpolated_factors(mag_r, k, l, vdw_eps, vdw_r_eqi, force_mag, e);
+            if(mag_r < Rmin) 
+                calc_ljinterpolated_factors(mag_r, k, l, Emin, Rmini, force_mag, e);
             else
-                calc_lj_factors(mag_r, k, l, vdw_eps, vdw_r_eq_6, force_mag, e);
+                calc_lj_factors(mag_r, k, l, Emin, Rmin_6, force_mag, e);
 
             energy += 2*e;
 

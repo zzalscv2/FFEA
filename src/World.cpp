@@ -63,7 +63,7 @@ World::World() {
     strainenergy = 0.0;
     springenergy = 0.0;
     springfieldenergy = NULL;
-    vdwenergy = 0.0;
+    ssintenergy = 0.0;
     preCompenergy = 0.0;
 
     vector3_set_zero(L);
@@ -160,7 +160,7 @@ World::~World() {
     delete[] springfieldenergy;
     springfieldenergy = NULL;
 
-    vdwenergy = 0.0;
+    ssintenergy = 0.0;
     preCompenergy = 0.0;
 
     vector3_set_zero(L);
@@ -212,7 +212,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         return FFEA_ERROR;
     }
     cout << "...done!" << endl;
-
+printf("%s\n", params.ssint_in_fname);
     // Check for consistency
     cout << "\nVerifying Parameters..." << endl;
     if(params.validate(mode) != 0) {
@@ -220,7 +220,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         printf("Parameters found to be inconsistent in SimulationParams::validate()\n");
         return FFEA_ERROR;
     }
-
+printf("%s\n", params.ssint_in_fname);
     if ((params.num_blobs) == 1) {
         writeDetailed = false;
         printf("\n\tA single blob is simulated, and thus the detailed measurements would be redundant and are not needed\n");
@@ -268,9 +268,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     }
 
     // Load the vdw forcefield params matrix
-    if(params.calc_vdw == 1) {
-        if (lj_matrix.init(params.vdw_in_fname, params.vdw_type) == FFEA_ERROR) {
-            FFEA_ERROR_MESSG("Error when reading from vdw forcefield params file.\n")
+    printf("%s\n", params.ssint_in_fname);
+    if(params.calc_ssint == 1 || params.calc_steric == 1) {
+        if (lj_matrix.init(params.ssint_in_fname, params.ssint_type, params.calc_ssint) == FFEA_ERROR) {
+            FFEA_ERROR_MESSG("Error when reading from ssint forcefield params file.\n")
         }
     }
 
@@ -458,15 +459,15 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         get_system_dimensions(&dimension_vector);
 
         // Calculate decent box size
-        params.es_N_x = 2 * (int)ceil(dimension_vector.x / params.vdw_cutoff);
-        params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.vdw_cutoff);
-        params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.vdw_cutoff);
+        params.es_N_x = 2 * (int)ceil(dimension_vector.x / params.ssint_cutoff);
+        params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.ssint_cutoff);
+        params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.ssint_cutoff);
     }
 
     // Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
-    box_dim.x = params.vdw_cutoff * params.es_N_x;
-    box_dim.y = params.vdw_cutoff * params.es_N_y;
-    box_dim.z = params.vdw_cutoff * params.es_N_z;
+    box_dim.x = params.ssint_cutoff * params.es_N_x;
+    box_dim.y = params.ssint_cutoff * params.es_N_y;
+    box_dim.z = params.ssint_cutoff * params.es_N_z;
 
     shift.x = box_dim.x / 2.0 - world_centroid.x;
     shift.y = box_dim.y / 2.0 - world_centroid.y;
@@ -554,8 +555,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             if(params.calc_springs != 0) {
                 fprintf(measurement_out, "%-14s", "SpringEnergy");
             }
-            if(params.calc_vdw != 0) {
-                fprintf(measurement_out, "%-14s", "VdWEnergy");
+            if(params.calc_ssint != 0 && params.calc_steric != 0) {
+                fprintf(measurement_out, "%-14s", "SurfSurfEnergy");
             }
             if(params.calc_preComp != 0) {
                 fprintf(measurement_out, "%-14s", "PreCompEnergy");
@@ -577,12 +578,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                     fprintf(detailed_meas_out, "%-14s%-14s%-14s%-14s", "Centroid.x", "Centroid.y", "Centroid.z", "RMSD");
                 }
 
-                if(params.calc_vdw == 1 || params.calc_preComp == 1 || params.calc_springs == 1) {
+                if(params.calc_ssint == 1 || params.calc_steric == 1 || params.calc_preComp == 1 || params.calc_springs == 1) {
                     for(i = 0; i < params.num_blobs; ++i) {
                         for(j = i; j < params.num_blobs; ++j) {
                             fprintf(detailed_meas_out, "| B%dB%d ", i, j);
-                            if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
-                                fprintf(detailed_meas_out, "%-14s", "VdWEnergy");
+                            if(active_blob_array[i]->there_is_ssint() && active_blob_array[j]->there_is_ssint()) {
+                                fprintf(detailed_meas_out, "%-14s", "SurfSurfEnergy");
                             }
                             if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs()) {
                                 fprintf(detailed_meas_out, "%-14s", "SpringEnergy");
@@ -870,16 +871,16 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         if (there_are_static_blobs == true) break; 
     }
 
-    if (params.vdw_type == "lennard-jones")
+    if (params.ssint_type == "lennard-jones")
         vdw_solver = new(std::nothrow) VdW_solver();
-    else if (params.vdw_type == "steric")
+    else if (params.ssint_type == "steric")
         vdw_solver = new(std::nothrow) Steric_solver();
-    else if (params.vdw_type == "ljsteric")
+    else if (params.ssint_type == "ljsteric")
         vdw_solver = new(std::nothrow) LJSteric_solver();
     if (vdw_solver == NULL)
-        FFEA_ERROR_MESSG("World::init failed to initialise the VdW_solver.\n");
+        FFEA_ERROR_MESSG("World::init failed to initialise the ssint_solver.\n");
 
-    vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.vdw_steric_factor, params.num_blobs, params.inc_self_vdw, params.vdw_type, params.vdw_steric_dr, params.calc_kinetics, there_are_static_blobs);
+    vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.steric_factor, params.num_blobs, params.inc_self_ssint, params.ssint_type, params.steric_dr, params.calc_kinetics, there_are_static_blobs);
 
     // Calculate the total number of vdw interacting faces in the entire system
     total_num_surface_faces = 0;
@@ -890,7 +891,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     }
     printf("Total number of surface faces in system: %d\n", total_num_surface_faces);
     // Initialise the face-face neighbour list for vdw or es:
-    if(params.calc_vdw == 1 || params.calc_es == 1) {
+    if(params.calc_ssint == 1 || params.calc_steric == 1 || params.calc_es == 1) {
 
         // Allocate memory for an NxNxN grid, with a 'pool' for the required number of surface faces
         printf("Allocating memory for nearest neighbour lookup grid...\n");
@@ -929,13 +930,13 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                         num_faces_added++;
                     }
                 }
-                if (userInfo::verblevel > 1) printf("%d 'VdW active' faces, from blob %d, conformation %d, added to lookup grid.\n", num_faces_added, i, j);
+                if (userInfo::verblevel > 1) printf("%d 'ssint active' faces, from blob %d, conformation %d, added to lookup grid.\n", num_faces_added, i, j);
             }
         }
 
 #ifdef FFEA_PARALLEL_FUTURE
         // And build the lookup table for the first time:
-        thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.vdw_cutoff);
+        thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.ssint_cutoff);
 #endif
 
     }
@@ -1789,7 +1790,7 @@ int World::run() {
         //                     update the neighbour list,
         //                     and calculate normals and centroids for the faces.
         bool es_update = false;
-        if (params.calc_vdw == 1 || params.calc_preComp == 1 || params.sticky_wall_xz == 1 || params.calc_es == 1) {
+        if (params.calc_ssint == 1 || params.calc_steric == 1 || params.calc_preComp == 1 || params.sticky_wall_xz == 1 || params.calc_es == 1) {
             if (es_count == params.es_update) {
                 es_count = 1;
                 es_update = true;
@@ -1892,10 +1893,10 @@ int World::run() {
             // Catching up the thread should be done through catch_thread_updatingVdWLL,
             //   which will to lookup.safely_swap_layers().
             if (updatingVdWLL() == false) {
-                thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.vdw_cutoff);
+                thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.ssint_cutoff);
             } else // die with dignity
 #else
-            if (lookup.build_nearest_neighbour_lookup(params.vdw_cutoff) == FFEA_ERROR)
+            if (lookup.build_nearest_neighbour_lookup(params.ssint_cutoff) == FFEA_ERROR)
 #endif
             {
                 return die_with_dignity(step, wtime);
@@ -1965,10 +1966,10 @@ int World::run() {
 
 
         // Calculate the VdW forces:
-        if (params.calc_vdw == 1) {
+        if (params.calc_ssint == 1 || params.calc_steric == 1) {
            vdw_solver->solve(blob_corr); // blob_corr == NULL if force_pbc = 0.
         }
-        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.vdw_cutoff);
+        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.ssint_cutoff);
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
 
@@ -2057,7 +2058,7 @@ int World::run() {
     cout<<"total steps:"<< params.num_steps <<endl;
     cout<< "benchmarking--------cleaning & threading out\t"<< time0 << "seconds"<< endl;
     cout<< "benchmarking--------strictly preComp for \t"<< time1 << "seconds"<< endl;
-    cout<< "benchmarking--------vdw & threading back in\t"<< time2 << "seconds"<< endl;
+    cout<< "benchmarking--------ssint & threading back in\t"<< time2 << "seconds"<< endl;
     cout<< "benchmarking--------update blobs for \t"<< time3 << "seconds"<< endl;
     cout<< "benchmarking--------writing and measuring \t"<< time4 << "seconds"<< endl;
     cout<< "benchmarking--------Total time in World::run():" << omp_get_wtime() - wtime << "seconds"<< endl;
@@ -2162,10 +2163,10 @@ int World::read_and_build_system(vector<string> script_vector) {
     vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, spring_vector;
     vector<string>::iterator it;
 
-    vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, beads;
+    vector<string> nodes, topology, surface, material, stokes, ssint, binding, pin, beads;
     string map_fname;
     int map_indices[2];
-    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0; 
+    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_ssint = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0; 
     scalar scale = 1, compress = 1;
     int solver = FFEA_NOMASS_CG_SOLVER;
     vector<int> motion_state;
@@ -2339,10 +2340,10 @@ int World::read_and_build_system(vector<string> script_vector) {
                     b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
                     stokes.push_back(auxpath.string());
                     set_stokes = 1;
-                } else if (lrvalue[0] == "vdw") {
+                } else if (lrvalue[0] == "ssint" || lrvalue[0] == "vdw") {
                     b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
-                    vdw.push_back(auxpath.string());
-                    set_vdw = 1;
+                    ssint.push_back(auxpath.string());
+                    set_ssint = 1;
                 } else if (lrvalue[0] == "binding_sites") {
                     if(params.calc_kinetics == 1) {
                         b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
@@ -2374,9 +2375,9 @@ int World::read_and_build_system(vector<string> script_vector) {
                 cout << "Blob " << i << ", conformation " << j << " must have a motion state set.\nAccepted states: DYNAMIC, STATIC, FROZEN." << endl;
                 return FFEA_ERROR;
             } else {
-                if(set_nodes == 0 || set_surf == 0 || set_vdw == 0) {
+                if(set_nodes == 0 || set_surf == 0 || set_ssint == 0) {
                     FFEA_error_text();
-                    cout << "In blob " << i << ", conformation " << j << ":\nFor any blob conformation, 'nodes', 'surface' and 'vdw' must be set." << endl;
+                    cout << "In blob " << i << ", conformation " << j << ":\nFor any blob conformation, 'nodes', 'surface' and 'ssint' must be set." << endl;
                     return FFEA_ERROR;
 
                 }
@@ -2422,7 +2423,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             set_surf = 0;
             set_mat = 0;
             set_stokes = 0;
-            set_vdw = 0;
+            set_ssint = 0;
             set_binding = 0;
             set_pin = 0;
             set_preComp = 0;
@@ -2564,7 +2565,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             cout << "\tConfiguring blob " << i << " conformation " << j << "..." << endl;
 
             if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
-                                        material[j], stokes[j], vdw[j], pin[j], binding[j],
+                                        material[j], stokes[j], ssint[j], pin[j], binding[j],
                                         beads[j], scale, calc_compress, compress, solver,
                                         motion_state[j], &params, &pc_params, &lj_matrix,
                                         &binding_matrix, rng) == FFEA_ERROR) {
@@ -2579,7 +2580,7 @@ int World::read_and_build_system(vector<string> script_vector) {
         surface.clear();
         material.clear();
         stokes.clear();
-        vdw.clear();
+        ssint.clear();
         binding.clear();
         pin.clear();
         beads.clear();
@@ -2611,7 +2612,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                 fatal_errors += 1;
             }
 
-            // If not an active conforamtion, move to random area in infinity so vdw and stuff are not active (face linked list is not set up for deleting elements)
+            // If not an active conforamtion, move to random area in infinity so ssint and stuff are not active (face linked list is not set up for deleting elements)
             if (j > 0) {
                 blob_array[i][j].position(blob_array[i][j].get_RandU01() * 1e10, blob_array[i][j].get_RandU01() * 1e10, blob_array[i][j].get_RandU01() * 1e10);
             } else {
@@ -2619,7 +2620,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                 // Activate all faces
                 blob_array[i][j].kinetically_set_faces(true);
 
-                // if centroid position is set, position the blob's centroid at that position. If vdw is set, move to center of box
+                // if centroid position is set, position the blob's centroid at that position. If ssint is set, move to center of box
                 if (blob_conf[i].set_centroid) {
 
                     blob_conf[i].centroid[0] *= blob_array[i][j].get_scale();
@@ -2647,7 +2648,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                 }
 
                 // Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
-                if (blob_array[i][j].get_motion_state() == FFEA_BLOB_IS_STATIC && (params.vdw_type == "steric" || params.vdw_type == "ljsteric")) {
+                if (blob_array[i][j].get_motion_state() == FFEA_BLOB_IS_STATIC && (params.ssint_type == "steric" || params.ssint_type == "ljsteric")) {
                     blob_array[i][j].add_steric_nodes();
                 }
 
@@ -3445,7 +3446,7 @@ int World::load_springs(const char *fname) {
 
     fclose(in);
 
-    // Inititalise the energy array (move to a solver in the future, like the VdW)
+    // Inititalise the energy array (move to a solver in the future, like the ssint)
     springfieldenergy = new scalar*[params.num_blobs];
     for(i = 0; i < params.num_blobs; ++i) {
         springfieldenergy[i] = new scalar[params.num_blobs];
@@ -3938,7 +3939,7 @@ void World::make_measurements() {
     kineticenergy = 0.0;
     strainenergy = 0.0;
     springenergy = 0.0;
-    vdwenergy = 0.0;
+    ssintenergy = 0.0;
     preCompenergy = 0.0;
     rmsd = 0.0;
     vector3_set_zero(CoG);
@@ -3981,8 +3982,8 @@ void World::make_measurements() {
         springenergy = get_spring_field_energy(-1, -1);
     }
 
-    if(params.calc_vdw == 1) {
-        vdwenergy = vdw_solver->get_field_energy(-1, -1);
+    if(params.calc_ssint == 1 || params.calc_steric == 1) {
+        ssintenergy = vdw_solver->get_field_energy(-1, -1);
     }
 
     if(params.calc_preComp == 1) {
@@ -4003,8 +4004,8 @@ void World::write_measurements_to_file(FILE *fout, int step) {
     if(params.calc_springs != 0) {
         fprintf(fout, "%-14.6e", springenergy * mesoDimensions::Energy);
     }
-    if(params.calc_vdw != 0) {
-        fprintf(fout, "%-14.6e", vdwenergy * mesoDimensions::Energy);
+    if(params.calc_ssint == 1 || params.calc_steric == 1) {
+        fprintf(fout, "%-14.6e", ssintenergy * mesoDimensions::Energy);
     }
     if(params.calc_preComp != 0) {
         fprintf(fout, "%-14.6e", preCompenergy * mesoDimensions::Energy);
@@ -4022,7 +4023,7 @@ void World::write_detailed_measurements_to_file(FILE *fout) {
         for(j = i; j < params.num_blobs; ++j) {
             // White space for blob index bit
             fprintf(fout, "       ");
-            if(active_blob_array[i]->there_is_vdw() && active_blob_array[j]->there_is_vdw()) {
+            if(active_blob_array[i]->there_is_ssint() && active_blob_array[j]->there_is_ssint()) {
                 fprintf(detailed_meas_out, "%-14.6e", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
             }
             if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs() * mesoDimensions::Energy) {

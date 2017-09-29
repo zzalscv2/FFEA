@@ -116,7 +116,7 @@ public:
      */
     int config(const int blob_index, const int conformation_index, string node_filename, 
              string topology_filename, string surface_filename, string material_params_filename,
-             string stokes_filename, string vdw_filename, string pin_filename, 
+             string stokes_filename, string ssint_filename, string pin_filename, 
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
              scalar compress, int linear_solver, int blob_state, SimulationParams *params,
              PreComp_params *pc_params, LJ_matrix *lj_matrix,
@@ -292,7 +292,7 @@ public:
     vector<int> get_bead_assignment(int i);
 
 
-    scalar get_vdw_area();
+    scalar get_ssint_area();
 
     //		/*
     //		 *
@@ -457,7 +457,7 @@ public:
     void set_springs_on_blob(bool state);
     bool there_are_springs();
     bool there_are_beads();
-    bool there_is_vdw();
+    bool there_is_ssint();
 
     scalar get_kinetic_energy();
     scalar get_strain_energy();
@@ -509,8 +509,8 @@ private:
     /** Total mass of Blob */
     scalar mass;
 
-    /** Total vdw energy between blobs */
-    scalar vdw_bb_energy;
+    /** Total ssint energy between blobs */
+    scalar ssint_bb_energy;
 
     /** Array of nodes */
     mesh_node *node;
@@ -572,7 +572,7 @@ private:
 
     /** Strings of all the files that contain input data: */
     string s_node_filename, s_topology_filename, s_surface_filename, 
-          s_material_params_filename, s_stokes_filename, s_vdw_filename, 
+          s_material_params_filename, s_stokes_filename, s_ssint_filename, 
           s_pin_filename, s_binding_filename, s_beads_filename;
 
 
@@ -589,7 +589,7 @@ private:
     /** A pointer to the same binding matrix configured in World */ 
     BindingSite_matrix *binding_matrix;
 
-    /** pointer to the vdw forcefield parameters (for some energy calcs) */
+    /** pointer to the ssint forcefield parameters (for some energy calcs) */
     LJ_matrix *lj_matrix;
 
     /** A pointer to whatever Solver is being used for this Blob (eg SparseSubstitutionSolver
@@ -607,8 +607,8 @@ private:
     /** Are there springs on this blob? */
     bool springs_on_blob;
 
-    /** Are there vdw on this blob? */
-    bool vdw_on_blob;
+    /** Are there ssint on this blob? */
+    bool ssint_on_blob;
 
     /** Are the preComp beads on this blob? */
     bool beads_on_blob;
@@ -691,9 +691,9 @@ private:
 
 
     /**
-     * Opens and reads the given 'ffea vdw file', extracting all the van der waals species for each face of this Blob.
+     * Opens and reads the given 'ffea ssint file', extracting all the van der waals species for each face of this Blob.
      */
-    int load_vdw(const char *vdw_filename, int num_vdw_face_types, string vdw_method);
+    int load_ssint(const char *ssint_filename, int num_ssint_face_types, string ssint_method);
 
     /**
      * Opens and reads the given 'ffea beads file', extracting all the beads types and positions and for this Blob.

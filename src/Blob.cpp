@@ -64,7 +64,7 @@ Blob::Blob() {
     solver = NULL;
     linear_solver = 0;
     mass_in_blob = false;
-    vdw_on_blob = false;
+    ssint_on_blob = false;
     springs_on_blob = false;
     beads_on_blob = false;
     force = NULL;
@@ -114,7 +114,7 @@ Blob::~Blob() {
     solver = NULL;
     linear_solver = 0;
     mass_in_blob = false;
-    vdw_on_blob = false;
+    ssint_on_blob = false;
     springs_on_blob = false;
     beads_on_blob = false;
 
@@ -212,7 +212,7 @@ Blob::~Blob() {
 
 int Blob::config(const int blob_index, const int conformation_index, string node_filename,
              string topology_filename, string surface_filename, string material_params_filename,
-             string stokes_filename, string vdw_filename, string pin_filename,
+             string stokes_filename, string ssint_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
              scalar compress, int linear_solver, int blob_state, SimulationParams *params, 
              PreComp_params *pc_params, LJ_matrix *lj_matrix, 
@@ -228,7 +228,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->s_surface_filename = surface_filename;
     this->s_material_params_filename = material_params_filename;
     this->s_stokes_filename = stokes_filename;      
-    this->s_vdw_filename = vdw_filename;
+    this->s_ssint_filename = ssint_filename;
     this->s_beads_filename = beads_filename;
     this->s_binding_filename = binding_filename;
     this->s_pin_filename = pin_filename;
@@ -295,9 +295,9 @@ int Blob::init(){
         }
     }
 
-    if (params->calc_vdw == 1) {
-        if (load_vdw(s_vdw_filename.c_str(), lj_matrix->get_num_types(), params->vdw_type) == FFEA_ERROR) {
-            FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
+    if (params->calc_ssint == 1 || params->calc_steric == 1) {
+        if (load_ssint(s_ssint_filename.c_str(), lj_matrix->get_num_types(), params->ssint_type) == FFEA_ERROR) {
+            FFEA_ERROR_MESSG("Error when loading ssint parameter file.\n")
         }
     }
 
@@ -1317,8 +1317,8 @@ void Blob::make_measurements() {
 
     int n, i, j;
     scalar kenergy, senergy;
-    vector3 total_vdw_xz_force;
-    scalar total_vdw_xz_energy = 0.0, total_vdw_xz_area = 0.0;
+    vector3 total_ssint_xz_force;
+    scalar total_ssint_xz_energy = 0.0, total_ssint_xz_area = 0.0;
     scalar temp1, temp2, temp3;
     scalar cogx = 0.0, cogy = 0.0, cogz = 0.0, lx = 0.0, ly = 0.0, lz = 0.0, brmsd = 0.0;
     scalar r[4][3];
@@ -1593,7 +1593,7 @@ void Blob::get_stored_centroid(arr3 &cog){
  *
  */
 Face * Blob::get_face(int i) {
-    if (surface[i].is_vdw_active() == true) {
+    if (surface[i].is_ssint_active() == true) {
         return &surface[i];
     } else {
         return NULL;
@@ -1650,14 +1650,14 @@ vector<int> Blob::get_bead_assignment(int i) {
     return bead_assignment[i];
 }
 
-scalar Blob::get_vdw_area() {
-    scalar total_vdw_area = 0.0;
+scalar Blob::get_ssint_area() {
+    scalar total_ssint_area = 0.0;
     for (int i = 0; i < get_num_faces(); ++i) {
-        if (surface[i].is_vdw_active() == true) {
-            total_vdw_area += surface[i].area;
+        if (surface[i].is_ssint_active() == true) {
+            total_ssint_area += surface[i].area;
         }
     }
-    return total_vdw_area;
+    return total_ssint_area;
 }
 //		/*
 //		 *
@@ -3436,89 +3436,89 @@ void Blob::print_bead_positions() {
 
 /*
  */
-int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types, string vdw_method) {
+int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, string ssint_method) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(vdw_filename, "r")) == NULL) {
-        FFEA_FILE_ERROR_MESSG(vdw_filename)
+    if ((in = fopen(ssint_filename, "r")) == NULL) {
+        FFEA_FILE_ERROR_MESSG(ssint_filename)
     }
-    printf("\t\tReading in Van der Waals file: %s\n", vdw_filename);
+    printf("\t\tReading in Van der Waals file: %s\n", ssint_filename);
 
-    // first line should be the file type "ffea vdw file"
+    // first line should be the file type "ffea vdw file" or "ffea ssint file"
     if (fgets(line, max_line_size, in) == NULL) {
         fclose(in);
-        FFEA_ERROR_MESSG("Error reading first line of VdW file\n")
+        FFEA_ERROR_MESSG("Error reading first line of ssint file\n")
     }
-    if (strcmp(line, "walrus vdw file\n") != 0 && strcmp(line, "ffea vdw file\n") != 0) {
+    if (strcmp(line, "walrus vdw file\n") != 0 && strcmp(line, "ffea vdw file\n") != 0 && strcmp(line, "ffea ssint file\n") != 0) {
         fclose(in);
-        FFEA_ERROR_MESSG("This is not a 'ffea vdw file' (read '%s') \n", line)
+        FFEA_ERROR_MESSG("This is not a 'ffea ssint file' (read '%s') \n", line)
     }
 
     // read in the number of faces in the file
-    int num_vdw_faces = 0;
-    if (fscanf(in, "num_faces %d\n", &num_vdw_faces) != 1) {
+    int num_ssint_faces = 0;
+    if (fscanf(in, "num_faces %d\n", &num_ssint_faces) != 1) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading number of faces\n")
     }
-    printf("\t\t\tNumber of faces = %d\n", num_vdw_faces);
+    printf("\t\t\tNumber of faces = %d\n", num_ssint_faces);
 
-    if (num_vdw_faces != num_surface_faces) {
-        FFEA_ERROR_MESSG("Number of faces specified in Van der Waals file (%d) does not agree with number in surface file (%d)\n", num_vdw_faces, num_surface_faces)
+    if (num_ssint_faces != num_surface_faces) {
+        FFEA_ERROR_MESSG("Number of faces specified in Van der Waals file (%d) does not agree with number in surface file (%d)\n", num_ssint_faces, num_surface_faces)
     }
 
-    // Check for "vdw params:" line
+    // Check for "ssint params:" line
     if (fgets(line, max_line_size, in) == NULL) {
         fclose(in);
-        FFEA_ERROR_MESSG("Error when looking for 'vdw params:' line\n")
+        FFEA_ERROR_MESSG("Error when looking for 'ssint params:' line\n")
     }
-    if (strcmp(line, "vdw params:\n") != 0) {
+    if (strcmp(line, "vdw params:\n") != 0 && strcmp(line, "ssint params:\n") != 0) {
         fclose(in);
-        FFEA_ERROR_MESSG("Could not find 'vdw params:' line (found '%s' instead)\n", line)
+        FFEA_ERROR_MESSG("Could not find 'ssint params:' line (found '%s' instead)\n", line)
     }
 
-    // Read in all the vdw parameters from the file, assigning them to the appropriate faces
+    // Read in all the ssint parameters from the file, assigning them to the appropriate faces
     int i;
-    int vdw_type = 0;
+    int ssint_type = 0;
 
     // If steric only, set all to type 0
-    if (vdw_method == "steric") {
+    if (params->calc_ssint == 0) {
         for(i = 0; i < num_surface_faces; ++i) {
-            if (fscanf(in, "%d\n", &vdw_type) != 1) {
+            if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
-                FFEA_ERROR_MESSG("Error reading from vdw file at face %d. There should be 1 integer denoting vdw face species (-1 - unreactive). \n", i);
+                FFEA_ERROR_MESSG("Error reading from ssint file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
             } else {
-                if (vdw_type > num_vdw_face_types - 1) {
-                    vdw_type = 0;
+                if (ssint_type > num_ssint_face_types - 1) {
+                    ssint_type = 0;
                 }
-                surface[i].set_vdw_interaction_type(vdw_type);
+                surface[i].set_ssint_interaction_type(ssint_type);
             }
         }
     } else {
         for (i = 0; i < num_surface_faces; i++) {
-            if (fscanf(in, "%d\n", &vdw_type) != 1) {
+            if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
-                FFEA_ERROR_MESSG("Error reading from vdw file at face %d. There should be 1 integer denoting vdw face species (-1 - unreactive). \n", i);
+                FFEA_ERROR_MESSG("Error reading from ssint file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
             } else {
-                if (vdw_type > num_vdw_face_types - 1) {
-                    FFEA_ERROR_MESSG("Error reading from vdw file at face %d. The given vdw face type (%d) is higher than that allowed by the vdw forcefield params file (%d). \n", i, vdw_type, num_vdw_face_types - 1);
+                if (ssint_type > num_ssint_face_types - 1) {
+                    FFEA_ERROR_MESSG("Error reading from ssint file at face %d. The given ssint face type (%d) is higher than that allowed by the ssint forcefield params file (%d). \n", i, ssint_type, num_ssint_face_types - 1);
                 }
-                surface[i].set_vdw_interaction_type(vdw_type);
+                surface[i].set_ssint_interaction_type(ssint_type);
             }
         }
     }
 
     // Set whether vdw is active on blob
     for(i = 0; i < num_surface_faces; ++i) {
-        if(surface[i].vdw_interaction_type != -1) {
-            vdw_on_blob = true;
+        if(surface[i].ssint_interaction_type != -1) {
+            ssint_on_blob = true;
             break;
         }
     }
     fclose(in);
 
-    printf("\t\t\tRead %d vdw faces from %s\n", i, vdw_filename);
+    printf("\t\t\tRead %d ssint faces from %s\n", i, ssint_filename);
 
     return FFEA_OK;
 }
@@ -4086,8 +4086,8 @@ bool Blob::there_are_springs() {
     return springs_on_blob;
 }
 
-bool Blob::there_is_vdw() {
-    return vdw_on_blob;
+bool Blob::there_is_ssint() {
+    return ssint_on_blob;
 }
 
 bool Blob::there_are_beads() {

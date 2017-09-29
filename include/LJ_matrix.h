@@ -31,7 +31,7 @@
 #include "mat_vec_types.h"
 #include "dimensions.h"
 
-#define LJI(A,B)	((A) * num_vdw_face_types + (B))
+#define LJI(A,B)	((A) * num_ssint_face_types + (B))
 
 using namespace std;
 
@@ -39,8 +39,8 @@ class LJ_pair {
 public:
     LJ_pair();
     ~LJ_pair();
-    scalar vdw_eps;
-    scalar vdw_r_eq;
+    scalar Emin;
+    scalar Rmin;
 };
 
 class LJ_matrix {
@@ -48,17 +48,17 @@ public:
     LJ_matrix();
     ~LJ_matrix(); 
 
-    int init(string vdw_params_fname, string vdw_type);
+    int init(string ssint_params_fname, string ssint_type, int calc_ssint);
 
-    void get_LJ_params(int type1, int type2, scalar *vdw_eps, scalar *vdw_r_eq);
+    void get_LJ_params(int type1, int type2, scalar *Emin, scalar *Rmin);
 
     int get_num_types();
 
 private:
-    int init_lj(string vdw_params_fname);
+    int init_lj(string ssint_params_fname);
     int init_steric(); 
     LJ_pair *params;
-    int num_vdw_face_types;
+    int num_ssint_face_types;
 };
 
 
