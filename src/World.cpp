@@ -871,12 +871,16 @@ printf("%s\n", params.ssint_in_fname);
         if (there_are_static_blobs == true) break; 
     }
 
+    // 'calc_steric' and 'ssint_type' are now independent. Can the solvers be refactored to reduce on code?
     if (params.ssint_type == "lennard-jones")
         vdw_solver = new(std::nothrow) VdW_solver();
     else if (params.ssint_type == "steric")
         vdw_solver = new(std::nothrow) Steric_solver();
     else if (params.ssint_type == "ljsteric")
         vdw_solver = new(std::nothrow) LJSteric_solver();
+    else if (params.ssint_type == "gensoft")
+        vdw_solver = new(std::nothrow) GenSoftSSINT_solver();
+
     if (vdw_solver == NULL)
         FFEA_ERROR_MESSG("World::init failed to initialise the ssint_solver.\n");
 
@@ -2648,7 +2652,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                 }
 
                 // Set up extra nodes if necessary (STATIC structures automatically load no topology; means no internal nodes!)
-                if (blob_array[i][j].get_motion_state() == FFEA_BLOB_IS_STATIC && (params.ssint_type == "steric" || params.ssint_type == "ljsteric")) {
+                if (blob_array[i][j].get_motion_state() == FFEA_BLOB_IS_STATIC && (params.calc_steric == 1)) {
                     blob_array[i][j].add_steric_nodes();
                 }
 

@@ -91,6 +91,8 @@ protected:
 
     void do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr); 
 
+    void do_gensoft_interaction(Face *f1, Face *f2, scalar *blob_corr);
+
     void do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_y);
 
     void calc_lj_force_pair_matrix(

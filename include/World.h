@@ -67,6 +67,7 @@
 #include "VdW_solver.h"
 #include "Steric_solver.h"
 #include "LJSteric_solver.h"
+#include "GenSoftSSINT_solver.h"
 #include "PreComp_solver.h"
 #include "LJ_matrix.h"
 #include "BindingSite.h"

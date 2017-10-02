@@ -532,6 +532,91 @@ bool VdW_solver::do_steric_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 
 }
 
+void VdW_solver::do_gensoft_interaction(Face *f1, Face *f2, scalar *blob_corr) {
+    int f1_daddy_blob_index = f1->daddy_blob->blob_index;
+    int f2_daddy_blob_index = f2->daddy_blob->blob_index;
+
+    //printf("Centroid 1: %f %f %f\n", f1->centroid.x * (mesoDimensions::length / 1e-9), f1->centroid.y * (mesoDimensions::length / 1e-9), f1->centroid.z * (mesoDimensions::length / 1e-9));
+    //printf("Centroid 2: %f %f %f\n", f2->centroid.x * (mesoDimensions::length / 1e-9), f2->centroid.y * (mesoDimensions::length / 1e-9), f2->centroid.z * (mesoDimensions::length / 1e-9));
+    //printf("Separation: %f %f %f\n", (f1->centroid.x - f2->centroid.x) * (mesoDimensions::length / 1e-9), (f1->centroid.y - f2->centroid.y) * (mesoDimensions::length / 1e-9), (f1->centroid.z - f2->centroid.z) * (mesoDimensions::length / 1e-9));
+
+    // Get the interaction LJ parameters for these two face types
+    scalar Emin = 0.0, Rmin = 0.0;
+    lj_matrix->get_LJ_params(f1->ssint_interaction_type, f2->ssint_interaction_type, &Emin, &Rmin);
+    //printf("VdW Params: %f nm %e \n", Rmin * (mesoDimensions::length / 1e-9), Emin * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
+    vector3 p[num_tri_gauss_quad_points], q[num_tri_gauss_quad_points];
+    vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
+
+    // Convert all area coordinate gauss points to cartesian
+    if (blob_corr == NULL) {
+        for (int i = 0; i < num_tri_gauss_quad_points; i++) {
+            f1->barycentric_calc_point(gauss_points[i].eta[0], gauss_points[i].eta[1], gauss_points[i].eta[2], &p[i]);
+            f2->barycentric_calc_point(gauss_points[i].eta[0], gauss_points[i].eta[1], gauss_points[i].eta[2], &q[i]);
+        }
+    } else {
+        for (int i = 0; i < num_tri_gauss_quad_points; i++) {
+            f1->barycentric_calc_point_f2(gauss_points[i].eta[0], gauss_points[i].eta[1], gauss_points[i].eta[2], &p[i],blob_corr, f1_daddy_blob_index, f2_daddy_blob_index);
+            f2->barycentric_calc_point(gauss_points[i].eta[0], gauss_points[i].eta[1], gauss_points[i].eta[2], &q[i]);
+        }
+    } 
+
+    // Construct the force pair matrix: f(p, q) where p and q are all the gauss points in each face
+    // Also calculate energy whilst looping through face points
+    scalar energy = 0.0;
+
+    if (ssint_type == SSINT_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
+             p, q, Rmin, Emin, energy);
+    else if (ssint_type == SSINT_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
+             p, q, Rmin, Emin, energy);
+
+    scalar ApAq = f1->area * f2->area;
+    energy *= ApAq;
+
+    // Store the measurement
+	/*for (int k = 0; k < num_tri_gauss_quad_points; k++) {
+		for (int l = 0; l < num_tri_gauss_quad_points; l++) {
+			printf("%e  ", force_pair_matrix[k][l].z);
+		}
+		printf("\n");
+	}
+	exit(0);*/
+    #pragma omp critical
+    {
+        fieldenergy[f1_daddy_blob_index][f2_daddy_blob_index] += energy;
+        for (int j = 0; j < 3; j++) {
+            vector3 force1, force2;
+            force1.assign( 0, 0, 0 );
+            force2.assign( 0, 0, 0 );
+            for (int k = 0; k < num_tri_gauss_quad_points; k++) {
+                for (int l = 0; l < num_tri_gauss_quad_points; l++) {
+                    scalar c = gauss_points[k].W * gauss_points[l].W * gauss_points[l].eta[j];
+                    scalar d = gauss_points[k].W * gauss_points[l].W * gauss_points[k].eta[j];
+                    //printf("c = %e, %e, %e, %e\n", c, gauss_points[k].W, gauss_points[l].W, gauss_points[l].eta[j]);
+                    force1.x += c * force_pair_matrix[k][l].x;
+                    force1.y += c * force_pair_matrix[k][l].y;
+                    force1.z += c * force_pair_matrix[k][l].z;
+
+                    force2.x -= d * force_pair_matrix[l][k].x;
+                    force2.y -= d * force_pair_matrix[l][k].y;
+                    force2.z -= d * force_pair_matrix[l][k].z;
+                }
+            }
+            force1.x *= ApAq;
+            force1.y *= ApAq;
+            force1.z *= ApAq;
+            f1->add_force_to_node(j, &force1);
+            // f1->add_bb_vdw_force_to_record(&force1, f2->daddy_blob->blob_index); // DEPRECATED
+            			//	printf("1:: %d %e %e %e\n", f1->index, force1.x, force1.y, force1.z);
+					//printf("2:: %d %e %e %e\n", f2->index, force2.x, force2.y, force2.z);
+
+            force2.x *= ApAq;
+            force2.y *= ApAq;
+            force2.z *= ApAq;
+            f2->add_force_to_node(j, &force2);
+            // f2->add_bb_vdw_force_to_record(&force2, f1->daddy_blob->blob_index); // DEPRECATED
+        } // end updating face nodes.
+    } // end of critical
+}
 
 scalar VdW_solver::distance2(vector3 &p, vector3 &q) {
     scalar dx = p[0] - q[0], dy = p[1] - q[1], dz = p[2] - q[2];

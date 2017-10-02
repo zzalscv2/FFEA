@@ -34,7 +34,8 @@ add_library(ffea_lib
     mat_vec_fns_II.cpp NearestNeighbourLinkedListCube.cpp 
     PoissonMatrixQuadratic.cpp SparseMatrixTypes.cpp 
     SparseMatrixUnknownPattern.cpp SparsityPattern.cpp 
-    Spring.cpp VdW_solver.cpp Steric_solver.cpp LJSteric_solver.cpp 
+    Spring.cpp VdW_solver.cpp Steric_solver.cpp LJSteric_solver.cpp
+    GenSoftSSINT_solver.cpp
     KineticState.cpp PreComp_solver.cpp CheckTetrahedraOverlap.cpp 
     VolumeIntersection.cpp RngStream.cpp )
     

@@ -614,9 +614,13 @@ int SimulationParams::validate(int sim_mode) {
 
     if (calc_ssint == 1) {
 
-        if (ssint_type != "lennard-jones" && ssint_type != "ljsteric") {
-            FFEA_ERROR_MESSG("Optional: 'ssint_type', must be either 'lennard-jones' or 'ljsteric' (both methods combined).\n");
+        if (ssint_type != "lennard-jones" && ssint_type != "ljsteric" && ssint_type != "gensoft") {
+            FFEA_ERROR_MESSG("Optional: 'ssint_type', must be either 'lennard-jones', 'ljsteric' (both methods combined) or 'gensoft' (polynomial soft attraction).\n");
         }
+
+	if (ssint_type == "ljsteric" && calc_steric == 0) {
+	    FFEA_ERROR_MESSG("Optional: For 'ssint_type = ljsteric', we also require 'calc_steric = 1'.\n");
+	}
 
         if (ssint_in_fname_set == 0) {
             FFEA_ERROR_MESSG("Surface-surface forcefield params file name required (ssint_in_fname).\n");
@@ -852,9 +856,7 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params) {
         fprintf(fout, "\tinc_self_ssint = %d\n", inc_self_ssint);
         fprintf(fout, "\tssint_cutoff = %e\n", ssint_cutoff*mesoDimensions::length);
 
-        if (ssint_type == "lennard-jones" || ssint_type == "ljsteric") {
-            fprintf(fout, "\tssint_in_fname = %s\n", ssint_in_fname.c_str());
-        }
+        fprintf(fout, "\tssint_in_fname = %s\n", ssint_in_fname.c_str());
         if (calc_steric == 1) {
             fprintf(fout, "\tsteric_factor = %e\n", steric_factor);
         }
