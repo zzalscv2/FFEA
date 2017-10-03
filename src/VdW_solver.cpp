@@ -121,13 +121,13 @@ VdW_solver::~VdW_solver() {
     ssint_type = SSINT_TYPE_UNDEFINED;
 }
 
-int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &steric_factor, int num_blobs, int inc_self_ssint, string ssint_type_string, scalar &steric_dr, int calc_kinetics, bool working_w_static_blobs) {
+int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, SSINT_matrix *ssint_matrix, scalar &steric_factor, int num_blobs, int inc_self_ssint, string ssint_type_string, scalar &steric_dr, int calc_kinetics, bool working_w_static_blobs) {
     this->surface_face_lookup = surface_face_lookup;
     this->box_size.x = box_size->x;
     this->box_size.y = box_size->y;
     this->box_size.z = box_size->z;
 
-    this->lj_matrix = lj_matrix;
+    this->ssint_matrix = ssint_matrix;
 
     this->inc_self_ssint = inc_self_ssint;
     this->steric_factor = steric_factor;
@@ -138,6 +138,8 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
         ssint_type = SSINT_TYPE_STERIC;
     else if (ssint_type_string == "ljsteric")
         ssint_type = SSINT_TYPE_LJSTERIC;
+    else if (ssint_type_string == "gensoft")
+        ssint_type = SSINT_TYPE_GENSOFT;
 
 
     // And some measurement stuff it should know about
@@ -242,9 +244,10 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     //printf("Separation: %f %f %f\n", (f1->centroid.x - f2->centroid.x) * (mesoDimensions::length / 1e-9), (f1->centroid.y - f2->centroid.y) * (mesoDimensions::length / 1e-9), (f1->centroid.z - f2->centroid.z) * (mesoDimensions::length / 1e-9));
 
     // Get the interaction LJ parameters for these two face types
-    scalar Emin = 0.0, Rmin = 0.0;
-    lj_matrix->get_LJ_params(f1->ssint_interaction_type, f2->ssint_interaction_type, &Emin, &Rmin);
-    //printf("VdW Params: %f nm %e \n", Rmin * (mesoDimensions::length / 1e-9), Emin * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
+    //scalar Emin = 0.0, Rmin = 0.0;
+    map<string, scalar> pmap;
+    ssint_matrix->get_SSINT_params(f1->ssint_interaction_type, f2->ssint_interaction_type, &pmap);
+    //printf("VdW Params: %f nm %e \n", pmap["Rmin"] * (mesoDimensions::length / 1e-9), pmap["Emin"] * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
     vector3 p[num_tri_gauss_quad_points], q[num_tri_gauss_quad_points];
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
 
@@ -266,9 +269,9 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     scalar energy = 0.0;
 
     if (ssint_type == SSINT_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
-             p, q, Rmin, Emin, energy);
+             p, q, pmap["Rmin"], pmap["Emin"], energy);
     else if (ssint_type == SSINT_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
-             p, q, Rmin, Emin, energy);
+             p, q, pmap["Rmin"], pmap["Emin"], energy);
 
     scalar ApAq = f1->area * f2->area;
     energy *= ApAq;
@@ -399,8 +402,8 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
     }
 
     // Get the interaction LJ parameters for these two face types
-    scalar Emin = 0.0, Rmin = 0.0;
-    lj_matrix->get_LJ_params(f->ssint_interaction_type, f->ssint_interaction_type, &Emin, &Rmin);
+    map<string, scalar> pmap;
+    ssint_matrix->get_SSINT_params(f->ssint_interaction_type, f->ssint_interaction_type, &pmap);
 
 
     vector3 p[num_tri_gauss_quad_points];
@@ -418,8 +421,8 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
         for (int l = k; l < num_tri_gauss_quad_points; l++) {
             scalar mag_r = p[k].y - y_wall;
 
-            scalar force_mag = 12 * pow(Rmin, 6) * Emin * (pow(mag_r, -7) - pow(Rmin, 6) * pow(mag_r, -13));
-            energy += pow(Rmin, 6) * Emin * (pow(Rmin, 6) * pow(mag_r, -12) - 2 * pow(mag_r, -6));
+            scalar force_mag = 12 * pow(pmap["Rmin"], 6) * pmap["Emin"] * (pow(mag_r, -7) - pow(pmap["Rmin"], 6) * pow(mag_r, -13));
+            energy += pow(pmap["Rmin"], 6) * pmap["Emin"] * (pow(pmap["Rmin"], 6) * pow(mag_r, -12) - 2 * pow(mag_r, -6));
             force_mag *= -1;
 
             force_pair_matrix[k][l] = force_mag;
@@ -536,14 +539,10 @@ void VdW_solver::do_gensoft_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     int f1_daddy_blob_index = f1->daddy_blob->blob_index;
     int f2_daddy_blob_index = f2->daddy_blob->blob_index;
 
-    //printf("Centroid 1: %f %f %f\n", f1->centroid.x * (mesoDimensions::length / 1e-9), f1->centroid.y * (mesoDimensions::length / 1e-9), f1->centroid.z * (mesoDimensions::length / 1e-9));
-    //printf("Centroid 2: %f %f %f\n", f2->centroid.x * (mesoDimensions::length / 1e-9), f2->centroid.y * (mesoDimensions::length / 1e-9), f2->centroid.z * (mesoDimensions::length / 1e-9));
-    //printf("Separation: %f %f %f\n", (f1->centroid.x - f2->centroid.x) * (mesoDimensions::length / 1e-9), (f1->centroid.y - f2->centroid.y) * (mesoDimensions::length / 1e-9), (f1->centroid.z - f2->centroid.z) * (mesoDimensions::length / 1e-9));
-
     // Get the interaction LJ parameters for these two face types
-    scalar Emin = 0.0, Rmin = 0.0;
-    lj_matrix->get_LJ_params(f1->ssint_interaction_type, f2->ssint_interaction_type, &Emin, &Rmin);
-    //printf("VdW Params: %f nm %e \n", Rmin * (mesoDimensions::length / 1e-9), Emin * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
+    map<string, scalar> pmap;
+    ssint_matrix->get_SSINT_params(f1->ssint_interaction_type, f2->ssint_interaction_type, &pmap);
+    //printf("VdW Params: %f nm %e \n", pmap["Rmin"] * (mesoDimensions::length / 1e-9), Emin * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
     vector3 p[num_tri_gauss_quad_points], q[num_tri_gauss_quad_points];
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
 
@@ -564,10 +563,7 @@ void VdW_solver::do_gensoft_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // Also calculate energy whilst looping through face points
     scalar energy = 0.0;
 
-    if (ssint_type == SSINT_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
-             p, q, Rmin, Emin, energy);
-    else if (ssint_type == SSINT_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
-             p, q, Rmin, Emin, energy);
+    calc_gensoft_force_pair_matrix(force_pair_matrix, p, q, pmap["Rmin"], pmap["Emin"], pmap["k0"], energy);
 
     scalar ApAq = f1->area * f2->area;
     energy *= ApAq;
@@ -696,6 +692,40 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
     }
 }
 
+void VdW_solver::calc_gensoft_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
+        vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points],
+        scalar &Rmin, scalar &Emin, scalar &k0, scalar &energy) {
+
+    scalar mag_r, force_mag, e;
+
+    scalar Rmin_2 = Rmin * Rmin;
+    scalar Rmin_3 = Rmin_2 * Rmin;
+   
+    for(int k = 0; k < num_tri_gauss_quad_points; k++) {
+        mag_r = sqrt(distance2(p[k], q[k])); 
+        calc_gensoft_factors(mag_r, k, k, Emin, Rmin, Rmin_3, k0, force_mag, e); 
+        energy += e; 
+        force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
+        force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);
+        force_pair_matrix[k][k].z = force_mag * ((p[k].z - q[k].z) / mag_r);
+
+        for(int l = k+1; l < num_tri_gauss_quad_points; l++) {
+            mag_r = sqrt(distance2(p[k], q[l])); 
+            calc_gensoft_factors(mag_r, k, l, Emin, Rmin, Rmin_3, k0, force_mag, e); 
+
+            energy += 2*e;
+
+            force_pair_matrix[k][l].x = force_mag * ((p[k].x - q[l].x) / mag_r);
+            force_pair_matrix[k][l].y = force_mag * ((p[k].y - q[l].y) / mag_r);
+            force_pair_matrix[k][l].z = force_mag * ((p[k].z - q[l].z) / mag_r);
+
+            force_pair_matrix[l][k].x = force_pair_matrix[k][l].x;
+            force_pair_matrix[l][k].y = force_pair_matrix[k][l].y;
+            force_pair_matrix[l][k].z = force_pair_matrix[k][l].z;
+        }
+    }
+}
+
 /** Given (mag_r), get LJ force magnitude (force_mag) and energy (e) */
 void VdW_solver::calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmin_6,
                                  scalar &force_mag, scalar &e) {
@@ -712,6 +742,25 @@ void VdW_solver::calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar
     force_mag = 12 * mag_ri_7 * Rmin_6 * Emin * (vdw_fac_6 - 1);
     e = gauss_points[index_k].W * gauss_points[index_l].W *
                    Emin * vdw_fac_6 * (vdw_fac_6 - 2 );
+
+}
+
+void VdW_solver::calc_gensoft_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmin, scalar &Rmin_3, scalar &k0,
+                                 scalar &force_mag, scalar &e) {
+
+      scalar k0rm, k0rm2, epsonrm, Rmin_2, mag_r_2, mag_r_3, gensoftfac_2, gensoftfac_3, emag, korm2;
+      mag_r_2 = mag_r * mag_r;
+      mag_r_3 = mag_r_2 * mag_r;
+      Rmin_2 = Rmin * Rmin;
+      gensoftfac_2 = mag_r_2 / Rmin_2;
+      gensoftfac_3 = gensoftfac_2 * mag_r / Rmin;
+      k0rm = k0 * Rmin;
+      k0rm2 = k0rm * Rmin;
+      epsonrm = Emin / Rmin;
+      force_mag = 2 * (k0rm - 6 * epsonrm) * gensoftfac_3 + 3 * (4 * epsonrm - k0rm) * gensoftfac_2 + k0 * mag_r;
+
+      emag = (0.5 * k0rm2 - 3 * Emin) * gensoftfac_2 * gensoftfac_2 + (4 * Emin - k0rm2) * gensoftfac_3 + 0.5 * k0 * mag_r_2 - Emin;
+      e = gauss_points[index_k].W * gauss_points[index_l].W * emag;
 
 }
 

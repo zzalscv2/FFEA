@@ -35,6 +35,7 @@
 #define SSINT_TYPE_STERIC 1
 #define SSINT_TYPE_LJSTERIC 2
 #define SSINT_TYPE_LJ 3
+#define SSINT_TYPE_GENSOFT 4
 
 class VdW_solver {
 public:
@@ -42,7 +43,7 @@ public:
 
     ~VdW_solver();
 
-    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, LJ_matrix *lj_matrix, scalar &steric_factor, int num_blobs, int inc_self_ssint, string ssint_type_string, scalar &steric_dr, int calc_kinetics, bool working_w_static_blobs);
+    int init(NearestNeighbourLinkedListCube *surface_face_lookup, vector3 *box_size, SSINT_matrix *ssint_matrix, scalar &steric_factor, int num_blobs, int inc_self_ssint, string ssint_type_string, scalar &steric_dr, int calc_kinetics, bool working_w_static_blobs);
 
     int solve(scalar *blob_corr);
 
@@ -59,7 +60,7 @@ protected:
     NearestNeighbourLinkedListCube *surface_face_lookup;
 
     vector3 box_size;
-    LJ_matrix *lj_matrix;
+    SSINT_matrix *ssint_matrix;
 
     scalar **fieldenergy;
     int num_blobs;
@@ -105,10 +106,17 @@ protected:
               vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points], 
               scalar &Rmin, scalar &Emin, scalar &energy);
 
+    void calc_gensoft_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_gauss_quad_points][num_tri_gauss_quad_points],
+        vector3 (&p)[num_tri_gauss_quad_points], vector3 (&q)[num_tri_gauss_quad_points],
+        scalar &Rmin, scalar &Emin, scalar &k0, scalar &energy);
+
     void calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmin_6,
                                  scalar &force_mag, scalar &e);
 
     void calc_ljinterpolated_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmini,
+                                 scalar &force_mag, scalar &e);
+
+    void calc_gensoft_factors(scalar &mag_r, int index_k, int index_l, scalar &Emin, scalar &Rmin_2, scalar &Rmin_3, scalar &k0, 
                                  scalar &force_mag, scalar &e);
 
     scalar distance2(vector3 &p, vector3 &q);

@@ -119,7 +119,7 @@ public:
              string stokes_filename, string ssint_filename, string pin_filename, 
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
              scalar compress, int linear_solver, int blob_state, SimulationParams *params,
-             PreComp_params *pc_params, LJ_matrix *lj_matrix,
+             PreComp_params *pc_params, SSINT_matrix *ssint_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]);
     int init();
 
@@ -590,7 +590,7 @@ private:
     BindingSite_matrix *binding_matrix;
 
     /** pointer to the ssint forcefield parameters (for some energy calcs) */
-    LJ_matrix *lj_matrix;
+    SSINT_matrix *ssint_matrix;
 
     /** A pointer to whatever Solver is being used for this Blob (eg SparseSubstitutionSolver
      * or ConjugateGradientSolver). The Solver solves the equation Mx = f where M is the

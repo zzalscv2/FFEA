@@ -533,7 +533,6 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         cout << "\tdt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\n\tepsilon_0\n\trestart\n\tcalc_ssint\n\tcalc_noise\n\tcalc_preComp\n" << endl;
         return FFEA_ERROR;
     }
-	cout << ssint_in_fname << endl;
     return FFEA_OK;
 }
 

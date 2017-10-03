@@ -212,7 +212,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         return FFEA_ERROR;
     }
     cout << "...done!" << endl;
-printf("%s\n", params.ssint_in_fname);
+
     // Check for consistency
     cout << "\nVerifying Parameters..." << endl;
     if(params.validate(mode) != 0) {
@@ -220,7 +220,6 @@ printf("%s\n", params.ssint_in_fname);
         printf("Parameters found to be inconsistent in SimulationParams::validate()\n");
         return FFEA_ERROR;
     }
-printf("%s\n", params.ssint_in_fname);
     if ((params.num_blobs) == 1) {
         writeDetailed = false;
         printf("\n\tA single blob is simulated, and thus the detailed measurements would be redundant and are not needed\n");
@@ -268,9 +267,8 @@ printf("%s\n", params.ssint_in_fname);
     }
 
     // Load the vdw forcefield params matrix
-    printf("%s\n", params.ssint_in_fname);
     if(params.calc_ssint == 1 || params.calc_steric == 1) {
-        if (lj_matrix.init(params.ssint_in_fname, params.ssint_type, params.calc_ssint) == FFEA_ERROR) {
+        if (ssint_matrix.init(params.ssint_in_fname, params.ssint_type, params.calc_ssint) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when reading from ssint forcefield params file.\n")
         }
     }
@@ -884,7 +882,7 @@ printf("%s\n", params.ssint_in_fname);
     if (vdw_solver == NULL)
         FFEA_ERROR_MESSG("World::init failed to initialise the ssint_solver.\n");
 
-    vdw_solver->init(&lookup, &box_dim, &lj_matrix, params.steric_factor, params.num_blobs, params.inc_self_ssint, params.ssint_type, params.steric_dr, params.calc_kinetics, there_are_static_blobs);
+    vdw_solver->init(&lookup, &box_dim, &ssint_matrix, params.steric_factor, params.num_blobs, params.inc_self_ssint, params.ssint_type, params.steric_dr, params.calc_kinetics, there_are_static_blobs);
 
     // Calculate the total number of vdw interacting faces in the entire system
     total_num_surface_faces = 0;
@@ -2571,7 +2569,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
                                         material[j], stokes[j], ssint[j], pin[j], binding[j],
                                         beads[j], scale, calc_compress, compress, solver,
-                                        motion_state[j], &params, &pc_params, &lj_matrix,
+                                        motion_state[j], &params, &pc_params, &ssint_matrix,
                                         &binding_matrix, rng) == FFEA_ERROR) {
                 FFEA_ERROR_MESSG("\tError when trying to pre-initialise Blob %d, conformation %d.\n", i, j); 
             }

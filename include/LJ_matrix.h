@@ -27,6 +27,12 @@
 #include <stdio.h>
 #include <cstring> 
 #include <string>
+#include <map>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <boost/algorithm/string.hpp>
+
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "dimensions.h"
@@ -43,23 +49,23 @@ public:
     scalar Rmin;
 };
 
-class LJ_matrix {
+class SSINT_matrix {
 public:
-    LJ_matrix();
-    ~LJ_matrix(); 
+    SSINT_matrix();
+    ~SSINT_matrix(); 
 
     int init(string ssint_params_fname, string ssint_type, int calc_ssint);
 
-    void get_LJ_params(int type1, int type2, scalar *Emin, scalar *Rmin);
-
+    void get_SSINT_params(int type1, int type2, map<string, scalar> *parmap);
+    
     int get_num_types();
 
 private:
-    int init_lj(string ssint_params_fname);
+    int init_ssint(string ssint_params_fname);
     int init_steric(); 
-    LJ_pair *params;
+    //LJ_pair *params;
+    map<string, scalar> *params;
     int num_ssint_face_types;
 };
-
 
 #endif

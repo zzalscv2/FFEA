@@ -215,7 +215,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
              string stokes_filename, string ssint_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
              scalar compress, int linear_solver, int blob_state, SimulationParams *params, 
-             PreComp_params *pc_params, LJ_matrix *lj_matrix, 
+             PreComp_params *pc_params, SSINT_matrix *ssint_matrix, 
              BindingSite_matrix *binding_matrix, RngStream rng[]){
 
     // Which blob and conformation am i?
@@ -247,7 +247,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->binding_matrix = binding_matrix; 
 
     // lennard-jones interaction matrix:
-    this->lj_matrix = lj_matrix;
+    this->ssint_matrix = ssint_matrix;
 
     // Store the pointer to the simulation parameters class
     this->params = params;
@@ -296,7 +296,7 @@ int Blob::init(){
     }
 
     if (params->calc_ssint == 1 || params->calc_steric == 1) {
-        if (load_ssint(s_ssint_filename.c_str(), lj_matrix->get_num_types(), params->ssint_type) == FFEA_ERROR) {
+        if (load_ssint(s_ssint_filename.c_str(), ssint_matrix->get_num_types(), params->ssint_type) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading ssint parameter file.\n")
         }
     }

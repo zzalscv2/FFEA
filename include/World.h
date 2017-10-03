@@ -255,7 +255,7 @@ private:
     VdW_solver *vdw_solver;
 
     /** @brief LJ parameters matrix */
-    LJ_matrix lj_matrix;
+    SSINT_matrix ssint_matrix;
 
     /** @brief Binding Interactions matrix */
     BindingSite_matrix binding_matrix;
