@@ -44,7 +44,7 @@ SSINT_matrix::~SSINT_matrix() {
     num_ssint_face_types = 0;
 }
 
-int SSINT_matrix::init(string ssint_params_fname, string ssint_type, int calc_ssint) {
+int SSINT_matrix::init(string ssint_params_fname, string ssint_type, int calc_ssint, scalar ssint_cutoff) {
 
     int err;
     // In that case we do not need an input parameter file, 
@@ -52,7 +52,7 @@ int SSINT_matrix::init(string ssint_params_fname, string ssint_type, int calc_ss
     if (calc_ssint == 0) {
        err = init_steric(); 
     } else {
-       err = init_ssint(ssint_params_fname); 
+       err = init_ssint(ssint_params_fname, ssint_cutoff); 
     } 
     return err; 
 } 
@@ -151,7 +151,7 @@ int LJ_matrix::init_ssintOLD(string ssint_params_fname) {
 }
 */
 
-int SSINT_matrix::init_ssint(string ssint_params_fname) {
+int SSINT_matrix::init_ssint(string ssint_params_fname, scalar ssint_cutoff) {
 
     int count, MAX_NUM_VARS = 3;
     string line, aset, head[MAX_NUM_VARS];
@@ -159,7 +159,7 @@ int SSINT_matrix::init_ssint(string ssint_params_fname) {
     vector<string> bufvec2;
     ifstream in (ssint_params_fname);
     
-    // What are the params?
+    // What are the param possibilities (keys)?
     head[0] = "Emin";
     head[1] = "Rmin";
     head[2] = "k0";
@@ -213,26 +213,35 @@ int SSINT_matrix::init_ssint(string ssint_params_fname) {
 	    if (bufvec2.size() > 3) {
         	FFEA_ERROR_MESSG("For SSINT_params set %d %d, currently unable to have more than 3 params. You specified %d\n", i, j, bufvec2.size())
 	    }
-
-	    count = 0;
-	    for(count = 0; count < MAX_NUM_VARS; count++) {
-		params[LJI(i, j)][head[count]] = 0.0;
+	    if (bufvec2.size() < 2) {
+        	FFEA_ERROR_MESSG("For SSINT_params set %d %d, currently must have at least 2 params (Emin, Rmin). You specified %d\n", i, j, bufvec2.size())
 	    }
+//	    count = 0;
+	//    for(count = 0; count < MAX_NUM_VARS; count++) {
+//		params[LJI(i, j)][head[count]] = -1.0;
+//	    }
 	    for(count = 0; count < bufvec2.size(); count++) {
 		params[LJI(i, j)][head[count]] = atof(bufvec2.at(count).c_str());
 	    }
 
-            if (params[LJI(i, j)]["Emin"] <= 0) {
+	    if (params[LJI(i, j)]["Emin"] <= 0) {
                 FFEA_ERROR_MESSG("Required: 'Emin' must be greater than 0 if you wish to use ssint (calc_ssint is 1)\n")
             }
             if (params[LJI(i, j)]["Rmin"] <= 0) {
                 FFEA_ERROR_MESSG("Required: 'Rmin' must be greater than 0 if you wish to use ssint (calc_ssint is 1)\n")
             }
 
+	    // Set the Rmin value to the cutoff distance for now, so avoid turning points
+	    params[LJI(i, j)]["Rmin"] = ssint_cutoff * mesoDimensions::length;
+
+	    // Defaulting the value if not found 
+            if(params[LJI(i, j)].count(head[2]) == 0) {
+		params[LJI(i, j)][head[2]] = 0.0;
+	    }
             params[LJI(i, j)][head[0]] = params[LJI(i, j)][head[0]] * mesoDimensions::area * mesoDimensions::area / mesoDimensions::Energy ;
             params[LJI(i, j)][head[1]] = params[LJI(i, j)][head[1]] / mesoDimensions::length;
- 	    params[LJI(i, j)][head[2]] = params[LJI(i, j)][head[2]] * mesoDimensions::area / mesoDimensions::Energy;
-        }
+	    params[LJI(i, j)][head[2]] = params[LJI(i, j)][head[2]] * mesoDimensions::area / mesoDimensions::Energy; 
+	}
     }
 
     in.close();

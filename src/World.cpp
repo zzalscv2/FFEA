@@ -268,7 +268,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
     // Load the vdw forcefield params matrix
     if(params.calc_ssint == 1 || params.calc_steric == 1) {
-        if (ssint_matrix.init(params.ssint_in_fname, params.ssint_type, params.calc_ssint) == FFEA_ERROR) {
+        if (ssint_matrix.init(params.ssint_in_fname, params.ssint_type, params.calc_ssint, params.ssint_cutoff) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when reading from ssint forcefield params file.\n")
         }
     }

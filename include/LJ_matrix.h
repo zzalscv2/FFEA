@@ -36,6 +36,7 @@
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "dimensions.h"
+#include "SimulationParams.h"
 
 #define LJI(A,B)	((A) * num_ssint_face_types + (B))
 
@@ -54,14 +55,14 @@ public:
     SSINT_matrix();
     ~SSINT_matrix(); 
 
-    int init(string ssint_params_fname, string ssint_type, int calc_ssint);
+    int init(string ssint_params_fname, string ssint_type, int calc_ssint, scalar ssint_cutoff);
 
    // void get_SSINT_params(int type1, int type2, map<string, scalar> *parmap);
     map<string, scalar> get_SSINT_params(int type1, int type2);   
     int get_num_types();
 
 private:
-    int init_ssint(string ssint_params_fname);
+    int init_ssint(string ssint_params_fname, scalar ssint_cutoff);
     int init_steric(); 
     //LJ_pair *params;
     map<string, scalar> *params;
