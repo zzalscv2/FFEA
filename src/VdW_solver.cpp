@@ -246,7 +246,7 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // Get the interaction LJ parameters for these two face types
     //scalar Emin = 0.0, Rmin = 0.0;
     map<string, scalar> pmap;
-    ssint_matrix->get_SSINT_params(f1->ssint_interaction_type, f2->ssint_interaction_type, &pmap);
+    pmap = ssint_matrix->get_SSINT_params(f1->ssint_interaction_type, f2->ssint_interaction_type);
     //printf("VdW Params: %f nm %e \n", pmap["Rmin"] * (mesoDimensions::length / 1e-9), pmap["Emin"] * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
     vector3 p[num_tri_gauss_quad_points], q[num_tri_gauss_quad_points];
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
@@ -267,7 +267,7 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // Construct the force pair matrix: f(p, q) where p and q are all the gauss points in each face
     // Also calculate energy whilst looping through face points
     scalar energy = 0.0;
-
+//cout << "Params: " << pmap["Rmin"] << " " << pmap["Emin"] << endl;
     if (ssint_type == SSINT_TYPE_LJSTERIC) calc_ljinterpolated_force_pair_matrix(force_pair_matrix, 
              p, q, pmap["Rmin"], pmap["Emin"], energy);
     else if (ssint_type == SSINT_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
@@ -275,7 +275,6 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 
     scalar ApAq = f1->area * f2->area;
     energy *= ApAq;
-
     // Store the measurement
 	/*for (int k = 0; k < num_tri_gauss_quad_points; k++) {
 		for (int l = 0; l < num_tri_gauss_quad_points; l++) {
@@ -403,7 +402,7 @@ void VdW_solver::do_sticky_xz_interaction(Face *f, bool bottom_wall, scalar dim_
 
     // Get the interaction LJ parameters for these two face types
     map<string, scalar> pmap;
-    ssint_matrix->get_SSINT_params(f->ssint_interaction_type, f->ssint_interaction_type, &pmap);
+    pmap = ssint_matrix->get_SSINT_params(f->ssint_interaction_type, f->ssint_interaction_type);
 
 
     vector3 p[num_tri_gauss_quad_points];
@@ -541,7 +540,7 @@ void VdW_solver::do_gensoft_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 
     // Get the interaction LJ parameters for these two face types
     map<string, scalar> pmap;
-    ssint_matrix->get_SSINT_params(f1->ssint_interaction_type, f2->ssint_interaction_type, &pmap);
+    pmap = ssint_matrix->get_SSINT_params(f1->ssint_interaction_type, f2->ssint_interaction_type);
     //printf("VdW Params: %f nm %e \n", pmap["Rmin"] * (mesoDimensions::length / 1e-9), Emin * (mesoDimensions::Energy / mesoDimensions::area) * (1.0/ mesoDimensions::area));
     vector3 p[num_tri_gauss_quad_points], q[num_tri_gauss_quad_points];
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
@@ -669,7 +668,8 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
    
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
         mag_r = sqrt(distance2(p[k], q[k])); 
-        calc_lj_factors(mag_r, k, k, Emin, Rmin_6, force_mag, e); 
+        calc_lj_factors(mag_r, k, k, Emin, Rmin_6, force_mag, e);
+
         energy += e; 
         force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
         force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);
@@ -700,10 +700,10 @@ void VdW_solver::calc_gensoft_force_pair_matrix(vector3 (&force_pair_matrix)[num
 
     scalar Rmin_2 = Rmin * Rmin;
     scalar Rmin_3 = Rmin_2 * Rmin;
-   
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
         mag_r = sqrt(distance2(p[k], q[k])); 
-        calc_gensoft_factors(mag_r, k, k, Emin, Rmin, Rmin_3, k0, force_mag, e); 
+        calc_gensoft_factors(mag_r, k, k, Emin, Rmin, Rmin_3, k0, force_mag, e);
+	//cout << Rmin << " " << Emin << " " << k0 << " " << force_mag << endl;
         energy += e; 
         force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
         force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);
@@ -796,6 +796,7 @@ void VdW_solver::calc_ljinterpolated_force_pair_matrix(vector3 (&force_pair_matr
         else 
            calc_lj_factors(mag_r, k, k, Emin, Rmin_6, force_mag, e);
         energy += e;
+	//cout << Rmin << " " << Emin << " " << force_mag << endl;
         force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
         force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);
         force_pair_matrix[k][k].z = force_mag * ((p[k].z - q[k].z) / mag_r);

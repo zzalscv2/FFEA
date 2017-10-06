@@ -56,8 +56,8 @@ public:
 
     int init(string ssint_params_fname, string ssint_type, int calc_ssint);
 
-    void get_SSINT_params(int type1, int type2, map<string, scalar> *parmap);
-    
+   // void get_SSINT_params(int type1, int type2, map<string, scalar> *parmap);
+    map<string, scalar> get_SSINT_params(int type1, int type2);   
     int get_num_types();
 
 private:

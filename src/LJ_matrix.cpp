@@ -261,6 +261,7 @@ int LJ_matrix::get_num_types() {
     return num_ssint_face_types;
 }
 */
+/*
 void SSINT_matrix::get_SSINT_params(int type1, int type2, map<string, scalar> *parmap) {
     if (type1 < 0 || type1 > num_ssint_face_types - 1) {
         printf("Frog1 %d %d\n", type1, num_ssint_face_types - 1);
@@ -270,7 +271,25 @@ void SSINT_matrix::get_SSINT_params(int type1, int type2, map<string, scalar> *p
         printf("Frog2 %d %d\n", type2, num_ssint_face_types - 1);
         return;
     }
-    
+
+    parmap = &(params[LJI(type1, type2)]);
+    cout << "Full map: " << params[LJI(type1, type2)]["Emin"] << endl;
+    cout << "Map: " << (*parmap)["Emin"] << endl;
+}
+*/
+
+map<string, scalar> SSINT_matrix::get_SSINT_params(int type1, int type2) {
+    if (type1 < 0 || type1 > num_ssint_face_types - 1) {
+        printf("Frog1 %d %d\n", type1, num_ssint_face_types - 1);
+    }
+    if (type2 < 0 || type2 > num_ssint_face_types - 1) {
+        printf("Frog2 %d %d\n", type2, num_ssint_face_types - 1);
+    }
+
+    return params[LJI(type1, type2)];
+//    parmap = &(params[LJI(type1, type2)]);
+ //   cout << "Full map: " << params[LJI(type1, type2)]["Emin"] << endl;
+  //  cout << "Map: " << (*parmap)["Emin"] << endl;
 }
 
 int SSINT_matrix::get_num_types() {
