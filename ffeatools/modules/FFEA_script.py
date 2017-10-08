@@ -574,7 +574,7 @@ class FFEA_script_params():
 		self.dielec_ext = 1
 		self.calc_stokes = 1
 		self.stokes_visc = 1e-3
-		self.calc_vdw = 1
+		self.calc_ssint = 1
 		self.calc_noise = 1
 		self.calc_springs = 0
 		self.calc_ctforces = 0
@@ -586,8 +586,8 @@ class FFEA_script_params():
 		self.kinetics_update = 0
 		self.es_update = 1
 		self.es_N = nparray([-1,-1,-1])
-		self.vdw_type = "steric"
-		self.vdw_steric_factor = 1
+		self.ssint_type = "ljsteric"
+		self.steric_factor = 1
 		self.move_into_box = 1
 		self.sticky_wall_xz = 0
 		self.wall_x_1 = "PBC"
@@ -649,22 +649,22 @@ class FFEA_script_params():
 			self.kinetics_update = int(rvalue)
 		elif lvalue == "stokes_visc":
 			self.stokes_visc = float(rvalue)
-		elif lvalue == "calc_vdw":
-			self.calc_vdw = int(rvalue)
+		elif lvalue == "calc_ssint":
+			self.calc_ssint = int(rvalue)
 		elif lvalue == "calc_preComp":
 			self.calc_preComp = int(rvalue)
 		elif lvalue == "calc_springs":
 			self.calc_springs = int(rvalue)
 		elif lvalue == "calc_ctforces":
 			self.calc_ctforces = int(rvalue)
-		elif lvalue == "vdw_type":
-			self.vdw_type = rvalue
+		elif lvalue == "ssint_type":
+			self.ssint_type = rvalue
 		elif lvalue == "inc_self_vdw":
 			self.inc_self_vdw = int(rvalue)
 		elif lvalue == "vdw_cutoff":
 			self.vdw_cutoff = float(rvalue)
-		elif lvalue == "vdw_steric_factor":
-			self.vdw_steric_factor = float(rvalue)
+		elif lvalue == "steric_factor":
+			self.steric_factor = float(rvalue)
 		elif lvalue == "calc_noise":
 			self.calc_noise = int(rvalue)
 		elif lvalue == "calc_es":
@@ -783,11 +783,11 @@ class FFEA_script_params():
 		if (self.calc_stokes == 1):
 			astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
 			astr += "\t<stokes_visc = %6.2e>\n" % (self.stokes_visc)
-		if (self.calc_vdw == 1):
-			astr += "\t<calc_vdw = %d>\n" % (self.calc_vdw)
-			astr += "\t<vdw_type = %s>\n" % (self.vdw_type)
-			if self.vdw_type == "steric" or self.vdw_type == "ljsteric":
-				astr += "\t<vdw_steric_factor = %6.2e>\n" % (self.vdw_steric_factor)
+		if (self.calc_ssint == 1):
+			astr += "\t<calc_ssint = %d>\n" % (self.calc_ssint)
+			astr += "\t<ssint_type = %s>\n" % (self.ssint_type)
+			if self.ssint_type == "steric" or self.ssint_type == "ljsteric":
+				astr += "\t<steric_factor = %6.2e>\n" % (self.steric_factor)
 			astr += "\t<vdw_cutoff = %6.2e>\n" % (self.vdw_cutoff)
 			astr += "\t<inc_self_vdw = %d>\n" % (self.inc_self_vdw)
 		if (self.calc_springs == 1):
