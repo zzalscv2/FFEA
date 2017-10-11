@@ -116,6 +116,8 @@ class FFEA_measurement:
 			measmap[i] = title.strip()
 			self.global_meas[measmap[i]] = []
 
+		num_meas = len(measmap)
+
 		# Read measurements
 		line = fin.readline()
 		frames_read = 0
@@ -128,7 +130,7 @@ class FFEA_measurement:
 
 			if all_frames % frame_rate == 0:
 				sline = line.split()
-				for i in range(len(sline)):
+				for i in range(num_meas):
 					self.global_meas[measmap[i]].append(float(sline[i]))
 				frames_read += 1
 

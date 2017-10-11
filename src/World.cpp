@@ -553,7 +553,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             if(params.calc_springs != 0) {
                 fprintf(measurement_out, "%-14s", "SpringEnergy");
             }
-            if(params.calc_ssint != 0 && params.calc_steric != 0) {
+            if(params.calc_ssint == 1 || params.calc_steric == 1) {
                 fprintf(measurement_out, "%-14s", "SurfSurfEnergy");
             }
             if(params.calc_preComp != 0) {
@@ -2249,7 +2249,6 @@ int World::read_and_build_system(vector<string> script_vector) {
             params.springs_fname = auxpath.string(); 
         } 
     }
-
     params.write_to_file(stdout, pc_params); 
 
 

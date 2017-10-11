@@ -3293,7 +3293,7 @@ int Blob::load_ctforces(string ctforces_fname) {
 
 
 
-    // 4 - READ AND STORE THE ROTATIONAL PART:
+    // 4 - READ AND STORE THE SURFACE PART:
     // 4.1 - First the header:
     now_reading = now_reading + n_ct_rforces;
     // check that we're still within bounds:
