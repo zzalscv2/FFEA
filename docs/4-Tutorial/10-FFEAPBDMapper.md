@@ -38,8 +38,26 @@ Mapping the FFEA trajectory back onto the atomic coordinates, **requires
   have not been misaligned,
  but, there is no guarantee that our EM density map is aligned with our PDB file.
  Thus, we need to do this alignment ourselves.
+ 
+Automatic Alignment
+===============================  
 
-One can follow two strategies. The first one consists of aligning
+FFEAtools contains an automatic alignment tool based on the iterative closest point (ICP) algorithm. To use it, run the command
+
+	ffeatools nodepdbalign script.ffea target_pdb.pdb --node
+	
+This will rotate the nodes in the node file onto the atom positions in the PDB, minimising the RMSD between the two. For structures with an obvious alignment (e.g. a protein with one long axis), the default settings should be enough, but for structures with a more ambigous alignment (a rounder protein, for example), they won't. 
+
+By default, the algorithm picks a random set of starting positions, in order to avoid getting stuck in a local minimum. For rounder proteins, you may wish to add the --candidates flag, setting it higher than default value of 50.
+
+For structures with multiple blobs and conformations, you can use the --bindex and --cindex flags to rotate individual blobs and conformations. By default, blob 0, conformation 0 is used.
+
+Once the alignment has finished, make you sure to double-check that it has worked using the FFEA viewer. When loading in your FFEA file, remember to select 'Load\System (plainly)', as this will ensure that the pdb and the FFEA file will be loaded with the same orientation in PyMOL.
+
+Manual Alignment
+===============================  
+
+The easiest way to manually align an FFEA structure is to align
  the PDB to the EM map that was used to generate the mesh. 
  It will work in this case because the mesh has not been reorientated or translated, and 
  we will show how to do that using UCSF Chimera. However, some meshing programs 
@@ -62,12 +80,14 @@ If they are not aligned, select ` Tools ` on the volume viewer menu bar, and sel
  
 The new atomic structure can be saved by opening the file menu and selecting ` save PDB `. For this example, we will save it as ` Atomicstructure.pdb `.
 
+Mapping the structure
+===============================  
+
 Once an atomic structure is aligned with the FFEA mesh,
  the next step is to create the map between them. This is done through 
  a number of scripts within the FFEAtools package, 
  can be called from a front end command:
 
-	
 	ffeatools makestructuremap -i FFEAstructure.node -t FFEAstructure.top -o Atomisticstructure.pdb -m FFEAtoatoms.map
 
 This will use the [above method](\ref #FFEApdbmappertheory) to generate your mapping script. This is a highly sparse matrix, so is converted to the Yale sparse matrix format to save space before being written.
