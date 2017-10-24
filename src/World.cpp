@@ -2530,6 +2530,9 @@ int World::read_and_build_system(vector<string> script_vector) {
                 lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
                 boost::trim(lrvalue[1]);
                 systemreader->split_string(lrvalue[1], blob_conf[i].velocity, ",");
+                for (int ivt=0; ivt<3; ivt++) {
+                   blob_conf[i].velocity[ivt] /= mesoDimensions::velocity ;
+                }
 
             } else if(lrvalue[0] == "rotation") {
                 blob_conf[i].set_rotation = 1; 
