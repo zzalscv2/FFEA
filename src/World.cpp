@@ -2284,8 +2284,8 @@ int World::read_and_build_system(vector<string> script_vector) {
     vector<string> nodes, topology, surface, material, stokes, vdw, binding, pin, beads;
     string map_fname;
     int map_indices[2];
-    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0;
-    scalar scale = 1, compress = 1;
+    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_vdw = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0, calc_back_vel =0;
+    scalar scale = 1, compress = 1, scale_back_vel = 0;
     int solver = FFEA_NOMASS_CG_SOLVER;
     vector<int> motion_state;
 
@@ -2443,7 +2443,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                     set_preComp = 1;
                 } else {
                     bool forgive_unrecognised = false;
-                    if ( (read_blob_as_conf == true) && ( (lrvalue[0] == "centroid") || (lrvalue[0] == "rotation") || (lrvalue[0] == "solver") || (lrvalue[0] == "scale") || (lrvalue[0] == "translate") || (lrvalue[0] == "velocity") || (lrvalue[0] == "calc_compress") || (lrvalue[0] == "compress") ) ) forgive_unrecognised = true;
+                    if ( (read_blob_as_conf == true) && ( (lrvalue[0] == "centroid") || (lrvalue[0] == "rotation") || (lrvalue[0] == "solver") || (lrvalue[0] == "scale") || (lrvalue[0] == "translate") || (lrvalue[0] == "velocity") || (lrvalue[0] == "calc_compress") || (lrvalue[0] == "compress") || (lrvalue[0] == "calc_back_vel") || (lrvalue[0] == "scale_back_vel") ) ) forgive_unrecognised = true;
                     if (forgive_unrecognised == false) {
                        FFEA_error_text();
                        cout << "Unrecognised conformation lvalue: '" << lrvalue[0] << "'" << endl;
@@ -2604,6 +2604,10 @@ int World::read_and_build_system(vector<string> script_vector) {
                 calc_compress = atof(lrvalue[1].c_str());
             } else if(lrvalue[0] == "compress") {
                 compress = atof(lrvalue[1].c_str());
+            } else if(lrvalue[0] == "calc_back_vel") {
+                calc_back_vel = atof(lrvalue[1].c_str());
+            } else if(lrvalue[0] == "scale_back_vel") {
+                scale_back_vel = atof(lrvalue[1].c_str());
             } else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
                 blob_conf[i].set_centroid = 1;
                 lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
@@ -2649,7 +2653,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
             if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
                                         material[j], stokes[j], vdw[j], pin[j], binding[j],
-                                        beads[j], scale, calc_compress, compress, solver,
+                                        beads[j], scale, calc_compress, compress,calc_back_vel,scale_back_vel, solver,
                                         motion_state[j], &params, &pc_params, &lj_matrix,
                                         &binding_matrix, rng) == FFEA_ERROR) {
                 FFEA_ERROR_MESSG("\tError when trying to pre-initialise Blob %d, conformation %d.\n", i, j);

@@ -215,7 +215,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string vdw_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
+             scalar compress,int calc_back_vel,scalar scale_back_vel, int linear_solver, int blob_state, SimulationParams *params,
              PreComp_params *pc_params, LJ_matrix *lj_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]){
 
@@ -240,6 +240,10 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     // compressing:
     this->calc_compress = calc_compress;
     this->compress = compress;
+    
+    //storing background volume profile:
+    this->calc_back_vel = calc_back_vel;
+    this->scale_back_vel = scale_back_vel*this->scale;
 
     // precomputed configuration:
     this->pc_params = pc_params;
@@ -3903,6 +3907,8 @@ int Blob::aggregate_forces_and_solve() {
                         force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                         force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                         force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        if (calc_back_vel ==1)
+                            force[i].x += node[i].pos.y*node[i].stokes_drag;
                     }
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
                 }

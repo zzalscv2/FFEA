@@ -118,7 +118,7 @@ public:
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string vdw_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
+             scalar compress,int calc_back_vol,scalar scale_back_vel, int linear_solver, int blob_state, SimulationParams *params,
              PreComp_params *pc_params, LJ_matrix *lj_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]);
     int init();
@@ -756,6 +756,11 @@ private:
     int build_mass_matrix();
 
     scalar total_vol;
+    
+    int calc_back_vel;
+    
+    scalar scale_back_vel;
+    
 };
 
 #endif
