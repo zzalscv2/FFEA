@@ -305,18 +305,36 @@ class FFEA_measurement:
 		#
 
 		# These params are written in the same order as they are written out in the main code. They don't have to be for this module to work, but consistency is nice
+		# Rough fix to test for None in numpy arrays
 		keys_to_write = ["Time"]
-		if self.global_meas["KineticEnergy"] != None:
+		try:
+			if self.global_meas["KineticEnergy"] != None:
+				keys_to_write.append("KineticEnergy")
+		except(ValueError):
 			keys_to_write.append("KineticEnergy")
+
 		keys_to_write.append("StrainEnergy")
 		keys_to_write.append("Centroid")
 		keys_to_write.append("RMSD")
-		if self.global_meas["SpringEnergy"] != None:
+
+		try:
+			if self.global_meas["SpringEnergy"] != None:
+				keys_to_write.append("SpringEnergy")
+		except(ValueError):
 			keys_to_write.append("SpringEnergy")
-		if self.global_meas["VdWEnergy"] != None:
+
+		try:
+			if self.global_meas["VdWEnergy"] != None:
+				keys_to_write.append("VdWEnergy")
+		except(ValueError):
 			keys_to_write.append("VdWEnergy")
-		if self.global_meas["PreCompEnergy"] != None:
+
+		try:
+			if self.global_meas["PreCompEnergy"] != None:
+				keys_to_write.append("PreCompEnergy")
+		except(ValueError):
 			keys_to_write.append("PreCompEnergy")
+
 		fout.write("Measurements:\n")
 		for key in keys_to_write:
 			if key == "Centroid":
@@ -346,21 +364,34 @@ class FFEA_measurement:
 			pair_keys_to_write = [[[] for j in range(self.num_blobs)] for i in range(self.num_blobs)]
 			do_interblob = [[False for j in range(self.num_blobs)] for i in range(self.num_blobs)]
 			for i in range(self.num_blobs):
-				if self.blob_meas[i]["KineticEnergy"] != None:
+				try:
+					if self.blob_meas[i]["KineticEnergy"] != None:
+						keys_to_write[i].append("KineticEnergy")
+				except(ValueError):
 					keys_to_write[i].append("KineticEnergy")
+	
 				keys_to_write[i].append("StrainEnergy")
 				keys_to_write[i].append("Centroid")
 				keys_to_write[i].append("RMSD")
 				for j in range(i, self.num_blobs):
-					if self.interblob_meas[i][j]["VdWEnergy"] != None:
-						pair_keys_to_write[i][j].append("VdWEnergy")
-						do_interblob[i][j] = True
-					if self.interblob_meas[i][j]["SpringEnergy"] != None:
-						pair_keys_to_write[i][j].append("SpringEnergy")
-						do_interblob[i][j] = True
-					if self.interblob_meas[i][j]["PreCompEnergy"] != None:
-						pair_keys_to_write[i][j].append("PreCompEnergy")
-						do_interblob[i][j] = True
+
+					try:
+						if self.blob_meas[i]["VdWEnergy"] != None:
+							keys_to_write[i].append("VdWEnergy")
+					except(ValueError):
+						keys_to_write[i].append("VdWEnergy")
+
+					try:
+						if self.blob_meas[i]["SpringEnergy"] != None:
+							keys_to_write[i].append("SpringEnergy")
+					except(ValueError):
+						keys_to_write[i].append("SpringEnergy")
+
+					try:
+						if self.blob_meas[i]["PreCompEnergy"] != None:
+							keys_to_write[i].append("PreCompEnergy")
+					except(ValueError):
+						keys_to_write[i].append("PreCompEnergy")
 
 		
 
