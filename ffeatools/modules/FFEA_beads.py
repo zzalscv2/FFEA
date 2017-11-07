@@ -29,7 +29,7 @@ import FFEA_pdb
 
 class FFEA_beads:
  
-	def __init__(self, fname = "", motion_state = "STATIC", scale = 1.0, topology = None, node = None):
+	def __init__(self, fname = "", motion_state = "STATIC", scale = 1.0, topology = None, node = None, assignBeads = True):
 
 		self.reset()
 		self.scale = scale
@@ -39,11 +39,11 @@ class FFEA_beads:
 			return
 
 		#try:
-		self.load(fname, motion_state, topology, node)
+		self.load(fname, motion_state, topology, node, assignBeads)
 		#except:
 		#	raise
 
-	def load(self, fname, motion_state, topology, node):
+	def load(self, fname, motion_state, topology, node, assignBeads):
 		sys.stdout.write("Loading FFEA beads...\n")
 
 		# load the PDB
@@ -62,7 +62,7 @@ class FFEA_beads:
 
 		# now assign beads to elements... but we only have 
 		#  elements if motion_state == DYNAMIC
-		if motion_state == "DYNAMIC":
+		if motion_state == "DYNAMIC" and assignBeads:
 			self.assign_beads(topology, node)
 
 

@@ -20,7 +20,7 @@
 #  To help us fund FFEA development, we humbly ask that you cite 
 #  the research papers on the package.
 #
-# import cProfile
+import cProfile
 
 import sys, os, time
 import numpy as np
@@ -693,7 +693,7 @@ class FFEA_viewer_control_window:
              return
 
      # load the file
-     # cProfile.runctx('self.load_ffea(ffea_fname)', globals(), locals()) # in case you want to profile
+     # cProfile.runctx('self.load_ffea(ffea_fname)', globals(), locals())
      self.load_ffea(ffea_fname)
 
 
@@ -819,7 +819,7 @@ class FFEA_viewer_control_window:
 			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
 			new_blob = Blob.Blob()
 			# try:
-			new_blob.load(idnum, bindex, cindex, self.script)
+			new_blob.load(idnum, bindex, cindex, self.script, self.display_flags)
 			# except:
 				# print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
 				# return
