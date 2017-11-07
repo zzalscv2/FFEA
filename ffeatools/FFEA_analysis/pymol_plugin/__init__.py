@@ -20,6 +20,7 @@
 #  To help us fund FFEA development, we humbly ask that you cite 
 #  the research papers on the package.
 #
+# import cProfile
 
 import sys, os, time
 import numpy as np
@@ -692,6 +693,7 @@ class FFEA_viewer_control_window:
              return
 
      # load the file
+     # cProfile.runctx('self.load_ffea(ffea_fname)', globals(), locals()) # in case you want to profile
      self.load_ffea(ffea_fname)
 
 
