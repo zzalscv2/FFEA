@@ -28,7 +28,7 @@ import sys
 
 class FFEA_trajectory:
 
-	def __init__(self, fname="", surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0):
+	def __init__(self, fname="", surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0, onlyNodes = False):
 
 		self.reset()
 
@@ -38,11 +38,11 @@ class FFEA_trajectory:
 			sys.stdout.write("Empty trajectory object initialised.\n")
 			return
 
-		self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read, start = start)
+		self.load(fname, load_all=load_all, surf=surf, frame_rate = frame_rate, num_frames_to_read = num_frames_to_read, start = start, onlyNodes = onlyNodes)
 
 		return	
 		
-	def load(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0):
+	def load(self, fname, surf=None, load_all=1, frame_rate = 1, num_frames_to_read = 1000000, start = 0, onlyNodes = False):
 
 		print("Loading FFEA trajectory file...")
 
@@ -73,7 +73,7 @@ class FFEA_trajectory:
 						print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 						break
 				
-				elif(self.load_frame(surf=surf) != 0):
+				elif(self.load_frame(surf=surf, onlyNodes=onlyNodes) != 0):
 					print("\ndone! Successfully read " + str(self.num_frames) + " frame/s from '" + fname + "'.")
 					break
 
@@ -156,7 +156,7 @@ class FFEA_trajectory:
 		self.blob = [[FFEA_traj_blob(self.num_nodes[i][j]) for j in range(self.num_conformations[i])] for i in range(self.num_blobs)]
 
 	# This function must be run as fast as possible! Error checking will be at a minimum. This function is standalone so it can be threaded
-	def load_frame(self, surf=None):
+	def load_frame(self, surf=None, onlyNodes=False):
 	
 		# For each blob
 		eof = False
@@ -206,9 +206,13 @@ class FFEA_trajectory:
 
 				# Get a frame
 				frame = FFEA_frame.FFEA_frame()
+				frame.num_nodes = b[cindex].num_nodes
 
 				# Try to read stuff
-				success = frame.load_from_traj(self.traj)
+				if onlyNodes == True:
+					success = frame.load_from_traj_onlynodes_faster(self.traj)
+				else:
+					success = frame.load_from_traj_faster(self.traj)
 			
 				# We are at eof, or halfway through a frame being written
 				if success == 1:

@@ -693,8 +693,8 @@ class FFEA_viewer_control_window:
              return
 
      # load the file
-     # cProfile.runctx('self.load_ffea(ffea_fname)', globals(), locals())
-     self.load_ffea(ffea_fname)
+     cProfile.runctx('self.load_ffea(ffea_fname)', globals(), locals())
+     # self.load_ffea(ffea_fname)
 
 
   def choose_mat_file_to_setup(self):
@@ -959,10 +959,10 @@ class FFEA_viewer_control_window:
 		self.load_cgo(cgo_fname, cgo_index_fname)
 		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
 	else:
-		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
-		self.load_trajectory_thread.start()
-		waitForTrajToLoad = True
-		#self.load_trajectory(p.trajectory_out_fname)
+		# self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
+		# self.load_trajectory_thread.start()
+		# waitForTrajToLoad = True
+		self.load_trajectory(p.trajectory_out_fname)
 
 
 	#
@@ -975,8 +975,8 @@ class FFEA_viewer_control_window:
 					print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
 					break
 				
-	if waitForTrajToLoad: 
-		self.load_trajectory_thread.join()
+	# if waitForTrajToLoad: 
+	#	self.load_trajectory_thread.join()
 
 	# Requires knowledge of whole trajectory
 	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
@@ -1207,7 +1207,7 @@ class FFEA_viewer_control_window:
 
 	# Load header and skip first frame (we already have it from the node files)
 	try:
-		self.traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+		self.traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0, onlyNodes=True)
 		try:
 			failure = self.traj.skip_frame()
 		except:
@@ -1240,7 +1240,7 @@ class FFEA_viewer_control_window:
 	while True:
 		
 		# Get frame from traj
-		if self.traj.load_frame() == 0:
+		if self.traj.load_frame(onlyNodes=True) == 0:
 
 			# Scale traj frame
 			self.traj.rescale(self.global_scale, -1)
