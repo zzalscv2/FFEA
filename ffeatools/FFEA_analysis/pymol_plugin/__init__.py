@@ -693,8 +693,8 @@ class FFEA_viewer_control_window:
              return
 
      # load the file
-     cProfile.runctx('self.load_ffea(ffea_fname)', globals(), locals())
-     # self.load_ffea(ffea_fname)
+     # cProfile.runctx('self.load_ffea(ffea_fname)', globals(), locals())
+     self.load_ffea(ffea_fname)
 
 
   def choose_mat_file_to_setup(self):
@@ -959,10 +959,10 @@ class FFEA_viewer_control_window:
 		self.load_cgo(cgo_fname, cgo_index_fname)
 		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
 	else:
-		# self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
-		# self.load_trajectory_thread.start()
-		# waitForTrajToLoad = True
-		self.load_trajectory(p.trajectory_out_fname)
+		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
+		self.load_trajectory_thread.start()
+		waitForTrajToLoad = True
+		# self.load_trajectory(p.trajectory_out_fname) # serial
 
 
 	#
@@ -975,8 +975,8 @@ class FFEA_viewer_control_window:
 					print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
 					break
 				
-	# if waitForTrajToLoad: 
-	#	self.load_trajectory_thread.join()
+	if waitForTrajToLoad: 
+		self.load_trajectory_thread.join()
 
 	# Requires knowledge of whole trajectory
 	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
@@ -1199,6 +1199,8 @@ class FFEA_viewer_control_window:
 		bin += 1
 
   def load_trajectory(self, trajectory_out_fname):
+
+	tbegin = time.time()
 	
 	#
 	# All blobs already have the first frame. They will keep this permanently.
@@ -1265,6 +1267,8 @@ class FFEA_viewer_control_window:
 		cmd.mset("1-"+str(self.num_frames))
 	# If the trajectory was a single frame, then we loaded nothing:
 	else: self.wontLoadTraj = 1
+
+	print "Trajectory loaded in: ", time.time() - tbegin, "s."
 
 
   def get_system_dimensions(self, findex):

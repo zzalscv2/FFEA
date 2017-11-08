@@ -38,7 +38,25 @@ from pymol.vfont import plain
 
 import copy
 
+from line_profiler import LineProfiler
+
 # from pymol.callback import Callback
+
+def do_profile(follow=[]):
+    def inner(func):
+        def profiled_func(*args, **kwargs):
+            try:
+                profiler = LineProfiler()
+                profiler.add_function(func)
+                for f in follow:
+                    profiler.add_function(f)
+                profiler.enable_by_count()
+                return func(*args, **kwargs)
+            finally:
+                profiler.print_stats()
+        return profiled_func
+    return inner
+
 
 def get_vdw_colour(index):
 	if index == -1:
@@ -505,6 +523,7 @@ class Blob:
 		f = self.frames[i]
 		return f.calc_centroid()
 
+	# @do_profile(follow=[calc_normal_2])   
 	def draw_frame(self, i, frameLabel, display_flags, scale = 1.0):
 
 		# Make a copy of the display flags so the user input one doesn't change!
@@ -557,21 +576,30 @@ class Blob:
 			
 			# If solid, draw all triangles
 			if default or display_flags['matparam'] == "Plain Solid":
-		                # sol.extend( [ COLOR, bc[0], bc[1], bc[2] ] )
+				# sol.extend( [ COLOR, bc[0], bc[1], bc[2] ] )
+
+				N1 = np.empty([self.surf.num_faces,3])
+				N2 = np.empty([self.surf.num_faces,3])
+				N3 = np.empty([self.surf.num_faces,3])
+				cnt = -1
 				for f in range(self.surf.num_faces):
 					if self.hidden_face[f] == 1:
 						continue
 
-					n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-					n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-					n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-				
-		                        norm = self.calc_normal_2(n1, n2, n3)
+					cnt += 1 
+					n = self.surf.face[f].n
+					N1[cnt,:] = self.frames[i].pos[n[0],:]
+					N2[cnt,:] = self.frames[i].pos[n[1],:]
+					N3[cnt,:] = self.frames[i].pos[n[2],:]
 
-		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
-		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-		                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+
+				NORM = np.cross(N2 - N1, N3 - N2)
+				# sol = [None] * (2 + 16 * (len(NORM)))
+				# sol[0:2] = BEGIN, TRIANGLES
+				for f in range(len(NORM)):
+					# sol[2+16*f:2+16*(f+1)] = NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2]
+					sol.extend([ NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
+
 
 			elif MatOpt.count(display_flags['matparam']) == 1:
 
@@ -668,7 +696,7 @@ class Blob:
 
 
 
-			sol.extend([END])
+			sol.append(END)
 			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid", frameLabel)
 
 		#
