@@ -101,7 +101,7 @@ class Blob:
 		
 		self.display_flags = None
 
-	def load(self, idnum, bindex, cindex, script):
+	def load(self, idnum, bindex, cindex, script, display_flags=None):
 	
 		self.idnum = idnum
 		self.bindex = bindex
@@ -165,7 +165,10 @@ class Blob:
 
 		# beads for active blobs need to know of the elements. 
 		#if (len(c.beads)):
-		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.scale, self.top, self.node)
+		assignBeads = False
+		if display_flags['show_beads'] == "Configuration & Assignments":
+			assignBeads = True
+		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.scale, self.top, self.node, assignBeads)
 
 		# Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
 		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
