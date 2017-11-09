@@ -38,7 +38,7 @@ from pymol.vfont import plain
 
 import copy
 
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 
 # from pymol.callback import Callback
 
