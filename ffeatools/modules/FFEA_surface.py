@@ -26,6 +26,24 @@ from time import sleep
 import numpy as np
 from FFEA_exceptions import *
 
+# from line_profiler import LineProfiler
+
+def do_profile(follow=[]):
+    def inner(func):
+        def profiled_func(*args, **kwargs):
+            try:
+                profiler = LineProfiler()
+                profiler.add_function(func)
+                for f in follow:
+                    profiler.add_function(f)
+                profiler.enable_by_count()
+                return func(*args, **kwargs)
+            finally:
+                profiler.print_stats()
+        return profiled_func
+    return inner
+
+
 class FFEA_surface:
 
 	def __init__(self, fname = ""):
@@ -468,12 +486,54 @@ class FFEA_surface:
 
 		return outindex
 
+
+	# @do_profile()
+	def build_firstOrderFaceNodes(self, linear_node_list): 
+		# 1 - separate 2nd order faces into into two lists:
+		#  f_center = list of faces at the center (1 per linear face)
+		#  f_edge = list of faces at the edge (3 per linear face)
+      #  n_edge = list of 1st order nodes in f_edge (3 per linear face)
+		fn_center = []
+		fn_edge = []
+		n_edge = []
+		self.num_linear_faces = 0
+		for f in self.face:
+			linear_nodes = 0
+			for n in f.n:
+				if linear_node_list.count(n):
+					linear_nodes += 1
+					fn_edge.append(frozenset(f.n))
+					n_edge.append(n)
+					break
+			if linear_nodes == 0:
+				self.num_linear_faces += 1
+				fn_center.append(frozenset(f.n))
+
+
+		# 2 - for every f_c in f_center, look for adjacent faces, i. e., 
+		#     for faces that have 2 nodes in common. And build the linear
+		#     face from there. 
+		for fc in fn_center:
+			out = []
+			for ne, fe in enumerate(fn_edge):
+				if len(fc.intersection(fe)) == 2:
+					self.firstOrderFaceNodes.append(n_edge[ne])
+					out.append(ne)
+			for o in reversed(out):
+				fn_edge.pop(o)
+				n_edge.pop(o)
+			
+		return 0
+
+
 	def reset(self):
 
 		self.face = []
 		self.num_faces = 0
 		self.valid = False
 		self.empty = True
+		self.firstOrderFaceNodes = [] # an array of nodes n_i1, n_i2, n_i3, ... describing 1st order faces.
+		self.num_linear_faces = 0
 
 class FFEA_face:
 

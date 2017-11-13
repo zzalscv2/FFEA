@@ -763,6 +763,7 @@ class FFEA_viewer_control_window:
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
       
+	tbegin = time.time()
 	self.notebook.selectpage("Editor")
   	
 	# Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
@@ -1037,6 +1038,9 @@ class FFEA_viewer_control_window:
 		self.load_lj_button.config(state="normal")
 	else:
 		self.root.destroy()
+
+	print "System loaded in ", time.time() - tbegin, "s."
+
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]

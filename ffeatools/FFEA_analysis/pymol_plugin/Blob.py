@@ -119,6 +119,7 @@ class Blob:
 		
 		self.display_flags = None
 
+	# @do_profile()
 	def load(self, idnum, bindex, cindex, script, display_flags=None):
 	
 		self.idnum = idnum
@@ -216,6 +217,8 @@ class Blob:
 			for e in self.top.element:
 				for n in e.n[0:4]:
 					self.linear_node_list.append(n)
+
+			self.surf.build_firstOrderFaceNodes(self.linear_node_list)
 		
 		else:
 			# Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
@@ -523,7 +526,7 @@ class Blob:
 		f = self.frames[i]
 		return f.calc_centroid()
 
-	# @do_profile(follow=[calc_normal_2])   
+	# @do_profile(follow=[build_firstOrderFaceNodes])   
 	def draw_frame(self, i, frameLabel, display_flags, scale = 1.0):
 
 		# Make a copy of the display flags so the user input one doesn't change!
@@ -578,19 +581,23 @@ class Blob:
 			if default or display_flags['matparam'] == "Plain Solid":
 				# sol.extend( [ COLOR, bc[0], bc[1], bc[2] ] )
 
-				N1 = np.empty([self.surf.num_faces,3])
-				N2 = np.empty([self.surf.num_faces,3])
-				N3 = np.empty([self.surf.num_faces,3])
+				N1 = np.empty([self.surf.num_linear_faces,3])
+				N2 = np.empty([self.surf.num_linear_faces,3])
+				N3 = np.empty([self.surf.num_linear_faces,3])
 				cnt = -1
-				for f in range(self.surf.num_faces):
-					if self.hidden_face[f] == 1:
-						continue
+				for f in range(self.surf.num_linear_faces):
+					#if self.hidden_face[f] == 1:
+						#continue
 
 					cnt += 1 
-					n = self.surf.face[f].n
-					N1[cnt,:] = self.frames[i].pos[n[0],:]
-					N2[cnt,:] = self.frames[i].pos[n[1],:]
-					N3[cnt,:] = self.frames[i].pos[n[2],:]
+					n0, n1, n2 = self.surf.firstOrderFaceNodes[3*f: 3*(f+1)]
+					N1[cnt,:] = self.frames[i].pos[n0,:]
+					N2[cnt,:] = self.frames[i].pos[n1,:]
+					N3[cnt,:] = self.frames[i].pos[n2,:]
+					# n = self.surf.face[f].n
+					# N1[cnt,:] = self.frames[i].pos[n[0],:]
+					# N2[cnt,:] = self.frames[i].pos[n[1],:]
+					# N3[cnt,:] = self.frames[i].pos[n[2],:]
 
 
 				NORM = np.cross(N2 - N1, N3 - N2)
