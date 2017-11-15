@@ -532,7 +532,7 @@ class Blob:
 		# Make a copy of the display flags so the user input one doesn't change!
 		
 		# Ideally these checks shouldn't ned to be here, but whatever
-		if self.motion_state == "STATIC":
+		if self.motion_state == "STATIC" and frameLabel != "ALL":
 			i = 0
 
 		if self.num_frames == 0:
@@ -560,7 +560,7 @@ class Blob:
 		pinsphere = []
 
 		print "loading frame ", frameLabel, " for blob ", self.idnum
-		frameLabel += 1
+		if frameLabel != "ALL": frameLabel += 1
 
 		#
 		#  Solid
@@ -579,32 +579,38 @@ class Blob:
 			
 			# If solid, draw all triangles
 			if default or display_flags['matparam'] == "Plain Solid":
-				# sol.extend( [ COLOR, bc[0], bc[1], bc[2] ] )
+				if self.surf.num_linear_faces > 0:
+					N1 = np.empty([self.surf.num_linear_faces,3])
+					N2 = np.empty([self.surf.num_linear_faces,3])
+					N3 = np.empty([self.surf.num_linear_faces,3])
+					cnt = -1
+					for f in range(self.surf.num_linear_faces):
+						#if self.hidden_face[f] == 1:
+							#continue
 
-				N1 = np.empty([self.surf.num_linear_faces,3])
-				N2 = np.empty([self.surf.num_linear_faces,3])
-				N3 = np.empty([self.surf.num_linear_faces,3])
-				cnt = -1
-				for f in range(self.surf.num_linear_faces):
-					#if self.hidden_face[f] == 1:
-						#continue
+						cnt += 1 
+						n0, n1, n2 = self.surf.firstOrderFaceNodes[3*f: 3*(f+1)]
+						N1[cnt,:] = self.frames[i].pos[n0,:]
+						N2[cnt,:] = self.frames[i].pos[n1,:]
+						N3[cnt,:] = self.frames[i].pos[n2,:]
 
-					cnt += 1 
-					n0, n1, n2 = self.surf.firstOrderFaceNodes[3*f: 3*(f+1)]
-					N1[cnt,:] = self.frames[i].pos[n0,:]
-					N2[cnt,:] = self.frames[i].pos[n1,:]
-					N3[cnt,:] = self.frames[i].pos[n2,:]
-					# n = self.surf.face[f].n
-					# N1[cnt,:] = self.frames[i].pos[n[0],:]
-					# N2[cnt,:] = self.frames[i].pos[n[1],:]
-					# N3[cnt,:] = self.frames[i].pos[n[2],:]
+				else:
+					N1 = np.empty([self.surf.num_faces,3])
+					N2 = np.empty([self.surf.num_faces,3])
+					N3 = np.empty([self.surf.num_faces,3])
+					cnt = -1
+					for f in range(self.surf.num_faces):
+						if self.hidden_face[f] == 1:
+							continue
 
+						cnt += 1
+						n = self.surf.face[f].n
+						N1[cnt,:] = self.frames[i].pos[n[0],:]
+						N2[cnt,:] = self.frames[i].pos[n[1],:]
+						N3[cnt,:] = self.frames[i].pos[n[2],:]
 
 				NORM = np.cross(N2 - N1, N3 - N2)
-				# sol = [None] * (2 + 16 * (len(NORM)))
-				# sol[0:2] = BEGIN, TRIANGLES
 				for f in range(len(NORM)):
-					# sol[2+16*f:2+16*(f+1)] = NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2]
 					sol.extend([ NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
 
 
@@ -704,7 +710,10 @@ class Blob:
 
 
 			sol.append(END)
-			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid", frameLabel)
+			if frameLabel == "ALL":
+				cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid")
+			else:
+				cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid", frameLabel)
 
 		#
 		#  Mesh      (doable usually. catch if there's no topology i.e. STATIC blob)

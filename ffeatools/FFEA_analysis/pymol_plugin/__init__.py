@@ -960,10 +960,10 @@ class FFEA_viewer_control_window:
 		self.load_cgo(cgo_fname, cgo_index_fname)
 		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
 	else:
-		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
-		self.load_trajectory_thread.start()
-		waitForTrajToLoad = True
-		# self.load_trajectory(p.trajectory_out_fname) # serial
+		# self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
+		# self.load_trajectory_thread.start()
+		# waitForTrajToLoad = True
+		self.load_trajectory(p.trajectory_out_fname) # serial
 
 
 	#
@@ -976,8 +976,8 @@ class FFEA_viewer_control_window:
 					print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
 					break
 				
-	if waitForTrajToLoad: 
-		self.load_trajectory_thread.join()
+	# if waitForTrajToLoad: 
+		# self.load_trajectory_thread.join()
 
 	# Requires knowledge of whole trajectory
 	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
@@ -1256,7 +1256,7 @@ class FFEA_viewer_control_window:
 			self.num_frames += 1
 
 			# Draw whole frame (if above worked, these should work no problem...)
-			self.draw_frame(self.num_frames - 1, scale = lmin)
+			self.draw_frame(self.num_frames - 1, scale = lmin, draw_static = False)
 
 			# Delete frames from memory
 			if(self.num_frames > 3):
@@ -1488,7 +1488,7 @@ class FFEA_viewer_control_window:
 	cent *= 1.0 / total_num_nodes
 	return cent
 
-  def draw_frame(self, index, scale = 1.0):
+  def draw_frame(self, index, scale = 1.0, draw_static = True):
 
 	# Blobs should only ever have at most 2 frames on them, the initial one and the currently loaded one. So...
 	frame_real_index = index
@@ -1510,6 +1510,10 @@ class FFEA_viewer_control_window:
 
 	for i in range(self.script.params.num_blobs):
 		for j in range(self.script.params.num_conformations[i]):
+			frame_real_index = index
+			if self.blob_list[i][j].motion_state == "STATIC": 
+				if draw_static == True: frame_real_index = "ALL"
+				else: continue
 			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags, scale = scale)
 
   def draw_box(self, f):
