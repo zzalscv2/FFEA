@@ -760,6 +760,7 @@ private:
     int calc_back_vel;
     
     scalar scale_back_vel;
+    scalar sys_dim_y;
     
 };
 

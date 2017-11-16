@@ -66,6 +66,7 @@ World::World() {
     springfieldenergy = NULL;
     vdwenergy = 0.0;
     preCompenergy = 0.0;
+    box_lag = 0;
 
     vector3_set_zero(L);
     vector3_set_zero(CoM);
@@ -1923,7 +1924,9 @@ int World::run() {
             // If blob centre of mass moves outside simulation box, apply PBC to it
             vector3 com;
             active_blob_array[i]->calc_and_store_centroid(com);
-
+            box_lag += params.shear_scale*params.dt*box_dim.y;
+            if(box_lag>box_dim.x){box_lag -=box_dim.x;}
+            
             scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
             if (com.x < 0) {
@@ -1942,12 +1945,14 @@ int World::run() {
             if (com.y < 0) {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
+                    dx +=box_lag;
                     active_blob_array[i]->dec_pbc_count(1);
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
+                    dx -= box_lag;
                     active_blob_array[i]->inc_pbc_count(1);
                     check_move = 1;
                 }
@@ -2606,8 +2611,9 @@ int World::read_and_build_system(vector<string> script_vector) {
                 compress = atof(lrvalue[1].c_str());
             } else if(lrvalue[0] == "calc_back_vel") {
                 calc_back_vel = atof(lrvalue[1].c_str());
-            } else if(lrvalue[0] == "scale_back_vel") {
-                scale_back_vel = atof(lrvalue[1].c_str());
+                scale_back_vel = params.shear_scale;
+            //} else if(lrvalue[0] == "scale_back_vel") {
+            //    scale_back_vel = atof(lrvalue[1].c_str());
             } else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
                 blob_conf[i].set_centroid = 1;
                 lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
@@ -2644,7 +2650,6 @@ int World::read_and_build_system(vector<string> script_vector) {
             cout << "Blob " << i << ", scale not set." << endl;
             return FFEA_ERROR;
         }
-
         // Build blob
         // Build conformations (structural data)
         // vector3 *cent = new vector3;
@@ -2653,7 +2658,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
             if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
                                         material[j], stokes[j], vdw[j], pin[j], binding[j],
-                                        beads[j], scale, calc_compress, compress,calc_back_vel,scale_back_vel, solver,
+                                        beads[j], scale, calc_compress, compress,calc_back_vel,scale_back_vel,solver,
                                         motion_state[j], &params, &pc_params, &lj_matrix,
                                         &binding_matrix, rng) == FFEA_ERROR) {
                 FFEA_ERROR_MESSG("\tError when trying to pre-initialise Blob %d, conformation %d.\n", i, j);

@@ -79,6 +79,7 @@ SimulationParams::SimulationParams() {
     es_N_x = -1;
     es_N_y = -1;
     es_N_z = -1;
+    shear_scale = 0;
 
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
@@ -248,6 +249,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "mini_meas") {
       		mini_meas = (int) atof(rvalue.c_str());
         	cout << "\tSetting " << lvalue << " = " << mini_meas << endl;
+        	
+    } else if (lvalue == "shear_scale") {
+      		shear_scale = atof(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << shear_scale << endl;
 
     } else if (lvalue == "num_blobs") {
         num_blobs = atoi(rvalue.c_str());
@@ -786,7 +791,8 @@ int SimulationParams::validate(int sim_mode) {
         }
     }
     printf("...done\n");
-
+    
+    
     return FFEA_OK;
 }
 
@@ -802,6 +808,7 @@ int SimulationParams::get_max_num_states() {
 }
 
 void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params) {
+
 
     // This should be getting added to the top of the measurement file!!
 

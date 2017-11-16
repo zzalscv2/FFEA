@@ -347,6 +347,8 @@ private:
     void calc_blob_corr_matrix(int num_blobs,scalar *blob_corr);
 
     scalar *blob_corr;
+    
+    scalar box_lag;
 
     int die_with_dignity(int step, scalar wtime);
 };

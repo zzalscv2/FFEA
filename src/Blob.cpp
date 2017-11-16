@@ -244,6 +244,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     //storing background volume profile:
     this->calc_back_vel = calc_back_vel;
     this->scale_back_vel = scale_back_vel*this->scale;
+    this->sys_dim_y = sys_dim_y;
 
     // precomputed configuration:
     this->pc_params = pc_params;
@@ -3866,6 +3867,7 @@ int Blob::aggregate_forces_and_solve() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
             #pragma omp parallel default(none)
             {
+            
 #endif
 #ifdef USE_OPENMP
                 int thread_id = omp_get_thread_num();
@@ -3877,6 +3879,7 @@ int Blob::aggregate_forces_and_solve() {
 #endif
                 for (int i = 0; i < num_nodes; i++) {
                     force[i].x -= node[i].vel.x * node[i].stokes_drag;
+                    printf("stokes drag for node %d is %.32F\n",i,node[i].stokes_drag);
                     force[i].y -= node[i].vel.y * node[i].stokes_drag;
                     force[i].z -= node[i].vel.z * node[i].stokes_drag;
                     if (params->calc_noise == 1) {
@@ -3909,8 +3912,13 @@ int Blob::aggregate_forces_and_solve() {
                         //force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                             if (calc_back_vel ==1){
                                 //printf("force before is %.32F\n",force[i].x);
-                                printf("y pos of node %d is  %.32F\n",i,node[i].pos.y);
-                                force[i].x += node[i].pos.y*scale_back_vel*node[i].stokes_drag/params->dt;
+                                //printf("y pos of node %d is  %.32F\n",i,node[i].pos.y);
+                                force[i].x += node[i].pos.y*scale_back_vel*node[i].stokes_drag;
+                                //force[i].x += scale_back_vel*node[i].stokes_drag;
+                                //force[i].y += scale_back_vel*node[i].stokes_drag;
+                                //printf("force added is %.32F\n and force after is %.32F\n ",scale_back_vel*node[i].stokes_drag/params->dt, force[i].x);
+                                //printf("scale back vel is %.32F\n and stokes drag for node %d is %.32F \n",scale_back_vel,node[i].stokes_drag);
+                                
                                 //printf("force added is %.32F\n and force after is %.32F\n ",node[i].pos.y*scale_back_vel*node[i].stokes_drag/params->dt, force[i].x);
                     
                     }}
