@@ -107,8 +107,6 @@ class FFEA_frame(FFEA_node.FFEA_node):
    #      from file object already open
 	def load_from_traj_onlynodes_faster(self, fo):
 
-		line_length = 130 # line length hardcoded here!
-
 		if self.num_nodes == 0:
 			self.load_from_traj(fo)
 			return 0
@@ -118,18 +116,17 @@ class FFEA_frame(FFEA_node.FFEA_node):
 		self.pos = np.empty([self.num_nodes, 3])
 		cnt = 0 
 		try:
-			#read fixed sized lines
-			text = fo.read(line_length*self.num_nodes).split("\n")
-			for ln in range(self.num_nodes):
-				self.pos[ln] = np.fromstring(text[ln], dtype=float, sep=" ", count=3)
-
+		   #read fixed sized lines
+		   # text = fo.read(line_length*self.num_nodes).split("\n")
+		   for ln in range(self.num_nodes):
+		      self.pos[ln] = np.fromstring(fo.readline(), dtype=float, sep=" ", count=3)
 		except:
-		 	fo.seek(start)
-		 	return 1
-					
+		   fo.seek(start)
+		   return 1
+
 		self.num_surface_nodes = self.num_nodes
 		return 0
-
+		
 	def build_from_node(self, node):
 	
 		self.num_nodes = node.num_nodes
