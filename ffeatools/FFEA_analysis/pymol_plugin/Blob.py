@@ -117,7 +117,7 @@ class Blob:
 		self.frames = []
 		self.num_frames = 0
 		
-		self.display_flags = None
+		# self.display_flags = None
 
 	# @do_profile()
 	def load(self, idnum, bindex, cindex, script, display_flags=None):
@@ -185,7 +185,7 @@ class Blob:
 		# beads for active blobs need to know of the elements. 
 		#if (len(c.beads)):
 		assignBeads = False
-		if display_flags['show_beads'] == "Configuration & Assignments":
+		if display_flags != None and  display_flags['show_beads'] == "Configuration & Assignments":
 			assignBeads = True
 		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.scale, self.top, self.node, assignBeads)
 
@@ -218,7 +218,8 @@ class Blob:
 				for n in e.n[0:4]:
 					self.top.linear_elemnode_list.append(n)
 
-			self.surf.build_firstOrderFaceNodes(self.top.linear_elemnode_list)
+			if display_flags != None and display_flags['load_trajectory'] == "Trajectory":
+				self.surf.build_firstOrderFaceNodes(self.top.linear_elemnode_list)
 		
 		else:
 			# Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
@@ -611,7 +612,11 @@ class Blob:
 
 				NORM = np.cross(N2 - N1, N3 - N2)
 				for f in range(len(NORM)):
-					sol.extend([ NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
+					# sol.extend([ NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
+					sol.extend([ NORMAL, NORM[f,0], NORM[f,1], NORM[f,2] ])
+					sol.extend([ VERTEX, N1[f,0], N1[f,1], N1[f,2] ])
+					sol.extend([ VERTEX, N2[f,0], N2[f,1], N2[f,2] ])
+					sol.extend([ VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
 
 
 			elif MatOpt.count(display_flags['matparam']) == 1:
