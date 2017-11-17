@@ -216,15 +216,15 @@ class Blob:
 		if self.top != None:
 			for e in self.top.element:
 				for n in e.n[0:4]:
-					self.linear_node_list.append(n)
+					self.top.linear_elemnode_list.append(n)
 
-			self.surf.build_firstOrderFaceNodes(self.linear_node_list)
+			self.surf.build_firstOrderFaceNodes(self.top.linear_elemnode_list)
 		
 		else:
 			# Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
 			print "Linear nodes cannot be known without a topology."
 
-		self.linear_node_list = list(set(self.linear_node_list))
+		self.linear_node_list = list(set(self.top.linear_elemnode_list))
 		
 		# Any initialisation done in ffea?
 		if b.centroid != None:
@@ -730,28 +730,29 @@ class Blob:
 			
 				# Loop through elements
 				for e in xrange(self.top.num_elements):
-					n1 = self.frames[i].pos[self.top.element[e].n[0]]
-					n2 = self.frames[i].pos[self.top.element[e].n[1]]
-					n3 = self.frames[i].pos[self.top.element[e].n[2]]
-					n4 = self.frames[i].pos[self.top.element[e].n[3]]
+					in1, in2, in3, in4 = self.top.linear_elemnode_list[4*e:4*(e+1)]
+					n1 = self.frames[i].pos[in1]
+					n2 = self.frames[i].pos[in2]
+					n3 = self.frames[i].pos[in3]
+					n4 = self.frames[i].pos[in4]
 
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-		                        mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+					mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
-		                        mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-		                        mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+					mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
 			elif display_flags['show_mesh'] == "Surface Mesh" or self.top == None:
 
@@ -762,17 +763,20 @@ class Blob:
 					n2 = self.frames[i].pos[self.surf.face[f].n[1]]
 					n3 = self.frames[i].pos[self.surf.face[f].n[2]]
 
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 		                        
-		                        mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 		                       
-		                        mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
 			mes.extend([END])
-			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh", frameLabel)
+			if frameLabel == "ALL":
+				cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh")
+			else:
+				cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh", frameLabel)
 
 		#
 		#  Numbers       (again, can't always do elements)
@@ -839,7 +843,10 @@ class Blob:
 						
 			# in any case:
  			if len(text) > 0: 
- 				cmd.read_pdbstr(text, ndx_name, frameLabel)
+				if frameLabel == "ALL":
+ 					cmd.read_pdbstr(text, ndx_name)
+				else:
+	 				cmd.read_pdbstr(text, ndx_name, frameLabel)
 				cmd.hide("everything", ndx_name)
 				cmd.label(ndx_name,"resi")
 	
@@ -859,7 +866,10 @@ class Blob:
 
 			# load, if it's not an empty object:
 			if len(text) != 0:
-				cmd.read_pdbstr(text, pin_name, frameLabel)
+				if frameLabel == "ALL":
+					cmd.read_pdbstr(text, pin_name)
+				else:
+					cmd.read_pdbstr(text, pin_name, frameLabel)
 				cmd.show("spheres", pin_name)
 				cmd.color("red", pin_name)
 				
@@ -874,7 +884,10 @@ class Blob:
 			if (frameLabel == 1) and (not self.beads.empty): # only load it for the first frame
 				text = self.beads.pdb.write_to_text()
 			if text != "":
-				cmd.read_pdbstr(text, beads_name, frameLabel)
+				if frameLabel == "ALL":
+					cmd.read_pdbstr(text, beads_name)
+				else:
+					cmd.read_pdbstr(text, beads_name, frameLabel)
 				cmd.hide("everything", beads_name)
 				cmd.show("spheres", beads_name)
 
@@ -896,8 +909,12 @@ class Blob:
 							text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e_ndx, "CA", "FEA", "A", e_ndx, e[0], e[1], e[2]))
 
 				if text != "":
-					cmd.load_cgo(obj, be_name, frameLabel)
-					cmd.read_pdbstr(text, b_elem_name, frameLabel)
+					if frameLabel == "ALL":
+						cmd.load_cgo(obj, be_name)
+						cmd.read_pdbstr(text, b_elem_name)
+					else:
+						cmd.load_cgo(obj, be_name, frameLabel)
+						cmd.read_pdbstr(text, b_elem_name, frameLabel)
 					cmd.hide("everything", b_elem_name)
 					cmd.show("spheres", b_elem_name)
 
@@ -934,30 +951,23 @@ class Blob:
 				dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
 				dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
-	                        dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+				dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
-	                        dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+				dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 				dan.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
 				dan.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-	                        dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+				dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
 			dan.extend([END])
 			if len(dan) != 7:
-				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
+				if frameLabel == "ALL":
+					cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
+				else:
+					cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
 
 			axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
 			
-
-			#if display_flags['show_numbers'] == 'Node Indices':
-			#	ndx_name += "_nI"
-			#	for n in range(self.node.num_nodes):
-			#		if n == 10000: 
-			#			print "Cannot load more than 10000 Supportive Fake Atoms"
-			#			break
-			#		pos = (self.frames[i].pos[n].tolist())[0:3]
-			#		text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
-
 
 			# And the indices
 			danbnum = ""
@@ -972,11 +982,17 @@ class Blob:
 
 			if len(dantxt) != 0:
 				if plotDanB == True:
-					cmd.read_pdbstr(danbnum, danbnum_name, frameLabel)
+					if frameLabel == "ALL":
+						cmd.read_pdbstr(danbnum, danbnum_name)
+					else:
+						cmd.read_pdbstr(danbnum, danbnum_name, frameLabel)
 					cmd.hide("everything", danbnum_name)
 					cmd.label(danbnum_name,"resi")
 				else:
-					cmd.load_cgo(dantxt, danbnum_name, frameLabel)
+					if frameLabel == "ALL":
+						cmd.load_cgo(dantxt, danbnum_name, frameLabel)
+					else:
+						cmd.load_cgo(dantxt, danbnum_name, frameLabel)
 
 		#
 		#  Load SFA: Supportive Fake Atoms #
@@ -1044,7 +1060,10 @@ class Blob:
 						
 			# in any case:
  			if len(text) > 0: 
- 				cmd.read_pdbstr(text, sfa_name, frameLabel)
+				if frameLabel == "ALL":
+	 				cmd.read_pdbstr(text, sfa_name)
+				else:
+	 				cmd.read_pdbstr(text, sfa_name, frameLabel)
 				cmd.hide("everything", sfa_name)
 				cmd.show("spheres", sfa_name)
 	

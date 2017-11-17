@@ -743,6 +743,7 @@ class FFEA_topology:
 		self.num_interior_elements = 0
 		self.valid = False
 		self.empty = True
+		self.linear_elemnode_list = []
 
 class FFEA_element:
 
