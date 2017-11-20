@@ -220,12 +220,13 @@ class Blob:
 
 			if display_flags != None and display_flags['load_trajectory'] == "Trajectory":
 				self.surf.build_firstOrderFaceNodes(self.top.linear_elemnode_list)
+
+			self.linear_node_list = list(set(self.top.linear_elemnode_list))
 		
 		else:
 			# Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
 			print "Linear nodes cannot be known without a topology."
 
-		self.linear_node_list = list(set(self.top.linear_elemnode_list))
 		
 		# Any initialisation done in ffea?
 		if b.centroid != None:
@@ -640,8 +641,9 @@ class Blob:
 				if (paramval != 5): ## that means we do proper material parameters
 
 					# Get range of colours
-					colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
+					# colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
 					#colgrad = [np.array([1.0,0.0,0.0]), np.array([1.0,1.0,0.0]), np.array([0.0,1.0,0.0]), np.array([0.0,0.0,1.0])]	# Red yellow green blue
+					colgrad = [np.array([0.0,0.0,1.0]), np.array([1.0,1.0,1.0])]  # blue to white
 					num_cols = len(colgrad)
 
 					# Get params
@@ -649,6 +651,7 @@ class Blob:
 
 					# Build color bins
 					Erange = max(param) - min(param)
+					print Erange
 					binwidth = Erange / (num_cols - 1)
 					Ebin = [min(param) + j * binwidth for j in range(num_cols)]
 					Ebin[-1] = np.ceil(Ebin[-1])
@@ -657,19 +660,20 @@ class Blob:
 					if binwidth == 0.0:
 						binwidth = 1.0
 
-					# Now, draw each face
-					for f in self.surf.face:
-						try:
-							paramfrac = (param[f.elindex] - Ebin[0]) / Erange
-						except:
-							paramfrac = 0.0
-	
-						# Get position data for viewer to draw
-						n1 = self.frames[i].pos[f.n[0]][0:3]
-						n2 = self.frames[i].pos[f.n[1]][0:3]
-						n3 = self.frames[i].pos[f.n[2]][0:3]
-						norm = self.calc_normal_2(n1, n2, n3)
 
+					N1 = np.empty([self.surf.num_faces,3])
+					N2 = np.empty([self.surf.num_faces,3])
+					N3 = np.empty([self.surf.num_faces,3])
+					C = np.empty([self.surf.num_faces,3])
+					
+					for f_i, f in enumerate( self.surf.face ):
+						# Get the nodes: 
+						n = f.n
+						N1[f_i,:] = self.frames[i].pos[n[0],:]
+						N2[f_i,:] = self.frames[i].pos[n[1],:]
+						N3[f_i,:] = self.frames[i].pos[n[2],:]
+
+	
 						# Get color bin
 						colpair = [0,1]
 						for j in range(num_cols - 1):
@@ -685,33 +689,35 @@ class Blob:
 							colfrac = 0.0
 
 						# What color then?
-						col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * colfrac + colgrad[colpair[0]]
-						sol.extend([COLOR, col[0], col[1], col[2]])
-			                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
-			                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-			                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-			                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+						C[f_i,:] = (colgrad[colpair[1]] - colgrad[colpair[0]]) * colfrac + colgrad[colpair[0]]
+
+					NORM = np.cross(N2 - N1, N3 - N2)
+
+					for f_i in range(self.surf.num_faces): 
+						sol.extend([COLOR, C[f_i,0], C[f_i,1], C[f_i,2], NORMAL, NORM[f_i,0], NORM[f_i,1], NORM[f_i,2], VERTEX, N1[f_i,0], N1[f_i,1], N1[f_i,2], VERTEX, N2[f_i,0], N2[f_i,1], N2[f_i,2], VERTEX, N3[f_i,0], N3[f_i,1], N3[f_i,2] ])
 
 				else: ## in that case, plot VdW! 
+
+					N1 = np.empty([self.surf.num_faces,3])
+					N2 = np.empty([self.surf.num_faces,3])
+					N3 = np.empty([self.surf.num_faces,3])
+					for f in range(self.surf.num_faces):
+						n = self.surf.face[f].n
+						N1[f,:] = self.frames[i].pos[n[0],:]
+						N2[f,:] = self.frames[i].pos[n[1],:]
+						N3[f,:] = self.frames[i].pos[n[2],:]
+
+					NORM = np.cross(N2 - N1, N3 - N2)
+
 					for f in range(self.surf.num_faces):
 						if self.hidden_face[f] == 1:
 							continue
-	
-						n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-						n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-						n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-					
-			                        norm = self.calc_normal_2(n1, n2, n3)
-	
-						if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
-							bc = get_vdw_colour(self.vdw.index[f])
-							sol.extend([ COLOR, bc[0], bc[1], bc[2] ])
-	
-			                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
-			                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-			                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-			                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
+						# if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
+						else:
+							bc = get_vdw_colour(self.vdw.index[f])
+							sol.extend([ COLOR, bc[0], bc[1], bc[2], NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
+	
 
 
 			sol.append(END)
