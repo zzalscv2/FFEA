@@ -960,10 +960,10 @@ class FFEA_viewer_control_window:
 		self.load_cgo(cgo_fname, cgo_index_fname)
 		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
 	else:
-		# self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
-		# self.load_trajectory_thread.start()
-		# waitForTrajToLoad = True
-		self.load_trajectory(p.trajectory_out_fname) # serial
+		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
+		self.load_trajectory_thread.start()
+		waitForTrajToLoad = True
+		# self.load_trajectory(p.trajectory_out_fname) # serial
 
 
 	#
@@ -976,8 +976,8 @@ class FFEA_viewer_control_window:
 					print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
 					break
 				
-	# if waitForTrajToLoad: 
-		# self.load_trajectory_thread.join()
+	if waitForTrajToLoad: 
+		self.load_trajectory_thread.join()
 
 	# Requires knowledge of whole trajectory
 	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
