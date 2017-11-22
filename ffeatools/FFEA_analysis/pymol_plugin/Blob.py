@@ -107,8 +107,8 @@ class Blob:
 		self.pin = None
 		self.bsites = None
 		self.beads = None
-		self.init_centroid = None
-		self.init_rotation = None
+		self.init_centroid = []
+		self.init_rotation = []
 		self.offset = np.array([0.0,0.0,0.0])
 		self.min_length = None
 		self.scale = 1.0
@@ -233,13 +233,13 @@ class Blob:
 			try:
 				self.init_centroid = np.array(b.centroid)	
 			except:
-				self.init_centroid = None
+				self.init_centroid = []
 
 		if b.rotation != None:		
 			try:
 				self.init_rotation = np.array(b.rotation)
 			except:
-				self.init_rotation = None
+				self.init_rotation = []
 				
 		# Initialise stuff that we didn't get
 		self.hidden_face = [-1 for i in range(self.surf.num_faces)]
@@ -440,7 +440,7 @@ class Blob:
 		aframe.build_from_node(self.node)
 		
 		# Move and rotate it
-		if self.init_centroid != None:
+		if self.init_centroid != []:
 			print "=============================="
 			print "Moving to starting position..."
 			print "=============================="
@@ -449,7 +449,7 @@ class Blob:
 			if not self.beads.empty:
 				self.beads.pdb.translate(dx) # translate the beads too
 
-		if self.init_rotation != None:
+		if self.init_rotation != []:
 			print "=============================="
 			print "Rotating to starting orientation..."
 			print "=============================="

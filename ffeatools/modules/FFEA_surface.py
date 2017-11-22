@@ -493,8 +493,10 @@ class FFEA_surface:
 		#  f_center = list of faces at the center (1 per linear face)
 		#  f_edge = list of faces at the edge (3 per linear face)
       #  n_edge = list of 1st order nodes in f_edge (3 per linear face)
+		fs_center = []
 		fn_center = []
-		fn_edge = []
+		fs_edge = []
+		# fn_edge = []
 		n_edge = []
 		self.num_linear_faces = 0
 		for f in self.face:
@@ -502,27 +504,41 @@ class FFEA_surface:
 			for n in f.n:
 				if linear_node_list.count(n):
 					linear_nodes += 1
-					fn_edge.append(frozenset(f.n))
+					fs_edge.append(frozenset(f.n))
+					# fn_edge.append(f.n)
 					n_edge.append(n)
 					break
 			if linear_nodes == 0:
 				self.num_linear_faces += 1
-				fn_center.append(frozenset(f.n))
+				fs_center.append(frozenset(f.n))
+				fn_center.append(f.n)
 
 
 		# 2 - for every f_c in f_center, look for adjacent faces, i. e., 
 		#     for faces that have 2 nodes in common. And build the linear
-		#     face from there. 
-		for fc in fn_center:
+		#     face from there, keeping the right order, so that when 
+		#     normals are calculated they point towards the right side!!
+		self.firstOrderFaceNodes = [0]*self.num_linear_faces*3
+		for nc, fc in enumerate(fs_center):
 			out = []
-			for ne, fe in enumerate(fn_edge):
+			fo_c0 = set(fn_center[nc][0:2])
+			fo_c1 = set(fn_center[nc][1:3])
+			order = [0,0,0]
+			for ne, fe in enumerate(fs_edge):
 				if len(fc.intersection(fe)) == 2:
-					self.firstOrderFaceNodes.append(n_edge[ne])
 					out.append(ne)
+					if len(fo_c0.intersection(fe)) == 2:
+						self.firstOrderFaceNodes[3*nc] = n_edge[ne]
+					elif len(fo_c1.intersection(fe)) == 2:
+						self.firstOrderFaceNodes[3*nc+1] = n_edge[ne]
+					else:
+						self.firstOrderFaceNodes[3*nc+2] = n_edge[ne]
+					if len(out) == 3: break
+
 			for o in reversed(out):
-				fn_edge.pop(o)
+				fs_edge.pop(o)
 				n_edge.pop(o)
-			
+
 		return 0
 
 

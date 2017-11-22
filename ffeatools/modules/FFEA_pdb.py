@@ -382,13 +382,13 @@ class FFEA_pdb:
 
 	# rotate the full system according to rot, around origin_trans (default CM),
    #        but just frame findex (default 0)
-	def rotate_full_system(self, rot, cent = None, findex = 0):
+	def rotate_full_system(self, rot, cent = [], findex = 0):
 		# findex is which frame we move to pos
 		if findex >= self.num_frames:
 			print("Frame " + findex + " does not exist. Please specifiy a correct index")
 			raise IndexError
 		
-		if cent == None:
+		if cent == []:
 			cent = np.array([0.0,0.0,0.0])
 			for i in range(self.num_chains):
 				cent += self.chain[i].frame[findex].calc_centroid() * self.num_atoms[i]
