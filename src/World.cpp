@@ -870,19 +870,21 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     }
 
     // 'calc_steric' and 'ssint_type' are now independent. Can the solvers be refactored to reduce on code?
-    if (params.ssint_type == "lennard-jones")
-        vdw_solver = new(std::nothrow) VdW_solver();
-    else if (params.ssint_type == "steric")
-        vdw_solver = new(std::nothrow) Steric_solver();
-    else if (params.ssint_type == "ljsteric")
-        vdw_solver = new(std::nothrow) LJSteric_solver();
-    else if (params.ssint_type == "gensoft")
-        vdw_solver = new(std::nothrow) GenSoftSSINT_solver();
+    if(params.calc_ssint == 1 || params.calc_steric == 1) {
+        if (params.ssint_type == "lennard-jones")
+            vdw_solver = new(std::nothrow) VdW_solver();
+        else if (params.ssint_type == "steric")
+            vdw_solver = new(std::nothrow) Steric_solver();
+        else if (params.ssint_type == "ljsteric")
+            vdw_solver = new(std::nothrow) LJSteric_solver();
+        else if (params.ssint_type == "gensoft")
+            vdw_solver = new(std::nothrow) GenSoftSSINT_solver();
 
-    if (vdw_solver == NULL)
-        FFEA_ERROR_MESSG("World::init failed to initialise the ssint_solver.\n");
+        if (vdw_solver == NULL)
+            FFEA_ERROR_MESSG("World::init failed to initialise the ssint_solver.\n");
 
-    vdw_solver->init(&lookup, &box_dim, &ssint_matrix, params.steric_factor, params.num_blobs, params.inc_self_ssint, params.ssint_type, params.steric_dr, params.calc_kinetics, there_are_static_blobs);
+        vdw_solver->init(&lookup, &box_dim, &ssint_matrix, params.steric_factor, params.num_blobs, params.inc_self_ssint, params.ssint_type, params.steric_dr, params.calc_kinetics, there_are_static_blobs);
+    }
 
     // Calculate the total number of vdw interacting faces in the entire system
     total_num_surface_faces = 0;
@@ -892,6 +894,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
     }
     printf("Total number of surface faces in system: %d\n", total_num_surface_faces);
+
     // Initialise the face-face neighbour list for vdw or es:
     if(params.calc_ssint == 1 || params.calc_steric == 1 || params.calc_es == 1) {
 

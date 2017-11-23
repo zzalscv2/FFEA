@@ -95,8 +95,11 @@ In between it can take the following parameters:
    * ` calc_noise ` <int>  <BR>
         Enter 1 or 0 to either enable or disable the effect of the thermal noise.
 
-   * ` calc_vdw ` <int>  <BR>
-        Enter 1 or 0 to either enable or disable the [Short range forces](ref shortRange).
+   * ` calc_steric ` <int>  <BR>
+        Enter 1 or 0 to either enable or disable the [Steric interactions](\ref shortRange).
+
+   * ` calc_ssint ` <int>  <BR>
+        Enter 1 or 0 to either enable or disable the [Short range interactions](\ref shortRange).
 
    * ` calc_es ` <int> <BR>
         Enter either 1 or 0 to enable or disable the electrostatic interactions. 
@@ -106,32 +109,32 @@ In between it can take the following parameters:
       [pre-computed interactions](\ref fmApproach) between beads.
  
 
-#### Short range forces parameters #### 
+#### Steric / Short range forces parameters #### 
 
-   * ` vdw_type ` <string> (steric) <BR>
-        Either "lennard-jones", "steric" or "ljsteric" depending on the type of calculations
+   * ` ssint_type ` <string> (steric) <BR>
+        Either "[lennard-jones](\ref #ljPotential)", "[steric](\ref #sPotential)", "[ljsteric](\ref #cPotential)" or "[gensoft](\ref #gPotential)" depending on the type of calculations
         to be performed.
 
-   * ` vdw_forcefield_params ` <string>  <BR>
+   * ` ssint_in_fname ` <string>  <BR>
         The name of the ` .lj ` file that contains the interaction parameters for 
-          the Lennard-Jones potential. Required only if ` vdw_type ` is set to 
-          either ` lennard-jones ` or ` ljsteric `. More details can be found 
+          the short-range interaction potential. Required only if ` ssint_type ` is set to 
+          either ` lennard-jones `, ` ljsteric ` or ` gensoft `. More details can be found 
           [here](\ref ljPotential).
 
-   * ` vdw_steric_factor ` <float> (1) <BR>
+   * ` inc_self_ssint ` <int> <BR>
+        Enter either 1 or 0 to enable or disable short range interactions 
+         between faces within the same blob.
+
+   * ` ssint_cutoff ` see box configuration.
+
+   * ` steric_factor ` <float> (1) <BR>
         Proportionality factor for the steric repulsion approach. More details 
          can be found [here](\ref sPotential).
 
-   * ` vdw_steric_dr ` <float> (5e-3) <BR>
+   * ` steric_dr ` <float> (5e-3) <BR>
         Constant used to calculate the numerial derivative of the steric repulsion.
         The value should only be changed for experienced users trying to use FFEA with 
         elements larger than tens of nm. 
-
-   * ` vdw_cutoff ` see box configuration.
-
-   * ` inc_self_vdw ` <int> <BR>
-        Enter either 1 or 0 to enable or disable short range interactions 
-         between faces within the same blob.
 
    * ` force_pbc ` <int> (0) <BR>
         Enter either 1 or 0 to enable or disable full periodic boundary conditions specifically for steric, 
@@ -181,7 +184,7 @@ In between it can take the following parameters:
    * ` es_N_z ` <int> (-1) <BR>
         Number of cells or voxels that the simulation box has in the z direction. If ` es_N_z ` is -1, FFEA will calculate a large enough value to store the system.
 
-   * ` vdw_cutoff ` <float> (3e-9) <BR> 
+   * ` ssint_cutoff ` <float> (3e-9) <BR> 
         Length of the side of the voxel.
 
    * ` es_update ` <int> (10) <BR>
@@ -283,9 +286,9 @@ It contains mostly structural information:
      The file name specifying the material properties of each element. 
      ` material ` is only needed if `motion_state` is set to `DYNAMIC`.
 
-   * ` vdw ` <string> [OPTIONAL] <BR>
-     The file name specifying the type of vdw interaction for each surface face
-     ` vdw ` is only needed if `calc_vdw` is set to 1.
+   * ` ssint ` <string> [OPTIONAL] <BR>
+     The file name specifying the type of ssint interaction for each surface face
+     ` ssint ` is only needed if `calc_ssint` is set to 1.
 
    * ` stokes ` <string> [OPTIONAL] <BR>
      The file name specifying the 'radius' of each node, to calculate local hydrodynamics

@@ -154,7 +154,7 @@ SimulationParams::~SimulationParams() {
     stokes_visc = -1;
 
     steric_factor = 0;
-
+    steric_dr = 0;
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
@@ -626,6 +626,10 @@ int SimulationParams::validate(int sim_mode) {
 
 	if (ssint_type == "ljsteric" && calc_steric == 0) {
 	    FFEA_ERROR_MESSG("Optional: For 'ssint_type = ljsteric', we also require 'calc_steric = 1'.\n");
+	}
+
+	if (ssint_type == "gensoft" && calc_steric == 0) {
+	    FFEA_ERROR_MESSG("Optional: For 'ssint_type = gensoft', we also require 'calc_steric = 1'.\n");
 	}
 
         if (ssint_in_fname_set == 0) {
