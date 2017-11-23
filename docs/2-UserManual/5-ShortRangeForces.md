@@ -160,7 +160,17 @@ General Soft potential {#gPotential}
 
       < ssint_type = gensoft >
 
- a 4th order polynomial is used to define an attractive potential, with a barrier whose height and gradient can be decided by the user
+ a 4th order polynomial is used to define an attractive potential, with a barrier whose height and gradient can be decided by the user. The 
+  polynomial has the following form:
+
+\f[ 
+
+  U(r) = \left( 3\epsilon  + \frac{1}{2}kr_c^2\right)\left(\frac{r}{r_c}\right)^4 - \left( 8\epsilon + kr_c^2\right)\left(\frac{r}{r_c}\right)^3 + \left( 6\epsilon  + \frac{1}{2}kr_c^2\right)\left(\frac{r}{r_c}\right)^2 - \epsilon
+
+\f]
+
+ This empirical, attractive potential has been designed to give zero force at \f$r = 0\f$ and at \f$r = r_c \f$ where \f$ r_c \f$ is the ` ssint_cutoff ` distance. In the intermediate range, we enable a tunable restoring force via the parameters \f$ \epsilon \f$, the energy minimum occuring at \f$r = 0\f$, and \f$ k \f$, which is the stiffness at \f$r = r_c\f$, or, \f$ k = \frac{d^2 U}{d r^2}| _{r = r_c} \f$.
+
   
 
   
