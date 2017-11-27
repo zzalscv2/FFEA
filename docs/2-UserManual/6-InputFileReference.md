@@ -92,27 +92,30 @@ In between it can take the following parameters:
 
 #### Enable different calculations #### 
 
-   * ` calc_noise ` <int>  <BR>
+   * ` calc_noise ` <int> (1) <BR>
         Enter 1 or 0 to either enable or disable the effect of the thermal noise.
 
-   * ` calc_steric ` <int>  <BR>
+   * ` calc_stokes ` <int> (1)  <BR>
+        1 or 0 
+
+   * ` calc_steric ` <int> (1) <BR>
         Enter 1 or 0 to either enable or disable the [Steric interactions](\ref shortRange).
 
-   * ` calc_ssint ` <int>  <BR>
+   * ` calc_ssint ` <int> (0) <BR>
         Enter 1 or 0 to either enable or disable the [Short range interactions](\ref shortRange).
 
-   * ` calc_es ` <int> <BR>
-        Enter either 1 or 0 to enable or disable the electrostatic interactions. 
-
-   * ` calc_preComp ` <int> <BR>
+   * ` calc_preComp ` <int> (0) <BR>
         Enter either 1 or 0 to enable or disable the calculation of 
       [pre-computed interactions](\ref fmApproach) between beads.
  
+   * ` calc_es `(0) <int> <BR>
+        Enter either 1 or 0 to enable or disable the electrostatic interactions. 
+
 
 #### Steric / Short range forces parameters #### 
 
    * ` ssint_type ` <string> (steric) <BR>
-        Either "[lennard-jones](\ref #ljPotential)", "[steric](\ref #sPotential)", "[ljsteric](\ref #cPotential)" or "[gensoft](\ref #gPotential)" depending on the type of calculations
+        Either [lennard-jones](\ref ljPotential), [steric](\ref sPotential), [ljsteric](\ref cPotential) or [gensoft](\ref gPotential) depending on the type of calculations
         to be performed.
 
    * ` ssint_in_fname ` <string>  <BR>
@@ -146,9 +149,6 @@ In between it can take the following parameters:
         tested with springs, boundary types other than PBC or electrostatics.
 
 #### Hydrodynamics parameters ####
-
-   * ` calc_stokes ` <int>  <BR>
-        1 or 0 
 
    * ` stokes_visc ` <float> (1e-3) <BR>
  
