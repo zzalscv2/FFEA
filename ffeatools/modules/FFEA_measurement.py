@@ -378,23 +378,27 @@ class FFEA_measurement:
 				for j in range(i, self.num_blobs):
 
 					try:
-						if self.blob_meas[i]["VdWEnergy"] != None:
-							keys_to_write[i].append("VdWEnergy")
+						if self.interblob_meas[i][j]["VdWEnergy"] != None:
+							pair_keys_to_write[i][j].append("VdWEnergy")
 					except(ValueError):
-						keys_to_write[i].append("VdWEnergy")
+						pair_keys_to_write[i][j].append("VdWEnergy")
+					except(KeyError):
+						pass
 
 					try:
-						if self.blob_meas[i]["SpringEnergy"] != None:
-							keys_to_write[i].append("SpringEnergy")
+						if self.interblob_meas[i][j]["SpringEnergy"] != None:
+							pair_keys_to_write[i][j].append("SpringEnergy")
 					except(ValueError):
-						keys_to_write[i].append("SpringEnergy")
-
+						pair_keys_to_write[i][j].append("SpringEnergy")
+					except(KeyError):
+						pass
 					try:
-						if self.blob_meas[i]["PreCompEnergy"] != None:
-							keys_to_write[i].append("PreCompEnergy")
+						if self.interblob_meas[i][j]["PreCompEnergy"] != None:
+							pair_keys_to_write[i][j].append("PreCompEnergy")
 					except(ValueError):
-						keys_to_write[i].append("PreCompEnergy")
-
+						pair_keys_to_write[i][j].append("PreCompEnergy")
+					except(KeyError):
+						pass
 		
 
 			# Time first
