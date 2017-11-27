@@ -272,8 +272,10 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
              p, q, pmap["Rmin"], pmap["Emin"], energy);
     else if (ssint_type == SSINT_TYPE_LJ) calc_lj_force_pair_matrix(force_pair_matrix, 
              p, q, pmap["Rmin"], pmap["Emin"], energy);
-
+    //cout << energy * mesoDimensions::Energy << " " << pmap["Emin"] *  mesoDimensions::Energy << " " << pmap["Rmin"] * mesoDimensions::length << endl;
+     
     scalar ApAq = f1->area * f2->area;
+   // cout << energy * mesoDimensions::Energy << " " << f1->area * mesoDimensions::area << endl;
     energy *= ApAq;
     // Store the measurement
 	/*for (int k = 0; k < num_tri_gauss_quad_points; k++) {
@@ -284,8 +286,11 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
 	}
 	exit(0);*/
     #pragma omp critical
-    {
+	    {
+	//cout << fieldenergy[f1_daddy_blob_index][f2_daddy_blob_index] * mesoDimensions::Energy << endl;
         fieldenergy[f1_daddy_blob_index][f2_daddy_blob_index] += energy;
+	//cout << fieldenergy[f1_daddy_blob_index][f2_daddy_blob_index] * mesoDimensions::Energy << endl;
+	//cout << pmap["Emin"] * (mesoDimensions::Energy / (mesoDimensions::area * mesoDimensions::area)) << endl;
         for (int j = 0; j < 3; j++) {
             vector3 force1, force2;
             force1.assign( 0, 0, 0 );
@@ -667,9 +672,10 @@ void VdW_solver::calc_lj_force_pair_matrix(vector3 (&force_pair_matrix)[num_tri_
     scalar Rmin_6 = Rmin_4 * Rmin_2;
    
     for(int k = 0; k < num_tri_gauss_quad_points; k++) {
-        mag_r = sqrt(distance2(p[k], q[k])); 
+        mag_r = sqrt(distance2(p[k], q[k]));
         calc_lj_factors(mag_r, k, k, Emin, Rmin_6, force_mag, e);
-
+	//cout << "Linear Energy = " << e * mesoDimensions::Energy << endl;
+	//cout << "Min distance = " << Rmin * mesoDimensions::length << endl; 
         energy += e; 
         force_pair_matrix[k][k].x = force_mag * ((p[k].x - q[k].x) / mag_r);
         force_pair_matrix[k][k].y = force_mag * ((p[k].y - q[k].y) / mag_r);

@@ -40,6 +40,12 @@
 
 #define LJI(A,B)	((A) * num_ssint_face_types + (B))
 
+#define SSINT_TYPE_UNDEFINED 0
+#define SSINT_TYPE_STERIC 1
+#define SSINT_TYPE_LJSTERIC 2
+#define SSINT_TYPE_LJ 3
+#define SSINT_TYPE_GENSOFT 4
+
 using namespace std;
 
 class LJ_pair {
@@ -62,7 +68,7 @@ public:
     int get_num_types();
 
 private:
-    int init_ssint(string ssint_params_fname, scalar ssint_cutoff);
+    int init_ssint(string ssint_params_fname, string ssint_type, scalar ssint_cutoff);
     int init_steric(); 
     //LJ_pair *params;
     map<string, scalar> *params;

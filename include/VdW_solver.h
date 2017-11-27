@@ -31,12 +31,6 @@
 #include "LJ_matrix.h"
 #include "Blob.h"
 
-#define SSINT_TYPE_UNDEFINED 0
-#define SSINT_TYPE_STERIC 1
-#define SSINT_TYPE_LJSTERIC 2
-#define SSINT_TYPE_LJ 3
-#define SSINT_TYPE_GENSOFT 4
-
 class VdW_solver {
 public:
     VdW_solver();

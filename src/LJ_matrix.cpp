@@ -52,7 +52,7 @@ int SSINT_matrix::init(string ssint_params_fname, string ssint_type, int calc_ss
     if (calc_ssint == 0) {
        err = init_steric(); 
     } else {
-       err = init_ssint(ssint_params_fname, ssint_cutoff); 
+       err = init_ssint(ssint_params_fname, ssint_type, ssint_cutoff); 
     } 
     return err; 
 } 
@@ -151,7 +151,7 @@ int LJ_matrix::init_ssintOLD(string ssint_params_fname) {
 }
 */
 
-int SSINT_matrix::init_ssint(string ssint_params_fname, scalar ssint_cutoff) {
+int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scalar ssint_cutoff) {
 
     int count, MAX_NUM_VARS = 3;
     string line, aset, head[MAX_NUM_VARS];
@@ -231,8 +231,10 @@ int SSINT_matrix::init_ssint(string ssint_params_fname, scalar ssint_cutoff) {
                 FFEA_ERROR_MESSG("Required: 'Rmin' must be greater than 0 if you wish to use ssint (calc_ssint is 1)\n")
             }
 
-	    // Set the Rmin value to the cutoff distance for now, so avoid turning points
-	    params[LJI(i, j)]["Rmin"] = ssint_cutoff * mesoDimensions::length;
+	    // In gensoft, set the Rmin value to the cutoff distance for now, so avoid turning points
+	    if (ssint_type == "gensoft") {
+		    params[LJI(i, j)]["Rmin"] = ssint_cutoff * mesoDimensions::length;
+	    }
 
 	    // Defaulting the value if not found 
             if(params[LJI(i, j)].count(head[2]) == 0) {
