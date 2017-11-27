@@ -632,7 +632,7 @@ int SimulationParams::validate(int sim_mode) {
 	    FFEA_ERROR_MESSG("Optional: For 'ssint_type = gensoft', we also require 'calc_steric = 1'.\n");
 	}
 
-        if (ssint_in_fname_set == 0) {
+        if (ssint_in_fname_set == 0 && ssint_type != "steric") {
             FFEA_ERROR_MESSG("Surface-surface forcefield params file name required (ssint_in_fname).\n");
         }
 
