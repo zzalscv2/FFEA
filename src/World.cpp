@@ -554,7 +554,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 fprintf(measurement_out, "%-14s", "SpringEnergy");
             }
             if(params.calc_ssint == 1 || params.calc_steric == 1) {
-                fprintf(measurement_out, "%-14s", "SurfSurfEnergy");
+                fprintf(measurement_out, "%-15s", "SurfSurfEnergy");
             }
             if(params.calc_preComp != 0) {
                 fprintf(measurement_out, "%-14s", "PreCompEnergy");
@@ -581,7 +581,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                         for(j = i; j < params.num_blobs; ++j) {
                             fprintf(detailed_meas_out, "| B%dB%d ", i, j);
                             if(active_blob_array[i]->there_is_ssint() && active_blob_array[j]->there_is_ssint()) {
-                                fprintf(detailed_meas_out, "%-14s", "SurfSurfEnergy");
+                                fprintf(detailed_meas_out, "%-15s", "SurfSurfEnergy");
                             }
                             if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs()) {
                                 fprintf(detailed_meas_out, "%-14s", "SpringEnergy");
@@ -4012,7 +4012,7 @@ void World::write_measurements_to_file(FILE *fout, int step) {
         fprintf(fout, "%-14.6e", springenergy * mesoDimensions::Energy);
     }
     if(params.calc_ssint == 1 || params.calc_steric == 1) {
-        fprintf(fout, "%-14.6e", ssintenergy * mesoDimensions::Energy);
+        fprintf(fout, "%-15.6e", ssintenergy * mesoDimensions::Energy);
     }
     if(params.calc_preComp != 0) {
         fprintf(fout, "%-14.6e", preCompenergy * mesoDimensions::Energy);
@@ -4031,7 +4031,7 @@ void World::write_detailed_measurements_to_file(FILE *fout) {
             // White space for blob index bit
             fprintf(fout, "       ");
             if(active_blob_array[i]->there_is_ssint() && active_blob_array[j]->there_is_ssint()) {
-                fprintf(detailed_meas_out, "%-14.6e", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
+                fprintf(detailed_meas_out, "%-15.6e", vdw_solver->get_field_energy(i, j) * mesoDimensions::Energy);
             }
             if(active_blob_array[i]->there_are_springs() && active_blob_array[j]->there_are_springs() * mesoDimensions::Energy) {
                 fprintf(detailed_meas_out, "%-14.6e", get_spring_field_energy(i, j) * mesoDimensions::Energy);

@@ -40,6 +40,7 @@ def readAndStore(iFile):
       if readblob:
         blob = i
         readblob = False
+        print(i)
         continue
       H.append([blob+i])
     for line in sta:
