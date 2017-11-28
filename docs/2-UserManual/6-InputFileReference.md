@@ -20,7 +20,7 @@ In between it can take the following parameters:
    * ` checkpoint_in ` <string> <BR>
         The name of the checkpoint file to be read in case of setting ` <restart = 1> `.
         
-   * ` dt ` <float>  <BR>
+   * ` dt ` <float> (1e-14)  <BR>
         Time step. Typically ranging 1e-12 to 1e-14, although the ideal 
         value depends on the shortest edge of the mesh and on the forces 
         acting on it. The higher the forces and the smaller the shortest edge,
@@ -31,7 +31,7 @@ In between it can take the following parameters:
    * ` num_steps ` <int> <BR>
         Number of time steps to be simulated. 
  
-   * ` kT ` <float> <BR>
+   * ` kT ` <float> (4.11e-21) <BR>
         The product of the Boltzmann constant k and the temperature T, in ` J `. 
 
    * ` rng_seed ` <int> <BR>
@@ -96,20 +96,24 @@ In between it can take the following parameters:
         Enter 1 or 0 to either enable or disable the effect of the thermal noise.
 
    * ` calc_stokes ` <int> (1)  <BR>
-        1 or 0 
+        Enter 1 or 0 to either enable or disable accounting for the external solvent friction.
 
    * ` calc_steric ` <int> (1) <BR>
         Enter 1 or 0 to either enable or disable the [Steric interactions](\ref shortRange).
 
-   * ` calc_ssint ` <int> (0) <BR>
+   * ` calc_ssint ` <int> (1) <BR>
         Enter 1 or 0 to either enable or disable the [Short range interactions](\ref shortRange).
 
    * ` calc_preComp ` <int> (0) <BR>
         Enter either 1 or 0 to enable or disable the calculation of 
       [pre-computed interactions](\ref fmApproach) between beads.
+
+	* ` calc_springs ` <int> (0) <BR>
+        Enter 1 or 0 to either enable or disable the interaction via [springs](\ref springs).
+
  
    * ` calc_es `(0) <int> <BR>
-        Enter either 1 or 0 to enable or disable the electrostatic interactions. 
+        Enter either 1 or 0 to enable or disable the electrostatic interactions. (EXPERIMENTAL)
 
 
 #### Steric / Short range forces parameters #### 
