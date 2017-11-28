@@ -787,6 +787,7 @@ INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/docs/1-Overview/Overview.md 
                          @CMAKE_CURRENT_SOURCE_DIR@/docs/4-Tutorial \
                          @CMAKE_CURRENT_SOURCE_DIR@/docs/2-UserManual \
                          @CMAKE_CURRENT_SOURCE_DIR@/docs/5-DevManual \
+                         @CMAKE_CURRENT_SOURCE_DIR@/ChangeLog.md \
                          @CMAKE_CURRENT_SOURCE_DIR@/docs/6-ToolsNRunner
 
 # This tag can be used to specify the character encoding of the source files
