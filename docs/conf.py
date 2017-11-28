@@ -90,6 +90,7 @@ cmake_configure_file("../DoxygenPyM.in", "../DoxyfilePyM", CMakeVars)
 
 
 # and build the documentation:
+subprocess.call('doxygen --version', shell=True)
 subprocess.call('cd ../ ; doxygen Doxyfile ; doxygen DoxyfilePyM ; mv ffeamodules doc/html/ ', shell=True)
 
 # If extensions (or modules to document with autodoc) are in another directory,
