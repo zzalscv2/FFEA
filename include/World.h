@@ -37,6 +37,7 @@
 #include <ctime>
 #include <algorithm>
 
+
 #include <boost/algorithm/string.hpp>
 #include <typeinfo>
 #include <Eigen/Sparse>
@@ -73,6 +74,7 @@
 #include "Spring.h"
 #include "SparseMatrixFixedPattern.h"
 #include "KineticState.h"
+#include "mt_correlator.h"
 
 #include "dimensions.h"
 using namespace std;
@@ -139,6 +141,16 @@ private:
 
     /** @brief 2-D Array of Blob objects (blob i, conformation j) */
     Blob **blob_array;
+    vector<TCorrelatorDiffusionVector> diff_vec;
+    vector<TCorrelatorDiffusionVector> diff_vec_corrected;
+    vector<TCorrelatorDiffusion> diff_corr_x;
+    vector<TCorrelatorDiffusion> diff_corr_y;
+    vector<TCorrelatorDiffusion> diff_corr_z;
+    //vector<TCorrelatorDiffusionVector> sys_corr;
+    TCorrelatorDiffusionVector sys_corr = TCorrelatorDiffusionVector(35,16);
+    vector<Fmm_blob> Fmm_vec;
+    Fmm_blob sys_blob;
+    
 
     /** @brief Which conformation is active in each blob */
     Blob **active_blob_array;
@@ -207,6 +219,13 @@ private:
     FILE *trajbeads_out; 
     /** @brief Output mini measurements file. May be unneccesary */
     FILE *mini_meas_out;
+    
+    FILE *base_corr_out;
+    FILE *corrected_corr_out;
+    FILE *x_corr_out;
+    FILE *y_corr_out;    
+    FILE *z_corr_out;
+    FILE *sys_corr_out;
 
     /** Reader objects */
     FFEA_input_reader *ffeareader;

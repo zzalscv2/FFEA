@@ -36,7 +36,7 @@ add_library(ffea_lib
     SparseMatrixUnknownPattern.cpp SparsityPattern.cpp 
     Spring.cpp VdW_solver.cpp Steric_solver.cpp LJSteric_solver.cpp 
     KineticState.cpp PreComp_solver.cpp CheckTetrahedraOverlap.cpp 
-    VolumeIntersection.cpp RngStream.cpp )
+    VolumeIntersection.cpp RngStream.cpp mt_correlator.cpp)
     
 add_executable(ffea ffea.cpp CG_solver.cpp ConjugateGradientSolver.cpp
     FFEA_user_info.cpp mat_vec_fns.cpp NoMassCGSolver.cpp 

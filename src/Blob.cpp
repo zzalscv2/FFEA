@@ -934,6 +934,7 @@ void Blob::get_centroid(vector3 *com) {
     com->z /= num_nodes;
 }
 
+
 void Blob::calc_and_store_centroid(vector3 &com) {
 
     get_centroid(&com);
@@ -1102,8 +1103,11 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
     } else if (blob_state == FFEA_BLOB_IS_FROZEN) {
         fprintf(trajectory_out, "FROZEN\n");
     }
+    
+    
 
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
+    
         for (int i = 0; i < num_nodes; i++) {
             fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                     node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
@@ -1113,12 +1117,15 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
         }
     } else {
         if (params->calc_es == 0) {
+        
+            fprintf(trajectory_out, "%d %d %d\n", pbc_count[0], pbc_count[1], pbc_count[2]);
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
                         0., 0., 0., 0., 0., 0., 0.);
             }
         } else {
+            fprintf(trajectory_out, "%d %d %d\n", pbc_count[0], pbc_count[1], pbc_count[2]);
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
@@ -1237,6 +1244,10 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
             FFEA_ERROR_MESSG("Problem when reading state line in trajectory file\n")
         }
     }
+    
+    if (fscanf(trajectory_out, "%d %d %d\n", &pbc_count[0], &pbc_count[1], &pbc_count[2]) != 3) {
+            FFEA_ERROR_MESSG("(When restarting) Error reading pbc counts from trajectory file\n")
+        }
 
     for (int i = 0; i < num_nodes; i++) {
         if (fscanf(trajectory_out, "%le %le %le %le %le %le %le %le %le %le\n", &node[i].pos.x, &node[i].pos.y, &node[i].pos.z, &node[i].vel.x, &node[i].vel.y, &node[i].vel.z, &node[i].phi, &force[i].x, &force[i].y, &force[i].z) != 10) {
@@ -1261,8 +1272,9 @@ int Blob::read_pbc_count_from_file(FILE *mini_meas_out,int b) {
     char state_str[20];
     char *result = NULL;
     double trash;
+    int trash2;
 
-    if (fscanf(mini_meas_out, "%le%le%le%d%d%d%le%le%le%le%le%le",&trash, &trash, &trash,&pbc_count[0],&pbc_count[1],&pbc_count[2],&trash,&trash,&trash,&trash,&trash,&trash) != 12) {
+    if (fscanf(mini_meas_out, "%le%le%le%d%d%d%le%le%le%le%le%le",&trash, &trash, &trash,&trash2,&trash2,&trash2,&trash,&trash,&trash,&trash,&trash,&trash) != 12) {
             FFEA_ERROR_MESSG("(When restarting) Error reading from mini_meas file, for blob %d\n",b)
         }
 

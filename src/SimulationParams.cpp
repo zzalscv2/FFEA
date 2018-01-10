@@ -89,9 +89,14 @@ SimulationParams::SimulationParams() {
     bsite_in_fname_set = 0;
     vdw_in_fname_set = 0;
     trajbeads_fname_set = 0;
-
-
     mini_meas_out_fname_set = 0;
+    /*
+    base_corr_out_fname_set = 0;
+    corrected_corr_out_fname_set = 0;
+    x_corr_out_fname_set = 0;
+    y_corr_out_fname_set = 0;
+    z_corr_out_fname_set = 0;
+    */
     trajectory_out_fname = "\n";
     kinetics_out_fname = "\n";
     measurement_out_fname = "\n";
@@ -104,6 +109,14 @@ SimulationParams::SimulationParams() {
     ctforces_fname = "\n";
     springs_fname = "\n";
     trajectory_beads_fname = "\n";
+    
+    
+    base_corr_out_fname = "\n";
+    corrected_corr_out_fname = "\n";
+    x_corr_out_fname = "\n";
+    y_corr_out_fname = "\n";
+    z_corr_out_fname = "\n";
+    sys_corr_out_fname = "\n";
 }
 
 SimulationParams::~SimulationParams() {
@@ -166,6 +179,14 @@ SimulationParams::~SimulationParams() {
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
     vdw_in_fname_set = 0;
+    
+    /*
+    base_corr_out_fname_set = 0;
+    corrected_corr_out_fname_set = 0;
+    x_corr_out_fname_set = 0;
+    y_corr_out_fname_set = 0;
+    z_corr_out_fname_set = 0;
+    */
 
     trajectory_out_fname = "\n";
     measurement_out_fname = "\n";
@@ -179,7 +200,12 @@ SimulationParams::~SimulationParams() {
     ctforces_fname = "\n";
     springs_fname = "\n";
     trajectory_beads_fname = "\n";
-
+    base_corr_out_fname = "\n";
+    corrected_corr_out_fname = "\n";
+    x_corr_out_fname = "\n";
+    y_corr_out_fname = "\n";
+    z_corr_out_fname = "\n";
+    sys_corr_out_fname = "\n";
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
@@ -380,6 +406,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "force_pbc") {
         force_pbc = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << force_pbc << endl;
+        
+    } else if (lvalue == "msd_corr_calc") {
+        msd_corr_calc = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << msd_corr_calc << endl;
 
     } else if (lvalue == "calc_kinetics") {
         calc_kinetics = atoi(rvalue.c_str());
@@ -498,6 +528,41 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 			string mini_meas_basename = measurement_out_fname;
 			mini_meas_basename = RemoveFileExtension(mini_meas_basename);
 			mini_meas_out_fname = mini_meas_basename + ".fmm";
+		}
+		
+		if (base_corr_out_fname == "\n") {
+			string base_corr_basename = measurement_out_fname;
+			base_corr_basename = RemoveFileExtension(base_corr_basename);
+			base_corr_out_fname = base_corr_basename + "_base_corr.txt";
+		}
+		
+		if (corrected_corr_out_fname == "\n") {
+			string corrected_corr_basename = measurement_out_fname;
+			corrected_corr_basename = RemoveFileExtension(corrected_corr_basename);
+			corrected_corr_out_fname = corrected_corr_basename + "_corrected_corr.txt";
+		}
+		
+		if (x_corr_out_fname == "\n") {
+			string x_corr_basename = measurement_out_fname;
+			x_corr_basename = RemoveFileExtension(x_corr_basename);
+			x_corr_out_fname = x_corr_basename + "_x_corr.txt";
+		}
+		
+		if (y_corr_out_fname == "\n") {
+			string y_corr_basename = measurement_out_fname;
+			y_corr_basename = RemoveFileExtension(y_corr_basename);
+			y_corr_out_fname = y_corr_basename + "_y_corr.txt";
+		}
+		
+		if (z_corr_out_fname == "\n") {
+			string z_corr_basename = measurement_out_fname;
+			z_corr_basename = RemoveFileExtension(z_corr_basename);
+			z_corr_out_fname = z_corr_basename + "_z_corr.txt";
+		}
+		if (sys_corr_out_fname == "\n") {
+			string sys_corr_basename = measurement_out_fname;
+			sys_corr_basename = RemoveFileExtension(sys_corr_basename);
+			sys_corr_out_fname = sys_corr_basename + "_sys_corr.txt";
 		}
 
     } else if (lvalue == "kinetics_out_fname") {

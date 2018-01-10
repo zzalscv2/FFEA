@@ -57,6 +57,13 @@ World::World() {
     Seeds = NULL;
     num_seeds = 0;
     blob_corr = NULL;
+    
+    base_corr_out = NULL;
+    corrected_corr_out = NULL;
+    x_corr_out = NULL;
+    y_corr_out = NULL;    
+    z_corr_out = NULL;
+    sys_corr_out = NULL;
 
     ffeareader = NULL;
     systemreader = NULL;
@@ -146,6 +153,12 @@ World::~World() {
     detailed_meas_out = NULL;
     kinetics_out = NULL;
     mini_meas_out = NULL;
+    base_corr_out = NULL;
+    corrected_corr_out = NULL;
+    x_corr_out = NULL;
+    y_corr_out = NULL;    
+    z_corr_out = NULL;
+    sys_corr_out = NULL;
 
 
     delete vdw_solver;
@@ -605,9 +618,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                }
 
             }
+            /*
             if(params.mini_meas!=0){
                 mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "w");
-                fprintf(mini_meas_out, "FFEA Mini Measurement File\n\nMeasurements:\n%-14s", "Time");
+                
+               fprintf(mini_meas_out, "FFEA Mini Measurement File\n\nMeasurements:\n%-14s", "Time");
 				for(i = 0; i < params.num_blobs; ++i) {
 					fprintf(mini_meas_out, "| B%d ", i);
 					fprintf(mini_meas_out, "%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s","Centroid.x", "Centroid.y", "Centroid.z","PBC_count.x","PBC_count.y","PBC_count.z", "FFt11","FFt12","FFt13","FFt22","FFt23","FFt33");
@@ -615,6 +630,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 fprintf(mini_meas_out, "\n");
 				fflush(mini_meas_out);
 			}
+			*/
+
+
 
             // Open the kinetics output file for writing (if neccessary) and write initial stuff
             if (params.kinetics_out_fname_set == 1) {
@@ -830,7 +848,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                     FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.detailed_meas_out_fname.c_str())
                 }
             }
-
+/*
             if(params.mini_meas!=0) {
 
                 if(params.check%params.mini_meas!=0){
@@ -877,7 +895,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				//}
 			    }
 			}
-
+			
+			
             if ((c = fgetc(mini_meas_out)) != '\n') {
 			    ungetc(c, mini_meas_out);
 			} else {
@@ -904,6 +923,60 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                     FFEA_ERROR_MESSG("Error when trying to truncate mini_meas file %s\n", params.mini_meas_out_fname.c_str())
                 }
 			}
+			*/
+			if(params.msd_corr_calc ==1){
+			    cout<<"here's a flag"<<endl;
+			    if ((base_corr_out = fopen(params.base_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.base_corr_out_fname.c_str())
+				    }
+				if ((corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.corrected_corr_out_fname.c_str())
+				    }
+				if ((x_corr_out = fopen(params.x_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.x_corr_out_fname.c_str())
+				    }
+				if ((y_corr_out = fopen(params.y_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.y_corr_out_fname.c_str())
+				    }
+				if ((z_corr_out = fopen(params.z_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.z_corr_out_fname.c_str())
+				    }
+				if ((sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.sys_corr_out_fname.c_str())
+				    }
+				cout<<"Managed dem opens for reads"<<endl;    
+				for(int i =0; i<params.num_blobs;i++){
+				    cout<<"this is blob"<<i<<endl;
+				    diff_vec[i].read_ffea(base_corr_out);
+				    cout<<"Read base_corr"<<endl;
+                    diff_vec_corrected[i].read_ffea(corrected_corr_out);
+                    cout<<"Read corrected_corr"<<endl;
+                    diff_corr_x[i].read_ffea(x_corr_out);
+                    cout<<"Read x_corr"<<endl;
+                    diff_corr_y[i].read_ffea(y_corr_out);
+                    cout<<"Read y_corr"<<endl;
+                    diff_corr_z[i].read_ffea(z_corr_out);
+                    cout<<"Read z_corr"<<endl;
+                    /*fscanf(base_corr_out, "%*[^\n]\n");
+                    fscanf(corrected_corr_out, "%*[^\n]\n");
+                    fscanf(x_corr_out, "%*[^\n]\n");
+                    fscanf(y_corr_out, "%*[^\n]\n");
+                    fscanf(z_corr_out, "%*[^\n]\n");*/
+                    
+				}
+				
+				    cout<<"it's treason, then?"<<endl;
+				    sys_corr.read_ffea(sys_corr_out);
+				    cout<<"did the read thing"<<endl;    
+			        fclose(base_corr_out);
+                    fclose(corrected_corr_out);
+                    fclose(x_corr_out);
+                    fclose(y_corr_out);    
+                    fclose(z_corr_out);
+                    fclose(sys_corr_out);
+                    cout<<"closed all the fs "<<endl;
+			}
+
 
             // Open trajectory and measurment files for appending
             printf("Opening trajectory and measurement files for appending.\n");
@@ -928,7 +1001,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 }
                 //fprintf(kinetics_out, "#==RESTART==\n");
             }
-
+/*
 
             if(params.mini_meas!=0) {
                     printf("mini_meas opened for appending properly\n");
@@ -2262,6 +2335,19 @@ int World::read_and_build_system(vector<string> script_vector) {
     cout << "\tCreating blob array..." << endl;
     blob_array = new Blob*[params.num_blobs];
     active_blob_array = new Blob*[params.num_blobs];
+    
+    if(params.msd_corr_calc ==1){
+    for(int i = 0; i < params.num_blobs; ++i) {
+    
+            diff_vec.push_back(TCorrelatorDiffusionVector(35,16));
+            diff_vec_corrected.push_back(TCorrelatorDiffusionVector(35,16));
+            Fmm_vec.push_back(Fmm_blob());
+            diff_corr_x.push_back(TCorrelatorDiffusion(35,16));
+            diff_corr_y.push_back(TCorrelatorDiffusion(35,16));
+            diff_corr_z.push_back(TCorrelatorDiffusion(35,16));
+        }    
+        //sys_corr[0].push_back(TCorrelatorDiffusionVector(35,16));
+    }
 
 #ifdef FFEA_PARALLEL_PER_BLOB
     #pragma omp parallel for default(none) schedule(static) // shared(blob_array, active_blob_array)
@@ -2269,11 +2355,11 @@ int World::read_and_build_system(vector<string> script_vector) {
     for (int i = 0; i < params.num_blobs; ++i) {
         blob_array[i] = new Blob[params.num_conformations[i]];
         active_blob_array[i] = &blob_array[i][0];
+        
     }
-
     //creates blob correction array if specified in input file
     if (params.force_pbc ==1) blob_corr = new scalar[params.num_blobs*params.num_blobs*3];
-
+    
     // Reading variables
     systemreader = new FFEA_input_reader();
     int i, j;
@@ -3881,9 +3967,10 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     } else {
         printf("\rstep = %d (simulation time = %.2fns, wall clock time = %.3f hrs)\n", step, step * params.dt * (mesoDimensions::time / 1e-9), (omp_get_wtime() - wtime) / 3600.0);
     }
-    if(params.mini_meas !=0){
+   /* if(params.mini_meas !=0){
         fprintf(mini_meas_out,"*\n");
-    }
+    }*/
+    
 
     // TRAJECTORY file: can be printed serially, or in parallel:
 #ifdef FFEA_PARALLEL_FUTURE
@@ -3942,6 +4029,61 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     if(detailed_meas_out != NULL) {
         fprintf(detailed_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
     }
+    /*
+     if(params.msd_corr_calc ==1){
+        for(int i = 0;i<num_blobs;i++){
+            diff_vec[i].evaluate();
+            diff_vec_corrected[i].evaluate();
+            diff_corr_x[i].evaluate();
+            diff_corr_y[i].evaluate();
+            diff_corr_z[i].evaluate();
+        }
+
+        sys_corr.evaluate();
+     }
+     */
+     
+    //cout<<"msd_corr_ calc = "<<params.msd_corr_calc<<endl;
+    if(params.msd_corr_calc==1){
+         base_corr_out = fopen(params.base_corr_out_fname.c_str(), "w");
+         
+         corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "w");
+         x_corr_out = fopen(params.x_corr_out_fname.c_str(), "w");
+         y_corr_out = fopen(params.y_corr_out_fname.c_str(), "w");
+         z_corr_out = fopen(params.z_corr_out_fname.c_str(), "w");
+         sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "w");
+	
+     
+        for(int i = 0; i < params.num_blobs; ++i){
+            diff_vec[i].save_ffea(base_corr_out);
+            diff_vec_corrected[i].save_ffea(corrected_corr_out);
+            diff_corr_x[i].save_ffea(x_corr_out);
+            diff_corr_y[i].save_ffea(y_corr_out);
+            diff_corr_z[i].save_ffea(z_corr_out);
+            /*fprintf(base_corr_out,"*\n");
+            fflush(base_corr_out);
+            fprintf(corrected_corr_out,"*\n");
+            fflush(corrected_corr_out);
+            fprintf(x_corr_out,"*\n");
+            fflush(x_corr_out);
+            fprintf(y_corr_out,"*\n");
+            fflush(y_corr_out);
+            fprintf(z_corr_out,"*\n");
+            fflush(z_corr_out);*/
+        }
+        
+        sys_corr.save_ffea(sys_corr_out);       
+        fclose(base_corr_out);
+        fclose(corrected_corr_out);
+        fclose(x_corr_out);
+        fclose(y_corr_out);    
+        fclose(z_corr_out);
+        fclose(sys_corr_out);
+    }
+
+
+   // fprintf(mini_meas_out,"*\n");    
+   // fflush(mini_meas_out);
 
 #ifdef FFEA_PARALLEL_PER_BLOB
     #pragma omp parallel for default(none) schedule(static)
@@ -4022,21 +4164,68 @@ void World::print_checkpoints() {
 }
 
 void World::print_mini_meas_file(int step, scalar wtime) {
-    // Stuff needed on each blob, and in global energy files
-    fprintf(mini_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
-
-    // Write trajectory for each blob, then do blob specific measurements (which are needed for globals, but only explicitly printed if "-d" was used)
+    //fprintf(mini_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
+    /*
     for (int i = 0; i < params.num_blobs; i++) {
 
-        // Write the node data for this blob
         active_blob_array[i]->calc_and_write_mini_meas_to_file(mini_meas_out);
+        
     }
+    */
+    vector3 com;
+    if(params.msd_corr_calc ==1){
+    for(int k = 0;k<3;k++){
+        sys_blob.pos[k] = 0;
+        }
+    for (int j = 0; j < params.num_blobs; j++) {
+        //active_blob_array[j]->get_CoM(&com);
+        active_blob_array[j]->get_centroid(&com);
+        //cout<<"blob "<<j<<" CoM  is "<<com.x<<"  "<<com.y<<"  "<<com.z<<endl;
+        
+        for(int k = 0;k<3;k++){
+        Fmm_vec[j].pos[k] = com[k];
+        }
+        //cout<<"blob "<<j<<" pos without pbc is "<<Fmm_vec[j].pos[0]<<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+        
+        for(int k = 0;k<3;k++){
+                Fmm_vec[j].PBC_Count[k] = active_blob_array[j]->get_pbc_count(k);
+                
+        }
+        //cout<<"blob "<<j<<" get pbc count is "<<active_blob_array[j]->get_pbc_count(0)<<"  "<<active_blob_array[j]->get_pbc_count(1)<<"  "<<active_blob_array[j]->get_pbc_count(2)<<endl;
+        //cout<<"blob "<<j<<" pbc count is "<<Fmm_vec[j].PBC_Count[0]<<"  "<<Fmm_vec[j].PBC_Count[1]<<"  "<<Fmm_vec[j].PBC_Count[2]<<endl;
+        for(int k = 0;k<3;k++){
+                Fmm_vec[j].pos[k] += box_dim[k]*Fmm_vec[j].PBC_Count[k];
+                sys_blob.pos[k] += Fmm_vec[j].pos[k];
 
-    if(detailed_meas_out != NULL) {
-	write_detailed_measurements_to_file(detailed_meas_out);
-    }
-   	fprintf(mini_meas_out, "\n");
-    fflush(mini_meas_out);
+                Fmm_vec[j].pos[k] *= mesoDimensions::length;
+                sys_blob.pos[k] *= mesoDimensions::length;
+        }
+        //cout<<"blob "<<j<<" pos with pbc is "<<Fmm_vec[j].pos[0] <<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+        //cout<<"next line is base for blob "<<j<<endl;
+        diff_vec[j].add(Fmm_vec[j].pos);
+        }
+        for(int k = 0;k<3;k++){
+            sys_blob.pos[k]/=params.num_blobs;
+        }
+        //cout<<"next line is sys"<<endl;
+        sys_corr.add(sys_blob.pos);
+        for(int j= 0;j<params.num_blobs;j++){
+            for(int k = 0;k<3;k++){
+                 Fmm_vec[j].pos[k]-=sys_blob.pos[k];
+            }
+            //cout<<"blob "<<j<<" pos corrected is "<<Fmm_vec[j].pos[0] <<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+            //cout<<"next line is corrected for blob "<<j<<endl;
+            diff_vec_corrected[j].add(Fmm_vec[j].pos);
+
+            diff_corr_x[j].add(Fmm_vec[j].pos[0]);
+            diff_corr_y[j].add(Fmm_vec[j].pos[1]);
+            diff_corr_z[j].add(Fmm_vec[j].pos[2]);
+        }
+        }
+
+
+   	//fprintf(mini_meas_out, "\n");
+    //fflush(mini_meas_out);
 }
 
 void World::make_measurements() {
@@ -4261,7 +4450,7 @@ int World::die_with_dignity(int step, scalar wtime) {
         print_kinetic_files(step);
         if(params.mini_meas!=0){
             print_mini_meas_file(step,wtime);
-            fprintf(mini_meas_out,"*\n");
+           // fprintf(mini_meas_out,"*\n");
         }
     }
 
