@@ -147,6 +147,8 @@ public:
     string y_corr_out_fname;
     string z_corr_out_fname;
     string sys_corr_out_fname;
+    string elem_stress_corr_out_fname;
+    string node_stress_corr_out_fname;
     string vdw_in_fname;
     string bsite_in_fname;
     string icheckpoint_fname;  ///< Input Checkpoint file name

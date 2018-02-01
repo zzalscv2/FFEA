@@ -234,7 +234,7 @@ void Face::print_centroid() {
 void Face::print_nodes() {
 
     for(int i = 0; i < 4; ++i) {
-        fprintf(stderr, "Node %d: %f %f %f\n", i, n[i]->pos.x, n[i]->pos.y, n[i]->pos.z);
+        fprintf(stderr, "Node %d: %.14f %.14f %.14f\n", i, n[i]->pos.x, n[i]->pos.y, n[i]->pos.z);
     }
     fprintf(stderr, "\n");
 }

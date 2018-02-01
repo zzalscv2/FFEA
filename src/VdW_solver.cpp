@@ -469,7 +469,8 @@ bool VdW_solver::do_steric_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     // Force is proportional to the gradient, i. e.:
     arr3Resize<geoscalar,grr3>(steric_factor, dVdr);
 
-    grr3 ftmp1, ftmp2;
+    grr3 ftmp1, ftmp2,ftmp1_store[4], ftmp2_store[4];
+    
     #pragma omp critical
     {
         // Store the measurement
@@ -477,15 +478,95 @@ bool VdW_solver::do_steric_interaction(Face *f1, Face *f2, scalar *blob_corr) {
         // Finally, apply the force onto the nodes:
         for (int j = 0; j < 4; j++) {
             arr3Resize2<geoscalar,grr3>(phi1[j], dVdr, ftmp1);
+            ftmp1_store[j][0] = ftmp1[0];
+            ftmp1_store[j][1] = ftmp1[1];
+            ftmp1_store[j][2] = ftmp1[2];
             f1->add_force_to_node(j, ftmp1);
             // f1->add_bb_vdw_force_to_record(ftmp1, f2->daddy_blob->blob_index); // DEPRECATED
+            
+            //printf("ftmp1 for %d is %.14lf %.14lf %.14lf\n",j,ftmp1[0],ftmp1[1],ftmp1[2]);
 
             arr3Resize2<geoscalar,grr3>(ffea_const::mOne*phi2[j], dVdr, ftmp2);
+            ftmp2_store[j][0] = ftmp2[0];
+            ftmp2_store[j][1] = ftmp2[1];
+            ftmp2_store[j][2] = ftmp2[2];
             f2->add_force_to_node(j, ftmp2);
             // f2->add_bb_vdw_force_to_record(ftmp2, f1->daddy_blob->blob_index); // DEPRECATED
+            //printf("ftmp2 for %d is %.14lf %.14lf %.14lf\n",j,ftmp2[0],ftmp2[1],ftmp2[2]);
+        }
+    }
+    //printf("f1 positions are \n");
+    //f1->print_nodes();
+    //printf("f2 positions are \n");
+    //f2->print_nodes();
+    //vector3 postmp1,postmp2;
+    /*
+    printf("\n\n\n**************STARTING A FACE*******************\n\n\n");
+    scalar fxoprod1[4][3][3],fxoprod2[4][3][3], fxoprodtot[4][3][3], fxoprodtotsing[3][3], fxtotal=0;
+    
+    for (int k = 0; k < 3; k++) {
+            for (int l = 0; l < 3; l++) {
+            fxoprodtotsing[k][l] = 0;
+            }
+        }
+    for (int j = 0; j < 4; j++) {
+        for (int k = 0; k < 3; k++) {
+            for (int l = 0; l < 3; l++) {
+                fxoprod1[j][k][l]=0;
+                fxoprod2[j][k][l]=0;
+                fxoprodtot[j][k][l]=0;
+            }
+        }
+ 
+    }
+    for (int j = 0; j < 4; j++) {
+        fxoprod1[j][0][0] = f1->n[j]->pos.x*ftmp1_store[j][0];
+        fxoprod1[j][0][1] = f1->n[j]->pos.x*ftmp1_store[j][1];
+        fxoprod1[j][0][2] = f1->n[j]->pos.x*ftmp1_store[j][2];
+        fxoprod1[j][1][0] = f1->n[j]->pos.y*ftmp1_store[j][0];
+        fxoprod1[j][1][1] = f1->n[j]->pos.y*ftmp1_store[j][1];
+        fxoprod1[j][1][2] = f1->n[j]->pos.y*ftmp1_store[j][2];
+        fxoprod1[j][2][0] = f1->n[j]->pos.z*ftmp1_store[j][0];
+        fxoprod1[j][2][1] = f1->n[j]->pos.z*ftmp1_store[j][1];
+        fxoprod1[j][2][2] = f1->n[j]->pos.z*ftmp1_store[j][2];
+        
+        fxoprod2[j][0][0] = f2->n[j]->pos.x*ftmp2_store[j][0];
+        fxoprod2[j][0][1] = f2->n[j]->pos.x*ftmp2_store[j][1];
+        fxoprod2[j][0][2] = f2->n[j]->pos.x*ftmp2_store[j][2];
+        fxoprod2[j][1][0] = f2->n[j]->pos.y*ftmp2_store[j][0];
+        fxoprod2[j][1][1] = f2->n[j]->pos.y*ftmp2_store[j][1];
+        fxoprod2[j][1][2] = f2->n[j]->pos.y*ftmp2_store[j][2];
+        fxoprod2[j][2][0] = f2->n[j]->pos.z*ftmp2_store[j][0];
+        fxoprod2[j][2][1] = f2->n[j]->pos.z*ftmp2_store[j][1];
+        fxoprod2[j][2][2] = f2->n[j]->pos.z*ftmp2_store[j][2];
+        
+        for (int k = 0; k < 3; k++) {
+            for (int l = 0; l < 3; l++) {
+                fxtotal+= fxoprod1[j][k][l]+fxoprod2[j][k][l];
+                fxoprodtot[j][k][l] = fxoprod1[j][k][l]+fxoprod2[j][k][l];
+                fxoprodtotsing[k][l]+=fxoprod1[j][k][l]+fxoprod2[j][k][l];
+            }
         }
     }
 
+    
+    for (int j = 0; j < 4; j++){
+        printf("fxoprod1 for node %d in blob %d is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n\n*\n",j,fxoprod1[j][0][0],fxoprod1[j][0][1],fxoprod1[j][0][2],fxoprod1[j][1][0],fxoprod1[j][1][1],fxoprod1[j][1][2],fxoprod1[j][2][0],fxoprod1[j][2][1],fxoprod1[j][2][2]);
+        printf("fxoprod2 for node %d in blob %d is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n\n*\n",j,fxoprod2[j][0][0],fxoprod2[j][0][1],fxoprod2[j][0][2],fxoprod2[j][1][0],fxoprod2[j][1][1],fxoprod2[j][1][2],fxoprod2[j][2][0],fxoprod2[j][2][1],fxoprod2[j][2][2]);
+        //printf("*\n*\n*\nfxoprodtot for node %d is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n\n*\n",j,fxoprodtot[j][0][0],fxoprodtot[j][0][1],fxoprodtot[j][0][2],fxoprodtot[j][1][0],fxoprodtot[j][1][1],fxoprodtot[j][1][2],fxoprodtot[j][2][0],fxoprodtot[j][2][1],fxoprodtot[j][2][2]);
+    }
+    printf("*\n*\n*\nfxoprodtotsing is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n\n*\n",fxoprodtotsing[0][0],fxoprodtotsing[0][1],fxoprodtotsing[0][2],fxoprodtotsing[1][0],fxoprodtotsing[1][1],fxoprodtotsing[1][2],fxoprodtotsing[2][0],fxoprodtotsing[2][1],fxoprodtotsing[2][2]);
+    //printf("fxtotal is %.14e\n",fxtotal);
+    
+    */
+    /*for (int j = 0; j < 4; j++) {
+       // postmp1 = f1->get_node_pos(j);
+       // postmp2 = f2->get_node_pos(j);
+        fxtotal+= f1->n[j]->pos.x*ftmp1_store[j][0]+f1->n[j]->pos.y*ftmp1_store[j][1]+f1->n[j]->pos.z*ftmp1_store[j][2];
+        fxtotal+= f2->n[j]->pos.x*ftmp2_store[j][0]+f2->n[j]->pos.y*ftmp2_store[j][1]+f2->n[j]->pos.z*ftmp2_store[j][2];
+    }*/
+    //printf("\n*\n*fxtotal is %.14e\n*\n*\n",fxtotal);
+    
     /* // //  Working version for F = k // //
     geoscalar vol, dVdr;
     grr3 force1, force2; //, n1_b;

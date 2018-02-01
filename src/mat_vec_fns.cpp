@@ -110,6 +110,13 @@ void mat3_mult_both_transposed(matrix3 A, matrix3 B, matrix3 result) {
                 result[i][j] += A[k][i] * B[j][k];
 }
 
+void mat3_plus_equal(matrix3 A, matrix3 B){
+    int i,j;
+    for (i = 0; i < 3; i++)
+        for (j = 0; j < 3; j++)
+            A[i][j]+=B[i][j];
+}
+
 /*
  *
  */

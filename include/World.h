@@ -148,6 +148,8 @@ private:
     vector<TCorrelatorDiffusion> diff_corr_z;
     //vector<TCorrelatorDiffusionVector> sys_corr;
     TCorrelatorDiffusionVector sys_corr = TCorrelatorDiffusionVector(35,16);
+    TCorrelatorStress elem_stress_corr = TCorrelatorStress(35,16);
+    TCorrelatorStress node_stress_corr = TCorrelatorStress(35,16);
     vector<Fmm_blob> Fmm_vec;
     Fmm_blob sys_blob;
     
@@ -226,6 +228,8 @@ private:
     FILE *y_corr_out;    
     FILE *z_corr_out;
     FILE *sys_corr_out;
+    FILE *elem_stress_corr_out;
+    FILE *node_stress_corr_out;
 
     /** Reader objects */
     FFEA_input_reader *ffeareader;
@@ -366,6 +370,10 @@ private:
     void calc_blob_corr_matrix(int num_blobs,scalar *blob_corr);
 
     scalar *blob_corr;
+    
+    matrix3 mean_stress_internal;
+    
+    matrix3 mean_stress_thermal;
 
     int die_with_dignity(int step, scalar wtime);
 };

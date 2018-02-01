@@ -616,10 +616,11 @@ int Blob::update_internal_forces() {
     int n; // Iterates through all the elements
     int tid; // Holds the current thread id (in parallel regions)
     int num_inversions = 0; // Counts the number of elements that have inverted (if > 0 then simulation has failed)
-
+    
+    double stress0,stress1,stress2,stress3,stress4,stress5,stress6,stress7,stress8,stress9;
     // Element loop
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel default(none) private(J, stress, du, tid, n) reduction(+:num_inversions)
+    #pragma omp parallel default(none) private(J, stress, du, tid, n) reduction(+:num_inversions,stress0,stress1,stress2,stress3,stress4,stress5,stress6,stress7,stress8,stress9)
     {
 #endif
 #ifdef USE_OPENMP
@@ -659,6 +660,8 @@ int Blob::update_internal_forces() {
             }
 
             elem[n].internal_stress_mag = sqrt(mat3_double_contraction_symmetric(stress));
+            
+            //printf("*************\nblob %d element %d stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,n,total_element_stress[0][0],total_element_stress[0][1],total_element_stress[0][2],total_element_stress[1][0],total_element_stress[1][1],total_element_stress[1][2],total_element_stress[2][0],total_element_stress[2][1],total_element_stress[2][2]);
 
             // Calculate internal forces of current element (or don't, depending on solver)
             if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
@@ -669,10 +672,24 @@ int Blob::update_internal_forces() {
             }
 
             elem[n].apply_stress_tensor(stress, du);
-
+            
+            
             // Store the contributions to the force on each of this element's nodes (Store them on
             // the element - they will be aggregated on the actual nodes outside of this parallel region)
             elem[n].add_element_force_vector(du);
+            
+            printf("*********n/ force added to blob %d element %d is:",blob_index,n);
+            print_vector12(du);
+            
+            stress0 = stress[0][0]*elem[n].vol;
+            stress1 = stress[0][1]*elem[n].vol;
+            stress2 = stress[0][2]*elem[n].vol;
+            stress3 = stress[1][0]*elem[n].vol;
+            stress4 = stress[1][1]*elem[n].vol;
+            stress5 = stress[1][2]*elem[n].vol;
+            stress6 = stress[2][0]*elem[n].vol;
+            stress7 = stress[2][1]*elem[n].vol;
+            stress8 = stress[2][2]*elem[n].vol;
 
             if (params->calc_es == 1) {
                 elem[n].calculate_electrostatic_forces();
@@ -691,7 +708,16 @@ int Blob::update_internal_forces() {
             FFEA_ERROR_MESSG("%d elements have inverted since the last step. Aborting simulation.\n", num_inversions);
         }
     }
-
+    total_element_stress[0][0]=stress0;
+    total_element_stress[0][1]=stress1;
+    total_element_stress[0][2]=stress2;
+    total_element_stress[1][0]=stress3;
+    total_element_stress[1][1]=stress4;
+    total_element_stress[1][2]=stress5;
+    total_element_stress[2][0]=stress6;
+    total_element_stress[2][1]=stress7;
+    total_element_stress[2][2]=stress8;
+    
     return FFEA_OK;
 }
 
@@ -3845,6 +3871,10 @@ void Blob::calc_rest_state_info() {
 int Blob::aggregate_forces_and_solve() {
     int n, m;
 
+
+    
+
+
     // Aggregate the forces on each node by summing the contributions from each element.
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp parallel for default(none) private(n, m) schedule(guided)
@@ -3855,8 +3885,32 @@ int Blob::aggregate_forces_and_solve() {
             force[n][1] += node[n].force_contributions[m]->y;
             force[n][2] += node[n].force_contributions[m]->z;
         }
+        
     }
-
+    //printf("*********n/ positions of blobe %d are:\n",blob_index);
+    mat3_set_zero(total_node_stress);
+    
+    for (int i = 0; i < num_nodes; i++) {
+        total_node_stress[0][0] += node[i].pos.x*force[i].x;
+        total_node_stress[0][1] += node[i].pos.x*force[i].y;
+        total_node_stress[0][2] += node[i].pos.x*force[i].z;
+        total_node_stress[1][0] += node[i].pos.y*force[i].x;
+        total_node_stress[1][1] += node[i].pos.y*force[i].y;
+        total_node_stress[1][2] += node[i].pos.y*force[i].z;
+        total_node_stress[2][0] += node[i].pos.z*force[i].x;
+        total_node_stress[2][1] += node[i].pos.z*force[i].y;
+        total_node_stress[2][2] += node[i].pos.z*force[i].z;
+    }
+    
+    printf("*********n/ positions of blobe %d are:\n",blob_index);
+    for (int i = 0; i < num_nodes; i++) {
+        printf("%.14e %.14e %.14e\n",node[i].pos.x,node[i].pos.y,node[i].pos.z);
+    }
+    printf("*********n/ forces of blobe %d are:\n",blob_index);
+    for (int i = 0; i < num_nodes; i++) {
+        printf("%.14e %.14e %.14e\n",force[i][0],force[i][1],force[i][2]);
+    }
+   
     // Aggregate surface forces onto nodes
     for (n = 0; n < num_surface_faces; n++) {
         for (int i = 0; i < 4; i++) {
@@ -3937,8 +3991,97 @@ int Blob::aggregate_forces_and_solve() {
         force[*it].y = 0;
         force[*it].z = 0;
     }
+    //for (n = 0; n < num_nodes; n++){
+    //    printf("\nNode %d pos is %.14e %.14e %.14e\n Node %d force pre linearisation %.14e %.14e %.14e\n",n,node[n].pos.x,node[n].pos.y,node[n].pos.z,n,force[n].x,force[n].y,force[n].z);
+    //}
+
+    
+    //printf("*************\nblob %d node stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,total_node_stress[0][0],total_node_stress[0][1],total_node_stress[0][2],total_node_stress[1][0],total_node_stress[1][1],total_node_stress[1][2],total_node_stress[2][0],total_node_stress[2][1],total_node_stress[2][2]);
+
 
     linearise_force();
+    
+
+    
+    
+    /*
+    scalar fxoprod1[4][3][3],fxoprodtotsing[3][3];
+    
+    for (int k = 0; k < 3; k++) {
+            for (int l = 0; l < 3; l++) {
+            fxoprodtotsing[k][l] = 0;
+        }
+    }
+    
+    for (int j = 0; j < 4; j++) {
+        for (int k = 0; k < 3; k++) {
+            for (int l = 0; l < 3; l++) {
+                fxoprod1[j][k][l]=0;
+            }
+        }
+ 
+    }
+    
+    
+    
+        fxoprod1[0][0][0] = node[0].pos.x*force[0].x;
+        fxoprod1[0][0][1] = node[0].pos.x*force[0].y;
+        fxoprod1[0][0][2] = node[0].pos.x*force[0].z;
+        fxoprod1[0][1][0] = node[0].pos.y*force[0].x;
+        fxoprod1[0][1][1] = node[0].pos.y*force[0].y;
+        fxoprod1[0][1][2] = node[0].pos.y*force[0].z;
+        fxoprod1[0][2][0] = node[0].pos.z*force[0].x;
+        fxoprod1[0][2][1] = node[0].pos.z*force[0].y;
+        fxoprod1[0][2][2] = node[0].pos.z*force[0].z;
+        
+        fxoprod1[1][0][0] = node[3].pos.x*force[3].x;
+        fxoprod1[1][0][1] = node[3].pos.x*force[3].y;
+        fxoprod1[1][0][2] = node[3].pos.x*force[3].z;
+        fxoprod1[1][1][0] = node[3].pos.y*force[3].x;
+        fxoprod1[1][1][1] = node[3].pos.y*force[3].y;
+        fxoprod1[1][1][2] = node[3].pos.y*force[3].z;
+        fxoprod1[1][2][0] = node[3].pos.z*force[3].x;
+        fxoprod1[1][2][1] = node[3].pos.z*force[3].y;
+        fxoprod1[1][2][2] = node[3].pos.z*force[3].z;
+        
+        fxoprod1[2][0][0] = node[5].pos.x*force[5].x;
+        fxoprod1[2][0][1] = node[5].pos.x*force[5].y;
+        fxoprod1[2][0][2] = node[5].pos.x*force[5].z;
+        fxoprod1[2][1][0] = node[5].pos.y*force[5].x;
+        fxoprod1[2][1][1] = node[5].pos.y*force[5].y;
+        fxoprod1[2][1][2] = node[5].pos.y*force[5].z;
+        fxoprod1[2][2][0] = node[5].pos.z*force[5].x;
+        fxoprod1[2][2][1] = node[5].pos.z*force[5].y;
+        fxoprod1[2][2][2] = node[5].pos.z*force[5].z;
+        
+        fxoprod1[3][0][0] = node[8].pos.x*force[8].x;
+        fxoprod1[3][0][1] = node[8].pos.x*force[8].y;
+        fxoprod1[3][0][2] = node[8].pos.x*force[8].z;
+        fxoprod1[3][1][0] = node[8].pos.y*force[8].x;
+        fxoprod1[3][1][1] = node[8].pos.y*force[8].y;
+        fxoprod1[3][1][2] = node[8].pos.y*force[8].z;
+        fxoprod1[3][2][0] = node[8].pos.z*force[8].x;
+        fxoprod1[3][2][1] = node[8].pos.z*force[8].y;
+        fxoprod1[3][2][2] = node[8].pos.z*force[8].z;
+    
+    
+    
+    for (int j = 0; j < 4; j++) {
+        for (int k = 0; k < 3; k++) {
+            for (int l = 0; l < 3; l++) {
+                fxoprodtotsing[k][l]+=fxoprod1[j][k][l];
+            }
+        }
+    }
+    
+    printf("**************\nfxoprodtotsing for blob %d is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n\n*\n",blob_index,fxoprodtotsing[0][0],fxoprodtotsing[0][1],fxoprodtotsing[0][2],fxoprodtotsing[1][0],fxoprodtotsing[1][1],fxoprodtotsing[1][2],fxoprodtotsing[2][0],fxoprodtotsing[2][1],fxoprodtotsing[2][2]);
+    
+    
+    /*
+    for (n = 0; n < num_nodes; n++){
+        printf("\nNode %d pos is %.14e %.14e %.14e\n Node %d force post linearisation %.14e %.14e %.14e\n",n,node[n].pos.x,node[n].pos.y,node[n].pos.z,n,force[n].x,force[n].y,force[n].z);
+    }
+    */
 
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix,
     // or Kv = f where K is the viscosity matrix for the system
@@ -4178,3 +4321,4 @@ void Blob::inc_pbc_count(int ind){
 void Blob::dec_pbc_count(int ind){
     pbc_count[ind]--;
 }
+

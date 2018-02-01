@@ -471,6 +471,12 @@ public:
     void inc_pbc_count(int ind);
     void dec_pbc_count(int ind);
     int read_pbc_count_from_file(FILE *mini_meas_out, int b);
+    
+    //scalar * get_total_element_stress();
+    //scalar * get_total_node_stress();
+    
+    matrix3 total_element_stress;
+    matrix3 total_node_stress;
 
 private:
 
@@ -737,7 +743,6 @@ private:
      * Calculate some quantities such as the rest jacobian, rest volume etc.
      */
     void calc_rest_state_info();
-
     /*
      *
      */
@@ -756,6 +761,7 @@ private:
     int build_mass_matrix();
 
     scalar total_vol;
+
 };
 
 #endif

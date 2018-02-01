@@ -64,6 +64,8 @@ World::World() {
     y_corr_out = NULL;    
     z_corr_out = NULL;
     sys_corr_out = NULL;
+    elem_stress_corr_out = NULL;
+    node_stress_corr_out = NULL;
 
     ffeareader = NULL;
     systemreader = NULL;
@@ -78,6 +80,9 @@ World::World() {
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
     rmsd = 0.0;
+    mat3_set_zero(mean_stress_internal);
+    mat3_set_zero(mean_stress_thermal);
+    
 }
 
 World::~World() {
@@ -159,6 +164,8 @@ World::~World() {
     y_corr_out = NULL;    
     z_corr_out = NULL;
     sys_corr_out = NULL;
+    elem_stress_corr_out = NULL;
+    node_stress_corr_out = NULL;
 
 
     delete vdw_solver;
@@ -182,6 +189,8 @@ World::~World() {
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
     rmsd = 0.0;
+    mat3_set_zero(mean_stress_internal);
+    mat3_set_zero(mean_stress_thermal);
 
 }
 
@@ -944,6 +953,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				if ((sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.sys_corr_out_fname.c_str())
 				    }
+				if ((elem_stress_corr_out = fopen(params.elem_stress_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.elem_stress_corr_out_fname.c_str())
+				    }
+				if ((node_stress_corr_out = fopen(params.node_stress_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.node_stress_corr_out_fname.c_str())
+				    }
 				cout<<"Managed dem opens for reads"<<endl;    
 				for(int i =0; i<params.num_blobs;i++){
 				    cout<<"this is blob"<<i<<endl;
@@ -967,13 +982,18 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				
 				    cout<<"it's treason, then?"<<endl;
 				    sys_corr.read_ffea(sys_corr_out);
-				    cout<<"did the read thing"<<endl;    
+				    cout<<"did the read thing"<<endl;  
+				    elem_stress_corr.read_ffea(elem_stress_corr_out);
+				    node_stress_corr.read_ffea(node_stress_corr_out);
+				      
 			        fclose(base_corr_out);
                     fclose(corrected_corr_out);
                     fclose(x_corr_out);
                     fclose(y_corr_out);    
                     fclose(z_corr_out);
                     fclose(sys_corr_out);
+                    fclose(elem_stress_corr_out);
+                    fclose(node_stress_corr_out);
                     cout<<"closed all the fs "<<endl;
 			}
 
@@ -2157,13 +2177,16 @@ int World::run() {
 
         // Update Blobs, while tracking possible errors.
         int fatal_errors = 0;
+        mat3_set_zero(mean_stress_internal);
+        mat3_set_zero(mean_stress_thermal);
 #ifdef FFEA_PARALLEL_PER_BLOB
         #pragma omp parallel for default(none) reduction(+: fatal_errors) schedule(static)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             if (active_blob_array[i]->update_internal_forces() == FFEA_ERROR) fatal_errors++;
+            mat3_plus_equal(mean_stress_internal,active_blob_array[i]->total_element_stress);
         }
-
+        printf("*************\nsystem total internal stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_internal[0][0],mean_stress_internal[0][1],mean_stress_internal[0][2],mean_stress_internal[1][0],mean_stress_internal[1][1],mean_stress_internal[1][2],mean_stress_internal[2][0],mean_stress_internal[2][1],mean_stress_internal[2][2]);
         if (fatal_errors > 0) return die_with_dignity(step, wtime);
 
 	// Now, for this step, all forces and positions are correct, as are the kinetic states
@@ -2171,11 +2194,7 @@ int World::run() {
             print_trajectory_and_measurement_files(step, wtime);
             print_kinetic_files(step);
         }
-        if (params.mini_meas!=0){
-            if ((step) % params.mini_meas == 0) {
-                print_mini_meas_file(step, wtime);
-        }
-        }
+
 
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
@@ -2184,12 +2203,19 @@ int World::run() {
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->update_positions();
+            mat3_plus_equal(mean_stress_thermal,active_blob_array[i]->total_node_stress);
         }
-
+        printf("*************\nsystem total thermal stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_thermal[0][0],mean_stress_thermal[0][1],mean_stress_thermal[0][2],mean_stress_thermal[1][0],mean_stress_thermal[1][1],mean_stress_thermal[1][2],mean_stress_thermal[2][0],mean_stress_thermal[2][1],mean_stress_thermal[2][2]);
 #ifdef BENCHMARK
         wtime4 = omp_get_wtime();
         time3 += wtime4 - wtime3;
 #endif
+
+        if (params.mini_meas!=0){
+            if ((step) % params.mini_meas == 0) {
+                print_mini_meas_file(step, wtime);
+            }
+        }
 
         /* Kinetic Part of each step */
 	// This part consists of a discrete change, and so must occur before a force calculation cycle to be consistent with measurement data
@@ -4052,7 +4078,9 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
          y_corr_out = fopen(params.y_corr_out_fname.c_str(), "w");
          z_corr_out = fopen(params.z_corr_out_fname.c_str(), "w");
          sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "w");
-	
+         elem_stress_corr_out = fopen(params.elem_stress_corr_out_fname.c_str(), "w");
+         node_stress_corr_out = fopen(params.node_stress_corr_out_fname.c_str(), "w");
+         	
      
         for(int i = 0; i < params.num_blobs; ++i){
             diff_vec[i].save_ffea(base_corr_out);
@@ -4072,13 +4100,17 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
             fflush(z_corr_out);*/
         }
         
-        sys_corr.save_ffea(sys_corr_out);       
+        sys_corr.save_ffea(sys_corr_out);
+        elem_stress_corr.save_ffea(elem_stress_corr_out); 
+        node_stress_corr.save_ffea(node_stress_corr_out);       
         fclose(base_corr_out);
         fclose(corrected_corr_out);
         fclose(x_corr_out);
         fclose(y_corr_out);    
         fclose(z_corr_out);
         fclose(sys_corr_out);
+        fclose(elem_stress_corr_out);
+        fclose(node_stress_corr_out);
     }
 
 
@@ -4221,7 +4253,12 @@ void World::print_mini_meas_file(int step, scalar wtime) {
             diff_corr_y[j].add(Fmm_vec[j].pos[1]);
             diff_corr_z[j].add(Fmm_vec[j].pos[2]);
         }
+        
+        elem_stress_corr.add(mean_stress_internal);
+        node_stress_corr.add(mean_stress_thermal);
         }
+        
+        
 
 
    	//fprintf(mini_meas_out, "\n");

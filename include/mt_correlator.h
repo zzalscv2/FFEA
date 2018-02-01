@@ -37,8 +37,10 @@ class TCorrelator{
         void toaverage();
         void clear();
         void save(std::string savename);
-        void save_out(std::string savename);
+        void save_out(FILE *fout);
         void read(std::string readname);
+        void save_ffea(FILE *fout);
+        void read_ffea(FILE *fout);
 };
 
 class TCorrelatorDiffusion{
@@ -172,6 +174,8 @@ class TCorrelatorStress{
         TCorrelator c2;
         TCorrelator c3;
         TCorrelator c4;
+        TCorrelator c5;
+        TCorrelator c6;
     public:
         double t[ntpoints],f[ntpoints];
         TCorrelatorStress(int numcorrin = 2,int pcorin=16);
@@ -179,7 +183,10 @@ class TCorrelatorStress{
         void add(matrix3 w, int k=1);
         void evaluate();
         void clear();
+        void save_ffea(FILE *fout);
+        void read_ffea(FILE *fout);
         void save(std::string savename);
+        void save_out(FILE *fout);
         int read(std::string readname);
 };
 
