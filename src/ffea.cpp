@@ -57,8 +57,8 @@ int main(int argc, char *argv[])
     cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
     //cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
     // cout << " Version:\tSuper Saiyan " << FFEA_MASCOT << " " << FFEA_VERSION << "(Version " << FFEA_VERSION << ")" << endl;
-    cout << "\tCoding:   Albert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk),\n" << endl;
-    cout << "\tTheory:   Oliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou\n" << endl;
+    cout << "\tCoding:   Albert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk), Rob Welch (py12rw@leeds.ac.uk)\n" << endl;
+    cout << "\tTheory:   Oliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou, Rob Welch\n" << endl;
 
     print_ffea_version(stdout);
     print_ffea_compilation_details(stdout);
