@@ -560,7 +560,7 @@ float get_bend_energy_mutual_parallel_transport(
     bend_energy = bend_energy*(1/(L_i)); // constant!
 
     assert(not_simulation_destroying(bend_energy) && "get_bend_energy_from_p is simulation destroying.");
-    assert(bend energy < 1900000850 && "bend energy is very large. Please fire this up in gdb!");
+    assert(bend_energy < 1900000850 && "bend energy is very large. Please fire this up in gdb!");
 
 
     return bend_energy;
