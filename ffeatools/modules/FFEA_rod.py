@@ -1,4 +1,32 @@
 # -*- coding: utf-8 -*-
+# 
+#  This file is part of the FFEA simulation package
+#  
+#  Copyright (c) by the Theory and Development FFEA teams,
+#  as they appear in the README.md file. 
+# 
+#  FFEA is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+# 
+#  FFEA is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+# 
+#  You should have received a copy of the GNU General Public License
+#  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
+# 
+#  To help us fund FFEA development, we humbly ask that you cite 
+#  the research papers on the package.
+#
+
+"""
+        FFEA_rod.py
+        Author: Rob Welch, University of Leeds
+        Email: py12rw@leeds.ac.uk
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -284,57 +312,7 @@ class FFEA_rod:
             
         rod_file.close()
             
-            
-            
-        
-        """
-        try:
-            StringIO
-            shutil
-        except NameError:
-            import cStringIO as StringIO
-            import shutil
-            sio = StringIO.StringIO()
-        
-        def fast_write(sio, obj, file_obj): #manually buffering my I/O, probably pointless
-            np.savetxt(sio, obj, newline=", ", delimiter="")
-            sio.write("\n")
-            
-        # NOTE: THIS NEEDS TO LOOP OVER A TRAJECTORY FOR ROD.THINGY[i].FLATTEN()
-        # CAN WRITE NEW FRAMES BY WRITING TO SIO AS IF IT WERE A PYTHON FILE (e.g. sio.write())
-        
-        for frame in range(self.num_frames):
-            
-            sio.write("FRAME "+str(frame)+" ROD "+str(self.rod_no)+"\n")
-        
-            fast_write(sio, self.current_r[frame].flatten(), rod_file)
-            fast_write(sio, self.current_m[frame].flatten(), rod_file)
-            fast_write(sio, self.equil_r[frame].flatten()*np.average(self.e_i), rod_file)
-            fast_write(sio, self.equil_m[frame].flatten()*np.average(self.e_i), rod_file)
-            fast_write(sio, self.perturbed_x_energy_positive[frame].flatten(), rod_file)
-            fast_write(sio, self.perturbed_y_energy_positive[frame].flatten(), rod_file)
-            fast_write(sio, self.perturbed_z_energy_positive[frame].flatten(), rod_file)
-            fast_write(sio, self.twisted_energy_positive[frame].flatten(), rod_file)
-            fast_write(sio, self.perturbed_x_energy_negative[frame].flatten(), rod_file)
-            fast_write(sio, self.perturbed_y_energy_negative[frame].flatten(), rod_file)
-            fast_write(sio, self.perturbed_z_energy_negative[frame].flatten(), rod_file)
-            fast_write(sio, self.twisted_energy_negative[frame].flatten(), rod_file)
-            fast_write(sio, self.material_params[frame].flatten(), rod_file)
-            fast_write(sio, self.B_matrix[frame].flatten(), rod_file)
-            
-            sio.seek(0)
-            shutil.copyfileobj(sio, rod_file)
-            
-        
-        sio.close()
-        rod_file.close()
-#        rod_file.write(sio.getvalue()+"\n")
 
-        """
-
-
-        #str(rod.flatten().tolist())
-        
     def get_p_i(self, x):
         """
         The rod trajectory files are only given in terms of the node positions.
