@@ -117,7 +117,7 @@ int FFEA_input_reader::file_to_lines(string script_fname, vector<string> *script
 int FFEA_input_reader::extract_block(string block_title, int block_index, vector<string> input, vector<string> *output, bool mandatory/*=true*/) {
 
 	// Immediate error checking
-	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs" && block_title != "precomp" && block_title != "ctforces") {
+	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs" && block_title != "precomp" && block_title != "ctforces" && block_title != "rod" && block_title != "coupling" ) {
 		FFEA_error_text();
 		cout << "Unrecognised block: " << block_title << ". Block structure is:" << endl;
 		cout << "<param>\n</param>\n<system>\n\t<blob>\n\t\t<conformation>\n\t\t</conformation>\n\t\t\t.\n\t\t\t.\n\t\t\t.\n\t\t<kinetics>\n\t\t\t<maps>\n\t\t\t</maps>\n\t\t</kinetics>\n\t</blob>\n\t\t.\n\t\t.\n\t\t.\n\t<interactions>\n\t\t<springs>\n\t\t</springs>\n\t\t<precomp>\n\t\t</precomp>\n\t\t<ctforces>\n\t\t</ctforces>\n\t</interactions>\n</system>" << endl;
@@ -130,7 +130,14 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 	for(string_it = input.begin(); string_it != input.end(); ++string_it) {
 		buf_string = boost::erase_last_copy(boost::erase_first_copy(*string_it, "<"), ">");
 		boost::trim(buf_string);
-		//cout << buf_string << endl;
+        
+        //Parse an enclosing blokc with attributes (e.g. <coupling type = rod>)
+        vector<string> split_buf_string;
+        boost::split(split_buf_string, buf_string, boost::is_any_of(" "));
+        if (split_buf_string.size() > 1){
+            buf_string = split_buf_string[0];
+        }
+        
 		if(buf_string == block_title) {
 			
 			if(copying == 1) {
@@ -169,7 +176,7 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 	}
 	
 }
-
+	
 /** 
  * @brief parse an input ffea line
  * @param[in] string input e. g.,  string < blah = whatever>
@@ -277,3 +284,88 @@ int FFEA_input_reader::split_string(string input, scalar *output, string delim) 
 	}
 	return lrvalvec.size();
 }
+
+// Returns a pointer to a rod object from an .ffea script that's already
+// been converted into a vector<string>. Also needs the block_id. Before
+// this can be used, we need a way to get the number of rods specified
+// in the file, so we can allocate an array for their pointers and know
+// what block_ids to assign.
+rod::Rod* FFEA_input_reader::rod_from_block(vector<string> block, int block_id){
+    
+    // Find trajectory file
+    string tag_out[2];
+    string filename;
+    for ( auto &tag_str : block ) {
+        this->parse_tag(tag_str, tag_out);
+        if (tag_out[0] == "input"){
+            filename = tag_out[1];
+        }
+    }
+    
+    // Create rod object
+    //rod::Rod *current_rod;
+    rod::Rod* current_rod = new rod::Rod(filename, block_id);
+    current_rod->load_header(filename);
+    
+    current_rod->load_contents(filename);
+    current_rod->set_units();
+    
+    int coupling_counter = 0;
+    for ( auto &tag_str : block ) {
+        this->parse_tag(tag_str, tag_out);
+        if (tag_out[0] == "output"){ current_rod->change_filename(tag_out[1]); }
+        
+        if (tag_out[0] == "scale"){
+            float scale = stof(tag_out[1]);
+            std::cout << "I have been told to scale this rod by a factor of " << scale << " but I can't.\n";
+            //current_rod.scale(to_scale); //TODO: can't scale yet!!!!!
+        }
+        
+        if (tag_out[0] == "centroid_pos"){
+            // get centroid and convert it to array
+            scalar centroid_pos[3];
+            float converted_centroid[3];
+            tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
+            this->split_string(tag_out[1], centroid_pos, ",");
+            // convert to floats
+            std::copy(centroid_pos, centroid_pos+3, converted_centroid);
+            // set centroid
+            current_rod->translate_rod(current_rod->current_r, converted_centroid);
+            current_rod->translate_rod(current_rod->equil_r, converted_centroid);
+        }
+        
+        if (tag_out[0] == "rotation"){
+            // get centroid and convert it to array
+            scalar rotation[3];
+            tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
+            this->split_string(tag_out[1], rotation, ",");
+            // convert to floats
+            float converted_rotation[3];
+            std::copy(rotation, rotation+3, converted_rotation);
+            // rotate that bad boy
+            current_rod->rotate_rod(converted_rotation);
+        }
+        // parse coupling block
+        if (tag_out[0] == "coupling type"){
+            std::cout << "Coupling data parsed, but coupling is not yet implemented!\n";
+            vector<string> sub_block;
+            this->extract_block("coupling", coupling_counter, block, &sub_block, true);
+            string sub_tag_out[2];
+            for ( auto &sub_tag_str : sub_block ) {
+                this->parse_tag(sub_tag_str, sub_tag_out);
+                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "rod")){ }
+                if ((sub_tag_out[0] == "to_rod_id") & (tag_out[1] == "rod")){ }
+                if ((sub_tag_out[0] == "to_rod_node_id") & (tag_out[1] == "rod")){ } // no way to add couplings yet
+                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "blob")){ }
+                if ((sub_tag_out[0] == "to_blob_id") & (tag_out[1] == "blob")){ }
+                if ((sub_tag_out[0] == "to_blob_node_id") & (tag_out[1] == "blob")){ }
+            }
+            coupling_counter += 1;
+        }
+            
+    }
+    
+    return current_rod;
+    
+}
+
