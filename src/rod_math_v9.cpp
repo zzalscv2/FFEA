@@ -40,7 +40,8 @@
 #include "dimensions.h"
 #include <iomanip>    
 
-
+namespace rod {
+    
      /*---------*/
     /* Utility */
    /*---------*/
@@ -964,3 +965,5 @@ void get_perturbation_energy(
 //  (0v0)  I AM DEBUG OWL. PUT ME IN YOUR
 //  (| |)  SOURCE CODE AND IT WILL BE BUG
 //   W-W   FREE FOREVER. HOOT HOOT! 
+
+} //end namespace

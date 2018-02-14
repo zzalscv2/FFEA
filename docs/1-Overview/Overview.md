@@ -113,7 +113,6 @@ FFEA Team  {#FFEAteam}
    * Ben Hanson
    * Robin Richardson
    * Robin Oliver
-   * [Rob Welch](http://robwel.ch/)
 
 
 Thanks {#thanks}

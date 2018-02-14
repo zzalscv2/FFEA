@@ -38,6 +38,8 @@
 #include <stdio.h>
 #include <random>
 
+namespace rod {
+
 std::vector <float> stof_vec (std::vector <std::string> vec_in, int length);
 struct Rod
 {
@@ -108,4 +110,5 @@ struct Rod
   Rod translate_rod(float* r, float translation_vec[3]);
   Rod rotate_rod(float euler_angles[3]);
 };
-// int main ();
+
+} //end namespace
