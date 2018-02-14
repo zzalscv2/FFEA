@@ -36,6 +36,8 @@
 #include <cstring>
 #include "dimensions.h"
 
+namespace rod {
+
 const double boltzmann_constant = 1.3806503e-23;
 static const int x = 0;
 static const int y = 1;
@@ -172,3 +174,5 @@ void get_perturbation_energy(
         float *m_all_equil,
         float energies[3]
 );
+
+}

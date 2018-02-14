@@ -42,7 +42,7 @@ add_library(ffea_lib
     
 add_executable(ffea ffea.cpp CG_solver.cpp ConjugateGradientSolver.cpp
     FFEA_user_info.cpp mat_vec_fns.cpp NoMassCGSolver.cpp 
-    SparseMatrixFixedPattern.cpp World.cpp Blob.cpp)
+    SparseMatrixFixedPattern.cpp World.cpp Blob.cpp rod_math_v9.cpp rod_structure.cpp)
 if (USE_OPENMP)
   target_compile_definitions(ffea PRIVATE -DFFEA_PARALLEL_WITHIN_BLOB)
 endif (USE_OPENMP)
@@ -50,7 +50,7 @@ endif (USE_OPENMP)
 if (USE_OPENMP)
   add_executable(ffea_mb ffea.cpp CG_solver.cpp ConjugateGradientSolver.cpp
     FFEA_user_info.cpp mat_vec_fns.cpp NoMassCGSolver.cpp 
-    SparseMatrixFixedPattern.cpp World.cpp Blob.cpp)
+    SparseMatrixFixedPattern.cpp World.cpp Blob.cpp  rod_math_v9.cpp rod_structure.cpp)
   target_compile_definitions(ffea_mb PRIVATE -DFFEA_PARALLEL_PER_BLOB)
 endif(USE_OPENMP)
 
