@@ -117,8 +117,9 @@ SimulationParams::SimulationParams() {
     y_corr_out_fname = "\n";
     z_corr_out_fname = "\n";
     sys_corr_out_fname = "\n";
-    elem_stress_corr_out_fname = "\n";
-    node_stress_corr_out_fname = "\n";
+    elastic_stress_corr_out_fname = "\n";
+    viscous_stress_corr_out_fname = "\n";
+    total_stress_corr_out_fname = "\n";
 }
 
 SimulationParams::~SimulationParams() {
@@ -208,9 +209,9 @@ SimulationParams::~SimulationParams() {
     y_corr_out_fname = "\n";
     z_corr_out_fname = "\n";
     sys_corr_out_fname = "\n";
-    elem_stress_corr_out_fname = "\n";
-    node_stress_corr_out_fname = "\n";
-
+    elastic_stress_corr_out_fname = "\n";
+    viscous_stress_corr_out_fname = "\n";
+    total_stress_corr_out_fname = "\n";
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
@@ -569,15 +570,20 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 			sys_corr_basename = RemoveFileExtension(sys_corr_basename);
 			sys_corr_out_fname = sys_corr_basename + "_sys_corr.txt";
 		}
-		if (elem_stress_corr_out_fname == "\n") {
-			string elem_stress_corr_basename = measurement_out_fname;
-			elem_stress_corr_basename = RemoveFileExtension(elem_stress_corr_basename);
-			elem_stress_corr_out_fname = elem_stress_corr_basename + "_elem_stress_corr.txt";
+		if (elastic_stress_corr_out_fname == "\n") {
+			string elastic_stress_corr_basename = measurement_out_fname;
+			elastic_stress_corr_basename = RemoveFileExtension(elastic_stress_corr_basename);
+			elastic_stress_corr_out_fname = elastic_stress_corr_basename + "_elastic_stress_corr.txt";
 		}
-		if (node_stress_corr_out_fname == "\n") {
-			string node_stress_corr_basename = measurement_out_fname;
-			node_stress_corr_basename = RemoveFileExtension(node_stress_corr_basename);
-			node_stress_corr_out_fname = node_stress_corr_basename + "_node_stress_corr.txt";
+		if (viscous_stress_corr_out_fname == "\n") {
+			string viscous_stress_corr_basename = measurement_out_fname;
+			viscous_stress_corr_basename = RemoveFileExtension(viscous_stress_corr_basename);
+			viscous_stress_corr_out_fname = viscous_stress_corr_basename + "_viscous_stress_corr.txt";
+		}
+		if (total_stress_corr_out_fname == "\n") {
+			string total_stress_corr_basename = measurement_out_fname;
+			total_stress_corr_basename = RemoveFileExtension(total_stress_corr_basename);
+			total_stress_corr_out_fname = total_stress_corr_basename + "_total_stress_corr.txt";
 		}
 		
     } else if (lvalue == "kinetics_out_fname") {

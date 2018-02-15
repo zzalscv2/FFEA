@@ -279,7 +279,7 @@ void TCorrelator::save_ffea(FILE *fout){
     fprintf(fout,"%d\t%d\t%d\n",npcorr,npcorrmax,nexp);
     for(int i = 0;i<=numcorr;i++){
         for(int j = 0;j<pcor+3;j++){
-            fprintf(fout,"%f\t%f\t%lld\n",aa[i*(pcor+3) + j],cor[i*(pcor+3) + j],ncor[i*(pcor+3) + j]);
+            fprintf(fout,"%.15e\t%.15e\t%lld\n",aa[i*(pcor+3) + j],cor[i*(pcor+3) + j],ncor[i*(pcor+3) + j]);
         }
     }
 }
@@ -2115,7 +2115,7 @@ void TCorrelatorDiffusion::save_ffea(FILE *fout){
     fprintf(fout,"%d\t%d\t%d\n",npcorr,npcorrmax,nexp);
     for(int i = 0;i<=numcorr;i++){
         for(int j = 0;j<pcor+3;j++){
-            fprintf(fout,"%f\t%f\t%lld\n",aa[i*(pcor+3) + j],cor[i*(pcor+3) + j],ncor[i*(pcor+3) + j]);
+            fprintf(fout,"%.15e\t%.15e\t%lld\n",aa[i*(pcor+3) + j],cor[i*(pcor+3) + j],ncor[i*(pcor+3) + j]);
         }
     }
        

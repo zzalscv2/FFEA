@@ -475,8 +475,10 @@ public:
     //scalar * get_total_element_stress();
     //scalar * get_total_node_stress();
     
-    matrix3 total_element_stress;
-    matrix3 total_node_stress;
+    matrix3 total_elastic_stress;
+    matrix3 total_viscous_stress;
+    
+    void calc_tot_visc(matrix3 stress);
 
 private:
 

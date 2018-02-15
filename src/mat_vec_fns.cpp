@@ -117,6 +117,15 @@ void mat3_plus_equal(matrix3 A, matrix3 B){
             A[i][j]+=B[i][j];
 }
 
+void mat3_add(matrix3 A, matrix3 B, matrix3 result){
+
+    int i,j;
+    for (i = 0; i < 3; i++)
+        for (j = 0; j < 3; j++)
+            result[i][j] = A[i][j]+B[i][j]; 
+
+}
+
 /*
  *
  */

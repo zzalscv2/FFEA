@@ -64,8 +64,9 @@ World::World() {
     y_corr_out = NULL;    
     z_corr_out = NULL;
     sys_corr_out = NULL;
-    elem_stress_corr_out = NULL;
-    node_stress_corr_out = NULL;
+    elastic_stress_corr_out = NULL;
+    viscous_stress_corr_out = NULL;
+    total_stress_corr_out = NULL;
 
     ffeareader = NULL;
     systemreader = NULL;
@@ -80,9 +81,9 @@ World::World() {
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
     rmsd = 0.0;
-    mat3_set_zero(mean_stress_internal);
-    mat3_set_zero(mean_stress_thermal);
-    
+    mat3_set_zero(mean_stress_elastic);
+    mat3_set_zero(mean_stress_viscous);
+    mat3_set_zero(mean_stress_total);
 }
 
 World::~World() {
@@ -164,8 +165,9 @@ World::~World() {
     y_corr_out = NULL;    
     z_corr_out = NULL;
     sys_corr_out = NULL;
-    elem_stress_corr_out = NULL;
-    node_stress_corr_out = NULL;
+    elastic_stress_corr_out = NULL;
+    viscous_stress_corr_out = NULL;
+    total_stress_corr_out = NULL;
 
 
     delete vdw_solver;
@@ -189,8 +191,9 @@ World::~World() {
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
     rmsd = 0.0;
-    mat3_set_zero(mean_stress_internal);
-    mat3_set_zero(mean_stress_thermal);
+    mat3_set_zero(mean_stress_elastic);
+    mat3_set_zero(mean_stress_viscous);
+    mat3_set_zero(mean_stress_total);
 
 }
 
@@ -953,11 +956,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				if ((sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.sys_corr_out_fname.c_str())
 				    }
-				if ((elem_stress_corr_out = fopen(params.elem_stress_corr_out_fname.c_str(), "r")) == NULL) {
-				        FFEA_FILE_ERROR_MESSG(params.elem_stress_corr_out_fname.c_str())
+				if ((elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.elastic_stress_corr_out_fname.c_str())
 				    }
-				if ((node_stress_corr_out = fopen(params.node_stress_corr_out_fname.c_str(), "r")) == NULL) {
-				        FFEA_FILE_ERROR_MESSG(params.node_stress_corr_out_fname.c_str())
+				if ((viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.viscous_stress_corr_out_fname.c_str())
+				    }
+				if ((total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.total_stress_corr_out_fname.c_str())
 				    }
 				cout<<"Managed dem opens for reads"<<endl;    
 				for(int i =0; i<params.num_blobs;i++){
@@ -983,8 +989,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				    cout<<"it's treason, then?"<<endl;
 				    sys_corr.read_ffea(sys_corr_out);
 				    cout<<"did the read thing"<<endl;  
-				    elem_stress_corr.read_ffea(elem_stress_corr_out);
-				    node_stress_corr.read_ffea(node_stress_corr_out);
+				    elastic_stress_corr.read_ffea(elastic_stress_corr_out);
+				    viscous_stress_corr.read_ffea(viscous_stress_corr_out);
+				    total_stress_corr.read_ffea(total_stress_corr_out);
 				      
 			        fclose(base_corr_out);
                     fclose(corrected_corr_out);
@@ -992,8 +999,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                     fclose(y_corr_out);    
                     fclose(z_corr_out);
                     fclose(sys_corr_out);
-                    fclose(elem_stress_corr_out);
-                    fclose(node_stress_corr_out);
+                    fclose(elastic_stress_corr_out);
+                    fclose(viscous_stress_corr_out);
+                    fclose(total_stress_corr_out);
                     cout<<"closed all the fs "<<endl;
 			}
 
@@ -2177,16 +2185,19 @@ int World::run() {
 
         // Update Blobs, while tracking possible errors.
         int fatal_errors = 0;
-        mat3_set_zero(mean_stress_internal);
-        mat3_set_zero(mean_stress_thermal);
+        mat3_set_zero(mean_stress_elastic);
+        mat3_set_zero(mean_stress_viscous);
+        mat3_set_zero(mean_stress_total);
 #ifdef FFEA_PARALLEL_PER_BLOB
         #pragma omp parallel for default(none) reduction(+: fatal_errors) schedule(static)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             if (active_blob_array[i]->update_internal_forces() == FFEA_ERROR) fatal_errors++;
-            mat3_plus_equal(mean_stress_internal,active_blob_array[i]->total_element_stress);
+            mat3_plus_equal(mean_stress_elastic,active_blob_array[i]->total_elastic_stress);
         }
-        printf("*************\nsystem total internal stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_internal[0][0],mean_stress_internal[0][1],mean_stress_internal[0][2],mean_stress_internal[1][0],mean_stress_internal[1][1],mean_stress_internal[1][2],mean_stress_internal[2][0],mean_stress_internal[2][1],mean_stress_internal[2][2]);
+        //printf("*************\nsystem total internal stresses pre vol av are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
+        mat3_scale(mean_stress_elastic,1/(box_dim.x*box_dim.y*box_dim.z*mesoDimensions::volume));
+        //printf("*************\nsystem total elastic stresses post vol av are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
         if (fatal_errors > 0) return die_with_dignity(step, wtime);
 
 	// Now, for this step, all forces and positions are correct, as are the kinetic states
@@ -2195,7 +2206,7 @@ int World::run() {
             print_kinetic_files(step);
         }
 
-
+    // Velocities update as part of update positions 
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
 
@@ -2203,9 +2214,8 @@ int World::run() {
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->update_positions();
-            mat3_plus_equal(mean_stress_thermal,active_blob_array[i]->total_node_stress);
         }
-        printf("*************\nsystem total thermal stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_thermal[0][0],mean_stress_thermal[0][1],mean_stress_thermal[0][2],mean_stress_thermal[1][0],mean_stress_thermal[1][1],mean_stress_thermal[1][2],mean_stress_thermal[2][0],mean_stress_thermal[2][1],mean_stress_thermal[2][2]);
+        //printf("*************\nsystem total thermal stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_thermal[0][0],mean_stress_thermal[0][1],mean_stress_thermal[0][2],mean_stress_thermal[1][0],mean_stress_thermal[1][1],mean_stress_thermal[1][2],mean_stress_thermal[2][0],mean_stress_thermal[2][1],mean_stress_thermal[2][2]);
 #ifdef BENCHMARK
         wtime4 = omp_get_wtime();
         time3 += wtime4 - wtime3;
@@ -4078,8 +4088,9 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
          y_corr_out = fopen(params.y_corr_out_fname.c_str(), "w");
          z_corr_out = fopen(params.z_corr_out_fname.c_str(), "w");
          sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "w");
-         elem_stress_corr_out = fopen(params.elem_stress_corr_out_fname.c_str(), "w");
-         node_stress_corr_out = fopen(params.node_stress_corr_out_fname.c_str(), "w");
+         elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "w");
+         viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "w");
+         total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "w");
          	
      
         for(int i = 0; i < params.num_blobs; ++i){
@@ -4101,16 +4112,19 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         }
         
         sys_corr.save_ffea(sys_corr_out);
-        elem_stress_corr.save_ffea(elem_stress_corr_out); 
-        node_stress_corr.save_ffea(node_stress_corr_out);       
+        elastic_stress_corr.save_ffea(elastic_stress_corr_out); 
+        viscous_stress_corr.save_ffea(viscous_stress_corr_out);
+        total_stress_corr.save_ffea(total_stress_corr_out);
+             
         fclose(base_corr_out);
         fclose(corrected_corr_out);
         fclose(x_corr_out);
         fclose(y_corr_out);    
         fclose(z_corr_out);
         fclose(sys_corr_out);
-        fclose(elem_stress_corr_out);
-        fclose(node_stress_corr_out);
+        fclose(elastic_stress_corr_out);
+        fclose(viscous_stress_corr_out);
+        fclose(total_stress_corr_out);        
     }
 
 
@@ -4205,6 +4219,12 @@ void World::print_mini_meas_file(int step, scalar wtime) {
     }
     */
     vector3 com;
+    matrix3 visc_stress_temp;
+    mat3_set_zero(visc_stress_temp);
+    matrix3 total_stress;
+    mat3_set_zero(total_stress);
+    mat3_set_zero(mean_stress_viscous);
+    
     if(params.msd_corr_calc ==1){
     for(int k = 0;k<3;k++){
         sys_blob.pos[k] = 0;
@@ -4252,12 +4272,24 @@ void World::print_mini_meas_file(int step, scalar wtime) {
             diff_corr_x[j].add(Fmm_vec[j].pos[0]);
             diff_corr_y[j].add(Fmm_vec[j].pos[1]);
             diff_corr_z[j].add(Fmm_vec[j].pos[2]);
+            active_blob_array[j]->calc_tot_visc(visc_stress_temp);
+            mat3_plus_equal(mean_stress_viscous,visc_stress_temp);
         }
         
-        elem_stress_corr.add(mean_stress_internal);
-        node_stress_corr.add(mean_stress_thermal);
-        }
+        mat3_scale(mean_stress_viscous,1/(box_dim.x*box_dim.y*box_dim.z*mesoDimensions::volume));
         
+        
+        mat3_add(mean_stress_viscous,mean_stress_elastic,mean_stress_total);
+        elastic_stress_corr.add(mean_stress_elastic);
+        viscous_stress_corr.add(mean_stress_viscous);
+        total_stress_corr.add(mean_stress_total);
+        /*if(step%100000==0){
+            printf("*******\nTotal Viscous Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_viscous[0][0],mean_stress_viscous[0][1],mean_stress_viscous[0][2],mean_stress_viscous[1][0],mean_stress_viscous[1][1],mean_stress_viscous[1][2],mean_stress_viscous[2][0],mean_stress_viscous[2][1],mean_stress_viscous[2][2]);
+            printf("*******\nTotal elastic Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
+            printf("*******\nTotal Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_total[0][0],mean_stress_total[0][1],mean_stress_total[0][2],mean_stress_total[1][0],mean_stress_total[1][1],mean_stress_total[1][2],mean_stress_total[2][0],mean_stress_total[2][1],mean_stress_total[2][2]);
+        }*/
+        }
+
         
 
 
