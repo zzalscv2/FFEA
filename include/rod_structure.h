@@ -34,7 +34,8 @@
 #include <string>
 #include <vector>
 #include "rod_math_v9.h"
-
+#include <omp.h>
+#include "RngStream.h"
 #include <stdio.h>
 #include <random>
 
@@ -55,7 +56,7 @@ struct Rod
   /** Global simulation parameters - eventually we may read this stuff in from the .ffea file **/
   float viscosity = 1; 
   float timestep = 0.002;
-  float temperature = 0; /** In Kelvin, obviously **/
+  float kT = 0; /** Boltzmann's constant x temperature. **/
   float perturbation_amount = 0.01; /** Amount by which nodes are perturbed during numerical differentiation. May want to override with a local value depending on the scale of the simulation. **/
   
   float translational_friction;
@@ -97,7 +98,7 @@ struct Rod
   Rod (std::string path, int set_rod_no);
   Rod set_units();
   Rod compute_rest_energy ();
-  Rod do_timestep ();
+  Rod do_timestep(RngStream rng[]);
   Rod add_force(float force[4], int node_index);
   Rod pin_node(bool pin_state, int node_index);
   Rod load_header (std::string filename);
@@ -106,7 +107,7 @@ struct Rod
   Rod write_array (float * array_ptr, int array_len, float unit_scale_factor);
   Rod write_mat_params_array(float *array_ptr, int array_len, float stretch_scale_factor, float twist_scale_factor, float length_scale_factor);
   Rod change_filename(std::string new_filename);
-  Rod equilibrate_rod();
+  Rod equilibrate_rod(RngStream rng[]);
   Rod translate_rod(float* r, float translation_vec[3]);
   Rod rotate_rod(float euler_angles[3]);
 };

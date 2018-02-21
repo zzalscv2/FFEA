@@ -126,7 +126,7 @@ float get_rotational_friction(float viscosity, float radius, float length, bool 
 float get_force(float bend_energy, float stretch_energy, float delta_x);
 float get_torque(float twist_energy, float delta_theta);
 float get_delta_r(float friction, float timestep, float force, float noise, float external_force);
-float get_noise(float timestep, float temperature, float friction, float random_number);
+float get_noise(float timestep, float kT, float friction, float random_number);
 
      /*------------*/
     /* Shorthands */

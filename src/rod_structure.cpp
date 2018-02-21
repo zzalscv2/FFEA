@@ -63,6 +63,10 @@ std::vector<float> stof_vec(std::vector<std::string> vec_in){
     return vec_out;
 }
 
+float random_number(float A, float B, RngStream rng[], int thread_id){
+    return ((A) + ((B)-(A))*(rng[thread_id].RandU01()));
+}
+
      /**-----**/
     /** Rod **/
    /**-----**/
@@ -160,11 +164,11 @@ Rod Rod::set_units(){
 /**
  Do a timestep.
  This function contains two loops. Both are over the nodes. The first loop
- populates the contents of the energy arrays, which we use to work out
+ populates the contents of the energy arrays, which int we use to work out
  delta E. The second one uses those energies to compute dynamics and
  applies those dynamics to the position arrays.
 */
-Rod Rod::do_timestep(){ // Most exciting method
+Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
     //The first loop is over all the nodes, and it computes all the energies for each one
     #pragma omp parallel for schedule(dynamic) //most of the execution time is spent in this first loop
@@ -350,6 +354,13 @@ Rod Rod::do_timestep(){ // Most exciting method
             continue;
         }
         
+        // Grab thread ID from openMP (needed for RNG)
+        #ifdef USE_OPENMP
+            int thread_id = omp_get_thread_num();
+        #else
+            int thread_id = 0;
+        #endif
+        
         // Get friction, needed for delta r and delta theta
         float translational_friction = get_translational_friction(this->viscosity, material_params[(node_no*3)+2], false);
         float length_for_friction = (get_absolute_length_from_array(equil_r, node_no, this->length) + get_absolute_length_from_array(equil_r, node_no-1, this->length))/2;
@@ -367,10 +378,10 @@ Rod Rod::do_timestep(){ // Most exciting method
         get_p_i(r_i, r_ip1, previous_p_i);
     
         // Get fluctuating force
-        float x_noise = get_noise(timestep, temperature, translational_friction, real_distribution->operator()(*mersenne_twister) );
-        float y_noise = get_noise(timestep, temperature, translational_friction, real_distribution->operator()(*mersenne_twister) );
-        float z_noise = get_noise(timestep, temperature, translational_friction, real_distribution->operator()(*mersenne_twister) );
-        float twist_noise = get_noise(timestep, temperature, rotational_friction, real_distribution->operator()(*mersenne_twister) );            
+        float x_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
+        float y_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
+        float z_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
+        float twist_noise = get_noise(timestep, kT, rotational_friction, random_number(-0.5, 0.5, rng, thread_id));            
 
         // Sum our energies and use them to compute the force            
         float x_force = (perturbed_x_energy_negative[node_no*3]+perturbed_x_energy_negative[(node_no*3)+1]+perturbed_x_energy_negative[(node_no*3)+2] - (perturbed_x_energy_positive[node_no*3]+perturbed_x_energy_positive[(node_no*3)+1]+perturbed_x_energy_positive[(node_no*3)+2] ))/perturbation_amount;
@@ -462,7 +473,6 @@ Rod Rod::do_timestep(){ // Most exciting method
  these will be overwritten by parameters from the .ffea file.
 */
 Rod Rod::load_header(std::string filename){
-    
     rod_filename = filename;
     file_ptr = fopen(filename.c_str(),"a");
     
@@ -537,7 +547,7 @@ Rod Rod::load_header(std::string filename){
     viscosity_constant_factor = mesoDimensions::pressure*mesoDimensions::time; ///poiseuille
     this->viscosity = 0.6913*pow(10, -3)/viscosity_constant_factor;
     this->timestep = 1e-12/mesoDimensions::time;
-    this->temperature = 0;
+    this->kT = 0;
     this->perturbation_amount = 0.001*pow(10,-9)/mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
     
     return *this;
@@ -725,10 +735,10 @@ Rod Rod::change_filename(std::string new_filename){
  arbitrary 1e-7 seconds and does not save the trajectory from the
  equilibration.
 */
-Rod Rod::equilibrate_rod(){
+Rod Rod::equilibrate_rod(RngStream rng[]){
     int no_steps = 1e-7/timestep; // this is arbitrary
     for (int i=0; i<no_steps; i++){
-        this->do_timestep();
+        this->do_timestep(rng);
     }
     return *this;
 }
