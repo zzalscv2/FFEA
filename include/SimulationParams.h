@@ -78,6 +78,7 @@ public:
     long long num_steps; ///< Number of time steps to run simulation for
     int check; ///< Every how many steps should the program 'check' the system i.e calculate energies, print snapshots etc.
     int num_blobs; ///< Number of blobs in the system
+    int num_rods; ///< Number of rods in the system
     int *num_conformations; ///< Number of conformations for each blob
     int *num_states; ///< Number of states for each blob
     int state_array_size;

@@ -143,6 +143,9 @@ private:
 
     /** @brief Which conformation is active in each blob */
     Blob **active_blob_array;
+    
+    /** @brief 1-D array containing pointers to all rod objects */
+    rod::Rod **rod_array;
 
     /** @brief Maps for kinetic switching of conformations */
     SparseMatrixFixedPattern ***kinetic_map;

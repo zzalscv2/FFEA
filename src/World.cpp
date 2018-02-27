@@ -30,6 +30,7 @@ World::World() {
 
     // Initialise everything to zero
     blob_array = NULL;
+    rod_array = NULL;
     spring_array = NULL;
     kinetic_map = NULL;
     kinetic_return_map = NULL;
@@ -84,6 +85,8 @@ World::~World() {
     blob_array = NULL;
     delete[] active_blob_array;
     active_blob_array = NULL;
+    delete[] rod_array;
+    rod_array = NULL;
 
     delete[] spring_array;
     spring_array = NULL;
@@ -1930,6 +1933,14 @@ int World::run() {
 
         // Apply springs directly to nodes
         apply_springs();
+        
+        // Todo: computing the force on the face nodes from the rod would go here
+        // Todo: setting the pseudo-rod on the face to its correct position would go here
+        // Do rods
+        for (int i=0; i<params.num_rods; i++){
+            rod_array[i]->do_timestep(rng);
+        }
+
 
 #ifdef FFEA_PARALLEL_FUTURE
         // Get the thread updating the VdW-LinkedLists if it has finished.
@@ -2154,7 +2165,7 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 }
 
 /**
- * @brief Parses <blobs>, <springs> and <precomp>.
+ * @brief Parses <blobs>, <springs>, <rods> and <precomp>.
  * @param[in] vector<string> script_vector, which is essentially the FFEA input file,
  *            line by line, as it comes out of FFEA_input_reader::file_to_lines
  */
@@ -2718,6 +2729,18 @@ int World::read_and_build_system(vector<string> script_vector) {
       return FFEA_ERROR;
     } 
 
+    // Create rods
+    rod_array = new rod::Rod*[params.num_rods];
+    for (int i=0; i<params.num_rods; i++){
+        // Init rod object
+        rod_array[i] = ffeareader->rod_from_block(script_vector, i);
+        
+        // Carry over params from script file
+        rod_array[i]->viscosity = params.stokes_visc;
+        rod_array[i]->timestep = params.dt;
+        rod_array[i]->kT = params.kT;
+    }
+
 /// /// 
     // Finally, get springs
     if (params.calc_springs == 1) {
@@ -2729,7 +2752,6 @@ int World::read_and_build_system(vector<string> script_vector) {
             return FFEA_ERROR;
         }
     }
-
     return FFEA_OK;
 }
 
@@ -3788,6 +3810,7 @@ void World::write_pre_print_to_trajfile(int step) {
     fprintf(trajectory_out, "*\n");
 
     fflush(trajectory_out);
+    
 }
 
 
@@ -3852,6 +3875,11 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     fflush(trajectory_out);
 #endif
     // TRAJECTORY END
+
+    //Write rod trajectory
+    for (int i=0; i<params.num_rods; i++){
+        rod_array[i]->write_frame_to_file();
+    }
 
 
     // Detailed Measurement Stuff.

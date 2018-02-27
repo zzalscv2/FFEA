@@ -30,6 +30,8 @@
 #define OUT ///< This is used to denote when a function modifies one of its parameters
 #define _USE_MATH_DEFINES ///<  This has to come before including cmath
 
+const static bool abort_on_fail = true; /// If the simulation becomes unstable, this will SIGABRT the whole program
+
 #include <cmath>
 #include <chrono>
 #include <iostream>
@@ -67,23 +69,33 @@ static const int ip1 = 3; ///< index of i+1th thing
 
 #define vec3d(x)for(int x = 0; x < 3; ++ x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
 
+/** Hopefully I won't ever have to use this. */
+void rod_abort(std::string message){
+    std::cout << "There has been a cataclysmic error in FFEA_rod. Here it is:\n" << message << "\n";
+    std::abort();
+}
+
 /**
  Check if a single value is simulation destroying. Here, simulation
  destroying means NaN or infinite.
 */
-bool not_simulation_destroying(float x){
-    return !(std::isnan(x) or std::isinf(x));
+bool not_simulation_destroying(float x, std::string message){
+    if(std::isnan(x) or std::isinf(x) ){
+        if (abort_on_fail){ rod_abort(message); }
+        else{ return false; }
+    }
+    return true;
 }
 
 /**
  This will do the same thing, but check an array 3 in length, and print
  a warning specifying which value it is.
 */
-bool not_simulation_destroying(float x[3]){
+bool not_simulation_destroying(float x[3], std::string message){
     for (int i=0; i<3; i++){
         if (std::isnan(i) or std::isinf(i)){
-            std::cout << i << "\033[1;31m is not a number!\033[0m\n";
-            return false;
+            if (abort_on_fail){ rod_abort(message); }
+            else{ return false; }
         }
     }
     return true;
@@ -115,14 +127,14 @@ void print_array(std::string array_name, float array[], int length){
 void normalize(float in[3], OUT float out[3]){
     float absolute = sqrt(in[0]*in[0] + in[1]*in[1] + in[2]*in[2]);
     vec3d(n){out[n] = in[n]/absolute;}
-    assert(not_simulation_destroying(out) && "Noramlisation is simulation destroying."); // this is a cheaty way to give a c-style assertion an actual message.
+    not_simulation_destroying(out, "Noramlisation is simulation destroying."); // this is a cheaty way to give a c-style assertion an actual message.
 }
 /**
  Get the absolute value of a vector.
 */
 float absolute(float in[3]){
     float absolute = sqrt(in[x]*in[x] + in[y]*in[y] + in[z]*in[z]);
-    assert(not_simulation_destroying(absolute) && "Absolute value is simulation destroying.");
+    not_simulation_destroying(absolute, "Absolute value is simulation destroying.");
     assert(absolute>0 && "Absolute value is lower than zero (WHAT?).");
     return absolute;
 }
@@ -135,7 +147,7 @@ void cross_product(float a[3], float b[3], float out[3]){ // 3x1 x 3x1
     out[x] = (a[y]*b[z]) - (a[z] * b[y]);
     out[y] = (a[z]*b[x]) - (a[x] * b[z]);
     out[z] = (a[x]*b[y]) - (a[y] * b[x]);
-    assert(not_simulation_destroying(out) && "Cross product is simulation destroying.");
+    not_simulation_destroying(out, "Cross product is simulation destroying.");
 }
 
 /**
@@ -206,7 +218,7 @@ void matmul_3x3_3x3(float a[9], float b[9], OUT float out[9]){
 */
 void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]){
     vec3d(n){p_i[n] = next_r[n] - curr_r[n];}
-    assert(not_simulation_destroying(p_i) && "Get_p_i is simulation destroying.");
+    not_simulation_destroying(p_i, "Get_p_i is simulation destroying.");
 }
 
 /**
@@ -224,7 +236,7 @@ void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3])
     float rhs[3];
     vec3d(n){ rhs[n] = right_multiplier * k_norm[n]; }
     vec3d(n){ v_rot[n] = cos_theta*v[n] + sin_theta*k_cross_v[n] + rhs[n]; }
-    assert(not_simulation_destroying(v_rot) && "Rodrigues' rotation is simulation destroying.");
+    not_simulation_destroying(v_rot, "Rodrigues' rotation is simulation destroying.");
 }
 
 /**
@@ -233,13 +245,17 @@ void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3])
  will give the float the benefit of the doubt and say the acos is zero.
 */
 float safe_cos(float in){
-    float out = std::acos(in);
-    if (not_simulation_destroying(out)){
-        return out;
-    }
-    else{
+    if (in < 1.01){
         return 0;
     }
+    
+    float out = std::acos(in);
+    if (std::isnan(out) or std::isinf(out)){
+        if (abort_on_fail){ rod_abort("Cosine of something much larger than 1."); }
+        else{ std::cout << "Warning: suspicious inverse cosine.\n"; return 0; }
+    }
+    
+    return out;
 }
  
  /**
@@ -291,7 +307,7 @@ float get_stretch_energy(float k, float p_i[3], float p_i_equil[3]){
     float diff = absolute(p_i) - absolute(p_i_equil);
     
     float stretch_energy = (diff*diff*0.5*k)/absolute(p_i_equil);
-    assert(not_simulation_destroying(stretch_energy) && "get_stretch_energy is simulation destroying.");
+    not_simulation_destroying(stretch_energy, "get_stretch_energy is simulation destroying.");
     
     return stretch_energy;
 }
@@ -335,7 +351,7 @@ float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil
     float delta_theta = safe_cos( m_prime[x]*m_i[x] + m_prime[y]*m_i[y] + m_prime[z]*m_i[z] );
     float delta_theta_equil = safe_cos( m_equil_prime[x]*m_i_equil[x] + m_equil_prime[y]*m_i_equil[y] + m_equil_prime[z]*m_i_equil[z] );   
     float twist_energy = (beta/l_i)*((delta_theta - delta_theta_equil)*(delta_theta - delta_theta_equil));
-    assert(not_simulation_destroying(twist_energy) && "get_twist_energy is simulation destroying.");
+    not_simulation_destroying(twist_energy, "get_twist_energy is simulation destroying.");
 
     return twist_energy;
 }
@@ -351,7 +367,7 @@ void get_kb_i(float p_im1[3], float p_i[3], OUT float kb_i[3]){
     cross_product(two_p_im1, p_i, top);
     float bottom = (absolute(p_im1)*absolute(p_i))+( (p_im1[x]*p_i[x])+(p_im1[y]*p_i[y])+(p_im1[z]*p_i[z]));
     vec3d(n){ kb_i[n] = top[n]/bottom; }
-    assert(not_simulation_destroying(kb_i) && "get_kb_i is simulation destroying.");
+    not_simulation_destroying(kb_i, "get_kb_i is simulation destroying.");
 }
 
 /**
@@ -361,8 +377,8 @@ void get_kb_i(float p_im1[3], float p_i[3], OUT float kb_i[3]){
 void get_omega_j_i(float kb_i[3], float n_j[3], float m_j[3], OUT float omega_j_i[2]){ //This is a column matrix not a vector
     omega_j_i[0] = (kb_i[x]*n_j[x])+(kb_i[y]*n_j[y])+(kb_i[z]*n_j[z]);
     omega_j_i[1] = -1*((kb_i[x]*m_j[x])+(kb_i[y]*m_j[y])+(kb_i[z]*m_j[z]));  
-    assert(not_simulation_destroying(omega_j_i[0]) && "get_omega_j_i is simulation destroying.");
-    assert(not_simulation_destroying(omega_j_i[1]) && "get_omega_j_i is simulation destroying.");
+    not_simulation_destroying(omega_j_i[0], "get_omega_j_i is simulation destroying.");
+    not_simulation_destroying(omega_j_i[1], "get_omega_j_i is simulation destroying.");
 }
 
 /**
@@ -375,7 +391,7 @@ float get_bend_energy(float omega_i_im1[2], float omega_i_im1_equil[2], float B_
     delta_omega[0] = omega_i_im1[0] - omega_i_im1_equil[0];
     delta_omega[1] = omega_i_im1[1] - omega_i_im1_equil[1];
     float result = delta_omega[0]*(delta_omega[0]*B_equil[0] + delta_omega[1]*B_equil[2]) + delta_omega[1]*(delta_omega[0]*B_equil[1] + delta_omega[1]*B_equil[3]);
-    assert(not_simulation_destroying(result) && "get_bend_energy is simulation destroying.");
+    not_simulation_destroying(result, "get_bend_energy is simulation destroying.");
     return result;
 }
 
@@ -436,7 +452,7 @@ float get_bend_energy_from_p(
     bend_energy += get_bend_energy(omega_j_im1, omega_j_im1_equil, B_im1_equil); //I THINK USING B_im1_equil IS WRONG
     bend_energy = bend_energy*(1/(2*l_i)); // constant!
     
-    assert(not_simulation_destroying(bend_energy) && "get_bend_energy_from_p is simulation destroying.");
+    not_simulation_destroying(bend_energy, "get_bend_energy_from_p is simulation destroying.");
     
     if (bend_energy >= 1900000850){
         std::cout << "bend energy looks a bit large... here's a dump \n";
@@ -560,8 +576,8 @@ float get_bend_energy_mutual_parallel_transport(
     bend_energy += get_bend_energy(omega_j_im1, omega_j_im1_equil, B_i_equil);
     bend_energy = bend_energy*(1/(L_i)); // constant!
 
-    assert(not_simulation_destroying(bend_energy) && "get_bend_energy_from_p is simulation destroying.");
-    assert(bend_energy < 1900000850 && "bend energy is very large. Please fire this up in gdb!");
+    not_simulation_destroying(bend_energy, "get_bend_energy_from_p is simulation destroying.");
+    if(bend_energy >= 1900000850){ std::cout << "bend energy is very large. Please fire this up in gdb!\n"; }
 
 
     return bend_energy;
@@ -602,7 +618,7 @@ float get_rotational_friction(float viscosity, float radius, float length, bool 
 */
 float get_force(float bend_energy, float stretch_energy, float delta_x){
     float result = bend_energy/delta_x + stretch_energy/delta_x;
-    assert(not_simulation_destroying(result) && "get_force is simulation destroying.");
+    not_simulation_destroying(result, "get_force is simulation destroying.");
     return result;
 }
 
@@ -613,7 +629,7 @@ float get_force(float bend_energy, float stretch_energy, float delta_x){
 */
 float get_torque(float twist_energy, float delta_theta){
     float result = twist_energy/delta_theta;
-    assert(not_simulation_destroying(result) && "get_torque is simulation destroying.");
+    not_simulation_destroying(result, "get_torque is simulation destroying.");
     return result;
 }
 
@@ -624,7 +640,7 @@ float get_torque(float twist_energy, float delta_theta){
 */
 float get_delta_r(float friction, float timestep, float force, float noise, float external_force){ // In a given dimension!
     float result = (timestep/friction)*(force + external_force + noise);
-    assert(not_simulation_destroying(result) && "get_delta_x is simulation destroying.");
+    not_simulation_destroying(result, "get_delta_x is simulation destroying.");
     return result;
 }
 
@@ -633,9 +649,9 @@ float get_delta_r(float friction, float timestep, float force, float noise, floa
  Where \f$ g  \f$ is the force due to the thermal noise, \f$ T \f$ is the temperature of the system, and \f$ S \f$ is the viscous drag, derived from the viscosity.
  This expression is derived from the fluctuation dissipation relation for the langevin equation of the  .
 */
-float get_noise(float timestep, float temperature, float friction, float random_number){ // in a given dimension/DOF! 
-    float result = std::sqrt( (24*boltzmann_constant*temperature*friction)/timestep );
-    assert(not_simulation_destroying(result*random_number) && "get_noise is simulation destroying.");
+float get_noise(float timestep, float kT, float friction, float random_number){ // in a given dimension/DOF! 
+    float result = std::sqrt( (24*kT*friction)/timestep );
+    not_simulation_destroying(result*random_number, "get_noise is simulation destroying.");
     return result*random_number;
 }
 
