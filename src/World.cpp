@@ -479,6 +479,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             active_blob_array[i]->move(shift.x, shift.y, shift.z);
             active_blob_array[i]->calc_all_centroids();
         }
+        float shift_rod[3] = {(float)shift.x, (float)shift.y, (float)shift.z}; // this class is some historical junk
+        for (i = 0; i < params.num_rods; i++) {
+            rod_array[i]->translate_rod(rod_array[i]->current_r, shift_rod);
+            rod_array[i]->translate_rod(rod_array[i]->equil_r, shift_rod);
+        }
     }
     // Now everything has been moved into boxes etc, save all initial positions
     for(i = 0; i < params.num_blobs; ++i) {
