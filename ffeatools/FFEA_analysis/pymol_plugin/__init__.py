@@ -68,6 +68,7 @@ import FFEA_trajectory
 import FFEA_turbotrajectory
 import FFEA_surface
 import FFEA_pin, FFEA_vdw, FFEA_lj
+import FFEA_rod
 
 from numpy.random import randint as rint
 
@@ -992,6 +993,10 @@ class FFEA_viewer_control_window:
 			else:
 				print "Beads trajectory won't load: beads_out_fname was not defined in the .ffea input file"
 
+	# Load up ye rods
+	if len(self.script.rod) > 0:
+		for rod_num in range(len(self.script.rod)):
+			self.load_rod(self.script.rod[rod_num], rod_num)
 
    	# Center everything, zoom and sort clipping plane
 	cmd.center()
@@ -1096,6 +1101,44 @@ class FFEA_viewer_control_window:
     # in each blob->conformation, consult the surface file
     # for each surf.face.n, grab the points at that index and draw a trinagle with them
     return
+
+  def load_rod(self, rod, rod_num=0):
+    
+    def get_avg_lengths(rod):
+        # Get scale factor for ei
+        avg_pi = 0
+        pi = rod.get_p_i(rod.current_r)
+        for frame in pi:
+            for p in range(len(frame)):
+                avg_pi += np.linalg.norm(frame[p])
+        avg_pi = avg_pi / (( len(pi)*len(pi[0]) ))
+        
+        # Get scale factor for m
+        avg_m = 0
+        for frame in rod.current_m:
+            for m in range(len(frame)-1):
+                avg_m += np.linalg.norm(frame[m])
+        avg_m = avg_m / (( len(rod.current_m)*len(rod.current_m[0]) ))
+        
+        return avg_m, avg_pi
+    
+    avg_m, avg_p = get_avg_lengths(rod)
+    
+    # Scale the material frame to be a similar size to the rod elements
+    rod.current_m /= (avg_m/avg_p)/np.sqrt(2)
+    
+    # units note: radii are arbitrary so far. the *10**10 is to go from SI to angstroms (I should remove this after I add proper scaling)
+    for i in range(len(rod.current_r)):
+      line = []
+      for j in range(len(rod.current_r[i])-1):
+        line = line + [9.0, rod.current_r[i][j][0]*10**10, rod.current_r[i][j][1]*10**10, rod.current_r[i][j][2]*10**10, rod.current_r[i][j+1][0]*10**10, rod.current_r[i][j+1][1]*10**10, rod.current_r[i][j+1][2]*10**10, 10, 0, 1, 0, 0, 1, 0 ]
+        # material frame in center of each element
+        mid_x, mid_y, mid_z = (rod.current_r[i][j][0]*10**10+rod.current_r[i][j+1][0]*10**10)/2, (rod.current_r[i][j][1]*10**10+rod.current_r[i][j+1][1]*10**10)/2, (rod.current_r[i][j][2]*10**10+rod.current_r[i][j+1][2]*10**10)/2
+        line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0]*10**10, mid_y+rod.current_m[i][j][1]*10**10, mid_z+rod.current_m[i][j][2]*10**9, 5, 0, 0, 1, 0, 0, 1 ]
+#        print("frame "+str(i)+" element "+str(j)+"= "+str(line))
+#        print(line)
+      cmd.load_cgo(line, self.display_flags['system_name']+"_rod_"+str(rod_num), i)
+
 
   def call_add_node_pseudoatoms(self):
      if self.display_flags['load_trajectory'] == "System (Plainly)" or self.display_flags['load_trajectory'] == "CGO" or self.wontLoadTraj == 1:
