@@ -377,7 +377,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             }
             for (int j=0; j<6; j++) {
                 try {
-                    Seeds[cnt_seeds][j] = stol(vline[j]);
+                    Seeds[cnt_seeds][j] = stoul(vline[j]);
                 } catch (invalid_argument& ia) {
                     FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
                 }
@@ -398,7 +398,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             }
             for (int j=0; j<6; j++) {
                 try {
-                    Seeds[cnt_seeds][j] = stol(vline[j]);
+                    Seeds[cnt_seeds][j] = stoul(vline[j]);
                 } catch (invalid_argument& ia) {
                     FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
                 }
