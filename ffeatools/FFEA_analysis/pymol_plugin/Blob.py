@@ -138,7 +138,7 @@ class Blob:
 		
 		
 		# All will be present
-
+g
 		# Try to load
 		try:
 			self.node = FFEA_node.FFEA_node(c.nodes, scale = self.scale)

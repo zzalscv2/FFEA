@@ -365,6 +365,12 @@ class FFEA_rod:
         self.current_r*=scale_factor
         self.equil_r*=scale_factor
         self.equil_m*=scale_factor
+        
+    def translate(self, shift):
+#        self.current_m+=shift
+        self.current_r+=shift
+        self.equil_r+=shift
+#        self.equil_m+=shift
 
 """
                        _           _     

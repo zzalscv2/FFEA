@@ -871,6 +871,11 @@ class FFEA_viewer_control_window:
 	for b in self.blob_list:
 		for c in b:
 			c.set_global_scale(self.global_scale)
+            
+    # Rescale rods
+	if len(self.script.rod) > 0:
+		for rod_num in range(len(self.script.rod)):
+			self.script.rod[rod_num].scale(self.global_scale)
 
 	# Move simulation into box, if necessary
 	world_centroid = np.array([0.0, 0.0, 0.0])
@@ -923,6 +928,10 @@ class FFEA_viewer_control_window:
 		for b in self.blob_list:
 			b[0].frames[0].translate(shift)
 			if b[0].beads.pdb != None: b[0].beads.pdb.translate(shift) # beads only work for conf 0
+       # move rods into box
+    	if len(self.script.rod) > 0:
+    		for rod_num in range(len(self.script.rod)):
+    			self.script.rod[rod_num].translate(shift)
     		
 
 	# Now, apply PBC if necessary
@@ -1131,10 +1140,10 @@ class FFEA_viewer_control_window:
     for i in range(len(rod.current_r)):
       line = []
       for j in range(len(rod.current_r[i])-1):
-        line = line + [9.0, rod.current_r[i][j][0]*10**10, rod.current_r[i][j][1]*10**10, rod.current_r[i][j][2]*10**10, rod.current_r[i][j+1][0]*10**10, rod.current_r[i][j+1][1]*10**10, rod.current_r[i][j+1][2]*10**10, 10, 0, 1, 0, 0, 1, 0 ]
+        line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 10, 0, 1, 0, 0, 1, 0 ]
         # material frame in center of each element
-        mid_x, mid_y, mid_z = (rod.current_r[i][j][0]*10**10+rod.current_r[i][j+1][0]*10**10)/2, (rod.current_r[i][j][1]*10**10+rod.current_r[i][j+1][1]*10**10)/2, (rod.current_r[i][j][2]*10**10+rod.current_r[i][j+1][2]*10**10)/2
-        line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0]*10**10, mid_y+rod.current_m[i][j][1]*10**10, mid_z+rod.current_m[i][j][2]*10**9, 5, 0, 0, 1, 0, 0, 1 ]
+        mid_x, mid_y, mid_z = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2, (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2, (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
+        line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 5, 0, 0, 1, 0, 0, 1 ]
 #        print("frame "+str(i)+" element "+str(j)+"= "+str(line))
 #        print(line)
       cmd.load_cgo(line, self.display_flags['system_name']+"_rod_"+str(rod_num), i)
