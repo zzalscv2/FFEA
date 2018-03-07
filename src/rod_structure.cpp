@@ -812,4 +812,23 @@ Rod Rod::rotate_rod(float euler_angles[3]){
     return *this;
 }
 
+/**
+ * Scale the rod by a float. No return values, it just updates the
+ * arrays current_r and equil_r. It doesn't modify m, that'll be
+ * normalized away anyway.
+ */
+Rod Rod::scale_rod(float scale){
+    for(int i=0; i<this->length; i+=3){
+        std::cout << "destroying rod by scaling by factor " << scale << ". r_i was " << this->current_r[i] << ", now is ";
+        this->current_r[i] *= scale;
+        std::cout << this->current_r[i] << "\n";
+        this->current_r[i+1] *= scale;
+        this->current_r[i+2] *= scale;
+        this->equil_r[i] *= scale;
+        this->equil_r[i+1] *= scale;
+        this->equil_r[i+2] *= scale;
+    }
+    return *this;
+}
+
 } //end namespace

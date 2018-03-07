@@ -310,18 +310,28 @@ rod::Rod* FFEA_input_reader::rod_from_block(vector<string> block, int block_id){
     current_rod->load_contents(filename);
     current_rod->set_units();
     
+    bool rod_parent = false;
+    
     int coupling_counter = 0;
     for ( auto &tag_str : block ) {
         this->parse_tag(tag_str, tag_out);
-        if (tag_out[0] == "output"){ current_rod->change_filename(tag_out[1]); }
         
-        if (tag_out[0] == "scale"){
+        // Are we in a <rod> block?
+        if (tag_out[0] == "blob"){rod_parent = false;}
+        if (tag_out[0] == "rod"){rod_parent = true;}
+        
+        // Set filename
+        if (tag_out[0] == "output" && rod_parent){ current_rod->change_filename(tag_out[1]); }
+        
+        // Scale rod
+        if (tag_out[0] == "scale" && rod_parent){
             float scale = stof(tag_out[1]);
-            std::cout << "I have been told to scale this rod by a factor of " << scale << " but I can't.\n";
-            //current_rod.scale(to_scale); //TODO: can't scale yet!!!!!
+            //std::cout << "I have been told to scale this rod by a factor of " << scale << " but I can't.\n";
+            current_rod->scale_rod(scale);
         }
         
-        if (tag_out[0] == "centroid_pos"){
+        // Move centroid
+        if (tag_out[0] == "centroid_pos" && rod_parent){
             // get centroid and convert it to array
             scalar centroid_pos[3];
             float converted_centroid[3];
@@ -334,7 +344,8 @@ rod::Rod* FFEA_input_reader::rod_from_block(vector<string> block, int block_id){
             current_rod->translate_rod(current_rod->equil_r, converted_centroid);
         }
         
-        if (tag_out[0] == "rotation"){
+        // Rotate rod
+        if (tag_out[0] == "rotation" && rod_parent){
             // get centroid and convert it to array
             scalar rotation[3];
             tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
@@ -346,7 +357,7 @@ rod::Rod* FFEA_input_reader::rod_from_block(vector<string> block, int block_id){
             current_rod->rotate_rod(converted_rotation);
         }
         // parse coupling block
-        if (tag_out[0] == "coupling type"){
+        if (tag_out[0] == "coupling type" && rod_parent){
             std::cout << "Coupling data parsed, but coupling is not yet implemented!\n";
             vector<string> sub_block;
             this->extract_block("coupling", coupling_counter, block, &sub_block, true);

@@ -110,6 +110,7 @@ struct Rod
   Rod equilibrate_rod(RngStream rng[]);
   Rod translate_rod(float* r, float translation_vec[3]);
   Rod rotate_rod(float euler_angles[3]);
+  Rod scale_rod(float scale);
 };
 
 } //end namespace
