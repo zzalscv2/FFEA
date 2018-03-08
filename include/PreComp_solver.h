@@ -52,8 +52,8 @@ public:
   ~PreComp_solver();
   int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
   int solve(scalar *blob_corr=NULL); ///< calculate the forces using a straightforward double loop.
-  int solve_using_neighbours();  ///< calculate the forces using linkedlists.
-  int solve_using_neighbours_non_critical(scalar *blob_corr=NULL);  ///< using linkedlists, calculate twice the forces to avoid any critical regions.
+  int solve_using_neighbours( int vox_lag);  ///< calculate the forces using linkedlists.
+  int solve_using_neighbours_non_critical(scalar *blob_corr=NULL, int vox_lag=0);  ///< using linkedlists, calculate twice the forces to avoid any critical regions.
   void reset_fieldenergy(); 
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);
@@ -61,9 +61,9 @@ public:
 
   int compute_bead_positions(); ///< calculate b_pos, the absolute positions of the beads. 
 
-  int build_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
-  int prebuild_pc_nearest_neighbour_lookup_and_swap(); ///< put the beads on the grid.
-  int prebuild_pc_nearest_neighbour_lookup(); ///< put the beads on the grid.
+  int build_pc_nearest_neighbour_lookup(int vox_lag); ///< put the beads on the grid.
+  int prebuild_pc_nearest_neighbour_lookup_and_swap(int vox_lag); ///< put the beads on the grid.
+  int prebuild_pc_nearest_neighbour_lookup(int vox_lag); ///< put the beads on the grid.
   int safely_swap_pc_layers(); ///< swap the two LinkedLists. 
 
   void write_beads_to_file(FILE *fout, int timestep); ///< write beads to file, for the current timestep

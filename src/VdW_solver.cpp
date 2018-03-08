@@ -58,6 +58,7 @@ const int VdW_solver::adjacent_cell_lookup_table[27][3] = {
     {+1, +1, +1}
 };
 
+
 const VdW_solver::tri_gauss_point VdW_solver::gauss_points[] = {
     // Weight, eta1, eta2, eta3
     {   0.333333333333333,
@@ -163,7 +164,7 @@ void VdW_solver::reset_fieldenergy() {
 }
 
 /** Solve VdW */ 
-int VdW_solver::solve(scalar *blob_corr) {
+int VdW_solver::solve(scalar *blob_corr, int vox_lag) {
 
     LinkedListNode<Face> *l_i = NULL;
     LinkedListNode<Face> *l_j = NULL;
@@ -177,7 +178,7 @@ int VdW_solver::solve(scalar *blob_corr) {
 
     /* For each face, calculate the interaction with all other relevant faces and add the contribution to the force on each node, storing the energy contribution to "blob-blob" (bb) interaction energy.*/
 #ifdef USE_OPENMP
-    #pragma omp parallel for default(none) shared(blob_corr) private(c, l_i, l_j, f_i, f_j, motion_state_i) schedule(dynamic, 1) // OMP-GHL
+    #pragma omp parallel for default(none) shared(blob_corr,vox_lag) private(c, l_i, l_j, f_i, f_j, motion_state_i) schedule(dynamic, 1) // OMP-GHL
 #endif
     for (int i = 0; i < total_num_surface_faces; i++) {
 
@@ -193,10 +194,11 @@ int VdW_solver::solve(scalar *blob_corr) {
         // Calculate this face's interaction with all faces in its cell and the 26 adjacent cells (3^3 = 27 cells)
         // Remember to check that the face is not interacting with itself or connected faces
         for (c = 0; c < 27; c++) {
-            l_j = surface_face_lookup->get_top_of_stack(
-                      l_i->x + adjacent_cell_lookup_table[c][0],
-                      l_i->y + adjacent_cell_lookup_table[c][1],
-                      l_i->z + adjacent_cell_lookup_table[c][2]);
+                l_j = surface_face_lookup->get_top_of_stack(
+                          l_i->x + adjacent_cell_lookup_table[c][0],
+                          l_i->y + adjacent_cell_lookup_table[c][1],
+                          l_i->z + adjacent_cell_lookup_table[c][2],vox_lag);
+        
             while (l_j != NULL) {
                 if (consider_interaction(f_i, l_index_i, motion_state_i, l_j, blob_corr)) {
                     do_interaction(f_i, l_j->obj, blob_corr);
@@ -211,7 +213,7 @@ int VdW_solver::solve(scalar *blob_corr) {
 
 
 /* Allow protein VdW interactions along the top and bottom x-z planes */
-int VdW_solver::solve_sticky_wall(scalar h) {
+int VdW_solver::solve_sticky_wall(scalar h, int vox_lag) {
     int Nx = 0, Ny = 0, Nz = 0;
     surface_face_lookup->get_dim(&Nx, &Ny, &Nz);
     LinkedListNode<Face> *l_j = NULL;
@@ -219,7 +221,7 @@ int VdW_solver::solve_sticky_wall(scalar h) {
     for (int y = 0; y < Ny; y += Ny - 1) {
         for (int z = 0; z < Nz; z++) {
             for (int x = 0; x < Nx; x++) {
-                l_j = surface_face_lookup->get_top_of_stack(x, y, z);
+                l_j = surface_face_lookup->get_top_of_stack(x, y, z, vox_lag);
                 while (l_j != NULL) {
                     f_j = l_j->obj;
                     f_j->set_vdw_xz_interaction_flag(true);
@@ -688,3 +690,5 @@ void VdW_solver::calc_ljinterpolated_force_pair_matrix(vector3 (&force_pair_matr
     }
 
 }
+
+

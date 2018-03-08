@@ -204,12 +204,12 @@ void LinkedListCube<T>::clear_shadow_layer() {
 
 /* */
 template <class T>
-int LinkedListCube<T>::add_node_to_stack(int i, int x, int y, int z) {
+int LinkedListCube<T>::add_node_to_stack(int i, int x, int y, int z, int vox_lag) {
     // Apply PBC to the face centroid
-    pbc(&x, &y, &z);
+    pbc(&x, &y, &z,vox_lag);
 
     if (x < 0 || x >= N_x || y < 0 || y >= N_y || z < 0 || z >= N_z) {
-        printf("Face centroid out of bounds of LinkedListCube (coords are [%d, %d, %d])\n", x, y, z);
+        printf("Face centroid out of bounds of LinkedListCube (coords are [%d, %d, %d])with vox_lag %d\n", x, y, z,vox_lag);
         return FFEA_ERROR;
     }
 
@@ -225,12 +225,12 @@ int LinkedListCube<T>::add_node_to_stack(int i, int x, int y, int z) {
 
 /* */
 template <class T>
-int LinkedListCube<T>::add_node_to_stack_shadow(int i, int x, int y, int z) {
+int LinkedListCube<T>::add_node_to_stack_shadow(int i, int x, int y, int z, int vox_lag) {
     // Apply PBC to the face centroid
-    pbc(&x, &y, &z);
+    pbc(&x, &y, &z,vox_lag);
 
     if (x < 0 || x >= N_x || y < 0 || y >= N_y || z < 0 || z >= N_z) {
-        printf("Face centroid out of bounds of LinkedListCube (coords are [%d, %d, %d])\n", x, y, z);
+        printf("Face centroid out of bounds of shadow LinkedListCube (coords are [%d, %d, %d]) with vox_lag %d\n", x, y, z,vox_lag);
         return FFEA_ERROR;
     }
 
@@ -246,11 +246,11 @@ int LinkedListCube<T>::add_node_to_stack_shadow(int i, int x, int y, int z) {
 
 /* */
 template <class T>
-LinkedListNode<T> * LinkedListCube<T>::get_top_of_stack(int x, int y, int z) {
-    pbc(&x, &y, &z);
+LinkedListNode<T> * LinkedListCube<T>::get_top_of_stack(int x, int y, int z, int vox_lag) {
+    pbc(&x, &y, &z,vox_lag);
 
     if (x < 0 || x >= N_x || y < 0 || y >= N_y || z < 0 || z >= N_z) {
-        printf("Error: Looking for stack in out of bounds cell %d %d %d\n", x, y, z);
+        printf("Error: Looking for stack in out of bounds cell %d %d %d with vox_lag %d\n", x, y, z,vox_lag);
         return NULL;
     }
 
@@ -269,18 +269,20 @@ void LinkedListCube<T>::get_dim(int *Nx, int *Ny, int *Nz) {
     *Ny = N_y;
     *Nz = N_z;
 }
-
+/*
 template <class T>
-void LinkedListCube<T>::pbc(int *x, int *y, int *z) {
+void LinkedListCube<T>::pbc(int *x, int *y, int *z,int vox_lag) {
+    if (*y < 0) {
+        *y += N_y;
+        *x += vox_lag;
+    } else if (*y >= N_y) {
+        *y -= N_y;
+        *x -= vox_lag;
+    }
     if (*x < 0) {
         *x += N_x;
     } else if (*x >= N_x) {
         *x -= N_x;
-    }
-    if (*y < 0) {
-        *y += N_y;
-    } else if (*y >= N_y) {
-        *y -= N_y;
     }
     if (*z < 0) {
         *z += N_z;
@@ -288,7 +290,26 @@ void LinkedListCube<T>::pbc(int *x, int *y, int *z) {
         *z -= N_z;
     }
 }
-
+*/template <class T>
+void LinkedListCube<T>::pbc(int *x, int *y, int *z,int vox_lag) {
+    if (*y < 0) {
+        *y = (*y%N_y+N_y)%N_y;
+        *x += vox_lag;
+    } else if (*y >= N_y) {
+        *y = (*y%N_y+N_y)%N_y;
+        *x -= vox_lag;
+    }
+    if (*x < 0) {
+        *x = (*x%N_x+N_x)%N_x;
+    } else if (*x >= N_x) {
+        *x = (*x%N_x+N_x)%N_x;
+    }
+    if (*z < 0) {
+        *z = (*z%N_z+N_z)%N_z;;
+    } else if (*z >= N_z) {
+        *z = (*z%N_z+N_z)%N_z;
+    }
+}
 template <class T>
 void LinkedListCube<T>::swap_layers() {
 

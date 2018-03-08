@@ -297,7 +297,7 @@ private:
 
     void apply_dense_matrix(scalar *y, scalar *M, scalar *x, int N);
 
-    void do_es();
+    void do_es(int vox_lag);
 
     void make_trajectory_from_eigenvector(string traj_out_fname, int blob_index, int mode_index, Eigen_VectorX evec, scalar step);
 
@@ -314,7 +314,7 @@ private:
     void write_pre_print_to_trajfile(int step);
     void do_nothing();
 
-    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size);
+    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size,int vox_lag);
 #ifdef FFEA_PARALLEL_FUTURE
     std::future<void> thread_writingTraj;
     std::future<int> thread_updatingVdWLL;
@@ -344,11 +344,12 @@ private:
     void print_static_trajectory(int step, scalar wtime, int blob_index);
 
     /** @brief calculates the blob to blob corrections due to periodic boundary conditions*/
-    void calc_blob_corr_matrix(int num_blobs,scalar *blob_corr);
+    void calc_blob_corr_matrix(int num_blobs,scalar *blob_corr,scalar box_lag, int step);
 
     scalar *blob_corr;
     
     scalar box_lag;
+    int vox_lag;
 
     int die_with_dignity(int step, scalar wtime);
 };

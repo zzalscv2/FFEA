@@ -83,11 +83,11 @@ public:
      * Does this by setting the current top of stack node to be the 'next' in the list
      * after node i, with node i becoming the new top of stack node on that cell;
      */
-    int add_node_to_stack(int i, int x, int y, int z);
-    int add_node_to_stack_shadow(int i, int x, int y, int z);
+    int add_node_to_stack(int i, int x, int y, int z, int vox_lag);
+    int add_node_to_stack_shadow(int i, int x, int y, int z, int vox_lag);
 
     /** Returns whatever node is at the top of the (linked list) stack in grid cell (x, y, z) */
-    LinkedListNode<T> * get_top_of_stack(int x, int y, int z);
+    LinkedListNode<T> * get_top_of_stack(int x, int y, int z, int vox_lag);
 
     /** Returns how many objects are in the 'pool' */
     int get_pool_size();
@@ -133,7 +133,7 @@ private:
     /** The current index in the pool array at which nodes are to be added */
     int add_index;
 
-    void pbc(int *x, int *y, int *z);
+    void pbc(int *x, int *y, int *z, int vox_lag);
 
 };
 

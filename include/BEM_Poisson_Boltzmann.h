@@ -46,9 +46,9 @@ public:
     int init(NearestNeighbourLinkedListCube *lookup);
     /** Sets the inverse debye screening length for the system */
     void set_kappa(scalar kappa);
-    void build_BEM_matrices();
-    void perform_integrals_for_lookup_cell_self(LinkedListNode<Face> *l_i, vector3 gqp[4]);
-    void perform_integrals_for_lookup_cell_relative(LinkedListNode<Face> *l_i, vector3 gqp[4], int dx, int dy, int dz);
+    void build_BEM_matrices(int vox_lag);
+    void perform_integrals_for_lookup_cell_self(LinkedListNode<Face> *l_i, vector3 gqp[4], int vox_lag);
+    void perform_integrals_for_lookup_cell_relative(LinkedListNode<Face> *l_i, vector3 gqp[4], int dx, int dy, int dz, int vox_lag);
     void print_matrices();
     SparseMatrixUnknownPattern * get_C();
     SparseMatrixUnknownPattern * get_D();

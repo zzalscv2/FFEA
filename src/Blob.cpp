@@ -200,7 +200,7 @@ Blob::~Blob() {
 
     delete[] toBePrinted_nodes;
     toBePrinted_nodes = NULL;
-
+    
     delete[] num_contributing_faces;
     num_contributing_faces = NULL;
 
@@ -215,7 +215,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string vdw_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress,int calc_back_vel,scalar scale_back_vel, int linear_solver, int blob_state, SimulationParams *params,
+             scalar compress,int calc_back_vel,scalar scale_back_vel,scalar sys_dim_y, int linear_solver, int blob_state, SimulationParams *params,
              PreComp_params *pc_params, LJ_matrix *lj_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]){
 
@@ -242,8 +242,9 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->compress = compress;
     
     //storing background volume profile:
-    this->calc_back_vel = calc_back_vel;
-    this->scale_back_vel = scale_back_vel*this->scale;
+    //this->calc_back_vel = calc_back_vel;
+    this->calc_back_vel = 1;
+    this->scale_back_vel = scale_back_vel;
     this->sys_dim_y = sys_dim_y;
 
     // precomputed configuration:
@@ -3907,19 +3908,20 @@ int Blob::aggregate_forces_and_solve() {
                     #pragma omp for schedule(guided)
 #endif
                     for (int i = 0; i < num_nodes; i++) {
-                        //force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                        //force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                        //force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                             if (calc_back_vel ==1){
                                 //printf("force before is %.32F\n",force[i].x);
                                 //printf("y pos of node %d is  %.32F\n",i,node[i].pos.y);
-                                force[i].x += node[i].pos.y*scale_back_vel*node[i].stokes_drag;
-                                //force[i].x += scale_back_vel*node[i].stokes_drag;
-                                //force[i].y += scale_back_vel*node[i].stokes_drag;
+                                //printf("y pos of node %d is  %.32F\nsys_dim_y is %.32F\ndivided is %.32F\n",i,node[i].pos.y, sys_dim_y,node[i].pos.y/sys_dim_y);
+                                
+                                force[i].x += params->shear_scale*(node[i].pos.y/sys_dim_y-0.5)*node[i].stokes_drag*sys_dim_y;
+                                //force[i].x += 0.5*params->shear_scale*node[i].stokes_drag;
                                 //printf("force added is %.32F\n and force after is %.32F\n ",scale_back_vel*node[i].stokes_drag/params->dt, force[i].x);
                                 //printf("scale back vel is %.32F\n and stokes drag for node %d is %.32F \n",scale_back_vel,node[i].stokes_drag);
                                 
-                                //printf("force added is %.32F\n and force after is %.32F\n ",node[i].pos.y*scale_back_vel*node[i].stokes_drag/params->dt, force[i].x);
+                                //if(blob_index ==1 &&i==0){ printf("blob force after is %.32F with stokes drag %.14e\n", force[i].x,node[i].stokes_drag);}
                     
                     }}
                             
@@ -3974,6 +3976,7 @@ void Blob::euler_integrate() {
             node[i].vel[0] = force[i][0];
             node[i].vel[1] = force[i][1];
             node[i].vel[2] = force[i][2];
+            //if(i==0){printf("\nblob %d node %d vel is :\n%.14e\t%.14e\t%.14e\n",blob_index,i,node[i].vel[0],node[i].vel[1],node[i].vel[2]);}
 
             node[i].pos[0] += force[i][0] * params->dt; // really meaning v * dt
             node[i].pos[1] += force[i][1] * params->dt;
