@@ -24,8 +24,6 @@
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 add_executable(twist_bend_independence twist_bend_independence.cpp
-               ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp
-               ${PROJECT_SOURCE_DIR}/src/RngStream.cpp
-               ${PROJECT_SOURCE_DIR}/src/rod_structure.cpp)
+               ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp)
 
 add_test(twist_bend_independence ${CMAKE_CURRENT_BINARY_DIR}/twist_bend_independence)

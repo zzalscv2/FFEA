@@ -1,6 +1,4 @@
-#include "rod_structure.h"
-#include <iostream>
-#include <string>
+#include "rod_math_v9.h"
 
 int main(){
     float mathematica_result = 059.6893;
@@ -40,8 +38,8 @@ int main(){
         return 0;
     }
     else{
-        std::cout << "Computed energy: " << computed_energy << "\n";
-        std::cout << "Analytical energy: " << mathematica_result << "\n";
+//        std::cout << "Computed energy: " << computed_energy << "\n";
+//        std::cout << "Analytical energy: " << mathematica_result << "\n";
         return 1;
     }
 }

@@ -1,6 +1,4 @@
-#include "rod_structure.h"
-#include <string>
-#include <iostream>
+#include "rod_math_v9.h"
 
 int main(){
     float m_i[3] = {0,1,0};
@@ -41,9 +39,9 @@ int main(){
         return 0;
     }
 
-    std::cout << "m_i rotated = " << m_i[0] << ", " << m_i[1] << ", " << m_i[2] << "\n";
-    std::cout << "twist emergy (should be >0)" << twist << "\n";
-    std::cout << "bend energy (should be ~0)" << bend << "\n";
+//    std::cout << "m_i rotated = " << m_i[0] << ", " << m_i[1] << ", " << m_i[2] << "\n";
+//    std::cout << "twist emergy (should be >0)" << twist << "\n";
+//    std::cout << "bend energy (should be ~0)" << bend << "\n";
 
     return 1;
 } 

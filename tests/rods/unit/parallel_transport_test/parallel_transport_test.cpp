@@ -1,5 +1,4 @@
-#include "rod_structure.h"
-#include <iostream>
+#include "rod_math_v9.h"
 
 int main(){
     float nodes[9] = {0,0,0, 1,0,0, 2,0,0};
@@ -44,7 +43,7 @@ int main(){
     if (twist<0.001){
         return 0;
     }
-    std::cout << twist << "\n";
+    //std::cout << twist << "\n";
     return 1;
     // test: doing this material frame update (check on wolfram?) SHOULD NOT MAKE A TWIST ENERGY    
 }

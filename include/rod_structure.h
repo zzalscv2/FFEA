@@ -37,7 +37,6 @@
 #include <omp.h>
 #include "RngStream.h"
 #include <stdio.h>
-#include <random>
 
 namespace rod {
 
@@ -92,8 +91,6 @@ struct Rod
   FILE * file_ptr;
   int frame_no = 0;
   int step_no = 0;
-  std::mt19937 *mersenne_twister;
-  std::uniform_real_distribution <float> *real_distribution;
   Rod (int length, int set_rod_no);
   Rod (std::string path, int set_rod_no);
   Rod set_units();

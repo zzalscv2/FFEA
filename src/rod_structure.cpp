@@ -26,16 +26,6 @@
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
  */
-
-#include <iostream>
-#include <fstream>
-#include <cassert>
-#include <boost/algorithm/string.hpp>
-#include <string>
-#include <vector>
-
-#include <stdio.h>
-#include <random>
 #include "rod_structure.h"
 
 namespace rod {
@@ -539,9 +529,6 @@ Rod Rod::load_header(std::string filename){
     for (int i=0; i<length+(length/3); i++){
         applied_forces[i] = 0;
     }
-    
-    mersenne_twister = new std::mt19937(3535.442464);
-    real_distribution = new std::uniform_real_distribution<float>(-0.5, 0.5);
     
     // These are hardcoded default values (temporary?) - eventualy they will load in from the .ffea script!
     viscosity_constant_factor = mesoDimensions::pressure*mesoDimensions::time; ///poiseuille

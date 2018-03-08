@@ -24,8 +24,6 @@
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 add_executable(test_parallel_transport test_parallel_transport.cpp
-               ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp
-               ${PROJECT_SOURCE_DIR}/src/RngStream.cpp
-               ${PROJECT_SOURCE_DIR}/src/rod_structure.cpp)
+               ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp)
 
 add_test(test_parallel_transport ${CMAKE_CURRENT_BINARY_DIR}/test_parallel_transport)

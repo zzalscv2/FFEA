@@ -24,8 +24,6 @@
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 add_executable(test_bend_against_mathematica test_bend_against_mathematica.cpp
-               ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp
-               ${PROJECT_SOURCE_DIR}/src/RngStream.cpp
-               ${PROJECT_SOURCE_DIR}/src/rod_structure.cpp)
+               ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp	)
 
 add_test(test_bend_against_mathematica ${CMAKE_CURRENT_BINARY_DIR}/test_bend_against_mathematica)

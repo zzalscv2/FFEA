@@ -1,7 +1,4 @@
-#include "rod_structure.h"
-#include <iostream>
-#include <string>
-#include <cmath> 
+#include "rod_math_v9.h"
 
 float get_bend_for_test(float x2_current[3]){
     float x1[3] = {0,0,0};

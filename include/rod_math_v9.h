@@ -27,26 +27,39 @@
  *	Email: py12rw@leeds.ac.uk
  */
 
-#define OUT
+#define OUT ///< This is used to denote when a function modifies one of its parameters
+#define _USE_MATH_DEFINES ///<  This has to come before including cmath
 
-#define _USE_MATH_DEFINES // This has to come before including cmath
+const static bool abort_on_fail = true; /// If the simulation becomes unstable, this will SIGABRT the whole program
+
 #include <cmath>
-#include <chrono>
 #include <iostream>
-#include <cstring>
-#include "dimensions.h"
+#include <assert.h>
+#include "dimensions.h" 
 
 namespace rod {
 
-const double boltzmann_constant = 1.3806503e-23;
+const double boltzmann_constant = 1.3806503e-23/mesoDimensions::Energy;
+
+// A less weird way to access the contents of our arrays representing our vectors
 static const int x = 0;
 static const int y = 1;
 static const int z = 2;
-static const int twist_dimension = 3;
-static const int im2 = 0;
-static const int im1 = 1;
-static const int i = 2;
-static const int ip1 = 3;
+
+// For clarity, anytime you see an index [x], we're referring to the x
+// dimension.
+
+// Computing the energy for a perturbation requires four segments, defined
+// by 5 nodes. They are i-2 to i+1, listed here.
+static const int im2 = 0; ///< index of i-2nd thing
+static const int im1 = 1; ///< index of i-1st thing
+static const int i = 2; ///< index of ith thing
+static const int ip1 = 3; ///< index of i+1th thing
+
+#define OMP_SIMD_INTERNAL _Pragma("omp simd")
+
+#define vec3d(x)for(int x = 0; x < 3; ++ x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
+
 
 static const float rod_software_version = 0.3;
 
