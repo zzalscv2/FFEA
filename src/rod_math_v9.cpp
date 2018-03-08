@@ -245,7 +245,7 @@ void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3])
  will give the float the benefit of the doubt and say the acos is zero.
 */
 float safe_cos(float in){
-    if (in < 1.01){
+    if (in > 1.0 && in < 1.01){
         return 0;
     }
     
@@ -350,6 +350,7 @@ float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil
     parallel_transport(m_im1_equil, m_equil_prime, p_im1_equil_norm, p_i_equil_norm);
     float delta_theta = safe_cos( m_prime[x]*m_i[x] + m_prime[y]*m_i[y] + m_prime[z]*m_i[z] );
     float delta_theta_equil = safe_cos( m_equil_prime[x]*m_i_equil[x] + m_equil_prime[y]*m_i_equil[y] + m_equil_prime[z]*m_i_equil[z] );   
+    
     float twist_energy = (beta/l_i)*((delta_theta - delta_theta_equil)*(delta_theta - delta_theta_equil));
     not_simulation_destroying(twist_energy, "get_twist_energy is simulation destroying.");
 

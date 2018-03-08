@@ -287,7 +287,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 # 9 ### PYTHON ######
 find_package(PythonInterp REQUIRED)
-# python will be used to run some tests.
+# python will be used to run some f.
 # Now look for NumPy
 execute_process(
     COMMAND "${PYTHON_EXECUTABLE}" -c "from __future__ import print_function\ntry:\n\t import numpy\n\t print('OK',end=\"\")\nexcept:\n\t print('FAIL',end=\"\")"
@@ -367,6 +367,7 @@ enable_testing()
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
+add_subdirectory("${PROJECT_SOURCE_DIR}/tests/rods")
 set(IGNORE_NUMPY_TESTS "")
 if (${NUMPY_FOUND} STREQUAL "FAIL")
   set(IGNORE_NUMPY_TESTS 
