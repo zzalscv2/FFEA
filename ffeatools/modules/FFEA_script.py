@@ -92,14 +92,16 @@ class FFEA_script:
 				return
         
         # load rods
-		for i in range(self.params.num_rods):
-			try:
+		try:
+			for i in range(self.params.num_rods):
 				self.rod.append(self.read_rod_from_script_lines(script_lines, scriptdir, i, ))
-			except:
+		except AttributeError:
+			pass # no rods exist
+		except:
 				print("Error. Couldn't load <rod>...</rod> " + str(i))
 				self.reset()
 				raise # why do all these functions return instead of raising...?
-
+        
 		# Get springs
 		try:
 			self.read_springs_from_script_lines(script_lines, scriptdir)
