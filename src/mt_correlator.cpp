@@ -1645,6 +1645,9 @@ TCorrelatorStress::TCorrelatorStress(int numcorrin,int pcorin){
     TCorrelator c2(numcorrin,pcorin);
     TCorrelator c3(numcorrin,pcorin);
     TCorrelator c4(numcorrin,pcorin);
+    TCorrelator c5(numcorrin,pcorin);
+    TCorrelator c6(numcorrin,pcorin);
+    
 }
 
 TCorrelatorStress::~TCorrelatorStress(){
@@ -1654,11 +1657,11 @@ TCorrelatorStress::~TCorrelatorStress(){
 void TCorrelatorStress::add(matrix3 w,int k){
     c0.add(w[0][1]);
     c1.add(w[1][2]);
-    c2.add(w[2][1]);
-    c3.add(w[0][0]+w[1][1]+w[2][2]);
+    c2.add(w[2][0]);
+    c3.add(w[1][1]-w[2][2]);
     c4.add(w[0][0]-w[1][1]);
     c5.add(w[0][0]-w[2][2]);
-    c6.add(w[1][1]-w[2][2]);
+    c6.add(w[0][0]+w[1][1]+w[2][2]);
 }
 
 void TCorrelatorStress::evaluate(){
@@ -1701,6 +1704,8 @@ void TCorrelatorStress::clear(){
         f[i] = 0;
     }
 }
+/*
+this won't work as is, and I don't use it
 
 void TCorrelatorStress::save(std::string savename){
 
@@ -1709,7 +1714,8 @@ void TCorrelatorStress::save(std::string savename){
         c2.save(savename+std::to_string(2)+".txt");
         c3.save(savename+std::to_string(3)+".txt");
         c4.save(savename+std::to_string(4)+".txt");
-        
+        c5.save(savename+std::to_string(5)+".txt");
+        c6.save(savename+std::to_string(6)+".txt");
 
   std::ofstream fsave;
 
@@ -1722,7 +1728,8 @@ void TCorrelatorStress::save(std::string savename){
     fsave.close();
 
 }
-
+*/
+/*
 int TCorrelatorStress::read(std::string readname){
     std::string storage;
 
@@ -1752,6 +1759,7 @@ int TCorrelatorStress::read(std::string readname){
         c3.read(readname+std::to_string(3)+".txt");
         c4.read(readname+std::to_string(4)+".txt");
 }
+*/
 
 void TCorrelatorStress::save_ffea(FILE *fout){
    

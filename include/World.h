@@ -151,7 +151,7 @@ private:
     TCorrelatorStress elastic_stress_corr = TCorrelatorStress(35,16);
     //TCorrelatorStress node_stress_corr = TCorrelatorStress(35,16);
     TCorrelatorStress viscous_stress_corr = TCorrelatorStress(35,16);
-    TCorrelatorStress total_stress_corr = TCorrelatorStress(335,16);
+    TCorrelatorStress total_stress_corr = TCorrelatorStress(35,16);
     vector<Fmm_blob> Fmm_vec;
     Fmm_blob sys_blob;
     

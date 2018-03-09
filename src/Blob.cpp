@@ -655,6 +655,16 @@ int Blob::update_internal_forces() {
             elem[n].add_shear_elastic_stress(J, stress);
             elem[n].add_bulk_elastic_stress(stress);
 
+            total_elastic_stress[0][0] += stress[0][0]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+            total_elastic_stress[0][1] += stress[0][1]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+            total_elastic_stress[0][2] += stress[0][2]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+            total_elastic_stress[1][0] += stress[1][0]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+            total_elastic_stress[1][1] += stress[1][1]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+            total_elastic_stress[1][2] += stress[1][2]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+            total_elastic_stress[2][0] += stress[2][0]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+            total_elastic_stress[2][1] += stress[2][1]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+            total_elastic_stress[2][2] += stress[2][2]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
+
             if (params->calc_noise == 1) {
                 elem[n].add_fluctuating_stress(params, rng, stress, tid);
             }
@@ -680,7 +690,7 @@ int Blob::update_internal_forces() {
             
             //printf("*********n/ force added to blob %d element %d is:",blob_index,n);
             // print_vector12(du);
-            
+            /*
             total_elastic_stress[0][0] += stress[0][0]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
             total_elastic_stress[0][1] += stress[0][1]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
             total_elastic_stress[0][2] += stress[0][2]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
@@ -690,7 +700,7 @@ int Blob::update_internal_forces() {
             total_elastic_stress[2][0] += stress[2][0]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
             total_elastic_stress[2][1] += stress[2][1]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
             total_elastic_stress[2][2] += stress[2][2]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
-            
+            */
             //printf("*************\nblob %d element elastic %d stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,n,stress[0][0],stress[0][1],stress[0][2],stress[1][0],stress[1][1],stress[1][2],stress[2][0],stress[2][1],stress[2][2]);
 
             if (params->calc_es == 1) {
