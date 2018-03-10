@@ -635,19 +635,19 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                  FFEA_FILE_ERROR_MESSG(params.trajectory_beads_fname.c_str())
                }
             }
-            /*
+            
             if(params.mini_meas!=0){
                 mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "w");
                 
-               fprintf(mini_meas_out, "FFEA Mini Measurement File\n\nMeasurements:\n%-14s", "Time");
-				for(i = 0; i < params.num_blobs; ++i) {
-					fprintf(mini_meas_out, "| B%d ", i);
-					fprintf(mini_meas_out, "%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s","Centroid.x", "Centroid.y", "Centroid.z","PBC_count.x","PBC_count.y","PBC_count.z", "FFt11","FFt12","FFt13","FFt22","FFt23","FFt33");
-				}
+               fprintf(mini_meas_out, "FFEA Mini Measurement File\n\nMeasurements:\n%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s\t%-14s", "Time","viscous00","viscous01","viscous02","viscous10","viscous11","viscous12","viscous20","viscous21","viscous22","elastic00","elastic01","elastic02","elastic10","elastic11","elastic12","elastic20","elastic21","elastic22");
+				//for(i = 0; i < params.num_blobs; ++i) {
+				//	fprintf(mini_meas_out, "| B%d ", i);
+				//	fprintf(mini_meas_out, "%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s","Centroid.x", "Centroid.y", "Centroid.z","PBC_count.x","PBC_count.y","PBC_count.z", "FFt11","FFt12","FFt13","FFt22","FFt23","FFt33");
+				//}
                 fprintf(mini_meas_out, "\n");
 				fflush(mini_meas_out);
 			}
-			*/
+			
 
 
 
@@ -919,7 +919,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			} else {
 				last_asterisk_pos = ftello(mini_meas_out)-2;//-2 removes asterisk so restart files are identical
 			}
-
+            
             printf("Loading Blob PBC relocation counts matching last completely written snapshot \n");
             int temp_pbc_count;
             double trash;
@@ -2125,7 +2125,7 @@ int World::run() {
                 thread_updatingPCLL = std::async(std::launch::async, &PreComp_solver::prebuild_pc_nearest_neighbour_lookup, &pc_solver);
             } else // die with dignity
 #else
-            if (pc_solver.build_pc_nearest_neighbour_lookup() == FFEA_ERROR)
+            if (pc_solver.build_pc_nearest_neighbour_lookup(vox_lag) == FFEA_ERROR)
 #endif
             {
                 return die_with_dignity(step, wtime);
@@ -4074,9 +4074,9 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     } else {
         printf("\rstep = %d (simulation time = %.2fns, wall clock time = %.3f hrs)\n", step, step * params.dt * (mesoDimensions::time / 1e-9), (omp_get_wtime() - wtime) / 3600.0);
     }
-   /* if(params.mini_meas !=0){
-        fprintf(mini_meas_out,"*\n");
-    }*/
+    //if(params.mini_meas !=0){
+    //    fprintf(mini_meas_out,"*\n");
+    //}
     
 
     // TRAJECTORY file: can be printed serially, or in parallel:
@@ -4286,7 +4286,7 @@ void World::print_checkpoints() {
 }
 
 void World::print_mini_meas_file(int step, scalar wtime) {
-    //fprintf(mini_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
+    fprintf(mini_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
     /*
     for (int i = 0; i < params.num_blobs; i++) {
 
@@ -4359,6 +4359,7 @@ void World::print_mini_meas_file(int step, scalar wtime) {
         elastic_stress_corr.add(mean_stress_elastic);
         viscous_stress_corr.add(mean_stress_viscous);
         total_stress_corr.add(mean_stress_total);
+        fprintf(mini_meas_out,"%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e",mean_stress_viscous[0][0],mean_stress_viscous[0][1],mean_stress_viscous[0][2],mean_stress_viscous[1][0],mean_stress_viscous[1][1],mean_stress_viscous[1][2],mean_stress_viscous[2][0],mean_stress_viscous[2][1],mean_stress_viscous[2][2],mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
         /*if(step%100000==0){
             printf("*******\nTotal Viscous Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_viscous[0][0],mean_stress_viscous[0][1],mean_stress_viscous[0][2],mean_stress_viscous[1][0],mean_stress_viscous[1][1],mean_stress_viscous[1][2],mean_stress_viscous[2][0],mean_stress_viscous[2][1],mean_stress_viscous[2][2]);
             printf("*******\nTotal elastic Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
@@ -4369,8 +4370,8 @@ void World::print_mini_meas_file(int step, scalar wtime) {
         
 
 
-   	//fprintf(mini_meas_out, "\n");
-    //fflush(mini_meas_out);
+   	fprintf(mini_meas_out, "\n");
+    fflush(mini_meas_out);
 }
 
 void World::make_measurements() {
