@@ -90,7 +90,7 @@ void BEM_Poisson_Boltzmann::set_kappa(scalar kappa) {
 /*
  *
  */
-void BEM_Poisson_Boltzmann::build_BEM_matrices() {
+void BEM_Poisson_Boltzmann::build_BEM_matrices(int vox_lag) {
     int i;
     LinkedListNode<Face> *l_i;
     Face *f;
@@ -123,30 +123,30 @@ void BEM_Poisson_Boltzmann::build_BEM_matrices() {
         f->barycentric_calc_point(.2, .2, .6, &gqp[3]);
 
         // Perform the necessary integrals for the face f with all faces in its own cell (in the lookup grid)
-        perform_integrals_for_lookup_cell_self(l_i, gqp);
+        perform_integrals_for_lookup_cell_self(l_i, gqp,vox_lag);
 
         // Perform integrals for the 9 adjacent cells above and below the plane containg f's cell
         for (int x = -1; x < 2; x++)
             for (int z = -1; z < 2; z++) {
-                perform_integrals_for_lookup_cell_relative(l_i, gqp, x, -1, z);
-                perform_integrals_for_lookup_cell_relative(l_i, gqp, x, +1, z);
+                perform_integrals_for_lookup_cell_relative(l_i, gqp, x, -1, z, vox_lag);
+                perform_integrals_for_lookup_cell_relative(l_i, gqp, x, +1, z, vox_lag);
             }
 
         // Perform integrals for the remaining 8 adjacent cells, lying in the y-plane of f's cell
         for (int x = -1; x < 2; x++) {
-            perform_integrals_for_lookup_cell_relative(l_i, gqp, x, 0, -1);
-            perform_integrals_for_lookup_cell_relative(l_i, gqp, x, 0, +1);
+            perform_integrals_for_lookup_cell_relative(l_i, gqp, x, 0, -1, vox_lag);
+            perform_integrals_for_lookup_cell_relative(l_i, gqp, x, 0, +1, vox_lag);
         }
-        perform_integrals_for_lookup_cell_relative(l_i, gqp, -1, 0, 0);
-        perform_integrals_for_lookup_cell_relative(l_i, gqp, +1, 0, 0);
+        perform_integrals_for_lookup_cell_relative(l_i, gqp, -1, 0, 0, vox_lag);
+        perform_integrals_for_lookup_cell_relative(l_i, gqp, +1, 0, 0, vox_lag);
     }
 }
 
-void BEM_Poisson_Boltzmann::perform_integrals_for_lookup_cell_self(LinkedListNode<Face> *l_i, vector3 gqp[4]) {
+void BEM_Poisson_Boltzmann::perform_integrals_for_lookup_cell_self(LinkedListNode<Face> *l_i, vector3 gqp[4], int vox_lag) {
     scalar mat_C_contribution, mat_D_contribution;
 
     // Get the top of the stack in the cell in which face f lies
-    LinkedListNode<Face> *l_j = lookup->get_top_of_stack(l_i->x, l_i->y, l_i->z);
+    LinkedListNode<Face> *l_j = lookup->get_top_of_stack(l_i->x, l_i->y, l_i->z, vox_lag);
     while (l_j != NULL) {
         if (l_j->index != l_i->index) {
             gauss_quadrature_4_point(gqp,
@@ -162,10 +162,10 @@ void BEM_Poisson_Boltzmann::perform_integrals_for_lookup_cell_self(LinkedListNod
     }
 }
 
-void BEM_Poisson_Boltzmann::perform_integrals_for_lookup_cell_relative(LinkedListNode<Face> *l_i, vector3 gqp[4], int dx, int dy, int dz) {
+void BEM_Poisson_Boltzmann::perform_integrals_for_lookup_cell_relative(LinkedListNode<Face> *l_i, vector3 gqp[4], int dx, int dy, int dz,int vox_lag) {
     scalar mat_C_contribution, mat_D_contribution;
 
-    LinkedListNode<Face> *l_j = lookup->get_top_of_stack(l_i->x + dx, l_i->y + dy, l_i->z + dz);
+    LinkedListNode<Face> *l_j = lookup->get_top_of_stack(l_i->x + dx, l_i->y + dy, l_i->z + dz, vox_lag);
     while (l_j != NULL) {
         gauss_quadrature_4_point(gqp,
                 &(l_j->obj->centroid),

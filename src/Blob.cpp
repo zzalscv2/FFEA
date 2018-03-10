@@ -214,7 +214,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string ssint_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress, int linear_solver, int blob_state, SimulationParams *params, 
+             scalar compress,int calc_back_vel,scalar sys_dim_y, int linear_solver, int blob_state, SimulationParams *params, 
              PreComp_params *pc_params, SSINT_matrix *ssint_matrix, 
              BindingSite_matrix *binding_matrix, RngStream rng[]){
 
@@ -235,6 +235,12 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     
     // scaling coordinates:
     this->scale = scale;
+    
+    //storing background volume profile
+    //this->calc_back_vel = calc_back_vel;
+    this->calc_back_vel = 1;
+    //this->scale_back_vel = scale_back_vel;
+    this->sys_dim_y = sys_dim_y;
 
     // compressing: 
     this->calc_compress = calc_compress; 
@@ -656,7 +662,7 @@ int Blob::update_internal_forces() {
             elem[n].add_bulk_elastic_stress(stress);
 
             if (params->calc_noise == 1) {
-                elem[n].add_fluctuating_stress(params, rng, stress, tid);
+                //elem[n].add_fluctuating_stress(params, rng, stress, tid);
             }
 
             elem[n].internal_stress_mag = sqrt(mat3_double_contraction_symmetric(stress));
@@ -3841,6 +3847,19 @@ int Blob::aggregate_forces_and_solve() {
                         force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                         force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                         force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        if(calc_back_vel==1){
+                                //if(blob_index ==1 &&i==0){ printf("force before is %.32F\n",force[i].x);}
+                                //printf("y pos of node %d is  %.32F\nsys_dim_y is %.32F\ndivided is %.32F\n",i,node[i].pos.y, sys_dim_y,node[i].pos.y/sys_dim_y);
+                                force[i].x += params->shear_rate*(node[i].pos[1]/sys_dim_y-0.5)*node[i].stokes_drag*sys_dim_y;
+                                //force[i].x += 0.5*params->shear_scale*node[i].stokes_drag;
+                                //printf("force added is %.32F\n and force after is %.32F\n ",scale_back_vel*node[i].stokes_drag/params->dt, force[i].x);
+                                //printf("scale back vel is %.32F\n and stokes drag for node %d is %.32F \n",scale_back_vel,node[i].stokes_drag);
+                                
+                                /*if(blob_index ==1 &&i==0){ 
+                                
+                                printf("y pos of node %d is  %.32F\n",i,node[i].pos.y);
+                                printf("blob force after is %.14F with node pos %.14F and sys_dim y %.14F\n and shear rate of %.14F\n", force[i].x,node[i].pos[1],sys_dim_y, params->shear_rate);}*/
+                        }
                     }
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
                 }

@@ -80,6 +80,7 @@ SimulationParams::SimulationParams() {
     es_N_x = -1;
     es_N_y = -1;
     es_N_z = -1;
+    shear_rate = 0;
 
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
@@ -248,7 +249,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "num_rods") {
         num_rods = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_rods << endl;
-
+    
+    } else if (lvalue == "shear_rate") {
+        shear_rate = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << shear_rate << endl;
 
     } else if (lvalue == "num_conformations") {
 

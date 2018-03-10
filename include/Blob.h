@@ -118,7 +118,7 @@ public:
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string ssint_filename, string pin_filename, 
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
+             scalar compress,int calc_back_vol, scalar sys_dim_y, int linear_solver, int blob_state, SimulationParams *params,
              PreComp_params *pc_params, SSINT_matrix *ssint_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]);
     int init();
@@ -743,6 +743,10 @@ private:
     int calculate_node_element_connectivity();
 
     int build_mass_matrix();
+    
+    int calc_back_vel;
+    scalar sys_dim_y;
+    
 };
 
 #endif

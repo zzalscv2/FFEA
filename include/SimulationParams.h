@@ -98,6 +98,7 @@ public:
     int restrict_motion[3]; ///< [x,y,z] array defining whether motion in the given direction should be nullified
     int num_dimensions;  /// Number of active dimensions after restricted_motion is applied
     scalar es_h; ///< Dimension of each cell in the lookup grid (in multiples of inverse kappa)
+    scalar shear_rate;
 
     scalar kappa; ///< Inverse Debye Screening length
 

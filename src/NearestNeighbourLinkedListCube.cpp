@@ -24,7 +24,7 @@
 #include "NearestNeighbourLinkedListCube.h"
 
 /* */
-int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
+int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h, int vox_lag) {
     // Clear the grid
     clear();
 
@@ -68,7 +68,7 @@ int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
                                         }
          */
         // attempt to add the node to the cell
-        if (add_node_to_stack(i, x, y, z) == FFEA_ERROR) {
+        if (add_node_to_stack(i, x, y, z,vox_lag) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when trying to add node %d to nearest neighbour stack at (%d %d %d)\n", i, x, y, z);
         }
     }
@@ -76,7 +76,7 @@ int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
 }
 
 
-int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup_and_swap(scalar h) {
+int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup_and_swap(scalar h, int vox_lag) {
     // Clear the grid
     clear_layer(shadow_layer);
 
@@ -99,7 +99,7 @@ int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup_and_swap(s
         int z = (int) floor(pool[i].obj->centroid.z / h);
 
         // attempt to add the node to the cell
-        if (add_node_to_stack_shadow(i, x, y, z) == FFEA_ERROR) {
+        if (add_node_to_stack_shadow(i, x, y, z,vox_lag) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when trying to add node %d to nearest neighbour stack at (%d %d %d)\n", i, x, y, z);
         }
 
@@ -108,7 +108,7 @@ int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup_and_swap(s
     return FFEA_OK;
 }
 
-int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup(scalar h) {
+int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup(scalar h, int vox_lag) {
     // Clear the grid
     clear_layer(shadow_layer);
     can_swap = false;
@@ -132,7 +132,7 @@ int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup(scalar h) 
         int z = (int) floor(pool[i].obj->centroid.z / h);
 
         // attempt to add the node to the cell
-        if (add_node_to_stack_shadow(i, x, y, z) == FFEA_ERROR) {
+        if (add_node_to_stack_shadow(i, x, y, z, vox_lag) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when trying to add node %d to nearest neighbour stack at (%d %d %d)\n", i, x, y, z);
         }
 

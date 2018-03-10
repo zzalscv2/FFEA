@@ -66,6 +66,8 @@ World::World() {
     springfieldenergy = NULL;
     ssintenergy = 0.0;
     preCompenergy = 0.0;
+    box_lag = 0;
+    vox_lag = 0;
 
     vector3_set_zero(L);
     vector3_set_zero(CoM);
@@ -944,7 +946,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
 #ifdef FFEA_PARALLEL_FUTURE
         // And build the lookup table for the first time:
-        thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.ssint_cutoff);
+        thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this,params.ssint_cutoff,vox_lag);
 #endif
 
     }
@@ -1792,7 +1794,17 @@ int World::run() {
 #ifdef BENCHMARK
         wtime0 = omp_get_wtime();
 #endif
-
+        box_lag += params.shear_rate*params.dt*box_dim.y;
+        //cout<<"box lag is"<<box_lag<<"and box_dim.x is"<<box_dim.x<<endl;
+        //cout<<"lag for dt is "<<0.5*params.shear_scale*params.dt<<endl;
+        if(box_lag>box_dim.x){box_lag = fmod(box_lag,box_dim.x);}
+        //cout<<"box lag is"<<box_lag<<"and number of voxels is"<<floor(box_dim.x/params.vdw_cutoff)<<endl;
+        vox_lag = floor(box_lag/params.ssint_cutoff+1/2);
+        
+       // if(step%1000==0){cout<<"\nbox lag is "<<box_lag<<"and vox_lag is "<<vox_lag<<"and box_dim.y is "<<box_dim.y<<"and params.dt is"<<params.dt<<endl;}
+        //cout<<"\nbox lag is "<<box_lag<<"and vox_lag is "<<vox_lag<<"and box_dim.y is "<<box_dim.y<<"and params.dt is"<<params.dt<<endl;
+        //if(vox_lag>floor(box_dim.x/params.vdw_cutoff)){vox_lag -=floor(box_dim.x/params.vdw_cutoff);}
+        //cout<<"vox lag is"<<vox_lag<<endl;
         // check if we are in one of those time-steps
         //     where we need to calculate electrostatics,
         //                     update the neighbour list,
@@ -1836,42 +1848,45 @@ int World::run() {
             scalar dx = 0, dy = 0, dz = 0;
             int check_move = 0;
 
-            if (com.x < 0) {
-                if (params.wall_x_1 == WALL_TYPE_PBC) {
-                    dx += box_dim.x;
-                    active_blob_array[i]->pbc_count[0]-=1;
-                    check_move = 1;
-                }
-            } else if (com.x > box_dim.x) {
-                if (params.wall_x_2 == WALL_TYPE_PBC) {
-                    dx -= box_dim.x;
-                    active_blob_array[i]->pbc_count[0]+=1;
-                    check_move = 1;
-                }
-            }
             if (com.y < 0) {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
-                    active_blob_array[i]->pbc_count[1]-=1;
+                    dx += box_lag;
+                    //active_blob_array[i]->dec_pbc_count(1);
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
-                    active_blob_array[i]->pbc_count[1]+=1;
+                    dx -= box_lag;
+                    //active_blob_array[i]->inc_pbc_count(1);
                     check_move = 1;
                 }
             }
+            if (com.x < 0) {
+                if (params.wall_x_1 == WALL_TYPE_PBC) {
+                    dx += box_dim.x;
+                    //active_blob_array[i]->dec_pbc_count(0);
+                    check_move = 1;
+                }
+            } else if (com.x > box_dim.x) {
+                if (params.wall_x_2 == WALL_TYPE_PBC) {
+                    dx -= box_dim.x;
+                    //active_blob_array[i]->inc_pbc_count(0);
+                    check_move = 1;
+                }
+            }
+
             if (com.z < 0) {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
-                    active_blob_array[i]->pbc_count[2]-=1;
+                    //active_blob_array[i]->dec_pbc_count(2);
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
-                    active_blob_array[i]->pbc_count[2]+=1;
+                    //active_blob_array[i]->inc_pbc_count(2);
                     check_move = 1;
                 }
             }
@@ -1901,10 +1916,10 @@ int World::run() {
             // Catching up the thread should be done through catch_thread_updatingVdWLL,
             //   which will to lookup.safely_swap_layers().
             if (updatingVdWLL() == false) {
-                thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.ssint_cutoff);
+                thread_updatingVdWLL = std::async(std::launch::async,&World::prebuild_nearest_neighbour_lookup_wrapper,this, params.ssint_cutoff,vox_lag);
             } else // die with dignity
 #else
-            if (lookup.build_nearest_neighbour_lookup(params.ssint_cutoff) == FFEA_ERROR)
+            if (lookup.build_nearest_neighbour_lookup(params.ssint_cutoff,vox_lag) == FFEA_ERROR)
 #endif
             {
                 return die_with_dignity(step, wtime);
@@ -1917,7 +1932,7 @@ int World::run() {
                 thread_updatingPCLL = std::async(std::launch::async, &PreComp_solver::prebuild_pc_nearest_neighbour_lookup, &pc_solver);
             } else // die with dignity
 #else
-            if (pc_solver.build_pc_nearest_neighbour_lookup() == FFEA_ERROR)
+            if (pc_solver.build_pc_nearest_neighbour_lookup(vox_lag) == FFEA_ERROR)
 #endif
             {
                 return die_with_dignity(step, wtime);
@@ -1926,7 +1941,7 @@ int World::run() {
 
 
             // Finally do calc_es, which is done only from time to time...
-            if (params.calc_es == 1) do_es();
+            if (params.calc_es == 1) do_es(vox_lag);
 
         }
 
@@ -1955,7 +1970,7 @@ int World::run() {
 #endif
 
         // Calculate the correlation matrix if Blob-Blob forces need PBC:
-        if (params.force_pbc == 1) calc_blob_corr_matrix(params.num_blobs, blob_corr);
+        if (params.force_pbc == 1) calc_blob_corr_matrix(params.num_blobs, blob_corr,box_lag,step);
 
         // Calculate the PreComp forces:
         if (params.calc_preComp == 1) {
@@ -1983,9 +1998,9 @@ int World::run() {
 
         // Calculate the VdW forces:
         if (params.calc_ssint == 1 || params.calc_steric == 1) {
-           vdw_solver->solve(blob_corr); // blob_corr == NULL if force_pbc = 0.
+           vdw_solver->solve(blob_corr,vox_lag); // blob_corr == NULL if force_pbc = 0.
         }
-        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.ssint_cutoff);
+        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.ssint_cutoff,vox_lag);
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
 
@@ -2182,7 +2197,7 @@ int World::read_and_build_system(vector<string> script_vector) {
     vector<string> nodes, topology, surface, material, stokes, ssint, binding, pin, beads;
     string map_fname;
     int map_indices[2];
-    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_ssint = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0; 
+    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_ssint = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0, calc_back_vel =0; 
     scalar scale = 1, compress = 1;
     int solver = FFEA_NOMASS_CG_SOLVER;
     vector<int> motion_state;
@@ -2375,7 +2390,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                     set_preComp = 1;
                 } else {
                     bool forgive_unrecognised = false;
-                    if ( (read_blob_as_conf == true) && ( (lrvalue[0] == "centroid") || (lrvalue[0] == "rotation") || (lrvalue[0] == "solver") || (lrvalue[0] == "scale") || (lrvalue[0] == "translate") || (lrvalue[0] == "velocity") || (lrvalue[0] == "calc_compress") || (lrvalue[0] == "compress") ) ) forgive_unrecognised = true; 
+                    if ( (read_blob_as_conf == true) && ( (lrvalue[0] == "centroid") || (lrvalue[0] == "rotation") || (lrvalue[0] == "solver") || (lrvalue[0] == "scale") || (lrvalue[0] == "translate") || (lrvalue[0] == "velocity") || (lrvalue[0] == "calc_compress") || (lrvalue[0] == "compress")|| (lrvalue[0] == "calc_back_vel") ) ) forgive_unrecognised = true; 
                     if (forgive_unrecognised == false) {
                        FFEA_error_text();
                        cout << "Unrecognised conformation lvalue: '" << lrvalue[0] << "'" << endl;
@@ -2536,6 +2551,8 @@ int World::read_and_build_system(vector<string> script_vector) {
                 calc_compress = atof(lrvalue[1].c_str());
             } else if(lrvalue[0] == "compress") {
                 compress = atof(lrvalue[1].c_str());
+            } else if(lrvalue[0] == "calc_back_vel") {
+                calc_back_vel = atof(lrvalue[1].c_str());
             } else if(lrvalue[0] == "centroid" || lrvalue[0] == "centroid_pos") {
                 blob_conf[i].set_centroid = 1; 
                 lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
@@ -2584,7 +2601,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
             if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
                                         material[j], stokes[j], ssint[j], pin[j], binding[j],
-                                        beads[j], scale, calc_compress, compress, solver,
+                                        beads[j], scale, calc_compress, compress,calc_back_vel,params.ssint_cutoff * params.es_N_y, solver,
                                         motion_state[j], &params, &pc_params, &ssint_matrix,
                                         &binding_matrix, rng) == FFEA_ERROR) {
                 FFEA_ERROR_MESSG("\tError when trying to pre-initialise Blob %d, conformation %d.\n", i, j); 
@@ -3581,9 +3598,9 @@ void World::apply_dense_matrix(scalar *y, scalar *M, scalar *x, int N) {
     }
 }
 
-void World::do_es() {
+void World::do_es(int vox_lag) {
     printf("Building BEM matrices\n");
-    PB_solver.build_BEM_matrices();
+    PB_solver.build_BEM_matrices(vox_lag);
 
 
     //	PB_solver.print_matrices();
@@ -4144,24 +4161,45 @@ void World::print_static_trajectory(int step, scalar wtime, int blob_index) {
 }
 
 
-void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr) {
+void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr,scalar box_lag, int step) {
 
     //calculates blob corrections for periodic interactions
     vector3 com,com2;
+    int ytemp;
+    /*
+    if(step%100==0){
+    cout<<"\n*******************"<<endl;
+    cout<<"Step is "<<step<<endl;
+    cout<<"***"<<endl;
+    cout.precision(10);
+    }
+    */
+    
     for(int i = 0; i < num_blobs; ++i) {
         //sets blob distance from itself to 0
         blob_corr[i*num_blobs*3 + i*3]= 0;
         blob_corr[i*num_blobs*3 + i*3+1]= 0;
         blob_corr[i*num_blobs*3 + i*3+2]= 0;
-        
+
         active_blob_array[i]->get_stored_centroid(com.data);
         for(int j = i+1; j < num_blobs; ++j) {
 
             active_blob_array[j]->get_stored_centroid(com2.data);
-            blob_corr[i*num_blobs*3 + j*3]= box_dim.x*floor((com2.x-com.x+0.5*box_dim.x)/box_dim.x);
-            blob_corr[i*num_blobs*3 + j*3+1]= box_dim.y*floor((com2.y-com.y+0.5*box_dim.y)/box_dim.y);
+            
+            ytemp = floor((com2.y-com.y+0.5*box_dim.y)/box_dim.y);
+            
+            blob_corr[i*num_blobs*3 + j*3+1]= box_dim.y*ytemp;
             blob_corr[i*num_blobs*3 + j*3+2]= box_dim.z*floor((com2.z-com.z+0.5*box_dim.z)/box_dim.z);
+            blob_corr[i*num_blobs*3 + j*3]= box_dim.x*floor((com2.x-com.x-box_lag*ytemp+0.5*box_dim.x)/box_dim.x)+ytemp*box_lag;
 
+            
+            /*
+            if(step%100==0){
+            cout<<"\nBlob_corr for blob "<<i<<"to blob"<<j<<"with box_lag "<<box_lag<<"and ytemp "<<ytemp<<" is: "<<endl;
+            cout<<blob_corr[i*num_blobs*3 + j*3]<<"\t"<<blob_corr[i*num_blobs*3 + j*3+1]<<"\t"<<blob_corr[i*num_blobs*3 + j*3+2]<<endl;
+            }
+            */
+            
             blob_corr[j*num_blobs*3 + i*3] = (-1)*blob_corr[i*num_blobs*3 + j*3];
             blob_corr[j*num_blobs*3 + i*3+1] = (-1)*blob_corr[i*num_blobs*3 + j*3+1];
             blob_corr[j*num_blobs*3 + i*3+2] = (-1)*blob_corr[i*num_blobs*3 + j*3+2];
@@ -4195,8 +4233,8 @@ int World::die_with_dignity(int step, scalar wtime) {
 
 
 #ifdef FFEA_PARALLEL_FUTURE
-int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size) {
-    return lookup.prebuild_nearest_neighbour_lookup(cell_size);
+int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size,int vox_lag) {
+    return lookup.prebuild_nearest_neighbour_lookup(cell_size,vox_lag);
 }
 
 bool World::updatingVdWLL() {

@@ -587,7 +587,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    return FFEA_OK; 
 }
 
-int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL*/){
+int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL*/, int vox_lag){
 
     scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
     vector3 dx, dtemp, dxik;
@@ -613,7 +613,7 @@ int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL
     int b_index_i, b_index_j; 
     int daddy_i, daddy_j;
 #ifdef USE_OPENMP
-#pragma omp parallel default(none) shared(blob_corr) private(type_i,phi_i,e_i,e_j,dx,dxik,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j,daddy_i, daddy_j)
+#pragma omp parallel default(none) shared(blob_corr,vox_lag) private(type_i,phi_i,e_i,e_j,dx,dxik,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j,daddy_i, daddy_j)
     {
     int thread_id = omp_get_thread_num(); 
     #pragma omp for
@@ -631,7 +631,7 @@ int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL
       for (int c=0; c<27; c++) {
         b_j = pcLookUp.get_top_of_stack(b_i->x + adjacent_cells[c][0], 
                                         b_i->y + adjacent_cells[c][1],
-                                        b_i->z + adjacent_cells[c][2]);
+                                        b_i->z + adjacent_cells[c][2],vox_lag);
   
         while (b_j != NULL) {
            b_index_j = b_j->index;
@@ -709,7 +709,7 @@ int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL
 }
 
 
-int PreComp_solver::solve_using_neighbours(){
+int PreComp_solver::solve_using_neighbours( int vox_lag){
 
     scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
     vector3 dx, dtemp, dxik, dxjk;
@@ -730,7 +730,7 @@ int PreComp_solver::solve_using_neighbours(){
     LinkedListNode<int> *b_j = NULL; 
     int b_index_i, b_index_j; 
 #ifdef USE_OPENMP
-#pragma omp parallel default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j,dxik,dxjk)
+#pragma omp parallel default(none) shared(vox_lag) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j,dxik,dxjk)
     {
     int thread_id = omp_get_thread_num(); 
     #pragma omp for
@@ -751,7 +751,7 @@ int PreComp_solver::solve_using_neighbours(){
       for (int c=0; c<27; c++) {
         b_j = pcLookUp.get_top_of_stack(b_i->x + adjacent_cells[c][0], 
                                         b_i->y + adjacent_cells[c][1],
-                                        b_i->z + adjacent_cells[c][2]);
+                                        b_i->z + adjacent_cells[c][2],vox_lag);
   
         while (b_j != NULL) {
            b_index_j = b_j->index;
@@ -1169,7 +1169,7 @@ scalar PreComp_solver::get_field_energy(int index0, int index1) {
 }
 
 
-int PreComp_solver::build_pc_nearest_neighbour_lookup() {
+int PreComp_solver::build_pc_nearest_neighbour_lookup(int vox_lag) {
 
    pcLookUp.clear(); 
    int x, y, z; 
@@ -1178,7 +1178,7 @@ int PreComp_solver::build_pc_nearest_neighbour_lookup() {
      y = (int) floor(b_pos[3*i+1] / pcVoxelSize);
      z = (int) floor(b_pos[3*i+2] / pcVoxelSize);
 
-     if (pcLookUp.add_node_to_stack(i, x, y, z) == FFEA_ERROR) {
+     if (pcLookUp.add_node_to_stack(i, x, y, z, vox_lag) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error when trying to add bead %d to nearest neighbour stack at (%d, %d, %d)\n", i, x,y,z);
      }
  
@@ -1189,7 +1189,7 @@ int PreComp_solver::build_pc_nearest_neighbour_lookup() {
 }
 
 
-int PreComp_solver::prebuild_pc_nearest_neighbour_lookup_and_swap() {
+int PreComp_solver::prebuild_pc_nearest_neighbour_lookup_and_swap( int vox_lag) {
  
    pcLookUp.clear_shadow_layer();
    int x, y, z; 
@@ -1198,7 +1198,7 @@ int PreComp_solver::prebuild_pc_nearest_neighbour_lookup_and_swap() {
      y = (int) floor(b_pos[3*i+1] / pcVoxelSize);
      z = (int) floor(b_pos[3*i+2] / pcVoxelSize);
 
-     if (pcLookUp.add_node_to_stack_shadow(i, x, y, z) == FFEA_ERROR) {
+     if (pcLookUp.add_node_to_stack_shadow(i, x, y, z, vox_lag) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error when trying to add bead %d to nearest neighbour stack at (%d, %d, %d)\n", i, x,y,z);
      }
  
@@ -1209,7 +1209,7 @@ int PreComp_solver::prebuild_pc_nearest_neighbour_lookup_and_swap() {
 }
 
 
-int PreComp_solver::prebuild_pc_nearest_neighbour_lookup() {
+int PreComp_solver::prebuild_pc_nearest_neighbour_lookup(int vox_lag) {
  
    pcLookUp.clear_shadow_layer();
    pcLookUp.forbid_swapping();
@@ -1219,7 +1219,7 @@ int PreComp_solver::prebuild_pc_nearest_neighbour_lookup() {
      y = (int) floor(b_pos[3*i+1] / pcVoxelSize);
      z = (int) floor(b_pos[3*i+2] / pcVoxelSize);
 
-     if (pcLookUp.add_node_to_stack_shadow(i, x, y, z) == FFEA_ERROR) {
+     if (pcLookUp.add_node_to_stack_shadow(i, x, y, z,vox_lag) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error when trying to add bead %d to nearest neighbour stack at (%d, %d, %d)\n", i, x,y,z);
      }
  
