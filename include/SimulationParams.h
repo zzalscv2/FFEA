@@ -118,6 +118,7 @@ public:
     int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
     int calc_ctforces; ///< Whether or not to include constant forces onto nodes defined in the ctforces block
     int force_pbc; ///< Whether or not to apply pbc to surface insteractions
+    int msd_corr_calc;
     int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
     int wall_x_1;
     int wall_x_2;
@@ -142,6 +143,16 @@ public:
     string measurement_out_fname;
     string mini_meas_out_fname;
     string detailed_meas_out_fname;
+    string base_corr_out_fname;
+    string corrected_corr_out_fname;
+    string x_corr_out_fname;
+    string y_corr_out_fname;
+    string z_corr_out_fname;
+    string sys_corr_out_fname;
+    string elastic_stress_corr_out_fname;
+    string viscous_stress_corr_out_fname;
+    string total_stress_corr_out_fname;
+    string vdw_in_fname;
     string ssint_in_fname;
     string bsite_in_fname;
     string icheckpoint_fname;  ///< Input Checkpoint file name

@@ -986,6 +986,47 @@ void Blob::calc_and_store_centroid(vector3 &com) {
 
 }
 
+void Blob::calc_tot_visc(matrix3 stress){
+    //matrix3 stress;
+    vector12 v;
+    //mat3_set_zero(stress);
+    scalar prefac=0;
+    for(int i = 0; i<num_elements;i++){
+        //prefac=mesoDimensions::pressure * mesoDimensions::time*elem[i].vol*mesoDimensions::volume*mesoDimensions::velocity*mesoDimensions::length*mesoDimensions::length;
+        prefac = mesoDimensions::pressure*elem[i].vol*mesoDimensions::volume;
+        vec12_set_zero(v);
+        elem[i].get_element_velocity_vector(v);
+        
+            
+        stress[0][0]+=prefac*((4/3 *elem[i].A+elem[i].B)*((v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9])+(elem[i].B-2/3*elem[i].A)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10]+(v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11]));
+        stress[0][1]+=prefac*elem[i].A*((v[1]-v[0])*elem[i].dpsi[2]+(v[2]-v[0])*elem[i].dpsi[6]+(v[3]-v[0])*elem[i].dpsi[10]+(v[5]-v[4])*elem[i].dpsi[1]+(v[6]-v[4])*elem[i].dpsi[5]+(v[7]-v[4])*elem[i].dpsi[9]);
+        stress[0][2]+=prefac*elem[i].A*((v[1]-v[0])*elem[i].dpsi[3]+(v[2]-v[0])*elem[i].dpsi[7]+(v[3]-v[0])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[1]+(v[10]-v[8])*elem[i].dpsi[5]+(v[11]-v[8])*elem[i].dpsi[9]);
+        stress[1][0]+=prefac*elem[i].A*((v[5]-v[4])*elem[i].dpsi[1]+(v[6]-v[4])*elem[i].dpsi[5]+(v[7]-v[4])*elem[i].dpsi[9]+(v[1]-v[0])*elem[i].dpsi[2]+(v[2]-v[0])*elem[i].dpsi[6]+(v[3]-v[0])*elem[i].dpsi[10]);
+        stress[1][1]+=prefac*((4/3 *elem[i].A+elem[i].B)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10])+(elem[i].B-2/3*elem[i].A)*((v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9]+(v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11]));
+        stress[1][2]+=prefac*elem[i].A*((v[5]-v[4])*elem[i].dpsi[3]+(v[6]-v[4])*elem[i].dpsi[7]+(v[7]-v[4])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[2]+(v[10]-v[8])*elem[i].dpsi[6]+(v[11]-v[8])*elem[i].dpsi[10]);
+        stress[2][0]+=prefac*elem[i].A*((v[1]-v[0])*elem[i].dpsi[3]+(v[2]-v[0])*elem[i].dpsi[7]+(v[3]-v[0])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[1]+(v[10]-v[8])*elem[i].dpsi[5]+(v[11]-v[8])*elem[i].dpsi[9]);
+        stress[2][1]+=prefac*elem[i].A*((v[9]-v[8])*elem[i].dpsi[2]+(v[10]-v[8])*elem[i].dpsi[6]+(v[11]-v[8])*elem[i].dpsi[10]+(v[5]-v[4])*elem[i].dpsi[3]+(v[6]-v[4])*elem[i].dpsi[7]+(v[7]-v[4])*elem[i].dpsi[11]);
+        stress[2][2]+=prefac*((4/3 *elem[i].A+elem[i].B)*((v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11])+(elem[i].B-2/3*elem[i].A)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10]+(v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9]));
+        
+        //vec12_scale(v, mesoDimensions::velocity);
+        //print_vector12(v);
+        //printf("*******\nprefac is %.14e\n",prefac);
+        //printf("****** blob %d element %d:\n vol is %.14e /n",blob_index, i,elem[i].vol*mesoDimensions::volume);
+       /* printf("*********blob %d element %d:\nshear visc is %.14e bulk visc is %.14e\nV is \n", blob_index,i,elem[i].A*mesoDimensions::pressure * mesoDimensions::time,mesoDimensions::pressure * mesoDimensions::time*elem[i].B);
+        vec12_scale(v, mesoDimensions::velocity);
+        print_vector12(v);
+        printf("****** blob %d element %d:\n dpsi is \n",blob_index, i);
+        print_vector12(elem[i].dpsi);    
+        printf("*******\nprefac is %.14e\n",prefac);
+        printf("****** blob %d element %d:\n vol is %.14e /n",blob_index, i,elem[i].vol*mesoDimensions::volume);
+        */
+    }
+    
+    
+   // printf("*******\nViscous Stress for blob %d is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",blob_index,stress[0][0],stress[0][1],stress[0][2],stress[1][0],stress[1][1],stress[1][2],stress[2][0],stress[2][1],stress[2][2]);
+    //return stress;
+}
+
 // This one returns an array rather than arsing about with pointers
 vector3 Blob::calc_centroid() {
 

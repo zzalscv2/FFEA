@@ -488,15 +488,15 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         get_system_dimensions(&dimension_vector);
 
         // Calculate decent box size
-        params.es_N_x = 2 * (int)ceil(dimension_vector.x / params.vdw_cutoff);
-        params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.vdw_cutoff);
-        params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.vdw_cutoff);
+        params.es_N_x = 2 * (int)ceil(dimension_vector.x / params.ssint_cutoff);
+        params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.ssint_cutoff);
+        params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.ssint_cutoff);
     }
 
     // Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
-    box_dim.x = params.vdw_cutoff * params.es_N_x;
-    box_dim.y = params.vdw_cutoff * params.es_N_y;
-    box_dim.z = params.vdw_cutoff * params.es_N_z;
+    box_dim.x = params.ssint_cutoff * params.es_N_x;
+    box_dim.y = params.ssint_cutoff * params.es_N_y;
+    box_dim.z = params.ssint_cutoff * params.es_N_z;
 
     shift.x = box_dim.x / 2.0 - world_centroid.x;
     shift.y = box_dim.y / 2.0 - world_centroid.y;
