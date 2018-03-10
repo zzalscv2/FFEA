@@ -37,7 +37,7 @@ add_library(ffea_lib
     Spring.cpp VdW_solver.cpp Steric_solver.cpp LJSteric_solver.cpp
     GenSoftSSINT_solver.cpp
     KineticState.cpp PreComp_solver.cpp CheckTetrahedraOverlap.cpp 
-    VolumeIntersection.cpp RngStream.cpp rod_math_v9.cpp
+    VolumeIntersection.cpp RngStream.cpp mt_correlator.cpp rod_math_v9.cpp
     rod_structure.cpp)
     
 add_executable(ffea ffea.cpp CG_solver.cpp ConjugateGradientSolver.cpp

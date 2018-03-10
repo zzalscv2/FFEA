@@ -77,6 +77,7 @@ public:
     scalar dt; ///< time step
     long long num_steps; ///< Number of time steps to run simulation for
     int check; ///< Every how many steps should the program 'check' the system i.e calculate energies, print snapshots etc.
+    int mini_meas; ///< Every how many steps should the program output centroid, F_ij mult F_ij transpose.
     int num_blobs; ///< Number of blobs in the system
     int num_rods; ///< Number of rods in the system
     int *num_conformations; ///< Number of conformations for each blob
@@ -118,6 +119,7 @@ public:
     int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
     int calc_ctforces; ///< Whether or not to include constant forces onto nodes defined in the ctforces block
     int force_pbc; ///< Whether or not to apply pbc to surface insteractions
+    int msd_corr_calc;
     int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
     int wall_x_1;
     int wall_x_2;
@@ -140,7 +142,18 @@ public:
     string trajectory_out_fname;
     string kinetics_out_fname;
     string measurement_out_fname;
+    string mini_meas_out_fname;
     string detailed_meas_out_fname;
+    string base_corr_out_fname;
+    string corrected_corr_out_fname;
+    string x_corr_out_fname;
+    string y_corr_out_fname;
+    string z_corr_out_fname;
+    string sys_corr_out_fname;
+    string elastic_stress_corr_out_fname;
+    string viscous_stress_corr_out_fname;
+    string total_stress_corr_out_fname;
+    string vdw_in_fname;
     string ssint_in_fname;
     string bsite_in_fname;
     string icheckpoint_fname;  ///< Input Checkpoint file name
@@ -180,13 +193,22 @@ public:
     /** Writes all params to fout (either a file or stdout) for user's info */
     void write_to_file(FILE *fout, PreComp_params &pc_params);
 
+    int check_ratio;
+
 private:
     int trajectory_out_fname_set;
     int measurement_out_fname_set;
+    int mini_meas_out_fname_set;
     int icheckpoint_fname_set;
     int ocheckpoint_fname_set;
     int ssint_in_fname_set;
     int bsite_in_fname_set;
+    /*
+    int base_corr_out_fname_set;
+    int corrected_corr_out_fname_set;
+    int x_corr_out_fname_set;
+    int y_corr_out_fname_set;
+    int z_corr_out_fname_set;
 
 /** Check if the file oFile exists, and if so
   *     rename it to "__"+oFile+"__bckp.N",

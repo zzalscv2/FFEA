@@ -462,9 +462,23 @@ public:
     scalar get_kinetic_energy();
     scalar get_strain_energy();
 
-    int pbc_count[3];
+    int get_pbc_count(int ind);
+    void inc_pbc_count(int ind);
+    void dec_pbc_count(int ind);
+    int read_pbc_count_from_file(FILE *mini_meas_out, int b);
+    
+    //scalar * get_total_element_stress();
+    //scalar * get_total_node_stress();
+    
+    matrix3 total_elastic_stress;
+    matrix3 total_viscous_stress;
+    
+    void calc_tot_visc(matrix3 stress);
 
 private:
+
+    int pbc_count[3];
+
 
     /** Total number of nodes in Blob */
     int num_nodes;
@@ -743,7 +757,7 @@ private:
     int calculate_node_element_connectivity();
 
     int build_mass_matrix();
-    
+    scalar total_vol;
     int calc_back_vel;
     scalar sys_dim_y;
     

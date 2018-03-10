@@ -51,12 +51,23 @@ World::World() {
     measurement_out = NULL;
     detailed_meas_out = NULL;
     writeDetailed = true;
+    mini_meas_out = NULL;
     kinetics_out = NULL;
     checkpoint_out = NULL;
     vdw_solver = NULL;
     Seeds = NULL;
     num_seeds = 0;
     blob_corr = NULL;
+    
+    base_corr_out = NULL;
+    corrected_corr_out = NULL;
+    x_corr_out = NULL;
+    y_corr_out = NULL;    
+    z_corr_out = NULL;
+    sys_corr_out = NULL;
+    elastic_stress_corr_out = NULL;
+    viscous_stress_corr_out = NULL;
+    total_stress_corr_out = NULL;
 
     ffeareader = NULL;
     systemreader = NULL;
@@ -73,6 +84,9 @@ World::World() {
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
     rmsd = 0.0;
+    mat3_set_zero(mean_stress_elastic);
+    mat3_set_zero(mean_stress_viscous);
+    mat3_set_zero(mean_stress_total);
 }
 
 World::~World() {
@@ -149,6 +163,16 @@ World::~World() {
     checkpoint_out = NULL;
     detailed_meas_out = NULL;
     kinetics_out = NULL;
+    mini_meas_out = NULL;
+    base_corr_out = NULL;
+    corrected_corr_out = NULL;
+    x_corr_out = NULL;
+    y_corr_out = NULL;    
+    z_corr_out = NULL;
+    sys_corr_out = NULL;
+    elastic_stress_corr_out = NULL;
+    viscous_stress_corr_out = NULL;
+    total_stress_corr_out = NULL;
 
 
     delete vdw_solver; 
@@ -172,6 +196,9 @@ World::~World() {
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
     rmsd = 0.0;
+    mat3_set_zero(mean_stress_elastic);
+    mat3_set_zero(mean_stress_viscous);
+    mat3_set_zero(mean_stress_total);
 
 }
 
@@ -608,6 +635,21 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                  FFEA_FILE_ERROR_MESSG(params.trajectory_beads_fname.c_str())
                }
             }
+            /*
+            if(params.mini_meas!=0){
+                mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "w");
+                
+               fprintf(mini_meas_out, "FFEA Mini Measurement File\n\nMeasurements:\n%-14s", "Time");
+				for(i = 0; i < params.num_blobs; ++i) {
+					fprintf(mini_meas_out, "| B%d ", i);
+					fprintf(mini_meas_out, "%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s%-14s","Centroid.x", "Centroid.y", "Centroid.z","PBC_count.x","PBC_count.y","PBC_count.z", "FFt11","FFt12","FFt13","FFt22","FFt23","FFt33");
+				}
+                fprintf(mini_meas_out, "\n");
+				fflush(mini_meas_out);
+			}
+			*/
+
+
 
             // Open the kinetics output file for writing (if neccessary) and write initial stuff
             if (params.kinetics_out_fname_set == 1) {
@@ -823,6 +865,151 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                     FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.detailed_meas_out_fname.c_str())
                 }
             }
+/*
+            if(params.mini_meas!=0) {
+
+                if(params.check%params.mini_meas!=0){
+                        FFEA_FILE_ERROR_MESSG("Cannot restart mini_measurement file as Check not integer divisible by mini_meas")
+                }
+				if ((mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "r")) == NULL) {
+				    FFEA_FILE_ERROR_MESSG(params.mini_meas_out_fname.c_str())
+				}
+
+
+				if (fseek(mini_meas_out, 0, SEEK_END) != 0) {
+				    FFEA_ERROR_MESSG("Could not seek to end of file\n")
+				}
+
+				last_asterisk_pos = ftello(mini_meas_out);
+
+				num_asterisks = 0;
+               num_asterisks_to_find = (frames_to_delete)+1; // 1 to get to top of last frame, one to delete the previous
+			    while (num_asterisks != num_asterisks_to_find) {
+			        if (fseek(mini_meas_out, -2, SEEK_CUR) != 0) {
+				//perror(NULL);
+				//FFEA_ERROR_MESSG("It is likely we have reached the beginning of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
+				    printf("Found beginning of file. Searching forwards for next asterisk...");
+				    singleframe = true;
+
+				// This loop will allow the script to find the 'final' asterisk
+				    while(true) {
+					    if ((c = fgetc(mini_meas_out)) == '*') {
+						    fseek(mini_meas_out, -1, SEEK_CUR);
+						    break;
+					    }
+				    }
+
+
+			        }
+			        c = fgetc(mini_meas_out);
+			        if (c == '*') {
+                    num_asterisks++;
+                    printf("Found %d\n", num_asterisks);
+
+				// get the position in the file of this last asterisk
+				//if (num_asterisks == num_asterisks_to_find - 2) {
+				  //  last_asterisk_pos = ftello(trajectory_out);
+				//}
+			    }
+			}
+			
+			
+            if ((c = fgetc(mini_meas_out)) != '\n') {
+			    ungetc(c, mini_meas_out);
+			} else {
+				last_asterisk_pos = ftello(mini_meas_out)-2;//-2 removes asterisk so restart files are identical
+			}
+
+            printf("Loading Blob PBC relocation counts matching last completely written snapshot \n");
+            int temp_pbc_count;
+            double trash;
+            if (fscanf(mini_meas_out, "%le", &trash) != 1) {
+                    FFEA_ERROR_MESSG("(When restarting) Error reading from fmm file, for time)")
+            }
+            cout<<"Mini-Measurement restart step is "<<trash/(params.dt*mesoDimensions::time)<<endl;
+            for (int b = 0; b < params.num_blobs; b++) {
+                printf("Loading Blob PBC relocation counts matching last completely written snapshot, for blob %d\n", b);
+                if (active_blob_array[b]->read_pbc_count_from_file(mini_meas_out,b) == FFEA_ERROR) {
+                    FFEA_ERROR_MESSG("Error restarting blob %d\n", b)
+                }
+            }
+
+
+			printf("Truncating the mini_meas file to the last asterisk...\n");
+			if (truncate(params.mini_meas_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate mini_meas file %s\n", params.mini_meas_out_fname.c_str())
+                }
+			}
+			*/
+			if(params.msd_corr_calc ==1){
+			    cout<<"here's a flag"<<endl;
+			    if ((base_corr_out = fopen(params.base_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.base_corr_out_fname.c_str())
+				    }
+				if ((corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.corrected_corr_out_fname.c_str())
+				    }
+				if ((x_corr_out = fopen(params.x_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.x_corr_out_fname.c_str())
+				    }
+				if ((y_corr_out = fopen(params.y_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.y_corr_out_fname.c_str())
+				    }
+				if ((z_corr_out = fopen(params.z_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.z_corr_out_fname.c_str())
+				    }
+				if ((sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.sys_corr_out_fname.c_str())
+				    }
+				if ((elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.elastic_stress_corr_out_fname.c_str())
+				    }
+				if ((viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.viscous_stress_corr_out_fname.c_str())
+				    }
+				if ((total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.total_stress_corr_out_fname.c_str())
+				    }
+				cout<<"Managed dem opens for reads"<<endl;    
+				for(int i =0; i<params.num_blobs;i++){
+				    cout<<"this is blob"<<i<<endl;
+				    diff_vec[i].read_ffea(base_corr_out);
+				    cout<<"Read base_corr"<<endl;
+                    diff_vec_corrected[i].read_ffea(corrected_corr_out);
+                    cout<<"Read corrected_corr"<<endl;
+                    diff_corr_x[i].read_ffea(x_corr_out);
+                    cout<<"Read x_corr"<<endl;
+                    diff_corr_y[i].read_ffea(y_corr_out);
+                    cout<<"Read y_corr"<<endl;
+                    diff_corr_z[i].read_ffea(z_corr_out);
+                    cout<<"Read z_corr"<<endl;
+                    /*fscanf(base_corr_out, "%*[^\n]\n");
+                    fscanf(corrected_corr_out, "%*[^\n]\n");
+                    fscanf(x_corr_out, "%*[^\n]\n");
+                    fscanf(y_corr_out, "%*[^\n]\n");
+                    fscanf(z_corr_out, "%*[^\n]\n");*/
+                    
+				}
+				
+				    cout<<"it's treason, then?"<<endl;
+				    sys_corr.read_ffea(sys_corr_out);
+				    cout<<"did the read thing"<<endl;  
+				    elastic_stress_corr.read_ffea(elastic_stress_corr_out);
+				    viscous_stress_corr.read_ffea(viscous_stress_corr_out);
+				    total_stress_corr.read_ffea(total_stress_corr_out);
+				      
+			        fclose(base_corr_out);
+                    fclose(corrected_corr_out);
+                    fclose(x_corr_out);
+                    fclose(y_corr_out);    
+                    fclose(z_corr_out);
+                    fclose(sys_corr_out);
+                    fclose(elastic_stress_corr_out);
+                    fclose(viscous_stress_corr_out);
+                    fclose(total_stress_corr_out);
+                    cout<<"closed all the fs "<<endl;
+			}
+
 
             // Open trajectory and measurment files for appending
             printf("Opening trajectory and measurement files for appending.\n");
@@ -848,6 +1035,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 //fprintf(kinetics_out, "#==RESTART==\n");
             }
 
+            if(params.mini_meas!=0) {
+                    printf("mini_meas opened for appending properly\n");
+            	if((mini_meas_out = fopen(params.mini_meas_out_fname.c_str(), "a")) == NULL) {
+					FFEA_FILE_ERROR_MESSG(params.mini_meas_out_fname.c_str())
+				}
+			}
             /*
             *
             *
@@ -1932,7 +2125,7 @@ int World::run() {
                 thread_updatingPCLL = std::async(std::launch::async, &PreComp_solver::prebuild_pc_nearest_neighbour_lookup, &pc_solver);
             } else // die with dignity
 #else
-            if (pc_solver.build_pc_nearest_neighbour_lookup(vox_lag) == FFEA_ERROR)
+            if (pc_solver.build_pc_nearest_neighbour_lookup() == FFEA_ERROR)
 #endif
             {
                 return die_with_dignity(step, wtime);
@@ -2017,13 +2210,19 @@ int World::run() {
 
         // Update Blobs, while tracking possible errors.
         int fatal_errors = 0;
+        mat3_set_zero(mean_stress_elastic);
+        mat3_set_zero(mean_stress_viscous);
+        mat3_set_zero(mean_stress_total);
 #ifdef FFEA_PARALLEL_PER_BLOB
         #pragma omp parallel for default(none) reduction(+: fatal_errors) schedule(static)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             if (active_blob_array[i]->update_internal_forces() == FFEA_ERROR) fatal_errors++;
+            mat3_plus_equal(mean_stress_elastic,active_blob_array[i]->total_elastic_stress);
         }
-
+        //printf("*************\nsystem total internal stresses pre vol av are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
+        mat3_scale(mean_stress_elastic,1/(box_dim.x*box_dim.y*box_dim.z*mesoDimensions::volume));
+        //printf("*************\nsystem total elastic stresses post vol av are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
         if (fatal_errors > 0) return die_with_dignity(step, wtime);
 
 	// Now, for this step, all forces and positions are correct, as are the kinetic states
@@ -2045,6 +2244,12 @@ int World::run() {
         wtime4 = omp_get_wtime();
         time3 += wtime4 - wtime3;
 #endif
+
+        if (params.mini_meas!=0){
+            if ((step) % params.mini_meas == 0) {
+                print_mini_meas_file(step, wtime);
+            }
+        }
 
         /* Kinetic Part of each step */
 	// This part consists of a discrete change, and so must occur before a force calculation cycle to be consistent with measurement data
@@ -2186,6 +2391,34 @@ int World::change_kinetic_state(int blob_index, int target_state) {
  */
 int World::read_and_build_system(vector<string> script_vector) {
 
+    // Create some blobs based on params
+    cout << "\tCreating blob array..." << endl;
+    blob_array = new Blob*[params.num_blobs];
+    active_blob_array = new Blob*[params.num_blobs];
+    
+    if(params.msd_corr_calc ==1){
+    for(int i = 0; i < params.num_blobs; ++i) {
+    
+            diff_vec.push_back(TCorrelatorDiffusionVector(35,16));
+            diff_vec_corrected.push_back(TCorrelatorDiffusionVector(35,16));
+            Fmm_vec.push_back(Fmm_blob());
+            diff_corr_x.push_back(TCorrelatorDiffusion(35,16));
+            diff_corr_y.push_back(TCorrelatorDiffusion(35,16));
+            diff_corr_z.push_back(TCorrelatorDiffusion(35,16));
+        }    
+        //sys_corr[0].push_back(TCorrelatorDiffusionVector(35,16));
+    }
+
+#ifdef FFEA_PARALLEL_PER_BLOB
+    #pragma omp parallel for default(none) schedule(static) // shared(blob_array, active_blob_array)
+#endif
+    for (int i = 0; i < params.num_blobs; ++i) {
+        blob_array[i] = new Blob[params.num_conformations[i]];
+        active_blob_array[i] = &blob_array[i][0];
+        
+    }
+    //creates blob correction array if specified in input file
+    if (params.force_pbc ==1) blob_corr = new scalar[params.num_blobs*params.num_blobs*3];
     // READ and parse more
     // Reading variables
     systemreader = new FFEA_input_reader();
@@ -3841,6 +4074,10 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     } else {
         printf("\rstep = %d (simulation time = %.2fns, wall clock time = %.3f hrs)\n", step, step * params.dt * (mesoDimensions::time / 1e-9), (omp_get_wtime() - wtime) / 3600.0);
     }
+   /* if(params.mini_meas !=0){
+        fprintf(mini_meas_out,"*\n");
+    }*/
+    
 
     // TRAJECTORY file: can be printed serially, or in parallel:
 #ifdef FFEA_PARALLEL_FUTURE
@@ -3904,6 +4141,71 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     if(detailed_meas_out != NULL) {
         fprintf(detailed_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
     }
+    /*
+     if(params.msd_corr_calc ==1){
+        for(int i = 0;i<num_blobs;i++){
+            diff_vec[i].evaluate();
+            diff_vec_corrected[i].evaluate();
+            diff_corr_x[i].evaluate();
+            diff_corr_y[i].evaluate();
+            diff_corr_z[i].evaluate();
+        }
+
+        sys_corr.evaluate();
+     }
+     */
+     
+    //cout<<"msd_corr_ calc = "<<params.msd_corr_calc<<endl;
+    if(params.msd_corr_calc==1){
+         base_corr_out = fopen(params.base_corr_out_fname.c_str(), "w");
+         
+         corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "w");
+         x_corr_out = fopen(params.x_corr_out_fname.c_str(), "w");
+         y_corr_out = fopen(params.y_corr_out_fname.c_str(), "w");
+         z_corr_out = fopen(params.z_corr_out_fname.c_str(), "w");
+         sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "w");
+         elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "w");
+         viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "w");
+         total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "w");
+         	
+     
+        for(int i = 0; i < params.num_blobs; ++i){
+            diff_vec[i].save_ffea(base_corr_out);
+            diff_vec_corrected[i].save_ffea(corrected_corr_out);
+            diff_corr_x[i].save_ffea(x_corr_out);
+            diff_corr_y[i].save_ffea(y_corr_out);
+            diff_corr_z[i].save_ffea(z_corr_out);
+            /*fprintf(base_corr_out,"*\n");
+            fflush(base_corr_out);
+            fprintf(corrected_corr_out,"*\n");
+            fflush(corrected_corr_out);
+            fprintf(x_corr_out,"*\n");
+            fflush(x_corr_out);
+            fprintf(y_corr_out,"*\n");
+            fflush(y_corr_out);
+            fprintf(z_corr_out,"*\n");
+            fflush(z_corr_out);*/
+        }
+        
+        sys_corr.save_ffea(sys_corr_out);
+        elastic_stress_corr.save_ffea(elastic_stress_corr_out); 
+        viscous_stress_corr.save_ffea(viscous_stress_corr_out);
+        total_stress_corr.save_ffea(total_stress_corr_out);
+             
+        fclose(base_corr_out);
+        fclose(corrected_corr_out);
+        fclose(x_corr_out);
+        fclose(y_corr_out);    
+        fclose(z_corr_out);
+        fclose(sys_corr_out);
+        fclose(elastic_stress_corr_out);
+        fclose(viscous_stress_corr_out);
+        fclose(total_stress_corr_out);        
+    }
+
+
+   // fprintf(mini_meas_out,"*\n");    
+   // fflush(mini_meas_out);
 
 #ifdef FFEA_PARALLEL_PER_BLOB
     #pragma omp parallel for default(none) schedule(static)
@@ -3981,6 +4283,94 @@ void World::print_checkpoints() {
 	//cout << "hi" << endl << flush;   
 	fflush(checkpoint_out);
     // Done with the checkpoint!
+}
+
+void World::print_mini_meas_file(int step, scalar wtime) {
+    //fprintf(mini_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
+    /*
+    for (int i = 0; i < params.num_blobs; i++) {
+
+        active_blob_array[i]->calc_and_write_mini_meas_to_file(mini_meas_out);
+        
+    }
+    */
+    vector3 com;
+    matrix3 visc_stress_temp;
+    mat3_set_zero(visc_stress_temp);
+    matrix3 total_stress;
+    mat3_set_zero(total_stress);
+    mat3_set_zero(mean_stress_viscous);
+    
+    if(params.msd_corr_calc ==1){
+    for(int k = 0;k<3;k++){
+        sys_blob.pos[k] = 0;
+        }
+    for (int j = 0; j < params.num_blobs; j++) {
+        //active_blob_array[j]->get_CoM(&com);
+        active_blob_array[j]->get_centroid(&com);
+        //cout<<"blob "<<j<<" CoM  is "<<com.x<<"  "<<com.y<<"  "<<com.z<<endl;
+        
+        for(int k = 0;k<3;k++){
+        Fmm_vec[j].pos[k] = com[k];
+        }
+        //cout<<"blob "<<j<<" pos without pbc is "<<Fmm_vec[j].pos[0]<<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+        
+        for(int k = 0;k<3;k++){
+                Fmm_vec[j].PBC_Count[k] = active_blob_array[j]->get_pbc_count(k);
+                
+        }
+        //cout<<"blob "<<j<<" get pbc count is "<<active_blob_array[j]->get_pbc_count(0)<<"  "<<active_blob_array[j]->get_pbc_count(1)<<"  "<<active_blob_array[j]->get_pbc_count(2)<<endl;
+        //cout<<"blob "<<j<<" pbc count is "<<Fmm_vec[j].PBC_Count[0]<<"  "<<Fmm_vec[j].PBC_Count[1]<<"  "<<Fmm_vec[j].PBC_Count[2]<<endl;
+        for(int k = 0;k<3;k++){
+                Fmm_vec[j].pos[k] += box_dim[k]*Fmm_vec[j].PBC_Count[k];
+                sys_blob.pos[k] += Fmm_vec[j].pos[k];
+
+                Fmm_vec[j].pos[k] *= mesoDimensions::length;
+                sys_blob.pos[k] *= mesoDimensions::length;
+        }
+        //cout<<"blob "<<j<<" pos with pbc is "<<Fmm_vec[j].pos[0] <<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+        //cout<<"next line is base for blob "<<j<<endl;
+        diff_vec[j].add(Fmm_vec[j].pos);
+        }
+        for(int k = 0;k<3;k++){
+            sys_blob.pos[k]/=params.num_blobs;
+        }
+        //cout<<"next line is sys"<<endl;
+        sys_corr.add(sys_blob.pos);
+        for(int j= 0;j<params.num_blobs;j++){
+            for(int k = 0;k<3;k++){
+                 Fmm_vec[j].pos[k]-=sys_blob.pos[k];
+            }
+            //cout<<"blob "<<j<<" pos corrected is "<<Fmm_vec[j].pos[0] <<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+            //cout<<"next line is corrected for blob "<<j<<endl;
+            diff_vec_corrected[j].add(Fmm_vec[j].pos);
+
+            diff_corr_x[j].add(Fmm_vec[j].pos[0]);
+            diff_corr_y[j].add(Fmm_vec[j].pos[1]);
+            diff_corr_z[j].add(Fmm_vec[j].pos[2]);
+            active_blob_array[j]->calc_tot_visc(visc_stress_temp);
+            mat3_plus_equal(mean_stress_viscous,visc_stress_temp);
+        }
+        
+        mat3_scale(mean_stress_viscous,1/(box_dim.x*box_dim.y*box_dim.z*mesoDimensions::volume));
+        
+        
+        mat3_add(mean_stress_viscous,mean_stress_elastic,mean_stress_total);
+        elastic_stress_corr.add(mean_stress_elastic);
+        viscous_stress_corr.add(mean_stress_viscous);
+        total_stress_corr.add(mean_stress_total);
+        /*if(step%100000==0){
+            printf("*******\nTotal Viscous Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_viscous[0][0],mean_stress_viscous[0][1],mean_stress_viscous[0][2],mean_stress_viscous[1][0],mean_stress_viscous[1][1],mean_stress_viscous[1][2],mean_stress_viscous[2][0],mean_stress_viscous[2][1],mean_stress_viscous[2][2]);
+            printf("*******\nTotal elastic Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
+            printf("*******\nTotal Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_total[0][0],mean_stress_total[0][1],mean_stress_total[0][2],mean_stress_total[1][0],mean_stress_total[1][1],mean_stress_total[1][2],mean_stress_total[2][0],mean_stress_total[2][1],mean_stress_total[2][2]);
+        }*/
+        }
+
+        
+
+
+   	//fprintf(mini_meas_out, "\n");
+    //fflush(mini_meas_out);
 }
 
 void World::make_measurements() {
@@ -4180,7 +4570,7 @@ void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr,scalar box_lag
         blob_corr[i*num_blobs*3 + i*3]= 0;
         blob_corr[i*num_blobs*3 + i*3+1]= 0;
         blob_corr[i*num_blobs*3 + i*3+2]= 0;
-
+        
         active_blob_array[i]->get_stored_centroid(com.data);
         for(int j = i+1; j < num_blobs; ++j) {
 

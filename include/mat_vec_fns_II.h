@@ -89,6 +89,7 @@ template <class t_scalar, class brr3> void arr3Store(arr3_view<t_scalar,brr3> u,
 /** return the distance from vecA to vecB */
 template <class t_scalar, class brr3> t_scalar arr3arr3Distance(arr3_view<t_scalar,brr3> vecA, arr3_view<t_scalar,brr3> vecB);
 
+
 /** Return the length of a vector v */
 template <class t_scalar, class brr3> t_scalar mag(arr3_view<t_scalar,brr3> v);
 

@@ -74,6 +74,7 @@
 #include "Spring.h"
 #include "SparseMatrixFixedPattern.h"
 #include "KineticState.h"
+#include "mt_correlator.h"
 
 #include "dimensions.h"
 using namespace std;
@@ -140,6 +141,20 @@ private:
 
     /** @brief 2-D Array of Blob objects (blob i, conformation j) */
     Blob **blob_array;
+    vector<TCorrelatorDiffusionVector> diff_vec;
+    vector<TCorrelatorDiffusionVector> diff_vec_corrected;
+    vector<TCorrelatorDiffusion> diff_corr_x;
+    vector<TCorrelatorDiffusion> diff_corr_y;
+    vector<TCorrelatorDiffusion> diff_corr_z;
+    //vector<TCorrelatorDiffusionVector> sys_corr;
+    TCorrelatorDiffusionVector sys_corr = TCorrelatorDiffusionVector(35,16);
+    TCorrelatorStress elastic_stress_corr = TCorrelatorStress(35,16);
+    //TCorrelatorStress node_stress_corr = TCorrelatorStress(35,16);
+    TCorrelatorStress viscous_stress_corr = TCorrelatorStress(35,16);
+    TCorrelatorStress total_stress_corr = TCorrelatorStress(35,16);
+    vector<Fmm_blob> Fmm_vec;
+    Fmm_blob sys_blob;
+    
 
     /** @brief Which conformation is active in each blob */
     Blob **active_blob_array;
@@ -209,6 +224,19 @@ private:
 
     /** @brief Output file for the trajectory beads. Completely optional. */
     FILE *trajbeads_out; 
+    /** @brief Output mini measurements file. May be unneccesary */
+    FILE *mini_meas_out;
+    
+    FILE *base_corr_out;
+    FILE *corrected_corr_out;
+    FILE *x_corr_out;
+    FILE *y_corr_out;    
+    FILE *z_corr_out;
+    FILE *sys_corr_out;
+    FILE *elastic_stress_corr_out;
+    //FILE *node_stress_corr_out;
+    FILE *viscous_stress_corr_out;
+    FILE *total_stress_corr_out;
 
     /** Reader objects */
     FFEA_input_reader *ffeareader;
@@ -329,11 +357,15 @@ private:
     int catch_thread_updatingPCLL(int step, scalar wtime, int where); 
 #endif
 
+    void print_mini_meas_file(int step, scalar wtime);
+
     void make_measurements();
 
     void write_measurements_to_file(FILE *fout, int step);
 
     void write_detailed_measurements_to_file(FILE *fout);
+
+    void write_mini_measurements_to_file(FILE *fout);
 
     void print_trajectory_conformation_changes(FILE *fout, int step, int *from_index, int *to_index);
 
@@ -348,6 +380,14 @@ private:
     
     scalar box_lag;
     int vox_lag;
+
+    matrix3 mean_stress_elastic;
+    
+    //matrix3 mean_stress_thermal;
+    
+    matrix3 mean_stress_viscous;
+    
+    matrix3 mean_stress_total;
 
     int die_with_dignity(int step, scalar wtime); 
 };

@@ -47,6 +47,7 @@ SimulationParams::SimulationParams() {
     es_update = 10;
     kappa = 1e9 * mesoDimensions::length;
     es_h = 3;
+    mini_meas = 0;
 
     calc_noise = 1;
     calc_es = 0;
@@ -90,11 +91,18 @@ SimulationParams::SimulationParams() {
     bsite_in_fname_set = 0;
     ssint_in_fname_set = 0;
     trajbeads_fname_set = 0;
-
-
+    mini_meas_out_fname_set = 0;
+    /*
+    base_corr_out_fname_set = 0;
+    corrected_corr_out_fname_set = 0;
+    x_corr_out_fname_set = 0;
+    y_corr_out_fname_set = 0;
+    z_corr_out_fname_set = 0;
+    */
     trajectory_out_fname = "\n";
     kinetics_out_fname = "\n";
     measurement_out_fname = "\n";
+    mini_meas_out_fname = "\n";
     ssint_in_fname = "\n";
     bsite_in_fname = "\n";
     icheckpoint_fname = "\n";
@@ -103,6 +111,17 @@ SimulationParams::SimulationParams() {
     ctforces_fname = "\n";
     springs_fname = "\n";
     trajectory_beads_fname = "\n";
+    
+    
+    base_corr_out_fname = "\n";
+    corrected_corr_out_fname = "\n";
+    x_corr_out_fname = "\n";
+    y_corr_out_fname = "\n";
+    z_corr_out_fname = "\n";
+    sys_corr_out_fname = "\n";
+    elastic_stress_corr_out_fname = "\n";
+    viscous_stress_corr_out_fname = "\n";
+    total_stress_corr_out_fname = "\n";
 }
 
 SimulationParams::~SimulationParams() {
@@ -143,6 +162,7 @@ SimulationParams::~SimulationParams() {
     calc_springs = 0;
     calc_ctforces = 0;
     calc_kinetics = 0;
+    mini_meas = 0;
 
     wall_x_1 = -1;
     wall_x_2 = -1;
@@ -161,6 +181,7 @@ SimulationParams::~SimulationParams() {
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
+    mini_meas_out_fname_set = 0;
     icheckpoint_fname_set = 0;
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
@@ -168,6 +189,7 @@ SimulationParams::~SimulationParams() {
 
     trajectory_out_fname = "\n";
     measurement_out_fname = "\n";
+    mini_meas_out_fname = "\n";
     kinetics_out_fname, "\n";
     icheckpoint_fname = "\n";
     ocheckpoint_fname = "\n";
@@ -177,7 +199,15 @@ SimulationParams::~SimulationParams() {
     ctforces_fname = "\n";
     springs_fname = "\n";
     trajectory_beads_fname = "\n";
-
+    base_corr_out_fname = "\n";
+    corrected_corr_out_fname = "\n";
+    x_corr_out_fname = "\n";
+    y_corr_out_fname = "\n";
+    z_corr_out_fname = "\n";
+    sys_corr_out_fname = "\n";
+    elastic_stress_corr_out_fname = "\n";
+    viscous_stress_corr_out_fname = "\n";
+    total_stress_corr_out_fname = "\n";
 }
 
 int SimulationParams::extract_params(vector<string> script_vector) {
@@ -241,6 +271,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "check") {
         check = (int) atof(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << check << endl;
+
+    } else if (lvalue == "mini_meas") {
+      		mini_meas = (int) atof(rvalue.c_str());
+        	cout << "\tSetting " << lvalue << " = " << mini_meas << endl;
 
     } else if (lvalue == "num_blobs") {
         num_blobs = atoi(rvalue.c_str());
@@ -385,6 +419,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "force_pbc") {
         force_pbc = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << force_pbc << endl;
+        
+    } else if (lvalue == "msd_corr_calc") {
+        msd_corr_calc = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << msd_corr_calc << endl;
 
     } else if (lvalue == "calc_kinetics") {
         calc_kinetics = atoi(rvalue.c_str());
@@ -499,6 +537,62 @@ int SimulationParams::assign(string lvalue, string rvalue) {
             detailed_meas_out_fname = meas_basename + ".fdm";
         }
 
+		if (mini_meas_out_fname == "\n") {
+			string mini_meas_basename = measurement_out_fname;
+			mini_meas_basename = RemoveFileExtension(mini_meas_basename);
+			mini_meas_out_fname = mini_meas_basename + ".fmm";
+		}
+		
+		if (base_corr_out_fname == "\n") {
+			string base_corr_basename = measurement_out_fname;
+			base_corr_basename = RemoveFileExtension(base_corr_basename);
+			base_corr_out_fname = base_corr_basename + "_base_corr.txt";
+		}
+		
+		if (corrected_corr_out_fname == "\n") {
+			string corrected_corr_basename = measurement_out_fname;
+			corrected_corr_basename = RemoveFileExtension(corrected_corr_basename);
+			corrected_corr_out_fname = corrected_corr_basename + "_corrected_corr.txt";
+		}
+		
+		if (x_corr_out_fname == "\n") {
+			string x_corr_basename = measurement_out_fname;
+			x_corr_basename = RemoveFileExtension(x_corr_basename);
+			x_corr_out_fname = x_corr_basename + "_x_corr.txt";
+		}
+		
+		if (y_corr_out_fname == "\n") {
+			string y_corr_basename = measurement_out_fname;
+			y_corr_basename = RemoveFileExtension(y_corr_basename);
+			y_corr_out_fname = y_corr_basename + "_y_corr.txt";
+		}
+		
+		if (z_corr_out_fname == "\n") {
+			string z_corr_basename = measurement_out_fname;
+			z_corr_basename = RemoveFileExtension(z_corr_basename);
+			z_corr_out_fname = z_corr_basename + "_z_corr.txt";
+		}
+		if (sys_corr_out_fname == "\n") {
+			string sys_corr_basename = measurement_out_fname;
+			sys_corr_basename = RemoveFileExtension(sys_corr_basename);
+			sys_corr_out_fname = sys_corr_basename + "_sys_corr.txt";
+		}
+		if (elastic_stress_corr_out_fname == "\n") {
+			string elastic_stress_corr_basename = measurement_out_fname;
+			elastic_stress_corr_basename = RemoveFileExtension(elastic_stress_corr_basename);
+			elastic_stress_corr_out_fname = elastic_stress_corr_basename + "_elastic_stress_corr.txt";
+		}
+		if (viscous_stress_corr_out_fname == "\n") {
+			string viscous_stress_corr_basename = measurement_out_fname;
+			viscous_stress_corr_basename = RemoveFileExtension(viscous_stress_corr_basename);
+			viscous_stress_corr_out_fname = viscous_stress_corr_basename + "_viscous_stress_corr.txt";
+		}
+		if (total_stress_corr_out_fname == "\n") {
+			string total_stress_corr_basename = measurement_out_fname;
+			total_stress_corr_basename = RemoveFileExtension(total_stress_corr_basename);
+			total_stress_corr_out_fname = total_stress_corr_basename + "_total_stress_corr.txt";
+		}
+		
     } else if (lvalue == "kinetics_out_fname") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         kinetics_out_fname = auxpath.string();
@@ -544,6 +638,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         cout << "\tdt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\n\tepsilon_0\n\trestart\n\tcalc_ssint\n\tcalc_noise\n\tcalc_preComp\n" << endl;
         return FFEA_ERROR;
     }
+
     return FFEA_OK;
 }
 
@@ -673,7 +768,14 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("Required: 'calc_kinetics', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (calc_steric == 1 or calc_ssint == 1 or calc_es == 1 or calc_preComp == 1) {
+    if (mini_meas!=0){
+            if(check%mini_meas!=0){
+                FFEA_ERROR_MESSG("Required: Check must be divisible by mini_meas")
+            }
+            check_ratio = check/mini_meas;
+    }
+
+if (calc_steric == 1 or calc_ssint == 1 or calc_es == 1 or calc_preComp == 1) {
         if (es_N_x < 1) {
             printf("\tFRIENDLY WARNING: Length of the nearest neighbour lookup grid, 'es_N_x', is less than 1. Will assign default value to encompass whole system.\n");
         } else if (es_N_y < 1) {
@@ -731,11 +833,12 @@ int SimulationParams::validate(int sim_mode) {
 
         // check if the output files exists, and if so, rename it.
         if (restart == 0) {
-            checkFileName(measurement_out_fname);
-            checkFileName(detailed_meas_out_fname);
-            checkFileName(trajectory_out_fname);
-            checkFileName(kinetics_out_fname);
-            checkFileName(trajectory_beads_fname);
+          checkFileName(measurement_out_fname);
+          checkFileName(detailed_meas_out_fname);
+          checkFileName(mini_meas_out_fname);
+          checkFileName(trajectory_out_fname);
+          checkFileName(kinetics_out_fname);
+          checkFileName(trajectory_beads_fname);
         } else {
             if (trajbeads_fname_set == 1) FFEA_ERROR_MESSG("FFEA cannot still restart and keep writing on the beads file. Just remove it from your input file.");
         }
