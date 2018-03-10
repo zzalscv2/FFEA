@@ -21,17 +21,13 @@
 //  the research papers on the package.
 //
 
-#include "LJSteric_solver.h"
-
-// This combined interaction is piecewise and as follows
-//if r < 0, steric
-//if 0 < r < rm, intermediate soft core potential
-// if r > rm, lennard-jones
+#include "GenSoftSSINT_solver.h"
 
 
-    /**Calculates LJSteric forces modified with periodic boundary correction in distance calculation*/
-void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
-    bool lj = true;
+    /**Calculates GenSoftSSINT forces modified with periodic boundary correction in distance calculation*/
+void GenSoftSSINT_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
+
+    bool gensoft = true;
     bool intersection = false; 
     if (blob_corr == NULL) {
        intersection = f1->checkTetraIntersection(f2);
@@ -41,11 +37,11 @@ void LJSteric_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
     }
 
     if (intersection) {
-      if (do_steric_interaction(f1, f2, blob_corr)) lj = false; 
+      if (do_steric_interaction(f1, f2, blob_corr)) gensoft = false; 
     } 
 
-    if (lj) {;
-        do_lj_interaction(f1, f2, blob_corr);
+    if (gensoft) {
+        do_gensoft_interaction(f1, f2, blob_corr);
     }
 
     return;

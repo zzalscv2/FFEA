@@ -23,134 +23,286 @@
 
 #include "LJ_matrix.h"
 LJ_pair::LJ_pair() {
-    vdw_eps = 0;
-    vdw_r_eq = 0;
+    Emin = 0;
+    Rmin = 0;
 }
 
 
 LJ_pair::~LJ_pair() {
-    vdw_eps = 0;
-    vdw_r_eq = 0;
+    Emin = 0;
+    Rmin = 0;
 }
 
-LJ_matrix::LJ_matrix() {
+SSINT_matrix::SSINT_matrix() {
     params = NULL;
-    num_vdw_face_types = 0;
+    num_ssint_face_types = 0;
 }
 
-
-LJ_matrix::~LJ_matrix() {
-    delete[] params; 
+SSINT_matrix::~SSINT_matrix() {
+    delete[] params;
     params = NULL;
-    num_vdw_face_types = 0;
+    num_ssint_face_types = 0;
 }
 
-
-int LJ_matrix::init(string vdw_params_fname, string vdw_type) {
+int SSINT_matrix::init(string ssint_params_fname, string ssint_type, int calc_ssint, scalar ssint_cutoff) {
 
     int err;
     // In that case we do not need an input parameter file, 
     //      but just to initialise a number of values
-    if (vdw_type == "steric") {
+    if (calc_ssint == 0) {
        err = init_steric(); 
     } else {
-       err = init_lj(vdw_params_fname); 
+       err = init_ssint(ssint_params_fname, ssint_type, ssint_cutoff); 
     } 
     return err; 
 } 
 
-int LJ_matrix::init_steric() {
+/*
+int LJ_matrix::init_stericOLD() {
 
-    num_vdw_face_types = 1;
+    num_ssint_face_types = 1;
     // Allocate the memory for that LJ pair
-    params = new(std::nothrow) LJ_pair[num_vdw_face_types * num_vdw_face_types];
+    params = new(std::nothrow) LJ_pair[num_ssint_face_types * num_ssint_face_types];
     if (params == NULL) {
         FFEA_ERROR_MESSG("Unable to allocate memory for LJ matrix.\n")
     }
-    params[LJI(0, 0)].vdw_eps = 0; 
-    params[LJI(0, 0)].vdw_r_eq = 0; 
+    params[LJI(0, 0)].Emin = 0; 
+    params[LJI(0, 0)].Rmin = 0; 
+
+    return FFEA_OK; 
+}
+*/
+
+int SSINT_matrix::init_steric() {
+
+    num_ssint_face_types = 1;
+    // Allocate the memory for that LJ pair
+    params = new(std::nothrow) map<string,scalar>[num_ssint_face_types * num_ssint_face_types];
+    if (params == NULL) {
+        FFEA_ERROR_MESSG("Unable to allocate memory for LJ matrix.\n")
+    }
+    params[LJI(0, 0)]["Emin"] = 0; 
+    params[LJI(0, 0)]["Rmin"] = 0; 
 
     return FFEA_OK; 
 }
 
-int LJ_matrix::init_lj(string vdw_params_fname) {
+/*
+int LJ_matrix::init_ssintOLD(string ssint_params_fname) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(vdw_params_fname.c_str(), "r")) == NULL) {
-        FFEA_FILE_ERROR_MESSG(vdw_params_fname.c_str())
+    if ((in = fopen(ssint_params_fname.c_str(), "r")) == NULL) {
+        FFEA_FILE_ERROR_MESSG(ssint_params_fname.c_str())
     }
-    printf("\tReading in vdw forcefield parameters file: %s\n", vdw_params_fname.c_str());
+    printf("\tReading in ssint forcefield parameters file: %s\n", ssint_params_fname.c_str());
 
-    // first line should be the file type "ffea vdw forcefield params file"
+    // first line should be the file type "ffea ssint forcefield params file"
     if (fgets(line, max_line_size, in) == NULL) {
         fclose(in);
-        FFEA_ERROR_MESSG("Error reading first line of ffea vdw forcefield params file\n")
+        FFEA_ERROR_MESSG("Error reading first line of ffea ssint forcefield params file\n")
     }
-    if (strcmp(line, "ffea vdw forcefield params file\n") != 0) {
+    if (strcmp(line, "ffea vdw forcefield params file\n") != 0 && strcmp(line, "ffea ssint forcefield params file\n") != 0) {
         fclose(in);
-        FFEA_ERROR_MESSG("This is not a 'ffea vdw forcefield params file' (read '%s') \n", line)
+        FFEA_ERROR_MESSG("This is not a 'ffea ssint forcefield params file' (read '%s') \n", line)
     }
 
     // read in the number of nodes in the file
-    if (fscanf(in, "num_vdw_face_types %d\n", &num_vdw_face_types) != 1) {
+    if (fscanf(in, "num_vdw_face_types %d\n", &num_ssint_face_types) != 1) {
         fclose(in);
-        FFEA_ERROR_MESSG("Error reading number of vdw face types\n")
+        FFEA_ERROR_MESSG("Error reading number of ssint face types\n")
     }
-    printf("\t\tNumber of vdw face types = %d\n", num_vdw_face_types);
+    printf("\t\tNumber of ssint face types = %d\n", num_ssint_face_types);
 
     // Allocate the memory for all these LJ pairs
-    params = new(std::nothrow) LJ_pair[num_vdw_face_types * num_vdw_face_types];
+    params = new(std::nothrow) LJ_pair[num_ssint_face_types * num_ssint_face_types];
     if (params == NULL) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for LJ matrix.\n")
     }
 
     // Fill the matrix
-    double vdw_eps = 0.0, vdw_r_eq = 0.0;
-    for (int i = 0; i < num_vdw_face_types; i++) {
-        for (int j = 0; j < num_vdw_face_types; j++) {
-            if (fscanf(in, " (%le,%le) ", &vdw_eps, &vdw_r_eq) != 2) {
+    double Emin = 0.0, Rmin = 0.0;
+    for (int i = 0; i < num_ssint_face_types; i++) {
+        for (int j = 0; j < num_ssint_face_types; j++) {
+            if (fscanf(in, " (%le,%le) ", &Emin, &Rmin) != 2) {
                 fclose(in);
-                FFEA_ERROR_MESSG("Error reading from ffea vdw forcefield params file at (%d,%d)\n", i, j);
+                FFEA_ERROR_MESSG("Error reading from ffea ssint forcefield params file at (%d,%d)\n", i, j);
             }
 
-            if (vdw_eps <= 0) {
-                FFEA_ERROR_MESSG("Required: 'vdw_eps' must be greater than 0 if you wish to use vdw (calc_vdw is 1)\n")
+            if (Emin <= 0) {
+                FFEA_ERROR_MESSG("Required: 'Emin' must be greater than 0 if you wish to use ssint (calc_ssint is 1)\n")
             }
-            if (vdw_r_eq <= 0) {
-                FFEA_ERROR_MESSG("Required: 'vdw_r_eq' must be greater than 0 if you wish to use vdw (calc_vdw is 1)\n")
+            if (Rmin <= 0) {
+                FFEA_ERROR_MESSG("Required: 'Rmin' must be greater than 0 if you wish to use ssint (calc_ssint is 1)\n")
             }
 
-            params[LJI(i, j)].vdw_eps = vdw_eps * mesoDimensions::area * mesoDimensions::area / mesoDimensions::Energy ;
-            params[LJI(i, j)].vdw_r_eq = vdw_r_eq / mesoDimensions::length ;
+            params[LJI(i, j)].Emin = Emin * mesoDimensions::area * mesoDimensions::area / mesoDimensions::Energy ;
+            params[LJI(i, j)].Rmin = Rmin / mesoDimensions::length ;
         }
     }
 
     fclose(in);
 
-    printf("\t\tRead %d vdw forcefield parameter entries from %s\n", num_vdw_face_types * num_vdw_face_types, vdw_params_fname.c_str());
+    printf("\t\tRead %d ssint forcefield parameter entries from %s\n", num_ssint_face_types * num_ssint_face_types, ssint_params_fname.c_str());
 
     return FFEA_OK;
 }
+*/
 
-void LJ_matrix::get_LJ_params(int type1, int type2, scalar *vdw_eps, scalar *vdw_r_eq) {
-    if (type1 < 0 || type1 > num_vdw_face_types - 1) {
-        printf("Frog1 %d %d\n", type1, num_vdw_face_types - 1);
+int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scalar ssint_cutoff) {
+
+    int count, MAX_NUM_VARS = 3;
+    string line, aset, head[MAX_NUM_VARS];
+    vector<string> bufvec;
+    vector<string> bufvec2;
+    ifstream in (ssint_params_fname);
+    
+    // What are the param possibilities (keys)?
+    head[0] = "Emin";
+    head[1] = "Rmin";
+    head[2] = "k0";
+    if (!in.is_open()) {
+        FFEA_FILE_ERROR_MESSG(ssint_params_fname.c_str());
+    }
+
+    printf("\tReading in ssint forcefield parameters file: %s\n", ssint_params_fname.c_str());
+
+    // first line should be the file type "ffea ssint forcefield params file"
+    getline(in, line);
+    if (line != "ffea vdw forcefield params file" && line != "ffea ssint forcefield params file") {
+        in.close();
+        FFEA_ERROR_MESSG("This is not a 'ffea ssint forcefield params file' (read '%s') \n", line.c_str());
+    }
+    
+    // read in the number of nodes in the file
+    getline(in, line);
+    boost::split(bufvec, line, boost::is_any_of(" "));
+    cout << bufvec.at(0) << " " << atoi(bufvec.at(1).c_str()) << endl;
+    num_ssint_face_types = atoi(bufvec.at(1).c_str());
+
+    printf("\t\tNumber of ssint face types = %d\n", num_ssint_face_types);
+
+    // Allocate the memory for all these LJ pairs
+    params = new(std::nothrow) map<string, scalar>[num_ssint_face_types * num_ssint_face_types];
+    if (params == NULL) {
+        in.close();
+        FFEA_ERROR_MESSG("Unable to allocate memory for LJ matrix.\n")
+    }
+
+    // Fill the matrix (with an as yet unknown number of parameters)
+    scalar Emin = 0.0, Rmin = 0.0, k0 = 0.0;
+    for (int i = 0; i < num_ssint_face_types; i++) {
+
+     	// Use boost to get something we can deal with
+	getline(in, line);
+        boost::split(bufvec, line, boost::is_any_of(")"));
+
+        for (int j = 0; j < num_ssint_face_types; j++) {
+
+	    // Strip it to a comma delimited set
+	    aset = bufvec.at(j);
+	    boost::trim(aset);
+            aset = boost::erase_first_copy(aset, "(");
+
+            // And split
+	    boost::split(bufvec2, aset, boost::is_any_of(","));
+
+	    // First parameter is an energy one, second is a distance one, third is a curvature one. This may need further generalisation
+	    if (bufvec2.size() > 3) {
+        	FFEA_ERROR_MESSG("For SSINT_params set %d %d, currently unable to have more than 3 params. You specified %d\n", i, j, bufvec2.size())
+	    }
+	    if (bufvec2.size() < 2) {
+        	FFEA_ERROR_MESSG("For SSINT_params set %d %d, currently must have at least 2 params (Emin, Rmin). You specified %d\n", i, j, bufvec2.size())
+	    }
+//	    count = 0;
+	//    for(count = 0; count < MAX_NUM_VARS; count++) {
+//		params[LJI(i, j)][head[count]] = -1.0;
+//	    }
+	    for(count = 0; count < bufvec2.size(); count++) {
+		params[LJI(i, j)][head[count]] = atof(bufvec2.at(count).c_str());
+	    }
+
+	    if (params[LJI(i, j)]["Emin"] <= 0) {
+                FFEA_ERROR_MESSG("Required: 'Emin' must be greater than 0 if you wish to use ssint (calc_ssint is 1)\n")
+            }
+            if (params[LJI(i, j)]["Rmin"] <= 0) {
+                FFEA_ERROR_MESSG("Required: 'Rmin' must be greater than 0 if you wish to use ssint (calc_ssint is 1)\n")
+            }
+
+	    // In gensoft, set the Rmin value to the cutoff distance for now, so avoid turning points
+	    if (ssint_type == "gensoft") {
+		    params[LJI(i, j)]["Rmin"] = ssint_cutoff * mesoDimensions::length;
+	    }
+
+	    // Defaulting the value if not found 
+            if(params[LJI(i, j)].count(head[2]) == 0) {
+		params[LJI(i, j)][head[2]] = 0.0;
+	    }
+            params[LJI(i, j)][head[0]] = params[LJI(i, j)][head[0]] * mesoDimensions::area * mesoDimensions::area / mesoDimensions::Energy ;
+            params[LJI(i, j)][head[1]] = params[LJI(i, j)][head[1]] / mesoDimensions::length;
+	    params[LJI(i, j)][head[2]] = params[LJI(i, j)][head[2]] * mesoDimensions::area / mesoDimensions::Energy; 
+	}
+    }
+
+    in.close();
+
+    printf("\t\tRead %d ssint forcefield parameter entries from %s\n", num_ssint_face_types * num_ssint_face_types, ssint_params_fname.c_str());
+    return FFEA_OK;
+}
+
+/*
+void LJ_matrix::get_LJ_params(int type1, int type2, scalar *Emin, scalar *Rmin) {
+    if (type1 < 0 || type1 > num_ssint_face_types - 1) {
+        printf("Frog1 %d %d\n", type1, num_ssint_face_types - 1);
         return;
     }
-    if (type2 < 0 || type2 > num_vdw_face_types - 1) {
-        printf("Frog2 %d %d\n", type2, num_vdw_face_types - 1);
+    if (type2 < 0 || type2 > num_ssint_face_types - 1) {
+        printf("Frog2 %d %d\n", type2, num_ssint_face_types - 1);
         return;
     }
 
     LJ_pair *p = &(params[LJI(type1, type2)]);
-    *vdw_eps = p->vdw_eps;
-    *vdw_r_eq = p->vdw_r_eq;
+    *Emin = p->Emin;
+    *Rmin = p->Rmin;
 }
 
 int LJ_matrix::get_num_types() {
-    return num_vdw_face_types;
+    return num_ssint_face_types;
+}
+*/
+/*
+void SSINT_matrix::get_SSINT_params(int type1, int type2, map<string, scalar> *parmap) {
+    if (type1 < 0 || type1 > num_ssint_face_types - 1) {
+        printf("Frog1 %d %d\n", type1, num_ssint_face_types - 1);
+        return;
+    }
+    if (type2 < 0 || type2 > num_ssint_face_types - 1) {
+        printf("Frog2 %d %d\n", type2, num_ssint_face_types - 1);
+        return;
+    }
+
+    parmap = &(params[LJI(type1, type2)]);
+    cout << "Full map: " << params[LJI(type1, type2)]["Emin"] << endl;
+    cout << "Map: " << (*parmap)["Emin"] << endl;
+}
+*/
+
+map<string, scalar> SSINT_matrix::get_SSINT_params(int type1, int type2) {
+    if (type1 < 0 || type1 > num_ssint_face_types - 1) {
+        printf("Frog1 %d %d\n", type1, num_ssint_face_types - 1);
+    }
+    if (type2 < 0 || type2 > num_ssint_face_types - 1) {
+        printf("Frog2 %d %d\n", type2, num_ssint_face_types - 1);
+    }
+
+    return params[LJI(type1, type2)];
+//    parmap = &(params[LJI(type1, type2)]);
+ //   cout << "Full map: " << params[LJI(type1, type2)]["Emin"] << endl;
+  //  cout << "Map: " << (*parmap)["Emin"] << endl;
 }
 
+int SSINT_matrix::get_num_types() {
+    return num_ssint_face_types;
+}

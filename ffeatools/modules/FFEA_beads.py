@@ -23,12 +23,13 @@
 
 
 import sys, os
+import numpy as np
 from FFEA_exceptions import *
 import FFEA_pdb
 
 class FFEA_beads:
  
-	def __init__(self, fname = "", motion_state = "STATIC", scale = 1.0, topology = None, node = None):
+	def __init__(self, fname = "", motion_state = "STATIC", scale = 1.0, topology = None, node = None, assignBeads = True):
 
 		self.reset()
 		self.scale = scale
@@ -38,11 +39,11 @@ class FFEA_beads:
 			return
 
 		#try:
-		self.load(fname, motion_state, topology, node)
+		self.load(fname, motion_state, topology, node, assignBeads)
 		#except:
 		#	raise
 
-	def load(self, fname, motion_state, topology, node):
+	def load(self, fname, motion_state, topology, node, assignBeads):
 		sys.stdout.write("Loading FFEA beads...\n")
 
 		# load the PDB
@@ -61,7 +62,7 @@ class FFEA_beads:
 
 		# now assign beads to elements... but we only have 
 		#  elements if motion_state == DYNAMIC
-		if motion_state == "DYNAMIC":
+		if motion_state == "DYNAMIC" and assignBeads:
 			self.assign_beads(topology, node)
 
 
@@ -81,18 +82,34 @@ class FFEA_beads:
 		return beads_assignment
 			
 
+	# initialise_assignment should have been called
 	def assign_beads(self, topology, node):
 
 		# initialise b_elems with -1
 		for i in range(self.pdb.num_chains):
-			aux = []
-			for j in range(self.pdb.chain[i].num_atoms):
-				aux.append(-1)
+			aux = [-1] * self.pdb.chain[i].num_atoms
 			self.b_elems.append(aux)
 				
+		# precalculate the CMs of every element.
+		eCM = []
+		for e_ndx, e in enumerate(topology.element):
+			eCM.append( e.calc_centroid(node) ) 
+		eCM = np.array(eCM)
 
+		# put all the atoms into a numpy array:
+		npA = []
+		for i in range(self.pdb.num_chains): # new 
+			for j, a in enumerate(self.pdb.chain[i].atom):
+				npA.append(self.pdb.chain[i].frame[0].pos[j])
+		npA = np.array(npA) 
+		# xyD2[e,a] is the squared distance matrix 
+      #           between atoms and element centroids
+		xyD2 = ((eCM[:,:,None] - npA[:,:,None].T) ** 2 ).sum(1)
+
+		a_cnt = -1 # new 
 		for i in range(self.pdb.num_chains):
 			for j, a in enumerate(self.pdb.chain[i].atom):
+				a_cnt += 1 # new 
 				d2_0 = 1e9
 				beads_assignment = self.get_beads_preassignment(a.ffea_comment)
 				# get the closest element to this bead:
@@ -105,18 +122,14 @@ class FFEA_beads:
 								work = True
 								break
 					if (work == False): continue
-					ecm = e.calc_centroid(node)
-					d2 = (ecm[0] - self.pdb.chain[i].frame[0].pos[j][0])**2 + \
-					     (ecm[1] - self.pdb.chain[i].frame[0].pos[j][1])**2 + \
-					     (ecm[2] - self.pdb.chain[i].frame[0].pos[j][2])**2
+					d2 = xyD2[e_ndx, a_cnt]
 							
 					if (d2 < d2_0):
 						d2_0 = d2
 						self.b_elems[i][j] = e_ndx
 
-				#print a.name, a.res, self.pdb.chain[i].frame[0].pos[j][0:3],\
-                  #a.ffea_comment, self.b_elems[i][j]
 				if self.b_elems[i][j] == -1: 
+					print "ABORTING: an element could not be assigned"
 					raise
 
 

@@ -38,7 +38,25 @@ from pymol.vfont import plain
 
 import copy
 
+# from line_profiler import LineProfiler
+
 # from pymol.callback import Callback
+
+def do_profile(follow=[]):
+    def inner(func):
+        def profiled_func(*args, **kwargs):
+            try:
+                profiler = LineProfiler()
+                profiler.add_function(func)
+                for f in follow:
+                    profiler.add_function(f)
+                profiler.enable_by_count()
+                return func(*args, **kwargs)
+            finally:
+                profiler.print_stats()
+        return profiled_func
+    return inner
+
 
 def get_vdw_colour(index):
 	if index == -1:
@@ -89,8 +107,8 @@ class Blob:
 		self.pin = None
 		self.bsites = None
 		self.beads = None
-		self.init_centroid = None
-		self.init_rotation = None
+		self.init_centroid = []
+		self.init_rotation = []
 		self.offset = np.array([0.0,0.0,0.0])
 		self.min_length = None
 		self.scale = 1.0
@@ -99,9 +117,10 @@ class Blob:
 		self.frames = []
 		self.num_frames = 0
 		
-		self.display_flags = None
+		# self.display_flags = None
 
-	def load(self, idnum, bindex, cindex, script):
+	# @do_profile()
+	def load(self, idnum, bindex, cindex, script, display_flags=None):
 	
 		self.idnum = idnum
 		self.bindex = bindex
@@ -165,7 +184,10 @@ class Blob:
 
 		# beads for active blobs need to know of the elements. 
 		#if (len(c.beads)):
-		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.scale, self.top, self.node)
+		assignBeads = False
+		if display_flags != None and  display_flags['show_beads'] == "Configuration & Assignments":
+			assignBeads = True
+		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.scale, self.top, self.node, assignBeads)
 
 		# Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
 		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
@@ -194,26 +216,30 @@ class Blob:
 		if self.top != None:
 			for e in self.top.element:
 				for n in e.n[0:4]:
-					self.linear_node_list.append(n)
+					self.top.linear_elemnode_list.append(n)
+
+			if display_flags != None and display_flags['load_trajectory'] == "Trajectory":
+				self.surf.build_firstOrderFaceNodes(self.top.linear_elemnode_list)
+
+			self.linear_node_list = list(set(self.top.linear_elemnode_list))
 		
 		else:
 			# Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
 			print "Linear nodes cannot be known without a topology."
 
-		self.linear_node_list = list(set(self.linear_node_list))
 		
 		# Any initialisation done in ffea?
 		if b.centroid != None:
 			try:
 				self.init_centroid = np.array(b.centroid)	
 			except:
-				self.init_centroid = None
+				self.init_centroid = []
 
 		if b.rotation != None:		
 			try:
 				self.init_rotation = np.array(b.rotation)
 			except:
-				self.init_rotation = None
+				self.init_rotation = []
 				
 		# Initialise stuff that we didn't get
 		self.hidden_face = [-1 for i in range(self.surf.num_faces)]
@@ -414,7 +440,7 @@ class Blob:
 		aframe.build_from_node(self.node)
 		
 		# Move and rotate it
-		if self.init_centroid != None:
+		if self.init_centroid != []:
 			print "=============================="
 			print "Moving to starting position..."
 			print "=============================="
@@ -423,7 +449,7 @@ class Blob:
 			if not self.beads.empty:
 				self.beads.pdb.translate(dx) # translate the beads too
 
-		if self.init_rotation != None:
+		if self.init_rotation != []:
 			print "=============================="
 			print "Rotating to starting orientation..."
 			print "=============================="
@@ -502,12 +528,13 @@ class Blob:
 		f = self.frames[i]
 		return f.calc_centroid()
 
+	# @do_profile(follow=[build_firstOrderFaceNodes])   
 	def draw_frame(self, i, frameLabel, display_flags, scale = 1.0):
 
 		# Make a copy of the display flags so the user input one doesn't change!
 		
 		# Ideally these checks shouldn't ned to be here, but whatever
-		if self.motion_state == "STATIC":
+		if self.motion_state == "STATIC" and frameLabel != "ALL":
 			i = 0
 
 		if self.num_frames == 0:
@@ -535,7 +562,7 @@ class Blob:
 		pinsphere = []
 
 		print "loading frame ", frameLabel, " for blob ", self.idnum
-		frameLabel += 1
+		if frameLabel != "ALL": frameLabel += 1
 
 		#
 		#  Solid
@@ -554,21 +581,44 @@ class Blob:
 			
 			# If solid, draw all triangles
 			if default or display_flags['matparam'] == "Plain Solid":
-		                # sol.extend( [ COLOR, bc[0], bc[1], bc[2] ] )
-				for f in range(self.surf.num_faces):
-					if self.hidden_face[f] == 1:
-						continue
+				if self.surf.num_linear_faces > 0:
+					N1 = np.empty([self.surf.num_linear_faces,3])
+					N2 = np.empty([self.surf.num_linear_faces,3])
+					N3 = np.empty([self.surf.num_linear_faces,3])
+					cnt = -1
+					for f in range(self.surf.num_linear_faces):
+						#if self.hidden_face[f] == 1:
+							#continue
 
-					n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-					n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-					n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-				
-		                        norm = self.calc_normal_2(n1, n2, n3)
+						cnt += 1 
+						n0, n1, n2 = self.surf.firstOrderFaceNodes[3*f: 3*(f+1)]
+						N1[cnt,:] = self.frames[i].pos[n0,:]
+						N2[cnt,:] = self.frames[i].pos[n1,:]
+						N3[cnt,:] = self.frames[i].pos[n2,:]
 
-		                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
-		                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-		                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-		                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+				else:
+					N1 = np.empty([self.surf.num_faces,3])
+					N2 = np.empty([self.surf.num_faces,3])
+					N3 = np.empty([self.surf.num_faces,3])
+					cnt = -1
+					for f in range(self.surf.num_faces):
+						if self.hidden_face[f] == 1:
+							continue
+
+						cnt += 1
+						n = self.surf.face[f].n
+						N1[cnt,:] = self.frames[i].pos[n[0],:]
+						N2[cnt,:] = self.frames[i].pos[n[1],:]
+						N3[cnt,:] = self.frames[i].pos[n[2],:]
+
+				NORM = np.cross(N2 - N1, N3 - N2)
+				for f in range(len(NORM)):
+					# sol.extend([ NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
+					sol.extend([ NORMAL, NORM[f,0], NORM[f,1], NORM[f,2] ])
+					sol.extend([ VERTEX, N1[f,0], N1[f,1], N1[f,2] ])
+					sol.extend([ VERTEX, N2[f,0], N2[f,1], N2[f,2] ])
+					sol.extend([ VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
+
 
 			elif MatOpt.count(display_flags['matparam']) == 1:
 
@@ -591,8 +641,9 @@ class Blob:
 				if (paramval != 5): ## that means we do proper material parameters
 
 					# Get range of colours
-					colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
+					# colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]	# Blue green yellow red
 					#colgrad = [np.array([1.0,0.0,0.0]), np.array([1.0,1.0,0.0]), np.array([0.0,1.0,0.0]), np.array([0.0,0.0,1.0])]	# Red yellow green blue
+					colgrad = [np.array([0.0,0.0,1.0]), np.array([1.0,1.0,1.0])]  # blue to white
 					num_cols = len(colgrad)
 
 					# Get params
@@ -600,6 +651,7 @@ class Blob:
 
 					# Build color bins
 					Erange = max(param) - min(param)
+					print Erange
 					binwidth = Erange / (num_cols - 1)
 					Ebin = [min(param) + j * binwidth for j in range(num_cols)]
 					Ebin[-1] = np.ceil(Ebin[-1])
@@ -608,19 +660,20 @@ class Blob:
 					if binwidth == 0.0:
 						binwidth = 1.0
 
-					# Now, draw each face
-					for f in self.surf.face:
-						try:
-							paramfrac = (param[f.elindex] - Ebin[0]) / Erange
-						except:
-							paramfrac = 0.0
-	
-						# Get position data for viewer to draw
-						n1 = self.frames[i].pos[f.n[0]][0:3]
-						n2 = self.frames[i].pos[f.n[1]][0:3]
-						n3 = self.frames[i].pos[f.n[2]][0:3]
-						norm = self.calc_normal_2(n1, n2, n3)
 
+					N1 = np.empty([self.surf.num_faces,3])
+					N2 = np.empty([self.surf.num_faces,3])
+					N3 = np.empty([self.surf.num_faces,3])
+					C = np.empty([self.surf.num_faces,3])
+					
+					for f_i, f in enumerate( self.surf.face ):
+						# Get the nodes: 
+						n = f.n
+						N1[f_i,:] = self.frames[i].pos[n[0],:]
+						N2[f_i,:] = self.frames[i].pos[n[1],:]
+						N3[f_i,:] = self.frames[i].pos[n[2],:]
+
+	
 						# Get color bin
 						colpair = [0,1]
 						for j in range(num_cols - 1):
@@ -636,37 +689,42 @@ class Blob:
 							colfrac = 0.0
 
 						# What color then?
-						col = (colgrad[colpair[1]] - colgrad[colpair[0]]) * colfrac + colgrad[colpair[0]]
-						sol.extend([COLOR, col[0], col[1], col[2]])
-			                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
-			                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-			                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-			                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+						C[f_i,:] = (colgrad[colpair[1]] - colgrad[colpair[0]]) * colfrac + colgrad[colpair[0]]
+
+					NORM = np.cross(N2 - N1, N3 - N2)
+
+					for f_i in range(self.surf.num_faces): 
+						sol.extend([COLOR, C[f_i,0], C[f_i,1], C[f_i,2], NORMAL, NORM[f_i,0], NORM[f_i,1], NORM[f_i,2], VERTEX, N1[f_i,0], N1[f_i,1], N1[f_i,2], VERTEX, N2[f_i,0], N2[f_i,1], N2[f_i,2], VERTEX, N3[f_i,0], N3[f_i,1], N3[f_i,2] ])
 
 				else: ## in that case, plot VdW! 
+
+					N1 = np.empty([self.surf.num_faces,3])
+					N2 = np.empty([self.surf.num_faces,3])
+					N3 = np.empty([self.surf.num_faces,3])
+					for f in range(self.surf.num_faces):
+						n = self.surf.face[f].n
+						N1[f,:] = self.frames[i].pos[n[0],:]
+						N2[f,:] = self.frames[i].pos[n[1],:]
+						N3[f,:] = self.frames[i].pos[n[2],:]
+
+					NORM = np.cross(N2 - N1, N3 - N2)
+
 					for f in range(self.surf.num_faces):
 						if self.hidden_face[f] == 1:
 							continue
-	
-						n1 = self.frames[i].pos[self.surf.face[f].n[0]][0:3]
-						n2 = self.frames[i].pos[self.surf.face[f].n[1]][0:3]
-						n3 = self.frames[i].pos[self.surf.face[f].n[2]][0:3]
-					
-			                        norm = self.calc_normal_2(n1, n2, n3)
-	
-						if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
+
+						# if self.vdw.index[f] != self.vdw.index[f - 1] or f == 0:
+						else:
 							bc = get_vdw_colour(self.vdw.index[f])
-							sol.extend([ COLOR, bc[0], bc[1], bc[2] ])
+							sol.extend([ COLOR, bc[0], bc[1], bc[2], NORMAL, NORM[f,0], NORM[f,1], NORM[f,2], VERTEX, N1[f,0], N1[f,1], N1[f,2], VERTEX, N2[f,0], N2[f,1], N2[f,2], VERTEX, N3[f,0], N3[f,1], N3[f,2] ])
 	
-			                        sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2] ] )
-			                        sol.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-			                        sol.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-			                        sol.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
 
-
-			sol.extend([END])
-			cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid", frameLabel)
+			sol.append(END)
+			if frameLabel == "ALL":
+				cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid")
+			else:
+				cmd.load_cgo(sol, display_flags['system_name'] + "_" + str(self.idnum) + "_solid", frameLabel)
 
 		#
 		#  Mesh      (doable usually. catch if there's no topology i.e. STATIC blob)
@@ -683,28 +741,29 @@ class Blob:
 			
 				# Loop through elements
 				for e in xrange(self.top.num_elements):
-					n1 = self.frames[i].pos[self.top.element[e].n[0]]
-					n2 = self.frames[i].pos[self.top.element[e].n[1]]
-					n3 = self.frames[i].pos[self.top.element[e].n[2]]
-					n4 = self.frames[i].pos[self.top.element[e].n[3]]
+					in1, in2, in3, in4 = self.top.linear_elemnode_list[4*e:4*(e+1)]
+					n1 = self.frames[i].pos[in1]
+					n2 = self.frames[i].pos[in2]
+					n3 = self.frames[i].pos[in3]
+					n4 = self.frames[i].pos[in4]
 
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-		                        mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+					mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
-		                        mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-		                        mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+					mes.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
 			elif display_flags['show_mesh'] == "Surface Mesh" or self.top == None:
 
@@ -715,17 +774,20 @@ class Blob:
 					n2 = self.frames[i].pos[self.surf.face[f].n[1]]
 					n3 = self.frames[i].pos[self.surf.face[f].n[2]]
 
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 		                        
-		                        mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+					mes.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 		                       
-		                        mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-		                        mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+					mes.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+					mes.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
 			mes.extend([END])
-			cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh", frameLabel)
+			if frameLabel == "ALL":
+				cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh")
+			else:
+				cmd.load_cgo(mes, display_flags['system_name'] + "_" + str(self.idnum) + "_mesh", frameLabel)
 
 		#
 		#  Numbers       (again, can't always do elements)
@@ -792,7 +854,10 @@ class Blob:
 						
 			# in any case:
  			if len(text) > 0: 
- 				cmd.read_pdbstr(text, ndx_name, frameLabel)
+				if frameLabel == "ALL":
+ 					cmd.read_pdbstr(text, ndx_name)
+				else:
+	 				cmd.read_pdbstr(text, ndx_name, frameLabel)
 				cmd.hide("everything", ndx_name)
 				cmd.label(ndx_name,"resi")
 	
@@ -812,7 +877,10 @@ class Blob:
 
 			# load, if it's not an empty object:
 			if len(text) != 0:
-				cmd.read_pdbstr(text, pin_name, frameLabel)
+				if frameLabel == "ALL":
+					cmd.read_pdbstr(text, pin_name)
+				else:
+					cmd.read_pdbstr(text, pin_name, frameLabel)
 				cmd.show("spheres", pin_name)
 				cmd.color("red", pin_name)
 				
@@ -827,7 +895,10 @@ class Blob:
 			if (frameLabel == 1) and (not self.beads.empty): # only load it for the first frame
 				text = self.beads.pdb.write_to_text()
 			if text != "":
-				cmd.read_pdbstr(text, beads_name, frameLabel)
+				if frameLabel == "ALL":
+					cmd.read_pdbstr(text, beads_name)
+				else:
+					cmd.read_pdbstr(text, beads_name, frameLabel)
 				cmd.hide("everything", beads_name)
 				cmd.show("spheres", beads_name)
 
@@ -849,8 +920,12 @@ class Blob:
 							text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (e_ndx, "CA", "FEA", "A", e_ndx, e[0], e[1], e[2]))
 
 				if text != "":
-					cmd.load_cgo(obj, be_name, frameLabel)
-					cmd.read_pdbstr(text, b_elem_name, frameLabel)
+					if frameLabel == "ALL":
+						cmd.load_cgo(obj, be_name)
+						cmd.read_pdbstr(text, b_elem_name)
+					else:
+						cmd.load_cgo(obj, be_name, frameLabel)
+						cmd.read_pdbstr(text, b_elem_name, frameLabel)
 					cmd.hide("everything", b_elem_name)
 					cmd.show("spheres", b_elem_name)
 
@@ -887,30 +962,23 @@ class Blob:
 				dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
 				dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
-	                        dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+				dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
-	                        dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+				dan.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 				dan.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
 				dan.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-	                        dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+				dan.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
 			dan.extend([END])
 			if len(dan) != 7:
-				cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
+				if frameLabel == "ALL":
+					cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
+				else:
+					cmd.load_cgo(dan, display_flags['system_name'] + "_" + str(self.idnum) + "_danger", frameLabel)
 
 			axes = np.array([[2.0,0.0,0.0],[0.0,2.0,0.0],[0.0,0.0,2.0]])
 			
-
-			#if display_flags['show_numbers'] == 'Node Indices':
-			#	ndx_name += "_nI"
-			#	for n in range(self.node.num_nodes):
-			#		if n == 10000: 
-			#			print "Cannot load more than 10000 Supportive Fake Atoms"
-			#			break
-			#		pos = (self.frames[i].pos[n].tolist())[0:3]
-			#		text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
-
 
 			# And the indices
 			danbnum = ""
@@ -925,11 +993,17 @@ class Blob:
 
 			if len(dantxt) != 0:
 				if plotDanB == True:
-					cmd.read_pdbstr(danbnum, danbnum_name, frameLabel)
+					if frameLabel == "ALL":
+						cmd.read_pdbstr(danbnum, danbnum_name)
+					else:
+						cmd.read_pdbstr(danbnum, danbnum_name, frameLabel)
 					cmd.hide("everything", danbnum_name)
 					cmd.label(danbnum_name,"resi")
 				else:
-					cmd.load_cgo(dantxt, danbnum_name, frameLabel)
+					if frameLabel == "ALL":
+						cmd.load_cgo(dantxt, danbnum_name, frameLabel)
+					else:
+						cmd.load_cgo(dantxt, danbnum_name, frameLabel)
 
 		#
 		#  Load SFA: Supportive Fake Atoms #
@@ -997,7 +1071,10 @@ class Blob:
 						
 			# in any case:
  			if len(text) > 0: 
- 				cmd.read_pdbstr(text, sfa_name, frameLabel)
+				if frameLabel == "ALL":
+	 				cmd.read_pdbstr(text, sfa_name)
+				else:
+	 				cmd.read_pdbstr(text, sfa_name, frameLabel)
 				cmd.hide("everything", sfa_name)
 				cmd.show("spheres", sfa_name)
 	

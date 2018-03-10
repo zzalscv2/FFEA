@@ -21,26 +21,13 @@
 //  the research papers on the package.
 //
 
-#ifndef FFEA_VERSION_H_INCLUDED
-#define FFEA_VERSION_H_INCLUDED
+#include "VdW_solver.h"
+#include <set>
 
-#include <string>
+class GenSoftSSINT_solver: public VdW_solver {
 
-using std::string;
+private:
 
+  void do_interaction(Face *f1, Face *f2, scalar *blob_corr);
 
-static string FFEA_version = "@PACKAGE_VERSION@";
-#ifdef USE_CMAKECONF
-static string FFEA_commit = "@PACKAGE_COMMIT@";
-static string FFEA_branch = "@PACKAGE_BRANCH@";
-static string FFEA_date = "@PACKAGE_DATE@";
-#else
-
-static string FFEA_prev_commit = "1edd4bce96fe663abbf05a1ad7dbcb3fa3ef5917";
-static string FFEA_prev_branch = "master";
-static string FFEA_prev_date = "2017-09-27";
-
-#endif
-
-
-#endif
+};

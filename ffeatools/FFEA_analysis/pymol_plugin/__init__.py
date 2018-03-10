@@ -20,6 +20,7 @@
 #  To help us fund FFEA development, we humbly ask that you cite 
 #  the research papers on the package.
 #
+import cProfile
 
 import sys, os, time
 import numpy as np
@@ -692,6 +693,7 @@ class FFEA_viewer_control_window:
              return
 
      # load the file
+     # cProfile.runctx('self.load_ffea(ffea_fname)', globals(), locals())
      self.load_ffea(ffea_fname)
 
 
@@ -761,6 +763,7 @@ class FFEA_viewer_control_window:
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
       
+	tbegin = time.time()
 	self.notebook.selectpage("Editor")
   	
 	# Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
@@ -817,7 +820,7 @@ class FFEA_viewer_control_window:
 			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
 			new_blob = Blob.Blob()
 			# try:
-			new_blob.load(idnum, bindex, cindex, self.script)
+			new_blob.load(idnum, bindex, cindex, self.script, self.display_flags)
 			# except:
 				# print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
 				# return
@@ -960,7 +963,7 @@ class FFEA_viewer_control_window:
 		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
 		self.load_trajectory_thread.start()
 		waitForTrajToLoad = True
-		#self.load_trajectory(p.trajectory_out_fname)
+		# self.load_trajectory(p.trajectory_out_fname) # serial
 
 
 	#
@@ -1035,6 +1038,9 @@ class FFEA_viewer_control_window:
 		self.load_lj_button.config(state="normal")
 	else:
 		self.root.destroy()
+
+	print "System loaded in ", time.time() - tbegin, "s."
+
 
   def get_normal(self, node0, node1, node2):
 	ax = node1[0] - node0[0]
@@ -1197,6 +1203,8 @@ class FFEA_viewer_control_window:
 		bin += 1
 
   def load_trajectory(self, trajectory_out_fname):
+
+	tbegin = time.time()
 	
 	#
 	# All blobs already have the first frame. They will keep this permanently.
@@ -1205,7 +1213,7 @@ class FFEA_viewer_control_window:
 
 	# Load header and skip first frame (we already have it from the node files)
 	try:
-		self.traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+		self.traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0, onlyNodes=True)
 		try:
 			failure = self.traj.skip_frame()
 		except:
@@ -1238,7 +1246,7 @@ class FFEA_viewer_control_window:
 	while True:
 		
 		# Get frame from traj
-		if self.traj.load_frame() == 0:
+		if self.traj.load_frame(onlyNodes=True) == 0:
 
 			# Scale traj frame
 			self.traj.rescale(self.global_scale, -1)
@@ -1248,7 +1256,7 @@ class FFEA_viewer_control_window:
 			self.num_frames += 1
 
 			# Draw whole frame (if above worked, these should work no problem...)
-			self.draw_frame(self.num_frames - 1, scale = lmin)
+			self.draw_frame(self.num_frames - 1, scale = lmin, draw_static = False)
 
 			# Delete frames from memory
 			if(self.num_frames > 3):
@@ -1263,6 +1271,8 @@ class FFEA_viewer_control_window:
 		cmd.mset("1-"+str(self.num_frames))
 	# If the trajectory was a single frame, then we loaded nothing:
 	else: self.wontLoadTraj = 1
+
+	print "Trajectory loaded in: ", time.time() - tbegin, "s."
 
 
   def get_system_dimensions(self, findex):
@@ -1478,7 +1488,7 @@ class FFEA_viewer_control_window:
 	cent *= 1.0 / total_num_nodes
 	return cent
 
-  def draw_frame(self, index, scale = 1.0):
+  def draw_frame(self, index, scale = 1.0, draw_static = True):
 
 	# Blobs should only ever have at most 2 frames on them, the initial one and the currently loaded one. So...
 	frame_real_index = index
@@ -1500,6 +1510,10 @@ class FFEA_viewer_control_window:
 
 	for i in range(self.script.params.num_blobs):
 		for j in range(self.script.params.num_conformations[i]):
+			frame_real_index = index
+			if self.blob_list[i][j].motion_state == "STATIC": 
+				if draw_static == True: frame_real_index = "ALL"
+				else: continue
 			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags, scale = scale)
 
   def draw_box(self, f):

@@ -64,7 +64,7 @@ Blob::Blob() {
     solver = NULL;
     linear_solver = 0;
     mass_in_blob = false;
-    vdw_on_blob = false;
+    ssint_on_blob = false;
     springs_on_blob = false;
     beads_on_blob = false;
     force = NULL;
@@ -115,7 +115,7 @@ Blob::~Blob() {
     solver = NULL;
     linear_solver = 0;
     mass_in_blob = false;
-    vdw_on_blob = false;
+    ssint_on_blob = false;
     springs_on_blob = false;
     beads_on_blob = false;
 
@@ -213,10 +213,10 @@ Blob::~Blob() {
 
 int Blob::config(const int blob_index, const int conformation_index, string node_filename,
              string topology_filename, string surface_filename, string material_params_filename,
-             string stokes_filename, string vdw_filename, string pin_filename,
+             string stokes_filename, string ssint_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
-             PreComp_params *pc_params, LJ_matrix *lj_matrix,
+             scalar compress, int linear_solver, int blob_state, SimulationParams *params, 
+             PreComp_params *pc_params, SSINT_matrix *ssint_matrix, 
              BindingSite_matrix *binding_matrix, RngStream rng[]){
 
     // Which blob and conformation am i?
@@ -224,31 +224,31 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->conformation_index = conformation_index;
 
     // Input files:
-    this->s_node_filename = node_filename;
+    this->s_node_filename = node_filename; 
     this->s_topology_filename = topology_filename;
     this->s_surface_filename = surface_filename;
     this->s_material_params_filename = material_params_filename;
-    this->s_stokes_filename = stokes_filename;
-    this->s_vdw_filename = vdw_filename;
+    this->s_stokes_filename = stokes_filename;      
+    this->s_ssint_filename = ssint_filename;
     this->s_beads_filename = beads_filename;
     this->s_binding_filename = binding_filename;
     this->s_pin_filename = pin_filename;
-
+    
     // scaling coordinates:
     this->scale = scale;
 
-    // compressing:
-    this->calc_compress = calc_compress;
+    // compressing: 
+    this->calc_compress = calc_compress; 
     this->compress = compress;
 
-    // precomputed configuration:
+    // precomputed configuration: 
     this->pc_params = pc_params;
 
     // BindingSite_matrix:
-    this->binding_matrix = binding_matrix;
+    this->binding_matrix = binding_matrix; 
 
     // lennard-jones interaction matrix:
-    this->lj_matrix = lj_matrix;
+    this->ssint_matrix = ssint_matrix;
 
     // Store the pointer to the simulation parameters class
     this->params = params;
@@ -264,7 +264,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->linear_solver = linear_solver;
 
 
-    return FFEA_OK;
+    return FFEA_OK; 
 }
 
 int Blob::init(){
@@ -296,9 +296,9 @@ int Blob::init(){
         }
     }
 
-    if (params->calc_vdw == 1) {
-        if (load_vdw(s_vdw_filename.c_str(), lj_matrix->get_num_types(), params->vdw_type) == FFEA_ERROR) {
-            FFEA_ERROR_MESSG("Error when loading VdW parameter file.\n")
+    if (params->calc_ssint == 1 || params->calc_steric == 1) {
+        if (load_ssint(s_ssint_filename.c_str(), ssint_matrix->get_num_types(), params->ssint_type) == FFEA_ERROR) {
+            FFEA_ERROR_MESSG("Error when loading ssint parameter file.\n")
         }
     }
 
@@ -592,6 +592,8 @@ int Blob::init(){
             toBePrinted_nodes = new scalar[4*num_nodes];
         }
     }
+
+
     // Return FFEA_OK to indicate "success"
     return FFEA_OK;
 }
@@ -682,8 +684,7 @@ int Blob::update_internal_forces() {
             }
 
             elem[n].apply_stress_tensor(stress, du);
-            
-            
+
             // Store the contributions to the force on each of this element's nodes (Store them on
             // the element - they will be aggregated on the actual nodes outside of this parallel region)
             elem[n].add_element_force_vector(du);
@@ -815,8 +816,8 @@ void Blob::rotate(float xang, float yang, float zang, bool beads) {
     r[2][2] = cos(xang) * cos(yang);
 
     rotate(r[0][0], r[0][1], r[0][2],
-           r[1][0], r[1][1], r[1][2],
-           r[2][0], r[2][1], r[2][2], beads);
+           r[1][0], r[1][1], r[1][2], 
+           r[2][0], r[2][1], r[2][2], beads); 
 
 }
 
@@ -975,56 +976,14 @@ void Blob::get_centroid(vector3 *com) {
     com->z /= num_nodes;
 }
 
-
 void Blob::calc_and_store_centroid(vector3 &com) {
 
-    get_centroid(&com);
+    get_centroid(&com); 
 
     CoG[0] = com[0];
     CoG[1] = com[1];
-    CoG[2] = com[2];
+    CoG[2] = com[2]; 
 
-}
-
-void Blob::calc_tot_visc(matrix3 stress){
-    //matrix3 stress;
-    vector12 v;
-    //mat3_set_zero(stress);
-    scalar prefac=0;
-    for(int i = 0; i<num_elements;i++){
-        //prefac=mesoDimensions::pressure * mesoDimensions::time*elem[i].vol*mesoDimensions::volume*mesoDimensions::velocity*mesoDimensions::length*mesoDimensions::length;
-        prefac = mesoDimensions::pressure*elem[i].vol*mesoDimensions::volume;
-        vec12_set_zero(v);
-        elem[i].get_element_velocity_vector(v);
-        
-            
-        stress[0][0]+=prefac*((4/3 *elem[i].A+elem[i].B)*((v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9])+(elem[i].B-2/3*elem[i].A)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10]+(v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11]));
-        stress[0][1]+=prefac*elem[i].A*((v[1]-v[0])*elem[i].dpsi[2]+(v[2]-v[0])*elem[i].dpsi[6]+(v[3]-v[0])*elem[i].dpsi[10]+(v[5]-v[4])*elem[i].dpsi[1]+(v[6]-v[4])*elem[i].dpsi[5]+(v[7]-v[4])*elem[i].dpsi[9]);
-        stress[0][2]+=prefac*elem[i].A*((v[1]-v[0])*elem[i].dpsi[3]+(v[2]-v[0])*elem[i].dpsi[7]+(v[3]-v[0])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[1]+(v[10]-v[8])*elem[i].dpsi[5]+(v[11]-v[8])*elem[i].dpsi[9]);
-        stress[1][0]+=prefac*elem[i].A*((v[5]-v[4])*elem[i].dpsi[1]+(v[6]-v[4])*elem[i].dpsi[5]+(v[7]-v[4])*elem[i].dpsi[9]+(v[1]-v[0])*elem[i].dpsi[2]+(v[2]-v[0])*elem[i].dpsi[6]+(v[3]-v[0])*elem[i].dpsi[10]);
-        stress[1][1]+=prefac*((4/3 *elem[i].A+elem[i].B)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10])+(elem[i].B-2/3*elem[i].A)*((v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9]+(v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11]));
-        stress[1][2]+=prefac*elem[i].A*((v[5]-v[4])*elem[i].dpsi[3]+(v[6]-v[4])*elem[i].dpsi[7]+(v[7]-v[4])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[2]+(v[10]-v[8])*elem[i].dpsi[6]+(v[11]-v[8])*elem[i].dpsi[10]);
-        stress[2][0]+=prefac*elem[i].A*((v[1]-v[0])*elem[i].dpsi[3]+(v[2]-v[0])*elem[i].dpsi[7]+(v[3]-v[0])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[1]+(v[10]-v[8])*elem[i].dpsi[5]+(v[11]-v[8])*elem[i].dpsi[9]);
-        stress[2][1]+=prefac*elem[i].A*((v[9]-v[8])*elem[i].dpsi[2]+(v[10]-v[8])*elem[i].dpsi[6]+(v[11]-v[8])*elem[i].dpsi[10]+(v[5]-v[4])*elem[i].dpsi[3]+(v[6]-v[4])*elem[i].dpsi[7]+(v[7]-v[4])*elem[i].dpsi[11]);
-        stress[2][2]+=prefac*((4/3 *elem[i].A+elem[i].B)*((v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11])+(elem[i].B-2/3*elem[i].A)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10]+(v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9]));
-        
-        //vec12_scale(v, mesoDimensions::velocity);
-        //print_vector12(v);
-        //printf("*******\nprefac is %.14e\n",prefac);
-        //printf("****** blob %d element %d:\n vol is %.14e /n",blob_index, i,elem[i].vol*mesoDimensions::volume);
-       /* printf("*********blob %d element %d:\nshear visc is %.14e bulk visc is %.14e\nV is \n", blob_index,i,elem[i].A*mesoDimensions::pressure * mesoDimensions::time,mesoDimensions::pressure * mesoDimensions::time*elem[i].B);
-        vec12_scale(v, mesoDimensions::velocity);
-        print_vector12(v);
-        printf("****** blob %d element %d:\n dpsi is \n",blob_index, i);
-        print_vector12(elem[i].dpsi);    
-        printf("*******\nprefac is %.14e\n",prefac);
-        printf("****** blob %d element %d:\n vol is %.14e /n",blob_index, i,elem[i].vol*mesoDimensions::volume);
-        */
-    }
-    
-    
-   // printf("*******\nViscous Stress for blob %d is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",blob_index,stress[0][0],stress[0][1],stress[0][2],stress[1][0],stress[1][1],stress[1][2],stress[2][0],stress[2][1],stress[2][2]);
-    //return stress;
 }
 
 // This one returns an array rather than arsing about with pointers
@@ -1110,7 +1069,7 @@ void Blob::linearise_force() {
            force[nIdx[1]][j] += 0.5 * ( force[nIdx[4]][j] + force[nIdx[7]][j] + force[nIdx[8]][j]);
            force[nIdx[2]][j] += 0.5 * ( force[nIdx[5]][j] + force[nIdx[7]][j] + force[nIdx[9]][j]);
            force[nIdx[3]][j] += 0.5 * ( force[nIdx[6]][j] + force[nIdx[8]][j] + force[nIdx[9]][j]);
-        }
+        } 
         for (int j=4; j<NUM_NODES_QUADRATIC_TET; j++) {
             force[nIdx[j]][0]   = 0.;
             force[nIdx[j]][1]   = 0.;
@@ -1185,11 +1144,8 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
     } else if (blob_state == FFEA_BLOB_IS_FROZEN) {
         fprintf(trajectory_out, "FROZEN\n");
     }
-    
-    
 
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
-    
         for (int i = 0; i < num_nodes; i++) {
             fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                     node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
@@ -1199,15 +1155,12 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
         }
     } else {
         if (params->calc_es == 0) {
-        
-            fprintf(trajectory_out, "%d %d %d\n", pbc_count[0], pbc_count[1], pbc_count[2]);
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
                         0., 0., 0., 0., 0., 0., 0.);
             }
         } else {
-            fprintf(trajectory_out, "%d %d %d\n", pbc_count[0], pbc_count[1], pbc_count[2]);
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
@@ -1326,10 +1279,6 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
             FFEA_ERROR_MESSG("Problem when reading state line in trajectory file\n")
         }
     }
-    
-    if (fscanf(trajectory_out, "%d %d %d\n", &pbc_count[0], &pbc_count[1], &pbc_count[2]) != 3) {
-            FFEA_ERROR_MESSG("(When restarting) Error reading pbc counts from trajectory file\n")
-        }
 
     for (int i = 0; i < num_nodes; i++) {
         if (fscanf(trajectory_out, "%le %le %le %le %le %le %le %le %le %le\n", &node[i].pos.x, &node[i].pos.y, &node[i].pos.z, &node[i].vel.x, &node[i].vel.y, &node[i].vel.z, &node[i].phi, &force[i].x, &force[i].y, &force[i].z) != 10) {
@@ -1347,19 +1296,6 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
         }
 
     }
-    return FFEA_OK;
-}
-
-int Blob::read_pbc_count_from_file(FILE *mini_meas_out,int b) {
-    char state_str[20];
-    char *result = NULL;
-    double trash;
-    int trash2;
-
-    if (fscanf(mini_meas_out, "%le%le%le%d%d%d%le%le%le%le%le%le",&trash, &trash, &trash,&trash2,&trash2,&trash2,&trash,&trash,&trash,&trash,&trash,&trash) != 12) {
-            FFEA_ERROR_MESSG("(When restarting) Error reading from mini_meas file, for blob %d\n",b)
-        }
-
     return FFEA_OK;
 }
 
@@ -1422,8 +1358,8 @@ void Blob::make_measurements() {
 
     int n, i, j;
     scalar kenergy, senergy;
-    vector3 total_vdw_xz_force;
-    scalar total_vdw_xz_energy = 0.0, total_vdw_xz_area = 0.0;
+    vector3 total_ssint_xz_force;
+    scalar total_ssint_xz_energy = 0.0, total_ssint_xz_area = 0.0;
     scalar temp1, temp2, temp3;
     scalar cogx = 0.0, cogy = 0.0, cogz = 0.0, lx = 0.0, ly = 0.0, lz = 0.0, brmsd = 0.0;
     scalar r[4][3];
@@ -1597,58 +1533,6 @@ void Blob::write_measurements_to_file(FILE *fout) {
     fflush(fout);
 }
 
-void Blob::calc_and_write_mini_meas_to_file(FILE *fout) {
-
-	// White space for blob index bit
-    int i;
-	scalar F_ij_store[6];
-    for(i=0;i<6;i++){
-            F_ij_store[i]=0;
-    }
-    matrix3 J;
-	matrix3 F_ij_calc;
-
-	scalar cogx = 0.0, cogy = 0.0, cogz = 0.0;
-	for (i = 0; i < num_nodes; i++) {
-
-	    /*
-	     * Center of geometry contribution (geometry better on nodes than elements)
-	     */
-	    cogx += node[i].pos.x;
-	    cogy += node[i].pos.y;
-	    cogz += node[i].pos.z;
-
-    }
-
-	CoG.x = cogx / num_nodes;
-	CoG.y = cogy / num_nodes;
-	CoG.z = cogz / num_nodes;
-
-
-	for(i=0;i< num_elements;i++){
-        mat3_set_zero(F_ij_calc);
-        mat3_mult_transpose(elem[i].F_ij, elem[i].F_ij, F_ij_calc);
-        mat3_scale(F_ij_calc, (elem[i].vol_0));
-        //mat3_scale(F_ij_calc, (elem[i].G * elem[i].vol_0 / elem[i].vol));
-        F_ij_store[0] += F_ij_calc[0][0];
-        F_ij_store[1] += F_ij_calc[0][1];
-        F_ij_store[2] += F_ij_calc[0][2];
-        F_ij_store[3] += F_ij_calc[1][1];
-        F_ij_store[4] += F_ij_calc[1][2];
-        F_ij_store[5] += F_ij_calc[2][2];
-
-	}
-
-	    for(int i=0;i<6;i++){
-                F_ij_store[i]=F_ij_store[i]/total_vol;
-        }
-
-
-
-	fprintf(fout, "%-14.6e%-14.6e%-14.6e%-14d%-14d%-14d%-14.6e%-14.6e%-14.6e%-14.6e%-14.6e%-14.6e", CoG.x * mesoDimensions::length, CoG.y * mesoDimensions::length, CoG.z * mesoDimensions::length,pbc_count[0],pbc_count[1],pbc_count[2],F_ij_store[0],F_ij_store[1],F_ij_store[2],F_ij_store[3],F_ij_store[4],F_ij_store[5]);
-	fflush(fout);
-}
-
 void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
     int n;
     if (stress_out != NULL) {
@@ -1719,7 +1603,7 @@ int Blob::get_num_beads() {
 
 bool Blob::is_using_beads() {
     if (num_beads > 0) return true;
-    else return false;
+    else return false; 
 }
 
 /*
@@ -1743,14 +1627,14 @@ arr3 Blob::get_CoG() {
 }
  */
 void Blob::get_stored_centroid(arr3 &cog){
-    arr3Store<scalar,arr3>(CoG.data, cog);
+    arr3Store<scalar,arr3>(CoG.data, cog); 
 }
 
 /*
  *
  */
 Face * Blob::get_face(int i) {
-    if (surface[i].is_vdw_active() == true) {
+    if (surface[i].is_ssint_active() == true) {
         return &surface[i];
     } else {
         return NULL;
@@ -1775,7 +1659,7 @@ tetra_element_linear *Blob::get_element(int i) {
  **/
 void Blob::get_bead_position(int i, arr3 &v) {
 
-    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v);
+    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v); 
 }
 
 /**
@@ -1807,14 +1691,14 @@ vector<int> Blob::get_bead_assignment(int i) {
     return bead_assignment[i];
 }
 
-scalar Blob::get_vdw_area() {
-    scalar total_vdw_area = 0.0;
+scalar Blob::get_ssint_area() {
+    scalar total_ssint_area = 0.0;
     for (int i = 0; i < get_num_faces(); ++i) {
-        if (surface[i].is_vdw_active() == true) {
-            total_vdw_area += surface[i].area;
+        if (surface[i].is_ssint_active() == true) {
+            total_ssint_area += surface[i].area;
         }
     }
-    return total_vdw_area;
+    return total_ssint_area;
 }
 //		/*
 //		 *
@@ -2288,9 +2172,9 @@ void Blob::set_forces_to_zero() {
 }
 
 void Blob::get_node(int index, arr3 &v) {
-
-    arr3Store<scalar,arr3>(node[index].pos.data, v);
-
+    
+    arr3Store<scalar,arr3>(node[index].pos.data, v); 
+    
 }
 
 void Blob::add_force_to_node(vector3 f, int index) {
@@ -2303,7 +2187,7 @@ void Blob::add_force_to_node(vector3 f, int index) {
     for (int i = 0; i < num_surface_faces; ++i) {
         surface[i].zero_vdw_bb_measurement_data();
     }
-}*/
+}*/ 
 
 /* void Blob::zero_vdw_xz_measurement_data() {
     for (int i = 0; i < num_surface_faces; ++i) {
@@ -2452,11 +2336,11 @@ int Blob::get_motion_state() {
 }
 
 scalar Blob::get_scale() {
-    return scale;
+    return scale; 
 }
 
 scalar Blob::get_RandU01() {
-    return rng->RandU01();
+    return rng->RandU01(); 
 }
 
 int Blob::get_num_linear_nodes() {
@@ -3450,7 +3334,7 @@ int Blob::load_ctforces(string ctforces_fname) {
 
 
 
-    // 4 - READ AND STORE THE ROTATIONAL PART:
+    // 4 - READ AND STORE THE SURFACE PART:
     // 4.1 - First the header:
     now_reading = now_reading + n_ct_rforces;
     // check that we're still within bounds:
@@ -3593,89 +3477,89 @@ void Blob::print_bead_positions() {
 
 /*
  */
-int Blob::load_vdw(const char *vdw_filename, int num_vdw_face_types, string vdw_method) {
+int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, string ssint_method) {
     FILE *in = NULL;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(vdw_filename, "r")) == NULL) {
-        FFEA_FILE_ERROR_MESSG(vdw_filename)
+    if ((in = fopen(ssint_filename, "r")) == NULL) {
+        FFEA_FILE_ERROR_MESSG(ssint_filename)
     }
-    printf("\t\tReading in Van der Waals file: %s\n", vdw_filename);
+    printf("\t\tReading in Van der Waals file: %s\n", ssint_filename);
 
-    // first line should be the file type "ffea vdw file"
+    // first line should be the file type "ffea vdw file" or "ffea ssint file"
     if (fgets(line, max_line_size, in) == NULL) {
         fclose(in);
-        FFEA_ERROR_MESSG("Error reading first line of VdW file\n")
+        FFEA_ERROR_MESSG("Error reading first line of ssint file\n")
     }
-    if (strcmp(line, "walrus vdw file\n") != 0 && strcmp(line, "ffea vdw file\n") != 0) {
+    if (strcmp(line, "walrus vdw file\n") != 0 && strcmp(line, "ffea vdw file\n") != 0 && strcmp(line, "ffea ssint file\n") != 0) {
         fclose(in);
-        FFEA_ERROR_MESSG("This is not a 'ffea vdw file' (read '%s') \n", line)
+        FFEA_ERROR_MESSG("This is not a 'ffea ssint file' (read '%s') \n", line)
     }
 
     // read in the number of faces in the file
-    int num_vdw_faces = 0;
-    if (fscanf(in, "num_faces %d\n", &num_vdw_faces) != 1) {
+    int num_ssint_faces = 0;
+    if (fscanf(in, "num_faces %d\n", &num_ssint_faces) != 1) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading number of faces\n")
     }
-    printf("\t\t\tNumber of faces = %d\n", num_vdw_faces);
+    printf("\t\t\tNumber of faces = %d\n", num_ssint_faces);
 
-    if (num_vdw_faces != num_surface_faces) {
-        FFEA_ERROR_MESSG("Number of faces specified in Van der Waals file (%d) does not agree with number in surface file (%d)\n", num_vdw_faces, num_surface_faces)
+    if (num_ssint_faces != num_surface_faces) {
+        FFEA_ERROR_MESSG("Number of faces specified in Van der Waals file (%d) does not agree with number in surface file (%d)\n", num_ssint_faces, num_surface_faces)
     }
 
-    // Check for "vdw params:" line
+    // Check for "ssint params:" line
     if (fgets(line, max_line_size, in) == NULL) {
         fclose(in);
-        FFEA_ERROR_MESSG("Error when looking for 'vdw params:' line\n")
+        FFEA_ERROR_MESSG("Error when looking for 'ssint params:' line\n")
     }
-    if (strcmp(line, "vdw params:\n") != 0) {
+    if (strcmp(line, "vdw params:\n") != 0 && strcmp(line, "ssint params:\n") != 0) {
         fclose(in);
-        FFEA_ERROR_MESSG("Could not find 'vdw params:' line (found '%s' instead)\n", line)
+        FFEA_ERROR_MESSG("Could not find 'ssint params:' line (found '%s' instead)\n", line)
     }
 
-    // Read in all the vdw parameters from the file, assigning them to the appropriate faces
+    // Read in all the ssint parameters from the file, assigning them to the appropriate faces
     int i;
-    int vdw_type = 0;
+    int ssint_type = 0;
 
     // If steric only, set all to type 0
-    if (vdw_method == "steric") {
+    if (params->calc_ssint == 0) {
         for(i = 0; i < num_surface_faces; ++i) {
-            if (fscanf(in, "%d\n", &vdw_type) != 1) {
+            if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
-                FFEA_ERROR_MESSG("Error reading from vdw file at face %d. There should be 1 integer denoting vdw face species (-1 - unreactive). \n", i);
+                FFEA_ERROR_MESSG("Error reading from ssint file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
             } else {
-                if (vdw_type > num_vdw_face_types - 1) {
-                    vdw_type = 0;
+                if (ssint_type > num_ssint_face_types - 1) {
+                    ssint_type = 0;
                 }
-                surface[i].set_vdw_interaction_type(vdw_type);
+                surface[i].set_ssint_interaction_type(ssint_type);
             }
         }
     } else {
         for (i = 0; i < num_surface_faces; i++) {
-            if (fscanf(in, "%d\n", &vdw_type) != 1) {
+            if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
-                FFEA_ERROR_MESSG("Error reading from vdw file at face %d. There should be 1 integer denoting vdw face species (-1 - unreactive). \n", i);
+                FFEA_ERROR_MESSG("Error reading from ssint file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
             } else {
-                if (vdw_type > num_vdw_face_types - 1) {
-                    FFEA_ERROR_MESSG("Error reading from vdw file at face %d. The given vdw face type (%d) is higher than that allowed by the vdw forcefield params file (%d). \n", i, vdw_type, num_vdw_face_types - 1);
+                if (ssint_type > num_ssint_face_types - 1) {
+                    FFEA_ERROR_MESSG("Error reading from ssint file at face %d. The given ssint face type (%d) is higher than that allowed by the ssint forcefield params file (%d). \n", i, ssint_type, num_ssint_face_types - 1);
                 }
-                surface[i].set_vdw_interaction_type(vdw_type);
+                surface[i].set_ssint_interaction_type(ssint_type);
             }
         }
     }
 
     // Set whether vdw is active on blob
     for(i = 0; i < num_surface_faces; ++i) {
-        if(surface[i].vdw_interaction_type != -1) {
-            vdw_on_blob = true;
+        if(surface[i].ssint_interaction_type != -1) {
+            ssint_on_blob = true;
             break;
         }
     }
     fclose(in);
 
-    printf("\t\t\tRead %d vdw faces from %s\n", i, vdw_filename);
+    printf("\t\t\tRead %d ssint faces from %s\n", i, ssint_filename);
 
     return FFEA_OK;
 }
@@ -3687,7 +3571,7 @@ int Blob::load_binding_sites() {
     int num_binding_site_types = binding_matrix->get_num_interaction_types();
 
     // Return successful as params.calc_kinetics == 0 or no sites are required
-    if (s_binding_filename.empty()) return FFEA_OK;
+    if (s_binding_filename.empty()) return FFEA_OK; 
     // Open file
     ifstream fin;
     fin.open(s_binding_filename.c_str());
@@ -3871,6 +3755,7 @@ void Blob::calc_rest_state_info() {
     scalar longest_surface_edge = 0;
     int min_vol_elem = 0;
     mass = 0;
+    scalar total_vol = 0;
     for (int i = 0; i < num_elements; i++) {
         // Get jacobian matrix for this element
         elem[i].calculate_jacobian(J);
@@ -3900,7 +3785,7 @@ void Blob::calc_rest_state_info() {
 
     for (int i=0; i<num_surface_faces; i++) {
         scalar longest_surface_edge_i = surface[i].length_of_longest_edge();
-        if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i;
+        if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i; 
     }
 
     if (blob_state == FFEA_BLOB_IS_STATIC) {
@@ -3927,10 +3812,6 @@ void Blob::calc_rest_state_info() {
 int Blob::aggregate_forces_and_solve() {
     int n, m;
 
-
-    
-
-
     // Aggregate the forces on each node by summing the contributions from each element.
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp parallel for default(none) private(n, m) schedule(guided)
@@ -3941,36 +3822,8 @@ int Blob::aggregate_forces_and_solve() {
             force[n][1] += node[n].force_contributions[m]->y;
             force[n][2] += node[n].force_contributions[m]->z;
         }
-        
     }
-    //printf("*********n/ positions of blobe %d are:\n",blob_index);
-    
-    /*
-    mat3_set_zero(total_node_stress);
-    
-    for (int i = 0; i < num_nodes; i++) {
-        total_node_stress[0][0] += node[i].pos.x*force[i].x;
-        total_node_stress[0][1] += node[i].pos.x*force[i].y;
-        total_node_stress[0][2] += node[i].pos.x*force[i].z;
-        total_node_stress[1][0] += node[i].pos.y*force[i].x;
-        total_node_stress[1][1] += node[i].pos.y*force[i].y;
-        total_node_stress[1][2] += node[i].pos.y*force[i].z;
-        total_node_stress[2][0] += node[i].pos.z*force[i].x;
-        total_node_stress[2][1] += node[i].pos.z*force[i].y;
-        total_node_stress[2][2] += node[i].pos.z*force[i].z;
-    }
-    
-    printf("*********n/ positions of blobe %d are:\n",blob_index);
-    for (int i = 0; i < num_nodes; i++) {
-        printf("%.14e %.14e %.14e\n",node[i].pos.x,node[i].pos.y,node[i].pos.z);
-    }
-    printf("*********n/ forces of blobe %d are:\n",blob_index);
-    for (int i = 0; i < num_nodes; i++) {
-        printf("%.14e %.14e %.14e\n",force[i][0],force[i][1],force[i][2]);
-    }
-   */
-   
-   
+
     // Aggregate surface forces onto nodes
     for (n = 0; n < num_surface_faces; n++) {
         for (int i = 0; i < 4; i++) {
@@ -4037,6 +3890,9 @@ int Blob::aggregate_forces_and_solve() {
         }
     }
 
+    // Take forces off of second order nodes onto linear ones 
+    linearise_force();
+
     // Set to zero any forces on the pinned nodes
     for (n = 0; n < num_pinned_nodes; n++) {
         int pn_index = pinned_nodes_list[n];
@@ -4051,97 +3907,6 @@ int Blob::aggregate_forces_and_solve() {
         force[*it].y = 0;
         force[*it].z = 0;
     }
-    //for (n = 0; n < num_nodes; n++){
-    //    printf("\nNode %d pos is %.14e %.14e %.14e\n Node %d force pre linearisation %.14e %.14e %.14e\n",n,node[n].pos.x,node[n].pos.y,node[n].pos.z,n,force[n].x,force[n].y,force[n].z);
-    //}
-
-    
-    //printf("*************\nblob %d node stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,total_node_stress[0][0],total_node_stress[0][1],total_node_stress[0][2],total_node_stress[1][0],total_node_stress[1][1],total_node_stress[1][2],total_node_stress[2][0],total_node_stress[2][1],total_node_stress[2][2]);
-
-
-    linearise_force();
-    
-
-    
-    
-    /*
-    scalar fxoprod1[4][3][3],fxoprodtotsing[3][3];
-    
-    for (int k = 0; k < 3; k++) {
-            for (int l = 0; l < 3; l++) {
-            fxoprodtotsing[k][l] = 0;
-        }
-    }
-    
-    for (int j = 0; j < 4; j++) {
-        for (int k = 0; k < 3; k++) {
-            for (int l = 0; l < 3; l++) {
-                fxoprod1[j][k][l]=0;
-            }
-        }
- 
-    }
-    
-    
-    
-        fxoprod1[0][0][0] = node[0].pos.x*force[0].x;
-        fxoprod1[0][0][1] = node[0].pos.x*force[0].y;
-        fxoprod1[0][0][2] = node[0].pos.x*force[0].z;
-        fxoprod1[0][1][0] = node[0].pos.y*force[0].x;
-        fxoprod1[0][1][1] = node[0].pos.y*force[0].y;
-        fxoprod1[0][1][2] = node[0].pos.y*force[0].z;
-        fxoprod1[0][2][0] = node[0].pos.z*force[0].x;
-        fxoprod1[0][2][1] = node[0].pos.z*force[0].y;
-        fxoprod1[0][2][2] = node[0].pos.z*force[0].z;
-        
-        fxoprod1[1][0][0] = node[3].pos.x*force[3].x;
-        fxoprod1[1][0][1] = node[3].pos.x*force[3].y;
-        fxoprod1[1][0][2] = node[3].pos.x*force[3].z;
-        fxoprod1[1][1][0] = node[3].pos.y*force[3].x;
-        fxoprod1[1][1][1] = node[3].pos.y*force[3].y;
-        fxoprod1[1][1][2] = node[3].pos.y*force[3].z;
-        fxoprod1[1][2][0] = node[3].pos.z*force[3].x;
-        fxoprod1[1][2][1] = node[3].pos.z*force[3].y;
-        fxoprod1[1][2][2] = node[3].pos.z*force[3].z;
-        
-        fxoprod1[2][0][0] = node[5].pos.x*force[5].x;
-        fxoprod1[2][0][1] = node[5].pos.x*force[5].y;
-        fxoprod1[2][0][2] = node[5].pos.x*force[5].z;
-        fxoprod1[2][1][0] = node[5].pos.y*force[5].x;
-        fxoprod1[2][1][1] = node[5].pos.y*force[5].y;
-        fxoprod1[2][1][2] = node[5].pos.y*force[5].z;
-        fxoprod1[2][2][0] = node[5].pos.z*force[5].x;
-        fxoprod1[2][2][1] = node[5].pos.z*force[5].y;
-        fxoprod1[2][2][2] = node[5].pos.z*force[5].z;
-        
-        fxoprod1[3][0][0] = node[8].pos.x*force[8].x;
-        fxoprod1[3][0][1] = node[8].pos.x*force[8].y;
-        fxoprod1[3][0][2] = node[8].pos.x*force[8].z;
-        fxoprod1[3][1][0] = node[8].pos.y*force[8].x;
-        fxoprod1[3][1][1] = node[8].pos.y*force[8].y;
-        fxoprod1[3][1][2] = node[8].pos.y*force[8].z;
-        fxoprod1[3][2][0] = node[8].pos.z*force[8].x;
-        fxoprod1[3][2][1] = node[8].pos.z*force[8].y;
-        fxoprod1[3][2][2] = node[8].pos.z*force[8].z;
-    
-    
-    
-    for (int j = 0; j < 4; j++) {
-        for (int k = 0; k < 3; k++) {
-            for (int l = 0; l < 3; l++) {
-                fxoprodtotsing[k][l]+=fxoprod1[j][k][l];
-            }
-        }
-    }
-    
-    printf("**************\nfxoprodtotsing for blob %d is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n\n*\n",blob_index,fxoprodtotsing[0][0],fxoprodtotsing[0][1],fxoprodtotsing[0][2],fxoprodtotsing[1][0],fxoprodtotsing[1][1],fxoprodtotsing[1][2],fxoprodtotsing[2][0],fxoprodtotsing[2][1],fxoprodtotsing[2][2]);
-    
-    
-    /*
-    for (n = 0; n < num_nodes; n++){
-        printf("\nNode %d pos is %.14e %.14e %.14e\n Node %d force post linearisation %.14e %.14e %.14e\n",n,node[n].pos.x,node[n].pos.y,node[n].pos.z,n,force[n].x,force[n].y,force[n].z);
-    }
-    */
 
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix,
     // or Kv = f where K is the viscosity matrix for the system
@@ -4166,17 +3931,13 @@ void Blob::euler_integrate() {
         for (i = 0; i < num_nodes; i++) {
             node[i].vel[0] = force[i][0];
             node[i].vel[1] = force[i][1];
-            node[i].vel[2] = force[i][2];//*node[i].pos[0]*10000000;
-            //printf("i is %d\n%.14e\t%.14e\t%.14e\n",i,node[i].vel[0],node[i].vel[1],node[i].vel[2]);
-            
+            node[i].vel[2] = force[i][2];
+        
             node[i].pos[0] += force[i][0] * params->dt; // really meaning v * dt
             node[i].pos[1] += force[i][1] * params->dt;
             node[i].pos[2] += force[i][2] * params->dt;
         }
-        for (i = 0; i < num_nodes; i++) {
-            //printf("i is %d\n%.14e\t%.14e\t%.14e\n",i,node[i].vel[0],node[i].vel[1],node[i].vel[2]);
-            //printf("node %d y pos%.14e\n",i, node[i].pos[1]);
-        }
+
     } else {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
         #pragma omp parallel for default(none) private(i) schedule(static)
@@ -4191,7 +3952,6 @@ void Blob::euler_integrate() {
             node[i].pos[2] += node[i].vel[2] * params->dt;
         }
     }
-    
 }
 
 /*
@@ -4367,8 +4127,8 @@ bool Blob::there_are_springs() {
     return springs_on_blob;
 }
 
-bool Blob::there_is_vdw() {
-    return vdw_on_blob;
+bool Blob::there_is_ssint() {
+    return ssint_on_blob;
 }
 
 bool Blob::there_are_beads() {

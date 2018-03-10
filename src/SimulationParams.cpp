@@ -35,13 +35,14 @@ SimulationParams::SimulationParams() {
     max_iterations_cg = 1000;
     epsilon2 = 0.01;
     rng_seed = time(NULL);
-    calc_vdw = 1;
-    inc_self_vdw = 1;
+    calc_ssint = 1;
+    inc_self_ssint = 1;
     sticky_wall_xz = 0;
-    vdw_type = "steric";
-    vdw_cutoff = 3e-9 / mesoDimensions::length;
-    vdw_steric_factor = 1;
-    vdw_steric_dr = 5e-3;
+    ssint_type = "ljsteric";
+    ssint_cutoff = 3e-9 / mesoDimensions::length;
+    calc_steric = 1;
+    steric_factor = 1;
+    steric_dr = 5e-3;
     move_into_box = 1;
     es_update = 10;
     kappa = 1e9 * mesoDimensions::length;
@@ -72,6 +73,7 @@ SimulationParams::SimulationParams() {
     // Initialised to zero or equivalent for later initialisation
     restart = -1;
     num_blobs = 0;
+    num_rods = 0;
     num_conformations = NULL;
     num_states = NULL;
     state_array_size = 0;
@@ -83,11 +85,10 @@ SimulationParams::SimulationParams() {
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
-
     icheckpoint_fname_set = 0;
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
-    vdw_in_fname_set = 0;
+    ssint_in_fname_set = 0;
     trajbeads_fname_set = 0;
     mini_meas_out_fname_set = 0;
     /*
@@ -101,7 +102,7 @@ SimulationParams::SimulationParams() {
     kinetics_out_fname = "\n";
     measurement_out_fname = "\n";
     mini_meas_out_fname = "\n";
-    vdw_in_fname = "\n";
+    ssint_in_fname = "\n";
     bsite_in_fname = "\n";
     icheckpoint_fname = "\n";
     ocheckpoint_fname = "\n";
@@ -127,6 +128,7 @@ SimulationParams::~SimulationParams() {
     num_steps = -1;
     check = 0;
     num_blobs = 0;
+    num_rods = 0;
     delete[] num_conformations;
     num_conformations = NULL;
     delete[] num_states;
@@ -148,10 +150,11 @@ SimulationParams::~SimulationParams() {
     dielec_ext = 0;
     epsilon_0 = 0;
     restart = 0;
-    calc_vdw = -1;
-    inc_self_vdw = 0;
-    vdw_type = "";
-    vdw_cutoff = 0;
+    calc_ssint = -1;
+    inc_self_ssint = 0;
+    ssint_type = "";
+    ssint_cutoff = 0;
+    calc_steric = 0;
     calc_es = 0;
     calc_noise = 0;
     calc_preComp = 0;
@@ -172,8 +175,8 @@ SimulationParams::~SimulationParams() {
     calc_stokes = 0;
     stokes_visc = -1;
 
-    vdw_steric_factor = 0;
-
+    steric_factor = 0;
+    steric_dr = 0;
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
     measurement_out_fname_set = 0;
@@ -181,15 +184,7 @@ SimulationParams::~SimulationParams() {
     icheckpoint_fname_set = 0;
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
-    vdw_in_fname_set = 0;
-    
-    /*
-    base_corr_out_fname_set = 0;
-    corrected_corr_out_fname_set = 0;
-    x_corr_out_fname_set = 0;
-    y_corr_out_fname_set = 0;
-    z_corr_out_fname_set = 0;
-    */
+    ssint_in_fname_set = 0;
 
     trajectory_out_fname = "\n";
     measurement_out_fname = "\n";
@@ -198,7 +193,7 @@ SimulationParams::~SimulationParams() {
     icheckpoint_fname = "\n";
     ocheckpoint_fname = "\n";
     bsite_in_fname = "\n";
-    vdw_in_fname = "\n";
+    ssint_in_fname = "\n";
     detailed_meas_out_fname = "\n";
     ctforces_fname = "\n";
     springs_fname = "\n";
@@ -243,7 +238,6 @@ int SimulationParams::extract_params(vector<string> script_vector) {
 
 int SimulationParams::assign(string lvalue, string rvalue) {
 
-
     b_fs::path ffea_script = FFEA_script_filename;
     FFEA_script_path = ffea_script.parent_path();
     FFEA_script_basename = ffea_script.stem();
@@ -284,6 +278,11 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "num_blobs") {
         num_blobs = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_blobs << endl;
+
+    } else if (lvalue == "num_rods") {
+        num_rods = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_rods << endl;
+
 
     } else if (lvalue == "num_conformations") {
 
@@ -381,17 +380,21 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         epsilon_0 = atof(rvalue.c_str()); // relative permittivity
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << epsilon_0 << endl;
 
-    } else if (lvalue == "calc_vdw") {
-        calc_vdw = atoi(rvalue.c_str());
-        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_vdw << endl;
+    } else if (lvalue == "calc_ssint" || lvalue == "calc_vdw") {
+        calc_ssint = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_ssint << endl;
 
-    } else if (lvalue == "inc_self_vdw") {
-        inc_self_vdw = atoi(rvalue.c_str());
-        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << inc_self_vdw << endl;
+    } else if (lvalue == "calc_steric") {
+        calc_steric = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << calc_steric << endl;
 
-    } else if (lvalue == "vdw_type") {
-        vdw_type = rvalue;
-        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_type << endl;
+    } else if (lvalue == "inc_self_ssint" || lvalue == "inc_self_vdw") {
+        inc_self_ssint = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << inc_self_ssint << endl;
+
+    } else if (lvalue == "ssint_type" || lvalue == "vdw_type") {
+        ssint_type = rvalue;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_type << endl;
 
     } else if (lvalue == "calc_es") {
         calc_es = atoi(rvalue.c_str());
@@ -434,18 +437,18 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << stokes_visc << endl;
         stokes_visc /= mesoDimensions::pressure * mesoDimensions::time;
 
-    } else if (lvalue == "vdw_cutoff") {
-        vdw_cutoff = atof(rvalue.c_str());
-        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_cutoff << endl;
-        vdw_cutoff /= mesoDimensions::length;
+    } else if (lvalue == "ssint_cutoff" || lvalue == "vdw_cutoff") {
+        ssint_cutoff = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_cutoff << endl;
+        ssint_cutoff /= mesoDimensions::length;
 
-    } else if (lvalue == "vdw_steric_factor") {
-        vdw_steric_factor = atof(rvalue.c_str());
-        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_steric_factor << endl;
+    } else if (lvalue == "steric_factor" || lvalue == "vdw_steric_factor") {
+        steric_factor = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << steric_factor << endl;
 
-    } else if (lvalue == "vdw_steric_dr") {
-        vdw_steric_dr = atof(rvalue.c_str());
-        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_steric_dr << endl;
+    } else if (lvalue == "steric_dr" || lvalue == "vdw_steric_dr") {
+        steric_dr = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << steric_dr << endl;
 
     } else if (lvalue == "wall_x_1") {
         if (rvalue == "PBC") {
@@ -592,11 +595,11 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         kinetics_out_fname_set = 1;
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << kinetics_out_fname << endl;
 
-    } else if (lvalue == "vdw_in_fname" || lvalue == "vdw_forcefield_params" || lvalue == "ljparams" || lvalue == "lj_params") {
+    } else if (lvalue == "vdw_in_fname" || lvalue == "ssint_in_fname" || lvalue == "vdw_forcefield_params" || lvalue == "ssint_forcefield_params" || lvalue == "ljparams" || lvalue == "lj_params") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
-        vdw_in_fname = auxpath.string();
-        vdw_in_fname_set = 1;
-        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << vdw_in_fname << endl;
+        ssint_in_fname = auxpath.string();
+        ssint_in_fname_set = 1;
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_in_fname << endl;
 
     } else if (lvalue == "checkpoint_in") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
@@ -628,7 +631,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         FFEA_error_text();
         cout << "Error: '" << lvalue << "' is not a recognised lvalue" << endl;
         cout << "Recognised lvalues are:" << endl;
-        cout << "\tdt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\n\tepsilon_0\n\trestart\n\tcalc_vdw\n\tcalc_noise\n\tcalc_preComp\n" << endl;
+        cout << "\tdt\n\tepsilon\n\tnum_steps\n\tmax_iterations_cg\n\tcheck\n\tes_update\n\ttrajectory_out_fname\n\tmeasurement_out_fname\n\tstress_out_fname\n\tes_N_x\n\tes_N_y\n\tes_N_z\n\tes_h\n\trng_seed\n\tkT\n\tkappa\n\tdielec_ext\n\tepsilon_0\n\trestart\n\tcalc_ssint\n\tcalc_noise\n\tcalc_preComp\n" << endl;
         return FFEA_ERROR;
     }
 
@@ -678,8 +681,8 @@ int SimulationParams::validate(int sim_mode) {
     if (num_steps < 0) {
         FFEA_ERROR_MESSG("Required: Number of time steps, 'num_steps', must be greater than or equal to 0.\n");
     }
-    if (num_blobs <= 0) {
-        FFEA_ERROR_MESSG("\tRequired: Number of Blobs, 'num_blobs', must be greater than 0.\n");
+    if (num_blobs <= 0 && num_rods <= 0) {
+        FFEA_ERROR_MESSG("\tRequired: Number of Blobs, 'num_blobs' or Number of rods, 'num_rods' must be greater than 0.\n");
     }
 
     if (kappa < 0) {
@@ -694,32 +697,50 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("Required: Permittivity of free space, 'epsilon_0', must be greater than 0.\n");
     }
 
-    if (calc_vdw != 0 && calc_vdw != 1) {
-        FFEA_ERROR_MESSG("Required: 'calc_vdw', must be 0 (no) or 1 (yes).\n");
+    if (calc_ssint != 0 && calc_ssint != 1) {
+        FFEA_ERROR_MESSG("Required: 'calc_ssint', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (inc_self_vdw != 0 && inc_self_vdw != 1) {
-        FFEA_ERROR_MESSG("Required: 'inc_self_vdw', must be 0 (no) or 1 (yes).\n");
+    if (calc_steric != 0 && calc_steric != 1) {
+        FFEA_ERROR_MESSG("Required: 'calc_steric', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (vdw_cutoff <= 0) {
-        FFEA_ERROR_MESSG("'vdw_cutoff' must be positive and larger than zero.\n");
+    if (inc_self_ssint != 0 && inc_self_ssint != 1) {
+        FFEA_ERROR_MESSG("Required: 'inc_self_ssint', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (calc_vdw == 1) {
+    if (ssint_cutoff <= 0) {
+        FFEA_ERROR_MESSG("'ssint_cutoff' must be positive and larger than zero.\n");
+    }
 
-        if (vdw_type != "lennard-jones" && vdw_type != "steric" && vdw_type != "ljsteric") {
-            FFEA_ERROR_MESSG("Optional: 'vdw_type', must be either 'steric' (default), 'lennard-jones' or 'ljsteric' (both methods combined).\n");
+    if (calc_ssint == 1) {
+	
+	// Steric is now separate
+	if (ssint_type == "steric") {
+		if (calc_steric == 0) {
+			FFEA_ERROR_MESSG("Inconsistent parameters. If you want steric interactions, set 'calc_steric = 1'\n");
+		}
+		calc_ssint = 0;
+	}
+        else if (ssint_type != "lennard-jones" && ssint_type != "ljsteric" && ssint_type != "gensoft") {
+            FFEA_ERROR_MESSG("Optional: 'ssint_type', must be either 'lennard-jones', 'ljsteric' (both methods combined) or 'gensoft' (polynomial soft attraction).\n");
         }
 
-        if (vdw_type != "steric") {
-            if (vdw_in_fname_set == 0) {
-                FFEA_ERROR_MESSG("VdW forcefield params file name required (vdw_forcefield_params).\n");
-            }
+	if (ssint_type == "ljsteric" && calc_steric == 0) {
+	    FFEA_ERROR_MESSG("Optional: For 'ssint_type = ljsteric', we also require 'calc_steric = 1'.\n");
+	}
+
+	if (ssint_type == "gensoft" && calc_steric == 0) {
+	    FFEA_ERROR_MESSG("Optional: For 'ssint_type = gensoft', we also require 'calc_steric = 1'.\n");
+	}
+
+        if (ssint_in_fname_set == 0 && ssint_type != "steric") {
+            FFEA_ERROR_MESSG("Surface-surface forcefield params file name required (ssint_in_fname).\n");
         }
+
     } else {
-        if (inc_self_vdw == 1) {
-            printf("\tFRIENDLY WARNING: No face-face interactions will be computed if calc_vdw = 0.\n");
+        if (inc_self_ssint == 1) {
+            printf("\tFRIENDLY WARNING: No face-face interactions will be computed as calc_ssint = 0.\n");
         }
     }
 
@@ -750,7 +771,7 @@ int SimulationParams::validate(int sim_mode) {
             check_ratio = check/mini_meas;
     }
 
-    if (calc_vdw == 1 or calc_es == 1 or calc_preComp == 1) {
+if (calc_steric == 1 or calc_ssint == 1 or calc_es == 1 or calc_preComp == 1) {
         if (es_N_x < 1) {
             printf("\tFRIENDLY WARNING: Length of the nearest neighbour lookup grid, 'es_N_x', is less than 1. Will assign default value to encompass whole system.\n");
         } else if (es_N_y < 1) {
@@ -823,12 +844,12 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("calc_stokes flag is set, so stokes_visc must be set to a value greater than 0.\n");
     }
 
-    if (vdw_steric_factor < 0) {
-        printf("\tFRIENDLY WARNING: Beware, vdw_steric_factor is negative.\n");
+    if (steric_factor < 0) {
+        printf("\tFRIENDLY WARNING: Beware, steric_factor is negative.\n");
     }
 
-    if (vdw_steric_dr <= 0) {
-        FFEA_ERROR_MESSG("vdw_steric_dr can only be >=0.\n");
+    if (steric_dr <= 0) {
+        FFEA_ERROR_MESSG("steric_dr can only be >=0.\n");
     }
 
     bool using_conformations = true;
@@ -941,24 +962,23 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params) {
     fprintf(fout, "\n\tCalculations enabled:\n");
     fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
     fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
-    fprintf(fout, "\tcalc_vdw = %d\n", calc_vdw);
+    fprintf(fout, "\tcalc_ssint = %d\n", calc_ssint);
+    fprintf(fout, "\tcalc_steric = %d\n", calc_steric);
     fprintf(fout, "\tcalc_preComp = %d\n", calc_preComp);
     fprintf(fout, "\tcalc_springs = %d\n", calc_springs);
     fprintf(fout, "\tcalc_ctforces = %d\n", calc_ctforces);
     fprintf(fout, "\tcalc_kinetics = %d\n", calc_kinetics);
     fprintf(fout, "\tcalc_es = %d\n", calc_es);
 
-    if (calc_vdw == 1) {
+    if (calc_ssint == 1) {
         fprintf(fout, "\n\tShort range parameters:\n");
-        fprintf(fout, "\tvdw_type = %s\n", vdw_type.c_str());
-        fprintf(fout, "\tinc_self_vdw = %d\n", inc_self_vdw);
-        fprintf(fout, "\tvdw_cutoff = %e\n", vdw_cutoff*mesoDimensions::length);
+        fprintf(fout, "\tssint_type = %s\n", ssint_type.c_str());
+        fprintf(fout, "\tinc_self_ssint = %d\n", inc_self_ssint);
+        fprintf(fout, "\tssint_cutoff = %e\n", ssint_cutoff*mesoDimensions::length);
 
-        if (vdw_type == "lennard-jones" || vdw_type == "ljsteric") {
-            fprintf(fout, "\tvdw_forcefield_params = %s\n", vdw_in_fname.c_str());
-        }
-        if (vdw_type == "steric" || vdw_type == "ljsteric") {
-            fprintf(fout, "\tvdw_steric_factor = %e\n", vdw_steric_factor);
+        fprintf(fout, "\tssint_in_fname = %s\n", ssint_in_fname.c_str());
+        if (calc_steric == 1) {
+            fprintf(fout, "\tsteric_factor = %e\n", steric_factor);
         }
     }
 

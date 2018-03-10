@@ -218,7 +218,7 @@ template <class t_scalar, class brr3> t_scalar getTetrahedraVolume(arr3_view<t_s
 template <class brr3> void getTetrahedraCM(brr3 &p1, brr3 &p2, brr3 &p3, brr3 &p4, brr3 &c);
 
 
-template <class t_scalar, class brr3, class brr4> void getLocalCoordinatesForLinTet(arr3_view<t_scalar,brr3> t0, arr3_view<t_scalar,brr3> t1, arr3_view<t_scalar,brr3> t2, arr3_view<t_scalar,brr3> t3, arr3_view<t_scalar,brr3> p, brr4 phi);
+template <class t_scalar, class brr3, class brr4> void getLocalCoordinatesForLinTet(arr3_view<t_scalar,brr3> t0, arr3_view<t_scalar,brr3> t1, arr3_view<t_scalar,brr3> t2, arr3_view<t_scalar,brr3> t3, arr3_view<t_scalar,brr3> p, brr4 &phi);
 
 ///////////////// SECTION 3 ////////////////////
 //// Transition functions from vector3 to arr3 // 

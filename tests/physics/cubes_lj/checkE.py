@@ -71,9 +71,9 @@ fail = 0
 iFile = ["veryFinefine1face1face.fm"]
 H, dH = readAndStore(iFile[0])
 
-errRel = abs((H[dH["VdWEnergy"]][-1] - knownValue)/knownValue) 
+errRel = abs((H[dH["SurfSurfEnergy"]][-1] - knownValue)/knownValue) 
 if ( errRel > errTol ): 
-  print( "VdWEnergy energy should be %e, but was found to be %e" % (knownValue, (H[dH["VdWEnergy"]][-1])))
+  print( "VdWEnergy energy should be %e, but was found to be %e" % (knownValue, (H[dH["SurfSurfEnergy"]][-1])))
   print( "The relative error: %e was larger than the tolerance: %e" % (errRel, errTol))
   fail = 1
 

@@ -27,11 +27,24 @@
 #include <stdio.h>
 #include <cstring> 
 #include <string>
+#include <map>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <boost/algorithm/string.hpp>
+
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "dimensions.h"
+#include "SimulationParams.h"
 
-#define LJI(A,B)	((A) * num_vdw_face_types + (B))
+#define LJI(A,B)	((A) * num_ssint_face_types + (B))
+
+#define SSINT_TYPE_UNDEFINED 0
+#define SSINT_TYPE_STERIC 1
+#define SSINT_TYPE_LJSTERIC 2
+#define SSINT_TYPE_LJ 3
+#define SSINT_TYPE_GENSOFT 4
 
 using namespace std;
 
@@ -39,27 +52,27 @@ class LJ_pair {
 public:
     LJ_pair();
     ~LJ_pair();
-    scalar vdw_eps;
-    scalar vdw_r_eq;
+    scalar Emin;
+    scalar Rmin;
 };
 
-class LJ_matrix {
+class SSINT_matrix {
 public:
-    LJ_matrix();
-    ~LJ_matrix(); 
+    SSINT_matrix();
+    ~SSINT_matrix(); 
 
-    int init(string vdw_params_fname, string vdw_type);
+    int init(string ssint_params_fname, string ssint_type, int calc_ssint, scalar ssint_cutoff);
 
-    void get_LJ_params(int type1, int type2, scalar *vdw_eps, scalar *vdw_r_eq);
-
+   // void get_SSINT_params(int type1, int type2, map<string, scalar> *parmap);
+    map<string, scalar> get_SSINT_params(int type1, int type2);   
     int get_num_types();
 
 private:
-    int init_lj(string vdw_params_fname);
+    int init_ssint(string ssint_params_fname, string ssint_type, scalar ssint_cutoff);
     int init_steric(); 
-    LJ_pair *params;
-    int num_vdw_face_types;
+    //LJ_pair *params;
+    map<string, scalar> *params;
+    int num_ssint_face_types;
 };
-
 
 #endif

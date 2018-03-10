@@ -20,7 +20,7 @@ In between it can take the following parameters:
    * ` checkpoint_in ` <string> <BR>
         The name of the checkpoint file to be read in case of setting ` <restart = 1> `.
         
-   * ` dt ` <float>  <BR>
+   * ` dt ` <float> (1e-14)  <BR>
         Time step. Typically ranging 1e-12 to 1e-14, although the ideal 
         value depends on the shortest edge of the mesh and on the forces 
         acting on it. The higher the forces and the smaller the shortest edge,
@@ -31,7 +31,7 @@ In between it can take the following parameters:
    * ` num_steps ` <int> <BR>
         Number of time steps to be simulated. 
  
-   * ` kT ` <float> <BR>
+   * ` kT ` <float> (4.11e-21) <BR>
         The product of the Boltzmann constant k and the temperature T, in ` J `. 
 
    * ` rng_seed ` <int> <BR>
@@ -92,46 +92,56 @@ In between it can take the following parameters:
 
 #### Enable different calculations #### 
 
-   * ` calc_noise ` <int>  <BR>
+   * ` calc_noise ` <int> (1) <BR>
         Enter 1 or 0 to either enable or disable the effect of the thermal noise.
 
-   * ` calc_vdw ` <int>  <BR>
-        Enter 1 or 0 to either enable or disable the [Short range forces](ref shortRange).
+   * ` calc_stokes ` <int> (1)  <BR>
+        Enter 1 or 0 to either enable or disable accounting for the external solvent friction.
 
-   * ` calc_es ` <int> <BR>
-        Enter either 1 or 0 to enable or disable the electrostatic interactions. 
+   * ` calc_steric ` <int> (1) <BR>
+        Enter 1 or 0 to either enable or disable the [Steric interactions](\ref shortRange).
 
-   * ` calc_preComp ` <int> <BR>
+   * ` calc_ssint ` <int> (1) <BR>
+        Enter 1 or 0 to either enable or disable the [Short range interactions](\ref shortRange).
+
+   * ` calc_preComp ` <int> (0) <BR>
         Enter either 1 or 0 to enable or disable the calculation of 
       [pre-computed interactions](\ref fmApproach) between beads.
+
+	* ` calc_springs ` <int> (0) <BR>
+        Enter 1 or 0 to either enable or disable the interaction via [springs](\ref springs).
+
  
+   * ` calc_es `(0) <int> <BR>
+        Enter either 1 or 0 to enable or disable the electrostatic interactions. (EXPERIMENTAL)
 
-#### Short range forces parameters #### 
 
-   * ` vdw_type ` <string> (steric) <BR>
-        Either "lennard-jones", "steric" or "ljsteric" depending on the type of calculations
+#### Steric / Short range forces parameters #### 
+
+   * ` ssint_type ` <string> (steric) <BR>
+        Either [lennard-jones](\ref ljPotential), [steric](\ref sPotential), [ljsteric](\ref cPotential) or [gensoft](\ref gPotential) depending on the type of calculations
         to be performed.
 
-   * ` vdw_forcefield_params ` <string>  <BR>
+   * ` ssint_in_fname ` <string>  <BR>
         The name of the ` .lj ` file that contains the interaction parameters for 
-          the Lennard-Jones potential. Required only if ` vdw_type ` is set to 
-          either ` lennard-jones ` or ` ljsteric `. More details can be found 
+          the short-range interaction potential. Required only if ` ssint_type ` is set to 
+          either ` lennard-jones `, ` ljsteric ` or ` gensoft `. More details can be found 
           [here](\ref ljPotential).
 
-   * ` vdw_steric_factor ` <float> (1) <BR>
+   * ` inc_self_ssint ` <int> <BR>
+        Enter either 1 or 0 to enable or disable short range interactions 
+         between faces within the same blob.
+
+   * ` ssint_cutoff ` see box configuration.
+
+   * ` steric_factor ` <float> (1) <BR>
         Proportionality factor for the steric repulsion approach. More details 
          can be found [here](\ref sPotential).
 
-   * ` vdw_steric_dr ` <float> (5e-3) <BR>
+   * ` steric_dr ` <float> (5e-3) <BR>
         Constant used to calculate the numerial derivative of the steric repulsion.
         The value should only be changed for experienced users trying to use FFEA with 
         elements larger than tens of nm. 
-
-   * ` vdw_cutoff ` see box configuration.
-
-   * ` inc_self_vdw ` <int> <BR>
-        Enter either 1 or 0 to enable or disable short range interactions 
-         between faces within the same blob.
 
    * ` force_pbc ` <int> (0) <BR>
         Enter either 1 or 0 to enable or disable full periodic boundary conditions specifically for steric, 
@@ -143,9 +153,6 @@ In between it can take the following parameters:
         tested with springs, boundary types other than PBC or electrostatics.
 
 #### Hydrodynamics parameters ####
-
-   * ` calc_stokes ` <int>  <BR>
-        1 or 0 
 
    * ` stokes_visc ` <float> (1e-3) <BR>
  
@@ -181,7 +188,7 @@ In between it can take the following parameters:
    * ` es_N_z ` <int> (-1) <BR>
         Number of cells or voxels that the simulation box has in the z direction. If ` es_N_z ` is -1, FFEA will calculate a large enough value to store the system.
 
-   * ` vdw_cutoff ` <float> (3e-9) <BR> 
+   * ` ssint_cutoff ` <float> (3e-9) <BR> 
         Length of the side of the voxel.
 
    * ` es_update ` <int> (10) <BR>
@@ -283,9 +290,9 @@ It contains mostly structural information:
      The file name specifying the material properties of each element. 
      ` material ` is only needed if `motion_state` is set to `DYNAMIC`.
 
-   * ` vdw ` <string> [OPTIONAL] <BR>
-     The file name specifying the type of vdw interaction for each surface face
-     ` vdw ` is only needed if `calc_vdw` is set to 1.
+   * ` ssint ` <string> [OPTIONAL] <BR>
+     The file name specifying the type of ssint interaction for each surface face
+     ` ssint ` is only needed if `calc_ssint` is set to 1.
 
    * ` stokes ` <string> [OPTIONAL] <BR>
      The file name specifying the 'radius' of each node, to calculate local hydrodynamics

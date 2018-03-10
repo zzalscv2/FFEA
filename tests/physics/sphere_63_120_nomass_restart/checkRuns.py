@@ -66,7 +66,10 @@ Dmax = 0.0e0
 Dmin = 100.0e0
 for i in range(len(STA[0])):
   for j in range(len(STA[0][i])):
-    d = abs((STA[1][i][j] - STA[0][i][j])/STA[0][i][j])
+    try:
+        d = abs((STA[1][i][j] - STA[0][i][j])/STA[0][i][j])
+    except(ZeroDivisionError):
+        d = 0
     if d < Dmin: Dmin = d
     if d > Dmax: Dmax = d 
   

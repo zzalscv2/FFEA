@@ -29,11 +29,11 @@ Face::Face() {
     n[2] = NULL;
     n[3] = NULL;
     e = NULL;
-    vdw_interaction_type = -1;
+    ssint_interaction_type = -1;
     area_0 = 0;
     zero_force();
     num_blobs = 0;
-    vdw_xz_interaction_flag = false;
+    ssint_xz_interaction_flag = false;
     // vdw_bb_interaction_flag = NULL; // DEPRECATED
     kinetically_active = false;
     // vdw_bb_force = NULL; // DEPRECATED
@@ -52,11 +52,11 @@ Face::~Face() {
     dealloc_n3 = false;
     n[3] = NULL;
     e = NULL;
-    vdw_interaction_type = -1;
+    ssint_interaction_type = -1;
     area_0 = 0;
     zero_force();
     num_blobs = 0;
-    vdw_xz_interaction_flag = false;
+    ssint_xz_interaction_flag = false;
     // delete[] vdw_bb_interaction_flag; // DEPRECATED
     // vdw_bb_interaction_flag = NULL; // DEPRECATED
     kinetically_active = false;
@@ -144,8 +144,8 @@ int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node
     this->daddy_blob = daddy_blob;
 }
 
-void Face::set_vdw_interaction_type(int vdw_interaction_type) {
-    this->vdw_interaction_type = vdw_interaction_type;
+void Face::set_ssint_interaction_type(int ssint_interaction_type) {
+    this->ssint_interaction_type = ssint_interaction_type;
 }
 
 int Face::build_opposite_node() {
@@ -372,8 +372,8 @@ void Face::zero_force() {
     // vdw_xz_energy = 0.0; // DEPRECATED
 }*/
 
-void Face::set_vdw_xz_interaction_flag(bool state) {
-    vdw_xz_interaction_flag = state;
+void Face::set_ssint_xz_interaction_flag(bool state) {
+    ssint_xz_interaction_flag = state;
 }
 
 /* DEPRECATED
@@ -382,8 +382,8 @@ void Face::set_vdw_bb_interaction_flag(bool state, int other_blob_index) {
     vdw_bb_interaction_flag[other_blob_index] = state;
 }*/
 
-bool Face::is_vdw_active() {
-    if (vdw_interaction_type == -1) {
+bool Face::is_ssint_active() {
+    if (ssint_interaction_type == -1) {
         return false;
     } else {
         return true;

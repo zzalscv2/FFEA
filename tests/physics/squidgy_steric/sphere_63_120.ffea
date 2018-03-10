@@ -54,7 +54,7 @@
 		<solver = CG>
 		<scale = 5e-9>
 		<centroid_pos = (-1.05,0.0,0.0)>
-		<velocity = (15.0,0.0,0.0)>
+		<velocity = (7000.0,0.0,0.0)>
 	</blob>
 	<blob>
 		<conformation>
@@ -70,7 +70,7 @@
 		<solver = CG>
 		<scale = 5e-9>
 		<centroid_pos = (1.05,0.0,0.0)>
-		<velocity = (-15.0,0.0,0.0)>
+		<velocity = (-7000.0,0.0,0.0)>
 		<rotation = (-1.,0.,0.,0.,1.,0.,0.,0.,-1.)>
 	</blob>
 </system>
