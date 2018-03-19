@@ -21,6 +21,11 @@
 #  the research papers on the package.
 #
 
-
-add_subdirectory(unit)
-add_subdirectory(integration)
+set (SYMMETRYDIR "${PROJECT_BINARY_DIR}/tests/rods/integration/symmetry/")
+file (COPY symmetry_test_stretch_only.rod DESTINATION ${SYMMETRYDIR})
+file (COPY symmetry_test.py DESTINATION ${SYMMETRYDIR})
+file (COPY symmetry_test_bend_only.ffea DESTINATION ${SYMMETRYDIR})
+file (COPY symmetry_test_stretch_only.ffea DESTINATION ${SYMMETRYDIR})
+file (COPY symmetry_test_bend_only.rod DESTINATION ${SYMMETRYDIR})
+add_test(NAME symmetry_test COMMAND ${PYTHON_EXECUTABLE} symmetry_test.py)
+set_tests_properties(symmetry_test PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:$ENV{PYTHONPATH})

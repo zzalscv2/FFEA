@@ -167,7 +167,7 @@ void load_B_all(float B[4][4], float *B_matrix, int offset);
 void make_diagonal_B_matrix(float B, OUT float B_matrix[4]);
 void set_cutoff_values(int e_i_node_no, int length, OUT int *start_cutoff, int *end_cutoff);
 float get_absolute_length_from_array(float* array, int node_no, int length);
-void get_centroid(float* r, int length, OUT float centroid[3]);
+void get_centroid_generic(float* r, int length, OUT float centroid[3]);
 
      /*-------------------------------*/
     /* Move the node, get the energy */

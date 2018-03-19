@@ -108,6 +108,8 @@ struct Rod
   Rod translate_rod(float* r, float translation_vec[3]);
   Rod rotate_rod(float euler_angles[3]);
   Rod scale_rod(float scale);
+  Rod get_centroid(float *r, float centroid[3]);
+  Rod get_min_max(float *r, OUT float min[3], float max[3]);
 };
 
 } //end namespace

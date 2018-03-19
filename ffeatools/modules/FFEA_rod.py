@@ -36,6 +36,8 @@ from mpl_toolkits.mplot3d import Axes3D # do not remove
 global rod_creator_version
 rod_creator_version = 0.3
 
+
+
 """
  _____     ______  
 |_   _|   / / __ \ 
@@ -359,6 +361,7 @@ class FFEA_rod:
                 self.unperturbed_energy_dof[frame][node][1] = (np.sum(self.perturbed_y_energy_positive[frame][node])+np.sum(self.perturbed_y_energy_negative[frame][node]))/2
                 self.unperturbed_energy_dof[frame][node][2] = (np.sum(self.perturbed_z_energy_positive[frame][node])+np.sum(self.perturbed_z_energy_negative[frame][node]))/2
                 self.unperturbed_energy_dof[frame][node][3] = (np.sum(self.twisted_energy_positive[frame][node])+np.sum(self.twisted_energy_negative[frame][node]))/2
+        self.unperturbed_energy = np.sum( self.unperturbed_energy_type, axis=2)
 
     def scale(self, scale_factor):
         self.current_m*=scale_factor
@@ -371,6 +374,11 @@ class FFEA_rod:
         self.current_r+=shift
         self.equil_r+=shift
 #        self.equil_m+=shift
+
+    def calc_centroid(self):
+        self.centroid_traj = np.average(self.current_r, axis=1)
+        self.initial_centroid = self.centroid_traj[0]
+        return self.centroid_traj
 
 """
                        _           _     
@@ -400,7 +408,7 @@ class anal_rod:
         
     The attributes are:
         rod: rod object.
-        py_rod_math: instance of the py_rod_math object, containing rod-specific
+        rod_math: instance of the py_rod_math object, containing rod-specific
         math functions.
         analytical_P: value of the persistence length converted analytically.
         analytical_deflection: deflection calculated analytically (for the bending
@@ -440,7 +448,7 @@ class anal_rod:
         Returns: nothing.
         """
         self.rod = rod
-        py_rod_math = py_rod_math()
+        self.py_rod_math = rod_math
         self.analytical_P = None
         self.analytical_deflection = None
         self.analytical_kbT = None
@@ -486,11 +494,11 @@ class anal_rod:
             
         frames = len(self.rod.current_r)
         nodes = len(self.rod.current_r[0]) -1
-        beam_length = py_rod_math.get_length(self.rod.equil_r[0][1] - self.rod.equil_r[0][nodes])
+        beam_length = rod_math.get_length(self.rod.equil_r[0][1] - self.rod.equil_r[0][nodes])
         self.EI_from_deflection = np.zeros([frames])
         for frame in range(frames):
             #beam_length = self.get_absolute_length(1,nodes,frame) # gets a better number but i think not for the right reason, i think the beam length is constant
-            self.EI_from_deflection[frame] = (force_applied*(beam_length**3))/(3*py_rod_math.get_length(self.deflections[frame]))
+            self.EI_from_deflection[frame] = (force_applied*(beam_length**3))/(3*rod_math.get_length(self.deflections[frame]))
 
     def get_persistence_length(self):
         """
@@ -512,9 +520,9 @@ class anal_rod:
         cos_theta = np.zeros(len(self.rod.current_r))
         
         for frame in range(len(self.rod.current_r)):
-            a = py_rod_math.normalize(self.p_i[frame][0])
-            b = py_rod_math.normalize(self.p_i[frame][-1])
-            cos_theta[frame] = py_rod_math.get_cos_theta(a,b)
+            a = rod_math.normalize(self.p_i[frame][0])
+            b = rod_math.normalize(self.p_i[frame][-1])
+            cos_theta[frame] = rod_math.get_cos_theta(a,b)
             
         avg_cos_theta = np.average(cos_theta)
 #        avg_cos_theta = np.sqrt(np.mean(cos_theta**2)) #rms?
@@ -563,27 +571,27 @@ class anal_rod:
                 B_j = np.matrix([[self.rod.B_matrix[frame][element][0], self.rod.B_matrix[0][0][1]], [self.rod.B_matrix[0][0][2], self.rod.B_matrix[0][0][3]]])
                 B_i= np.matrix([[self.rod.B_matrix[frame][element+1][0], self.rod.B_matrix[0][0][1]], [self.rod.B_matrix[0][0][2], self.rod.B_matrix[0][0][3]]])
                 
-                pim1 = py_rod_math.normalize(self.p_i[frame][element])
-                pi = py_rod_math.normalize(self.p_i[frame][element+1])
-                mim1 = py_rod_math.normalize(self.rod.current_m[frame][element])
+                pim1 = rod_math.normalize(self.p_i[frame][element])
+                pi = rod_math.normalize(self.p_i[frame][element+1])
+                mim1 = rod_math.normalize(self.rod.current_m[frame][element])
                 nim1 = np.cross(mim1, pim1/np.linalg.norm(pim1))
-                mi = py_rod_math.normalize(self.rod.current_m[frame][element+1])
+                mi = rod_math.normalize(self.rod.current_m[frame][element+1])
                 #m2i = m2im1 = np.cross(m1i, ei/np.linalg.norm(ei)) #THIS HAS TO BE WRONG, RIGHT?
                 ni = np.cross(mi, pi/np.linalg.norm(pi))
                 
-                omega_i = py_rod_math.omega(pi, pim1, nim1, mim1)
-                omega_j = py_rod_math.omega(pi, pim1, ni, mi)
+                omega_i = rod_math.omega(pi, pim1, nim1, mim1)
+                omega_j = rod_math.omega(pi, pim1, ni, mi)
                 
-                equil_pim1 = py_rod_math.normalize(self.equil_p_i[frame][element])
-                equil_pi = py_rod_math.normalize(self.equil_p_i[frame][element+1])
-                equil_mim1 = py_rod_math.normalize(self.rod.equil_m[frame][element])
+                equil_pim1 = rod_math.normalize(self.equil_p_i[frame][element])
+                equil_pi = rod_math.normalize(self.equil_p_i[frame][element+1])
+                equil_mim1 = rod_math.normalize(self.rod.equil_m[frame][element])
                 equil_nim1 = np.cross(equil_mim1, equil_pim1/np.linalg.norm(equil_pim1))
-                equil_mi = py_rod_math.normalize(self.rod.equil_m[frame][element+1])
+                equil_mi = rod_math.normalize(self.rod.equil_m[frame][element+1])
                 #m2i_bar = m2im1 = np.cross(m1i_bar, ei_bar/np.linalg.norm(ei_bar)) #THIS HAS TO BE WRONG, RIGHT?
                 equil_ni = np.cross(equil_mi, equil_pi/np.linalg.norm(equil_pi))
                 
-                equil_omega_i = py_rod_math.omega(equil_pi, equil_pim1, equil_nim1, equil_mim1)
-                equil_omega_j = py_rod_math.omega(equil_pi, equil_pim1, equil_ni, equil_mi)
+                equil_omega_i = rod_math.omega(equil_pi, equil_pim1, equil_nim1, equil_mim1)
+                equil_omega_j = rod_math.omega(equil_pi, equil_pim1, equil_ni, equil_mi)
 
                 delta_omega_i = omega_i - equil_omega_i
                 delta_omega_j = omega_j - equil_omega_j
@@ -591,9 +599,9 @@ class anal_rod:
                 inner_i = np.dot(np.transpose(delta_omega_i), np.dot(B_j, delta_omega_i))
                 inner_j = np.dot(np.transpose(delta_omega_j), np.dot(B_i, delta_omega_j))
                 
-                energy = 0.5*(inner_i + inner_j)*(1/(2*(py_rod_math.get_length(equil_pi)+py_rod_math.get_length(equil_pim1))))
+                energy = 0.5*(inner_i + inner_j)*(1/(2*(rod_math.get_length(equil_pi)+rod_math.get_length(equil_pim1))))
                 
-                L_i = py_rod_math.get_length(equil_pi)+py_rod_math.get_length(equil_pim1)
+                L_i = rod_math.get_length(equil_pi)+rod_math.get_length(equil_pim1)
                 
                 self.bending_energy[frame][element] = energy
         
@@ -606,15 +614,15 @@ class anal_rod:
         """
         
         def get_mutual_frame_inverse(a, b):
-            a_length = py_rod_math.get_length(a)
-            b_length = py_rod_math.get_length(b)
+            a_length = rod_math.get_length(a)
+            b_length = rod_math.get_length(b)
             mutual_frame = (1/a_length)*a + (1/b_length)*b
-            return py_rod_math.normalize(mutual_frame)
+            return rod_math.normalize(mutual_frame)
         
 
         def get_mutual_angle_inverse(a, b, angle):
-            a_length = py_rod_math.get_length(a)
-            b_length = py_rod_math.get_length(b)
+            a_length = rod_math.get_length(a)
+            b_length = rod_math.get_length(b)
             a_b_ratio = b_length/(b_length+a_length)
             return angle*a_b_ratio
         
@@ -646,47 +654,47 @@ class anal_rod:
                 mutual_l = get_mutual_frame_inverse(self.p_i[frame][element], self.p_i[frame][element+1])
                 equil_mutual_l = get_mutual_frame_inverse(self.equil_p_i[frame][element], self.equil_p_i[frame][element+1])
                 
-                pim1 = py_rod_math.normalize(self.p_i[frame][element])
-                pi = py_rod_math.normalize(self.p_i[frame][element+1])
-                mim1 = py_rod_math.normalize(self.rod.current_m[frame][element])
+                pim1 = rod_math.normalize(self.p_i[frame][element])
+                pi = rod_math.normalize(self.p_i[frame][element+1])
+                mim1 = rod_math.normalize(self.rod.current_m[frame][element])
                 nim1 = np.cross(mim1, pim1/np.linalg.norm(pim1))
-                mi = py_rod_math.normalize(self.rod.current_m[frame][element+1])
+                mi = rod_math.normalize(self.rod.current_m[frame][element+1])
                 #m2i = m2im1 = np.cross(m1i, ei/np.linalg.norm(ei)) #THIS HAS TO BE WRONG, RIGHT?
                 ni = np.cross(mi, pi/np.linalg.norm(pi))
                 
                 # need to do this for the equilibrium config as well
-                mutual_mi = py_rod_math.parallel_transport(mi,  pi, mutual_l)
-                mutual_mim1 = py_rod_math.parallel_transport(mim1,  pim1, mutual_l)
+                mutual_mi = rod_math.parallel_transport(mi,  pi, mutual_l)
+                mutual_mim1 = rod_math.parallel_transport(mim1,  pim1, mutual_l)
                 angle_between = np.arccos(np.dot(mutual_mi, mutual_mim1))
                 mutual_angle = get_mutual_angle_inverse(mutual_mi, mutual_mim1, angle_between)
-                mutual_m_rotated = self.py_rod_math.rodrigues(mutual_mim1, mutual_l, mutual_angle)
-                omega = py_rod_math.omega(pi, pim1, np.cross(mutual_m_rotated, mutual_l), mutual_m_rotated)
+                mutual_m_rotated = rod_math.rodrigues(mutual_mim1, mutual_l, mutual_angle)
+                omega = rod_math.omega(pi, pim1, np.cross(mutual_m_rotated, mutual_l), mutual_m_rotated)
                 
                 
                 
                 
-                equil_pim1 = py_rod_math.normalize(self.equil_p_i[frame][element])
-                equil_pi = py_rod_math.normalize(self.equil_p_i[frame][element+1])
-                equil_mim1 = py_rod_math.normalize(self.rod.equil_m[frame][element])
+                equil_pim1 = rod_math.normalize(self.equil_p_i[frame][element])
+                equil_pi = rod_math.normalize(self.equil_p_i[frame][element+1])
+                equil_mim1 = rod_math.normalize(self.rod.equil_m[frame][element])
                 equil_nim1 = np.cross(equil_mim1, equil_pim1/np.linalg.norm(equil_pim1))
-                equil_mi = py_rod_math.normalize(self.rod.equil_m[frame][element+1])
+                equil_mi = rod_math.normalize(self.rod.equil_m[frame][element+1])
                 #m2i_bar = m2im1 = np.cross(m1i_bar, ei_bar/np.linalg.norm(ei_bar)) #THIS HAS TO BE WRONG, RIGHT?
                 equil_ni = np.cross(equil_mi, equil_pi/np.linalg.norm(equil_pi))
                 
-                equil_mutual_mi = py_rod_math.parallel_transport(equil_mi,  equil_pi, equil_mutual_l)
-                equil_mutual_mim1 = py_rod_math.parallel_transport(equil_mim1,  equil_pim1, equil_mutual_l)
+                equil_mutual_mi = rod_math.parallel_transport(equil_mi,  equil_pi, equil_mutual_l)
+                equil_mutual_mim1 = rod_math.parallel_transport(equil_mim1,  equil_pim1, equil_mutual_l)
                 equil_angle_between = np.arccos(np.dot(equil_mutual_mi, equil_mutual_mim1))
                 equil_mutual_angle = get_mutual_angle_inverse(equil_mutual_mi, equil_mutual_mim1, equil_angle_between)
-                equil_mutual_m_rotated = self.py_rod_math.rodrigues(equil_mutual_mim1, equil_mutual_l, equil_mutual_angle)
-                equil_omega = py_rod_math.omega(equil_pi, equil_pim1, np.cross(equil_mutual_m_rotated, equil_mutual_l), equil_mutual_m_rotated)
+                equil_mutual_m_rotated = rod_math.rodrigues(equil_mutual_mim1, equil_mutual_l, equil_mutual_angle)
+                equil_omega = rod_math.omega(equil_pi, equil_pim1, np.cross(equil_mutual_m_rotated, equil_mutual_l), equil_mutual_m_rotated)
                 
                 delta_omega = omega - equil_omega
                 
                 inner = np.dot(np.transpose(delta_omega), np.dot(B, delta_omega))
 
-                energy = 0.5*(inner)*(1/((py_rod_math.get_length(equil_pi)+py_rod_math.get_length(equil_pim1))))
+                energy = 0.5*(inner)*(1/((rod_math.get_length(equil_pi)+rod_math.get_length(equil_pim1))))
                 
-                #L_i = py_rod_math.get_length(equil_pi)+py_rod_math.get_length(equil_pim1)
+                #L_i = rod_math.get_length(equil_pi)+rod_math.get_length(equil_pim1)
                 
                 self.bending_energy[frame][element] = energy
                 
@@ -711,14 +719,14 @@ class anal_rod:
         for frame in range(len(self.p_i)):
             for element in range(len(self.p_i[frame])-1):
                 # parallel transport  mi to mip1
-                mim1_transported = py_rod_math.parallel_transport(py_rod_math.normalize(self.rod.current_m[frame][element]), py_rod_math.normalize(self.r_i[frame][element]), py_rod_math.normalize(self.r_i[frame][element+1] ))
-                delta_theta = py_rod_math.get_twist_angle( mim1_transported, py_rod_math.normalize(self.rod.current_m[frame][element+1]))
-                equil_mim1_transported = py_rod_math.parallel_transport(py_rod_math.normalize(self.rod.equil_m[frame][element]), py_rod_math.normalize(self.equil_r_i[frame][element]), py_rod_math.normalize(self.equil_r_i[frame][element+1] ))
-                equil_delta_theta = py_rod_math.get_twist_angle( equil_mim1_transported, py_rod_math.normalize(self.rod.equil_m[frame][element+1]))
+                mim1_transported = rod_math.parallel_transport(rod_math.normalize(self.rod.current_m[frame][element]), rod_math.normalize(self.r_i[frame][element]), rod_math.normalize(self.r_i[frame][element+1] ))
+                delta_theta = rod_math.get_twist_angle( mim1_transported, rod_math.normalize(self.rod.current_m[frame][element+1]))
+                equil_mim1_transported = rod_math.parallel_transport(rod_math.normalize(self.rod.equil_m[frame][element]), rod_math.normalize(self.equil_r_i[frame][element]), rod_math.normalize(self.equil_r_i[frame][element+1] ))
+                equil_delta_theta = rod_math.get_twist_angle( equil_mim1_transported, rod_math.normalize(self.rod.equil_m[frame][element+1]))
                 
                 self.twist_amount[frame][element] = delta_theta - equil_delta_theta
                 
-                Li = py_rod_math.get_length(self.equil_r_i[frame][element]) + py_rod_math.get_length(self.equil_r_i[frame][element+1]) 
+                Li = rod_math.get_length(self.equil_r_i[frame][element]) + rod_math.get_length(self.equil_r_i[frame][element+1]) 
                 self.twist_energy[frame][element] = self.rod.material_params[frame][element][1]/Li * np.power(delta_theta-equil_delta_theta, 2)
         
         
@@ -734,7 +742,7 @@ class anal_rod:
         self.p_i_extension= np.zeros( [len(self.p_i), len(self.p_i[0])] )
         for frame in range(len(self.p_i)):
             for segment in range(len(self.p_i[frame])):
-                self.p_i_extension[frame][segment] = py_rod_math.get_length(self.equil_p_i[frame][segment]) - py_rod_math.get_length(self.p_i[frame][segment])
+                self.p_i_extension[frame][segment] = rod_math.get_length(self.equil_p_i[frame][segment]) - rod_math.get_length(self.p_i[frame][segment])
 
         self.p_i_extension_x = np.zeros( [len(self.p_i), len(self.p_i[0])] )
         self.p_i_extension_y = np.zeros( [len(self.p_i), len(self.p_i[0])] )
@@ -789,7 +797,7 @@ class anal_rod:
         Returns: none, but sets self.starting_length, a float.
         """
         endtoend = self.rod.current_r[0][0] - self.rod.current_r[0][-1]
-        self.starting_length = py_rod_math.get_length( endtoend )
+        self.starting_length = rod_math.get_length( endtoend )
     
     def get_average_quantities(self):
         """
@@ -847,7 +855,7 @@ class anal_rod:
             
         try:
             force
-            self.analytical_deflection = py_rod_math.get_analytical_deflection(force, self.get_absolute_length(1, self.rod.num_elements-1, 0), self.EI)
+            self.analytical_deflection = rod_math.get_analytical_deflection(force, self.get_absolute_length(1, self.rod.num_elements-1, 0), self.EI)
         except TypeError:
             self.analytical_deflection = None
         
@@ -857,7 +865,7 @@ class anal_rod:
             half_kbT = None
             
         try:
-            self.analytical_P = py_rod_math.get_analytical_persistence_length(self.EI, temp)
+            self.analytical_P = rod_math.get_analytical_persistence_length(self.EI, temp)
         except TypeError:
             self.analytical_P= None
             
@@ -910,40 +918,40 @@ class anal_rod:
         
         # ENERGIES\LOOKUPS
         
-        if not py_rod_math.approximately_equal(self.rod.unperturbed_energy[1][0][1], self.rod.unperturbed_energy[1][4][1], 0.0001):
+        if not rod_math.approximately_equal(self.rod.unperturbed_energy_type[1][0][1], self.rod.unperturbed_energy_type[1][4][1], 0.001):
             print("End stretch energies are not symmetric.")
             print("Here's some debug info:")
-            print("Node energy at first node: "+str(self.rod.unperturbed_energy[1][0][1]))
-            print("Node energy at last node: "+str(self.rod.unperturbed_energy[1][4][1]))
+            print("Node energy at first node: "+str(self.rod.unperturbed_energy_type[1][0][1]))
+            print("Node energy at last node: "+str(self.rod.unperturbed_energy_type[1][4][1]))
             passed_all_tests = False
             
-        if not py_rod_math.approximately_equal(self.rod.unperturbed_energy[1][1][1], self.rod.unperturbed_energy[1][3][1], 0.0001):
+        if not rod_math.approximately_equal(self.rod.unperturbed_energy_type[1][1][1], self.rod.unperturbed_energy_type[1][3][1], 0.001):
             print("Opposite stretch energies are not symmetric.")
             print("Here's some debug info:")
-            print("Node energy at second node: "+str(self.rod.unperturbed_energy[1][0][1]))
-            print("Node energy at second to last node: "+str(self.rod.unperturbed_energy[1][4][1]))
+            print("Node energy at second node: "+str(self.rod.unperturbed_energy_type[1][0][1]))
+            print("Node energy at second to last node: "+str(self.rod.unperturbed_energy_type[1][4][1]))
             passed_all_tests = False
             
         # DYNAMICS
         
-        if not py_rod_math.approximately_equal(self.rod.current_r[0][2][0], self.rod.current_r[1][2][0], 0.0001):
+        if not rod_math.approximately_equal(self.rod.current_r[1][2][0], self.rod.current_r[2][2][0], 0.001):
             print("The node in the middle moves! So the stretch dynamics are not symmetric.")
             print("Here's some debug info:")
-            print("Initial x position of the central node: "+str(self.rod.current_r[0][2]))
-            print("Final x position of the central node: "+str(self.rod.current_r[1][2]))
+            print("Initial x position of the central node: "+str(self.rod.current_r[1][2]))
+            print("Final x position of the central node: "+str(self.rod.current_r[2][2]))
         
         self.p_i = self.get_p_i(self.rod.current_r)
         for element_no in range(self.rod.num_elements-1):
-            if np.dot(py_rod_math.normalize(self.p_i[1][element_no]), [1,0,0]) < 0.999:
+            if np.dot(rod_math.normalize(self.p_i[2][element_no]), [1,0,0]) < 0.999:
                 print("The rod doesn't stay straight.")
                 print("Here's some debug info:")
-                print("Rod state: "+str(self.rod.p_i[1][0]))
+                print("Rod state: "+str(self.rod.p_i[2][0]))
                 passed_all_tests = False
                 break
                 
-        leftmost_delta_n = self.rod.current_r[1][0] - self.rod.current_r[0][0]
-        rightmost_delta_n = self.rod.current_r[1][4] - self.rod.current_r[0][4]
-        dot_product = np.dot(py_rod_math.normalize(leftmost_delta_n), py_rod_math.normalize(rightmost_delta_n))
+        leftmost_delta_n = self.rod.current_r[2][0] - self.rod.current_r[1][0]
+        rightmost_delta_n = self.rod.current_r[2][4] - self.rod.current_r[1][4]
+        dot_product = np.dot(rod_math.normalize(leftmost_delta_n), rod_math.normalize(rightmost_delta_n))
         if dot_product > 0.0001:
             print("The nodes at the far ends are not travelling in opposite directions.")
             print("Here's some debug info:")
@@ -965,20 +973,20 @@ class anal_rod:
         
         # ENERGIES\LOOKUPS
         
-        symmetric_energies = py_rod_math.approximately_equal(self.rod.unperturbed_energy[1][1][1], self.rod.unperturbed_energy[1][3][1], 0.001)
+        symmetric_energies = rod_math.approximately_equal(self.rod.unperturbed_energy_type[1][1][1], self.rod.unperturbed_energy_type[1][3][1], 0.01)
         if not symmetric_energies:
             print("Energies are not symmetric - the energies are not the same on the let and right sides of the rod, even though it's reflected through the middle.")
             print("Here's some extra debug info:")
-            print("Left energy (node 1): "+str(self.rod.unperturbed_energy[1][1][1]))
-            print("Right energy (node 3): "+str(self.rod.unperturbed_energy[1][3][1]))
+            print("Left energy (node 1): "+str(self.rod.unperturbed_energy_type[1][1][1]))
+            print("Right energy (node 3): "+str(self.rod.unperturbed_energy_type[1][3][1]))
             passed_all_tests = False
         else:
             print("Passed symmetric energy tests.")
         
         # DYNAMICS
-        #middle_angle = np.arccos(py_rod_math.get_cos_theta(self.rod.current_x[1][2] - self.rod.bar_x[0][2], [0,1,0] ))
+        #middle_angle = np.arccos(rod_math.get_cos_theta(self.rod.current_x[1][2] - self.rod.bar_x[0][2], [0,1,0] ))
 
-        middle_dot  = np.dot( (py_rod_math.normalize(self.rod.current_r[1][2] - self.rod.current_r[0][2])), [0,-1,0])
+        middle_dot  = np.dot( (rod_math.normalize(self.rod.current_r[1][2] - self.rod.current_r[0][2])), [0,-1,0])
         
         if middle_dot < 0.999:
             print("Failed bending dynamics symmetry test. The central node is not going straight down.")
@@ -988,15 +996,15 @@ class anal_rod:
         else:
             print("Passed central node dynamics test.")
         
-        left = self.rod.current_r[1][1] - self.rod.current_r[0][1]
-        right = self.rod.current_r[1][3] - self.rod.current_r[0][3]
-        sides_dot =  np.dot(py_rod_math.normalize(left), py_rod_math.normalize(right))
+        left = self.rod.current_r[2][1] - self.rod.current_r[1][1]
+        right = self.rod.current_r[2][3] - self.rod.current_r[1][3]
+        side_dynamics = rod_math.approximately_equal(left[0], right[0]*-1, 0.01)
         
-        if sides_dot > 0.001:
-            print("Failed bending dynamics symmetry test. The delta r values are not symmetric along the center of the rod.")
+        if side_dynamics == False:
+            print("Failed bending dynamics symmetry test. 1st and 3rd nodes are not moving in opposite directions, even though they are at opposite positions.")
             print("Here's some extra debug info:")
-            print("Left vector: "+str(left))
-            print("Right vector: "+str(right))
+            print("1st vector: "+str(left))
+            print("3rd vector: "+str(right))
             passed_all_tests = False
         else:
             print("Passed reflection dynamics tests.")
@@ -1032,7 +1040,7 @@ class anal_rod:
             for node in range(len(self.rod.current_r[frame])):
                 self.delta_r_x[frame][node] = -1*(self.rod.current_r[frame][node][0] - self.rod.current_r[frame+1][node][0])
                 self.delta_r_y[frame][node] = -1*(self.rod.current_r[frame][node][1] - self.rod.current_r[frame+1][node][1])
-                self.delta_twist[frame][node] = np.dot( py_rod_math.normalize(self.rod.current_m[frame][node]), py_rod_math.normalize(self.rod.current_m[frame+1][node]))
+                self.delta_twist[frame][node] = np.dot( rod_math.normalize(self.rod.current_m[frame][node]), rod_math.normalize(self.rod.current_m[frame+1][node]))
         
     def get_absolute_length(self, starting_node, ending_node, frame):
         """
@@ -1050,7 +1058,7 @@ class anal_rod:
             
         absolute_length = 0
         for i in range(ending_node-starting_node):
-            absolute_length += py_rod_math.get_length(self.p_i[frame][i+starting_node])
+            absolute_length += rod_math.get_length(self.p_i[frame][i+starting_node])
         return absolute_length
         
     def whole_rod_avg(self, thing):
@@ -1182,15 +1190,15 @@ class py_rod_math:
         Params: a, b, margin
         Returns: boolean, true if they are within the margin, false otherwise.
         """
-        margin_of_error = factor_of_error*np.average([a,b])
+        margin_of_error = factor_of_error*np.average([np.abs(a)+np.abs(b)])
         a_max = a + margin_of_error 
         a_min = a - margin_of_error 
-        if b > a_min or b < a_max:
-            return True
+        if b < a_min or b > a_max:
+            return False
         elif b == a:
             return True
         else:
-            return False
+            return True
         
     def rodrigues(self, v, k, theta):
         """
@@ -1205,7 +1213,7 @@ class py_rod_math:
         except TypeError:
             return np.cos(theta)*np.array(v) + np.cross(k, v)*np.sin(theta) + np.array(k)*np.dot(k,v)*(1-np.cos(theta))
 
-py_rod_math = py_rod_math()
+rod_math = py_rod_math()
 
 test_threejs = """[new THREE.Vector3(289.76843686945404, 452.51481137238443, 56.10018915737797),
 	new THREE.Vector3(5.170639673700947, 66.80453441905567, 28.658512034683916),
@@ -1407,15 +1415,15 @@ class rod_creator:
         
         # The selection of the first material frame is arbitrary. If our first two p_i elements are different, we can use their
         # cross product to give us a value. If not, we use a somewhat arbitrary value.
-        if np.array_equal(py_rod_math.normalize(rod.p_i[0][0]), py_rod_math.normalize(rod.p_i[0][1])):
-            current_first_material_frame = py_rod_math.normalize(np.cross(py_rod_math.normalize(rod.p_i[0][0]), np.array([0.48154341,  0.84270097, -0.24077171])))
+        if np.array_equal(rod_math.normalize(rod.p_i[0][0]), rod_math.normalize(rod.p_i[0][1])):
+            current_first_material_frame = rod_math.normalize(np.cross(rod_math.normalize(rod.p_i[0][0]), np.array([0.48154341,  0.84270097, -0.24077171])))
         else:
-            current_first_material_frame = py_rod_math.normalize(np.cross(py_rod_math.normalize(rod.p_i[0][0]), py_rod_math.normalize(rod.p_i[0][1])))
+            current_first_material_frame = rod_math.normalize(np.cross(rod_math.normalize(rod.p_i[0][0]), rod_math.normalize(rod.p_i[0][1])))
         
-        if np.array_equal(py_rod_math.normalize(rod.equil_p_i[0][0]), py_rod_math.normalize(rod.equil_p_i[0][1])):
-            equil_first_material_frame = py_rod_math.normalize(np.cross(py_rod_math.normalize(rod.equil_p_i[0][0]), np.array([0.48154341,  0.84270097, -0.24077171])))
+        if np.array_equal(rod_math.normalize(rod.equil_p_i[0][0]), rod_math.normalize(rod.equil_p_i[0][1])):
+            equil_first_material_frame = rod_math.normalize(np.cross(rod_math.normalize(rod.equil_p_i[0][0]), np.array([0.48154341,  0.84270097, -0.24077171])))
         else:
-            equil_first_material_frame = py_rod_math.normalize(np.cross(py_rod_math.normalize(rod.equil_p_i[0][0]), py_rod_math.normalize(rod.equil_p_i[0][1])))
+            equil_first_material_frame = rod_math.normalize(np.cross(rod_math.normalize(rod.equil_p_i[0][0]), rod_math.normalize(rod.equil_p_i[0][1])))
 
         current_material_frame[0][0] = current_first_material_frame
         equil_material_frame[0][0] = equil_first_material_frame
@@ -1423,8 +1431,8 @@ class rod_creator:
         for element in range(len(rod.p_i[0])):
             if element == 0:
                 continue
-            current_material_frame[0][element] = py_rod_math.parallel_transport(current_material_frame[0][0], py_rod_math.normalize(rod.p_i[0][0]), py_rod_math.normalize(rod.p_i[0][element]))
-            equil_material_frame[0][element] = py_rod_math.parallel_transport(equil_material_frame[0][0], py_rod_math.normalize(rod.equil_p_i[0][0]), py_rod_math.normalize(rod.equil_p_i[0][element]))
+            current_material_frame[0][element] = rod_math.parallel_transport(current_material_frame[0][0], rod_math.normalize(rod.p_i[0][0]), rod_math.normalize(rod.p_i[0][element]))
+            equil_material_frame[0][element] = rod_math.parallel_transport(equil_material_frame[0][0], rod_math.normalize(rod.equil_p_i[0][0]), rod_math.normalize(rod.equil_p_i[0][element]))
         
         return current_material_frame, equil_material_frame
         
@@ -1456,7 +1464,7 @@ class rod_creator:
             
         for i in range(rod.num_elements-1):
             func_value = function( (i/rod.num_elements-1)*2*np.pi )
-            material_frame[0][i] = py_rod_math.rodrigues(rod.p_i[0][i], material_frame[0][i], func_value)
+            material_frame[0][i] = rod_math.rodrigues(rod.p_i[0][i], material_frame[0][i], func_value)
             
         return material_frame
     
@@ -1504,14 +1512,14 @@ rod_creator = rod_creator()
 ### TEMPORARY
 
 def mpt_weight(a, b):
-    a_length = py_rod_math.get_length(a)
-    b_length = py_rod_math.get_length(b)
-    vec = py_rod_math.normalize( (1/a_length)*a + (1/b_length)*b )
+    a_length = rod_math.get_length(a)
+    b_length = rod_math.get_length(b)
+    vec = rod_math.normalize( (1/a_length)*a + (1/b_length)*b )
     return vec
 
 def mpt_angle(a, b, angle):
-    a_length = py_rod_math.get_length(a)
-    b_length = py_rod_math.get_length(b)
+    a_length = rod_math.get_length(a)
+    b_length = rod_math.get_length(b)
     a_b_ratio = b_length/(b_length+a_length)
     angle_to_rotate = a_b_ratio * angle
     return angle_to_rotate

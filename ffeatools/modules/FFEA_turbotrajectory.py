@@ -364,7 +364,7 @@ class FFEA_turbotrajectory:
         steps = []
         while seek:
             line = ftj.readline()
-            if line.startswith('Blob') and "->" not in line and "Nodes" not in line: # Only lines with blob, conf, step
+            if line.startswith('Blob 0') and "->" not in line and "Nodes" not in line: # Only lines with blob, conf, step
                 blob, conf, step = match_line(line) # regex the line to get the values
                 steps.append(step)
             if len(steps) >= 3:
@@ -389,12 +389,14 @@ class FFEA_turbotrajectory:
                 ftj.readline() # skip the word 'DYNAMIC'
                 nodes_range = xrange(self.num_nodes)
                 for node in nodes_range: #  each node occupies one line
-                    #self.turbotraj[blob][conf][frame][node] = np.fromstring(self.ftj.readline(), dtype=float, sep=' ')[0:3]
+                
+                    #try:
+                    #    turbotraj[blob][conf][frame][node] = np.fromstring(line, dtype=float, sep=' ')[0:3]
                     node_line = ftj.readline().split()
                     for i in [0,1,2]: # 3 points
                         turbotraj[blob][conf][frame][node][i] = float(node_line[i])
                     # fill the contents of the node with the first 3 numbers in the line, converted from a string. first 3 numbers = ignore second order elements
-            if line == "": #empty string (no /n) at eof
+            if line == "" or line == None: #empty string (no /n) at eof
                 break
 
         self.ftj =  ftj

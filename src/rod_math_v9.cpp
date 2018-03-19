@@ -796,7 +796,7 @@ float get_absolute_length_from_array(float* array, int node_no, int length){
 /** Get the centroid of a particular rod, specified by the array of node
  positions for that rod (and the length). Updates the 'centroid' array
  given as a parameter. */
-void get_centroid(float* r, int length, OUT float centroid[3]){
+void get_centroid_generic(float* r, int length, OUT float centroid[3]){
     float sum_pos[3] = {0,0,0};
     for(int i=0; i<length; i+=3){
         sum_pos[0] += r[i];

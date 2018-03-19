@@ -530,7 +530,7 @@ Rod Rod::load_header(std::string filename){
         applied_forces[i] = 0;
     }
     
-    // These are hardcoded default values (temporary?) - eventualy they will load in from the .ffea script!
+    // These are hardcoded default values - the real values are loaded in from the .ffea script
     viscosity_constant_factor = mesoDimensions::pressure*mesoDimensions::time; ///poiseuille
     this->viscosity = 0.6913*pow(10, -3)/viscosity_constant_factor;
     this->timestep = 1e-12/mesoDimensions::time;
@@ -697,10 +697,11 @@ Rod Rod::change_filename(std::string new_filename){
     /** Get contents of current file */
     std::string current_file_contents = "";
     std::ifstream infile(this->rod_filename);
-    for(int i=0 ; infile.eof()!=true ; i++){
-        current_file_contents += infile.get();
+    for( std::string line; getline( infile, line ); ){
+        if (line == "---END HEADER---"){break;}
+        current_file_contents += line+"\n";
     }
-    current_file_contents.erase(current_file_contents.end()-1);
+    current_file_contents += "---END HEADER---\n";
     infile.close();
     
     /** Create new file **/
@@ -755,12 +756,12 @@ Rod Rod::translate_rod(float* r, float translation_vec[3]){
 Rod Rod::rotate_rod(float euler_angles[3]){
     /** Put rod centroid on 0,0,0 */
     float equil_centroid[3];
-    get_centroid(this->equil_r, this->length, equil_centroid);
+    get_centroid_generic(this->equil_r, this->length, equil_centroid);
     float equil_to_translate[3] = {-equil_centroid[0], -equil_centroid[1], -equil_centroid[2]};
     this->translate_rod(this->equil_r, equil_to_translate);
     
     float current_centroid[3];
-    get_centroid(this->current_r, this->length, current_centroid);
+    get_centroid_generic(this->current_r, this->length, current_centroid);
     float current_to_translate[3] = {-current_centroid[0], -current_centroid[1], -current_centroid[2]};
     this->translate_rod(this->current_r, current_to_translate);
     
@@ -814,6 +815,33 @@ Rod Rod::scale_rod(float scale){
         this->equil_r[i] *= scale;
         this->equil_r[i+1] *= scale;
         this->equil_r[i+2] *= scale;
+    }
+    return *this;
+}
+
+/**
+ * Get a centroid for the current frame of the rod. Note: you must supply
+ * an array (either current_r or equil_r).
+ */
+Rod Rod::get_centroid(float *r, OUT float centroid[3]){
+    vec3d(n){ centroid[n] = 0; }
+    for (int i = 0; i<this->length; i+=3){
+        centroid[0] += r[i];
+        centroid[1] += r[i+1];
+        centroid[2] += r[i+2];
+    }
+    vec3d(n){ centroid[n] /= this->num_elements; }
+    return *this;
+}
+
+Rod Rod::get_min_max(float *r, OUT float min[3], float max[3]){
+    for (int i = 0; i<this->length; i+=3){
+        if (r[i+x] > max[x]){ max[x] = r[i+x]; }
+        if (r[i+y] > max[x]){ max[y] = r[i+y]; }
+        if (r[i+z] > max[z]){ max[z] = r[i+z]; }
+        if (r[i+x] < min[x]){ min[x] = r[i+x]; }
+        if (r[i+y] < min[y]){ min[y] = r[i+y]; }
+        if (r[i+z] < min[z]){ min[z] = r[i+z]; }
     }
     return *this;
 }

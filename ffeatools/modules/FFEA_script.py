@@ -95,8 +95,8 @@ class FFEA_script:
 		try:
 			for i in range(self.params.num_rods):
 				self.rod.append(self.read_rod_from_script_lines(script_lines, scriptdir, i, ))
-		except AttributeError:
-			pass # no rods exist
+		#except AttributeError:
+		#	pass # no rods exist
 		except:
 				print("Error. Couldn't load <rod>...</rod> " + str(i))
 				self.reset()
@@ -408,16 +408,33 @@ class FFEA_script:
          
          # Can't avoid it now, just gotta do the FFEA_script thing
          # (aka: write a bunch of spaghetti code instead of just using an XML parser)
+         # First, parse thing
          rod_lines = script_lines[line_start+1:line_end]
          for line_no in range(len(rod_lines)):
              rod_lines[line_no] = rod_lines[line_no].replace("\t", "")
              rod_lines[line_no] = rod_lines[line_no].replace("\n", "")
              rod_lines[line_no] = rod_lines[line_no].replace("<", "")
              rod_lines[line_no] = rod_lines[line_no].replace(">", "")
-             
+        
+         #absolute vs relative paths (don't begin a relative path with a /)
+         if scriptdir == "":
+             separator = ""
+         else:
+             separator = "/"
+        
+         # Read in rod
          for line in rod_lines:
+             if line.split("=")[0].strip() == "input":
+                 in_path = scriptdir+separator+line.split("=")[1].strip()
+            
              if line.split("=")[0].strip() == "output":
-                 rod = FFEA_rod.FFEA_rod(scriptdir+"/"+line.split("=")[1].strip())
+                 out_path = scriptdir+separator+line.split("=")[1].strip()
+                 
+         try:
+             rod = FFEA_rod.FFEA_rod(out_path)
+         except IOError:
+             rod = FFEA_rod.FFEA_rod(in_path)
+
           #scaling, translation, rotation etc go here
          return rod
              

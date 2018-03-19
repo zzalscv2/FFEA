@@ -483,6 +483,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         for (i = 0; i < params.num_rods; i++) {
             rod_array[i]->translate_rod(rod_array[i]->current_r, shift_rod);
             rod_array[i]->translate_rod(rod_array[i]->equil_r, shift_rod);
+            rod_array[i]->write_frame_to_file(); // rod traj contains initial state but positioned in box
         }
     }
     // Now everything has been moved into boxes etc, save all initial positions
@@ -3321,6 +3322,7 @@ void World::get_system_CoM(vector3 *system_CoM) {
 
 /* */
 void World::get_system_centroid(vector3 *centroid) {
+    /** Blob centroid */
     centroid->x = 0;
     centroid->y = 0;
     centroid->z = 0;
@@ -3334,6 +3336,18 @@ void World::get_system_centroid(vector3 *centroid) {
 
         total_num_nodes += active_blob_array[i]->get_num_nodes();
     }
+    
+    /** Rod centroid */
+    for (int i = 0; i<params.num_rods; i++) {
+        float rod_centroid[3];
+        rod_array[i]->get_centroid(rod_array[i]->current_r, rod_centroid);
+        /** I'm leaving it like this and there's nothing you can do about it */
+        centroid->x += rod_centroid[0]*rod_array[i]->num_elements;
+        centroid->y += rod_centroid[1]*rod_array[i]->num_elements;
+        centroid->z += rod_centroid[2]*rod_array[i]->num_elements;
+        total_num_nodes += rod_array[i]->num_elements;
+    }
+    
     centroid->x /= total_num_nodes;
     centroid->y /= total_num_nodes;
     centroid->z /= total_num_nodes;
@@ -3376,6 +3390,17 @@ void World::get_system_dimensions(vector3 *dimension) {
         if(blob_max.z > max.z) {
             max.z = blob_max.z;
         }
+    }
+    
+    float rod_min[3], rod_max[3];
+    for(int i=0; i < params.num_rods; i++){
+        rod_array[i]->get_min_max(rod_array[i]->current_r, rod_min, rod_max);
+        if (rod_max[0] > max.x){ max.x = rod_max[0]; }
+        if (rod_max[1] > max.y){ max.y = rod_max[1]; }
+        if (rod_max[2] > max.z){ max.z = rod_max[2]; }
+        if (rod_min[0] < min.x){ min.x = rod_min[0]; }
+        if (rod_min[1] < min.y){ min.y = rod_min[1]; }
+        if (rod_min[2] < min.z){ min.z = rod_min[2]; }
     }
 
     dimension->x = max.x - min.x;
