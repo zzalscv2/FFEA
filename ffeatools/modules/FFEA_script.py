@@ -773,6 +773,11 @@ class FFEA_script_params():
 	def fix_params(self):
 		if len(self.num_conformations) < self.num_blobs:
 			self.num_conformations.extend([1 for i in range(self.num_blobs - len(self.num_conformations))])
+         
+		try:
+			self.num_rods
+		except AttributeError:
+			self.num_rods = 0
 
 	# This function tests whether or not there are enough params to form an ffea system
 	def completed(self):
