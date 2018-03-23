@@ -785,6 +785,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             if (truncate(params.trajectory_out_fname.c_str(), last_asterisk_pos) != 0) {
                 FFEA_ERROR_MESSG("Error when trying to truncate trajectory file %s\n", params.trajectory_out_fname.c_str())
             }
+            
+            box_lag = step_initial*params.shear_rate*params.dt*box_dim.y;
+            if(box_lag>box_dim.x){box_lag = fmod(box_lag,box_dim.x);}
+            vox_lag = floor(box_lag/params.ssint_cutoff+1/2);
+            
+            
 
             /*
              * Measurement files
@@ -865,7 +871,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                     FFEA_ERROR_MESSG("Error when trying to truncate measurment file %s\n", params.detailed_meas_out_fname.c_str())
                 }
             }
-/*
+
             if(params.mini_meas!=0) {
 
                 if(params.check%params.mini_meas!=0){
@@ -919,7 +925,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			} else {
 				last_asterisk_pos = ftello(mini_meas_out)-2;//-2 removes asterisk so restart files are identical
 			}
-            
+            /*
             printf("Loading Blob PBC relocation counts matching last completely written snapshot \n");
             int temp_pbc_count;
             double trash;
@@ -932,7 +938,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 if (active_blob_array[b]->read_pbc_count_from_file(mini_meas_out,b) == FFEA_ERROR) {
                     FFEA_ERROR_MESSG("Error restarting blob %d\n", b)
                 }
-            }
+            }*/
 
 
 			printf("Truncating the mini_meas file to the last asterisk...\n");
@@ -940,7 +946,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                     FFEA_ERROR_MESSG("Error when trying to truncate mini_meas file %s\n", params.mini_meas_out_fname.c_str())
                 }
 			}
-			*/
+			
 			if(params.msd_corr_calc ==1){
 			    cout<<"here's a flag"<<endl;
 			    if ((base_corr_out = fopen(params.base_corr_out_fname.c_str(), "r")) == NULL) {
@@ -994,9 +1000,30 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				    cout<<"it's treason, then?"<<endl;
 				    sys_corr.read_ffea(sys_corr_out);
 				    cout<<"did the read thing"<<endl;  
-				    elastic_stress_corr.read_ffea(elastic_stress_corr_out);
-				    viscous_stress_corr.read_ffea(viscous_stress_corr_out);
-				    total_stress_corr.read_ffea(total_stress_corr_out);
+				    elastic_stress_corr_c0.read_ffea(elastic_stress_corr_out);
+				    elastic_stress_corr_c1.read_ffea(elastic_stress_corr_out);
+				    elastic_stress_corr_c2.read_ffea(elastic_stress_corr_out);
+				    elastic_stress_corr_c3.read_ffea(elastic_stress_corr_out);
+				    elastic_stress_corr_c4.read_ffea(elastic_stress_corr_out);
+				    elastic_stress_corr_c5.read_ffea(elastic_stress_corr_out);
+				    elastic_stress_corr_c6.read_ffea(elastic_stress_corr_out);
+				    viscous_stress_corr_c0.read_ffea(viscous_stress_corr_out);
+				    viscous_stress_corr_c1.read_ffea(viscous_stress_corr_out);
+				    viscous_stress_corr_c2.read_ffea(viscous_stress_corr_out);
+				    viscous_stress_corr_c3.read_ffea(viscous_stress_corr_out);
+				    viscous_stress_corr_c4.read_ffea(viscous_stress_corr_out);
+				    viscous_stress_corr_c5.read_ffea(viscous_stress_corr_out);
+				    viscous_stress_corr_c6.read_ffea(viscous_stress_corr_out);
+				    total_stress_corr_c0.read_ffea(total_stress_corr_out);
+				    total_stress_corr_c1.read_ffea(total_stress_corr_out);
+				    total_stress_corr_c2.read_ffea(total_stress_corr_out);
+				    total_stress_corr_c3.read_ffea(total_stress_corr_out);
+				    total_stress_corr_c4.read_ffea(total_stress_corr_out);
+				    total_stress_corr_c5.read_ffea(total_stress_corr_out);
+				    total_stress_corr_c6.read_ffea(total_stress_corr_out);
+				    
+				    
+				    
 				      
 			        fclose(base_corr_out);
                     fclose(corrected_corr_out);
@@ -1189,11 +1216,13 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     printf("Now initialised with 'per-blob parallelisation' (FFEA_PARALLEL_PER_BLOB) on %d threads.\n", num_threads);
 #endif
 
+    cout<<"we reach here"<<endl;
+
 #ifdef USE_MPI
     et = MPI::Wtime() -st;
     cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
 #endif
-
+    cout<<"and here"<<endl;
     return FFEA_OK;
 }
 
@@ -4188,10 +4217,29 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         }
         
         sys_corr.save_ffea(sys_corr_out);
-        elastic_stress_corr.save_ffea(elastic_stress_corr_out); 
-        viscous_stress_corr.save_ffea(viscous_stress_corr_out);
-        total_stress_corr.save_ffea(total_stress_corr_out);
-             
+        elastic_stress_corr_c0.save_ffea(elastic_stress_corr_out); 
+        elastic_stress_corr_c1.save_ffea(elastic_stress_corr_out);
+        elastic_stress_corr_c2.save_ffea(elastic_stress_corr_out);
+        elastic_stress_corr_c3.save_ffea(elastic_stress_corr_out);
+        elastic_stress_corr_c4.save_ffea(elastic_stress_corr_out);
+        elastic_stress_corr_c5.save_ffea(elastic_stress_corr_out);
+        elastic_stress_corr_c6.save_ffea(elastic_stress_corr_out);
+        viscous_stress_corr_c0.save_ffea(viscous_stress_corr_out); 
+        viscous_stress_corr_c1.save_ffea(viscous_stress_corr_out);
+        viscous_stress_corr_c2.save_ffea(viscous_stress_corr_out);
+        viscous_stress_corr_c3.save_ffea(viscous_stress_corr_out);
+        viscous_stress_corr_c4.save_ffea(viscous_stress_corr_out);
+        viscous_stress_corr_c5.save_ffea(viscous_stress_corr_out);
+        viscous_stress_corr_c6.save_ffea(viscous_stress_corr_out);
+        total_stress_corr_c0.save_ffea(total_stress_corr_out); 
+        total_stress_corr_c1.save_ffea(total_stress_corr_out);
+        total_stress_corr_c2.save_ffea(total_stress_corr_out);
+        total_stress_corr_c3.save_ffea(total_stress_corr_out);
+        total_stress_corr_c4.save_ffea(total_stress_corr_out);
+        total_stress_corr_c5.save_ffea(total_stress_corr_out);
+        total_stress_corr_c6.save_ffea(total_stress_corr_out);
+        
+            
         fclose(base_corr_out);
         fclose(corrected_corr_out);
         fclose(x_corr_out);
@@ -4204,8 +4252,8 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     }
 
 
-   // fprintf(mini_meas_out,"*\n");    
-   // fflush(mini_meas_out);
+    fprintf(mini_meas_out,"*\n");    
+    fflush(mini_meas_out);
 
 #ifdef FFEA_PARALLEL_PER_BLOB
     #pragma omp parallel for default(none) schedule(static)
@@ -4356,9 +4404,30 @@ void World::print_mini_meas_file(int step, scalar wtime) {
         
         
         mat3_add(mean_stress_viscous,mean_stress_elastic,mean_stress_total);
-        elastic_stress_corr.add(mean_stress_elastic);
-        viscous_stress_corr.add(mean_stress_viscous);
-        total_stress_corr.add(mean_stress_total);
+        elastic_stress_corr_c0.add(mean_stress_elastic[0][1]);
+        elastic_stress_corr_c1.add(mean_stress_elastic[1][2]);
+        elastic_stress_corr_c2.add(mean_stress_elastic[2][0]);
+        elastic_stress_corr_c3.add(mean_stress_elastic[1][1]-mean_stress_elastic[2][2]);
+        elastic_stress_corr_c4.add(mean_stress_elastic[0][0]-mean_stress_elastic[1][1]);
+        elastic_stress_corr_c5.add(mean_stress_elastic[0][0]-mean_stress_elastic[2][2]);
+        elastic_stress_corr_c6.add(mean_stress_elastic[0][0]+mean_stress_elastic[1][1]+mean_stress_elastic[2][2]);
+        viscous_stress_corr_c0.add(mean_stress_viscous[0][1]);
+        viscous_stress_corr_c1.add(mean_stress_viscous[1][2]);
+        viscous_stress_corr_c2.add(mean_stress_viscous[2][0]);
+        viscous_stress_corr_c3.add(mean_stress_viscous[1][1]-mean_stress_viscous[2][2]);
+        viscous_stress_corr_c4.add(mean_stress_viscous[0][0]-mean_stress_viscous[1][1]);
+        viscous_stress_corr_c5.add(mean_stress_viscous[0][0]-mean_stress_viscous[2][2]);
+        viscous_stress_corr_c6.add(mean_stress_viscous[0][0]+mean_stress_viscous[1][1]+mean_stress_viscous[2][2]);
+        total_stress_corr_c0.add(mean_stress_total[0][1]);
+        total_stress_corr_c1.add(mean_stress_total[1][2]);
+        total_stress_corr_c2.add(mean_stress_total[2][0]);
+        total_stress_corr_c3.add(mean_stress_total[1][1]-mean_stress_total[2][2]);
+        total_stress_corr_c4.add(mean_stress_total[0][0]-mean_stress_total[1][1]);
+        total_stress_corr_c5.add(mean_stress_total[0][0]-mean_stress_total[2][2]);
+        total_stress_corr_c6.add(mean_stress_total[0][0]+mean_stress_total[1][1]+mean_stress_total[2][2]);
+        
+        
+        
         fprintf(mini_meas_out,"%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e\t%.14e",mean_stress_viscous[0][0],mean_stress_viscous[0][1],mean_stress_viscous[0][2],mean_stress_viscous[1][0],mean_stress_viscous[1][1],mean_stress_viscous[1][2],mean_stress_viscous[2][0],mean_stress_viscous[2][1],mean_stress_viscous[2][2],mean_stress_elastic[0][0],mean_stress_elastic[0][1],mean_stress_elastic[0][2],mean_stress_elastic[1][0],mean_stress_elastic[1][1],mean_stress_elastic[1][2],mean_stress_elastic[2][0],mean_stress_elastic[2][1],mean_stress_elastic[2][2]);
         /*if(step%100000==0){
             printf("*******\nTotal Viscous Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_viscous[0][0],mean_stress_viscous[0][1],mean_stress_viscous[0][2],mean_stress_viscous[1][0],mean_stress_viscous[1][1],mean_stress_viscous[1][2],mean_stress_viscous[2][0],mean_stress_viscous[2][1],mean_stress_viscous[2][2]);

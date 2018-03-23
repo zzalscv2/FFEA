@@ -27,7 +27,7 @@ class TCorrelator{
     public:
         scalar *t,*f,*fav,*fsqav,*tav;
         int npcorr,npcorrmax,nexp;
-        TCorrelator(int numcorrin = 2, int pcorin = 16);
+        TCorrelator(int numcorrin = 35, int pcorin = 16);
         ~TCorrelator();
         int resizecount=0, addcount=0;
         int get_numcorr();
@@ -52,7 +52,7 @@ class TCorrelatorDiffusion{
     public:
         scalar *t,*f,*fav,*fsqav,*tav;
         int npcorr,npcorrmax,nexp;
-        TCorrelatorDiffusion(int numcorrin = 2, int pcorin = 16);
+        TCorrelatorDiffusion(int numcorrin = 35, int pcorin = 16);
         ~TCorrelatorDiffusion();
         TCorrelatorDiffusion(const TCorrelatorDiffusion &obj);
         int resizecount=0, addcount=0;
@@ -79,7 +79,7 @@ class TCrossCorrelator{
     public:
         scalar *t,*f,*fav,*fsqav,*tav;
         int npcorr,npcorrmax,nexp;
-        TCrossCorrelator(int numcorrin = 2, int pcorin = 16);
+        TCrossCorrelator(int numcorrin = 35, int pcorin = 16);
         ~TCrossCorrelator();
         int resizecount=0, addcount=0;
         void add(scalar w,scalar w2, int k=1);
@@ -101,7 +101,7 @@ class TCorrelatorVector{
     public:
         scalar *t,*f,*fav,*fsqav,*tav;
         int npcorr,npcorrmax,nexp;
-        TCorrelatorVector(int numcorrin = 2, int pcorin = 16);
+        TCorrelatorVector(int numcorrin = 35, int pcorin = 16);
         ~TCorrelatorVector();
         int resizecount=0, addcount=0;
         void add(arr3 w, int k=1);
@@ -123,7 +123,7 @@ class TCorrelatorDiffusionVector{
     public:
         scalar *t,*f,*fav,*fsqav,*tav;
         int npcorr,npcorrmax,nexp;
-        TCorrelatorDiffusionVector(int numcorrin = 2, int pcorin = 16);
+        TCorrelatorDiffusionVector(int numcorrin = 35, int pcorin = 16);
         ~TCorrelatorDiffusionVector();
         TCorrelatorDiffusionVector(const TCorrelatorDiffusionVector &obj);
         int resizecount=0, addcount=0;
@@ -155,7 +155,7 @@ class TCorrelatorSq{
     public:
         scalar *t,*f,*fav,*fsqav,*tav;
         int npcorr,npcorrmax,nexp;
-        TCorrelatorSq(int numcorrin = 2, int pcorin = 16);
+        TCorrelatorSq(int numcorrin = 35, int pcorin = 16);
         ~TCorrelatorSq();
         int resizecount=0, addcount=0;
         void add(cossindata w, int k=1);
@@ -166,19 +166,19 @@ class TCorrelatorSq{
         void save(std::string savename);
         void read(std::string readname);
 };
-
+/*
 class TCorrelatorStress{
     private:
-        TCorrelator c0;
-        TCorrelator c1;
-        TCorrelator c2;
-        TCorrelator c3;
-        TCorrelator c4;
-        TCorrelator c5;
-        TCorrelator c6;
+        TCorrelator *c0;
+        TCorrelator *c1;
+        TCorrelator *c2;
+        TCorrelator *c3;
+        TCorrelator *c4;
+        TCorrelator *c5;
+        TCorrelator *c6;
     public:
         double t[ntpoints],f[ntpoints];
-        TCorrelatorStress(int numcorrin = 2,int pcorin=16);
+        TCorrelatorStress(int numcorrin = 35,int pcorin=16);
         ~TCorrelatorStress();
         void add(matrix3 w, int k=1);
         void evaluate();
@@ -190,7 +190,7 @@ class TCorrelatorStress{
         int read(std::string readname);
 };
 
-
+*/
 class Fmm_blob{
 public:
     Fmm_blob();

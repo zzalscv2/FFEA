@@ -1638,98 +1638,90 @@ void TCorrelatorSq::clear(){
     }
     npcorr = 0;
 }
-
+/*
 TCorrelatorStress::TCorrelatorStress(int numcorrin,int pcorin){
-    TCorrelator c0(numcorrin,pcorin);
-    TCorrelator c1(numcorrin,pcorin);
-    TCorrelator c2(numcorrin,pcorin);
-    TCorrelator c3(numcorrin,pcorin);
-    TCorrelator c4(numcorrin,pcorin);
-    TCorrelator c5(numcorrin,pcorin);
-    TCorrelator c6(numcorrin,pcorin);
-    
+    TCorrelator *c0 = new TCorrelator();
+    TCorrelator *c1 = new TCorrelator();
+    TCorrelator *c2 = new TCorrelator();
+    TCorrelator *c3 = new TCorrelator();
+    TCorrelator *c4 = new TCorrelator();
+    TCorrelator *c5 = new TCorrelator();
+    TCorrelator *c6 = new TCorrelator();
 }
 
 TCorrelatorStress::~TCorrelatorStress(){
-
+    delete c0;
+    delete c1;
+    delete c2;
+    delete c3;
+    delete c4;
+    delete c5;
+    delete c6;
 }
 
 void TCorrelatorStress::add(matrix3 w,int k){
-    c0.add(w[0][1]);
-    c1.add(w[1][2]);
-    c2.add(w[2][0]);
-    c3.add(w[1][1]-w[2][2]);
-    c4.add(w[0][0]-w[1][1]);
-    c5.add(w[0][0]-w[2][2]);
-    c6.add(w[0][0]+w[1][1]+w[2][2]);
+    c0->add(w[0][1]);
+    c1->add(w[1][2]);
+    c2->add(w[2][0]);
+    c3->add(w[1][1]-w[2][2]);
+    c4->add(w[0][0]-w[1][1]);
+    c5->add(w[0][0]-w[2][2]);
+    c6->add(w[0][0]+w[1][1]+w[2][2]);
 }
 
 void TCorrelatorStress::evaluate(){
     //for(int i = 0;i<5;i++){
-        c0.evaluate();
-        c1.evaluate();
-        c2.evaluate();
-        c3.evaluate();
-        c4.evaluate();
-        c5.evaluate();
-        c6.evaluate();
+        c0->evaluate();
+        c1->evaluate();
+        c2->evaluate();
+        c3->evaluate();
+        c4->evaluate();
+        c5->evaluate();
+        c6->evaluate();
     //}
-/*
-    for(int i=0;i<ntpoints;i++){
-        f[i] = 0;
 
-            f[i] = f[i]+0.2 * c0.f[i];
-            f[i] = f[i]+0.2 * c1.f[i];
-            f[i] = f[i]+0.2 * c2.f[i];
-            f[i] = f[i]+0.2 * c3.f[i];
-            f[i] = f[i]+0.2 * c4.f[i];
-            t[i] = c0.t[i];
-     }
-*/
 }
 
 
 
 void TCorrelatorStress::clear(){
-    c0.clear();
-    c1.clear();
-    c2.clear();
-    c3.clear();
-    c4.clear();
-    c5.clear();
-    c6.clear();
+    c0->clear();
+    c1->clear();
+    c2->clear();
+    c3->clear();
+    c4->clear();
+    c5->clear();
+    c6->clear();
 
     for(int i = 0;i<ntpoints;i++){
         t[i] = 0;
         f[i] = 0;
     }
 }
-/*
 this won't work as is, and I don't use it
 
 void TCorrelatorStress::save(std::string savename){
 
-        c0.save(savename+std::to_string(0)+".txt");
-        c1.save(savename+std::to_string(1)+".txt");
-        c2.save(savename+std::to_string(2)+".txt");
-        c3.save(savename+std::to_string(3)+".txt");
-        c4.save(savename+std::to_string(4)+".txt");
-        c5.save(savename+std::to_string(5)+".txt");
-        c6.save(savename+std::to_string(6)+".txt");
+        c0->save(savename+std::to_string(0)+".txt");
+        c1->save(savename+std::to_string(1)+".txt");
+        c2->save(savename+std::to_string(2)+".txt");
+        c3->save(savename+std::to_string(3)+".txt");
+        c4->save(savename+std::to_string(4)+".txt");
+        c5->save(savename+std::to_string(5)+".txt");
+        c6->save(savename+std::to_string(6)+".txt");
 
   std::ofstream fsave;
 
   fsave.open(savename+"_base.txt");
 
-  fsave<<c0.get_numcorr()<<"\t"<<c1.get_numcorr()<<"\t"<<c2.get_numcorr()<<"\t"<<c3.get_numcorr()<<"\t"<<c4.get_numcorr()<<endl;
+  fsave<<c0->get_numcorr()<<"\t"<<c1->get_numcorr()<<"\t"<<c2->get_numcorr()<<"\t"<<c3->get_numcorr()<<"\t"<<c4->get_numcorr()<<endl;
   for(int i=0;i<ntpoints;i++){
       fsave<<t[i]<<"\t"<<f[i]<<endl;
   }
     fsave.close();
 
 }
-*/
-/*
+
 int TCorrelatorStress::read(std::string readname){
     std::string storage;
 
@@ -1753,49 +1745,49 @@ int TCorrelatorStress::read(std::string readname){
         return 0;
     }
 
-        c0.read(readname+std::to_string(0)+".txt");
-        c1.read(readname+std::to_string(1)+".txt");
-        c2.read(readname+std::to_string(2)+".txt");
-        c3.read(readname+std::to_string(3)+".txt");
-        c4.read(readname+std::to_string(4)+".txt");
+        c0->read(readname+std::to_string(0)+".txt");
+        c1->read(readname+std::to_string(1)+".txt");
+        c2->read(readname+std::to_string(2)+".txt");
+        c3->read(readname+std::to_string(3)+".txt");
+        c4->read(readname+std::to_string(4)+".txt");
 }
-*/
+
 
 void TCorrelatorStress::save_ffea(FILE *fout){
    
-   c0.save_ffea(fout);
-   c1.save_ffea(fout);
-   c2.save_ffea(fout);
-   c3.save_ffea(fout);
-   c4.save_ffea(fout);
-   c5.save_ffea(fout);
-   c6.save_ffea(fout);
+   c0->save_ffea(fout);
+   c1->save_ffea(fout);
+   c2->save_ffea(fout);
+   c3->save_ffea(fout);
+   c4->save_ffea(fout);
+   c5->save_ffea(fout);
+   c6->save_ffea(fout);
    
 }
     
 
 void TCorrelatorStress::read_ffea(FILE *fout){
    
-    c0.read_ffea(fout);
-    c1.read_ffea(fout);
-    c2.read_ffea(fout);
-    c3.read_ffea(fout);
-    c4.read_ffea(fout);
-    c5.read_ffea(fout);
-    c6.read_ffea(fout);
+    c0->read_ffea(fout);
+    c1->read_ffea(fout);
+    c2->read_ffea(fout);
+    c3->read_ffea(fout);
+    c4->read_ffea(fout);
+    c5->read_ffea(fout);
+    c6->read_ffea(fout);
        
 }
 
 void TCorrelatorStress::save_out(FILE *fout){
-    c0.save_out(fout);
-    c1.save_out(fout);
-    c2.save_out(fout);
-    c3.save_out(fout);
-    c4.save_out(fout);
-    c5.save_out(fout);
-    c6.save_out(fout);
+    c0->save_out(fout);
+    c1->save_out(fout);
+    c2->save_out(fout);
+    c3->save_out(fout);
+    c4->save_out(fout);
+    c5->save_out(fout);
+    c6->save_out(fout);
 }
-
+*/
 Fmm_blob::Fmm_blob(){
     init();
 }

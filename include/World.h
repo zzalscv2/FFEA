@@ -148,10 +148,28 @@ private:
     vector<TCorrelatorDiffusion> diff_corr_z;
     //vector<TCorrelatorDiffusionVector> sys_corr;
     TCorrelatorDiffusionVector sys_corr = TCorrelatorDiffusionVector(35,16);
-    TCorrelatorStress elastic_stress_corr = TCorrelatorStress(35,16);
-    //TCorrelatorStress node_stress_corr = TCorrelatorStress(35,16);
-    TCorrelatorStress viscous_stress_corr = TCorrelatorStress(35,16);
-    TCorrelatorStress total_stress_corr = TCorrelatorStress(35,16);
+    TCorrelator elastic_stress_corr_c0 = TCorrelator();
+    TCorrelator elastic_stress_corr_c1 = TCorrelator();
+    TCorrelator elastic_stress_corr_c2 = TCorrelator();
+    TCorrelator elastic_stress_corr_c3 = TCorrelator();
+    TCorrelator elastic_stress_corr_c4 = TCorrelator();
+    TCorrelator elastic_stress_corr_c5 = TCorrelator();
+    TCorrelator elastic_stress_corr_c6 = TCorrelator();
+    TCorrelator viscous_stress_corr_c0 = TCorrelator();
+    TCorrelator viscous_stress_corr_c1 = TCorrelator();
+    TCorrelator viscous_stress_corr_c2 = TCorrelator();
+    TCorrelator viscous_stress_corr_c3 = TCorrelator();
+    TCorrelator viscous_stress_corr_c4 = TCorrelator();
+    TCorrelator viscous_stress_corr_c5 = TCorrelator();
+    TCorrelator viscous_stress_corr_c6 = TCorrelator();
+    TCorrelator total_stress_corr_c0 = TCorrelator();
+    TCorrelator total_stress_corr_c1 = TCorrelator();
+    TCorrelator total_stress_corr_c2 = TCorrelator();
+    TCorrelator total_stress_corr_c3 = TCorrelator();
+    TCorrelator total_stress_corr_c4 = TCorrelator();
+    TCorrelator total_stress_corr_c5 = TCorrelator();
+    TCorrelator total_stress_corr_c6 = TCorrelator();
+        
     vector<Fmm_blob> Fmm_vec;
     Fmm_blob sys_blob;
     
