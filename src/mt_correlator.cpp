@@ -38,6 +38,22 @@ TCorrelator::~TCorrelator(){
     tav = 0;
 }
 
+TCorrelator::TCorrelator(const TCorrelator &obj){
+    numcorr = obj.numcorr;
+    pcor = obj.pcor;
+    p2 = obj.pcor/2;
+    length = (numcorr+1)*p2;
+    aa = new scalar[(numcorr+1)*(pcor+3)];
+    cor = new scalar[(numcorr+1)*(pcor+3)];
+    ncor = new long long[((numcorr+1)*(pcor+3))];
+    t = new scalar[length];
+    f = new scalar[length];
+    fav = new scalar[length];
+    fsqav = new scalar[length];
+    tav = new scalar[length];
+    init();
+}
+
 int TCorrelator::get_numcorr(){
     return numcorr;
 }
@@ -983,7 +999,7 @@ TCorrelatorDiffusionVector::TCorrelatorDiffusionVector(const TCorrelatorDiffusio
     fav = new scalar[length];
     fsqav = new scalar[length];
     tav = new scalar[length];
-
+/*
     for(int i=0;i<numcorr;i++){
         for(int j=0;j<pcor+3;j++){
             for(int m=0;m<3;m++){
@@ -1001,7 +1017,8 @@ TCorrelatorDiffusionVector::TCorrelatorDiffusionVector(const TCorrelatorDiffusio
         fsqav[i] = obj.fsqav[i];
         tav[i] = obj.tav[i];
     }
-
+*/
+    init();
 }
 
 int TCorrelatorDiffusionVector::getlength(){
@@ -1861,6 +1878,8 @@ TCorrelatorDiffusion::TCorrelatorDiffusion(const TCorrelatorDiffusion &obj){
     fsqav = new scalar[length];
     tav = new scalar[length];
 
+    init();
+/*
     for(int i=0;i<numcorr;i++){
         for(int j=0;j<pcor+3;j++){
             aa[i*(pcor+3) + j]=obj.aa[i*(pcor+3) + j];
@@ -1876,7 +1895,7 @@ TCorrelatorDiffusion::TCorrelatorDiffusion(const TCorrelatorDiffusion &obj){
         fsqav[i] = obj.fsqav[i];
         tav[i] = obj.tav[i];
     }
-
+*/
 }
 
 void TCorrelatorDiffusion::resizeCorrelator(int k){

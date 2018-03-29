@@ -29,6 +29,7 @@ class TCorrelator{
         int npcorr,npcorrmax,nexp;
         TCorrelator(int numcorrin = 35, int pcorin = 16);
         ~TCorrelator();
+        TCorrelator(const TCorrelator &obj);
         int resizecount=0, addcount=0;
         int get_numcorr();
         void add(scalar w, int k=1);

@@ -346,7 +346,6 @@ int Blob::init(){
     calc_rest_state_info();
 
     // Calculate the connectivity of the mesh, giving each node a list of pointers to elements
-    // it is a member of. The pointers will be to the exact memory location in that element's struct
     // in which can be found the contribution to the force on that node.
     if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
         printf("\t\tCalculating node-element connectivity...");
@@ -588,6 +587,8 @@ int Blob::init(){
     if (calc_compress ==1) {
         compress_blob(compress);
     }
+    
+    
 
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
         toBePrinted_nodes = new scalar[10*num_nodes];
@@ -673,10 +674,12 @@ int Blob::update_internal_forces() {
             total_elastic_stress[2][1] += stress[2][1]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
             total_elastic_stress[2][2] += stress[2][2]*mesoDimensions::pressure*elem[n].vol*mesoDimensions::volume;
 
+
+
             if (params->calc_noise == 1) {
                 //elem[n].add_fluctuating_stress(params, rng, stress, tid);
             }
-
+            printf("*************\nblob %d element %d elastic stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,n,stress[0][0]*mesoDimensions::pressure,stress[0][1]*mesoDimensions::pressure,stress[0][2]*mesoDimensions::pressure,stress[1][0]*mesoDimensions::pressure,stress[1][1]*mesoDimensions::pressure,stress[1][2]*mesoDimensions::pressure,stress[2][0]*mesoDimensions::pressure,stress[2][1]*mesoDimensions::pressure,stress[2][2]*mesoDimensions::pressure);
             elem[n].internal_stress_mag = sqrt(mat3_double_contraction_symmetric(stress));
             
             //printf("*************\nblob %d element %d stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,n,total_elastic_stress[0][0],total_elastic_stress[0][1],total_elastic_stress[0][2],total_elastic_stress[1][0],total_elastic_stress[1][1],total_elastic_stress[1][2],total_elastic_stress[2][0],total_elastic_stress[2][1],total_elastic_stress[2][2]);
@@ -993,17 +996,99 @@ void Blob::calc_and_store_centroid(vector3 &com) {
 }
 
 void Blob::calc_tot_visc(matrix3 stress){
-    //matrix3 stress;
+    matrix3 pstress,velgrad;
     vector12 v;
-    //mat3_set_zero(stress);
+    mat3_set_zero(pstress);
     scalar prefac=0;
+    scalar trace=0;
     for(int i = 0; i<num_elements;i++){
+        trace=0;
+        
+    mat3_set_zero(pstress);
+        mat3_set_zero(velgrad);
         //prefac=mesoDimensions::pressure * mesoDimensions::time*elem[i].vol*mesoDimensions::volume*mesoDimensions::velocity*mesoDimensions::length*mesoDimensions::length;
         prefac = mesoDimensions::pressure*elem[i].vol*mesoDimensions::volume;
         vec12_set_zero(v);
         elem[i].get_element_velocity_vector(v);
+        //printf("*************\nblob %d element %d viscous stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,i,pstress[0][0]*mesoDimensions::pressure,pstress[0][1]*mesoDimensions::pressure,pstress[0][2]*mesoDimensions::pressure,pstress[1][0]*mesoDimensions::pressure,pstress[1][1]*mesoDimensions::pressure,pstress[1][2]*mesoDimensions::pressure,pstress[2][0]*mesoDimensions::pressure,pstress[2][1]*mesoDimensions::pressure,pstress[2][2]*mesoDimensions::pressure);
         
-            
+        /*
+        v[0] = elem[i].n[0]->pos.y;
+        cout<<"Node 1 position is "<<elem[i].n[0]->pos.x*mesoDimensions::length<<"\t"<<elem[i].n[0]->pos.y*mesoDimensions::length<<"\t"<<elem[i].n[0]->pos.z*mesoDimensions::length<<"\t"<<endl;
+        v[0]=0;
+        v[1]=0;
+        v[2]=0;
+        //v[3]=0;
+        //v[1] =elem[i].n[1]->pos.y;
+        cout<<"Node 1 position is "<<elem[i].n[1]->pos.x*mesoDimensions::length<<"\t"<<elem[i].n[1]->pos.y*mesoDimensions::length<<"\t"<<elem[i].n[1]->pos.z*mesoDimensions::length<<"\t"<<endl;
+        //v[2] =elem[i].n[2]->pos.y;
+        cout<<"Node 1 position is "<<elem[i].n[2]->pos.x*mesoDimensions::length<<"\t"<<elem[i].n[2]->pos.y*mesoDimensions::length<<"\t"<<elem[i].n[2]->pos.z*mesoDimensions::length<<"\t"<<endl;
+        //v[3] = elem[i].n[3]->pos.y;
+        cout<<"Node 1 position is "<<elem[i].n[3]->pos.x*mesoDimensions::length<<"\t"<<elem[i].n[3]->pos.y*mesoDimensions::length<<"\t"<<elem[i].n[3]->pos.z*mesoDimensions::length<<"\t"<<endl;
+        v[4] =0;
+        v[5] =0;
+        v[6] = 0;
+        v[7] =0;
+        v[8] =0;
+        v[9] =0;
+        v[10] =0;
+        v[11] =0;
+        */
+        
+        
+        cout<<"dpsi is as below"<<endl;
+        print_vector12(elem[i].dpsi);
+        
+        
+        for(int j=0;j<4;j++){
+            velgrad[0][0] +=v[j]*elem[i].dpsi[j]; 
+        }
+        for(int j=0;j<4;j++){
+            velgrad[0][1] +=v[j]*elem[i].dpsi[j+4]; 
+        }
+        for(int j=0;j<4;j++){
+            velgrad[0][2] +=v[j]*elem[i].dpsi[j+8]; 
+        }       
+        for(int j=0;j<4;j++){
+            velgrad[1][0] +=v[j+4]*elem[i].dpsi[j]; 
+        }
+        for(int j=0;j<4;j++){
+            velgrad[1][1] +=v[j+4]*elem[i].dpsi[j+4]; 
+        }
+        for(int j=0;j<4;j++){
+            velgrad[1][2] +=v[j+4]*elem[i].dpsi[j+8]; 
+        }
+        for(int j=0;j<4;j++){
+            velgrad[2][0] +=v[j+8]*elem[i].dpsi[j]; 
+        }
+        for(int j=0;j<4;j++){
+            velgrad[2][1] +=v[j+8]*elem[i].dpsi[j+4]; 
+        }
+        for(int j=0;j<4;j++){
+            velgrad[2][2] +=v[j+8]*elem[i].dpsi[j+8]; 
+        }
+     
+        
+        
+        trace = velgrad[0][0]+velgrad[1][1]+velgrad[2][2];
+        printf("*************\nblob %d element %d velocity gradient:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,i,velgrad[0][0],velgrad[0][1],velgrad[0][2],velgrad[1][0],velgrad[1][1],velgrad[1][2],velgrad[2][0],velgrad[2][1],velgrad[2][2]);
+        
+        
+        for(int j=0;j<3;j++){
+            for(int k=0;k<3;k++){
+                pstress[j][k]=mesoDimensions::pressure*elem[i].A*(velgrad[j][k]+velgrad[k][j]);
+                stress[j][k]=prefac*elem[i].A*(velgrad[j][k]+velgrad[k][j]);
+            }
+            pstress[j][j]+=mesoDimensions::pressure*(elem[i].B - 2/3*elem[i].A)*trace;
+            stress[j][j]+=prefac*(elem[i].B - 2/3*elem[i].A)*trace;
+        }
+        
+        
+        
+       /*
+       
+       Initial attempt at calculating viscous stress which appears to be incorret 
+        
         stress[0][0]+=prefac*((4/3 *elem[i].A+elem[i].B)*((v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9])+(elem[i].B-2/3*elem[i].A)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10]+(v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11]));
         stress[0][1]+=prefac*elem[i].A*((v[1]-v[0])*elem[i].dpsi[2]+(v[2]-v[0])*elem[i].dpsi[6]+(v[3]-v[0])*elem[i].dpsi[10]+(v[5]-v[4])*elem[i].dpsi[1]+(v[6]-v[4])*elem[i].dpsi[5]+(v[7]-v[4])*elem[i].dpsi[9]);
         stress[0][2]+=prefac*elem[i].A*((v[1]-v[0])*elem[i].dpsi[3]+(v[2]-v[0])*elem[i].dpsi[7]+(v[3]-v[0])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[1]+(v[10]-v[8])*elem[i].dpsi[5]+(v[11]-v[8])*elem[i].dpsi[9]);
@@ -1014,8 +1099,24 @@ void Blob::calc_tot_visc(matrix3 stress){
         stress[2][1]+=prefac*elem[i].A*((v[9]-v[8])*elem[i].dpsi[2]+(v[10]-v[8])*elem[i].dpsi[6]+(v[11]-v[8])*elem[i].dpsi[10]+(v[5]-v[4])*elem[i].dpsi[3]+(v[6]-v[4])*elem[i].dpsi[7]+(v[7]-v[4])*elem[i].dpsi[11]);
         stress[2][2]+=prefac*((4/3 *elem[i].A+elem[i].B)*((v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11])+(elem[i].B-2/3*elem[i].A)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10]+(v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9]));
         
-        //vec12_scale(v, mesoDimensions::velocity);
-        //print_vector12(v);
+        
+        pstress[0][0]=mesoDimensions::pressure*((4/3 *elem[i].A+elem[i].B)*((v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9])+(elem[i].B-2/3*elem[i].A)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10]+(v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11]));
+        pstress[0][1]=mesoDimensions::pressure*elem[i].A*((v[1]-v[0])*elem[i].dpsi[2]+(v[2]-v[0])*elem[i].dpsi[6]+(v[3]-v[0])*elem[i].dpsi[10]+(v[5]-v[4])*elem[i].dpsi[1]+(v[6]-v[4])*elem[i].dpsi[5]+(v[7]-v[4])*elem[i].dpsi[9]);
+        pstress[0][2]=mesoDimensions::pressure*elem[i].A*((v[1]-v[0])*elem[i].dpsi[3]+(v[2]-v[0])*elem[i].dpsi[7]+(v[3]-v[0])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[1]+(v[10]-v[8])*elem[i].dpsi[5]+(v[11]-v[8])*elem[i].dpsi[9]);
+        pstress[1][0]=mesoDimensions::pressure*elem[i].A*((v[5]-v[4])*elem[i].dpsi[1]+(v[6]-v[4])*elem[i].dpsi[5]+(v[7]-v[4])*elem[i].dpsi[9]+(v[1]-v[0])*elem[i].dpsi[2]+(v[2]-v[0])*elem[i].dpsi[6]+(v[3]-v[0])*elem[i].dpsi[10]);
+        pstress[1][1]=mesoDimensions::pressure*((4/3 *elem[i].A+elem[i].B)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10])+(elem[i].B-2/3*elem[i].A)*((v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9]+(v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11]));
+        pstress[1][2]=mesoDimensions::pressure*elem[i].A*((v[5]-v[4])*elem[i].dpsi[3]+(v[6]-v[4])*elem[i].dpsi[7]+(v[7]-v[4])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[2]+(v[10]-v[8])*elem[i].dpsi[6]+(v[11]-v[8])*elem[i].dpsi[10]);
+        pstress[2][0]=mesoDimensions::pressure*elem[i].A*((v[1]-v[0])*elem[i].dpsi[3]+(v[2]-v[0])*elem[i].dpsi[7]+(v[3]-v[0])*elem[i].dpsi[11]+(v[9]-v[8])*elem[i].dpsi[1]+(v[10]-v[8])*elem[i].dpsi[5]+(v[11]-v[8])*elem[i].dpsi[9]);
+        pstress[2][1]=mesoDimensions::pressure*elem[i].A*((v[9]-v[8])*elem[i].dpsi[2]+(v[10]-v[8])*elem[i].dpsi[6]+(v[11]-v[8])*elem[i].dpsi[10]+(v[5]-v[4])*elem[i].dpsi[3]+(v[6]-v[4])*elem[i].dpsi[7]+(v[7]-v[4])*elem[i].dpsi[11]);
+        pstress[2][2]=mesoDimensions::pressure*((4/3 *elem[i].A+elem[i].B)*((v[9]-v[8])*elem[i].dpsi[3]+(v[10]-v[8])*elem[i].dpsi[7]+(v[11]-v[8])*elem[i].dpsi[11])+(elem[i].B-2/3*elem[i].A)*((v[5]-v[4])*elem[i].dpsi[2]+(v[6]-v[4])*elem[i].dpsi[6]+(v[7]-v[4])*elem[i].dpsi[10]+(v[1]-v[0])*elem[i].dpsi[1]+(v[2]-v[0])*elem[i].dpsi[5]+(v[3]-v[0])*elem[i].dpsi[9]));
+        */
+        printf("*************\nblob %d element %d viscous stresses are:\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n%.14e  %.14e  %.14e\n***********\n",blob_index,i,pstress[0][0],pstress[0][1],pstress[0][2],pstress[1][0],pstress[1][1],pstress[1][2],pstress[2][0],pstress[2][1],pstress[2][2]);
+        /*for int j=0;j<4;j++({
+        printf("***\n elem %d node %d has pos: %.14e   %.14e   %.14e\n",i,j,elem[i].n[j]->pos[0],elem[i].n[j]->pos[1],elem[i].n[j]->pos[2]);
+        }*/
+        cout<<"printing node vels"<<endl;
+        vec12_scale(v, mesoDimensions::velocity);
+        print_vector12(v);
         //printf("*******\nprefac is %.14e\n",prefac);
         //printf("****** blob %d element %d:\n vol is %.14e /n",blob_index, i,elem[i].vol*mesoDimensions::volume);
        /* printf("*********blob %d element %d:\nshear visc is %.14e bulk visc is %.14e\nV is \n", blob_index,i,elem[i].A*mesoDimensions::pressure * mesoDimensions::time,mesoDimensions::pressure * mesoDimensions::time*elem[i].B);
@@ -1136,6 +1237,14 @@ void Blob::compress_blob(scalar compress) {
         node[i].pos.y *= compress;
         node[i].pos.z *= compress;
     }
+    /*for (int i = 0; i < num_nodes; i++) {
+        //node[i].pos.x = node[i].pos.x +1e-1*node[i].pos.y;
+        //node[i].pos.x *= compress;
+        //node[i].pos.y /=compress;
+        printf("\nnode %d y pos is %.14e\n",i,node[i].pos.y*mesoDimensions::length);
+    }*/
+    
+    
     this->get_centroid(&cogaft);
 
     if (!(fabs(cogaft.x - cog.x*compress) < 0.000001&&fabs(cogaft.y - cog.y*compress) < 0.000001&&fabs(cogaft.z - cog.z*compress) < 0.000001)) {
@@ -3926,9 +4035,9 @@ int Blob::aggregate_forces_and_solve() {
                     #pragma omp for schedule(guided)
 #endif
                     for (int i = 0; i < num_nodes; i++) {
-                        force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                       /* force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                         force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                        force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));*/
                         if(calc_back_vel==1){
                                 //if(blob_index ==1 &&i==0){ printf("force before is %.32F\n",force[i].x);}
                                 //printf("y pos of node %d is  %.32F\nsys_dim_y is %.32F\ndivided is %.32F\n",i,node[i].pos.y, sys_dim_y,node[i].pos.y/sys_dim_y);
