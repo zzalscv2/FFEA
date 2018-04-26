@@ -158,7 +158,6 @@ int main(int argc, char *argv[])
     cout << "Initialising the world:\n" << endl;
     if(world->init(script_fname, frames_to_delete, mode, !var_map.count("no-detail")) == FFEA_ERROR) {
         
-        cout<<"and here"<<endl;
         FFEA_error_text();
         cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
 
@@ -170,7 +169,6 @@ int main(int argc, char *argv[])
         return FFEA_ERROR;
     }
     
-    cout<<"or here in ffea.cpp"<<endl;
 
     /* World is initialised. How shall we run FFEA? */
     int myreturn = FFEA_OK;

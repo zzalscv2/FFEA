@@ -82,6 +82,9 @@ SimulationParams::SimulationParams() {
     es_N_y = -1;
     es_N_z = -1;
     shear_rate = 0;
+    
+    msd_corr_calc = 0;
+    correlator_skip = 0;
 
     trajectory_out_fname_set = 0;
     kinetics_out_fname_set = 0;
@@ -186,6 +189,9 @@ SimulationParams::~SimulationParams() {
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
     ssint_in_fname_set = 0;
+    
+    msd_corr_calc = 0;
+    correlator_skip = 0;
 
     trajectory_out_fname = "\n";
     measurement_out_fname = "\n";
@@ -423,6 +429,12 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "msd_corr_calc") {
         msd_corr_calc = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << msd_corr_calc << endl;
+    } else if (lvalue == "correlator_skip") {
+
+        // convert to float first so that user may write numbers of the form 1e4 for 10000 etc
+        correlator_skip = (long long) (atof(rvalue.c_str()));
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << correlator_skip << endl;
+
 
     } else if (lvalue == "calc_kinetics") {
         calc_kinetics = atoi(rvalue.c_str());

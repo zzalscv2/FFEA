@@ -1216,13 +1216,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     printf("Now initialised with 'per-blob parallelisation' (FFEA_PARALLEL_PER_BLOB) on %d threads.\n", num_threads);
 #endif
 
-    cout<<"we reach here"<<endl;
 
 #ifdef USE_MPI
     et = MPI::Wtime() -st;
     cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
 #endif
-    cout<<"and here"<<endl;
     return FFEA_OK;
 }
 
@@ -4334,6 +4332,7 @@ void World::print_checkpoints() {
 }
 
 void World::print_mini_meas_file(int step, scalar wtime) {
+    if(step>params.correlator_skip){
     fprintf(mini_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
     /*
     for (int i = 0; i < params.num_blobs; i++) {
@@ -4435,12 +4434,13 @@ void World::print_mini_meas_file(int step, scalar wtime) {
             printf("*******\nTotal Stress is:\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n%.14e\t%.14e\t%.14e\n",mean_stress_total[0][0],mean_stress_total[0][1],mean_stress_total[0][2],mean_stress_total[1][0],mean_stress_total[1][1],mean_stress_total[1][2],mean_stress_total[2][0],mean_stress_total[2][1],mean_stress_total[2][2]);
         }*/
         }
-
+    
         
 
 
    	fprintf(mini_meas_out, "\n");
     fflush(mini_meas_out);
+    }
 }
 
 void World::make_measurements() {

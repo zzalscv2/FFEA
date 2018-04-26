@@ -120,6 +120,7 @@ public:
     int calc_ctforces; ///< Whether or not to include constant forces onto nodes defined in the ctforces block
     int force_pbc; ///< Whether or not to apply pbc to surface insteractions
     int msd_corr_calc;
+    long long correlator_skip;
     int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
     int wall_x_1;
     int wall_x_2;
