@@ -474,11 +474,15 @@ public:
     matrix3 total_viscous_stress;
     
     void calc_tot_visc(matrix3 stress);
+    scalar get_dxstore(int ind);
+    void set_dxstore(arr3 dv);
+    void add_to_dxstore(arr3 dv);
 
 private:
 
     int pbc_count[3];
-
+    
+    arr3 dxstore;
 
     /** Total number of nodes in Blob */
     int num_nodes;

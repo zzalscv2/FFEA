@@ -122,6 +122,12 @@ SimulationParams::SimulationParams() {
     y_corr_out_fname = "\n";
     z_corr_out_fname = "\n";
     sys_corr_out_fname = "\n";
+    base_corr_out_test_fname = "\n";
+    corrected_corr_out_test_fname = "\n";
+    x_corr_out_test_fname = "\n";
+    y_corr_out_test_fname = "\n";
+    z_corr_out_test_fname = "\n";
+    sys_corr_out_test_fname = "\n";
     elastic_stress_corr_out_fname = "\n";
     viscous_stress_corr_out_fname = "\n";
     total_stress_corr_out_fname = "\n";
@@ -211,6 +217,12 @@ SimulationParams::~SimulationParams() {
     y_corr_out_fname = "\n";
     z_corr_out_fname = "\n";
     sys_corr_out_fname = "\n";
+    base_corr_out_test_fname = "\n";
+    corrected_corr_out_test_fname = "\n";
+    x_corr_out_test_fname = "\n";
+    y_corr_out_test_fname = "\n";
+    z_corr_out_test_fname = "\n";
+    sys_corr_out_test_fname = "\n";
     elastic_stress_corr_out_fname = "\n";
     viscous_stress_corr_out_fname = "\n";
     total_stress_corr_out_fname = "\n";
@@ -588,6 +600,40 @@ int SimulationParams::assign(string lvalue, string rvalue) {
 			string sys_corr_basename = measurement_out_fname;
 			sys_corr_basename = RemoveFileExtension(sys_corr_basename);
 			sys_corr_out_fname = sys_corr_basename + "_sys_corr.txt";
+		}
+		if (base_corr_out_test_fname == "\n") {
+			string base_corr_basename = measurement_out_fname;
+			base_corr_basename = RemoveFileExtension(base_corr_basename);
+			base_corr_out_test_fname = base_corr_basename + "_base_corr_test.txt";
+		}
+		
+		if (corrected_corr_out_test_fname == "\n") {
+			string corrected_corr_basename = measurement_out_fname;
+			corrected_corr_basename = RemoveFileExtension(corrected_corr_basename);
+			corrected_corr_out_test_fname = corrected_corr_basename + "_corrected_corr_test.txt";
+		}
+		
+		if (x_corr_out_test_fname == "\n") {
+			string x_corr_basename = measurement_out_fname;
+			x_corr_basename = RemoveFileExtension(x_corr_basename);
+			x_corr_out_test_fname = x_corr_basename + "_x_corr_test.txt";
+		}
+		
+		if (y_corr_out_test_fname == "\n") {
+			string y_corr_basename = measurement_out_fname;
+			y_corr_basename = RemoveFileExtension(y_corr_basename);
+			y_corr_out_test_fname = y_corr_basename + "_y_corr_test.txt";
+		}
+		
+		if (z_corr_out_test_fname == "\n") {
+			string z_corr_basename = measurement_out_fname;
+			z_corr_basename = RemoveFileExtension(z_corr_basename);
+			z_corr_out_test_fname = z_corr_basename + "_z_corr_test.txt";
+		}
+		if (sys_corr_out_test_fname == "\n") {
+			string sys_corr_basename = measurement_out_fname;
+			sys_corr_basename = RemoveFileExtension(sys_corr_basename);
+			sys_corr_out_test_fname = sys_corr_basename + "_sys_corr_test.txt";
 		}
 		if (elastic_stress_corr_out_fname == "\n") {
 			string elastic_stress_corr_basename = measurement_out_fname;

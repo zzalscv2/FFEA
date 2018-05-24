@@ -199,7 +199,6 @@ World::~World() {
     mat3_set_zero(mean_stress_elastic);
     mat3_set_zero(mean_stress_viscous);
     mat3_set_zero(mean_stress_total);
-
 }
 
 /**
@@ -976,30 +975,46 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				if ((total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.total_stress_corr_out_fname.c_str())
 				    }
+				if ((base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.base_corr_out_test_fname.c_str())
+				    }
+				if ((corrected_corr_out_test = fopen(params.corrected_corr_out_test_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.corrected_corr_out_test_fname.c_str())
+				    }
+				if ((x_corr_out_test = fopen(params.x_corr_out_test_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.x_corr_out_test_fname.c_str())
+				    }
+				if ((y_corr_out_test = fopen(params.y_corr_out_test_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.y_corr_out_test_fname.c_str())
+				    }
+				if ((z_corr_out_test = fopen(params.z_corr_out_test_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.z_corr_out_test_fname.c_str())
+				    }
+				if ((sys_corr_out_test = fopen(params.sys_corr_out_test_fname.c_str(), "r")) == NULL) {
+				        FFEA_FILE_ERROR_MESSG(params.sys_corr_out_test_fname.c_str())
+				    }
+
+				
 				cout<<"Managed dem opens for reads"<<endl;    
 				for(int i =0; i<params.num_blobs;i++){
-				    cout<<"this is blob"<<i<<endl;
 				    diff_vec[i].read_ffea(base_corr_out);
-				    cout<<"Read base_corr"<<endl;
+				    cout<<"read diff_vec"<<endl;
+				    dxstore_vec[i].read_ffea(base_corr_out_test);
+				    cout<<"read dxstore vec"<<endl;
                     diff_vec_corrected[i].read_ffea(corrected_corr_out);
-                    cout<<"Read corrected_corr"<<endl;
+                    dxstore_vec_corrected[i].read_ffea(corrected_corr_out_test);
                     diff_corr_x[i].read_ffea(x_corr_out);
-                    cout<<"Read x_corr"<<endl;
+                    dxstore_corr_x[i].read_ffea(x_corr_out_test);
                     diff_corr_y[i].read_ffea(y_corr_out);
-                    cout<<"Read y_corr"<<endl;
+                    dxstore_corr_y[i].read_ffea(y_corr_out_test);           
                     diff_corr_z[i].read_ffea(z_corr_out);
-                    cout<<"Read z_corr"<<endl;
-                    /*fscanf(base_corr_out, "%*[^\n]\n");
-                    fscanf(corrected_corr_out, "%*[^\n]\n");
-                    fscanf(x_corr_out, "%*[^\n]\n");
-                    fscanf(y_corr_out, "%*[^\n]\n");
-                    fscanf(z_corr_out, "%*[^\n]\n");*/
-                    
+                    dxstore_corr_z[i].read_ffea(z_corr_out_test);
 				}
 				
 				    cout<<"it's treason, then?"<<endl;
 				    sys_corr.read_ffea(sys_corr_out);
-				    cout<<"did the read thing"<<endl;  
+				    dxstore_sys_corr.read_ffea(sys_corr_out_test);
+				    //cout<<"did the read thing"<<endl;  
 				    elastic_stress_corr_c0.read_ffea(elastic_stress_corr_out);
 				    elastic_stress_corr_c1.read_ffea(elastic_stress_corr_out);
 				    elastic_stress_corr_c2.read_ffea(elastic_stress_corr_out);
@@ -1026,11 +1041,17 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				    
 				      
 			        fclose(base_corr_out);
+			        fclose(base_corr_out_test);
                     fclose(corrected_corr_out);
+                    fclose(corrected_corr_out_test);
                     fclose(x_corr_out);
+                    fclose(x_corr_out_test);
                     fclose(y_corr_out);    
+                    fclose(y_corr_out_test);
                     fclose(z_corr_out);
+                    fclose(z_corr_out_test);
                     fclose(sys_corr_out);
+                    fclose(sys_corr_out_test);
                     fclose(elastic_stress_corr_out);
                     fclose(viscous_stress_corr_out);
                     fclose(total_stress_corr_out);
@@ -2072,27 +2093,27 @@ int World::run() {
                 if (params.wall_y_1 == WALL_TYPE_PBC) {
                     dy += box_dim.y;
                     dx += box_lag;
-                    //active_blob_array[i]->dec_pbc_count(1);
+                    active_blob_array[i]->dec_pbc_count(1);
                     check_move = 1;
                 }
             } else if (com.y > box_dim.y) {
                 if (params.wall_y_2 == WALL_TYPE_PBC) {
                     dy -= box_dim.y;
                     dx -= box_lag;
-                    //active_blob_array[i]->inc_pbc_count(1);
+                    active_blob_array[i]->inc_pbc_count(1);
                     check_move = 1;
                 }
             }
             if (com.x < 0) {
                 if (params.wall_x_1 == WALL_TYPE_PBC) {
                     dx += box_dim.x;
-                    //active_blob_array[i]->dec_pbc_count(0);
+                    active_blob_array[i]->dec_pbc_count(0);
                     check_move = 1;
                 }
             } else if (com.x > box_dim.x) {
                 if (params.wall_x_2 == WALL_TYPE_PBC) {
                     dx -= box_dim.x;
-                    //active_blob_array[i]->inc_pbc_count(0);
+                    active_blob_array[i]->inc_pbc_count(0);
                     check_move = 1;
                 }
             }
@@ -2100,13 +2121,13 @@ int World::run() {
             if (com.z < 0) {
                 if (params.wall_z_1 == WALL_TYPE_PBC) {
                     dz += box_dim.z;
-                    //active_blob_array[i]->dec_pbc_count(2);
+                    active_blob_array[i]->dec_pbc_count(2);
                     check_move = 1;
                 }
             } else if (com.z > box_dim.z) {
                 if (params.wall_z_2 == WALL_TYPE_PBC) {
                     dz -= box_dim.z;
-                    //active_blob_array[i]->inc_pbc_count(2);
+                    active_blob_array[i]->inc_pbc_count(2);
                     check_move = 1;
                 }
             }
@@ -2264,8 +2285,21 @@ int World::run() {
         #pragma omp parallel for default(none) schedule(static) 
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
+            vector3 cog,cog2;
+            arr3 dxtemp;
+            active_blob_array[i]->get_centroid(&cog);
             active_blob_array[i]->update_positions();
+            active_blob_array[i]->get_centroid(&cog2);
+            vec3Vec3SubsToArr3(cog2,cog,dxtemp);
+            active_blob_array[i]->add_to_dxstore(dxtemp);
+            //centroid_dxstore[i].pos[1]+=dxtemp[1];
+            //centroid_dxstore[i].pos[2]+=dxtemp[2];
+            //printf("********blob %d cog2 is \n%lf\t%lf\t%lf\n",i,cog2[0],cog2[1],cog2[2]);
+            //printf("******** %d centroid_dxstore is \n%lf\t%lf\t%lf\n",i,centroid_dxstore[i].pos[0],centroid_dxstore[i].pos[1],centroid_dxstore[i].pos[2]);
         }
+        
+        //so I could take dxstore, dystore, dzstore here or after?
+        
 
 #ifdef BENCHMARK
         wtime4 = omp_get_wtime();
@@ -2427,11 +2461,17 @@ int World::read_and_build_system(vector<string> script_vector) {
     for(int i = 0; i < params.num_blobs; ++i) {
     
             diff_vec.push_back(TCorrelatorDiffusionVector(35,16));
+            dxstore_vec.push_back(TCorrelatorDiffusionVector(35,16));
             diff_vec_corrected.push_back(TCorrelatorDiffusionVector(35,16));
+            dxstore_vec_corrected.push_back(TCorrelatorDiffusionVector(35,16));
             Fmm_vec.push_back(Fmm_blob());
+            pos_change_tot.push_back(Fmm_blob());
             diff_corr_x.push_back(TCorrelatorDiffusion(35,16));
+            dxstore_corr_x.push_back(TCorrelatorDiffusion(35,16));
             diff_corr_y.push_back(TCorrelatorDiffusion(35,16));
+            dxstore_corr_y.push_back(TCorrelatorDiffusion(35,16));
             diff_corr_z.push_back(TCorrelatorDiffusion(35,16));
+            dxstore_corr_z.push_back(TCorrelatorDiffusion(35,16));
         }    
         //sys_corr[0].push_back(TCorrelatorDiffusionVector(35,16));
     }
@@ -2923,6 +2963,14 @@ int World::read_and_build_system(vector<string> script_vector) {
                     blob_conf[i].centroid[2] *= blob_array[i][j].get_scale();
                     vector3 dv = blob_array[i][j].position(blob_conf[i].centroid[0], 
                                       blob_conf[i].centroid[1], blob_conf[i].centroid[2]);
+                    printf("*********blob %d dv is \n%.14e\t%.14e\t%.14e\n",i,dv[0],dv[1],dv[2]);
+                    vector3 com;
+                    blob_array[i][j].get_centroid(&com);
+                    blob_array[i][j].set_dxstore(com.data);
+                    //centroid_dxstore[i].pos[1] = com[1];
+                    //centroid_dxstore[i].pos[2] = com[2]; 
+                    //blob_array[i][j].set_dxstore(dv);
+                    
 
                     // if Blob has a number of beads, transform them too:
                     if (blob_array[i][j].get_num_beads() > 0)
@@ -4185,12 +4233,19 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     //cout<<"msd_corr_ calc = "<<params.msd_corr_calc<<endl;
     if(params.msd_corr_calc==1){
          base_corr_out = fopen(params.base_corr_out_fname.c_str(), "w");
-         
          corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "w");
          x_corr_out = fopen(params.x_corr_out_fname.c_str(), "w");
          y_corr_out = fopen(params.y_corr_out_fname.c_str(), "w");
          z_corr_out = fopen(params.z_corr_out_fname.c_str(), "w");
          sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "w");
+         
+         base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "w");
+         corrected_corr_out_test = fopen(params.corrected_corr_out_test_fname.c_str(), "w");
+         x_corr_out_test = fopen(params.x_corr_out_test_fname.c_str(), "w");
+         y_corr_out_test = fopen(params.y_corr_out_test_fname.c_str(), "w");
+         z_corr_out_test = fopen(params.z_corr_out_test_fname.c_str(), "w");
+         sys_corr_out_test = fopen(params.sys_corr_out_test_fname.c_str(), "w");
+         
          elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "w");
          viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "w");
          total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "w");
@@ -4202,6 +4257,11 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
             diff_corr_x[i].save_ffea(x_corr_out);
             diff_corr_y[i].save_ffea(y_corr_out);
             diff_corr_z[i].save_ffea(z_corr_out);
+            dxstore_vec[i].save_ffea(base_corr_out_test);
+            dxstore_vec_corrected[i].save_ffea(corrected_corr_out_test);
+            dxstore_corr_x[i].save_ffea(x_corr_out_test);
+            dxstore_corr_y[i].save_ffea(y_corr_out_test);
+            dxstore_corr_z[i].save_ffea(z_corr_out_test);
             /*fprintf(base_corr_out,"*\n");
             fflush(base_corr_out);
             fprintf(corrected_corr_out,"*\n");
@@ -4215,6 +4275,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         }
         
         sys_corr.save_ffea(sys_corr_out);
+        dxstore_sys_corr.save_ffea(sys_corr_out_test);
         elastic_stress_corr_c0.save_ffea(elastic_stress_corr_out); 
         elastic_stress_corr_c1.save_ffea(elastic_stress_corr_out);
         elastic_stress_corr_c2.save_ffea(elastic_stress_corr_out);
@@ -4244,6 +4305,12 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         fclose(y_corr_out);    
         fclose(z_corr_out);
         fclose(sys_corr_out);
+        fclose(base_corr_out_test);
+        fclose(corrected_corr_out_test);
+        fclose(x_corr_out_test);
+        fclose(y_corr_out_test);    
+        fclose(z_corr_out_test);
+        fclose(sys_corr_out_test);
         fclose(elastic_stress_corr_out);
         fclose(viscous_stress_corr_out);
         fclose(total_stress_corr_out);        
@@ -4350,18 +4417,25 @@ void World::print_mini_meas_file(int step, scalar wtime) {
     
     if(params.msd_corr_calc ==1){
     for(int k = 0;k<3;k++){
-        sys_blob.pos[k] = 0;
+            sys_blob.pos[k] = 0;
         }
     for (int j = 0; j < params.num_blobs; j++) {
         //active_blob_array[j]->get_CoM(&com);
         active_blob_array[j]->get_centroid(&com);
         //cout<<"blob "<<j<<" CoM  is "<<com.x<<"  "<<com.y<<"  "<<com.z<<endl;
-        
+        //cout<<"*********************\nblob "<<j<<" pre-assign pos is "<<Fmm_vec[j].pos[0]<<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+        //cout<<"*********************\n"<<"blob "<<j<<" pre-assign pos_change_tot is\n"<<pos_change_tot[j].pos[0]<<"  "<<pos_change_tot[j].pos[1]<<"  "<<pos_change_tot[j].pos[2]<<endl;
         for(int k = 0;k<3;k++){
-        Fmm_vec[j].pos[k] = com[k];
-        }
-        //cout<<"blob "<<j<<" pos without pbc is "<<Fmm_vec[j].pos[0]<<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+            Fmm_vec[j].pos[k] = com[k];
+            pos_change_tot[j].pos[k]=active_blob_array[j]->get_dxstore(k);
         
+        //pos_change_tot[j].pos[k] = active_blob_array[j]->get_dxstore(k);//* mesoDimensions::length;
+        
+        }
+        //cout<<"*********************\n"<<"blob "<<j<<" get dxstore is\n"<<active_blob_array[j]->get_dxstore(0)<<"  "<<active_blob_array[j]->get_dxstore(1)<<"  "<<active_blob_array[j]->get_dxstore(2)<<endl;
+        //cout<<"*********************\n"<<"blob "<<j<<" pos_change_tot is\n"<<pos_change_tot[j].pos[0]<<"  "<<pos_change_tot[j].pos[1]<<"  "<<pos_change_tot[j].pos[2]<<endl;
+        //cout<<"*********************\nblob "<<j<<" fmm change without pbc is "<<Fmm_vec[j].pos[0]<<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+        //cout<<"*********************\nblob "<<j<<" pos without pbc is "<<Fmm_vec[j].pos[0]<<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
         for(int k = 0;k<3;k++){
                 Fmm_vec[j].PBC_Count[k] = active_blob_array[j]->get_pbc_count(k);
                 
@@ -4371,32 +4445,45 @@ void World::print_mini_meas_file(int step, scalar wtime) {
         for(int k = 0;k<3;k++){
                 Fmm_vec[j].pos[k] += box_dim[k]*Fmm_vec[j].PBC_Count[k];
                 sys_blob.pos[k] += Fmm_vec[j].pos[k];
-
+                sys_pos_change_tot[k] +=pos_change_tot[j].pos[k];
+                
                 Fmm_vec[j].pos[k] *= mesoDimensions::length;
                 sys_blob.pos[k] *= mesoDimensions::length;
+                pos_change_tot[j].pos[k] *= mesoDimensions::length;
+                sys_pos_change_tot[k] *= mesoDimensions::length;
         }
         //cout<<"blob "<<j<<" pos with pbc is "<<Fmm_vec[j].pos[0] <<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
         //cout<<"next line is base for blob "<<j<<endl;
         diff_vec[j].add(Fmm_vec[j].pos);
-        }
+        dxstore_vec[j].add(pos_change_tot[j].pos);
+    }
         for(int k = 0;k<3;k++){
             sys_blob.pos[k]/=params.num_blobs;
+            sys_pos_change_tot[k]/=params.num_blobs;
         }
         //cout<<"next line is sys"<<endl;
         sys_corr.add(sys_blob.pos);
+        dxstore_sys_corr.add(sys_pos_change_tot);
         for(int j= 0;j<params.num_blobs;j++){
             for(int k = 0;k<3;k++){
                  Fmm_vec[j].pos[k]-=sys_blob.pos[k];
+                 pos_change_tot[j].pos[k] -=sys_pos_change_tot[k];
             }
-            //cout<<"blob "<<j<<" pos corrected is "<<Fmm_vec[j].pos[0] <<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+            //cout<<"blob "<<j<<" pos corrected before add is "<<Fmm_vec[j].pos[0] <<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
             //cout<<"next line is corrected for blob "<<j<<endl;
             diff_vec_corrected[j].add(Fmm_vec[j].pos);
+            dxstore_vec_corrected[j].add(pos_change_tot[j].pos);
 
             diff_corr_x[j].add(Fmm_vec[j].pos[0]);
+            dxstore_corr_x[j].add(pos_change_tot[j].pos[0]);
             diff_corr_y[j].add(Fmm_vec[j].pos[1]);
+            dxstore_corr_y[j].add(pos_change_tot[j].pos[1]);
             diff_corr_z[j].add(Fmm_vec[j].pos[2]);
+            dxstore_corr_z[j].add(pos_change_tot[j].pos[2]);
             active_blob_array[j]->calc_tot_visc(visc_stress_temp);
             mat3_plus_equal(mean_stress_viscous,visc_stress_temp);
+            //cout<<"*********************\nblob "<<j<<" late pos is "<<Fmm_vec[j].pos[0]<<"  "<<Fmm_vec[j].pos[1]<<"  "<<Fmm_vec[j].pos[2]<<endl;
+        
         }
         
         mat3_scale(mean_stress_viscous,1/(box_dim.x*box_dim.y*box_dim.z*mesoDimensions::volume));
@@ -4436,7 +4523,6 @@ void World::print_mini_meas_file(int step, scalar wtime) {
         }
     
         
-
 
    	fprintf(mini_meas_out, "\n");
     fflush(mini_meas_out);

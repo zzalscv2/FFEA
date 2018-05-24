@@ -142,12 +142,20 @@ private:
     /** @brief 2-D Array of Blob objects (blob i, conformation j) */
     Blob **blob_array;
     vector<TCorrelatorDiffusionVector> diff_vec;
+    vector<TCorrelatorDiffusionVector> dxstore_vec;
+    
+    
     vector<TCorrelatorDiffusionVector> diff_vec_corrected;
+    vector<TCorrelatorDiffusionVector> dxstore_vec_corrected;
     vector<TCorrelatorDiffusion> diff_corr_x;
+    vector<TCorrelatorDiffusion> dxstore_corr_x;
     vector<TCorrelatorDiffusion> diff_corr_y;
+    vector<TCorrelatorDiffusion> dxstore_corr_y;
     vector<TCorrelatorDiffusion> diff_corr_z;
+    vector<TCorrelatorDiffusion> dxstore_corr_z;
     //vector<TCorrelatorDiffusionVector> sys_corr;
     TCorrelatorDiffusionVector sys_corr = TCorrelatorDiffusionVector(35,16);
+    TCorrelatorDiffusionVector dxstore_sys_corr = TCorrelatorDiffusionVector(35,16);
     TCorrelator elastic_stress_corr_c0 = TCorrelator();
     TCorrelator elastic_stress_corr_c1 = TCorrelator();
     TCorrelator elastic_stress_corr_c2 = TCorrelator();
@@ -171,7 +179,11 @@ private:
     TCorrelator total_stress_corr_c6 = TCorrelator();
         
     vector<Fmm_blob> Fmm_vec;
+    vector<Fmm_blob> centroid_dxstore;
+    vector<Fmm_blob> pos_change_tot;
+    
     Fmm_blob sys_blob;
+    arr3 sys_pos_change_tot;
     
 
     /** @brief Which conformation is active in each blob */
@@ -251,6 +263,12 @@ private:
     FILE *y_corr_out;    
     FILE *z_corr_out;
     FILE *sys_corr_out;
+    FILE *base_corr_out_test;
+    FILE *corrected_corr_out_test;
+    FILE *x_corr_out_test;
+    FILE *y_corr_out_test;    
+    FILE *z_corr_out_test;
+    FILE *sys_corr_out_test;
     FILE *elastic_stress_corr_out;
     //FILE *node_stress_corr_out;
     FILE *viscous_stress_corr_out;

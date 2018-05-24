@@ -85,6 +85,9 @@ Blob::Blob() {
     pbc_count[1]= 0;
     pbc_count[2]= 0;
     total_vol = 0;
+    dxstore[0] = 0;
+    dxstore[1] = 0;
+    dxstore[2] = 0;
 
     toBePrinted_nodes = NULL;
 
@@ -197,6 +200,14 @@ Blob::~Blob() {
     rng = NULL;
     num_pinned_nodes = 0;
     bsite_pinned_nodes_list.clear();
+        
+    pbc_count[0]= 0;
+    pbc_count[1]= 0;
+    pbc_count[2]= 0;
+    total_vol = 0;
+    dxstore[0] = 0;
+    dxstore[1] = 0;
+    dxstore[2] = 0;
 
     delete[] toBePrinted_nodes;
     toBePrinted_nodes = NULL;
@@ -889,7 +900,7 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
 vector3 Blob::position(scalar x, scalar y, scalar z) {
     int i;
     scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
-    vector3 v;
+    vector3 v,com;
     // scalar dx, dy, dz;
 
     // Calculate centroid of entire Blob mesh
@@ -920,6 +931,10 @@ vector3 Blob::position(scalar x, scalar y, scalar z) {
         node[i].pos.y += v.y;
         node[i].pos.z += v.z;
     }
+    
+    //get_centroid(&com);
+    //printf("*********blob %d post-move-centroid is \n%.14e\t%.14e\t%.14e\n",i,com[0],com[1],com[2]);
+    //set_dxstore(com);
 
     return v;
 
@@ -1311,12 +1326,17 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
         }
     } else {
         if (params->calc_es == 0) {
+        
+            fprintf(trajectory_out, "%d %d %d\n", pbc_count[0], pbc_count[1], pbc_count[2]);
+            fprintf(trajectory_out, "%e %e %e\n", dxstore[0], dxstore[1], dxstore[2]);
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
                         0., 0., 0., 0., 0., 0., 0.);
             }
         } else {
+            fprintf(trajectory_out, "%d %d %d\n", pbc_count[0], pbc_count[1], pbc_count[2]);
+            fprintf(trajectory_out, "%e %e %e\n", dxstore[0], dxstore[1], dxstore[2]);
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
@@ -1436,6 +1456,13 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
         }
     }
 
+
+    if (fscanf(trajectory_out, "%d %d %d\n", &pbc_count[0], &pbc_count[1], &pbc_count[2]) != 3) {
+            FFEA_ERROR_MESSG("(When restarting) Error reading PBC relocation count from trajectory file")
+        }
+    if (fscanf(trajectory_out, "%le %le %le\n", &dxstore[0], &dxstore[1], &dxstore[2]) != 3) {
+            FFEA_ERROR_MESSG("(When restarting) Error reading PBC relocation count from trajectory file")
+        }
     for (int i = 0; i < num_nodes; i++) {
         if (fscanf(trajectory_out, "%le %le %le %le %le %le %le %le %le %le\n", &node[i].pos.x, &node[i].pos.y, &node[i].pos.z, &node[i].vel.x, &node[i].vel.y, &node[i].vel.z, &node[i].phi, &force[i].x, &force[i].y, &force[i].z) != 10) {
             FFEA_ERROR_MESSG("(When restarting) Error reading from trajectory file, for node %d\n", i)
@@ -4091,11 +4118,15 @@ int Blob::aggregate_forces_and_solve() {
  */
 void Blob::euler_integrate() {
     int i;
-
+    /*arr3 dxtemp;
+    dxtemp[0]=0;
+    dxtemp[1]=0;
+    dxtemp[2]=0;*/
+    
     // Update the velocities and positions of all the nodes
     if (linear_solver == FFEA_NOMASS_CG_SOLVER) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-        #pragma omp parallel for default(none) private(i) schedule(static)
+        #pragma omp parallel for default(none) private(i)  schedule(static) 
 #endif
         for (i = 0; i < num_nodes; i++) {
             node[i].vel[0] = force[i][0];
@@ -4105,11 +4136,16 @@ void Blob::euler_integrate() {
             node[i].pos[0] += force[i][0] * params->dt; // really meaning v * dt
             node[i].pos[1] += force[i][1] * params->dt;
             node[i].pos[2] += force[i][2] * params->dt;
+            
+           // dxtemp[0] += force[i][0] * params->dt; // really meaning v * dt
+            //dxtemp[1] += force[i][1] * params->dt;
+            //dxtemp[2] += force[i][2] * params->dt;
+            //printf("************\ndx for node %d is %.14e\t%.14e\t%.14e\n************\n",i,force[i][0] * params->dt,force[i][1] * params->dt,force[i][2] * params->dt);
         }
 
     } else {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-        #pragma omp parallel for default(none) private(i) schedule(static)
+        #pragma omp parallel for default(none) private(i)  schedule(static)
 #endif
         for (i = 0; i < num_nodes; i++) {
             node[i].vel[0] += force[i][0] * params->dt;
@@ -4119,8 +4155,24 @@ void Blob::euler_integrate() {
             node[i].pos[0] += node[i].vel[0] * params->dt;
             node[i].pos[1] += node[i].vel[1] * params->dt;
             node[i].pos[2] += node[i].vel[2] * params->dt;
+            
+           // dxtemp[0] += node[i].vel[0] * params->dt;
+           // dxtemp[1] += node[i].vel[1] * params->dt;
+           // dxtemp[2] += node[i].vel[2] * params->dt;
         }
     }
+    
+    int num_lin_nodes;
+    num_lin_nodes = get_num_linear_nodes();
+    //printf("************\ndxstore pre-av node %d is\n%.14e\t%.14e\t%.14e\n************\n",i,dxstore[0],dxstore[1],dxstore[2]);
+    //printf("\nnum_lin_nodes is %d",num_lin_nodes);
+    /*dxtemp[0] /= num_lin_nodes;
+    dxtemp[1] /= num_lin_nodes;
+    dxtemp[2] /= num_lin_nodes;
+    dxstore[0] += dxtemp[0];
+    dxstore[1] += dxtemp[1];
+    dxstore[2] += dxtemp[2];*/
+    //printf("************\ndxstore post-av node %d is\n%.14e\t%.14e\t%.14e\n************\n",i,dxstore[0],dxstore[1],dxstore[2]);
 }
 
 /*
@@ -4316,3 +4368,18 @@ void Blob::dec_pbc_count(int ind){
     pbc_count[ind]--;
 }
 
+scalar Blob::get_dxstore(int ind){
+    return dxstore[ind];
+}
+
+void Blob::set_dxstore(arr3 dv){
+    dxstore[0] = dv[0];
+    dxstore[1] = dv[1];
+    dxstore[2] = dv[2];
+}
+
+void Blob::add_to_dxstore(arr3 dv){
+   dxstore[0] += dv[0];
+   dxstore[1] += dv[1];
+   dxstore[2] += dv[2];
+}

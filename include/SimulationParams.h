@@ -151,6 +151,12 @@ public:
     string y_corr_out_fname;
     string z_corr_out_fname;
     string sys_corr_out_fname;
+    string base_corr_out_test_fname;
+    string corrected_corr_out_test_fname;
+    string x_corr_out_test_fname;
+    string y_corr_out_test_fname;
+    string z_corr_out_test_fname;
+    string sys_corr_out_test_fname;
     string elastic_stress_corr_out_fname;
     string viscous_stress_corr_out_fname;
     string total_stress_corr_out_fname;
