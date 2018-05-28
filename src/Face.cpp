@@ -142,6 +142,8 @@ int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node
     zero_force();
 
     this->daddy_blob = daddy_blob;
+
+    return FFEA_OK;
 }
 
 void Face::set_ssint_interaction_type(int ssint_interaction_type) {
