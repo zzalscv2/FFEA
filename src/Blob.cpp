@@ -24,6 +24,7 @@
 #include "Blob.h"
 
 Blob::Blob() {
+
     /* Initialise everything to zero */
     blob_index = 0;
     conformation_index = 0;
