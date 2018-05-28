@@ -562,7 +562,12 @@ void tetra_element_linear::zero_force() {
 }
 
 void tetra_element_linear::linearise_element() {
-
+ /*   printf("%d\n", index);
+    for(int i = 0; i < 10; ++i) {
+	printf("%f ", n[i]->pos.x);
+	printf("%f ", n[i]->pos.y);
+	printf("%f\n", n[i]->pos.z);
+    }*/
     n[4]->pos.x = .5 * (n[0]->pos.x + n[1]->pos.x);
     n[4]->pos.y = .5 * (n[0]->pos.y + n[1]->pos.y);
     n[4]->pos.z = .5 * (n[0]->pos.z + n[1]->pos.z);
