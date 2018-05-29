@@ -406,7 +406,7 @@ bool Face::checkTetraIntersection(Face *f2) {
 scalar Face::getTetraIntersectionVolume(Face *f2) {
 
     grr3 cm;
-    volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data,
+    return volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data,
                                          n[3]->pos.data, f2->n[0]->pos.data, f2->n[1]->pos.data,
                                          f2->n[2]->pos.data, f2->n[3]->pos.data, false, cm);
 
