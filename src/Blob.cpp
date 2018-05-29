@@ -715,6 +715,7 @@ int Blob::update_positions() {
     for (int n = 0; n < num_elements; n++) {
         elem[n].linearise_element();
     }
+	return FFEA_OK;
 }
 
 int Blob::reset_solver() {
@@ -2110,6 +2111,7 @@ int Blob::apply_ctforces() {
         auxndx += ctf_sl_surfsize[i];
         delete[] faceAreas;
     }
+	return FFEA_OK;
 }
 
 /*

@@ -142,6 +142,7 @@ int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node
     zero_force();
 
     this->daddy_blob = daddy_blob;
+    return FFEA_OK;
 }
 
 void Face::set_ssint_interaction_type(int ssint_interaction_type) {
@@ -404,7 +405,7 @@ bool Face::checkTetraIntersection(Face *f2) {
 scalar Face::getTetraIntersectionVolume(Face *f2) {
 
     grr3 cm;
-    volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data,
+    return volumeIntersectionII<geoscalar,grr3>(n[0]->pos.data, n[1]->pos.data, n[2]->pos.data,
                                          n[3]->pos.data, f2->n[0]->pos.data, f2->n[1]->pos.data,
                                          f2->n[2]->pos.data, f2->n[3]->pos.data, false, cm);
 
