@@ -26,6 +26,10 @@ import FFEA_script, FFEA_springs, FFEA_trajectory, FFEA_node
 import numpy as np
 from subprocess import Popen
 
+# Sort out some functions
+if(sys.version_info.major < 3):
+	input = raw_input
+
 if len(sys.argv) != 6:
 	sys.exit("Usage: python FFEA_make_structures_overlap.py [INPUT .ffea file] [Blob index 1] [Conformation Index 1] [Blob index 2] [Conformation Index 2]")
 
@@ -97,7 +101,7 @@ while True:
 	#viewer_process = Popen(["python",os.path.expandvars("$FFEAVIEWER") + "/FFEA_viewer.py", "-s", outffea], stdout=fout)
 	run += 1
 	print("Minimisation Run %d\n\n" % (run))
-	line = raw_input("\tPlease enter:\n\t\tPairs of 2 nodes between which you would like to be added as springs\n\t\tPairs of 2 nodes making up a springs you want to delete\n\t\tReturn to continue\n\t\t'q' to finish: ")
+	line = input("\tPlease enter:\n\t\tPairs of 2 nodes between which you would like to be added as springs\n\t\tPairs of 2 nodes making up a springs you want to delete\n\t\tReturn to continue\n\t\t'q' to finish: ")
 	if line.strip() == "q" or line.strip() == "Q":
 		print("Minimisation completed!")
 		break
@@ -138,7 +142,7 @@ while True:
 				spring_array.append(pair)
 
 		# Add springs to script
-		line = raw_input("\n\t\tSpring constant?:")
+		line = input("\n\t\tSpring constant?:")
 		if line.strip() != "":
 			try:
 				k = float(line)
@@ -149,7 +153,7 @@ while True:
 		else:
 			k = 1e-2
 
-		line = raw_input("\n\t\tEquilibrium length?:")
+		line = input("\n\t\tEquilibrium length?:")
 		if line.strip() != "":
 			try:
 				l = float(line)
@@ -200,4 +204,4 @@ except(IOError):
 	node.write_to_file("blob1_overlap.node")
 
 # Remove all weirdo files
-os.system("rm lol*")
+os.system("rm " + os.path.dirname(os.path.abspath(inffea))  + "/lol*")
