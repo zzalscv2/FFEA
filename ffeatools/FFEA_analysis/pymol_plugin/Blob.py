@@ -30,7 +30,7 @@ import numpy as np
 import StringIO, tempfile
 import FFEA_node, FFEA_surface, FFEA_topology, FFEA_material
 import FFEA_stokes, FFEA_vdw, FFEA_pin, FFEA_binding_sites
-import FFEA_frame, FFEA_pdb, FFEA_beads
+import FFEA_frame, FFEA_pdb, FFEA_beads, FFEA_skeleton
 
 from pymol import cmd
 from pymol.cgo import *
@@ -107,6 +107,7 @@ class Blob:
 		self.pin = None
 		self.bsites = None
 		self.beads = None
+		self.skeleton = None
 		self.init_centroid = []
 		self.init_rotation = []
 		self.offset = np.array([0.0,0.0,0.0])
@@ -182,12 +183,15 @@ class Blob:
 				print("\nERROR: '" + c.pin + "' could not be loaded.")
 				raise
 
-		# beads for active blobs need to know of the elements. 
-		#if (len(c.beads)):
+		# beads for active blobs need to know of the elements.
 		assignBeads = False
 		if display_flags != None and  display_flags['show_beads'] == "Configuration & Assignments":
 			assignBeads = True
 		self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.scale, self.top, self.node, assignBeads)
+
+		# Can define a skeleton
+		if(display_flags != None and display_flags['show_skeleton'] == 1):
+			self.skeleton = FFEA_skeleton.FFEA_skeleton(c.skeleton)
 
 		# Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
 		if (not self.node.valid): raise IOError('Something went wrong initialising nodes')	
@@ -884,6 +888,41 @@ class Blob:
 				cmd.show("spheres", pin_name)
 				cmd.color("red", pin_name)
 				
+
+		#
+		# Skeleton
+		#
+		if display_flags['show_skeleton'] == 1 and self.skeleton != None:
+			skel_name = display_flags['system_name'] + "_" + str(self.idnum) + "_skelJoints"
+			psa_name = "CA"
+			psa_b = 20
+			text = ""
+			jtemp = [None for n in range(self.skeleton.num_joints)]
+			for n in range(self.skeleton.num_joints):
+				pos = copy.copy(self.top.element[self.skeleton.joints[n]].calc_centroid(self.frames[i]))
+				jtemp[n] = pos
+				text += ("ATOM %6i %4s %3s %1s%4i    %8.3f%8.3f%8.3f\n" % (n, psa_name, "FEA", "A", n, pos[0], pos[1], pos[2]))
+
+			# load, if it's not an empty object:
+			if len(text) != 0:
+				if frameLabel == "ALL":
+					cmd.read_pdbstr(text, skel_name)
+				else:
+					cmd.read_pdbstr(text, skel_name, frameLabel)
+
+				cmd.show("spheres", skel_name)
+				cmd.color("blue", skel_name)
+
+			skel_name = display_flags['system_name'] + "_" + str(self.idnum) + "_skelBones"
+			obj = []
+			for b in self.skeleton.bones:
+				obj.extend([CYLINDER])
+				obj.extend( [jtemp[b[0]][0], jtemp[b[0]][1], jtemp[b[0]][2], jtemp[b[1]][0], jtemp[b[1]][1], jtemp[b[1]][2], 4, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6] )
+
+			if obj != []:
+				cmd.load_cgo(obj, skel_name)
+				#cmd.show("spheres", skel_name)
+				#cmd.color("grey60", skel_name)
 
 		#
 		#  CG Beads

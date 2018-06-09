@@ -120,6 +120,7 @@ class FFEA_viewer_control_window:
      self.do_load_trajectory = StringVar(self.root, value=self.display_flags['load_trajectory'])
      self.show_box = StringVar(self.root, value=self.display_flags['show_box'])
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
+     self.show_skeleton = IntVar(self.root, value=self.display_flags['show_skeleton'])
      self.show_beads = StringVar(self.root, value=self.display_flags['show_beads'])
      self.show_danger = IntVar(self.root, value=self.display_flags['show_danger'])
      self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
@@ -171,23 +172,27 @@ class FFEA_viewer_control_window:
      label_display = Label(display_flags_frame, text="Display:")
      label_display.grid(row=2, column=2, sticky=W)
 
+     # show pinned_nodes: 
+     self.check_button_show_skeleton = Checkbutton(display_flags_frame, text="Skeleton", variable=self.show_skeleton, command=lambda:self.update_display_flags("show_skeleton"))
+     self.check_button_show_skeleton.grid(row=3, column=2, sticky=W)
+
      # show springs: 
      self.check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
-     self.check_button_show_springs.grid(row=3, column=2, sticky=W)
+     self.check_button_show_springs.grid(row=4, column=2, sticky=W)
 
 
      # show pinned_nodes: 
      self.check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
-     self.check_button_show_pinned.grid(row=4, column=2, sticky=W)
+     self.check_button_show_pinned.grid(row=5, column=2, sticky=W)
 
 
      # show inverted_elements: 
      self.check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
-     self.check_button_show_inverted.grid(row=5, column=2, sticky=W)
+     self.check_button_show_inverted.grid(row=6, column=2, sticky=W)
 
      # show danger_elements: 
      self.check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
-     self.check_button_show_danger.grid(row=6, column=2, sticky=W)
+     self.check_button_show_danger.grid(row=7, column=2, sticky=W)
 
      # # show solid:
      label_solid = Label(display_flags_frame, text="Show Solid:")
@@ -1417,6 +1422,7 @@ class FFEA_viewer_control_window:
 		'show_mesh': "No Mesh",
 		'show_numbers': "No Indices", ## PYMOL OK
 		'show_pinned': 1,
+		'show_skeleton': 0,
 		'show_beads': "No Beads",
 		'show_danger': 0,
 		'show_inverted': 1,

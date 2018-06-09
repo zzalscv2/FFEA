@@ -88,7 +88,7 @@ script2.params.checkpoint_out = os.path.dirname(os.path.abspath(inffea)) + "/lol
 script2.params.checkpoint_in = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp"
 script2.params.calc_vdw = 0
 script2.params.calc_springs = 1
-script2.write_to_file(outffea)	
+script2.write_to_file(outffea, verbose=True)	
 logfile = os.path.dirname(os.path.abspath(inffea)) + "/lol.log"
 fout = open(logfile, "w")
 
@@ -116,7 +116,7 @@ while True:
 		os.system("mv " + os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp " + os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp")
 		#script2.params.checkpoint_out = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp"
 		#script2.params.checkpoint_in = os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp"
-		script2.write_to_file(outffea)
+		script2.write_to_file(outffea, verbose=True)
 		os.system("ffea " + outffea)
 		continue
 	else:
@@ -181,7 +181,7 @@ while True:
 
 		# Sort checkpoint files
 		os.system("mv " + os.path.dirname(os.path.abspath(inffea)) + "/lol_checkout.fcp " + os.path.dirname(os.path.abspath(inffea)) + "/lol_checkin.fcp")
-		script2.write_to_file(outffea)
+		script2.write_to_file(outffea, verbose=True)
 
 		# End the viewer
 		#viewer_process.kill()
@@ -192,8 +192,8 @@ while True:
 # Finished minimisation! Make node files from this trajectory
 try:
 	traj = FFEA_trajectory.FFEA_trajectory(script2.params.trajectory_out_fname)
-	traj.blob[0][0].frame[-1].scale(1.0 / script2.blob[0].scale)
-	traj.blob[1][0].frame[-1].scale(1.0 / script2.blob[1].scale)
+	traj.blob[0][0].frame[-1].rescale(1.0 / script2.blob[0].scale)
+	traj.blob[1][0].frame[-1].rescale(1.0 / script2.blob[1].scale)
 	traj.blob[0][0].frame[-1].write_to_file("blob0_overlap.node")
 	traj.blob[1][0].frame[-1].write_to_file("blob1_overlap.node")
 except(IOError):
