@@ -442,7 +442,7 @@ class Blob:
 		# Get a frame
 		aframe = FFEA_frame.FFEA_frame()
 		aframe.build_from_node(self.node)
-		
+
 		# Move and rotate it
 		if self.init_centroid != []:
 			print "=============================="

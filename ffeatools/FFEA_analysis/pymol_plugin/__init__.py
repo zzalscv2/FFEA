@@ -1134,10 +1134,23 @@ class FFEA_viewer_control_window:
   def draw_inverted_elements(self):
 
 	# For each blob
-	bin = 0
+	bIn = 0
 	for b in self.blob_list:
+
 		# Change when conformations are stable
 		cin = 0
+		
+		# Get a frame from a conformation
+		while(cin < self.script.params.num_conformations[bIn]):
+			if(self.traj.blob[bIn][cin].frame[-1] != None):
+				break
+			cin += 1
+
+		# Test that we have a frame
+		if(self.traj.blob[bIn][cin].frame[-1] == None):
+			print("Cannot find frame to draw inverted elements with")
+			raise IndexError
+
 		c = b[cin]
 
 		element_list = []
@@ -1147,14 +1160,16 @@ class FFEA_viewer_control_window:
 		index = 0
 		if (c.top == None):
 			if (c.motion_state != "STATIC"):
-				print("Cannot draw inverted elements for blob %d as there is not topology" % (bin))
-			bin += 1
+				print("Cannot draw inverted elements for blob %d as there is no topology" % (bIn))
+			bIn += 1
 			continue
 
-		flast = self.traj.blob[bin][cin].frame[-1]
+		flast = self.traj.blob[bIn][cin].frame[-1]
 
 		try:
-			f2last = self.traj.blob[bin][cin].frame[-2]
+			f2last = self.traj.blob[bIn][cin].frame[-2]
+			if(f2last == None):
+				raise IndexError
 		except:
 			f2last = c.node
 
@@ -1205,7 +1220,7 @@ class FFEA_viewer_control_window:
 		if len(invele) > 3:
 			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted", self.num_frames)
 			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex", self.num_frames)
-		bin += 1
+		bIn += 1
 
   def load_trajectory(self, trajectory_out_fname):
 
