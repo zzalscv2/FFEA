@@ -3994,7 +3994,7 @@ void Blob::calc_rest_state_info() {
  */
 int Blob::aggregate_forces_and_solve() {
     int n, m;
-
+    back_imp = 0;
     // Aggregate the forces on each node by summing the contributions from each element.
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp parallel for default(none) private(n, m) schedule(guided)
@@ -4050,7 +4050,7 @@ int Blob::aggregate_forces_and_solve() {
             if (params->calc_noise == 1) {
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-                #pragma omp parallel default(none)
+                #pragma omp parallel default(none) shared(back_imp)
                 {
 #endif
 #ifdef USE_OPENMP
@@ -4059,7 +4059,7 @@ int Blob::aggregate_forces_and_solve() {
                     int thread_id = 0;
 #endif
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-                    #pragma omp for schedule(guided)
+                    #pragma omp for schedule(guided) 
 #endif
                     for (int i = 0; i < num_nodes; i++) {
                         force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
@@ -4068,10 +4068,14 @@ int Blob::aggregate_forces_and_solve() {
                         if(calc_back_vel==1){
                                 //if(blob_index ==1 &&i==0){ printf("force before is %.32F\n",force[i].x);}
                                 //printf("y pos of node %d is  %.32F\nsys_dim_y is %.32F\ndivided is %.32F\n",i,node[i].pos.y, sys_dim_y,node[i].pos.y/sys_dim_y);
+                                
                                 force[i].x += params->shear_rate*(node[i].pos[1]/sys_dim_y-0.5)*node[i].stokes_drag*sys_dim_y;
-                                //force[i].x += 0.5*params->shear_scale*node[i].stokes_drag;
-                                //printf("force added is %.32F\n and force after is %.32F\n ",scale_back_vel*node[i].stokes_drag/params->dt, force[i].x);
-                                //printf("scale back vel is %.32F\n and stokes drag for node %d is %.32F \n",scale_back_vel,node[i].stokes_drag);
+                                //back_imp +=0.5*params->shear_rate;
+                                back_imp += params->shear_rate*(node[i].pos[1]/sys_dim_y-0.5)*sys_dim_y;
+                                //force[i].x += 0.5*params->shear_rate*node[i].stokes_drag;
+                                
+                                //printf("force added is %.32F\n and force after is %.32F\n and without stokes drag is %.32F\n",0.5*params->shear_rate*node[i].stokes_drag, force[i].x,0.5*params->shear_rate);
+                                //printf("and stokes drag for node %d is %.32F \n",i,node[i].stokes_drag);
                                 
                                 /*if(blob_index ==1 &&i==0){ 
                                 
@@ -4103,7 +4107,9 @@ int Blob::aggregate_forces_and_solve() {
         force[*it].y = 0;
         force[*it].z = 0;
     }
-
+    //printf("**********\nblob %d Back imp before dt/averaging is %.14e\n***********\n",blob_index,back_imp);
+    back_imp*=params->dt/num_nodes;
+    //printf("**********\nblob %d Back imp is %.14e\n***********\n",blob_index,back_imp);
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix,
     // or Kv = f where K is the viscosity matrix for the system
     // x/v is the (unknown) force solution and f is the force vector for the system.
@@ -4140,7 +4146,7 @@ void Blob::euler_integrate() {
            // dxtemp[0] += force[i][0] * params->dt; // really meaning v * dt
             //dxtemp[1] += force[i][1] * params->dt;
             //dxtemp[2] += force[i][2] * params->dt;
-            //printf("************\ndx for node %d is %.14e\t%.14e\t%.14e\n************\n",i,force[i][0] * params->dt,force[i][1] * params->dt,force[i][2] * params->dt);
+            //printf("************\ndx for node %d is %.14e\t%.14e\t%.14e\ndt is %.14e\n************\n",i,force[i][0] * params->dt,force[i][1] * params->dt,force[i][2] * params->dt,params->dt);
         }
 
     } else {
@@ -4382,4 +4388,8 @@ void Blob::add_to_dxstore(arr3 dv){
    dxstore[0] += dv[0];
    dxstore[1] += dv[1];
    dxstore[2] += dv[2];
+}
+
+scalar Blob::get_back_imp(){
+    return back_imp;
 }

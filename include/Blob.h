@@ -477,11 +477,12 @@ public:
     scalar get_dxstore(int ind);
     void set_dxstore(arr3 dv);
     void add_to_dxstore(arr3 dv);
+    scalar get_back_imp();
 
 private:
 
     int pbc_count[3];
-    
+    scalar back_imp;
     arr3 dxstore;
 
     /** Total number of nodes in Blob */

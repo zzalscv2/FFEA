@@ -2282,15 +2282,19 @@ int World::run() {
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
 
-        #pragma omp parallel for default(none) schedule(static) 
+        #pragma omp parallel for default(none) schedule(static) shared(step)
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             vector3 cog,cog2;
-            arr3 dxtemp;
+            arr3 dxtemp,substemp;
+            scalar back_imp_temp;
             active_blob_array[i]->get_centroid(&cog);
             active_blob_array[i]->update_positions();
             active_blob_array[i]->get_centroid(&cog2);
+            back_imp_temp = active_blob_array[i]->get_back_imp();
             vec3Vec3SubsToArr3(cog2,cog,dxtemp);
+            dxtemp[0] -=back_imp_temp;
+            //if(step%1000==0)(printf("\n*****************\nback imp_temp for blob %d is%.14e\n",i,back_imp_temp));
             active_blob_array[i]->add_to_dxstore(dxtemp);
             //centroid_dxstore[i].pos[1]+=dxtemp[1];
             //centroid_dxstore[i].pos[2]+=dxtemp[2];
