@@ -21,13 +21,11 @@
 #  the research papers on the package.
 #
 
-set (SYMMETRYDIR "${PROJECT_BINARY_DIR}/tests/rods/integration/symmetry/")
-file (COPY symmetry_test_stretch_only.rod DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test.py DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_bend_only.ffea DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_stretch_only.ffea DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_bend_only.rod DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_twist_only.ffea DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_twist_only.rod DESTINATION ${SYMMETRYDIR})
-add_test(NAME symmetry_test COMMAND ${PYTHON_EXECUTABLE} symmetry_test.py)
-set_tests_properties(symmetry_test PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:$ENV{PYTHONPATH})
+set (SYMMETRYDIR "${PROJECT_BINARY_DIR}/tests/rods/integration/equipartition/")
+file (COPY bend.rod DESTINATION ${SYMMETRYDIR})
+file (COPY stretch.rod DESTINATION ${SYMMETRYDIR})
+file (COPY twist.rod DESTINATION ${SYMMETRYDIR})
+file (COPY equipartition_test.py DESTINATION ${SYMMETRYDIR})
+file (COPY realistic.ffea DESTINATION ${SYMMETRYDIR})
+add_test(NAME equipartition_test COMMAND ${PYTHON_EXECUTABLE} equipartition_test.py)
+set_tests_properties(equipartition_test PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:$ENV{PYTHONPATH})

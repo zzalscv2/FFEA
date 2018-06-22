@@ -1,4 +1,4 @@
-# 
+ # 
 #  This file is part of the FFEA simulation package
 #  
 #  Copyright (c) by the Theory and Development FFEA teams,
@@ -21,13 +21,17 @@
 #  the research papers on the package.
 #
 
-set (SYMMETRYDIR "${PROJECT_BINARY_DIR}/tests/rods/integration/symmetry/")
-file (COPY symmetry_test_stretch_only.rod DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test.py DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_bend_only.ffea DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_stretch_only.ffea DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_bend_only.rod DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_twist_only.ffea DESTINATION ${SYMMETRYDIR})
-file (COPY symmetry_test_twist_only.rod DESTINATION ${SYMMETRYDIR})
-add_test(NAME symmetry_test COMMAND ${PYTHON_EXECUTABLE} symmetry_test.py)
-set_tests_properties(symmetry_test PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:$ENV{PYTHONPATH})
+set (TESTROD "${PROJECT_BINARY_DIR}/tests/rods/unit/twist_bend_independence_v2")
+
+include_directories("${PROJECT_SOURCE_DIR}/include")
+
+add_executable(twist_bend_independence_v2 twist_bend_independence_v2.cpp
+               ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp
+               ${PROJECT_SOURCE_DIR}/src/RngStream.cpp
+               ${PROJECT_SOURCE_DIR}/src/rod_structure.cpp)
+
+file (COPY twisted_bent_rod.rod DESTINATION ${TESTROD})
+
+
+
+add_test(twist_bend_independence_v2 ${CMAKE_CURRENT_BINARY_DIR}/twist_bend_independence_v2)

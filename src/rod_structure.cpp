@@ -26,7 +26,7 @@
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
  */
-#include "rod_structure.h"
+#include "rod_structure.h"  
 
 namespace rod {
 
@@ -108,7 +108,7 @@ Rod::Rod(std::string path, int set_rod_no):
 Rod Rod::set_units(){
     /** Translate our units into the units specified in FFEA's mesoDimensions header file **/
     bending_response_factor = pow(mesoDimensions::length, 4)*mesoDimensions::pressure;
-    spring_constant_factor = mesoDimensions::force/mesoDimensions::length;
+    spring_constant_factor = mesoDimensions::force;
     twist_constant_factor = mesoDimensions::force*mesoDimensions::length*mesoDimensions::length;
     
     /** And now the rod itself **/
@@ -163,7 +163,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     //The first loop is over all the nodes, and it computes all the energies for each one
     #pragma omp parallel for schedule(dynamic) //most of the execution time is spent in this first loop
     for (int node_no = 0; node_no<num_elements; node_no++){
-        
+                
         // if the node is pinned, we go to the next iteration of the loop (e.g. the next node)
         if (pinned_nodes[node_no] == true){
             continue;
@@ -338,7 +338,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
     //This loop is for the dynamics
     for (int node_no = 0; node_no<num_elements; node_no++){
-        
+                
         // If the node is pinned, there's nothing to do
         if (pinned_nodes[node_no] == true){
             continue;
@@ -353,7 +353,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         
         // Get friction, needed for delta r and delta theta
         float translational_friction = get_translational_friction(this->viscosity, material_params[(node_no*3)+2], false);
-        float length_for_friction = (get_absolute_length_from_array(equil_r, node_no, this->length) + get_absolute_length_from_array(equil_r, node_no-1, this->length))/2;
+        //float length_for_friction = (get_absolute_length_from_array(equil_r, node_no, this->length) + get_absolute_length_from_array(equil_r, node_no-1, this->length))/2;
+        float length_for_friction = 1e-8/mesoDimensions::length;
+        
         float rotational_friction = get_rotational_friction(this->viscosity, material_params[(node_no*3)+2], length_for_friction, true);
         
         // Need these again
@@ -378,7 +380,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float y_force = (perturbed_y_energy_negative[node_no*3]+perturbed_y_energy_negative[(node_no*3)+1]+perturbed_y_energy_negative[(node_no*3)+2] - (perturbed_y_energy_positive[node_no*3]+perturbed_y_energy_positive[(node_no*3)+1]+perturbed_y_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float z_force = (perturbed_z_energy_negative[node_no*3]+perturbed_z_energy_negative[(node_no*3)+1]+perturbed_z_energy_negative[(node_no*3)+2] - (perturbed_z_energy_positive[node_no*3]+perturbed_z_energy_positive[(node_no*3)+1]+perturbed_z_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float twist_force = (twisted_energy_negative[node_no*3]+twisted_energy_negative[(node_no*3)+1]+twisted_energy_negative[(node_no*3)+2] - (twisted_energy_positive[node_no*3]+twisted_energy_positive[(node_no*3)+1]+twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
-                
+                                
         // Get applied force, if any
         float applied_force_x = applied_forces[node_no*4];
         float applied_force_y = applied_forces[(node_no*4)+1];
@@ -398,10 +400,10 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         
         // A wee sanity check to stop your simulations from exploding horribly
         for (int i=0; i<length; i++){
-            if (current_r[i] >= 30000000){
+            if (std::abs(delta_r_x) >= 8000 or std::abs(delta_r_y) >= 8000 or std::abs(delta_r_z) >= 8000){
                 std::cout << "node " << node_no << " frame " << frame_no << "\n";
                 std::cout << "dynamics: " << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "\n";
-                assert(current_r[i] < 30000000 && "r went crazy after initializing.");
+                rod_abort("Rod dynamics explosion. Bring your debugger.");
             }
         }
         
@@ -621,6 +623,7 @@ Rod Rod::load_contents(std::string filename){
         }
         n++;
     }
+    
     return *this;
 }
     
@@ -807,9 +810,7 @@ Rod Rod::rotate_rod(float euler_angles[3]){
  */
 Rod Rod::scale_rod(float scale){
     for(int i=0; i<this->length; i+=3){
-        std::cout << "destroying rod by scaling by factor " << scale << ". r_i was " << this->current_r[i] << ", now is ";
         this->current_r[i] *= scale;
-        std::cout << this->current_r[i] << "\n";
         this->current_r[i+1] *= scale;
         this->current_r[i+2] *= scale;
         this->equil_r[i] *= scale;

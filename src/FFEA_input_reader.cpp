@@ -295,10 +295,12 @@ rod::Rod* FFEA_input_reader::rod_from_block(vector<string> block, int block_id){
     // Find trajectory file
     string tag_out[2];
     string filename;
+    int rod_block_no = -1; // start indexing rod blocks from 0 (we add 1 to this if rod is found)
     for ( auto &tag_str : block ) {
         this->parse_tag(tag_str, tag_out);
         if (tag_out[0] == "input"){
-            filename = tag_out[1];
+            rod_block_no += 1;
+            if (rod_block_no == block_id){ filename = tag_out[1]; }
         }
     }
     
@@ -311,17 +313,22 @@ rod::Rod* FFEA_input_reader::rod_from_block(vector<string> block, int block_id){
     current_rod->set_units();
     
     bool rod_parent = false;
+    rod_block_no = -1; // start indexing rod blocks from 0
     
     int coupling_counter = 0;
     for ( auto &tag_str : block ) {
+        
         this->parse_tag(tag_str, tag_out);
         
         // Are we in a <rod> block?
         if (tag_out[0] == "blob"){rod_parent = false;}
-        if (tag_out[0] == "rod"){rod_parent = true;}
+        if (tag_out[0] == "rod"){rod_parent = true; rod_block_no+=1;}
+        
+        if (rod_block_no != current_rod->rod_no){ continue; }
         
         // Set filename
         if (tag_out[0] == "output" && rod_parent){ current_rod->change_filename(tag_out[1]); }
+        
         
         // Scale rod
         if (tag_out[0] == "scale" && rod_parent){

@@ -1004,7 +1004,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     et = MPI::Wtime() -st;
     cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
 #endif
-
     return FFEA_OK;
 }
 

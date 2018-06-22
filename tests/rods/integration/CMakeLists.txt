@@ -23,4 +23,4 @@
 
 
 add_subdirectory(symmetry)
-
+add_subdirectory(equipartition)

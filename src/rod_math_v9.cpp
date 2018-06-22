@@ -37,19 +37,31 @@ namespace rod {
    /*---------*/
 
 /** Hopefully I won't ever have to use this. */
+/** Edit: I used it */
 void rod_abort(std::string message){
+    // Nice way of aborting
     std::cout << "There has been a cataclysmic error in FFEA_rod. Here it is:\n" << message << "\n";
+    printf("Sorry. \n");
     std::abort();
+    // Direct way of aborting
+    abort();
+    // Nasty way of aborting
+    // Q: Why? A: some other parts of the FFEA code suppress this stuff.
+    volatile int *p = reinterpret_cast<volatile int*>(0);
+    *p = 0x1337D00D;
 }
+
+bool isnan(float x) { return x != x; }
+bool isinf(float x) { return !isnan(x) && isnan(x - x); }
 
 /**
  Check if a single value is simulation destroying. Here, simulation
  destroying means NaN or infinite.
 */
 bool not_simulation_destroying(float x, std::string message){
-    if(std::isnan(x) or std::isinf(x) ){
-        if (abort_on_fail){ rod_abort(message); }
-        else{ return false; }
+    if (!debug_nan){ return true; }
+    if((boost::math::isnan)(x) or isinf(x) or std::isnan(x) or std::isinf(x) ){
+        rod_abort(message);
     }
     return true;
 }
@@ -59,10 +71,11 @@ bool not_simulation_destroying(float x, std::string message){
  a warning specifying which value it is.
 */
 bool not_simulation_destroying(float x[3], std::string message){
+    if (!debug_nan){ return true; }
     for (int i=0; i<3; i++){
-        if (std::isnan(i) or std::isinf(i)){
-            if (abort_on_fail){ rod_abort(message); }
-            else{ return false; }
+        if((boost::math::isnan)(x[i]) or isinf(x[i]) or std::isnan(x[i]) or std::isinf(x[i]) ){
+            rod_abort(message);
+            abort();
         }
     }
     return true;
@@ -94,8 +107,33 @@ void print_array(std::string array_name, float array[], int length){
 void normalize(float in[3], OUT float out[3]){
     float absolute = sqrt(in[0]*in[0] + in[1]*in[1] + in[2]*in[2]);
     vec3d(n){out[n] = in[n]/absolute;}
+    if (boost::math::isnan(out[0])){
+        out[0] = 0; out[1] = 0; out[2] = 0;
+    }
     not_simulation_destroying(out, "Noramlisation is simulation destroying."); // this is a cheaty way to give a c-style assertion an actual message.
 }
+
+/**
+ There is some weird behaviour in FFEA when -ffast-math and -O1 or more
+ are both turned on (which are our default compiler settings). It
+ normalizes vectors to floating-point precision, but the std::acos
+ function will take the absolute value of that vector to be <1.
+ Do not remove this function! If you compare the values it returns
+ to rod::normalize, they will *look* identical, but they do not
+ behave identically.
+ */
+void precise_normalize(float in[3], float out[3]){
+    double in_double[3] = {(double)in[0], (double)in[1], (double)in[2]};
+    float absolute = sqrt(in_double[0]*in_double[0] + in_double[1]*in_double[1] + in_double[2]*in_double[2]);
+    float absolute_float = (float)absolute;
+    vec3d(n){out[n] = in[n]/absolute_float;}
+    if (boost::math::isnan(out[0])){
+        out[0] = 0; out[1] = 0; out[2] = 0;
+    }
+    not_simulation_destroying(out, "Noramlisation is simulation destroying."); // this is a cheaty way to give a c-style assertion an actual message.
+
+}
+
 /**
  Get the absolute value of a vector.
 */
@@ -143,7 +181,7 @@ void get_rotation_matrix(float a[3], float b[3], float rotation_matrix[9]){
     float identity_matrix[9] = {1,0,0,0,1,0,0,0,1};
     
     float vx_squared[9] = {-(v[1]*v[1])-(v[2]*v[2]), v[0]*v[1], v[0]*v[2], v[0]*v[1], -(v[0]*v[0])-(v[2]*v[2]), v[1]*v[2], v[0]*v[2], v[1]*v[2], -(-v[0]*-v[0])-(v[1]*v[1]) };
-    
+        
     for (int i=0; i<9; i++){
         rotation_matrix[i] = identity_matrix[i] + vx[i] + (vx_squared[i]*m_f);
     }
@@ -211,19 +249,41 @@ void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3])
  some imprecisions. Obviously acos(a milllion) isn't a number, but for values very close to 1, we4
  will give the float the benefit of the doubt and say the acos is zero.
 */
+
 float safe_cos(float in){
-    if (in > 1.0 && in < 1.01){
+    
+    float absin = std::abs(in);
+    
+    if (absin >= 1){
         return 0;
     }
     
-    float out = std::acos(in);
-    if (std::isnan(out) or std::isinf(out)){
-        if (abort_on_fail){ rod_abort("Cosine of something much larger than 1."); }
-        else{ std::cout << "Warning: suspicious inverse cosine.\n"; return 0; }
+    else{
+        return acos(absin);
     }
+}
+
+/*
+float safe_cos(float in){
+    
+    float absin = abs(in);
+    
+    if (absin >= 1.0 && absin < 1.03){ // 3 for luck
+        return 0;
+    }
+    
+    float out = std::acos(absin);
+    
+    if (!debug_nan){ return out; }
+    
+    if ((boost::math::isnan)(out) or std::isnan(out) or std::isinf(out)){
+        rod_abort("Cosine of something much larger than 1.");
+    }
+
     
     return out;
 }
+*/
  
  /**
  * Get the value of l_i.
@@ -255,7 +315,11 @@ void perpendicularize(float m_i[3], float p_i[3], OUT float m_i_prime[3]){
 void update_m1_matrix(float m_i[3], float p_i[3], float p_i_prime[3], float m_i_prime[3]){
     float rm[9];
     float m_i_rotated[3];
-    get_rotation_matrix(p_i, p_i_prime, rm);
+    float p_i_norm[3];
+    float p_i_prime_norm[3];
+    normalize(p_i, p_i_norm);
+    normalize(p_i_prime, p_i_prime_norm);
+    get_rotation_matrix(p_i_norm, p_i_prime_norm, rm);
     apply_rotation_matrix(m_i, rm, m_i_rotated);
     perpendicularize(m_i_rotated, p_i, m_i_prime);
     normalize(m_i_prime, m_i_prime);
@@ -270,10 +334,12 @@ void update_m1_matrix(float m_i[3], float p_i[3], float p_i_prime[3], float m_i_
  where \f$k\f$ is the spring constant, \f$p\f$ is the current segment and \f$m'\f$ is the equilbrium one.
 */
 float get_stretch_energy(float k, float p_i[3], float p_i_equil[3]){
-    
+    //std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1]*mesoDimensions::Energy << ", " << p_i_equil[2]*mesoDimensions::Energy << "}, ";
     float diff = absolute(p_i) - absolute(p_i_equil);
-    
+    //std::cout << "k = " << k << ", ";
+    //std::cout << "diff = " << diff << ", ";
     float stretch_energy = (diff*diff*0.5*k)/absolute(p_i_equil);
+    //std::cout << "stretch energy: " << stretch_energy << "\n";
     not_simulation_destroying(stretch_energy, "get_stretch_energy is simulation destroying.");
     
     return stretch_energy;
@@ -306,19 +372,29 @@ float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil
     float p_i_equil_norm[3];
     float p_im1_equil_norm[3];
     
+    float m_i_norm[3];
+    float m_i_equil_norm[3];
+    
     normalize(p_i, p_i_norm);
     normalize(p_im1, p_im1_norm);
     normalize(p_i_equil, p_i_equil_norm);
     normalize(p_im1_equil, p_im1_equil_norm);
     
+    precise_normalize(m_i, m_i_norm);
+    precise_normalize(m_i_equil, m_i_equil_norm);
+    
     float m_prime[3];
     parallel_transport(m_im1, m_prime, p_im1_norm, p_i_norm);
     float m_equil_prime[3];
     parallel_transport(m_im1_equil, m_equil_prime, p_im1_equil_norm, p_i_equil_norm);
-    float delta_theta = safe_cos( m_prime[x]*m_i[x] + m_prime[y]*m_i[y] + m_prime[z]*m_i[z] );
-    float delta_theta_equil = safe_cos( m_equil_prime[x]*m_i_equil[x] + m_equil_prime[y]*m_i_equil[y] + m_equil_prime[z]*m_i_equil[z] );   
     
-    float twist_energy = (beta/l_i)*((delta_theta - delta_theta_equil)*(delta_theta - delta_theta_equil));
+    precise_normalize(m_prime, m_prime);
+    precise_normalize(m_equil_prime, m_equil_prime);
+        
+    float delta_theta = safe_cos( m_prime[x]*m_i_norm[x] + m_prime[y]*m_i_norm[y] + m_prime[z]*m_i_norm[z] );
+    float delta_theta_equil = safe_cos( m_equil_prime[x]*m_i_equil_norm[x] + m_equil_prime[y]*m_i_equil_norm[y] + m_equil_prime[z]*m_i_equil_norm[z] );   
+    //float twist_energy = (beta/l_i)*((delta_theta - delta_theta_equil)*(delta_theta - delta_theta_equil));
+    float twist_energy = (beta/l_i)*pow((delta_theta - delta_theta_equil), 2);
     not_simulation_destroying(twist_energy, "get_twist_energy is simulation destroying.");
 
     return twist_energy;
@@ -627,7 +703,7 @@ float get_noise(float timestep, float kT, float friction, float random_number){ 
     /* Shorthands */
    /*------------*/
 
-// Dear function pointer likers: I know, but I would rather directly call these functions.
+// Dear function pointer likers: no.
 
 /**
 * This will load a region of a 1-d array containing nodes into an array
@@ -781,15 +857,18 @@ void set_cutoff_values(int p_i_node_no, int num_nodes, OUT int *start_cutoff, in
 /** Returns the absolute length of an element, given an array of elements
  *  and the index of the element itself.   */
 float get_absolute_length_from_array(float* array, int node_no, int length){
-    if (node_no*3 >= length){
+    if (node_no*3 >= length-3){
         return 0;
     }
     else if (node_no*3 < 0){
         return 0;
     }
     else{
-        float p[3] = {array[node_no*3], array[(node_no*3)+1], array[(node_no*3)+2]};
-        return absolute(p);
+        float r_i[3] = {array[node_no*3], array[(node_no*3)+1], array[(node_no*3)+2]};
+        float r_ip1[3] = {array[(node_no*3)+3], array[(node_no*3)+4], array[(node_no*3)+5]};
+        float p_i[3];
+        vec3d(n){ p_i[n] = r_ip1[n] - r_i[n]; }
+        return absolute(p_i);
     }
 } 
 
@@ -843,6 +922,8 @@ void get_perturbation_energy(
         OUT
         float energies[3]
     ){
+        
+    //feenableexcept( FE_INVALID | FE_OVERFLOW );
         
     // Put a 5-node segment onto the stack.
     // We need to make a copy of it, because we'l be modifying it for our

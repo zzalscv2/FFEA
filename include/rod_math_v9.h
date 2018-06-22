@@ -30,14 +30,19 @@
 #define OUT ///< This is used to denote when a function modifies one of its parameters
 #define _USE_MATH_DEFINES ///<  This has to come before including cmath
 
-const static bool abort_on_fail = true; /// If the simulation becomes unstable, this will SIGABRT the whole program
 
 #include <cmath>
 #include <iostream>
 #include <assert.h>
 #include "dimensions.h" 
+#include <stdlib.h>
+#include <boost/math/special_functions/fpclassify.hpp>
+//#include <fenv.h>
+
 
 namespace rod {
+    
+const static bool debug_nan = true;
 
 const double boltzmann_constant = 1.3806503e-23/mesoDimensions::Energy;
 
@@ -63,6 +68,7 @@ static const int ip1 = 3; ///< index of i+1th thing
 
 static const float rod_software_version = 0.3;
 
+void rod_abort(std::string message);
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point
 void print_array(std::string array_name, float array[], int length);
 void normalize(float in[3], OUT float out[3]);

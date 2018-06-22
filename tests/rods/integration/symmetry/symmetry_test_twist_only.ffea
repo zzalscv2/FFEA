@@ -1,0 +1,64 @@
+<param>
+	<restart = 0>
+	<dt = 1e-10>
+	<kT = 0>
+	<check = 1>
+	<num_steps = 100> 
+	<rng_seed = time>
+	<trajectory_out_fname = sphere_63_120_trajectory.ftj>
+	<measurement_out_fname = sphere_63_120_measurement.fm>
+	<epsilon = 0.01>
+	<max_iterations_cg = 1000>
+	<kappa = 2e9>
+	<epsilon_0 = 1>
+	<dielec_ext = 1>
+	<calc_stokes = 1>
+	<stokes_visc = 1e-03>
+	<calc_vdw = 1>
+	<calc_noise = 1>
+	<calc_kinetics = 0>
+	<vdw_type = steric>
+	<vdw_cutoff = 5e-10>
+   <inc_self_vdw = 0>
+	<vdw_steric_factor = 2e3>
+	<calc_es = 0>
+	<es_update = 4>
+	<es_N_x = 50>
+	<es_N_y = 30>
+	<es_N_z = 30>
+	<sticky_wall_xz = 0>
+	<wall_x_1 = PBC>
+	<wall_x_2 = PBC>
+	<wall_y_1 = PBC>
+	<wall_y_2 = PBC>
+	<wall_z_1 = PBC>
+	<wall_z_2 = PBC>
+	<es_h = 1>
+	<num_blobs = 0>
+	<num_rods = 1>
+	<num_conformations = (1)>
+	<num_states = (1)>
+</param>
+
+<system>
+
+
+<rod>
+		<input = symmetry_test_twist_only.rod>
+		<output = symmetry_test_twist_only.rodtraj>
+		<centroid_pos = (0.0,0.0,0.0)>
+		<rotation = (0.00, 0.00, 0,00)>
+		<scale = 1>
+		<coupling type = blob>
+			<from_node_id = 0>
+			<to_blob_id = 0>
+			<to_blob_node_id = 36>
+		</coupling>
+		<coupling type = rod>
+			<from_node_id = 0>
+			<to_rod_id = 0>
+			<to_rod_node_id = 36>
+		</coupling>
+</rod>
+
+</system>
