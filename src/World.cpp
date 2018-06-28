@@ -1584,7 +1584,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 
         // Get a filename
         evals_out_fname = base + "_FFEAdmm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_FFEA*dmm_blob" + bi.str() + ".evecs";
+        evecs_out_fname = base + "_FFEAdmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, R, num_rows, num_modes);
         print_evals_to_file(evals_out_fname, esAhat.eigenvalues(), num_modes, 1.0);
