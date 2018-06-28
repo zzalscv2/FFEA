@@ -2890,7 +2890,6 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
     fclose(in);
 
     printf("\t\t\tRead %d stokes radii from %s\n", i, stokes_filename);
-
     return FFEA_OK;
 }
 

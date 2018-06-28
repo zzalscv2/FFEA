@@ -1056,7 +1056,7 @@ int World::get_smallest_time_constants() {
             return FFEA_ERROR;
         }
         cout << "done!" << flush;
-
+	//cout << K * (mesoDimensions::force / mesoDimensions::velocity) << endl;
         // Build elasticity matrix, A
         cout << "\r\t\tCalculating the Elasticity Matrix, A (task 2/5)..." << flush;
         if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
@@ -1473,8 +1473,8 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 	// Check this is allowed
 	if(num_modes > 3 * num_nodes - 6) {
 		cout << "\n\t\t" << num_modes << " unavailable for only " << num_nodes << " linear nodes. Deafulting to 3N-6 = " << 3 * num_nodes - 6 << " modes." << endl << endl; 
+		num_modes = 3 * num_nodes - 6;
 	}
-	num_modes = 3 * num_nodes - 6;
 
         Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
 
@@ -1544,7 +1544,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
             dx = max.z - min.z;
         }
 
-        dx /= 20.0;
+        dx /= 10.0;
 
         // Make some trajectories (ignoring the first 6)
         // Firstly, normalise the first num_modes eigenvectors
