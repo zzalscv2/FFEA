@@ -568,7 +568,11 @@ Rod Rod::add_force(float force[4], int node_index){
 Rod Rod::load_contents(std::string filename){
     
     /** Make sure this method isn't called before loading header info */
-    assert(line_start != 0 && "Rod header\rod file not found."); 
+    if (line_start == 0){
+        std::cout << "Rod file at " << filename << "was not found. \n"
+        std::cout << "Rod version: " << this->rod_version << ". Length =  " << this->length << "\n";
+        assert(line_start != 0 && "Rod header\rod file not found."); 
+    }
     
     std::ifstream infile(filename);
     int n = 0;

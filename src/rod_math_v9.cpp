@@ -334,12 +334,13 @@ void update_m1_matrix(float m_i[3], float p_i[3], float p_i_prime[3], float m_i_
  where \f$k\f$ is the spring constant, \f$p\f$ is the current segment and \f$m'\f$ is the equilbrium one.
 */
 float get_stretch_energy(float k, float p_i[3], float p_i_equil[3]){
-    //std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1]*mesoDimensions::Energy << ", " << p_i_equil[2]*mesoDimensions::Energy << "}, ";
+//    std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1] << ", " << p_i_equil[2] << "}, ";
+//    std::cout << "p_i = {" << p_i[0] << ", " << p_i[1] << ", " << p_i[2] << "}, ";
     float diff = absolute(p_i) - absolute(p_i_equil);
-    //std::cout << "k = " << k << ", ";
-    //std::cout << "diff = " << diff << ", ";
+//    std::cout << "k = " << k << ", ";
+//    std::cout << "diff = " << diff << ", ";
     float stretch_energy = (diff*diff*0.5*k)/absolute(p_i_equil);
-    //std::cout << "stretch energy: " << stretch_energy << "\n";
+//    std::cout << "stretch energy: " << stretch_energy << "\n";
     not_simulation_destroying(stretch_energy, "get_stretch_energy is simulation destroying.");
     
     return stretch_energy;
