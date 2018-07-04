@@ -569,7 +569,7 @@ Rod Rod::load_contents(std::string filename){
     
     /** Make sure this method isn't called before loading header info */
     if (line_start == 0){
-        std::cout << "Rod file at " << filename << "was not found. \n"
+        std::cout << "Rod file at " << filename << "was not found. \n";
         std::cout << "Rod version: " << this->rod_version << ". Length =  " << this->length << "\n";
         assert(line_start != 0 && "Rod header\rod file not found."); 
     }
