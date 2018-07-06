@@ -469,7 +469,7 @@ Rod Rod::load_header(std::string filename){
     file_ptr = fopen(filename.c_str(),"a");
     
     /** This string denotes where the header info ends */
-    const std::string rod_connections = "CONNECTIONS,ROD,0";
+    const std::string rod_connections = "---END HEADER---";
     
     /** Check that we can load our input file */
     std::ifstream infile(filename);
