@@ -118,7 +118,7 @@ public:
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string ssint_filename, string pin_filename, 
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress,int calc_back_vol, scalar sys_dim_y, int linear_solver, int blob_state, SimulationParams *params,
+             scalar compress,int calc_back_vel, int linear_solver, int blob_state, SimulationParams *params,
              PreComp_params *pc_params, SSINT_matrix *ssint_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]);
     int init();
@@ -478,6 +478,7 @@ public:
     void set_dxstore(arr3 dv);
     void add_to_dxstore(arr3 dv);
     scalar get_back_imp();
+    void set_sys_dim_y(scalar sys_dim_y);
 
 private:
 

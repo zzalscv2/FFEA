@@ -203,7 +203,8 @@ class FFEA_trajectory:
 				frame = None
 
 			else:
-
+				print(self.traj.readline().strip())
+				print(self.traj.readline().strip())
 				# Get a frame
 				frame = FFEA_frame.FFEA_frame()
 				frame.num_nodes = b[cindex].num_nodes

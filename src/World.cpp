@@ -514,6 +514,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             blob_array[i][j].set_pos_0();
         }
     }
+    
+    
+    //if system is shearing, then we need to tell the blobs how big the box is in the y direction.
+    for (i = 0; i < params.num_blobs; i++) {
+        active_blob_array[i]->set_sys_dim_y(box_dim.y);
+    }
 
 
     // If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
@@ -2039,7 +2045,7 @@ int World::run() {
         //cout<<"box lag is"<<box_lag<<"and box_dim.x is"<<box_dim.x<<endl;
         //cout<<"lag for dt is "<<0.5*params.shear_scale*params.dt<<endl;
         if(box_lag>box_dim.x){box_lag = fmod(box_lag,box_dim.x);}
-        //cout<<"box lag is"<<box_lag<<"and number of voxels is"<<floor(box_dim.x/params.vdw_cutoff)<<endl;
+        //cout<<"box lag is"<<box_lag<<"and number of voxels is"<<floor(box_dim.x/params.ssint_cutoff)<<endl;
         vox_lag = floor(box_lag/params.ssint_cutoff+1/2);
         
        // if(step%1000==0){cout<<"\nbox lag is "<<box_lag<<"and vox_lag is "<<vox_lag<<"and box_dim.y is "<<box_dim.y<<"and params.dt is"<<params.dt<<endl;}
@@ -2289,6 +2295,7 @@ int World::run() {
             arr3 dxtemp,substemp;
             scalar back_imp_temp;
             active_blob_array[i]->get_centroid(&cog);
+            active_blob_array[i]->calc_volume();
             active_blob_array[i]->update_positions();
             active_blob_array[i]->get_centroid(&cog2);
             back_imp_temp = active_blob_array[i]->get_back_imp();
@@ -2896,7 +2903,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             cout << "Blob " << i << ", scale not set." << endl;
             return FFEA_ERROR;
         }
-
+        printf("sys_dim_y will be %.32F\n",params.ssint_cutoff * params.es_N_y);
         // Build blob
         // Build conformations (structural data)
         // vector3 *cent = new vector3;
@@ -2905,7 +2912,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
             if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
                                         material[j], stokes[j], ssint[j], pin[j], binding[j],
-                                        beads[j], scale, calc_compress, compress,calc_back_vel,params.ssint_cutoff * params.es_N_y, solver,
+                                        beads[j], scale, calc_compress, compress,calc_back_vel, solver,
                                         motion_state[j], &params, &pc_params, &ssint_matrix,
                                         &binding_matrix, rng) == FFEA_ERROR) {
                 FFEA_ERROR_MESSG("\tError when trying to pre-initialise Blob %d, conformation %d.\n", i, j); 
@@ -4148,7 +4155,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 
     // ONSCREEN progress:
     if (step % (params.check * 10) != 0) {
-        printf("\rstep = %d", step);
+        printf("\rstep = %d\n", step);
         fflush(stdout);
     } else {
         printf("\rstep = %d (simulation time = %.2fns, wall clock time = %.3f hrs)\n", step, step * params.dt * (mesoDimensions::time / 1e-9), (omp_get_wtime() - wtime) / 3600.0);
@@ -4254,7 +4261,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
          viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "w");
          total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "w");
          	
-     
+    //cout<<"opened the corr files"<<endl;
         for(int i = 0; i < params.num_blobs; ++i){
             diff_vec[i].save_ffea(base_corr_out);
             diff_vec_corrected[i].save_ffea(corrected_corr_out);
@@ -4277,9 +4284,10 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
             fprintf(z_corr_out,"*\n");
             fflush(z_corr_out);*/
         }
-        
+        //cout<<"saved main corr files"<<endl;
         sys_corr.save_ffea(sys_corr_out);
         dxstore_sys_corr.save_ffea(sys_corr_out_test);
+        //cout<<"saved sys corr files"<<endl;
         elastic_stress_corr_c0.save_ffea(elastic_stress_corr_out); 
         elastic_stress_corr_c1.save_ffea(elastic_stress_corr_out);
         elastic_stress_corr_c2.save_ffea(elastic_stress_corr_out);
@@ -4301,7 +4309,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         total_stress_corr_c4.save_ffea(total_stress_corr_out);
         total_stress_corr_c5.save_ffea(total_stress_corr_out);
         total_stress_corr_c6.save_ffea(total_stress_corr_out);
-        
+        //cout<<"saved stress corr files"<<endl;
             
         fclose(base_corr_out);
         fclose(corrected_corr_out);
@@ -4319,11 +4327,12 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         fclose(viscous_stress_corr_out);
         fclose(total_stress_corr_out);        
     }
-
-
-    fprintf(mini_meas_out,"*\n");    
-    fflush(mini_meas_out);
-
+    //cout<<"closed corr files"<<endl;
+    if (params.mini_meas!=0){
+        fprintf(mini_meas_out,"*\n");    
+        fflush(mini_meas_out);
+    }
+    //cout<<"flushed mini_meas"<<endl;
 #ifdef FFEA_PARALLEL_PER_BLOB
     #pragma omp parallel for default(none) schedule(static)
 #endif
@@ -4331,7 +4340,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         // Calculate properties for this blob
         active_blob_array[i]->make_measurements();
     }
-
+    //cout<<"made measurements"<<endl;
     // If necessary, write this stuff to a separate file
     for (int i = 0; i < params.num_blobs; i++) {
         if(detailed_meas_out != NULL) {
@@ -4342,7 +4351,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     // Global Measurement Stuff
     make_measurements();
     write_measurements_to_file(measurement_out, step);
-
+    //cout<<"wrote measurements"<<endl;
     if(detailed_meas_out != NULL) {
         write_detailed_measurements_to_file(detailed_meas_out);
     }

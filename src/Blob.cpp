@@ -226,7 +226,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string ssint_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress,int calc_back_vel,scalar sys_dim_y, int linear_solver, int blob_state, SimulationParams *params, 
+             scalar compress,int calc_back_vel, int linear_solver, int blob_state, SimulationParams *params, 
              PreComp_params *pc_params, SSINT_matrix *ssint_matrix, 
              BindingSite_matrix *binding_matrix, RngStream rng[]){
 
@@ -252,7 +252,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     //this->calc_back_vel = calc_back_vel;
     this->calc_back_vel = 1;
     //this->scale_back_vel = scale_back_vel;
-    this->sys_dim_y = sys_dim_y;
+    //this->sys_dim_y = sys_dim_y;
 
     // compressing: 
     this->calc_compress = calc_compress; 
@@ -1517,7 +1517,9 @@ scalar Blob::calc_volume() {
     scalar volume = 0.0;
     for(int i = 0; i < num_elements; ++i) {
         volume += elem[i].calc_volume();
+        //cout<<"elem "<<i<<" volume is"<<elem[i].calc_volume()*mesoDimensions::volume<<endl;
     }
+    cout<<"blob "<<blob_index<<" volume is "<<volume*mesoDimensions::volume<<endl;
     return volume;
 }
 
@@ -4050,7 +4052,7 @@ int Blob::aggregate_forces_and_solve() {
             if (params->calc_noise == 1) {
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-                #pragma omp parallel default(none) shared(back_imp)
+                #pragma omp parallel default(none)
                 {
 #endif
 #ifdef USE_OPENMP
@@ -4076,6 +4078,8 @@ int Blob::aggregate_forces_and_solve() {
                                 
                                 //printf("force added is %.32F\n and force after is %.32F\n and without stokes drag is %.32F\n",0.5*params->shear_rate*node[i].stokes_drag, force[i].x,0.5*params->shear_rate);
                                 //printf("and stokes drag for node %d is %.32F \n",i,node[i].stokes_drag);
+                                //printf("and shear rate is %.32F \n",params->shear_rate);
+                                //printf("and sys_dim_y is %.32F \n",sys_dim_y);
                                 
                                 /*if(blob_index ==1 &&i==0){ 
                                 
@@ -4392,4 +4396,8 @@ void Blob::add_to_dxstore(arr3 dv){
 
 scalar Blob::get_back_imp(){
     return back_imp;
+}
+
+void Blob::set_sys_dim_y(scalar sys_dim_y){
+    this->sys_dim_y = sys_dim_y;
 }

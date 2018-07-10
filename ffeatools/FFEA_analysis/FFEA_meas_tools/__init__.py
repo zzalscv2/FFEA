@@ -21,4 +21,4 @@
 #  the research papers on the package.
 #
 
-from test_equilibration import test_equilibration
+#from test_equilibration import test_equilibration
