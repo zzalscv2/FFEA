@@ -61,6 +61,7 @@ Blob::Blob() {
     node_position = NULL;
     elem = NULL;
     surface = NULL;
+    skeleton = NULL;
     binding_site = NULL;
     solver = NULL;
     linear_solver = 0;
@@ -102,6 +103,9 @@ Blob::~Blob() {
     elem = NULL;
     delete[] surface;
     surface = NULL;
+
+    delete skeleton;
+    skeleton = NULL;
 
     delete[] binding_site;
     binding_site = NULL;
@@ -213,7 +217,7 @@ Blob::~Blob() {
 
 int Blob::config(const int blob_index, const int conformation_index, string node_filename,
              string topology_filename, string surface_filename, string material_params_filename,
-             string stokes_filename, string ssint_filename, string pin_filename,
+             string stokes_filename, string ssint_filename, string pin_filename, string skel_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
              scalar compress, int linear_solver, int blob_state, SimulationParams *params, 
              PreComp_params *pc_params, SSINT_matrix *ssint_matrix, 
@@ -233,6 +237,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->s_beads_filename = beads_filename;
     this->s_binding_filename = binding_filename;
     this->s_pin_filename = pin_filename;
+    this->s_skel_filename = skel_filename;
     
     // scaling coordinates:
     this->scale = scale;
@@ -321,10 +326,19 @@ int Blob::init(){
         FFEA_ERROR_MESSG("Error when loading binding sites file.\n")
     }
 
-    // This can be defaulted by leaving it out of the script
+    // These can be defaulted by leaving it out of the script
     if (blob_state == FFEA_BLOB_IS_DYNAMIC && s_pin_filename != "") {
         if (load_pinned_nodes(s_pin_filename.c_str()) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob pinned nodes file.\n");
+        }
+    } else {
+        num_pinned_nodes = 0;
+        pinned_nodes_list = NULL;
+    }
+
+    if (blob_state == FFEA_BLOB_IS_DYNAMIC && s_skel_filename != "") {
+        if (load_skeleton(s_skel_filename.c_str()) == FFEA_ERROR) {
+            FFEA_ERROR_MESSG("Error when loading Blob skeleton file.\n");
         }
     } else {
         num_pinned_nodes = 0;
@@ -3702,6 +3716,122 @@ int Blob::load_pinned_nodes(const char *pin_filename) {
     return FFEA_OK;
 }
 
+/*
+ */
+int Blob::load_skeleton(const char *skel_filename) {
+
+    FILE *in = NULL;
+    int i, j_index1, j_index2, num_joints, num_bones;
+    const int max_line_size = 50;
+    char line[max_line_size];
+
+    if ((in = fopen(skel_filename, "r")) == NULL) {
+        FFEA_FILE_ERROR_MESSG(skel_filename)
+    }
+    printf("\t\tReading in skeleton file: %s\n", skel_filename);
+
+    // first line should be the file type "ffea skeleton file"
+    if (fgets(line, max_line_size, in) == NULL) {
+        fclose(in);
+        FFEA_ERROR_MESSG("Error reading first line of skeleton file\n")
+    }
+    if (strcmp(line, "ffea skeleton file\n") != 0) {
+        fclose(in);
+        FFEA_ERROR_MESSG("This is not a 'ffea skeleton file' (read '%s') \n", line)
+    }
+
+    // read in the number of joints in the file
+    if (fscanf(in, "num_joints %d\n", &num_joints) != 1) {
+        fclose(in);
+        FFEA_ERROR_MESSG("Error reading number of skeleton joints\n")
+    }
+    // read in the number of bones in the file
+    if (fscanf(in, "num_bones %d\n", &num_bones) != 1) {
+        fclose(in);
+        FFEA_ERROR_MESSG("Error reading number of skeleton bones\n")
+    }
+    printf("\t\t\tNumber of skeleton joints = %d\n", num_joints);
+    printf("\t\t\tNumber of skeleton bones = %d\n", num_bones);
+
+    // Allocate the memory for the skeleton object
+    skeleton = new Skeleton(num_joints, num_bones);
+
+    if (skeleton == NULL) FFEA_ERROR_MESSG("Failed to allocate Skeleton object memory\n");
+
+    // Check for "joints:" line
+    if (fgets(line, max_line_size, in) == NULL) {
+        fclose(in);
+        FFEA_ERROR_MESSG("Error when looking for 'joints:' line\n")
+    }
+    if (strcmp(line, "joints:\n") != 0) {
+        fclose(in);
+        FFEA_ERROR_MESSG("Could not find 'joints:' line (found '%s' instead)\n", line)
+    }
+
+    // Read in all the joints from file
+    for (i = 0; i < num_joints; i++) {
+        if (fscanf(in, "%d\n", &j_index1) != 1) {
+            fclose(in);
+            FFEA_ERROR_MESSG("Error reading joints from skeleton file at face %d. There should be 1 integer per line. \n", i);
+        } else {
+            // check that this does not reference nodes outside of the element array
+            if (j_index1 < 0 || j_index1 >= num_elements) {
+                fclose(in);
+                FFEA_ERROR_MESSG("Error: Skeleton joint %d references an out of bounds element index\n", i);
+            }
+
+	    // Add the joint 
+            skeleton->add_joint(i, j_index1, elem);
+        }
+    }
+
+    // Check for "bones:" line
+    if (fgets(line, max_line_size, in) == NULL) {
+        fclose(in);
+        FFEA_ERROR_MESSG("Error when looking for 'bones:' line\n")
+    }
+    if (strcmp(line, "bones:\n") != 0) {
+        fclose(in);
+        FFEA_ERROR_MESSG("Could not find 'bones:' line (found '%s' instead)\n", line)
+    }
+
+    // Read in all the bones from file
+    for (i = 0; i < num_bones; i++) {
+        if (fscanf(in, "%d %d\n", &j_index1, &j_index2) != 1) {
+            fclose(in);
+            FFEA_ERROR_MESSG("Error reading joints from skeleton file at face %d. There should be 1 integer per line. \n", i);
+        } else {
+            // check that this does not reference nodes outside of the element array
+            if (j_index1 < 0 || j_index1 >= num_joints) {
+                fclose(in);
+                FFEA_ERROR_MESSG("Error: Skeleton bone %d references an out of bounds joint index (%d)\n", i, j_index1);
+            }
+
+            if (j_index2 < 0 || j_index2 >= num_joints) {
+                fclose(in);
+                FFEA_ERROR_MESSG("Error: Skeleton bone %d references an out of bounds joint index (%d)\n", i, j_index2);
+            }
+
+	    // Add the bone
+            skeleton->add_bone(i, j_index1, j_index2);
+        }
+    }
+
+    fclose(in);
+
+    if (num_joints == 1)
+        printf("\t\t\tRead 1 skeleton joints from %s\n", skel_filename);
+    else
+        printf("\t\t\tRead %d skeleton joints from %s\n", num_joints, skel_filename);
+
+    if (num_bones == 1)
+        printf("\t\t\tRead 1 skeleton bones from %s\n", skel_filename);
+    else
+        printf("\t\t\tRead %d skeleton bones from %s\n", num_bones, skel_filename);
+
+    // Calculate what nodes correspond to what bones
+    return FFEA_OK;
+}
 /*
  */
 void Blob::calc_rest_state_info() {

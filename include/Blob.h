@@ -41,6 +41,7 @@
 #include "mat_vec_types.h"
 #include "mat_vec_fns.h"
 #include "mesh_node.h"
+#include "Skeleton.h"
 #include "tetra_element_linear.h"
 #include "SimulationParams.h"
 #include "Solver.h"
@@ -527,6 +528,9 @@ private:
     /** List of fixed ('pinned') nodes */
     int *pinned_nodes_list;
 
+    /** Structural skeleton **/
+    Skeleton *skel;
+
     /** Additional pinned node list for binding processes */
     set<int> bsite_pinned_nodes_list;
 
@@ -573,7 +577,7 @@ private:
     /** Strings of all the files that contain input data: */
     string s_node_filename, s_topology_filename, s_surface_filename, 
           s_material_params_filename, s_stokes_filename, s_ssint_filename, 
-          s_pin_filename, s_binding_filename, s_beads_filename;
+          s_pin_filename, s_skel_filename, s_binding_filename, s_beads_filename;
 
 
     /** Scale of the input coordinates to m: */
@@ -716,6 +720,11 @@ private:
      * Opens and reads the given 'ffea pinned nodes file', extracting all the faces for this Blob.
      */
     int load_pinned_nodes(const char *pin_filename);
+
+    /**
+     * Opens and reads the given 'ffea skeleton file', extracting the structural backbone for this Blob.
+     */
+    int load_skeleton(const char *skel_filename);
 
     /**
      * Creates a new pinned nodes list from a given set

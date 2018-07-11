@@ -2179,10 +2179,10 @@ int World::read_and_build_system(vector<string> script_vector) {
     vector<string> blob_vector, interactions_vector, conformation_vector, kinetics_vector, map_vector, spring_vector;
     vector<string>::iterator it;
 
-    vector<string> nodes, topology, surface, material, stokes, ssint, binding, pin, beads;
+    vector<string> nodes, topology, surface, material, stokes, ssint, binding, pin, skel, beads;
     string map_fname;
     int map_indices[2];
-    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_ssint = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0; 
+    int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_ssint = 0, set_binding = 0, set_pin = 0, set_skel = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0; 
     scalar scale = 1, compress = 1;
     int solver = FFEA_NOMASS_CG_SOLVER;
     vector<int> motion_state;
@@ -2369,6 +2369,10 @@ int World::read_and_build_system(vector<string> script_vector) {
                     b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
                     pin.push_back(auxpath.string());
                     set_pin = 1;
+                } else if (lrvalue[0] == "skel" || lrvalue[0] == "skeleton") {
+                    b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
+                    skel.push_back(auxpath.string());
+                    set_skel = 1;
                 } else if (lrvalue[0] == "beads") {
                     b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
                     beads.push_back(auxpath.string());
@@ -2408,10 +2412,12 @@ int World::read_and_build_system(vector<string> script_vector) {
                     material.push_back("");
                     stokes.push_back("");
                     pin.push_back("");
+		    skel.push_back("");
                     set_top = 1;
                     set_mat = 1;
                     set_stokes = 1;
                     set_pin = 1;
+		    set_skel = 1;
                 }
 
                 // Optional stuff
@@ -2429,6 +2435,11 @@ int World::read_and_build_system(vector<string> script_vector) {
 		    pin.push_back("");
 		    set_pin = 1;
 		}
+
+		if(set_skel == 0) {
+		    skel.push_back("");
+		    set_skel = 1;
+		}
             }
 
 
@@ -2441,6 +2452,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             set_ssint = 0;
             set_binding = 0;
             set_pin = 0;
+	    set_skel = 0;
             set_preComp = 0;
             conformation_vector.clear();
         }
@@ -2583,7 +2595,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             cout << "\tConfiguring blob " << i << " conformation " << j << "..." << endl;
 
             if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
-                                        material[j], stokes[j], ssint[j], pin[j], binding[j],
+                                        material[j], stokes[j], ssint[j], pin[j], skel[j], binding[j],
                                         beads[j], scale, calc_compress, compress, solver,
                                         motion_state[j], &params, &pc_params, &ssint_matrix,
                                         &binding_matrix, rng) == FFEA_ERROR) {
@@ -2601,6 +2613,7 @@ int World::read_and_build_system(vector<string> script_vector) {
         ssint.clear();
         binding.clear();
         pin.clear();
+	skel.clear();
         beads.clear();
         scale = 1;
         solver = FFEA_NOMASS_CG_SOLVER;
