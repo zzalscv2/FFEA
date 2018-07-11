@@ -117,7 +117,7 @@ public:
      */
     int config(const int blob_index, const int conformation_index, string node_filename, 
              string topology_filename, string surface_filename, string material_params_filename,
-             string stokes_filename, string ssint_filename, string pin_filename, 
+             string stokes_filename, string ssint_filename, string pin_filename, string skel_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
              scalar compress, int linear_solver, int blob_state, SimulationParams *params,
              PreComp_params *pc_params, SSINT_matrix *ssint_matrix,
@@ -529,7 +529,7 @@ private:
     int *pinned_nodes_list;
 
     /** Structural skeleton **/
-    Skeleton *skel;
+    Skeleton *skeleton;
 
     /** Additional pinned node list for binding processes */
     set<int> bsite_pinned_nodes_list;

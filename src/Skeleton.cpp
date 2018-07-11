@@ -60,6 +60,8 @@ void Skeleton::add_bone(int b_index, int j_index1, int j_index2) {
 
 	bone[b_index].joint[0] = &joint[j_index1];
 	bone[b_index].joint[1] = &joint[j_index2];
+	bone[b_index].calculate_centroid();
+	fprintf(stderr, "%f,%f,%f\n", (*bone[b_index].joint[0]->pos)[0], (*bone[b_index].joint[1]->pos)[0], bone[b_index].centroid[0]);
 }
 
 Joint::Joint() {
@@ -78,6 +80,7 @@ Bone::Bone() {
 		joint[i] = NULL;
 	}
 	linkedNodes.clear();
+	vector3_set_zero(centroid);
 }
 
 Bone::~Bone() {
@@ -86,4 +89,11 @@ Bone::~Bone() {
 		joint[i] = NULL;
 	}
 	linkedNodes.clear();
+	vector3_set_zero(centroid);
+}
+
+void Bone::calculate_centroid() {
+	for(int i = 0; i < 3; ++i) {
+		centroid[i] = 0.5 * ((*joint[0]->pos)[i] + (*joint[1]->pos)[i]);
+	}
 }

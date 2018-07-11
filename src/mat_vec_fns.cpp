@@ -274,6 +274,10 @@ void vec3_scale_and_add(vector3 *v1, vector3 *v2, scalar a, int vec_size) {
     }
 }
 
+scalar vec3_normalise(vector3 &v1) {
+	return sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]);
+}
+
 /*
  *
  */

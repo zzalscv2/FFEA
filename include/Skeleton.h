@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <vector>
 
+#include "mat_vec_types.h"
+#include "mat_vec_fns.h"
 #include "mesh_node.h"
 #include "tetra_element_linear.h"
 #include "FFEA_return_codes.h"
@@ -60,11 +62,17 @@ class Bone {
 		Bone();
 		~Bone();
 
+		void calculate_centroid();
+
 		/** Each bone points to 2 joints */
 		Joint *joint[2];
 
+		/** Each bone has a centroid */
+		vector3 centroid;
+
 		/** Each bone points to a list of nodes */
 		vector<mesh_node*> linkedNodes;
+		vector<vector3> linkedNodeVectors;
 };
 
 /*

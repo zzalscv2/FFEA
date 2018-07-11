@@ -2586,6 +2586,9 @@ int Blob::load_topology(const char *topology_filename) {
             node[n4].set_linear();
             elem[i].daddy_blob = this;
             elem[i].index = i;
+
+	    // Initialise centroid
+	    elem[i].calc_centroid();
         }
     }
 
@@ -3721,7 +3724,7 @@ int Blob::load_pinned_nodes(const char *pin_filename) {
 int Blob::load_skeleton(const char *skel_filename) {
 
     FILE *in = NULL;
-    int i, j_index1, j_index2, num_joints, num_bones;
+    int i, j, k, j_index1, j_index2, num_joints, num_bones;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -3797,9 +3800,9 @@ int Blob::load_skeleton(const char *skel_filename) {
 
     // Read in all the bones from file
     for (i = 0; i < num_bones; i++) {
-        if (fscanf(in, "%d %d\n", &j_index1, &j_index2) != 1) {
+        if (fscanf(in, "%d %d\n", &j_index1, &j_index2) != 2) {
             fclose(in);
-            FFEA_ERROR_MESSG("Error reading joints from skeleton file at face %d. There should be 1 integer per line. \n", i);
+            FFEA_ERROR_MESSG("Error reading bones from skeleton file at face %d. There should be 2 integers per line. \n", i);
         } else {
             // check that this does not reference nodes outside of the element array
             if (j_index1 < 0 || j_index1 >= num_joints) {
@@ -3829,7 +3832,35 @@ int Blob::load_skeleton(const char *skel_filename) {
     else
         printf("\t\t\tRead %d skeleton bones from %s\n", num_bones, skel_filename);
 
-    // Calculate what nodes correspond to what bones
+    // Calculate what nodes correspond to what bones, and the initial vector difference
+    int maxIndex;
+    vector3 sep;
+    scalar maxDist, dist;
+
+    // For all nodes
+    for(i = 0; i < num_nodes; ++i) {
+	maxDist = std::numeric_limits<double>::infinity();
+	maxIndex = -1;
+
+	// Which bone is closest?
+	for(j = 0; j < num_bones; ++j) {
+		for(k = 0; k < 3; ++k) {
+			sep[k] = node[i].pos[k] - skeleton->bone[j].centroid[k];
+		}
+		dist = vec3_normalise(sep);
+		if(dist < maxDist) {
+			maxDist = dist;
+			maxIndex = j;
+		}
+	}
+
+	// Add this node to the bone list
+	skeleton->bone[maxIndex].linkedNodes.push_back(&node[i]);
+	for(k = 0; k < 3; ++k) {
+		sep[k] = node[i].pos[k] - (*skeleton->joint[1].pos)[k];
+	}
+	skeleton->bone[maxIndex].linkedNodeVectors.push_back(sep);
+    }
     return FFEA_OK;
 }
 /*
