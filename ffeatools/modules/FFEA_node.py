@@ -229,7 +229,7 @@ class FFEA_node:
 		lines = lines[start_index:]
 
 		for line in lines:
-			if line[0] != "v":
+			if line[0] != "v" or line[:2] == "vn":
 				continue
 
 			sline = line.split()[1:4]

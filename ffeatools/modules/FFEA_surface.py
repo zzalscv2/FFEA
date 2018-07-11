@@ -201,7 +201,11 @@ class FFEA_surface:
 				continue
 
 			sline = line.split()[1:4]
-			sline = [int(s) - 1 for s in sline]
+			try:
+				sline = [np.absolute(int(s)) - 1 for s in sline]
+			except:
+				sline = [np.absolute(int(s.split("//")[0])) - 1 for s in sline]
+
 			f = FFEA_face_tri_lin()
 			f.set_indices(sline)
 			self.add_face(f)
