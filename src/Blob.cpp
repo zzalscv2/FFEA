@@ -238,7 +238,7 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     this->s_binding_filename = binding_filename;
     this->s_pin_filename = pin_filename;
     this->s_skel_filename = skel_filename;
-    
+
     // scaling coordinates:
     this->scale = scale;
 
@@ -344,7 +344,7 @@ int Blob::init(){
         num_pinned_nodes = 0;
         pinned_nodes_list = NULL;
     }
-
+//    printf("%d %f %f %f\n", 0, (*skeleton->joint[1].pos)[0], (*skeleton->joint[1].pos)[1], (*skeleton->joint[1].pos)[2]);
     // Linearise all the elements
     for (int i = 0; i < num_elements; i++) {
         elem[i].linearise_element();
@@ -1548,6 +1548,13 @@ void Blob::calc_centroids_and_normals_of_all_faces() {
     int i;
     for (i = 0; i < num_surface_faces; i++)
         surface[i].calc_area_normal_centroid();
+}
+
+/* */
+void Blob::calc_element_centroids() {
+	for(int i = 0; i < num_elements; ++i) {
+		elem[i].calc_centroid();
+	}
 }
 
 void Blob::calc_all_centroids() {
@@ -3856,11 +3863,14 @@ int Blob::load_skeleton(const char *skel_filename) {
 
 	// Add this node to the bone list
 	skeleton->bone[maxIndex].linkedNodes.push_back(&node[i]);
+
+	// Also store the vector from this node's [1] joint to the node
 	for(k = 0; k < 3; ++k) {
-		sep[k] = node[i].pos[k] - (*skeleton->joint[1].pos)[k];
+		sep[k] = node[i].pos[k] - (*skeleton->bone[maxIndex].joint[1]->pos)[k];
 	}
 	skeleton->bone[maxIndex].linkedNodeVectors.push_back(sep);
     }
+
     return FFEA_OK;
 }
 /*

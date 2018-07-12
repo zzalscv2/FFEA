@@ -2119,7 +2119,10 @@ int World::change_kinetic_state(int blob_index, int target_state) {
     if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
         // Conformation change!
-        // Get current nodes
+
+	/* Interpolative mapping method */
+	/*
+	// Get current nodes
         vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
 
         // Change active conformation and activate all faces
@@ -2138,7 +2141,13 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 
         // Reactivate springs
         activate_springs();
+*/
+	/* Skeleton Mapping Method */
+	
+	// Get all skeleton positions set
+	active_blob_array[blob_index]->calc_element_centroids();
 
+	exit(0);
     } else if (!kinetic_state[blob_index][current_state].is_bound() && kinetic_state[blob_index][target_state].is_bound()) {
 
         // Binding event! Add nodes to pinned node list, or add springs, and reset the solver
@@ -2325,6 +2334,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                 systemreader->parse_tag(*it, lrvalue);
 
                 // Assign if possible
+		cout << lrvalue[0] << endl;
                 if(lrvalue[0] == "motion_state") {
 
                     if(lrvalue[1] == "DYNAMIC") {
@@ -2372,6 +2382,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                 } else if (lrvalue[0] == "skel" || lrvalue[0] == "skeleton") {
                     b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
                     skel.push_back(auxpath.string());
+		    cout << auxpath.string() << endl;
                     set_skel = 1;
                 } else if (lrvalue[0] == "beads") {
                     b_fs::path auxpath = params.FFEA_script_path / lrvalue[1];
@@ -3069,6 +3080,7 @@ int World::choose_new_kinetic_state(int blob_index, int *target) {
             *target = i;
         }
     }
+//    *target = (active_blob_array[blob_index]->get_state_index() + 1) % 2;
     return FFEA_OK;
 }
 

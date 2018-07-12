@@ -127,6 +127,9 @@ public:
     void get_system_centroid(vector3 *centroid);
 
     /* */
+    void calculate_element_centroids();
+
+    /* */
     void get_system_dimensions(vector3 *dimenstion_vector);
 
     /* */

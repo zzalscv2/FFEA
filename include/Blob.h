@@ -257,6 +257,11 @@ public:
     /**
      * Get the centroid of all faces and elements in the blob
      */
+    void calc_element_centroids();
+
+    /**
+     * Get the centroid of all faces and elements in the blob
+     */
     void calc_all_centroids();
 
     /*
