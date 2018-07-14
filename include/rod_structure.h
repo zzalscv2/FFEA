@@ -26,6 +26,8 @@
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
  */
+#ifndef ROD_STRUCTURE
+#define ROD_STRUCTURE
 
 #include <iostream>
 #include <fstream>
@@ -113,3 +115,4 @@ struct Rod
 };
 
 } //end namespace
+#endif

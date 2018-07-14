@@ -746,20 +746,22 @@ class anal_rod:
         self.p_i = self.get_p_i(self.rod.current_r)
         self.equil_p_i = self.get_p_i(self.rod.equil_r)
         
-        self.p_i_extension= np.zeros( [len(self.p_i), len(self.p_i[0])] )
-        for frame in range(len(self.p_i)):
-            for segment in range(len(self.p_i[frame])):
-                self.p_i_extension[frame][segment] = rod_math.get_length(self.equil_p_i[frame][segment]) - rod_math.get_length(self.p_i[frame][segment])
+        #self.p_i_extension= np.zeros( [len(self.p_i), len(self.p_i[0])] )
+        #for frame in range(len(self.p_i)):
+        #    for segment in range(len(self.p_i[frame])):
+        #        self.p_i_extension[frame][segment] = rod_math.get_length(self.equil_p_i[frame][segment]) - rod_math.get_length(self.p_i[frame][segment])
 
-        self.p_i_extension_x = np.zeros( [len(self.p_i), len(self.p_i[0])] )
-        self.p_i_extension_y = np.zeros( [len(self.p_i), len(self.p_i[0])] )
-        self.p_i_extension_z = np.zeros( [len(self.p_i), len(self.p_i[0])] )
-        for frame in range(len(self.p_i)):
-            for segment in range(len(self.p_i[frame])):
-                self.p_i_extension_x[frame][segment] = self.equil_p_i[frame][segment][0] - self.p_i[frame][segment][0]
-                self.p_i_extension_y[frame][segment] = self.equil_p_i[frame][segment][1] - self.p_i[frame][segment][1]
-                self.p_i_extension_z[frame][segment] = self.equil_p_i[frame][segment][2] - self.p_i[frame][segment][2]
+        #self.p_i_extension_x = np.zeros( [len(self.p_i), len(self.p_i[0])] )
+        #self.p_i_extension_y = np.zeros( [len(self.p_i), len(self.p_i[0])] )
+        #self.p_i_extension_z = np.zeros( [len(self.p_i), len(self.p_i[0])] )
+        #for frame in range(len(self.p_i)):
+        #    for segment in range(len(self.p_i[frame])):
+        #        self.p_i_extension_x[frame][segment] = self.equil_p_i[frame][segment][0] - self.p_i[frame][segment][0]
+        #        self.p_i_extension_y[frame][segment] = self.equil_p_i[frame][segment][1] - self.p_i[frame][segment][1]
+        #        self.p_i_extension_z[frame][segment] = self.equil_p_i[frame][segment][2] - self.p_i[frame][segment][2]
    
+        self.get_stretch_energy()
+    
         self.get_bending_response_mutual()
         
         self.get_twist_amount()
@@ -816,11 +818,33 @@ class anal_rod:
         average_extension_sq_x, average_extension_sq_y, average_extension_sq_z.
         """
         self.get_equipartition()
-        self.average_extension_sq = np.average(self.p_i_extension**2, 1)
-        self.average_extension_sq_x = np.average(self.p_i_extension_x**2, 1)
-        self.average_extension_sq_y = np.average(self.p_i_extension_y**2, 1)
-        self.average_extension_sq_z = np.average(self.p_i_extension_z**2, 1)
+        #self.average_extension_sq = np.average(self.p_i_extension**2, 1)
+        #self.average_extension_sq_x = np.average(self.p_i_extension_x**2, 1)
+        #self.average_extension_sq_y = np.average(self.p_i_extension_y**2, 1)
+        #self.average_extension_sq_z = np.average(self.p_i_extension_z**2, 1)
             
+    def get_stretch_energy(self):
+        """
+        Computes the stretch energy for the rod using the new discretisation-
+        independent formula.
+        Params: none
+        Returns: none, but sets self.stretch_energy
+        """
+        try:
+            self.p_i
+        except AttributeError:
+            self.p_i = self.get_p_i(self.rod.current_r)
+            self.equil_p_i = self.get_p_i(self.rod.equil_r)
+            
+        self.stretch_energy = np.zeros([len(self.p_i), len(self.p_i[0]) ] )
+        
+        
+        for frame_no in range(len(self.stretch_energy)):
+            for element_no in range(len(self.p_i[frame_no])):
+                k = self.get_constant_parameter(0)/rod_math.get_length( self.equil_p_i[frame_no][element_no] )
+                delta_e = rod_math.get_length(self.p_i[frame_no][element_no]) - rod_math.get_length(self.equil_p_i[frame_no][element_no])
+                self.stretch_energy[frame_no][element_no] = 0.5*k*(delta_e**2)
+        
     def plot(self, force=None, temp=None):
         """
         For any tests you've done, this will plot the results.
@@ -887,7 +911,7 @@ class anal_rod:
             pass
 
         try:
-            do_a_plot(r'Simulation steps', r' $\frac{1}{2} k \langle x^2 \rangle $ (J)', range(len(self.rod.current_r)), self.average_extension_sq*0.5*self.get_constant_parameter(0), half_kbT, figname+"_equipartition_stretch.pdf")
+            do_a_plot(r'Simulation steps', r' $\frac{1}{2} k \langle x^2 \rangle $ (J)', range(len(self.rod.current_r)), self.stretch_energy, half_kbT, figname+"_equipartition_stretch.pdf")
         except AttributeError:
             pass
         

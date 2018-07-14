@@ -74,6 +74,8 @@
 #include "Spring.h"
 #include "SparseMatrixFixedPattern.h"
 #include "KineticState.h"
+#include "rod_structure.h"
+#include "rod_blob_interface.h"
 
 #include "dimensions.h"
 using namespace std;
@@ -146,6 +148,9 @@ private:
     
     /** @brief 1-D array containing pointers to all rod objects */
     rod::Rod **rod_array;
+    
+    /** @brief 1-D array containing pointers to all rod-blob interfaces */
+    rod::Rod_blob_interface **rod_blob_interface_array;
 
     /** @brief Maps for kinetic switching of conformations */
     SparseMatrixFixedPattern ***kinetic_map;
@@ -279,6 +284,10 @@ private:
     long long step_initial;
 
     int load_springs(const char *fname);
+    
+    rod::Rod_blob_interface* rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader);
+
+    rod::Rod* rod_from_block(vector<string> block, int block_id, FFEA_input_reader* systemreader);
 
     void activate_springs();
 

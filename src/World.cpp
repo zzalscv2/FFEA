@@ -2738,12 +2738,18 @@ int World::read_and_build_system(vector<string> script_vector) {
     rod_array = new rod::Rod*[params.num_rods];
     for (int i=0; i<params.num_rods; i++){
         // Init rod object
-        rod_array[i] = ffeareader->rod_from_block(script_vector, i);
+        rod_array[i] = rod_from_block(script_vector, i, systemreader);
         
         // Carry over params from script file
         rod_array[i]->viscosity = params.stokes_visc;
         rod_array[i]->timestep = params.dt;
         rod_array[i]->kT = params.kT;
+    }
+    
+    // Create couplings
+    rod_blob_interface_array = new rod::Rod_blob_interface*[params.num_interfaces];
+    for (int i=0; i<1; i++){
+        rod_blob_interface_array[params.num_interfaces] = rod_blob_interface_from_block(script_vector, i, systemreader);
     }
 
 /// /// 
@@ -3512,6 +3518,151 @@ int World::load_springs(const char *fname) {
     printf("\t\tRead %d springs from %s\n", num_springs, fname);
     activate_springs();
     return 0;
+}
+
+rod::Rod_blob_interface* World::rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader){
+    
+    string tag_out[2];
+    bool coupling_parent = false;
+    
+    int block_no = -1;
+    int coupling_counter = 0;
+    
+    for ( auto &tag_str : block ) {
+        
+        systemreader->parse_tag(tag_str, tag_out);
+        
+        // Are we in a <coupling> block?
+        //if (tag_out[0] == "blob"){rod_parent = false;}
+        if (tag_out[0] == "coupling type"){coupling_parent = true; block_no+=1;}
+        
+        if (block_no != interface_id){ continue; }
+        
+        // Set filename
+        //if (tag_out[0] == "output" && coupling_parent){ current_rod->change_filename(tag_out[1]); }
+        
+        // parse coupling block
+        if (tag_out[0] == "coupling type" && coupling_parent && tag_out[1] == "rod-blob"){
+            std::cout << "Coupling data parsing...";
+            vector<string> sub_block;
+            systemreader->extract_block("coupling", coupling_counter, block, &sub_block, true);
+            string sub_tag_out[2];
+            for ( auto &sub_tag_str : sub_block ) {
+                systemreader->parse_tag(sub_tag_str, sub_tag_out);
+                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "rod")){ }
+                if ((sub_tag_out[0] == "to_rod_id") & (tag_out[1] == "rod")){ }
+                if ((sub_tag_out[0] == "to_rod_node_id") & (tag_out[1] == "rod")){ } // no way to add couplings yet
+                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "blob")){ }
+                if ((sub_tag_out[0] == "to_blob_id") & (tag_out[1] == "blob")){ }
+                if ((sub_tag_out[0] == "to_blob_node_id") & (tag_out[1] == "blob")){ }
+            }
+            coupling_counter += 1;
+        }
+            
+    }
+    
+}
+
+// Returns a pointer to a rod object from an .ffea script that's already
+// been converted into a vector<string>. Also needs the block_id. Before
+// this can be used, we need a way to get the number of rods specified
+// in the file, so we can allocate an array for their pointers and know
+// what block_ids to assign.
+rod::Rod* World::rod_from_block(vector<string> block, int block_id, FFEA_input_reader* systemreader){
+    
+    // Find trajectory file
+    string tag_out[2];
+    string filename;
+    int rod_block_no = -1; // start indexing rod blocks from 0 (we add 1 to this if rod is found)
+    for ( auto &tag_str : block ) {
+        systemreader->parse_tag(tag_str, tag_out);
+        if (tag_out[0] == "input"){
+            rod_block_no += 1;
+            if (rod_block_no == block_id){ filename = tag_out[1]; }
+        }
+    }
+    
+    // Create rod object
+    //rod::Rod *current_rod;
+    rod::Rod* current_rod = new rod::Rod(filename, block_id);
+    current_rod->load_header(filename);
+    
+    current_rod->load_contents(filename);
+    current_rod->set_units();
+    
+    bool rod_parent = false;
+    rod_block_no = -1; // start indexing rod blocks from 0
+    
+    int coupling_counter = 0;
+    for ( auto &tag_str : block ) {
+        
+        systemreader->parse_tag(tag_str, tag_out);
+        
+        // Are we in a <rod> block?
+        if (tag_out[0] == "blob"){rod_parent = false;}
+        if (tag_out[0] == "rod"){rod_parent = true; rod_block_no+=1;}
+        
+        if (rod_block_no != current_rod->rod_no){ continue; }
+        
+        // Set filename
+        if (tag_out[0] == "output" && rod_parent){ current_rod->change_filename(tag_out[1]); }
+        
+        
+        // Scale rod
+        if (tag_out[0] == "scale" && rod_parent){
+            float scale = stof(tag_out[1]);
+            //std::cout << "I have been told to scale this rod by a factor of " << scale << " but I can't.\n";
+            current_rod->scale_rod(scale);
+        }
+        
+        // Move centroid
+        if (tag_out[0] == "centroid_pos" && rod_parent){
+            // get centroid and convert it to array
+            scalar centroid_pos[3];
+            float converted_centroid[3];
+            tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
+            systemreader->split_string(tag_out[1], centroid_pos, ",");
+            // convert to floats
+            std::copy(centroid_pos, centroid_pos+3, converted_centroid);
+            // set centroid
+            current_rod->translate_rod(current_rod->current_r, converted_centroid);
+            current_rod->translate_rod(current_rod->equil_r, converted_centroid);
+        }
+        
+        // Rotate rod
+        if (tag_out[0] == "rotation" && rod_parent){
+            // get centroid and convert it to array
+            scalar rotation[3];
+            tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
+            systemreader->split_string(tag_out[1], rotation, ",");
+            // convert to floats
+            float converted_rotation[3];
+            std::copy(rotation, rotation+3, converted_rotation);
+            // rotate that bad boy
+            current_rod->rotate_rod(converted_rotation);
+        }
+        // parse coupling block
+        if (tag_out[0] == "coupling type" && rod_parent){
+            std::cout << "Coupling data parsed, but coupling is not yet implemented!\n";
+            vector<string> sub_block;
+            systemreader->extract_block("coupling", coupling_counter, block, &sub_block, true);
+            string sub_tag_out[2];
+            for ( auto &sub_tag_str : sub_block ) {
+                systemreader->parse_tag(sub_tag_str, sub_tag_out);
+                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "rod")){ }
+                if ((sub_tag_out[0] == "to_rod_id") & (tag_out[1] == "rod")){ }
+                if ((sub_tag_out[0] == "to_rod_node_id") & (tag_out[1] == "rod")){ } // no way to add couplings yet
+                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "blob")){ }
+                if ((sub_tag_out[0] == "to_blob_id") & (tag_out[1] == "blob")){ }
+                if ((sub_tag_out[0] == "to_blob_node_id") & (tag_out[1] == "blob")){ }
+            }
+            coupling_counter += 1;
+        }
+            
+    }
+    
+    return current_rod;
+    
 }
 
 void World::activate_springs() {

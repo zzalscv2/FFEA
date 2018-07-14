@@ -46,8 +46,8 @@ def main():
     
     #Stretchy rod
     stretchy_analysis = FFEA_rod.anal_rod(stretchy_rod)
-    stretchy_analysis.get_average_quantities()
-    stretchy_rod_avg_energy = stretchy_analysis.average_extension_sq*0.5*stretchy_analysis.get_constant_parameter(0)
+    stretchy_analysis.get_equipartition()
+    stretchy_rod_avg_energy = stretchy_analysis.stretch_energy
     stretchy_time_avg_energy = np.average(stretchy_rod_avg_energy)
     print("Stretchy energy = "+str(stretchy_time_avg_energy))
     print("Equipartition energy = "+str(0.5*analytical_kbT))

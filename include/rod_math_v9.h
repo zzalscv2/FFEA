@@ -26,6 +26,8 @@
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
  */
+#ifndef ROD_MATH
+#define ROD_MATH
 
 #define OUT ///< This is used to denote when a function modifies one of its parameters
 #define _USE_MATH_DEFINES ///<  This has to come before including cmath
@@ -195,3 +197,4 @@ void get_perturbation_energy(
 );
 
 }
+#endif
