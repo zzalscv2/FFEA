@@ -54,6 +54,7 @@ void Skeleton::add_joint(int j_index, int el_index, tetra_element_linear *elem) 
 
 	joint[j_index].element = &elem[el_index];
 	joint[j_index].pos = &joint[j_index].element->centroid;
+	vector3_set_zero(joint[j_index].new_pos);
 }
 
 void Skeleton::add_bone(int b_index, int j_index1, int j_index2) {
@@ -61,16 +62,33 @@ void Skeleton::add_bone(int b_index, int j_index1, int j_index2) {
 	bone[b_index].joint[0] = &joint[j_index1];
 	bone[b_index].joint[1] = &joint[j_index2];
 	bone[b_index].calculate_centroid();
+	bone[b_index].set_initial_bone_vector();
+	bone[b_index].calculate_bone_vector();
+}
+
+void Skeleton::set_new_joint_positions(vector<vector3> pos) {
+
+	for(int i = 0 ; i < pos.size(); ++i) {
+		joint[i].set_new_pos(pos.at(i));
+	}
 }
 
 Joint::Joint() {
 	element = NULL;
 	pos = NULL;
+	vector3_set_zero(new_pos);
 }
 
 Joint::~Joint() {
 	element = NULL;
 	pos = NULL;
+	vector3_set_zero(new_pos);
+}
+
+void Joint::set_new_pos(vector3 pos) {
+	for(int i = 0; i < 3; ++i) {
+		new_pos[i] = pos[i];
+	}
 }
 
 Bone::Bone() {
@@ -78,8 +96,11 @@ Bone::Bone() {
 	for(int i = 0; i < 2; ++i) {
 		joint[i] = NULL;
 	}
+
 	linkedNodes.clear();
 	vector3_set_zero(centroid);
+	vector3_set_zero(vec);
+	vector3_set_zero(init_vec);
 }
 
 Bone::~Bone() {
@@ -94,5 +115,23 @@ Bone::~Bone() {
 void Bone::calculate_centroid() {
 	for(int i = 0; i < 3; ++i) {
 		centroid[i] = 0.5 * ((*joint[0]->pos)[i] + (*joint[1]->pos)[i]);
+	}
+}
+
+void Bone::set_initial_bone_vector() {
+	for(int i = 0; i < 3; ++i) {
+		init_vec[i] = (*joint[1]->pos)[i] - (*joint[0]->pos)[i];
+	}
+}
+
+void Bone::calculate_bone_vector() {
+	for(int i = 0; i < 3; ++i) {
+		vec[i] = (*joint[1]->pos)[i] - (*joint[0]->pos)[i];
+	}
+}
+
+void Bone::calculate_new_bone_vector() {
+	for(int i = 0; i < 3; ++i) {
+		vec[i] = joint[1]->new_pos[i] - joint[0]->new_pos[i];
 	}
 }

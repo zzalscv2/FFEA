@@ -28,6 +28,7 @@
 #include <stdio.h>
 
 #include "mat_vec_types.h"
+#include <Eigen/Geometry>
 
 /**
  * Applies matrix A to vector v, storing result in v
@@ -35,6 +36,7 @@
 void mat12_apply(matrix12 A, vector12 v);
 
 void vec3_mat3_mult(vector3 &v, matrix3 &A, vector3 &notV);
+void vec3_mat3_mult_correct(vector3 &v, matrix3 &A, vector3 &notv);
 
 void mat3_mult(matrix3 A, matrix3 B, matrix3 result);
 
@@ -51,6 +53,8 @@ void mat3_scale(matrix3 A, scalar s);
 scalar mat3_double_contraction_symmetric(matrix3 A);
 
 scalar mat3_double_contraction(matrix3 A);
+
+void get_rotation_matrix(vector3 &a, vector3 &b, matrix3 &R);
 
 /** Inverts the given 3x3 matrix, storing the result in m_inv and the determinant in det_m */
 void mat3_invert(matrix3 m, matrix3 m_inv, scalar *det_m);

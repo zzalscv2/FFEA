@@ -2143,11 +2143,44 @@ int World::change_kinetic_state(int blob_index, int target_state) {
         activate_springs();
 */
 	/* Skeleton Mapping Method */
-	
-	// Get all skeleton positions set
-	active_blob_array[blob_index]->calc_element_centroids();
+	vector<vector3> baseSkel, targetSkel;
 
-	exit(0);
+	// Get all skeleton positions into a vector
+	active_blob_array[blob_index]->calc_element_centroids();
+	baseSkel = active_blob_array[blob_index]->get_skeleton_element_centroids();
+
+	// Apply the map
+	targetSkel = kinetic_map[blob_index][current_conformation][target_conformation].apply(baseSkel);
+
+/*	for(int i = 0; i < targetSkel.size(); ++i) {
+		fprintf(stderr, "%f %f %f\n", targetSkel.at(i)[0], targetSkel.at(i)[1], targetSkel.at(i)[2]); 
+		fprintf(stderr, "%f %f %f\n", (*blob_array[blob_index][current_conformation].skeleton->joint[i].pos)[0], (*blob_array[blob_index][current_conformation].skeleton->joint[i].pos)[1], (*blob_array[blob_index][current_conformation].skeleton->joint[i].pos)[2]);
+		fprintf(stderr, "%f %f %f\n", (*blob_array[blob_index][target_conformation].skeleton->joint[i].pos)[0], (*blob_array[blob_index][target_conformation].skeleton->joint[i].pos)[1], (*blob_array[blob_index][target_conformation].skeleton->joint[i].pos)[2]);
+	}*/
+//(*skeleton->joint[1].pos)[0]
+
+        // Change active conformation and activate all faces
+        active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
+        active_blob_array[blob_index]->kinetically_set_faces(true);
+
+	// Set the new positions and rebuild the nodes
+	active_blob_array[blob_index]->skeleton->set_new_joint_positions(targetSkel);
+	active_blob_array[blob_index]->rebuild_nodes_from_skeleton();
+
+/*	for(int i = 0; i < targetSkel.size(); ++i) {
+		fprintf(stderr, "%f %f %f\n", targetSkel.at(i)[0], targetSkel.at(i)[1], targetSkel.at(i)[2]);
+		fprintf(stderr, "%f %f %f\n", active_blob_array[blob_index]->skeleton->joint[i].new_pos[0], active_blob_array[blob_index]->skeleton->joint[i].new_pos[1], active_blob_array[blob_index]->skeleton->joint[i].new_pos[2]);
+	}
+*/
+
+        // Move the old blob to random space so as not to interfere with calculations, and deactivate all faces
+        blob_array[blob_index][current_conformation].position(blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10);
+        blob_array[blob_index][current_conformation].kinetically_set_faces(false);
+
+        // Reactivate springs
+        activate_springs();
+
+//	exit(0);
     } else if (!kinetic_state[blob_index][current_state].is_bound() && kinetic_state[blob_index][target_state].is_bound()) {
 
         // Binding event! Add nodes to pinned node list, or add springs, and reset the solver
@@ -2818,9 +2851,10 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
         boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
         num_cols = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
-        if(num_cols != blob_array[blob_index][map_from.at(i)].get_num_nodes()) {
+	// Check whether skeleton or not
+        if(num_cols != blob_array[blob_index][map_from.at(i)].get_num_nodes() && num_cols != blob_array[blob_index][map_from.at(i)].skeleton->num_joints) {
             FFEA_error_text();
-            cout << "In " << map_fnames.at(i) << ", 'num_nodes_from', " << num_cols << ", does not correspond to the number of nodes in blob " << i << " conformation " << map_from.at(i) << endl;
+            cout << "In " << map_fnames.at(i) << ", 'num_nodes_from', " << num_cols << ", does not correspond to the number of nodes (" << blob_array[blob_index][map_from.at(i)].get_num_nodes() << ") or number of joints (" << blob_array[blob_index][map_from.at(i)].skeleton->num_joints << ") in blob " << i << " conformation " << map_from.at(i) << endl;
             return FFEA_ERROR;
         }
 
@@ -2828,9 +2862,9 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
         boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
         num_rows = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
-        if(num_rows != blob_array[blob_index][map_to.at(i)].get_num_nodes()) {
+        if(num_rows != blob_array[blob_index][map_to.at(i)].get_num_nodes() && num_rows != blob_array[blob_index][map_to.at(i)].skeleton->num_joints) {
             FFEA_error_text();
-            cout << "In " << map_fnames.at(i) << ", 'num_nodes_to', " << num_rows << ", does not correspond to the number of nodes in blob " << i << " conformation " << map_to.at(i) << endl;
+            cout << "In " << map_fnames.at(i) << ", 'num_nodes_to', " << num_rows << ", does not correspond to the number of nodes (" << blob_array[blob_index][map_to.at(i)].get_num_nodes() << ") or number of joints (" << blob_array[blob_index][map_to.at(i)].skeleton->num_joints << ") in blob " << i << " conformation " << map_to.at(i) << endl;
             return FFEA_ERROR;
         }
 
@@ -3075,12 +3109,12 @@ int World::choose_new_kinetic_state(int blob_index, int *target) {
     switch_check = kinetic_rng->RandU01();
 
     // See which bin this falls into
-    for(i = 0; i < params.num_states[blob_index]; ++i) {
+/*    for(i = 0; i < params.num_states[blob_index]; ++i) {
         if(switch_check > bin[i][0] && switch_check <= bin[i][1]) {
             *target = i;
         }
-    }
-//    *target = (active_blob_array[blob_index]->get_state_index() + 1) % 2;
+    }*/
+    *target = (active_blob_array[blob_index]->get_state_index() + 1) % 2;
     return FFEA_OK;
 }
 

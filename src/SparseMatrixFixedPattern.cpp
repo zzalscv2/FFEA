@@ -247,6 +247,27 @@ void SparseMatrixFixedPattern::block_apply(vector3 **in) {
     }
 }
 
+/* Applies this matrix to the given vector<vector3> 'in', returning the result to 'in'. 'in' is made of 'vector3's */
+/* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
+vector<vector3> SparseMatrixFixedPattern::apply(vector<vector3> in) {
+    int i, j;
+    vector<vector3> result;
+    vector3 resultEntry;
+    for(i = 0; i < num_rows; ++i) {
+        resultEntry[0] = 0;
+        resultEntry[1] = 0;
+        resultEntry[2] = 0;
+        for(j = key[i]; j < key[i + 1]; ++j) {
+            resultEntry[0] += entry[j].val * in.at(entry[j].column_index)[0];
+            resultEntry[1] += entry[j].val * in.at(entry[j].column_index)[1];
+            resultEntry[2] += entry[j].val * in.at(entry[j].column_index)[2];
+        }
+        result.push_back(resultEntry);
+    }
+
+    return result;
+}
+
 SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPattern *in) {
 
     int i, j, k, l;

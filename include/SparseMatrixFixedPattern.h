@@ -30,6 +30,8 @@
 #include "SparseMatrixTypes.h"
 #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
+#include <vector>
 
 using namespace std;
 
@@ -60,7 +62,10 @@ public:
     /** Applies matrix to vector in and leaves result in in */
     void block_apply(vector3 **in);
 
-     /** Applies this matrix to the given sparse matrix 'in', and returns a new sparse matrix */
+    /** Applies matrix to (c++ vector) of vectors, returning the result */
+    vector<vector3> apply(vector<vector3> in);
+
+    /** Applies this matrix to the given sparse matrix 'in', and returns a new sparse matrix */
     SparseMatrixFixedPattern * apply(SparseMatrixFixedPattern *in);
 
     void calc_inverse_diagonal(scalar *inv_D);

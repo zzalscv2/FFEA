@@ -723,7 +723,7 @@ int Blob::update_positions() {
     }
 
     // Update node velocities and positions
-    euler_integrate();
+    //euler_integrate();
 
     // Linearise the 2nd order elements
     for (int n = 0; n < num_elements; n++) {
@@ -1554,6 +1554,58 @@ void Blob::calc_centroids_and_normals_of_all_faces() {
 void Blob::calc_element_centroids() {
 	for(int i = 0; i < num_elements; ++i) {
 		elem[i].calc_centroid();
+	}
+}
+
+/* */
+vector<vector3> Blob::get_element_centroids() {
+	
+	vector<vector3> cents;
+	for(int i = 0; i < num_elements; ++i) {
+		cents.push_back(elem[i].get_centroid());
+	}
+	return cents;
+}
+
+/* */
+vector<vector3> Blob::get_skeleton_element_centroids() {
+	
+	vector<vector3> cents;
+	for(int i = 0; i < skeleton->num_joints; ++i) {
+		cents.push_back(skeleton->joint[i].element->get_centroid());
+	}
+	return cents;
+}
+
+/* */
+void Blob::rebuild_nodes_from_skeleton() {
+
+	// For all bones
+	int b, n, i;
+	vector3 a;
+	matrix3 R;
+	for(b = 0; b < skeleton->num_bones; ++b) {
+
+		// Work out the rotation vector from the initial state
+		skeleton->bone[b].calculate_new_bone_vector();
+//		fprintf(stderr, "Init: %f %f %f\n", skeleton->bone[b].init_vec[0], skeleton->bone[b].init_vec[1], skeleton->bone[b].init_vec[2]);
+//		fprintf(stderr, "Vec: %f %f %f\n", skeleton->bone[b].vec[0], skeleton->bone[b].vec[1], skeleton->bone[b].vec[2]);
+		get_rotation_matrix(skeleton->bone[b].init_vec, skeleton->bone[b].vec, R);
+
+		vec3_mat3_mult_correct(skeleton->bone[b].init_vec, R, a);
+//		fprintf(stderr, "Init: %f %f %f\n", skeleton->bone[b].init_vec[0], skeleton->bone[b].init_vec[1], skeleton->bone[b].init_vec[2]);
+//		fprintf(stderr, "Target: %f %f %f\n", a[0], a[1], a[2]);
+//		fprintf(stderr, "Vec: %f %f %f\n", skeleton->bone[b].vec[0], skeleton->bone[b].vec[1], skeleton->bone[b].vec[2]);
+
+		// For all nodes
+		for(n = 0; n < skeleton->bone[b].linkedNodes.size(); ++n) {
+
+			// Rotate the initial vector and add to new node position
+			vec3_mat3_mult_correct(skeleton->bone[b].linkedNodeVectors.at(n), R, a);
+			for(int i = 0; i < 3; ++i) {
+				skeleton->bone[b].linkedNodes.at(n)->pos[i] = skeleton->bone[b].joint[1]->new_pos[i] + a[i];
+			}	
+		}
 	}
 }
 

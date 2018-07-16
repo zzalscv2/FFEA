@@ -255,9 +255,24 @@ public:
     void calc_centroids_and_normals_of_all_faces();
 
     /**
-     * Get the centroid of all faces and elements in the blob
+     * Get the centroid of all elements in the blob
      */
     void calc_element_centroids();
+
+    /**
+     * Return a list of the centroids of all elements in the blob
+     */
+    vector<vector3> get_element_centroids();
+
+    /**
+     * Return a list of the centroids of all elements in the blob corresponding to skeleton joints
+     */
+    vector<vector3> get_skeleton_element_centroids();
+
+    /**
+     * Resets the node positions using the current state of the skeleton
+     */
+    void rebuild_nodes_from_skeleton();
 
     /**
      * Get the centroid of all faces and elements in the blob
@@ -470,6 +485,9 @@ public:
 
     int pbc_count[3];
 
+    /** Structural skeleton **/
+    Skeleton *skeleton;
+
 private:
 
     /** Total number of nodes in Blob */
@@ -532,9 +550,6 @@ private:
 
     /** List of fixed ('pinned') nodes */
     int *pinned_nodes_list;
-
-    /** Structural skeleton **/
-    Skeleton *skeleton;
 
     /** Additional pinned node list for binding processes */
     set<int> bsite_pinned_nodes_list;

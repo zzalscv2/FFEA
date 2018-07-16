@@ -47,9 +47,14 @@ class Joint {
 		Joint();
 		~Joint();
 
+		void set_new_pos(vector3 pos);
+
 		/** The joint location, which is defined by an element centroid */
 		tetra_element_linear *element;
 		vector3 *pos;
+
+		// The position, following mapping, which will be used to rebuild the structure
+		vector3 new_pos;
 };
 
 /*
@@ -63,12 +68,18 @@ class Bone {
 		~Bone();
 
 		void calculate_centroid();
+		void set_initial_bone_vector();
+		void calculate_bone_vector();
+		void calculate_new_bone_vector();
 
 		/** Each bone points to 2 joints */
 		Joint *joint[2];
 
 		/** Each bone has a centroid */
 		vector3 centroid;
+
+		/** Each bone can be defined as a vector */
+		vector3 vec, init_vec;
 
 		/** Each bone points to a list of nodes */
 		vector<mesh_node*> linkedNodes;
@@ -103,6 +114,10 @@ class Skeleton {
 	     */
 	    void add_bone(int b_index, int j_index1, int j_index2);
 
+	    /**
+	     * Method for setting the array of mapped joint positions 
+	     */
+	    void set_new_joint_positions(vector<vector3> pos);
 	    /*
 	     * Variables
 	     */

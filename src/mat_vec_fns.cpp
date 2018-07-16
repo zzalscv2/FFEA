@@ -33,12 +33,22 @@ void mat12_apply(matrix12 A, vector12 v) {
     for (i = 0; i < 12; i++) v[i] = temp_v[i];
 }
 
+// This method uses incorrect indexing!
 void vec3_mat3_mult(vector3 &v, matrix3 &A, vector3 &notv) {
     //int i, j;
 
     notv[0] = A[0][0]*v[0] + A[1][0]*v[1] + A[2][0]*v[2];
     notv[1] = A[0][1]*v[0] + A[1][1]*v[1] + A[2][1]*v[2];
     notv[2] = A[0][2]*v[0] + A[1][2]*v[1] + A[2][2]*v[2];
+
+}
+
+void vec3_mat3_mult_correct(vector3 &v, matrix3 &A, vector3 &notv) {
+    //int i, j;
+
+    notv[0] = A[0][0]*v[0] + A[0][1]*v[1] + A[0][2]*v[2];
+    notv[1] = A[1][0]*v[0] + A[1][1]*v[1] + A[1][2]*v[2];
+    notv[2] = A[2][0]*v[0] + A[2][1]*v[1] + A[2][2]*v[2];
 
 }
 
@@ -140,6 +150,38 @@ scalar mat3_double_contraction(matrix3 A) {
     return A[0][0] * A[0][0] + A[1][1] * A[1][1] + A[2][2] * A[2][2]
             + A[0][1] * A[0][1] + A[1][0] * A[1][0] + A[0][2] * A[0][2]
             + A[2][0] * A[2][0] + A[1][2] * A[1][2] + A[2][1] * A[2][1];
+}
+
+void get_rotation_matrix(vector3 &a, vector3 &b, matrix3 &R) {
+	
+	// Use built in Eigen methods
+	int i, j;
+	Eigen::Vector3d f, t;
+	Eigen::Matrix3d r;
+	Eigen::Quaterniond q;
+
+	// Initialise
+	for(i = 0; i < 3; ++i) {
+		f(i) = a[i];
+		t(i) = b[i];
+	}
+
+	// Get rotation quaternion
+	q = q.FromTwoVectors(f, t);
+
+	// Make a matrix
+	r = q.normalized().toRotationMatrix();
+	
+	// Make into an FFEA matrix (we will need to refactor into eigen at some point)
+//	fprintf(stderr, "Rotation:\n");
+	for(i = 0; i < 3; ++i) {
+		for(j = 0; j < 3; ++j) {
+			R[i][j] = r(i, j);
+//			fprintf(stderr, "%f ", R[i][j]);
+		}
+//		fprintf(stderr, "\n");
+	}
+
 }
 
 /*

@@ -310,6 +310,8 @@ public:
 
     void calc_centroid();
 
+    vector3 get_centroid();
+
     int get_opposite_node(int n1, int n2, int n3); 
 
     scalar length_of_longest_edge();

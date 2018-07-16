@@ -599,6 +599,10 @@ void tetra_element_linear::calc_centroid() {
     centroid.z = .25 * (n[0]->pos.z + n[1]->pos.z + n[2]->pos.z + n[3]->pos.z);
 }
 
+vector3 tetra_element_linear::get_centroid() {
+	return centroid;
+}
+
 void tetra_element_linear::calc_del2_matrix() {
     del2.u00 = (dpsi[0] * dpsi[0] + dpsi[4] * dpsi[4] + dpsi[8] * dpsi[8]);
     del2.u01 = (dpsi[0] * dpsi[1] + dpsi[4] * dpsi[5] + dpsi[8] * dpsi[9]);
