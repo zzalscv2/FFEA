@@ -39,6 +39,7 @@
 #include "Face.h"
 #include "Blob.h"
 #include "World.h"
+#include "ffea_test.h"
 
 #ifdef USE_MPI
 #include "mpi.h"
@@ -147,6 +148,14 @@ int main(int argc, char *argv[])
     fs_script_fname = canonicalPath / fs_script_fname.filename();
     script_fname = fs_script_fname.string();
     cout << "\tInput FFEA script - " << script_fname << "\n\n";
+
+    // todo: check to see if the input file is a test script, if so, return the result from the test it specifies.
+    std::string testscript_extension = "ffeatest";
+    if((script_fname.size()>=testscript_extension.size()) && equal(testscript_extension.rbegin(), testscript_extension.rend(), script_fname.rbegin())){
+        cout << "Test script detected. Entering test mode.\n";
+        int test_return_value = ffea_test::do_ffea_test(script_fname);
+        return test_return_value;
+    }
 
     //The system of all proteins, electrostatics and water
     World *world;

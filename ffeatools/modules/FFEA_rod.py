@@ -1531,7 +1531,7 @@ class rod_creator:
             return (np.pi/4.0)*(r**4)
         
         if rod_segments == None:
-            rod_segments = range(0, rod.num_elements)
+            rod_segments = range(0, len(rod.current_r[0]))
         
         if frames == None:
             frames = range(0, len(rod.current_r))

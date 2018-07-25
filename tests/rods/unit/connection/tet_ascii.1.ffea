@@ -1,0 +1,39 @@
+<param>
+	<restart = 0>
+	<trajectory_out_fname = tet_ascii.1.ftj>
+	<measurement_out_fname = tet_ascii.1.fm>
+	<lj_params = tet_ascii.1.lj>
+	<num_blobs = 1>
+	<num_rods = 1>
+	<num_couplings = 1>
+</param>
+
+<system>
+	<blob>
+		<motion_state = DYNAMIC>
+		<topology = tet_ascii.1.top>
+		<material = tet_ascii.1.mat>
+		<stokes = tet_ascii.1.stokes>
+		<nodes = tet_ascii.1.node>
+		<surface = tet_ascii.1.surf>
+		<vdw = tet_ascii.1.vdw>
+		<scale = 1.00e-9>
+	</blob>
+	
+	<rod>
+		<input = bend.rod>
+		<output = bend.rodtraj>
+		<centroid_pos = (0.0,0.0,0.0)>
+		<rotation = (0.00, 0.00, 0,00)>
+		<scale = 1>
+    </rod>
+	
+    <coupling type = blob-to-rod>
+        <rod_id = 0>
+        <blob_id = 0>
+        <rod_node_id = 0>
+        <blob_element_id = 0>
+        <blob_face_id = 0>
+    </coupling>
+    
+</system>

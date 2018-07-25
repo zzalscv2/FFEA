@@ -81,6 +81,7 @@
 using namespace std;
 
 class World {
+friend struct ffea_test; //allow  our unit test class to see ffea_world's private 
 public:
     World();
 
@@ -285,7 +286,7 @@ private:
 
     int load_springs(const char *fname);
     
-    rod::Rod_blob_interface* rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader);
+    rod::Rod_blob_interface* rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader, rod::Rod** rod_array, Blob** blob_array);
 
     rod::Rod* rod_from_block(vector<string> block, int block_id, FFEA_input_reader* systemreader);
 

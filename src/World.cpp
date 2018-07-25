@@ -2748,8 +2748,8 @@ int World::read_and_build_system(vector<string> script_vector) {
     
     // Create couplings
     rod_blob_interface_array = new rod::Rod_blob_interface*[params.num_interfaces];
-    for (int i=0; i<1; i++){
-        rod_blob_interface_array[params.num_interfaces] = rod_blob_interface_from_block(script_vector, i, systemreader);
+    for (int i=0; i<params.num_interfaces; i++){
+        rod_blob_interface_array[i] = rod_blob_interface_from_block(script_vector, i, systemreader, rod_array, blob_array);
     }
 
 /// /// 
@@ -3520,13 +3520,22 @@ int World::load_springs(const char *fname) {
     return 0;
 }
 
-rod::Rod_blob_interface* World::rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader){
+rod::Rod_blob_interface* World::rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader, rod::Rod** rod_array, Blob** blob_array){
     
     string tag_out[2];
     bool coupling_parent = false;
     
     int block_no = -1;
     int coupling_counter = 0;
+    
+    bool ends_at_rod = true;
+    int blob_id;
+    int rod_id;
+    int rod_node_id;
+    int blob_element_id;
+    int blob_face_id;
+    int from_index;
+    int to_index;
     
     for ( auto &tag_str : block ) {
         
@@ -3542,24 +3551,43 @@ rod::Rod_blob_interface* World::rod_blob_interface_from_block(vector<string> blo
         //if (tag_out[0] == "output" && coupling_parent){ current_rod->change_filename(tag_out[1]); }
         
         // parse coupling block
-        if (tag_out[0] == "coupling type" && coupling_parent && tag_out[1] == "rod-blob"){
+        if (tag_out[0] == "coupling type" && coupling_parent && (tag_out[1] == "rod-to-blob" or tag_out[1] == "blob-to-rod")){
             std::cout << "Coupling data parsing...";
+            if (tag_out[1] == "rod-to-blob"){
+                ends_at_rod = false;
+            }
             vector<string> sub_block;
             systemreader->extract_block("coupling", coupling_counter, block, &sub_block, true);
             string sub_tag_out[2];
             for ( auto &sub_tag_str : sub_block ) {
                 systemreader->parse_tag(sub_tag_str, sub_tag_out);
-                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "rod")){ }
-                if ((sub_tag_out[0] == "to_rod_id") & (tag_out[1] == "rod")){ }
-                if ((sub_tag_out[0] == "to_rod_node_id") & (tag_out[1] == "rod")){ } // no way to add couplings yet
-                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "blob")){ }
-                if ((sub_tag_out[0] == "to_blob_id") & (tag_out[1] == "blob")){ }
-                if ((sub_tag_out[0] == "to_blob_node_id") & (tag_out[1] == "blob")){ }
+                if ((sub_tag_out[0] == "rod_id")){ rod_id = stof(sub_tag_out[1]); }
+                if ((sub_tag_out[0] == "blob_id")){ blob_id = stof(sub_tag_out[1]); }
+                if ((sub_tag_out[0] == "rod_node_id")){ rod_node_id = stof(sub_tag_out[1]); } // no way to add couplings yet
+                if ((sub_tag_out[0] == "blob_element_id")){ blob_element_id = stof(sub_tag_out[1]); }
+                if ((sub_tag_out[0] == "blob_face_id")){ blob_face_id = stof(sub_tag_out[1]); }
+
             }
             coupling_counter += 1;
         }
             
     }
+    
+    if (ends_at_rod == false){
+        to_index = rod_node_id;
+        from_index = blob_element_id;
+    }
+    else{
+        to_index = blob_element_id;
+        from_index = rod_node_id;
+    }
+    
+    rod::Rod* connected_rod_ptr = rod_array[rod_id];
+    Blob* connected_blob_ptr = blob_array[blob_id];
+    
+    rod::Rod_blob_interface* curr_rbi = new rod::Rod_blob_interface(connected_rod_ptr, connected_blob_ptr, ends_at_rod, to_index, from_index, blob_face_id);
+    
+    return curr_rbi;
     
 }
 
@@ -4448,6 +4476,7 @@ int World::catch_thread_updatingPCLL(int step, scalar wtime, int where) {
 
     return FFEA_OK;
 }
+
 #endif
 
 

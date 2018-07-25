@@ -251,7 +251,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         num_rods = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_rods << endl;
 
-    } else if (lvalue == "num_interfaces") {
+    } else if (lvalue == "num_couplings") {
         num_interfaces = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_rods << endl;
 
