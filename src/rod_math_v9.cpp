@@ -98,6 +98,20 @@ void print_array(std::string array_name, float array[], int length){
     std::cout << "]\n";
 }
 
+void print_array(std::string array_name, double array[], int length){
+    std::cout << array_name << " : [";
+    for (int i = 0; i < length; i++){
+        if (i != length-1){
+            std::cout << array[i] << ", ";
+        }
+        else{
+            std::cout << array[i];
+        }
+    }
+    std::cout << "]\n";
+}
+
+
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point
 
 /**

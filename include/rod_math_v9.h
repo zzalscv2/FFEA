@@ -73,6 +73,7 @@ static const float rod_software_version = 0.3;
 void rod_abort(std::string message);
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point
 void print_array(std::string array_name, float array[], int length);
+void print_array(std::string array_name, double array[], int length);
 void normalize(float in[3], OUT float out[3]);
 float absolute(float in[3]);
 void cross_product(float a[3], float b[3], float out[3]);
