@@ -1519,7 +1519,7 @@ scalar Blob::calc_volume() {
         volume += elem[i].calc_volume();
         //cout<<"elem "<<i<<" volume is"<<elem[i].calc_volume()*mesoDimensions::volume<<endl;
     }
-    cout<<"blob "<<blob_index<<" volume is "<<volume*mesoDimensions::volume<<endl;
+    //cout<<"blob "<<blob_index<<" volume is "<<volume*mesoDimensions::volume<<endl;
     return volume;
 }
 
