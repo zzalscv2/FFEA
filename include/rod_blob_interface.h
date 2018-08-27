@@ -1,3 +1,32 @@
+// 
+//  This file is part of the FFEA simulation package
+//  
+//  Copyright (c) by the Theory and Development FFEA teams,
+//  as they appear in the README.md file. 
+// 
+//  FFEA is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+// 
+//  FFEA is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+// 
+//  You should have received a copy of the GNU General Public License
+//  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
+// 
+//  To help us fund FFEA development, we humbly ask that you cite 
+//  the research papers on the package.
+//
+
+/*
+ *      rod_blob_interface.cpp
+ *	Author: Rob Welch, University of Leeds
+ *	Email: py12rw@leeds.ac.uk
+ */
+
 #ifndef ROD_BLOB_INTERFACE
 #define ROD_BLOB_INTERFACE
 
@@ -16,7 +45,6 @@ namespace rod {
 void get_tri_norm(float node0[3], float node1[3], float node2[3], OUT float tri_norm[3]);
 void get_jacobian(mesh_node **tet_nodes, OUT float J[9]);
 void float_3x3_invert(float m[9], OUT float m_inv[9]);
-void float_3x3_mult_transpose(float A[9], float B[9], OUT float result[9]);
 void get_gradient_deformation(mesh_node **nodes_before, mesh_node**nodes_after, OUT float gradient_deformation_3x3[9]);
 void QR_decompose_gram_schmidt(float matrix_3x3[9], OUT float Q[9], float R[9]);
 void construct_euler_rotation_matrix(float a, float b, float g, float rotmat[9]);

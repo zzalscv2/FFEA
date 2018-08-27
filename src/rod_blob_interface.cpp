@@ -1,9 +1,41 @@
+// 
+//  This file is part of the FFEA simulation package
+//  
+//  Copyright (c) by the Theory and Development FFEA teams,
+//  as they appear in the README.md file. 
+// 
+//  FFEA is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+// 
+//  FFEA is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+// 
+//  You should have received a copy of the GNU General Public License
+//  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
+// 
+//  To help us fund FFEA development, we humbly ask that you cite 
+//  the research papers on the package.
+//
+
+/*
+ *      rod_blob_interface.cpp
+ *	Author: Rob Welch, University of Leeds
+ *	Email: py12rw@leeds.ac.uk
+ */
+ 
 #include "rod_blob_interface.h" 
 
 namespace rod{
 
 // interface math
 
+/**
+ Given the three nodes in a triangle (or the face of a tetrahedron, if you prefer), get the direction vector of the normal to to that face. 
+*/ 
 void get_tri_norm(float node0[3], float node1[3], float node2[3], OUT float tri_norm[3]){
     float ax = node1[0] - node0[0];
 	float ay = node1[1] - node0[1];
@@ -16,6 +48,9 @@ void get_tri_norm(float node0[3], float node1[3], float node2[3], OUT float tri_
     tri_norm[2] = ay*bx - ax*by;
 }
 
+/**
+ For an array of 9 tet_nodes (defined in  object defined in mesh_node.cpp/mesh_node.h) populate a 1-D array with the 3x3 Jacobian of the shape functions. 
+*/
 void get_jacobian(mesh_node **tet_nodes, OUT float J[0]){
     J[0] = tet_nodes[1]->pos[0] - tet_nodes[0]->pos[0];
     J[1] = tet_nodes[1]->pos[1] - tet_nodes[0]->pos[1];
@@ -30,9 +65,11 @@ void get_jacobian(mesh_node **tet_nodes, OUT float J[0]){
     J[8] = tet_nodes[3]->pos[2] - tet_nodes[0]->pos[2];
 }
 
+/**
+ Find the inverse of a 3x3 matrix (m), and populate the 1-D array m_inv. This is identical to the matrix inversion in mat_vec_fns, only it operates on 1-D arrays of floats instead of 2-D ones of scalars.
+*/ 
 void float_3x3_invert(float m[9], OUT float m_inv[9]) {
     scalar det;
-
 
     // Construct the inverse matrix
     m_inv[0] = m[8] * m[4] - m[7] * m[5];
@@ -61,18 +98,10 @@ void float_3x3_invert(float m[9], OUT float m_inv[9]) {
     m_inv[8] *= det;
 }
 
-void float_3x3_mult_transpose(float A[9], float B[9], OUT float result[9]){ //todo: change the [x][y] in this
-    for (int i=0; i<3; i++){
-        for (int j=0; j<3; j++){
-            for (int k=0; k<3; k++){
-                //result[j][i] += A[k][i] * B[j][k];
-                result[i*3 + j] = A[3*k + i] * B[3*j + k];
-            }
-        }
-    }
-}
-
-void float_3x3_mult_transpose_unrolled(float A[9], float B[9], OUT float result[9]){
+/**
+ Multiply the 3x3 matrices A and B. This one is unrolled. Store the result in result. A, B and result are 1-D arrays of length 9 representing 3x3 matrices. Again, this does the same thing as the mat_vec_fn, but with 1-D arrays of floats.
+*/ 
+void float_3x3_mult_unrolled(float A[9], float B[9], OUT float result[9]){
     result[0] += A[0] * B[0];
     result[0] += A[3] * B[1];
     result[0] += A[6] * B[2];
@@ -102,6 +131,9 @@ void float_3x3_mult_transpose_unrolled(float A[9], float B[9], OUT float result[
     result[8] += A[8] * B[8];
 }
 
+/**
+ Transpose a 3x3 matrix, represented as a 1-D array of floats. Populate the array 'transposed'.
+*/
 void transpose_3x3(float in[9], OUT float transposed[9]){
     transposed[0] = in[0];
     transposed[1] = in[3];
@@ -116,6 +148,12 @@ void transpose_3x3(float in[9], OUT float transposed[9]){
 
 // note: this is mostly the same as the one in tetra_element_linear, but that one is tied to FFEA's data structures,
 // objects and types, whereas this one uses pure functions and floats.
+/**
+ Get the 3x3 gradient deformation matrix of a tetrahedron. The tetrahedron is given as an array of the mesh_node object defined in mesh_node.cpp. Two arrays are needed, one representing the tetrahedron before it was deformed, the other one representing the tetrahedron after deformation.
+ \f[ \mathbf{F_e} = (\mathbf{J'} \mathbf{J}^{-1})^T \f]
+ Where \f$ \mathbf{F} \f$ is the gradient deformation matrix, \f$ \mathbf{J'} \f$ is the Jacobian of the new deformed tetrahedron, and \f$ \mathbf{J} \f$ is the Jacobian of the undeformed one.
+ Note: this is mostly the same as the one in tetra_element_linear.cpp, but that one is a member function that operates on member variables of tetra_element_linear, whereas this one is a pure function (and uses the same floats and 1-d arrays as the rest of the rod stuff).
+*/
 void get_gradient_deformation(mesh_node **nodes_before, mesh_node**nodes_after, OUT float transposed_gradient_deformation_3x3[9]){
     float J_before[9];
     float J_after[9];
@@ -123,13 +161,29 @@ void get_gradient_deformation(mesh_node **nodes_before, mesh_node**nodes_after, 
     get_jacobian(nodes_after, J_after);
     float before_inverse[9];
     float_3x3_invert(J_before, before_inverse);
-    print_array("inverse", before_inverse, 9);
     float gradient_deformation_3x3[9] = {0,0,0,0,0,0,0,0,0};
-    float_3x3_mult_transpose_unrolled(J_after, before_inverse, gradient_deformation_3x3);
+    float_3x3_mult_unrolled(J_after, before_inverse, gradient_deformation_3x3);
     transpose_3x3(gradient_deformation_3x3, transposed_gradient_deformation_3x3);
-    print_array("transposed", transposed_gradient_deformation_3x3, 9);
 }
 
+/**
+ QR decompose\factorise a 3x3 matrix (given here as a 1-d array of floats) using the Gram-Schmidt process. Like the matrix multiplication above, this is again unrolled. This populates arrays for both Q and R, although only R is used.
+ We wish to decompose the 3x3 matrix A ([a_1 ... a_n]) into two 3x3 matrices, Q and R.
+ The elements e_n of our Q matrix are given by the following recursive definition:
+ 
+ \f[ u_1 = a_1, ~ e_1 = \frac{u1}{||u_1||} \f]
+ \f[ u_{k+1} = a_{k+1} - (a_{k+1} \cdot e_1)e1 - ... - (a_{k+1} \cdot e_k)e_k, ~ e_1 = \frac{u1}{||u_1||}, e_{k+1} = \frac{u_{k+1}}{||u_{k+1}||} \f]
+ 
+ \f[A = [ a_1 | a_2 | \dots | a_n] = [ e_1 | e_2 | \dots | e_n]
+    \begin{bmatrix} 
+    a_{1}\cdot e_1 & a_2\cdot e_1 & \dots & a_n \cdot e_1 \\
+    0 & a_2 \cdot e_2 & \dots & a_n \cdot e_2 \\ 
+    \vdots & \vdots & \ddots & \vdots \\
+    0 & 0 & \dots & a_n \cdot e_n 
+    \end{bmatrix}
+
+  = QR \f]
+*/ 
 void QR_decompose_gram_schmidt(float matrix_3x3[9], OUT float Q[9], float R[9]){
     float a1[3] = {matrix_3x3[0], matrix_3x3[3], matrix_3x3[6]};
     float a2[3] = {matrix_3x3[1], matrix_3x3[4], matrix_3x3[7]};
@@ -168,6 +222,9 @@ void QR_decompose_gram_schmidt(float matrix_3x3[9], OUT float Q[9], float R[9]){
 }
 
 // X1Y2Z3 :)
+/**
+ Construct an euler rotation matrix of the X1Y2Z3 type. Parameters, a, b and c, the angles of rotation. Populates the array 'rotmat'.
+*/
 void construct_euler_rotation_matrix(float a, float b, float g, float rotmat[9]){
     float s1 = std::sin(a);
     float s2 = std::sin(b);
@@ -186,6 +243,9 @@ void construct_euler_rotation_matrix(float a, float b, float g, float rotmat[9])
     rotmat[8] = c1*c2;
 }
 
+/**
+ Rotate a tetrahedron (given by an array of mesh_node objects) by a 3x3 rotation matrix (given as a 1-d array of floats) about its centroid. Populates a new mesh_node object. Note that this function is not used in the main simulation loop, it is only used in the rod_blob_interface unit test.
+*/
 void rotate_tet(float rotmat[9], mesh_node **nodes, OUT mesh_node **rotated_nodes){
     
     print_array("connected tetrahedron node 0", nodes[0]->pos.data, 3);
@@ -230,6 +290,13 @@ void rotate_tet(float rotmat[9], mesh_node **nodes, OUT mesh_node **rotated_node
 
 // interface structure
 
+/**
+ Rod_blob_interface constructor. Requires pointers to fully-initialized rod and blob objects. Parameters:
+ - set_ends_at_rod: if true, the connection goes from blob to rod. If false, it goes from rod to blob. This affects the index of the rod element which is connected.
+ - set_to_index: index of the source element (via blob->get_element).
+ - set_from_index: index of the destination element (via blob->get_element).
+ - set_face_index: index of the face of the blob to connected the rod to. Even though we already have the element index (either to 
+*/
 Rod_blob_interface::Rod_blob_interface(Rod* set_connected_rod, Blob* set_connected_blob, bool set_ends_at_rod, int set_to_index, int set_from_index, int set_face_index)
     {
         this->connected_rod = set_connected_rod;
@@ -261,6 +328,11 @@ Rod_blob_interface::Rod_blob_interface(Rod* set_connected_rod, Blob* set_connect
                 
     }
 
+/**
+ Update the internal state of the rod-blob interface. The update_edge_vecs parameter will reconstruct the edges, which are need for certain mathematical operations, including updating the position of the attachment node. update_tet updates the cached tetrahedron object stored by the interface.
+ 
+ If you've deformed the tetrahedron somehow, you should leave this alone until you've computed the gradient deformation matrix, as you need 'before' and 'after' tetrahedra to make that work. If you're doing some numerical integraion, you should use the rod_blob_interface tetrahedron as the one you deform, because you can just update_tet as soon as you're done with it.
+*/
 void Rod_blob_interface::update_internal_state(bool update_edge_vecs, bool update_tet){
     if (update_edge_vecs){this->set_edge_vecs();}
     if (update_tet){this->set_tet(this->connected_tet);}
@@ -274,19 +346,20 @@ void Rod_blob_interface::update_internal_state(bool update_edge_vecs, bool updat
     print_array("deformed tetrahedron node 3", this->deformed_tet_nodes[3]->pos.data, 3);
 }    
 
+/**
+ Recompute te edge vectors for a tetrahedron. These are not automatically updated when the nodes are moved. If you do something to the attachment tetrahedron, consider running Rod_blob_interface->update_internal_state().
+*/
 void Rod_blob_interface::set_edge_vecs(){
     vec3d(v){this->tet_origin[v] = this->connected_tet->n[0]->pos.data[v];}
     vec3d(v){this->edge_vecs[0][v] = this->connected_tet->n[1]->pos[v] - this->tet_origin[v];}
     vec3d(v){this->edge_vecs[1][v] = this->connected_tet->n[2]->pos[v] - this->tet_origin[v];}
     vec3d(v){this->edge_vecs[2][v] = this->connected_tet->n[3]->pos[v] - this->tet_origin[v];}
-    // note about this: why is the thing not dead center? it has not moved in the z axis
-    // all these edge vecs have the same component in the z axis, that's surely not right
-    // or MAYBE IT IS RIGHT BECAUSE THEY'RE ALL GOING FROM THE TOP DOWN AND THUS ALL HAVE THAT COMPONENT
-    // ACTUALLY I THINK IT IS RIGHT LIKE THIS NEVERMIND ROB U DID IT
 }
 
+/**
+ Get the position and direction vectors for the current attachment node. You should run this every frame.
+*/
 void Rod_blob_interface::get_attachment_node(OUT float attachment_node[3], float attachment_node_pos[3]){
-    
     //grab face nodes
     float face_node_1[3];
     float face_node_2[3];
@@ -302,13 +375,11 @@ void Rod_blob_interface::get_attachment_node(OUT float attachment_node[3], float
     
     //get normal
     get_tri_norm(face_node_1, face_node_2, face_node_3, attachment_node);
-    rod::print_array("attachment node", attachment_node, 3);
     normalize(attachment_node, attachment_node);
     
     //get position of node in face
     vec3d(n){
         attachment_node_pos[n] = this->tet_origin[n] + (this->edge_vecs[0][n]*this->node_weighting[0] + this->edge_vecs[1][n]*this->node_weighting[1] + this->edge_vecs[2][n]*this->node_weighting[2]);
-        std::cout << attachment_node_pos[n] << "=" << this->tet_origin[n] << "+(" << this->edge_vecs[0][n] << "*" << this->node_weighting[0] << "+" << this->edge_vecs[1][n] << "*" << this->node_weighting[1] << "+" << this->edge_vecs[2][n] << "*" << this->node_weighting[2] << ")\n";
     }
     
     //make sure normal is facing the right way
@@ -323,6 +394,9 @@ void Rod_blob_interface::get_attachment_node(OUT float attachment_node[3], float
 }
 
 // need to call this AFTER getting the attachment node
+/**
+ Once the attachment node has been obtained, this sets the initial direction of the attachment material axis. Note that the initial direction is arbitray - by default it is set such that there is no energy between the attachment axis and the first rod material axis. Only run this function for initialisation! When the simulation is running, you need to update the orientation of this thing using this->reorientate_connection.
+*/
 void Rod_blob_interface::get_attachment_material_axis(float attachment_node[3], OUT float attachment_material_axis[3]){
     float nearest_material_axis[3];
     float nearest_element[3];
@@ -343,6 +417,9 @@ void Rod_blob_interface::get_attachment_material_axis(float attachment_node[3], 
     
 }
 
+/**
+ Overwrite the internal tetrahedron nodes with the nodes from a tetra_element_linear object. 
+*/
 void Rod_blob_interface::set_tet(tetra_element_linear *tet){
     vec3d(n){this->deformed_tet_nodes[0]->pos[n] = tet->n[0]->pos[n];}
     vec3d(n){this->deformed_tet_nodes[1]->pos[n] = tet->n[1]->pos[n];}
@@ -350,13 +427,16 @@ void Rod_blob_interface::set_tet(tetra_element_linear *tet){
     vec3d(n){this->deformed_tet_nodes[3]->pos[n] = tet->n[3]->pos[n];}
 }
 
+/**
+ For a given attachment element and material axis, get a new material axis and attachment element based on the rotation matrix found from the QR decomposition of the gradient deformation matrix. Run this every timestep!
+*/
 void Rod_blob_interface::reorientate_connection(float attachment_element[3], float attachment_material_axis[3], OUT float new_attachment_element[3], float new_attachment_material_axis[3]){
     float gradient_deformation[9] = {0,0,0,0,0,0,0,0,0};
     float R[9];
     float Q[9];
     get_gradient_deformation(this->connected_tet->n, this->deformed_tet_nodes, gradient_deformation);
     QR_decompose_gram_schmidt(gradient_deformation, Q, R);
-    apply_rotation_matrix(attachment_element, R, new_attachment_element);
+    apply_rotation_matrix(attachment_element, Q, new_attachment_element); // yes, Q really is the rotation matrix.
     apply_rotation_matrix(attachment_material_axis, Q, new_attachment_material_axis);
 }
 

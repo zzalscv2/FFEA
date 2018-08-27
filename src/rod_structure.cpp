@@ -53,6 +53,10 @@ std::vector<float> stof_vec(std::vector<std::string> vec_in){
     return vec_out;
 }
 
+/**
+ Generate a random number between A and B, given an array of RngStream
+ objects, and the id of the RngStream objects to be used. 
+*/
 float random_number(float A, float B, RngStream rng[], int thread_id){
     return ((A) + ((B)-(A))*(rng[thread_id].RandU01()));
 }
