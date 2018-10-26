@@ -2119,25 +2119,42 @@ int World::change_kinetic_state(int blob_index, int target_state) {
     if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
         // Conformation change!
+	int inversionCheck;
+
         // Get current nodes
         vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
 
-        // Change active conformation and activate all faces
-        active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
-        active_blob_array[blob_index]->kinetically_set_faces(true);
-
         // Get target nodes
-        vector3 ** target_nodes = active_blob_array[blob_index]->get_actual_node_positions();
+        vector3 **target_nodes = blob_array[blob_index][target_conformation].get_actual_node_positions();
 
         // Apply map
         kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
 
-        // Move the old one to random space so as not to interfere with calculations, and deactivate all faces
-        blob_array[blob_index][current_conformation].position(blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10);
-        blob_array[blob_index][current_conformation].kinetically_set_faces(false);
+	// Check inversion
+	inversionCheck = blob_array[blob_index][target_conformation].check_inversion();
 
-        // Reactivate springs
-        activate_springs();
+	if(inversionCheck == FFEA_ERROR) {
+		printf("Conformational change rejected.\n");
+
+		// Move target conformation back to infinity
+	        blob_array[blob_index][target_conformation].position(blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10);
+
+		return FFEA_OK;
+
+	} else {
+
+		// Change active conformation and activate all faces
+		active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
+		active_blob_array[blob_index]->kinetically_set_faces(true);
+
+		// Move the old one to random space so as not to interfere with calculations, and deactivate all faces
+		blob_array[blob_index][current_conformation].position(blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10);
+		blob_array[blob_index][current_conformation].kinetically_set_faces(false);
+
+		// Reactivate springs
+		activate_springs();
+
+	}
 
     } else if (!kinetic_state[blob_index][current_state].is_bound() && kinetic_state[blob_index][target_state].is_bound()) {
 

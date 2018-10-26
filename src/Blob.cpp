@@ -598,6 +598,42 @@ int Blob::init(){
     return FFEA_OK;
 }
 
+int Blob::check_inversion() {
+
+	int n;
+	matrix3 J;
+
+	vector<int> invEls;
+	invEls.clear();
+
+        for (n = 0; n < num_elements; n++) {
+
+            // calculate jacobian for this element
+            elem[n].calculate_jacobian(J);
+
+            // get the 12 derivatives of the shape functions (by inverting the jacobian)
+            // and also get the element volume. The function returns an error in the
+            // case of an element inverting itself (determinant changing sign since last step)
+            if (elem[n].calc_shape_function_derivatives_and_volume(J) == FFEA_ERROR) {
+	        invEls.push_back(n);
+            }
+	}
+
+	// Are we screwed?
+	if(invEls.size() != 0) {
+		printf("\n");
+		FFEA_error_text();
+		printf("%d inverted elements: ", invEls.size());
+		for(n = 0; n < invEls.size(); ++n) {
+	                printf("%d ", invEls.at(n));
+		}
+		printf("\n");
+		return FFEA_ERROR;
+	}
+
+	return FFEA_OK;
+}
+
 int Blob::update_internal_forces() {
     if (blob_state != FFEA_BLOB_IS_DYNAMIC) {
         return FFEA_OK;
