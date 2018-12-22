@@ -57,6 +57,9 @@ mark_as_advanced(USE_PACK)
 set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
 
+# Debug Build
+option(USE_DEBUG "Add debug compiler flags" OFF)
+
 set(BUILD_DOC "TRY" CACHE STRING "ONLY; YES; TRY; NO")
 
 set (LIBS_TO_LINK)
@@ -303,7 +306,8 @@ endif  ("${NUMPY_FOUND}" STREQUAL "OK")
 
 
 # 10 ### FAST! ##########
-if (NOT USE_PACK)
+if (NOT USE_DEBUG)
+ if (NOT USE_PACK)
   if (USE_FAST)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
       if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.8")
@@ -328,7 +332,22 @@ else (NOT USE_PACK)
   if (USE_FAST)
       message(STATUS "USE_FAST changed to USE_PACK!")
   endif(USE_FAST)
-endif(NOT USE_PACK)
+ endif(NOT USE_PACK)
+endif(NOT USE_DEBUG)
+
+#
+# Debug last, to overwrite everything else
+#
+if (USE_DEBUG)
+	set(CMAKE_BUILD_TYPE Debug)
+
+	# Just in case
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb3")
+
+	# Let the user know what mayhem they may have caused
+	message(STATUS "\n\tDebug mode enabled\n")
+
+endif (USE_DEBUG)
 
 message(STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}")
 get_directory_property( DirDefs COMPILE_DEFINITIONS )
