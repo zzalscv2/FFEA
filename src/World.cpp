@@ -3003,16 +3003,6 @@ int World::calculate_kinetic_rates() {
                 // Unbnding event! Kinetic switch is constant
                 kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 
-                // Dynein specific. Delete for generality. Cannot both unbind!
-                if(i == 0 || i == 1) {
-                    int other_state = active_blob_array[(i + 1) % 2]->get_state_index();
-                    /*if(other_state == 0 || other_state == 2 || other_state == 3 || other_state == 5) {
-                    	kinetic_rate[i][current_state][j] = 0.0;
-                    }*/
-                    if(current_state == 1 && other_state != 1) {
-                        kinetic_rate[i][current_state][j] = 0.0;
-                    }
-                }
             } else {
 
                 // Identity event. Nothing changes here either
