@@ -393,6 +393,7 @@ int Blob::init(){
 
     // Calculate how many faces each surface node is a part of
     num_contributing_faces = new(std::nothrow) int[num_surface_nodes];
+
     if (num_contributing_faces == NULL) FFEA_ERROR_MESSG("Failed to allocate num_contributing_faces\n");
     for (int i = 0; i < num_surface_nodes; i++) {
         num_contributing_faces[i] = 0;
