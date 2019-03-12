@@ -122,6 +122,7 @@ class FFEA_viewer_control_window:
      self.show_pinned = IntVar(self.root, value=self.display_flags['show_pinned'])
      self.show_beads = StringVar(self.root, value=self.display_flags['show_beads'])
      self.show_danger = IntVar(self.root, value=self.display_flags['show_danger'])
+     self.merge_blobs = IntVar(self.root, value=self.display_flags['merge_blobs'])
      self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
      self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
      self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
@@ -188,6 +189,10 @@ class FFEA_viewer_control_window:
      # show danger_elements: 
      self.check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
      self.check_button_show_danger.grid(row=6, column=2, sticky=W)
+
+     # Merge blobs into 1: 
+     self.check_button_merge_blobs = Checkbutton(display_flags_frame, text="merge_blobs", variable=self.merge_blobs, command=lambda:self.update_display_flags("merge_blobs"))
+     self.check_button_merge_blobs.grid(row=7, column=2, sticky=W)
 
      # # show solid:
      label_solid = Label(display_flags_frame, text="Show Solid:")
@@ -958,6 +963,11 @@ class FFEA_viewer_control_window:
 			turbotraj.create_cgo(self.script, self.display_flags)
 			turbotraj.dump_cgo()
 		self.load_cgo(cgo_fname, cgo_index_fname)
+		if self.display_flags['show_box'] != "No Box":
+			if self.box_exists == True:
+				self.turbo_draw_box(cgo_index_fname)
+			else:
+				print "Box does not exist"
 		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
 	else:
 		self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
@@ -1002,6 +1012,7 @@ class FFEA_viewer_control_window:
 	self.check_button_show_pinned.config(state=DISABLED)
 	self.check_button_show_inverted.config(state=DISABLED)
 	self.check_button_show_danger.config(state=DISABLED)
+	self.check_button_merge_blobs.config(state=DISABLED)
 
 	self.text_button_system_name.config(state=DISABLED)
 	self.random_name_button.config(state=DISABLED)
@@ -1058,6 +1069,44 @@ class FFEA_viewer_control_window:
       print("Loading the cgo object...")
       for frame in range(len(cgo_index)):
           cmd.load_cgo(cgo[frame], cgo_index[frame][0], str(cgo_index[frame][1]))
+          
+  def turbo_draw_box(self,cgo_index_fname):
+      cgo_index = np.load(cgo_index_fname)
+      obj = [BEGIN, LINES]
+      if self.display_flags['show_box'] == "Simulation Box (outline)":
+		if self.display_flags['load_trajectory'] == "CGO":
+		    self.box/=10
+		step = self.box
+		# Loop over the three planes
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[j * step[0], 0.0, i * step[2]], [j * step[0], self.box[1], i * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+      obj.append(END)
+      for frame in range(len(cgo_index)-1):
+          cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box")
 
   def load_turbotrajectory(self, turbotraj):
       
@@ -1085,7 +1134,12 @@ class FFEA_viewer_control_window:
             for face in surfs[blob_num].face:
                 nodexyz = get_nodes_in_face(turbotraj, face)
                 norm = self.get_normal(nodexyz[0], nodexyz[1], nodexyz[2])
-                sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2], VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+                #if(blobnum%10==0):
+                #    sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2], VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+                #    print("modulo")
+                #else:
+                sol.extend( [ NORMAL, -norm[0], -norm[1], -norm[2], VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000] )
+                print("not modulo")
         sol.append(END)#
         cmd.load_cgo(sol, self.display_flags['system_name'], frame)
 
@@ -1419,6 +1473,7 @@ class FFEA_viewer_control_window:
 		'show_pinned': 1,
 		'show_beads': "No Beads",
 		'show_danger': 0,
+		'merge_blobs': 0,
 		'show_inverted': 1,
 		'show_vdw': 0,
 		'show_shortest_edge': 0,
@@ -1517,7 +1572,7 @@ class FFEA_viewer_control_window:
 			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags, scale = scale)
 
   def draw_box(self, f):
-	
+	print("drawing box ",f)
 	# A cube has 8 vertices and 12 sides. A hypercube has 16 and 32! "Whoa, that's well cool Ben!" Yeah, ikr 
 	obj = [BEGIN, LINES]
 	
@@ -1525,6 +1580,8 @@ class FFEA_viewer_control_window:
 	#step = self.box
 	#step = [b for b in self.box]
 	if self.display_flags['show_box'] == "Simulation Box (outline)":
+		if self.display_flags['load_trajectory'] == "CGO":
+		    self.box/=10
 		step = self.box
 		# Loop over the three planes
 		for i in range(2):

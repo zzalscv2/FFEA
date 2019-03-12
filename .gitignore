@@ -16,3 +16,10 @@ external/boost/tools/build/bjam
 external/boost/tools/build/bootstrap.log
 external/boost/tools/build/src/engine/bin.linuxx86_64/
 external/boost/tools/build/src/engine/bootstrap/
+ffea_adv_msd.config
+ffea_adv_msd.creator
+ffea_adv_msd.files
+ffea_adv_msd.includes
+ffea_adv_msd.creator.user
+.gitignore
+

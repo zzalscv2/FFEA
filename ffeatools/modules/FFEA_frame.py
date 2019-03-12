@@ -135,7 +135,8 @@ class FFEA_frame(FFEA_node.FFEA_node):
 		self.pos = node.pos
 		
 	def write_to_traj(self, fo):
-
+		fo.write("%d %d %d\n" % (self.pbc_count[0],self.pbc_count[1],self.pbc_count[2]))
+		fo.write("%10.6e %10.6e %10.6e\n" % (self.com_adv_msd[0],self.com_adv_msd[1],self.com_adv_msd[2]))
 		for p in self.pos:
 			fo.write("%10.6e %10.6e %10.6e %10.6e %10.6e %10.6e %10.6e %10.6e %10.6e %10.6e\n" % (p[0], p[1], p[2], 0, 0, 0, 0, 0, 0, 0))
 
@@ -157,6 +158,8 @@ class FFEA_frame(FFEA_node.FFEA_node):
 		
 	def reset(self):
 		self.num_nodes = 0
+		self.pbc_count = [0,0,0]
+		self.com_adv_msd = [0,0,0]
 		self.num_surface_nodes = 0
 		self.num_interior_nodes = 0
 		self.step = 0

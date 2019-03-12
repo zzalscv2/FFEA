@@ -29,6 +29,7 @@ Created on Wed Aug 24 15:22:28 2016
 """
 import numpy as np
 import FFEA_trajectory
+from random import random
 #from pymol import cmd
 #from pymol.cgo import *
 #import pymol.cgo as _cgo
@@ -154,6 +155,16 @@ class FFEA_turbotrajectory:
             return [turbotraj[blob_num][0][frame][face.n[0]], turbotraj[blob_num][0][frame][face.n[1]], turbotraj[blob_num][0][frame][face.n[2]]]
         
         surfs, frames, self.cgo, self.cgo_blob_index = setup(self)
+        rand_a,rand_b,rand_c = [],[],[]
+        for blob_num in range(len(surfs)):
+            if (blob_num %5==0):
+                rand_a.append(random())
+                rand_b.append(random())
+                rand_c.append(random())
+            else:
+                rand_a.append(1)
+                rand_b.append(1)
+                rand_c.append(1)
     
         # for every frame, create a cgo object
         for frame in frames:
@@ -165,7 +176,8 @@ class FFEA_turbotrajectory:
                 for face in surfs[blob_num].face:
                     nodexyz = get_nodes_in_face(self.turbotraj, face)
                     norm = self.get_normal(nodexyz[0], nodexyz[1], nodexyz[2])
-                    sol.extend( [ _cgo.NORMAL, -norm[0], -norm[1], -norm[2], _cgo.VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, _cgo.VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, _cgo.VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+                    sol.extend( [_cgo.COLOR,rand_a[blob_num],rand_b[blob_num],rand_c[blob_num], _cgo.NORMAL, -norm[0], -norm[1], -norm[2], _cgo.VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, _cgo.VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, _cgo.VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
+                    #sol.extend( [ _cgo.NORMAL, -norm[0], -norm[1], -norm[2], _cgo.VERTEX, nodexyz[0][0]*1000000000, nodexyz[0][1]*1000000000, nodexyz[0][2]*1000000000, _cgo.VERTEX, nodexyz[1][0]*1000000000, nodexyz[1][1]*1000000000, nodexyz[1][2]*1000000000, _cgo.VERTEX, nodexyz[2][0]*1000000000, nodexyz[2][1]*1000000000, nodexyz[2][2]*1000000000 ] )
             sol.append(_cgo.END)
             self.cgo.append(sol)
             # save it for later
@@ -340,6 +352,7 @@ class FFEA_turbotrajectory:
             then we can work out which frame we're on.
             """
             if step > 1:
+                #print(" step is "+str(step) + " and steps_per_frame is " +str(steps_per_frame))
                 return ((step-1)/steps_per_frame)+1
             else:
                 return step
@@ -364,13 +377,16 @@ class FFEA_turbotrajectory:
         steps = []
         while seek:
             line = ftj.readline()
-            if line.startswith('Blob') and "->" not in line and "Nodes" not in line: # Only lines with blob, conf, step
+            if line.startswith('Blob 0') and "->" not in line and "Nodes" not in line: # Only lines with blob, conf, step
+                #print("line is " +str(line))
+                #print("steps is " +str(steps))
                 blob, conf, step = match_line(line) # regex the line to get the values
                 steps.append(step)
             if len(steps) >= 3:
                 break
             
         self.step = steps[2] - steps[1]
+        #print("self.step is " +str(self.step) + "and steps 1 and 2 are " +str(steps[1]))
         steps_per_frame = self.step
         
         print("Steps calculated successfully...")
@@ -385,13 +401,19 @@ class FFEA_turbotrajectory:
             line = ftj.readline()
             if line.startswith('Blob') and "->" not in line and "Nodes" not in line: #Only lines with blob, conf, step
                 blob, conf, step = match_line(line) # regex the line to get the values
+                #print("blob is " +str(blob) +" conf is "+str(conf)+" step is "+str(step)) 
                 frame = convert_step_to_frame(steps_per_frame, step)
                 ftj.readline() # skip the word 'DYNAMIC'
+                ftj.readline() #skip pbc_count)
+                ftj.readline() #skip com with advective transport removed
                 nodes_range = xrange(self.num_nodes)
                 for node in nodes_range: #  each node occupies one line
                     #self.turbotraj[blob][conf][frame][node] = np.fromstring(self.ftj.readline(), dtype=float, sep=' ')[0:3]
                     node_line = ftj.readline().split()
+                    #print(node_line)
                     for i in [0,1,2]: # 3 points
+                        #print(frame)
+                        #import pdb; pdb.set_trace()
                         turbotraj[blob][conf][frame][node][i] = float(node_line[i])
                     # fill the contents of the node with the first 3 numbers in the line, converted from a string. first 3 numbers = ignore second order elements
             if line == "": #empty string (no /n) at eof

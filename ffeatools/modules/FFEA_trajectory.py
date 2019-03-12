@@ -203,11 +203,13 @@ class FFEA_trajectory:
 				frame = None
 
 			else:
-				self.traj.readline().strip()
-				self.traj.readline().strip()
+				#self.traj.readline().strip()
+				#self.traj.readline().strip()
 				# Get a frame
 				frame = FFEA_frame.FFEA_frame()
 				frame.num_nodes = b[cindex].num_nodes
+				frame.pbc_count = [int(i) for i in self.traj.readline().split()]
+				frame.com_adv_msd = [float(i) for i in self.traj.readline().split()]
 
 				# Try to read stuff
 				if onlyNodes == True:
