@@ -84,6 +84,8 @@ SimulationParams::SimulationParams() {
     shear_rate = 0;
     
     msd_corr_calc = 0;
+    overlap_calc = 0;
+    overlap_cutoff = 0;
     correlator_skip = 0;
 
     trajectory_out_fname_set = 0;
@@ -198,6 +200,8 @@ SimulationParams::~SimulationParams() {
     
     msd_corr_calc = 0;
     correlator_skip = 0;
+    overlap_calc = 0;
+    overlap_cutoff = 0;
 
     trajectory_out_fname = "\n";
     measurement_out_fname = "\n";
@@ -441,6 +445,9 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "msd_corr_calc") {
         msd_corr_calc = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << msd_corr_calc << endl;
+    } else if (lvalue == "overlap_calc") {
+        overlap_calc = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << overlap_calc<< endl;
     } else if (lvalue == "correlator_skip") {
 
         // convert to float first so that user may write numbers of the form 1e4 for 10000 etc
@@ -469,6 +476,10 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         ssint_cutoff = atof(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_cutoff << endl;
         ssint_cutoff /= mesoDimensions::length;
+    } else if (lvalue == "overlap_cutoff" ) {
+        overlap_cutoff = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << overlap_cutoff << endl;
+        overlap_cutoff /= mesoDimensions::length;
 
     } else if (lvalue == "steric_factor" || lvalue == "vdw_steric_factor") {
         steric_factor = atof(rvalue.c_str());

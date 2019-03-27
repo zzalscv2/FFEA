@@ -119,8 +119,9 @@ public:
     int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
     int calc_ctforces; ///< Whether or not to include constant forces onto nodes defined in the ctforces block
     int force_pbc; ///< Whether or not to apply pbc to surface insteractions
-    int msd_corr_calc;
-    long long correlator_skip;
+    int msd_corr_calc; ///< Whether or not to calculate centre of mass Mean-square displacement and stress tensors and place in correlators
+    int overlap_calc; ///< Whether or not to calculate centre of mass differences ad abort simulation if an overlap has occured.
+    long long correlator_skip; ///< Period in simulation to consider equilibration and not include in correlator
     int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
     int wall_x_1;
     int wall_x_2;
@@ -136,6 +137,7 @@ public:
     int calc_steric; ///< Calculate steric interactions? 
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
     scalar ssint_cutoff; ///< Cutoff distance for the surface-surface interactions. 
+    scalar overlap_cutoff; ///< Cuttoff distance for Centre of Mass measurements indicating an unphysical overlap ( intended for spheres)
     geoscalar steric_dr; ///< used to calculate the numerical derivative.
 
     string FFEA_script_filename;

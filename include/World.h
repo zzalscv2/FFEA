@@ -184,7 +184,8 @@ private:
     
     Fmm_blob sys_blob;
     arr3 sys_pos_change_tot;
-    
+    int correlators_seek_end_for_restart(FILE *correlator_out, off_t &last_asterisk_pos, int frames_to_delete);
+
 
     /** @brief Which conformation is active in each blob */
     Blob **active_blob_array;
@@ -411,6 +412,8 @@ private:
 
     /** @brief calculates the blob to blob corrections due to periodic boundary conditions*/
     void calc_blob_corr_matrix(int num_blobs,scalar *blob_corr, scalar box_lag, int step);
+
+    int overlap_error_check();
 
     scalar *blob_corr;
     

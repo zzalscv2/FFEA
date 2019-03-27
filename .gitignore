@@ -21,5 +21,10 @@ ffea_adv_msd.creator
 ffea_adv_msd.files
 ffea_adv_msd.includes
 ffea_adv_msd.creator.user
+adv_msd.config
+adv_msd.creator
+adv_msd.files
+adv_msd.includes
+adv_msd.creator.user
 .gitignore
 

@@ -897,9 +897,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                num_asterisks_to_find = (frames_to_delete)+1; // 1 to get to top of last frame, one to delete the previous
 			    while (num_asterisks != num_asterisks_to_find) {
 			        if (fseek(mini_meas_out, -2, SEEK_CUR) != 0) {
-				//perror(NULL);
-				//FFEA_ERROR_MESSG("It is likely we have reached the beginning of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
-				    printf("Found beginning of file. Searching forwards for next asterisk...");
+                    printf("Found beginning of file. Searching forwards for next asterisk...");
 				    singleframe = true;
 
 				// This loop will allow the script to find the 'final' asterisk
@@ -953,70 +951,242 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 			}
 			
 			if(params.msd_corr_calc ==1){
-			    cout<<"here's a flag"<<endl;
+                //cout<<"here's a flag"<<endl;
 			    if ((base_corr_out = fopen(params.base_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.base_corr_out_fname.c_str())
 				    }
+                correlators_seek_end_for_restart(base_corr_out,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    diff_vec[i].read_ffea(base_corr_out);
+                }
+                //cout<<"read diff_vec"<<endl;
+                printf("Truncating the base MSD correlator file to the last asterisk...\n");
+                if (truncate(params.base_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate base MSD correlator file %s\n", params.base_corr_out_fname.c_str())
+                }
+                fclose(base_corr_out);
+
 				if ((corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.corrected_corr_out_fname.c_str())
 				    }
+                correlators_seek_end_for_restart(corrected_corr_out,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    diff_vec_corrected[i].read_ffea(corrected_corr_out);
+                }
+                //cout<<"read diff_vec_corrected"<<endl;
+                printf("Truncating the corrected MSD correlator file to the last asterisk...\n");
+                if (truncate(params.corrected_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate corrected MSD correlator file %s\n", params.corrected_corr_out_fname.c_str())
+                }
+                fclose(corrected_corr_out);
+
 				if ((x_corr_out = fopen(params.x_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.x_corr_out_fname.c_str())
 				    }
+                correlators_seek_end_for_restart(x_corr_out,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    diff_corr_x[i].read_ffea(x_corr_out);
+                }
+                //cout<<"read diff_corr_x"<<endl;
+                printf("Truncating the x dimension MSD correlator file to the last asterisk...\n");
+                if (truncate(params.x_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate x dimension MSD correlator file %s\n", params.x_corr_out_fname.c_str())
+                }
+                fclose(x_corr_out);
+
+
 				if ((y_corr_out = fopen(params.y_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.y_corr_out_fname.c_str())
 				    }
+                correlators_seek_end_for_restart(y_corr_out,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    diff_corr_y[i].read_ffea(y_corr_out);
+                }
+                //cout<<"read diff_corr_y"<<endl;
+                printf("Truncating the y dimension MSD correlator file to the last asterisk...\n");
+                if (truncate(params.y_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate y dimension MSD correlator file %s\n", params.y_corr_out_fname.c_str())
+                }
+                fclose(y_corr_out);
 				if ((z_corr_out = fopen(params.z_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.z_corr_out_fname.c_str())
 				    }
+                correlators_seek_end_for_restart(z_corr_out,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    diff_corr_z[i].read_ffea(z_corr_out);
+                }
+                //cout<<"read diff_corr_z"<<endl;
+                printf("Truncating the z dimension MSD correlator file to the last asterisk...\n");
+                if (truncate(params.z_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate z dimension MSD correlator file %s\n", params.z_corr_out_fname.c_str())
+                }
+                fclose(z_corr_out);
+                //cout<<"closed z corr out"<<endl;
 				if ((sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.sys_corr_out_fname.c_str())
 				    }
+                //cout<<"sys corr opened"<<endl;
+                correlators_seek_end_for_restart(sys_corr_out,last_asterisk_pos,frames_to_delete);
+                //cout<<"sys_corr_end_sought"<<endl;
+                sys_corr.read_ffea(sys_corr_out);
+                //cout<<"read sys_corr"<<endl;
+                printf("Truncating the system MSD correlator file to the last asterisk...\n");
+                if (truncate(params.sys_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate system MSD correlator file %s\n", params.sys_corr_out_fname.c_str())
+                }
+                fclose(sys_corr_out);
 				if ((elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.elastic_stress_corr_out_fname.c_str())
 				    }
+                correlators_seek_end_for_restart(elastic_stress_corr_out,last_asterisk_pos,frames_to_delete);
+                elastic_stress_corr_c0.read_ffea(elastic_stress_corr_out);
+                elastic_stress_corr_c1.read_ffea(elastic_stress_corr_out);
+                elastic_stress_corr_c2.read_ffea(elastic_stress_corr_out);
+                elastic_stress_corr_c3.read_ffea(elastic_stress_corr_out);
+                elastic_stress_corr_c4.read_ffea(elastic_stress_corr_out);
+                elastic_stress_corr_c5.read_ffea(elastic_stress_corr_out);
+                elastic_stress_corr_c6.read_ffea(elastic_stress_corr_out);
+                //cout<<"read elastic_stress_corr"<<endl;
+                printf("Truncating the elastic stress correlator file to the last asterisk...\n");
+                if (truncate(params.elastic_stress_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate elastic stress correlator file %s\n", params.elastic_stress_corr_out_fname.c_str())
+                }
+                fclose(elastic_stress_corr_out);
 				if ((viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.viscous_stress_corr_out_fname.c_str())
 				    }
-				if ((total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "r")) == NULL) {
+                correlators_seek_end_for_restart(viscous_stress_corr_out,last_asterisk_pos,frames_to_delete);
+                viscous_stress_corr_c0.read_ffea(viscous_stress_corr_out);
+                viscous_stress_corr_c1.read_ffea(viscous_stress_corr_out);
+                viscous_stress_corr_c2.read_ffea(viscous_stress_corr_out);
+                viscous_stress_corr_c3.read_ffea(viscous_stress_corr_out);
+                viscous_stress_corr_c4.read_ffea(viscous_stress_corr_out);
+                viscous_stress_corr_c5.read_ffea(viscous_stress_corr_out);
+                viscous_stress_corr_c6.read_ffea(viscous_stress_corr_out);
+                //cout<<"read viscous_stress_corr"<<endl;
+                printf("Truncating the viscous stress correlator file to the last asterisk...\n");
+                if (truncate(params.viscous_stress_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate viscous stress correlator file %s\n", params.viscous_stress_corr_out_fname.c_str())
+                }
+                fclose(elastic_stress_corr_out);
+                if ((total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.total_stress_corr_out_fname.c_str())
 				    }
-				if ((base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "r")) == NULL) {
-				        FFEA_FILE_ERROR_MESSG(params.base_corr_out_test_fname.c_str())
-				    }
-				if ((corrected_corr_out_test = fopen(params.corrected_corr_out_test_fname.c_str(), "r")) == NULL) {
-				        FFEA_FILE_ERROR_MESSG(params.corrected_corr_out_test_fname.c_str())
-				    }
-				if ((x_corr_out_test = fopen(params.x_corr_out_test_fname.c_str(), "r")) == NULL) {
-				        FFEA_FILE_ERROR_MESSG(params.x_corr_out_test_fname.c_str())
-				    }
-				if ((y_corr_out_test = fopen(params.y_corr_out_test_fname.c_str(), "r")) == NULL) {
-				        FFEA_FILE_ERROR_MESSG(params.y_corr_out_test_fname.c_str())
-				    }
-				if ((z_corr_out_test = fopen(params.z_corr_out_test_fname.c_str(), "r")) == NULL) {
-				        FFEA_FILE_ERROR_MESSG(params.z_corr_out_test_fname.c_str())
-				    }
-				if ((sys_corr_out_test = fopen(params.sys_corr_out_test_fname.c_str(), "r")) == NULL) {
-				        FFEA_FILE_ERROR_MESSG(params.sys_corr_out_test_fname.c_str())
-				    }
+                //cout<<"opened total_stress_corr"<<endl;
+                correlators_seek_end_for_restart(total_stress_corr_out,last_asterisk_pos,frames_to_delete);
+                //cout<<"sought end of total_stress_corr"<<endl;
+                total_stress_corr_c0.read_ffea(total_stress_corr_out);
+                total_stress_corr_c1.read_ffea(total_stress_corr_out);
+                total_stress_corr_c2.read_ffea(total_stress_corr_out);
+                total_stress_corr_c3.read_ffea(total_stress_corr_out);
+                total_stress_corr_c4.read_ffea(total_stress_corr_out);
+                total_stress_corr_c5.read_ffea(total_stress_corr_out);
+                total_stress_corr_c6.read_ffea(total_stress_corr_out);
+                //cout<<"read total_stress_corr"<<endl;
+                printf("Truncating the total stress correlator file to the last asterisk...\n");
+                if (truncate(params.total_stress_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate total stress correlator file %s\n", params.total_stress_corr_out_fname.c_str())
+                }
+                fclose(elastic_stress_corr_out);
+                if ((base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "r")) == NULL) {
+                        FFEA_FILE_ERROR_MESSG(params.base_corr_out_test_fname.c_str())
+                    }
+                correlators_seek_end_for_restart(base_corr_out_test,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    dxstore_vec[i].read_ffea(base_corr_out_test);
+                }
+                //cout<<"read dxstore_vec"<<endl;
+                printf("Truncating the advection removed base MSD correlator file to the last asterisk...\n");
+                if (truncate(params.base_corr_out_test_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate advection removed base MSD correlator file %s\n", params.base_corr_out_test_fname.c_str())
+                }
+                fclose(base_corr_out_test);
 
+                if ((corrected_corr_out_test = fopen(params.corrected_corr_out_test_fname.c_str(), "r")) == NULL) {
+                        FFEA_FILE_ERROR_MESSG(params.corrected_corr_out_test_fname.c_str())
+                    }
+                correlators_seek_end_for_restart(corrected_corr_out_test,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    dxstore_vec_corrected[i].read_ffea(corrected_corr_out_test);
+                }
+                //cout<<"read dxstore_vec_corrected"<<endl;
+                printf("Truncating the adection removed corrected MSD correlator file to the last asterisk...\n");
+                if (truncate(params.corrected_corr_out_test_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate advection removed corrected MSD correlator file %s\n", params.corrected_corr_out_test_fname.c_str())
+                }
+                fclose(corrected_corr_out_test);
+
+                if ((x_corr_out_test = fopen(params.x_corr_out_test_fname.c_str(), "r")) == NULL) {
+                        FFEA_FILE_ERROR_MESSG(params.x_corr_out_test_fname.c_str())
+                    }
+                correlators_seek_end_for_restart(x_corr_out_test,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    dxstore_corr_x[i].read_ffea(x_corr_out_test);
+                }
+                //cout<<"read dxstore_corr_x"<<endl;
+                printf("Truncating the advection removed x dimension MSD correlator file to the last asterisk...\n");
+                if (truncate(params.x_corr_out_test_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate advection removed x dimension MSD correlator filefile %s\n", params.x_corr_out_test_fname.c_str())
+                }
+                fclose(x_corr_out_test);
+
+
+                if ((y_corr_out_test = fopen(params.y_corr_out_test_fname.c_str(), "r")) == NULL) {
+                        FFEA_FILE_ERROR_MESSG(params.y_corr_out_test_fname.c_str())
+                    }
+                correlators_seek_end_for_restart(y_corr_out_test,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    dxstore_corr_y[i].read_ffea(y_corr_out_test);
+                }
+                //cout<<"read sxtore_corr_y"<<endl;
+                printf("Truncating the advection removed y dimension MSD correlator file to the last asterisk...\n");
+                if (truncate(params.y_corr_out_test_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate advection removed y dimension MSD correlator file %s\n", params.y_corr_out_test_fname.c_str())
+                }
+                fclose(y_corr_out_test);
+                if ((z_corr_out_test = fopen(params.z_corr_out_test_fname.c_str(), "r")) == NULL) {
+                        FFEA_FILE_ERROR_MESSG(params.z_corr_out_test_fname.c_str())
+                    }
+                correlators_seek_end_for_restart(z_corr_out_test,last_asterisk_pos,frames_to_delete);
+                for(int i =0; i<params.num_blobs;i++){
+                    dxstore_corr_z[i].read_ffea(z_corr_out_test);
+                }
+                //cout<<"read diff_corr_z"<<endl;
+                printf("Truncating the advection removed z dimension MSD correlator file to the last asterisk...\n");
+                if (truncate(params.z_corr_out_test_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate advection removed z dimension MSD correlator file %s\n", params.z_corr_out_test_fname.c_str())
+                }
+                fclose(z_corr_out_test);
+                if ((sys_corr_out_test = fopen(params.sys_corr_out_test_fname.c_str(), "r")) == NULL) {
+                        FFEA_FILE_ERROR_MESSG(params.sys_corr_out_test_fname.c_str())
+                    }
+                correlators_seek_end_for_restart(sys_corr_out_test,last_asterisk_pos,frames_to_delete);
+                dxstore_sys_corr.read_ffea(sys_corr_out_test);
+                //cout<<"read sys_corr"<<endl;
+                printf("Truncating the advection system MSD correlator file to the last asterisk...\n");
+                if (truncate(params.sys_corr_out_test_fname.c_str(), last_asterisk_pos) != 0) {
+                    FFEA_ERROR_MESSG("Error when trying to truncate advection removed system MSD correlator file %s\n", params.sys_corr_out_test_fname.c_str())
+                }
+                fclose(sys_corr_out_test);
+/*
 				
 				cout<<"Managed dem opens for reads"<<endl;    
-				for(int i =0; i<params.num_blobs;i++){
-				    diff_vec[i].read_ffea(base_corr_out);
-				    cout<<"read diff_vec"<<endl;
-				    dxstore_vec[i].read_ffea(base_corr_out_test);
+
+
+                    dxstore_vec[i].read_ffea(base_corr_out_test);
 				    cout<<"read dxstore vec"<<endl;
-                    diff_vec_corrected[i].read_ffea(corrected_corr_out);
+                    //diff_vec_corrected[i].read_ffea(corrected_corr_out);
                     dxstore_vec_corrected[i].read_ffea(corrected_corr_out_test);
-                    diff_corr_x[i].read_ffea(x_corr_out);
+                    //diff_corr_x[i].read_ffea(x_corr_out);
                     dxstore_corr_x[i].read_ffea(x_corr_out_test);
                     diff_corr_y[i].read_ffea(y_corr_out);
                     dxstore_corr_y[i].read_ffea(y_corr_out_test);           
                     diff_corr_z[i].read_ffea(z_corr_out);
                     dxstore_corr_z[i].read_ffea(z_corr_out_test);
-				}
-				
+
+
+
+
 				    cout<<"it's treason, then?"<<endl;
 				    sys_corr.read_ffea(sys_corr_out);
 				    dxstore_sys_corr.read_ffea(sys_corr_out_test);
@@ -1046,7 +1216,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 				    
 				    
 				      
-			        fclose(base_corr_out);
+
 			        fclose(base_corr_out_test);
                     fclose(corrected_corr_out);
                     fclose(corrected_corr_out_test);
@@ -1062,6 +1232,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                     fclose(viscous_stress_corr_out);
                     fclose(total_stress_corr_out);
                     cout<<"closed all the fs "<<endl;
+                    */
 			}
 
 
@@ -2281,6 +2452,12 @@ int World::run() {
 
 	// Now, for this step, all forces and positions are correct, as are the kinetic states
         if ((step) % params.check == 0) {
+            if (params.overlap_calc ==1){
+                if  (overlap_error_check() == FFEA_ERROR){
+                    FFEA_ERROR_MESSG("Unphysical overlap has occured. RNG streams saved for this timestep, but all other outputs not.");
+                }
+
+            }
             print_trajectory_and_measurement_files(step, wtime);
             print_kinetic_files(step);
         }
@@ -2903,7 +3080,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             cout << "Blob " << i << ", scale not set." << endl;
             return FFEA_ERROR;
         }
-        printf("sys_dim_y will be %.32F\n",params.ssint_cutoff * params.es_N_y);
+        //printf("sys_dim_y will be %.32F\n",params.ssint_cutoff * params.es_N_y);
         // Build blob
         // Build conformations (structural data)
         // vector3 *cent = new vector3;
@@ -2974,7 +3151,7 @@ int World::read_and_build_system(vector<string> script_vector) {
                     blob_conf[i].centroid[2] *= blob_array[i][j].get_scale();
                     vector3 dv = blob_array[i][j].position(blob_conf[i].centroid[0], 
                                       blob_conf[i].centroid[1], blob_conf[i].centroid[2]);
-                    printf("*********blob %d dv is \n%.14e\t%.14e\t%.14e\n",i,dv[0],dv[1],dv[2]);
+                    //printf("*********blob %d dv is \n%.14e\t%.14e\t%.14e\n",i,dv[0],dv[1],dv[2]);
                     vector3 com;
                     blob_array[i][j].get_centroid(&com);
                     blob_array[i][j].set_dxstore(com.data);
@@ -4243,23 +4420,23 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
      
     //cout<<"msd_corr_ calc = "<<params.msd_corr_calc<<endl;
     if(params.msd_corr_calc==1){
-         base_corr_out = fopen(params.base_corr_out_fname.c_str(), "w");
-         corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "w");
-         x_corr_out = fopen(params.x_corr_out_fname.c_str(), "w");
-         y_corr_out = fopen(params.y_corr_out_fname.c_str(), "w");
-         z_corr_out = fopen(params.z_corr_out_fname.c_str(), "w");
-         sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "w");
+         base_corr_out = fopen(params.base_corr_out_fname.c_str(), "a");
+         corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "a");
+         x_corr_out = fopen(params.x_corr_out_fname.c_str(), "a");
+         y_corr_out = fopen(params.y_corr_out_fname.c_str(), "a");
+         z_corr_out = fopen(params.z_corr_out_fname.c_str(), "a");
+         sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "a");
          
-         base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "w");
-         corrected_corr_out_test = fopen(params.corrected_corr_out_test_fname.c_str(), "w");
-         x_corr_out_test = fopen(params.x_corr_out_test_fname.c_str(), "w");
-         y_corr_out_test = fopen(params.y_corr_out_test_fname.c_str(), "w");
-         z_corr_out_test = fopen(params.z_corr_out_test_fname.c_str(), "w");
-         sys_corr_out_test = fopen(params.sys_corr_out_test_fname.c_str(), "w");
+         base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "a");
+         corrected_corr_out_test = fopen(params.corrected_corr_out_test_fname.c_str(), "a");
+         x_corr_out_test = fopen(params.x_corr_out_test_fname.c_str(), "a");
+         y_corr_out_test = fopen(params.y_corr_out_test_fname.c_str(), "a");
+         z_corr_out_test = fopen(params.z_corr_out_test_fname.c_str(), "a");
+         sys_corr_out_test = fopen(params.sys_corr_out_test_fname.c_str(), "a");
          
-         elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "w");
-         viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "w");
-         total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "w");
+         elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "a");
+         viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "a");
+         total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "a");
          	
     //cout<<"opened the corr files"<<endl;
         for(int i = 0; i < params.num_blobs; ++i){
@@ -4273,22 +4450,37 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
             dxstore_corr_x[i].save_ffea(x_corr_out_test);
             dxstore_corr_y[i].save_ffea(y_corr_out_test);
             dxstore_corr_z[i].save_ffea(z_corr_out_test);
-            /*fprintf(base_corr_out,"*\n");
-            fflush(base_corr_out);
-            fprintf(corrected_corr_out,"*\n");
-            fflush(corrected_corr_out);
-            fprintf(x_corr_out,"*\n");
-            fflush(x_corr_out);
-            fprintf(y_corr_out,"*\n");
-            fflush(y_corr_out);
-            fprintf(z_corr_out,"*\n");
-            fflush(z_corr_out);*/
         }
-        //cout<<"saved main corr files"<<endl;
         sys_corr.save_ffea(sys_corr_out);
         dxstore_sys_corr.save_ffea(sys_corr_out_test);
-        //cout<<"saved sys corr files"<<endl;
-        elastic_stress_corr_c0.save_ffea(elastic_stress_corr_out); 
+
+        fprintf(base_corr_out,"*\n");
+        fflush(base_corr_out);
+        fprintf(corrected_corr_out,"*\n");
+        fflush(corrected_corr_out);
+        fprintf(x_corr_out,"*\n");
+        fflush(x_corr_out);
+        fprintf(y_corr_out,"*\n");
+        fflush(y_corr_out);
+        fprintf(z_corr_out,"*\n");
+        fflush(z_corr_out);
+        fprintf(base_corr_out_test,"*\n");
+        fflush(base_corr_out_test);
+        fprintf(corrected_corr_out_test,"*\n");
+        fflush(corrected_corr_out_test);
+        fprintf(x_corr_out_test,"*\n");
+        fflush(x_corr_out_test);
+        fprintf(y_corr_out_test,"*\n");
+        fflush(y_corr_out_test);
+        fprintf(z_corr_out_test,"*\n");
+        fflush(z_corr_out_test);
+        fprintf(sys_corr_out,"*\n");
+        fflush(sys_corr_out);
+        fprintf(sys_corr_out_test,"*\n");
+        fflush(sys_corr_out_test);
+
+
+        elastic_stress_corr_c0.save_ffea(elastic_stress_corr_out);
         elastic_stress_corr_c1.save_ffea(elastic_stress_corr_out);
         elastic_stress_corr_c2.save_ffea(elastic_stress_corr_out);
         elastic_stress_corr_c3.save_ffea(elastic_stress_corr_out);
@@ -4309,8 +4501,14 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         total_stress_corr_c4.save_ffea(total_stress_corr_out);
         total_stress_corr_c5.save_ffea(total_stress_corr_out);
         total_stress_corr_c6.save_ffea(total_stress_corr_out);
-        //cout<<"saved stress corr files"<<endl;
-            
+
+        fprintf(elastic_stress_corr_out,"*\n");
+        fflush(elastic_stress_corr_out);
+        fprintf(viscous_stress_corr_out,"*\n");
+        fflush(viscous_stress_corr_out);
+        fprintf(total_stress_corr_out,"*\n");
+        fflush(total_stress_corr_out);
+
         fclose(base_corr_out);
         fclose(corrected_corr_out);
         fclose(x_corr_out);
@@ -4503,6 +4701,7 @@ void World::print_mini_meas_file(int step, scalar wtime) {
         
         
         mat3_add(mean_stress_viscous,mean_stress_elastic,mean_stress_total);
+        //printf("mean elastic 01 is %.15e\n",mean_stress_elastic[0][1]);
         elastic_stress_corr_c0.add(mean_stress_elastic[0][1]);
         elastic_stress_corr_c1.add(mean_stress_elastic[1][2]);
         elastic_stress_corr_c2.add(mean_stress_elastic[2][0]);
@@ -4720,6 +4919,23 @@ void World::print_static_trajectory(int step, scalar wtime, int blob_index) {
 }
 
 
+int World::overlap_error_check(){
+    arr3 com,com1;
+    for (int i = 0; i < params.num_blobs; i++) {
+        active_blob_array[i]->get_stored_centroid(com);
+        for (int j = i+1; j < params.num_blobs; j++) {
+            active_blob_array[j]->get_stored_centroid(com1);
+            if(arr3arr3Distance<scalar,arr3>(com,com1)<params.overlap_cutoff){
+                printf("distance between is %e\n",arr3arr3Distance<scalar,arr3>(com,com1));
+                printf("overlap_cutoff is %e\n",params.overlap_cutoff);
+                printf("centroid 0  is %e\t%e\t%e\t\n",com[0],com[1],com[2]);
+                printf("box_dim.x is %e\n",box_dim.x);
+                return FFEA_ERROR;
+            }
+        }
+    }
+}
+
 void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr,scalar box_lag, int step) {
 
     //calculates blob corrections for periodic interactions
@@ -4867,7 +5083,51 @@ int World::catch_thread_updatingPCLL(int step, scalar wtime, int where) {
 }
 #endif
 
+int World::correlators_seek_end_for_restart(FILE *correlator_out,off_t &last_asterisk_pos, int frames_to_delete){
 
+    bool singleframe = false;
+    char c;
+    int num_asterisks_to_find = 0;
+
+    if (fseek(correlator_out, 0, SEEK_END) != 0) {
+        return FFEA_ERROR;
+    }
+
+    last_asterisk_pos = ftello(correlator_out);
+
+    int num_asterisks = 0;
+    num_asterisks_to_find = (frames_to_delete)+2; // This might be the wrong amount
+    while (num_asterisks != num_asterisks_to_find) {
+        if (fseek(correlator_out, -2, SEEK_CUR) != 0) {
+            printf("Found beginning of file. Searching forwards for next asterisk...");
+            singleframe = true;
+
+            // This loop will allow the script to find the 'final' asterisk
+            while(true) {
+                if ((c = fgetc(correlator_out)) == '*') {
+                    fseek(correlator_out, -1, SEEK_CUR);
+                    break;
+                }
+            }
+
+
+        }
+        c = fgetc(correlator_out);
+        if (c == '*') {
+            num_asterisks++;
+            printf("Found %d\n", num_asterisks);
+
+        }
+
+    }
+
+
+    if ((c = fgetc(correlator_out)) != '\n') {
+        ungetc(c, correlator_out);
+    } else {
+        last_asterisk_pos = ftello(correlator_out);
+    }
+}
 
 // Well done for reading this far! Hope this makes you smile.
 

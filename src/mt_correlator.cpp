@@ -1270,17 +1270,17 @@ void TCorrelatorDiffusionVector::save_ffea(FILE *fout){
 }
 
 void TCorrelatorDiffusionVector::read_ffea(FILE *fout){
-    cout<<"started read_ffea"<<endl;
+    //cout<<"started read_ffea"<<endl;
     if (fscanf(fout,"%d\t%d\t%d\n",&numcorr,&pcor,&length)!=3){cout<<"Reading PROBLEM";};
-    cout<<"read first line"<<endl;
+    //cout<<"read first line"<<endl;
     if (fscanf(fout,"%d\t%d\t%d\n",&npcorr,&npcorrmax,&nexp)!=3){cout<<"Reading PROBLEM";};
-    cout<<"read second line"<<endl;
+    //cout<<"read second line"<<endl;
     for(int i = 0;i<=numcorr;i++){
         for(int j = 0;j<pcor+3;j++){
             if (fscanf(fout,"%lf\t%lf\t%lf\t%lf\t%lld\n",&aa[i*(pcor+3) + j][0],&aa[i*(pcor+3) + j][1],&aa[i*(pcor+3) + j][2],&cor[i*(pcor+3) + j],&ncor[i*(pcor+3) + j])!=5){cout<<"SAVING PROBLEM";};
         }
     }
-    cout<<"Read whole correlator!"<<endl;
+    //cout<<"Read whole correlator!"<<endl;
 }
 
 void TCorrelatorDiffusionVector::evaluate(){
