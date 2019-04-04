@@ -642,16 +642,21 @@ class Blob:
                          # Get range of colours
                          # colgrad = [np.array([0.0,0.0,1.0]), np.array([0.0,1.0,0.0]), np.array([1.0,1.0,0.0]), np.array([1.0,0.0,0.0])]     # Blue green yellow red
                          #colgrad = [np.array([1.0,0.0,0.0]), np.array([1.0,1.0,0.0]), np.array([0.0,1.0,0.0]), np.array([0.0,0.0,1.0])]     # Red yellow green blue
-                         colgrad = [np.array([0.0,0.0,1.0]), np.array([1.0,1.0,1.0])]  # blue to white
+#                         colgrad = [np.array([0.0,0.0,1.0]), np.array([1.0,1.0,1.0])]  # blue to white
+#                         colgrad = [np.array([0.0,0.0,1.0]), np.array([1.0,0.0,0.0])]  # blue to red
+                         colgrad = [np.array([0.0,0.0,1.0]), np.array([1.0,1.0,1.0]), np.array([1.0,0.0,0.0])]  # blue to white to red
                          num_cols = len(colgrad)
 
                          # Get params
                          param = self.mat.element[:,paramval]
 
                          # Build color bins
-                         Erange = max(param) - min(param)
+#                         Erange = max(param) - min(param)
+                         minParam = 5e8
+                         maxParam = 3.5e9
+                         Erange = maxParam - minParam
                          binwidth = Erange / (num_cols - 1)
-                         Ebin = [min(param) + j * binwidth for j in range(num_cols)]
+                         Ebin = [minParam + j * binwidth for j in range(num_cols)]
                          Ebin[-1] = np.ceil(Ebin[-1])
 
                          # Cheat to catch the 0 / 0 below
