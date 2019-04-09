@@ -2454,6 +2454,7 @@ int World::run() {
         if ((step) % params.check == 0) {
             if (params.overlap_calc ==1){
                 if  (overlap_error_check() == FFEA_ERROR){
+                    printf("Unphysical overlap on step %lld\n",step);
                     FFEA_ERROR_MESSG("Unphysical overlap has occured. RNG streams saved for this timestep, but all other outputs not.");
                 }
 
@@ -4930,6 +4931,7 @@ int World::overlap_error_check(){
                 printf("overlap_cutoff is %e\n",params.overlap_cutoff);
                 printf("centroid 0  is %e\t%e\t%e\t\n",com[0],com[1],com[2]);
                 printf("box_dim.x is %e\n",box_dim.x);
+                fflush(stdout);
                 return FFEA_ERROR;
             }
         }
