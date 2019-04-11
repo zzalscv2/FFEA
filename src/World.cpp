@@ -2457,7 +2457,6 @@ int World::run() {
                     printf("Unphysical overlap on step %lld\n",step);
                     FFEA_ERROR_MESSG("Unphysical overlap has occured. RNG streams saved for this timestep, but all other outputs not.");
                 }
-
             }
             print_trajectory_and_measurement_files(step, wtime);
             print_kinetic_files(step);
@@ -4921,12 +4920,20 @@ void World::print_static_trajectory(int step, scalar wtime, int blob_index) {
 
 
 int World::overlap_error_check(){
+    //printf("starting overlap errorcheck\n");
+    fflush(stdout);
     arr3 com,com1;
     for (int i = 0; i < params.num_blobs; i++) {
+        //printf("i is %d",i);
+        //printf("AN ERROR IN 3RD THING\n");
         active_blob_array[i]->get_stored_centroid(com);
         for (int j = i+1; j < params.num_blobs; j++) {
+            //printf("j is %d",j);
             active_blob_array[j]->get_stored_centroid(com1);
+            //printf("AN ERROR IS HERE INSTEAD\n"); 
             if(arr3arr3Distance<scalar,arr3>(com,com1)<params.overlap_cutoff){
+                //printf("AN ERROR IS HERE\n");
+                //fflush(stdout);
                 printf("distance between is %e\n",arr3arr3Distance<scalar,arr3>(com,com1));
                 printf("overlap_cutoff is %e\n",params.overlap_cutoff);
                 printf("centroid 0  is %e\t%e\t%e\t\n",com[0],com[1],com[2]);
@@ -4936,6 +4943,7 @@ int World::overlap_error_check(){
             }
         }
     }
+    return FFEA_OK;
 }
 
 void World::calc_blob_corr_matrix(int num_blobs,scalar *blob_corr,scalar box_lag, int step) {
