@@ -1068,7 +1068,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 if (truncate(params.viscous_stress_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
                     FFEA_ERROR_MESSG("Error when trying to truncate viscous stress correlator file %s\n", params.viscous_stress_corr_out_fname.c_str())
                 }
-                fclose(elastic_stress_corr_out);
+                fclose(viscous_stress_corr_out);
                 if ((total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "r")) == NULL) {
 				        FFEA_FILE_ERROR_MESSG(params.total_stress_corr_out_fname.c_str())
 				    }
