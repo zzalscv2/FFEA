@@ -1087,7 +1087,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 if (truncate(params.total_stress_corr_out_fname.c_str(), last_asterisk_pos) != 0) {
                     FFEA_ERROR_MESSG("Error when trying to truncate total stress correlator file %s\n", params.total_stress_corr_out_fname.c_str())
                 }
-                fclose(elastic_stress_corr_out);
+                fclose(total_stress_corr_out);
                 if ((base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "r")) == NULL) {
                         FFEA_FILE_ERROR_MESSG(params.base_corr_out_test_fname.c_str())
                     }
