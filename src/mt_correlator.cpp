@@ -265,28 +265,31 @@ void TCorrelator::save(std::string savename){
 
     fsave.close();
 }
-/*
+
 void TCorrelator::save_out(std::string savename){
+
+
     std::ofstream fsave;
 
     fsave.precision(14);
 
-    fsave.open(savename);
+    fsave.open(savename, ios::app);
 
     for(int i = 0;i<=length;i++){
             fsave<<std::scientific<<t[i]<<"\t"<<f[i]<<"\t"<<fav[i]<<"\t"<<fsqav[i]<<"\t"<<tav[i]<<endl;
     }
 
     fsave.close();
-}*/
 
+}
+/*
 void TCorrelator::save_out(FILE *fout){
     for(int i = 0;i<=length;i++){
         fprintf(fout,"%f\t%f\t%f\t%f\t%f\n",t[i],f[i],fav[i],fsqav[i],tav[i]);
     }
 
 }
-
+*/
 
 
 void TCorrelator::save_ffea(FILE *fout){
