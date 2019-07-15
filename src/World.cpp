@@ -4420,23 +4420,23 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
      
     //cout<<"msd_corr_ calc = "<<params.msd_corr_calc<<endl;
     if(params.msd_corr_calc==1){
-         base_corr_out = fopen(params.base_corr_out_fname.c_str(), "a");
-         corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "a");
-         x_corr_out = fopen(params.x_corr_out_fname.c_str(), "a");
-         y_corr_out = fopen(params.y_corr_out_fname.c_str(), "a");
-         z_corr_out = fopen(params.z_corr_out_fname.c_str(), "a");
-         sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "a");
+         base_corr_out = fopen(params.base_corr_out_fname.c_str(), "w");
+         corrected_corr_out = fopen(params.corrected_corr_out_fname.c_str(), "w");
+         x_corr_out = fopen(params.x_corr_out_fname.c_str(), "w");
+         y_corr_out = fopen(params.y_corr_out_fname.c_str(), "w");
+         z_corr_out = fopen(params.z_corr_out_fname.c_str(), "w");
+         sys_corr_out = fopen(params.sys_corr_out_fname.c_str(), "w");
          
-         base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "a");
-         corrected_corr_out_test = fopen(params.corrected_corr_out_test_fname.c_str(), "a");
-         x_corr_out_test = fopen(params.x_corr_out_test_fname.c_str(), "a");
-         y_corr_out_test = fopen(params.y_corr_out_test_fname.c_str(), "a");
-         z_corr_out_test = fopen(params.z_corr_out_test_fname.c_str(), "a");
-         sys_corr_out_test = fopen(params.sys_corr_out_test_fname.c_str(), "a");
+         base_corr_out_test = fopen(params.base_corr_out_test_fname.c_str(), "w");
+         corrected_corr_out_test = fopen(params.corrected_corr_out_test_fname.c_str(), "w");
+         x_corr_out_test = fopen(params.x_corr_out_test_fname.c_str(), "w");
+         y_corr_out_test = fopen(params.y_corr_out_test_fname.c_str(), "w");
+         z_corr_out_test = fopen(params.z_corr_out_test_fname.c_str(), "w");
+         sys_corr_out_test = fopen(params.sys_corr_out_test_fname.c_str(), "w");
          
-         elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "a");
-         viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "a");
-         total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "a");
+         elastic_stress_corr_out = fopen(params.elastic_stress_corr_out_fname.c_str(), "w");
+         viscous_stress_corr_out = fopen(params.viscous_stress_corr_out_fname.c_str(), "w");
+         total_stress_corr_out = fopen(params.total_stress_corr_out_fname.c_str(), "w");
          	
     //cout<<"opened the corr files"<<endl;
         for(int i = 0; i < params.num_blobs; ++i){
@@ -4454,29 +4454,29 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         sys_corr.save_ffea(sys_corr_out);
         dxstore_sys_corr.save_ffea(sys_corr_out_test);
 
-        fprintf(base_corr_out,"*\n");
+        //fprintf(base_corr_out,"*\n");
         fflush(base_corr_out);
-        fprintf(corrected_corr_out,"*\n");
+        //fprintf(corrected_corr_out,"*\n");
         fflush(corrected_corr_out);
-        fprintf(x_corr_out,"*\n");
+        //fprintf(x_corr_out,"*\n");
         fflush(x_corr_out);
-        fprintf(y_corr_out,"*\n");
+        //fprintf(y_corr_out,"*\n");
         fflush(y_corr_out);
-        fprintf(z_corr_out,"*\n");
+        //fprintf(z_corr_out,"*\n");
         fflush(z_corr_out);
-        fprintf(base_corr_out_test,"*\n");
+        //fprintf(base_corr_out_test,"*\n");
         fflush(base_corr_out_test);
-        fprintf(corrected_corr_out_test,"*\n");
+        //fprintf(corrected_corr_out_test,"*\n");
         fflush(corrected_corr_out_test);
-        fprintf(x_corr_out_test,"*\n");
+        //fprintf(x_corr_out_test,"*\n");
         fflush(x_corr_out_test);
-        fprintf(y_corr_out_test,"*\n");
+        //fprintf(y_corr_out_test,"*\n");
         fflush(y_corr_out_test);
-        fprintf(z_corr_out_test,"*\n");
+        //fprintf(z_corr_out_test,"*\n");
         fflush(z_corr_out_test);
-        fprintf(sys_corr_out,"*\n");
+        //fprintf(sys_corr_out,"*\n");
         fflush(sys_corr_out);
-        fprintf(sys_corr_out_test,"*\n");
+        //fprintf(sys_corr_out_test,"*\n");
         fflush(sys_corr_out_test);
 
 
@@ -4502,11 +4502,11 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
         total_stress_corr_c5.save_ffea(total_stress_corr_out);
         total_stress_corr_c6.save_ffea(total_stress_corr_out);
 
-        fprintf(elastic_stress_corr_out,"*\n");
+        //fprintf(elastic_stress_corr_out,"*\n");
         fflush(elastic_stress_corr_out);
-        fprintf(viscous_stress_corr_out,"*\n");
+        //fprintf(viscous_stress_corr_out,"*\n");
         fflush(viscous_stress_corr_out);
-        fprintf(total_stress_corr_out,"*\n");
+        //fprintf(total_stress_corr_out,"*\n");
         fflush(total_stress_corr_out);
 
         fclose(base_corr_out);
