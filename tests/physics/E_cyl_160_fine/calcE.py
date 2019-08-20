@@ -63,7 +63,7 @@ for f in range(trj.num_frames):
     CM += trj.blob[0][0].frame[f].pos[n]
   CM /= len(ENDNODES)
   if f == 0: CM0 = CM
-  print CM, sqrt( (CM[0] - CM0[0])**2 + (CM[1] - CM0[1])**2 + (CM[2] - CM0[2])**2 )
+  print(CM, sqrt( (CM[0] - CM0[0])**2 + (CM[1] - CM0[1])**2 + (CM[2] - CM0[2])**2 ))
 
 
 
@@ -82,10 +82,10 @@ dL = sqrt( (CM[1][0] - CM[0][0])**2 + (CM[1][1] - CM[0][1])**2 + (CM[1][2] - CM[
 ## ## ## Calculate the effective Young's modulus:
 E_c = F * L / (pi * r**2 * dL)
 
-print "E_c: ", E_c
-print "E_t: ", E_t
-print "E_c/E_t: ", E_c/E_t
-print "abs(E_c/E_t -1): ", abs(E_c/E_t -1)
+print("E_c: ", E_c)
+print("E_t: ", E_t)
+print("E_c/E_t: ", E_c/E_t)
+print("abs(E_c/E_t -1): ", abs(E_c/E_t -1))
 
 err = 0
 if (abs (E_c/E_t - 1) > 0.005):

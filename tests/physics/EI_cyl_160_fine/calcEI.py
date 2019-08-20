@@ -63,7 +63,7 @@ for f in range(trj.num_frames):
     CM += trj.blob[0][0].frame[f].pos[n]
   CM /= len(ENDNODES)
   if f == 0: CM0 = CM
-  print CM, sqrt( (CM[0] - CM0[0])**2 + (CM[1] - CM0[1])**2 + (CM[2] - CM0[2])**2 )
+  print(CM, sqrt( (CM[0] - CM0[0])**2 + (CM[1] - CM0[1])**2 + (CM[2] - CM0[2])**2 ))
 
 
 
@@ -83,10 +83,10 @@ dL = sqrt( (CM[1][0] - CM[0][0])**2 + (CM[1][1] - CM[0][1])**2 + (CM[1][2] - CM[
 EI_c = F * L**3 / (3 * dL)
 EI_t = E_t * I_t
 
-print "EI_c: ", EI_c
-print "EI_t: ", EI_t
-print "EI_c/EI_t: ", EI_c/EI_t
-print "abs(EI_c/EI_t -1): ", abs(EI_c/EI_t -1)
+print("EI_c: ", EI_c)
+print("EI_t: ", EI_t)
+print("EI_c/EI_t: ", EI_c/EI_t)
+print("abs(EI_c/EI_t -1): ", abs(EI_c/EI_t -1))
 
 err = 0
 if (abs (EI_c/EI_t - 1) > 0.1):
