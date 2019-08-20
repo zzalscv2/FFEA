@@ -38,7 +38,7 @@ class TCorrelator{
         void toaverage();
         void clear();
         void save(std::string savename);
-        void save_out(std::string savename);
+        void save_out(FILE *fout);
         void read(std::string readname);
         void save_ffea(FILE *fout);
         void read_ffea(FILE *fout);

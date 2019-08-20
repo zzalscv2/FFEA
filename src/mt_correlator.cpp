@@ -265,31 +265,28 @@ void TCorrelator::save(std::string savename){
 
     fsave.close();
 }
-
+/*
 void TCorrelator::save_out(std::string savename){
-
-
     std::ofstream fsave;
 
     fsave.precision(14);
 
-    fsave.open(savename, ios::app);
+    fsave.open(savename);
 
     for(int i = 0;i<=length;i++){
             fsave<<std::scientific<<t[i]<<"\t"<<f[i]<<"\t"<<fav[i]<<"\t"<<fsqav[i]<<"\t"<<tav[i]<<endl;
     }
 
     fsave.close();
+}*/
 
-}
-/*
 void TCorrelator::save_out(FILE *fout){
     for(int i = 0;i<=length;i++){
         fprintf(fout,"%f\t%f\t%f\t%f\t%f\n",t[i],f[i],fav[i],fsqav[i],tav[i]);
     }
 
 }
-*/
+
 
 
 void TCorrelator::save_ffea(FILE *fout){
@@ -1273,17 +1270,17 @@ void TCorrelatorDiffusionVector::save_ffea(FILE *fout){
 }
 
 void TCorrelatorDiffusionVector::read_ffea(FILE *fout){
-    //cout<<"started read_ffea"<<endl;
+    cout<<"started read_ffea"<<endl;
     if (fscanf(fout,"%d\t%d\t%d\n",&numcorr,&pcor,&length)!=3){cout<<"Reading PROBLEM";};
-    //cout<<"read first line"<<endl;
+    cout<<"read first line"<<endl;
     if (fscanf(fout,"%d\t%d\t%d\n",&npcorr,&npcorrmax,&nexp)!=3){cout<<"Reading PROBLEM";};
-    //cout<<"read second line"<<endl;
+    cout<<"read second line"<<endl;
     for(int i = 0;i<=numcorr;i++){
         for(int j = 0;j<pcor+3;j++){
             if (fscanf(fout,"%lf\t%lf\t%lf\t%lf\t%lld\n",&aa[i*(pcor+3) + j][0],&aa[i*(pcor+3) + j][1],&aa[i*(pcor+3) + j][2],&cor[i*(pcor+3) + j],&ncor[i*(pcor+3) + j])!=5){cout<<"SAVING PROBLEM";};
         }
     }
-    //cout<<"Read whole correlator!"<<endl;
+    cout<<"Read whole correlator!"<<endl;
 }
 
 void TCorrelatorDiffusionVector::evaluate(){

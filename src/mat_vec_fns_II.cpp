@@ -216,7 +216,7 @@ template <class t_scalar, class brr3> void arr3Store(arr3_view<t_scalar,brr3> u,
 
 /** return the distance from vecA to vecB */
 template <class t_scalar, class brr3> t_scalar arr3arr3Distance(arr3_view<t_scalar,brr3> vecA, arr3_view<t_scalar,brr3> vecB){
-    
+ 
     t_scalar d=0.0;
     for (int i=0; i<3; i++){ 
       d  += (vecA[i] - vecB[i])*(vecA[i] - vecB[i]); 
