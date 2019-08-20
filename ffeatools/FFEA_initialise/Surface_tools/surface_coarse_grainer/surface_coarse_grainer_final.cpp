@@ -504,12 +504,14 @@ class Surface
 				node = new vector3[num_nodes];
 				i = -1;
 				for(list<vector3>::iterator it = verts.begin(); it != verts.end(); ++it) {
+//					printf("%d %d %f %f %f\n", i, num_nodes, (*it).x, (*it).y, (*it).z);
 					i += 1;
 					node[i].x = (*it).x;
 					node[i].y = (*it).y;
 					node[i].z = (*it).z;
+
 				}
-				
+								
 				// Build face list
 				for(i = 0; i < num_faces; ++i) {
 					n[0] = fs.front();
