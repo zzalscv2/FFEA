@@ -30,5 +30,5 @@ install (TARGETS make_structure_map
 #          DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
 
 
-install(FILES FFEA_map_PDB_to_FFEA.py FFEA_convert_kinetic_map_to_sparse.py FFEA_make_structures_overlap.py FFEA_generate_kinetic_maps.py Kinetic_FFEA_map_apply_to_FFEA_node.py Kinetic_FFEA_map_apply_to_FFEA_traj.py Kinetic_FFEA_map_apply_to_FFEA_map.py Kinetic_FFEA_map_apply_to_PDB.py
+install(FILES FFEA_map_PDB_to_FFEA.py FFEA_convert_kinetic_map_to_sparse.py FFEA_make_structures_overlap.py FFEA_generate_kinetic_maps.py Kinetic_FFEA_map_apply_to_FFEA_node.py Kinetic_FFEA_map_apply_to_FFEA_traj.py Kinetic_FFEA_map_apply_to_FFEA_map.py node_pdb_align.py icp.py Kinetic_FFEA_map_apply_to_PDB.py structureAlignment.py
          DESTINATION "${PYTHONSTUFF}/FFEA_initialise/FFEA_mapping_tools")
