@@ -151,6 +151,12 @@ private:
     SparseMatrixFixedPattern ***kinetic_map;
     SparseMatrixFixedPattern ****kinetic_return_map;
 
+    /** @brief Array of bools with same structure as kinetic_map. Set to true if the mapping is an IDENTITY mapping i.e. the node positions should simply be copied across to the (presumably) identical or equivalent conformation */
+    bool ***kinetic_map_is_identity;
+
+    /** @brief Array of scalars with same structure as kinetic_map. A transition can only take place if the energy is lower than the corresponding value held in this table (by default these should be infinity). */
+    scalar ***kinetic_map_energy_threshold;
+
     //@{
     /** @brief Kinetic State and Rate objects */
     KineticState **kinetic_state;

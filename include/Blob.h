@@ -83,8 +83,7 @@ struct Blob_conf {
    // kinetics:
    string states, rates;
    vector<string> maps; 
-   vector<int> maps_conf_index_to, maps_conf_index_from; 
-   
+   vector<int> maps_conf_index_to, maps_conf_index_from;
 };
 
 

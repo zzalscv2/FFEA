@@ -33,6 +33,8 @@ World::World() {
     rod_array = NULL;
     spring_array = NULL;
     kinetic_map = NULL;
+    kinetic_map_is_identity = NULL;
+    kinetic_map_energy_threshold = NULL;
     kinetic_return_map = NULL;
     kinetic_state = NULL;
     kinetic_rate = NULL;
@@ -96,6 +98,12 @@ World::~World() {
 
     delete[] kinetic_map;
     kinetic_map = NULL;
+
+    delete[] kinetic_map_is_identity;
+    kinetic_map_is_identity = NULL;
+
+    delete[] kinetic_map_energy_threshold;
+    kinetic_map_energy_threshold = NULL;
 
     delete[] kinetic_return_map;
     kinetic_return_map = NULL;
@@ -240,8 +248,14 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         kinetic_rate = new scalar**[params.num_blobs];
         kinetic_base_rate = new scalar**[params.num_blobs];
 
-        // A 3D matrix holding the position maps enabline the switch from one conformation to another i.e. kinetic_map[blob_index][from_conf][to_conf]
+        // A 3D matrix holding the position maps enabling the switch from one conformation to another i.e. kinetic_map[blob_index][from_conf][to_conf]
         kinetic_map = new SparseMatrixFixedPattern**[params.num_blobs];
+
+        // A 3D matrix holding a boolean designating whether the switch from one conformation to another is an identity mapping or not (true if identity).
+        kinetic_map_is_identity = new bool**[params.num_blobs];
+
+        // A 3D matrix holding a scalar defining the threshold energy value necessary for a switch from one conformation to another.
+        kinetic_map_energy_threshold = new scalar**[params.num_blobs];
 
         // A 3D matrix holding pointers to the products of the above maps to make an 'identity' map i.e.:
         //kinetic_double_map[blob_index][conf_index][via_conf_index] = kinetic_map[blob_index][via_conf_index][conf_index] * kinetic_map[blob_index][conf_index][via_conf_index]
@@ -254,14 +268,22 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         // Assign all memory
         for(i = 0; i < params.num_blobs; ++i) {
             kinetic_map[i] = new SparseMatrixFixedPattern*[params.num_conformations[i]];
+            kinetic_map_is_identity[i] = new bool*[params.num_conformations[i]];
+            kinetic_map_energy_threshold[i] = new scalar*[params.num_conformations[i]];
             kinetic_return_map[i] = new SparseMatrixFixedPattern**[params.num_conformations[i]];
 
             if(params.num_conformations[i] == 1) {
                 kinetic_map[i] = NULL;
+                kinetic_map_is_identity[i] = NULL;
+                kinetic_map_energy_threshold[i] = NULL;
                 kinetic_return_map[i] = NULL;
             } else {
                 for(j = 0; j < params.num_conformations[i]; ++j) {
                     kinetic_map[i][j] = new SparseMatrixFixedPattern[params.num_conformations[i]];
+                    kinetic_map_is_identity[i][j] = new bool[params.num_conformations[i]];
+                    std::fill_n(kinetic_map_is_identity[i][j], params.num_conformations[i], true); // by default, all maps are identity maps
+                    kinetic_map_energy_threshold[i][j] = new scalar[params.num_conformations[i]];
+                    std::fill_n(kinetic_map_energy_threshold[i][j], params.num_conformations[i], std::numeric_limits<scalar>::infinity()); // by default energy thresholds are all inifinite
                     kinetic_return_map[i][j] = new SparseMatrixFixedPattern*[params.num_conformations[i]];
                 }
             }
@@ -2052,7 +2074,8 @@ int World::run() {
                 }
 
                 if(change_kinetic_state(i, target) != FFEA_OK) {
-                    FFEA_ERROR_MESSG("'change_kinetic_state()' failed.\n")
+		    target = active_blob_array[i]->get_state_index();
+           //         FFEA_ERROR_MESSG("'change_kinetic_state()' failed.\n")
                 }
             }
         }
@@ -2112,6 +2135,31 @@ int World::change_kinetic_state(int blob_index, int target_state) {
         return FFEA_OK;
     }
 
+/*
+    // Dynein hack, remove immediately if found
+    if(current_state == 1 && target_state == 2) {
+
+        vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
+	    // Only change if energy is greater than a certain amount            \|/ Was 5e-20
+	    if((vdw_solver->get_field_energy(-1, -1) * mesoDimensions::Energy < -2.5e-20) && current_nodes[52]->z * mesoDimensions::length * 1e10 < 600) {
+	    	cout << "\rAttempting transition ADPVI->APO  ";
+	    	cout << "Energy: " << vdw_solver->get_field_energy(-1, -1) * mesoDimensions::Energy << " Position: " << current_nodes[52]->z * mesoDimensions::length * 1e10 << endl;
+	    } else {
+	    	cout << "\rEnergy not low enough, or distance insufficient for ADPVI->APO  ";
+	    	cout << "Energy: " << vdw_solver->get_field_energy(-1, -1) * mesoDimensions::Energy << " Position: " << current_nodes[52]->z * mesoDimensions::length * 1e10 << endl;
+	    	return FFEA_OK;
+	    }
+    }
+*/
+
+    // Check if energy criterion is met for this transition
+    if(vdw_solver->get_field_energy(-1, -1) * mesoDimensions::Energy > kinetic_map_energy_threshold[blob_index][current_state][target_state]) {
+
+        // Reject transition due to insufficiently low energy
+	    cout << "\rEnergy not low enough, or distance insufficient for " << current_state << "->" << target_state << " transition (energy " << vdw_solver->get_field_energy(-1, -1) * mesoDimensions::Energy << " > " << kinetic_map_energy_threshold[blob_index][current_state][target_state] << ")" << endl;
+        return FFEA_OK;
+    }
+
     int current_conformation = active_blob_array[blob_index]->get_conformation_index();
     int target_conformation = kinetic_state[blob_index][target_state].get_conformation_index();
 
@@ -2119,7 +2167,7 @@ int World::change_kinetic_state(int blob_index, int target_state) {
     if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
         // Conformation change!
-	int inversionCheck;
+        int inversionCheck;
 
         // Get current nodes
         vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
@@ -2127,21 +2175,38 @@ int World::change_kinetic_state(int blob_index, int target_state) {
         // Get target nodes
         vector3 **target_nodes = blob_array[blob_index][target_conformation].get_actual_node_positions();
 
-        // Apply map
-        kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
+        // Apply map if one is provided (i.e. not designated "IDENTITY"). Otherwise, apply a direct "identity" mapping of the node positions to the new conformation.
+        if (kinetic_map_is_identity[blob_index][current_conformation][target_conformation] == false) {
+            kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
+        }
+        else {
+            printf("Applying IDENTITY map\n");
+            int num_nodes_current = active_blob_array[blob_index]->get_num_nodes();
+            int num_nodes_target = blob_array[blob_index][target_conformation].get_num_nodes();
+            if (num_nodes_current != num_nodes_target) {
+                FFEA_ERROR_MESSG("Attempted IDENTITY map between blobs with mismatching node numbers (%d and %d)\n", num_nodes_current, num_nodes_target);
+                return FFEA_ERROR;
+            }
+            for(int i = 0; i < num_nodes_target; ++i) {
+                target_nodes[i]->x = current_nodes[i]->x;
+                target_nodes[i]->y = current_nodes[i]->y;
+                target_nodes[i]->z = current_nodes[i]->z;
+            }
+        }
 
-	// Check inversion
-	inversionCheck = blob_array[blob_index][target_conformation].check_inversion();
+    	// Check inversion
+        inversionCheck = blob_array[blob_index][target_conformation].check_inversion();
 
-	if(inversionCheck == FFEA_ERROR) {
-		printf("Conformational change rejected.\n");
+    	if(inversionCheck == FFEA_ERROR) {
+    		printf("Conformational change rejected.\n");
 
 		// Move target conformation back to infinity
-	        blob_array[blob_index][target_conformation].position(blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10);
+	    blob_array[blob_index][target_conformation].position(blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10);
 
 		return FFEA_OK;
 
 	} else {
+		printf("Conformational change accepted.\n");
 
 		// Change active conformation and activate all faces
 		active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
@@ -2198,6 +2263,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
     vector<string> nodes, topology, surface, material, stokes, ssint, binding, pin, beads;
     string map_fname;
+    scalar map_energy_thresh;
     int map_indices[2];
     int set_motion_state = 0, set_nodes = 0, set_top = 0, set_surf = 0, set_mat = 0, set_stokes = 0, set_ssint = 0, set_binding = 0, set_pin = 0, set_solver = 0, set_preComp = 0, set_scale = 0, set_states = 0, set_rates = 0, calc_compress = 0; 
     scalar scale = 1, compress = 1;
@@ -2464,7 +2530,7 @@ int World::read_and_build_system(vector<string> script_vector) {
 
         // Read kinetic info (if necessary)
         if(params.calc_kinetics == 1 && params.num_states[i] != 1) {
-	    
+ 
             // Get kinetic data
             if (systemreader->extract_block("kinetics", 0, blob_vector, &kinetics_vector) == FFEA_ERROR) return FFEA_ERROR;
 
@@ -2476,10 +2542,11 @@ int World::read_and_build_system(vector<string> script_vector) {
 
                 // Parse map data
                 for(it = map_vector.begin(); it != map_vector.end(); ++it) {
-                    systemreader->parse_map_tag(*it, map_indices, &map_fname);
+                    systemreader->parse_map_tag(*it, map_indices, &map_fname, &map_energy_thresh);
                     blob_conf[i].maps.push_back(map_fname);
                     blob_conf[i].maps_conf_index_from.push_back(map_indices[0]);
                     blob_conf[i].maps_conf_index_to.push_back(map_indices[1]);
+                    kinetic_map_energy_threshold[i][map_indices[0]][map_indices[1]] = map_energy_thresh;
                 }
 
                 // Error check
@@ -2789,11 +2856,20 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
     vector<string> string_vec;
     for(i = 0; i < map_fnames.size(); ++i) {
 
+        // First check if the map_fname is the keyword "IDENTITY". If so, skip this map (as the switch will be done by copying node data directly).
+        // The kinetic_map for this transition is set to NULL to identify it as an identity map.
+        if ((map_fnames.at(i)).compare("IDENTITY") == 0) {
+            cout << "Map " << map_from.at(i) << "->" << map_to.at(i) << " is designated as an IDENTITY mapping." << endl;
+            kinetic_map_is_identity[blob_index][map_from[i]][map_to[i]] = true;
+            continue;
+        }
+
+
         cout << "\t\t\tReading map " << i << ", " << map_fnames.at(i) << ": from conformation " << map_from.at(i) << " to " << map_to.at(i) << endl;
         ifstream fin;
         fin.open(map_fnames.at(i).c_str());
         if(fin.is_open() == false) {
-            cout << "File " << map_fnames.at(i) << " not found. Plaese supply valid map file with correct path." << endl;
+            cout << "File " << map_fnames.at(i) << " not found. Please supply valid map file with correct path." << endl;
             return FFEA_ERROR;
         }
 
@@ -2870,6 +2946,7 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
 
         // Create sparse matrix
         kinetic_map[blob_index][map_from[i]][map_to[i]].init(num_rows, num_entries, entries, key, col_index);
+        kinetic_map_is_identity[blob_index][map_from[i]][map_to[i]] = false;
     }
 
     return FFEA_OK;
@@ -3003,16 +3080,6 @@ int World::calculate_kinetic_rates() {
                 // Unbnding event! Kinetic switch is constant
                 kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 
-                // Dynein specific. Delete for generality. Cannot both unbind!
-                if(i == 0 || i == 1) {
-                    int other_state = active_blob_array[(i + 1) % 2]->get_state_index();
-                    /*if(other_state == 0 || other_state == 2 || other_state == 3 || other_state == 5) {
-                    	kinetic_rate[i][current_state][j] = 0.0;
-                    }*/
-                    if(current_state == 1 && other_state != 1) {
-                        kinetic_rate[i][current_state][j] = 0.0;
-                    }
-                }
             } else {
 
                 // Identity event. Nothing changes here either

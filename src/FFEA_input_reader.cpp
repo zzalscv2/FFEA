@@ -205,10 +205,10 @@ int FFEA_input_reader::parse_tag(string input, string *output) {
 	return FFEA_OK;
 }
 
-int FFEA_input_reader::parse_map_tag(string input, int *map_indices, string *map_fname) {
+int FFEA_input_reader::parse_map_tag(string input, int *map_indices, string *map_fname, scalar *energy_thresh) {
 
 	// Parse whole tag
-	string lrvalue[2], indexlrvalue[2];
+	string lrvalue[2], mapinfo[2], mapcriteria[2], indexlrvalue[2];
 	parse_tag(input, lrvalue);
 
 	// Check if map
@@ -216,12 +216,34 @@ int FFEA_input_reader::parse_map_tag(string input, int *map_indices, string *map
 	if(indexlrvalue[0] != "map") {
 		cout << indexlrvalue[0] << endl;
 		FFEA_error_text();
-		cout << "Expected '<map (from,to) = fname>' but got " << input << endl;
+		cout << "Expected '<map (from,to) = fname , OPTIONAL energy_less_than VALUE>' but got " << input << endl;
 		return FFEA_ERROR;
 	}
 
+    // Get map fname and (optional) energy threshold criterion
+    int num_args = split_string(lrvalue[1], mapinfo, ",");
+
 	// Assign map!
-	*map_fname = lrvalue[1];
+	*map_fname = mapinfo[0];
+
+    // Parse energy criterion
+    if(num_args > 1) {
+        split_string(mapinfo[1], mapcriteria, " ");
+
+        cout << mapcriteria[0] << endl;
+        cout << mapcriteria[1] << endl;
+
+        // Check that the criterion keyword is recognised
+        if(mapcriteria[0] != "energy_less_than") {
+            FFEA_error_text();
+            cout << mapcriteria[0] << " is not recognised criterion. Only 'energy_less_than' is recognised" << endl;
+            exit(1);
+        }
+        *energy_thresh = boost::lexical_cast<scalar>(mapcriteria[1]);
+    } else {
+        // If not specified, the transition energy threshold is infinity
+        *energy_thresh = std::numeric_limits<scalar>::infinity();
+    }
 
 	// Get indices
 	indexlrvalue[1] = boost::erase_last_copy(indexlrvalue[1], ")");

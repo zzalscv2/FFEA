@@ -29,6 +29,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "rod_structure.h"
@@ -53,7 +54,7 @@ class FFEA_input_reader {
 		int parse_tag(string input, string *output);
 
 		/** Specifically return map data */ 
-		int parse_map_tag(string input, int *map_indices, string *map_fname);
+		int parse_map_tag(string input, int *map_indices, string *map_fname, scalar *energy_threshold);
 
 		/** Split string around delim and return as strings */ 
 		int split_string(string input, string *output, string delim);
