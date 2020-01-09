@@ -1073,7 +1073,7 @@ int World::get_smallest_time_constants() {
             return FFEA_ERROR;
         }
         cout << "done!" << flush;
-
+	//cout << K * (mesoDimensions::force / mesoDimensions::velocity) << endl;
         // Build elasticity matrix, A
         cout << "\r\t\tCalculating the Elasticity Matrix, A (task 2/5)..." << flush;
         if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
@@ -1490,8 +1490,8 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 	// Check this is allowed
 	if(num_modes > 3 * num_nodes - 6) {
 		cout << "\n\t\t" << num_modes << " unavailable for only " << num_nodes << " linear nodes. Deafulting to 3N-6 = " << 3 * num_nodes - 6 << " modes." << endl << endl; 
+		num_modes = 3 * num_nodes - 6;
 	}
-	num_modes = 3 * num_nodes - 6;
 
         Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
 
@@ -1561,7 +1561,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
             dx = max.z - min.z;
         }
 
-        dx /= 20.0;
+        dx /= 10.0;
 
         // Make some trajectories (ignoring the first 6)
         // Firstly, normalise the first num_modes eigenvectors
@@ -1601,7 +1601,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 
         // Get a filename
         evals_out_fname = base + "_FFEAdmm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_FFEA*dmm_blob" + bi.str() + ".evecs";
+        evecs_out_fname = base + "_FFEAdmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, R, num_rows, num_modes);
         print_evals_to_file(evals_out_fname, esAhat.eigenvalues(), num_modes, 1.0);
@@ -2134,25 +2134,42 @@ int World::change_kinetic_state(int blob_index, int target_state) {
     if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
         // Conformation change!
+	int inversionCheck;
+
         // Get current nodes
         vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
 
-        // Change active conformation and activate all faces
-        active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
-        active_blob_array[blob_index]->kinetically_set_faces(true);
-
         // Get target nodes
-        vector3 ** target_nodes = active_blob_array[blob_index]->get_actual_node_positions();
+        vector3 **target_nodes = blob_array[blob_index][target_conformation].get_actual_node_positions();
 
         // Apply map
         kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
 
-        // Move the old one to random space so as not to interfere with calculations, and deactivate all faces
-        blob_array[blob_index][current_conformation].position(blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10);
-        blob_array[blob_index][current_conformation].kinetically_set_faces(false);
+	// Check inversion
+	inversionCheck = blob_array[blob_index][target_conformation].check_inversion();
 
-        // Reactivate springs
-        activate_springs();
+	if(inversionCheck == FFEA_ERROR) {
+		printf("Conformational change rejected.\n");
+
+		// Move target conformation back to infinity
+	        blob_array[blob_index][target_conformation].position(blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10);
+
+		return FFEA_OK;
+
+	} else {
+
+		// Change active conformation and activate all faces
+		active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
+		active_blob_array[blob_index]->kinetically_set_faces(true);
+
+		// Move the old one to random space so as not to interfere with calculations, and deactivate all faces
+		blob_array[blob_index][current_conformation].position(blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10);
+		blob_array[blob_index][current_conformation].kinetically_set_faces(false);
+
+		// Reactivate springs
+		activate_springs();
+
+	}
 
     } else if (!kinetic_state[blob_index][current_state].is_bound() && kinetic_state[blob_index][target_state].is_bound()) {
 
@@ -3041,16 +3058,6 @@ int World::calculate_kinetic_rates() {
                 // Unbnding event! Kinetic switch is constant
                 kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 
-                // Dynein specific. Delete for generality. Cannot both unbind!
-                if(i == 0 || i == 1) {
-                    int other_state = active_blob_array[(i + 1) % 2]->get_state_index();
-                    /*if(other_state == 0 || other_state == 2 || other_state == 3 || other_state == 5) {
-                    	kinetic_rate[i][current_state][j] = 0.0;
-                    }*/
-                    if(current_state == 1 && other_state != 1) {
-                        kinetic_rate[i][current_state][j] = 0.0;
-                    }
-                }
             } else {
 
                 // Identity event. Nothing changes here either

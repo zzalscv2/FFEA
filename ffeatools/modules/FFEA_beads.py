@@ -129,7 +129,7 @@ class FFEA_beads:
 						self.b_elems[i][j] = e_ndx
 
 				if self.b_elems[i][j] == -1: 
-					print "ABORTING: an element could not be assigned"
+					print("ABORTING: an element could not be assigned")
 					raise
 
 

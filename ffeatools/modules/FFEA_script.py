@@ -292,6 +292,8 @@ class FFEA_script:
 						conformation.vdw = get_path_from_script(rvalue, scriptdir)
 					elif lvalue == "pin":
 						conformation.pin = get_path_from_script(rvalue, scriptdir)
+					elif lvalue == "skeleton":
+						conformation.skeleton = get_path_from_script(rvalue, scriptdir)
 					elif lvalue == "binding_sites":
 						conformation.bsites = get_path_from_script(rvalue, scriptdir)
 					elif lvalue == "beads":
@@ -592,6 +594,9 @@ class FFEA_script:
 	def load_pin(self, bindex, cindex=0):
 		return FFEA_pin.FFEA_pin(self.blob[bindex].conformation[cindex].pin)
 
+	def load_skeleton(self, bindex, cindex=0):
+		return FFEA_skeleton.FFEA_skeleton(self.blob[bindex].conformation[cindex].skeleton)
+
 	def load_material(self, bindex, cindex=0):
 		return FFEA_material.FFEA_material(self.blob[bindex].conformation[cindex].material)
 
@@ -859,7 +864,7 @@ class FFEA_script_params():
 			astr += "\t<inc_self_vdw = %d>\n" % (self.inc_self_vdw)
 		if (self.calc_springs == 1):
 			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
-		if (self.calc_noise == 1):
+		if (self.calc_noise == 0):
 			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
 		if (self.calc_preComp == 1):
 			astr += "\t<calc_preComp = %d>\n" % (self.calc_preComp)
@@ -972,6 +977,7 @@ class FFEA_script_conformation:
 		self.pin = ""
 		self.bsites = ""
 		self.beads = ""
+		self.skeleton = ""
 
 	def default(self, basename):
 
@@ -982,7 +988,8 @@ class FFEA_script_conformation:
 		self.material = basename + ".mat"
 		self.stokes = basename + ".stokes"
 		self.vdw = basename + ".vdw"
-		self.pin = basename + ".pin"	
+		self.pin = basename + ".pin"
+		self.skeleton = basename + ".skel"
 
 	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp, need_conformations=True, verbose = False):
 
@@ -1004,6 +1011,10 @@ class FFEA_script_conformation:
 		astr += tabs + "<nodes = %s>\n" % (os.path.relpath(self.nodes, os.path.dirname(os.path.abspath(fname))))
 		astr += tabs + "<surface = %s>\n" % (os.path.relpath(self.surface, os.path.dirname(os.path.abspath(fname))))
 		astr += tabs + "<vdw = %s>\n" % (os.path.relpath(self.vdw, os.path.dirname(os.path.abspath(fname))))
+
+		if verbose and self.skeleton != "":
+			astr += tabs + "<skeleton = %s>\n" % (os.path.relpath(self.skeleton, os.path.dirname(os.path.abspath(fname))))
+	
 		if (self.beads != ""):
 			astr += tabs + "<beads = %s>\n" % (os.path.relpath(self.beads, os.path.dirname(os.path.abspath(fname))))
 

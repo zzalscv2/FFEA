@@ -130,6 +130,11 @@ public:
     int update_internal_forces();
 
     /**
+     * Checks whether any of the elements have inverted or not
+     */
+    int check_inversion();
+
+    /**
      * Solves the EOM on the finite element mesh, updating the node positions and velocities by one time step
      */
     int update_positions();

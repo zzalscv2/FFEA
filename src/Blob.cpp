@@ -24,6 +24,7 @@
 #include "Blob.h"
 
 Blob::Blob() {
+
     /* Initialise everything to zero */
     blob_index = 0;
     conformation_index = 0;
@@ -392,6 +393,7 @@ int Blob::init(){
 
     // Calculate how many faces each surface node is a part of
     num_contributing_faces = new(std::nothrow) int[num_surface_nodes];
+
     if (num_contributing_faces == NULL) FFEA_ERROR_MESSG("Failed to allocate num_contributing_faces\n");
     for (int i = 0; i < num_surface_nodes; i++) {
         num_contributing_faces[i] = 0;
@@ -595,6 +597,42 @@ int Blob::init(){
 
     // Return FFEA_OK to indicate "success"
     return FFEA_OK;
+}
+
+int Blob::check_inversion() {
+
+	int n;
+	matrix3 J;
+
+	vector<int> invEls;
+	invEls.clear();
+
+        for (n = 0; n < num_elements; n++) {
+
+            // calculate jacobian for this element
+            elem[n].calculate_jacobian(J);
+
+            // get the 12 derivatives of the shape functions (by inverting the jacobian)
+            // and also get the element volume. The function returns an error in the
+            // case of an element inverting itself (determinant changing sign since last step)
+            if (elem[n].calc_shape_function_derivatives_and_volume(J) == FFEA_ERROR) {
+	        invEls.push_back(n);
+            }
+	}
+
+	// Are we screwed?
+	if(invEls.size() != 0) {
+		printf("\n");
+		FFEA_error_text();
+		printf("%d inverted elements: ", invEls.size());
+		for(n = 0; n < invEls.size(); ++n) {
+	                printf("%d ", invEls.at(n));
+		}
+		printf("\n");
+		return FFEA_ERROR;
+	}
+
+	return FFEA_OK;
 }
 
 int Blob::update_internal_forces() {
@@ -2118,8 +2156,9 @@ int Blob::apply_ctforces() {
         auxndx += ctf_sl_surfsize[i];
         delete[] faceAreas;
     }
-    
-    return FFEA_OK;
+
+	return FFEA_OK;
+
 }
 
 /*
@@ -2904,7 +2943,6 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
     fclose(in);
 
     printf("\t\t\tRead %d stokes radii from %s\n", i, stokes_filename);
-
     return FFEA_OK;
 }
 

@@ -44,6 +44,8 @@ os.system("python " + scriptdir + "/FFEA_make_structures_overlap.py " + infname 
 # Make the maps!
 basenode = ffeadir + "/blob0_overlap.node"
 targetnode = ffeadir + "/blob1_overlap.node"
+basenode = "blob0_overlap.node"
+targetnode = "blob1_overlap.node"
 basetop = script.blob[bindex[0]].conformation[cindex[0]].topology
 targettop = script.blob[bindex[1]].conformation[cindex[1]].topology
 
