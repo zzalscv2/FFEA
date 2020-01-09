@@ -31,7 +31,6 @@
 #include <boost/algorithm/string.hpp>
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
-#include "rod_structure.h"
 
 using namespace std;
 
@@ -67,9 +66,6 @@ class FFEA_input_reader {
 		/** Split string around delim and return as scalars */ 
 		int split_string(string input, scalar *output, string delim);
         
-        /** Return a pointer to a rod object from a block*/ 
-        rod::Rod* rod_from_block(vector<string> block, int block_id);
-
 	private:
 
 		string buf_string;

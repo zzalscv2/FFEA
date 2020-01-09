@@ -26,32 +26,56 @@
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
  */
+#ifndef ROD_MATH
+#define ROD_MATH
 
-#define OUT
+#define OUT ///< This is used to denote when a function modifies one of its parameters
+#define _USE_MATH_DEFINES ///<  This has to come before including cmath
 
-#define _USE_MATH_DEFINES // This has to come before including cmath
+
 #include <cmath>
-#include <chrono>
 #include <iostream>
-#include <cstring>
-#include "dimensions.h"
+#include <assert.h>
+#include "dimensions.h" 
+#include <stdlib.h>
+#include <boost/math/special_functions/fpclassify.hpp>
+//#include <fenv.h>
+
 
 namespace rod {
+    
+const static bool debug_nan = true;
 
-const double boltzmann_constant = 1.3806503e-23;
+const double boltzmann_constant = 1.3806503e-23/mesoDimensions::Energy;
+
+// A less weird way to access the contents of our arrays representing our vectors
 static const int x = 0;
 static const int y = 1;
 static const int z = 2;
-static const int twist_dimension = 3;
-static const int im2 = 0;
-static const int im1 = 1;
-static const int i = 2;
-static const int ip1 = 3;
+
+// For clarity, anytime you see an index [x], we're referring to the x
+// dimension.
+
+// Computing the energy for a perturbation requires four segments, defined
+// by 5 nodes. They are i-2 to i+1, listed here.
+static const int im2 = 0; ///< index of i-2nd thing
+static const int im1 = 1; ///< index of i-1st thing
+static const int i = 2; ///< index of ith thing
+static const int ip1 = 3; ///< index of i+1th thing
+
+#define OMP_SIMD_INTERNAL _Pragma("omp simd")
+
+#define vec3d(x)for(int x = 0; x < 3; ++ x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
+
+extern bool dbg_print; // prints tons of intermediate info for debugging purposes. don't enable this
 
 static const float rod_software_version = 0.3;
 
+void rod_abort(std::string message);
+
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point
 void print_array(std::string array_name, float array[], int length);
+void print_array(std::string array_name, double array[], int length);
 void normalize(float in[3], OUT float out[3]);
 float absolute(float in[3]);
 void cross_product(float a[3], float b[3], float out[3]);
@@ -61,11 +85,11 @@ void apply_rotation_matrix_row(float vec[3], float matrix[9], OUT float rotated_
 void matmul_3x3_3x3(float a[9], float b[9], OUT float out[9]);
 
 // These are utility functions specific to the math for the rods
-
 void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]);
 void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3]);
 float safe_cos(float in);
 float get_l_i(float p_i[3], float p_im1[3]);
+float get_signed_angle(float m1[3], float m2[3], float l[3]);
 
      /*-----------------------*/
     /* Update Material Frame */
@@ -100,6 +124,10 @@ float get_bend_energy_from_p(
         float m_i_equil[3],
         float B_i_equil[4],
         float B_im1_equil[4]);
+        
+float get_weights(float a[3], float b[3]);
+void get_mutual_element_inverse(float pim1[3], float pi[3], float weight, OUT float mutual_element[3]);
+void get_mutual_axes_inverse(float mim1[3], float mi[3], float weight, OUT float m_mutual[3]);
         
 float get_bend_energy_mutual_parallel_transport(
         float p_im1[3],
@@ -154,7 +182,7 @@ void load_B_all(float B[4][4], float *B_matrix, int offset);
 void make_diagonal_B_matrix(float B, OUT float B_matrix[4]);
 void set_cutoff_values(int e_i_node_no, int length, OUT int *start_cutoff, int *end_cutoff);
 float get_absolute_length_from_array(float* array, int node_no, int length);
-void get_centroid(float* r, int length, OUT float centroid[3]);
+void get_centroid_generic(float* r, int length, OUT float centroid[3]);
 
      /*-------------------------------*/
     /* Move the node, get the energy */
@@ -176,3 +204,4 @@ void get_perturbation_energy(
 );
 
 }
+#endif

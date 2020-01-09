@@ -26,17 +26,7 @@
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
  */
-
-#include <iostream>
-#include <fstream>
-#include <cassert>
-#include <boost/algorithm/string.hpp>
-#include <string>
-#include <vector>
-
-#include <stdio.h>
-#include <random>
-#include "rod_structure.h"
+#include "rod_structure.h"  
 
 namespace rod {
 
@@ -63,6 +53,10 @@ std::vector<float> stof_vec(std::vector<std::string> vec_in){
     return vec_out;
 }
 
+/**
+ Generate a random number between A and B, given an array of RngStream
+ objects, and the id of the RngStream objects to be used. 
+*/
 float random_number(float A, float B, RngStream rng[], int thread_id){
     return ((A) + ((B)-(A))*(rng[thread_id].RandU01()));
 }
@@ -118,7 +112,7 @@ Rod::Rod(std::string path, int set_rod_no):
 Rod Rod::set_units(){
     /** Translate our units into the units specified in FFEA's mesoDimensions header file **/
     bending_response_factor = pow(mesoDimensions::length, 4)*mesoDimensions::pressure;
-    spring_constant_factor = mesoDimensions::force/mesoDimensions::length;
+    spring_constant_factor = mesoDimensions::force;
     twist_constant_factor = mesoDimensions::force*mesoDimensions::length*mesoDimensions::length;
     
     /** And now the rod itself **/
@@ -170,12 +164,37 @@ Rod Rod::set_units(){
 */
 Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
+    // if there is a rod-blob interface, this will avoid doing dynamics
+    // on nodes which are attached to blobs
+    int end_node = this->num_elements;
+    
+    int node_min = 0;
+    //if (this->interface_at_start){
+    //    node_min = 1;
+    //}
+    
+    //if (this->interface_at_end){
+    //    end_node = num_elements-1;
+    //}
+    
+    if(dbg_print){std::cout << "Num elements: " << this->num_elements << "\n";} //temp
+    if(dbg_print){std::cout << "End node: " << end_node << "\n";} //temp
+    if(dbg_print){std::cout << "Node min: " << node_min << "\n";} //temp
+    
     //The first loop is over all the nodes, and it computes all the energies for each one
     #pragma omp parallel for schedule(dynamic) //most of the execution time is spent in this first loop
-    for (int node_no = 0; node_no<num_elements; node_no++){
+    for (int node_no = 0; node_no<end_node; node_no++){
         
+        //std::cout << "node " << node_no << "\n";
+        
+        if(dbg_print){std::cout << "IT BREAKS DURING NODE" << node_no << " ENERGY\n";}
+                
         // if the node is pinned, we go to the next iteration of the loop (e.g. the next node)
         if (pinned_nodes[node_no] == true){
+            continue;
+        }
+        
+        if (node_no < node_min){
             continue;
         }
 
@@ -198,6 +217,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         
         // We move the node backwards and forwards in each degree of freedom, so we end up calling get_perturbation_energy eight whole times
         // Fill the temporary variable with energies ( we basically pass the entire state of the rod to get_perturbation_energy)
+        if(dbg_print){std::cout << "getting perturbation energy 1...\n";} //temp
         get_perturbation_energy( 
             perturbation_amount*0.5, //half one way, half the other
             x, // dimension (x, y, z are array indices, defined to be 1, 2, 3 at the top of this file, twist is = 4)
@@ -216,7 +236,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         perturbed_x_energy_positive[node_no*3] = energies[stretch_index];
         perturbed_x_energy_positive[(node_no*3)+1] = energies[bend_index];
         perturbed_x_energy_positive[(node_no*3)+2] = energies[twist_index];   
-                   
+        
+        if(dbg_print){std::cout << "getting perturbation energy 2...\n";} //temp
         get_perturbation_energy( //from rod_math
             perturbation_amount*0.5, 
             y, // dimension
@@ -345,12 +366,16 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
         
     }
-    
-    //This loop is for the dynamics
-    for (int node_no = 0; node_no<num_elements; node_no++){
         
+    //This loop is for the dynamics
+    for (int node_no = 0; node_no<end_node; node_no++){
+                                
         // If the node is pinned, there's nothing to do
         if (pinned_nodes[node_no] == true){
+            continue;
+        }
+        
+        if (node_no < node_min){
             continue;
         }
         
@@ -363,7 +388,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         
         // Get friction, needed for delta r and delta theta
         float translational_friction = get_translational_friction(this->viscosity, material_params[(node_no*3)+2], false);
-        float length_for_friction = (get_absolute_length_from_array(equil_r, node_no, this->length) + get_absolute_length_from_array(equil_r, node_no-1, this->length))/2;
+        //float length_for_friction = (get_absolute_length_from_array(equil_r, node_no, this->length) + get_absolute_length_from_array(equil_r, node_no-1, this->length))/2;
+        float length_for_friction = 1e-8/mesoDimensions::length;
+        
         float rotational_friction = get_rotational_friction(this->viscosity, material_params[(node_no*3)+2], length_for_friction, true);
         
         // Need these again
@@ -388,7 +415,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float y_force = (perturbed_y_energy_negative[node_no*3]+perturbed_y_energy_negative[(node_no*3)+1]+perturbed_y_energy_negative[(node_no*3)+2] - (perturbed_y_energy_positive[node_no*3]+perturbed_y_energy_positive[(node_no*3)+1]+perturbed_y_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float z_force = (perturbed_z_energy_negative[node_no*3]+perturbed_z_energy_negative[(node_no*3)+1]+perturbed_z_energy_negative[(node_no*3)+2] - (perturbed_z_energy_positive[node_no*3]+perturbed_z_energy_positive[(node_no*3)+1]+perturbed_z_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float twist_force = (twisted_energy_negative[node_no*3]+twisted_energy_negative[(node_no*3)+1]+twisted_energy_negative[(node_no*3)+2] - (twisted_energy_positive[node_no*3]+twisted_energy_positive[(node_no*3)+1]+twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
-                
+                                
         // Get applied force, if any
         float applied_force_x = applied_forces[node_no*4];
         float applied_force_y = applied_forces[(node_no*4)+1];
@@ -400,18 +427,19 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float delta_r_y = get_delta_r(translational_friction, timestep, y_force, y_noise, applied_force_y);
         float delta_r_z = get_delta_r(translational_friction, timestep, z_force, z_noise, applied_force_z);
         float delta_twist = get_delta_r(rotational_friction, timestep, twist_force, twist_noise, applied_force_twist);
+        //std::cout << "delta_twist: " << delta_twist << "\n";
 
         // Apply our delta x
         current_r[node_no*3] += delta_r_x;
         current_r[(node_no*3)+1] += delta_r_y;
         current_r[(node_no*3)+2] += delta_r_z;
-        
+                
         // A wee sanity check to stop your simulations from exploding horribly
         for (int i=0; i<length; i++){
-            if (current_r[i] >= 30000000){
+            if (std::abs(delta_r_x) >= 800000 or std::abs(delta_r_y) >= 800000 or std::abs(delta_r_z) >= 800000){
                 std::cout << "node " << node_no << " frame " << frame_no << "\n";
                 std::cout << "dynamics: " << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "\n";
-                assert(current_r[i] < 30000000 && "r went crazy after initializing.");
+                rod_abort("Rod dynamics explosion. Bring your debugger.");
             }
         }
         
@@ -477,7 +505,7 @@ Rod Rod::load_header(std::string filename){
     file_ptr = fopen(filename.c_str(),"a");
     
     /** This string denotes where the header info ends */
-    const std::string rod_connections = "CONNECTIONS,ROD,0";
+    const std::string rod_connections = "---END HEADER---";
     
     /** Check that we can load our input file */
     std::ifstream infile(filename);
@@ -540,10 +568,7 @@ Rod Rod::load_header(std::string filename){
         applied_forces[i] = 0;
     }
     
-    mersenne_twister = new std::mt19937(3535.442464);
-    real_distribution = new std::uniform_real_distribution<float>(-0.5, 0.5);
-    
-    // These are hardcoded default values (temporary?) - eventualy they will load in from the .ffea script!
+    // These are hardcoded default values - the real values are loaded in from the .ffea script
     viscosity_constant_factor = mesoDimensions::pressure*mesoDimensions::time; ///poiseuille
     this->viscosity = 0.6913*pow(10, -3)/viscosity_constant_factor;
     this->timestep = 1e-12/mesoDimensions::time;
@@ -579,7 +604,11 @@ Rod Rod::add_force(float force[4], int node_index){
 Rod Rod::load_contents(std::string filename){
     
     /** Make sure this method isn't called before loading header info */
-    assert(line_start != 0 && "Rod header\rod file not found."); 
+    if (line_start == 0){
+        std::cout << "Rod file at " << filename << "was not found. \n";
+        std::cout << "Rod version: " << this->rod_version << ". Length =  " << this->length << "\n";
+        assert(line_start != 0 && "Rod header\rod file not found."); 
+    }
     
     std::ifstream infile(filename);
     int n = 0;
@@ -634,6 +663,7 @@ Rod Rod::load_contents(std::string filename){
         }
         n++;
     }
+    
     return *this;
 }
     
@@ -710,10 +740,11 @@ Rod Rod::change_filename(std::string new_filename){
     /** Get contents of current file */
     std::string current_file_contents = "";
     std::ifstream infile(this->rod_filename);
-    for(int i=0 ; infile.eof()!=true ; i++){
-        current_file_contents += infile.get();
+    for( std::string line; getline( infile, line ); ){
+        if (line == "---END HEADER---"){break;}
+        current_file_contents += line+"\n";
     }
-    current_file_contents.erase(current_file_contents.end()-1);
+    current_file_contents += "---END HEADER---\n";
     infile.close();
     
     /** Create new file **/
@@ -768,12 +799,12 @@ Rod Rod::translate_rod(float* r, float translation_vec[3]){
 Rod Rod::rotate_rod(float euler_angles[3]){
     /** Put rod centroid on 0,0,0 */
     float equil_centroid[3];
-    get_centroid(this->equil_r, this->length, equil_centroid);
+    get_centroid_generic(this->equil_r, this->length, equil_centroid);
     float equil_to_translate[3] = {-equil_centroid[0], -equil_centroid[1], -equil_centroid[2]};
     this->translate_rod(this->equil_r, equil_to_translate);
     
     float current_centroid[3];
-    get_centroid(this->current_r, this->length, current_centroid);
+    get_centroid_generic(this->current_r, this->length, current_centroid);
     float current_to_translate[3] = {-current_centroid[0], -current_centroid[1], -current_centroid[2]};
     this->translate_rod(this->current_r, current_to_translate);
     
@@ -809,6 +840,67 @@ Rod Rod::rotate_rod(float euler_angles[3]){
     this->translate_rod(this->current_r, current_centroid);
     this->translate_rod(this->equil_r, equil_centroid);
     
+    return *this;
+}
+
+/**
+ * Scale the rod by a float. No return values, it just updates the
+ * arrays current_r and equil_r. It doesn't modify m, that'll be
+ * normalized away anyway.
+ */
+Rod Rod::scale_rod(float scale){
+    for(int i=0; i<this->length; i+=3){
+        this->current_r[i] *= scale;
+        this->current_r[i+1] *= scale;
+        this->current_r[i+2] *= scale;
+        this->equil_r[i] *= scale;
+        this->equil_r[i+1] *= scale;
+        this->equil_r[i+2] *= scale;
+    }
+    return *this;
+}
+
+/**
+ * Get a centroid for the current frame of the rod. Note: you must supply
+ * an array (either current_r or equil_r).
+ */
+Rod Rod::get_centroid(float *r, OUT float centroid[3]){
+    vec3d(n){ centroid[n] = 0; }
+    for (int i = 0; i<this->length; i+=3){
+        centroid[0] += r[i];
+        centroid[1] += r[i+1];
+        centroid[2] += r[i+2];
+    }
+    vec3d(n){ centroid[n] /= this->num_elements; }
+    return *this;
+}
+
+Rod Rod::get_min_max(float *r, OUT float min[3], float max[3]){
+    for (int i = 0; i<this->length; i+=3){
+        if (r[i+x] > max[x]){ max[x] = r[i+x]; }
+        if (r[i+y] > max[x]){ max[y] = r[i+y]; }
+        if (r[i+z] > max[z]){ max[z] = r[i+z]; }
+        if (r[i+x] < min[x]){ min[x] = r[i+x]; }
+        if (r[i+y] < min[y]){ min[y] = r[i+y]; }
+        if (r[i+z] < min[z]){ min[z] = r[i+z]; }
+    }
+    return *this;
+}
+
+Rod Rod::get_p(int index, OUT float p[3], bool equil){
+    if (equil){
+        p[0] =  equil_r[(index*3)+3] - equil_r[index*3];
+        p[1] =  equil_r[(index*3)+4] - equil_r[(index*3)+1];
+        p[2] =  equil_r[(index*3)+5] - equil_r[(index*3)+2];
+    }
+    else{
+        if(dbg_print){std::cout << "index = " << index << "\n";}
+        if(dbg_print){std::cout << "   r_i = [" << current_r[index*3] << ", " << current_r[(index*3)+1] << ", " << current_r[(index*3)+1] << "]\n";}
+        if(dbg_print){std::cout << "   r_ip1 = [" << current_r[(index*3)+3] << ", " << current_r[(index*3)+4] << ", " << current_r[(index*3)+5] << "]\n";}
+        p[0] =  current_r[(index*3)+3] - current_r[index*3];
+        p[1] =  current_r[(index*3)+4] - current_r[(index*3)+1];
+        p[2] =  current_r[(index*3)+5] - current_r[(index*3)+2];
+    }
     return *this;
 }
 

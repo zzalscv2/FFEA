@@ -244,8 +244,6 @@ def automodel(args):
         
         no_danger_elements = check_danger_elements(name+".vol")
         
-        print("AT THE END OF THAT, NO DANGER ELEMENTS ="+str(no_danger_elements)+" and stl_correct = "+str(stl_correct))
-        
         attempts+=1
         current_granularity+=1.
     

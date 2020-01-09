@@ -271,7 +271,10 @@ class FFEA_pdb:
 				for k in range(self.num_atoms[j]):
 					#print j, self.num_chains, len(self.chain), k, self.num_atoms[j], len(self.chain[j].atom)
 					a = self.chain[j].atom[k]
-					text += ("%6s%5d %4s %3s %c%4d    %8.3f%8.3f%8.3f%6.2f%6.2f      %4s%2s%2s\n" % ("ATOM  ", a.atomID, a.name, a.res, self.chain[j].chainID, a.resID, self.chain[j].frame[i].pos[k][0], self.chain[j].frame[i].pos[k][1], self.chain[j].frame[i].pos[k][2], a.occupancy, a.temperature, a.segID ,a.element, a.charge))
+					x = ('%.5f' % self.chain[j].frame[i].pos[k][0])
+					y = ('%.5f' % self.chain[j].frame[i].pos[k][1])
+					z = ('%.5f' % self.chain[j].frame[i].pos[k][2])
+					text += ("%6s%5d %4s %3s %c%4d     %.7s %.7s %.7s%6.2f%6.2f      %4s%2s%2s\n" % ("ATOM  ", a.atomID, a.name, a.res, self.chain[j].chainID, a.resID, x, y, z, a.occupancy, a.temperature, a.segID ,a.element, a.charge))
 
 				text += ("TER\n")
 			text+= ("ENDMDL\n")
@@ -345,6 +348,59 @@ class FFEA_pdb:
 		self.num_frames = traj.num_frames
 		self.valid = True
 		self.empty = False
+
+	def build_from_rod(self, rod, scale=1e10, load_equil = False):
+
+		self.reset()
+        
+		plates = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        
+		if type(rod) != type(object()):
+			rod = [rod]
+                
+		bin = 0
+		for rod in rod:
+			chain = FFEA_pdb_chain()
+			chain.chainID = plates[bin]
+                
+			chain.num_atoms = rod.num_elements
+			for i  in range(chain.num_atoms):
+				atom = FFEA_pdb_atom()
+				atom.set_structure()
+				chain.atom.append(atom)
+
+			chain.num_frames = rod.num_frames
+			if not load_equil:
+				pos = rod.current_r
+			else:
+				pos = rod.equil_r
+				#chain.num_frames = 1
+            
+			chain.frame = []
+            
+			for frame_index in range(chain.num_frames):
+				chain.frame.append(FFEA_frame.FFEA_frame())
+				chain.frame[frame_index].pos = pos[frame_index]
+				chain.frame[frame_index].num_nodes = rod.num_elements
+                
+			for f in chain.frame:
+				f.pos *= scale
+                
+			self.chain.append(chain)
+			self.num_chains += 1
+			
+			# Add data
+			self.num_atoms.append(chain.num_atoms)
+            
+			bin += 1
+        
+        	self.num_frames = rod.num_frames
+		self.valid = True
+		self.empty = False
+        
+		for j in range(self.num_chains):
+			for k in range(self.num_atoms[j]):
+				self.chain[j].atom[k].resID = k
 
 	def clear_position_data(self):
 		

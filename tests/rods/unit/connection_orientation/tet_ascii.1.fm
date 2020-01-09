@@ -1,0 +1,57 @@
+FFEA Global Measurement File
+
+Simulation Details:
+	FFEA version: 2.6.0
+	FFEA commit '692bbfccc8328db6648cd4b3f0e7a79a549b80a0'
+	     branch rod_dev
+	     date '2018-08-27'
+	FFEA was compiled on Dec 14 2018 at 14:10:48
+	     using: -DUSE_OPENMP -DFFEA_PARALLEL_WITHIN_BLOB -DUSE_DOUBLE 
+	Simulation Began on 22/2/2019 at 13:39:39
+	Script Filename = tet_ascii.1.ffea
+	Simulation Type = Full
+
+Parameters:
+	System parameters:
+	restart = 0
+	dt = 1.000000e-14
+	num_steps = 100000000000
+	check = 10000
+	rng_seed = 1550842779
+	kT = 4.110000e-21
+	max_iterations_cg = 1000
+	epsilon = 1.000000e-01
+	stokes_visc = 1.000000e-03
+	num_blobs = 2
+
+	Calculations enabled:
+	calc_noise = 1
+	calc_stokes = 1
+	calc_ssint = 1
+	calc_steric = 1
+	calc_preComp = 0
+	calc_springs = 0
+	calc_ctforces = 0
+	calc_kinetics = 0
+	calc_es = 0
+
+	Short range parameters:
+	ssint_type = ljsteric
+	inc_self_ssint = 1
+	ssint_cutoff = 3.000000e-09
+	ssint_in_fname = tet_ascii.1.lj
+	steric_factor = 1.000000e+00
+
+	Simulation box configuration:
+	es_update = 10
+	es_N_x = 52
+	es_N_y = 30
+	es_N_z = 16
+	force_pbc = 0
+	move_into_box = 1
+
+
+Measurements:
+Time          StrainEnergy  Centroid.x    Centroid.y    Centroid.z    RMSD          SurfSurfEnergy 
+1.000000e-14  0.000000e+00  7.800000e-08  4.500000e-08  2.416666e-08  0.000000e+00  1.210379e-34   
+2.000000e-14  0.000000e+00  7.800000e-08  4.500000e-08  2.416666e-08  0.000000e+00  1.210379e-34   

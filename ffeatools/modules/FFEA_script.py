@@ -90,7 +90,18 @@ class FFEA_script:
 				print("Error. Couldn't load <blob>...</blob> " + str(i))
 				self.reset()
 				return
-
+        
+        # load rods
+		try:
+			for i in range(self.params.num_rods):
+				self.rod.append(self.read_rod_from_script_lines(script_lines, scriptdir, i, ))
+		#except AttributeError:
+		#	pass # no rods exist
+		except:
+				print("Error. Couldn't load <rod>...</rod> " + str(i))
+				self.reset()
+				raise # why do all these functions return instead of raising...?
+        
 		# Get springs
 		try:
 			self.read_springs_from_script_lines(script_lines, scriptdir)
@@ -384,6 +395,54 @@ class FFEA_script:
 				return None
 
 		return blob
+    
+	def read_rod_from_script_lines(self, script_lines, scriptdir, index):
+         # Get the starting and ending line numbers for the <rod> block
+         rod_index = 0
+         for line_no in range(len(script_lines)):
+            if "<rod>" in script_lines[line_no]:
+                if rod_index == index:
+                    line_start = line_no
+            if "</rod>" in script_lines[line_no]:
+                if rod_index == index:
+                    line_end = line_no
+                rod_index +=1
+         
+         # Can't avoid it now, just gotta do the FFEA_script thing
+         # (aka: write a bunch of spaghetti code instead of just using an XML parser)
+         # First, parse thing
+         rod_lines = script_lines[line_start+1:line_end]
+         for line_no in range(len(rod_lines)):
+             rod_lines[line_no] = rod_lines[line_no].replace("\t", "")
+             rod_lines[line_no] = rod_lines[line_no].replace("\n", "")
+             rod_lines[line_no] = rod_lines[line_no].replace("<", "")
+             rod_lines[line_no] = rod_lines[line_no].replace(">", "")
+        
+         #absolute vs relative paths (don't begin a relative path with a /)
+         if scriptdir == "":
+             separator = ""
+         else:
+             separator = "/"
+        
+         # Read in rod
+         for line in rod_lines:
+             if line.split("=")[0].strip() == "input":
+                 in_path = scriptdir+separator+line.split("=")[1].strip()
+            
+             if line.split("=")[0].strip() == "output":
+                 out_path = scriptdir+separator+line.split("=")[1].strip()
+                 
+         try:
+             rod = FFEA_rod.FFEA_rod(out_path)
+         except IOError:
+             print("Couldn't find "+out_path)
+             rod = FFEA_rod.FFEA_rod(in_path)
+
+          #scaling, translation, rotation etc go here
+         return rod
+             
+         
+         
 
 	def read_springs_from_script_lines(self, script_lines, scriptdir):
 
@@ -511,6 +570,7 @@ class FFEA_script:
 		self.empty = True
 		self.params = None
 		self.blob = []
+		self.rod = []
 		self.spring = ""
 		self.ctforces = ""
 		self.precomp = None
@@ -702,6 +762,8 @@ class FFEA_script_params():
 			self.es_h = int(rvalue)
 		elif lvalue == "num_blobs":
 			self.num_blobs = int(rvalue)
+		elif lvalue == "num_rods":
+			self.num_rods = int(rvalue)
 		elif lvalue == "num_conformations":
 			self.num_conformations = [int(r) for r in rvalue.replace("(", "").replace(")", "").split(",")]
 		elif lvalue == "num_states":
@@ -717,6 +779,11 @@ class FFEA_script_params():
 	def fix_params(self):
 		if len(self.num_conformations) < self.num_blobs:
 			self.num_conformations.extend([1 for i in range(self.num_blobs - len(self.num_conformations))])
+         
+		try:
+			self.num_rods
+		except AttributeError:
+			self.num_rods = 0
 
 	# This function tests whether or not there are enough params to form an ffea system
 	def completed(self):

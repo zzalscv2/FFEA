@@ -1,0 +1,41 @@
+<param>
+	<restart = 0>
+	<trajectory_out_fname = sphere_structure/round_lad.1.ftj>
+	<measurement_out_fname = sphere_structure/round_lad.1.fm>
+	<lj_params = sphere_structure/round_lad.1.lj>
+	<num_blobs = 1>
+	<num_rods = 1>
+    <num_couplings = 1>
+</param>
+
+<system>
+	<blob>
+		<motion_state = DYNAMIC>
+		<topology = sphere_structure/round_lad.1.top>
+		<material = sphere_structure/round_lad.1.mat>
+		<stokes = sphere_structure/round_lad.1.stokes>
+		<nodes = sphere_structure/round_lad.1.node>
+		<surface = sphere_structure/round_lad.1.surf>
+		<vdw = sphere_structure/round_lad.1.vdw>
+		<scale = 1.00e-8>
+	</blob>
+	
+	<rod>
+		<input = bend.rod>
+		<output = bend.rodtraj>
+		<centroid_pos = (0.0,0.0,0.0)>
+		<rotation = (0.00, 0.00, 0,00)>
+		<scale = 1>
+	</rod>
+	
+	<coupling type = rod-to-blob>
+        <rod_id = 0>
+        <blob_id = 0>
+        <rod_node_id = 0>
+        <blob_element_id = 80>
+        <blob_node_ids = (9,26,25)>
+        <node_weighting = (-1,-1,-1)>
+        <rotation = (0,0,0)>
+    </coupling>
+	
+</system>

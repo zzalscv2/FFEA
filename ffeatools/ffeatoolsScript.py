@@ -59,7 +59,8 @@ ffea_tools = 	{
       "pyPCAeigen": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_eigensystem.py",
       "pyPCAproj": "FFEA_analysis/FFEA_pyPca/FFEA_get_PCA_projections.py",
       "pintovdw": "FFEA_initialise/FFEA_vdw_tools/FFEA_pin_to_vdw.py",
-      "nodepdbalign": "FFEA_initialise/FFEA_mapping_tools/node_pdb_align.py"
+      "nodepdbalign": "FFEA_initialise/FFEA_mapping_tools/node_pdb_align.py",
+      "ccextractor": "modules/rod/ndc_extractor.py"
 		}
 
 if len(sys.argv) == 1:

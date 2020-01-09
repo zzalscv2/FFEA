@@ -27,62 +27,43 @@
  *	Email: py12rw@leeds.ac.uk
  */
 
-#define OUT ///< This is used to denote when a function modifies one of its parameters
-#define _USE_MATH_DEFINES ///<  This has to come before including cmath
 
-const static bool abort_on_fail = true; /// If the simulation becomes unstable, this will SIGABRT the whole program
-
-#include <cmath>
-#include <chrono>
-#include <iostream>
-#include <cstring>
-#include <assert.h>
-#include <random>
-#include <stdexcept>
-#include "dimensions.h"
-#include <iomanip>    
+#include "rod_math_v9.h"
 
 namespace rod {
+
+bool dbg_print = false;
     
      /*---------*/
     /* Utility */
    /*---------*/
 
-const double boltzmann_constant = 1.3806503e-23/mesoDimensions::Energy;
-
-// A less weird way to access the contents of our arrays representing our vectors
-static const int x = 0;
-static const int y = 1;
-static const int z = 2;
-
-// For clarity, anytime you see an index [x], we're referring to the x
-// dimension.
-
-// Computing the energy for a perturbation requires four segments, defined
-// by 5 nodes. They are i-2 to i+1, listed here.
-static const int im2 = 0; ///< index of i-2nd thing
-static const int im1 = 1; ///< index of i-1st thing
-static const int i = 2; ///< index of ith thing
-static const int ip1 = 3; ///< index of i+1th thing
-
-#define OMP_SIMD_INTERNAL _Pragma("omp simd")
-
-#define vec3d(x)for(int x = 0; x < 3; ++ x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
-
 /** Hopefully I won't ever have to use this. */
+/** Edit: I used it */
 void rod_abort(std::string message){
+    // Nice way of aborting
     std::cout << "There has been a cataclysmic error in FFEA_rod. Here it is:\n" << message << "\n";
+    printf("Sorry. \n");
     std::abort();
+    // Direct way of aborting
+    abort();
+    // Nasty way of aborting
+    // Q: Why? A: FFEA's compiler settings don't let you abort normally sometimes.
+    volatile int *p = reinterpret_cast<volatile int*>(0);
+    *p = 0x1337D00D;
 }
+
+bool isnan(float x) { return x != x; }
+bool isinf(float x) { return !isnan(x) && isnan(x - x); }
 
 /**
  Check if a single value is simulation destroying. Here, simulation
  destroying means NaN or infinite.
 */
 bool not_simulation_destroying(float x, std::string message){
-    if(std::isnan(x) or std::isinf(x) ){
-        if (abort_on_fail){ rod_abort(message); }
-        else{ return false; }
+    if (!debug_nan){ return true; }
+    if((boost::math::isnan)(x) or isinf(x) or std::isnan(x) or std::isinf(x) ){
+        rod_abort(message);
     }
     return true;
 }
@@ -92,10 +73,13 @@ bool not_simulation_destroying(float x, std::string message){
  a warning specifying which value it is.
 */
 bool not_simulation_destroying(float x[3], std::string message){
+    if (!debug_nan){ return true; }
     for (int i=0; i<3; i++){
-        if (std::isnan(i) or std::isinf(i)){
-            if (abort_on_fail){ rod_abort(message); }
-            else{ return false; }
+        // Boost is needed because copiling with -ffastmath will make
+        // the others stop working!
+        if((boost::math::isnan)(x[i]) or isinf(x[i]) or std::isnan(x[i]) or std::isinf(x[i]) ){
+            rod_abort(message);
+            abort();
         }
     }
     return true;
@@ -106,17 +90,35 @@ bool not_simulation_destroying(float x[3], std::string message){
  Print the contents of an array to the stdout.
 */
 void print_array(std::string array_name, float array[], int length){
-    std::cout << array_name << " : [";
-    for (int i = 0; i < length; i++){
-        if (i != length-1){
-            std::cout << array[i] << ", ";
+    if(dbg_print){
+        std::cout << array_name << " : [";
+        for (int i = 0; i < length; i++){
+            if (i != length-1){
+                std::cout << array[i] << ", ";
+            }
+            else{
+                std::cout << array[i];
+            }
         }
-        else{
-            std::cout << array[i];
-        }
+        std::cout << "]\n";
     }
-    std::cout << "]\n";
 }
+
+void print_array(std::string array_name, double array[], int length){
+    if(dbg_print){
+        std::cout << array_name << " : [";
+        for (int i = 0; i < length; i++){
+            if (i != length-1){
+                std::cout << array[i] << ", ";
+            }
+            else{
+                std::cout << array[i];
+            }
+        }
+        std::cout << "]\n";
+    }
+}
+
 
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point
 
@@ -127,8 +129,33 @@ void print_array(std::string array_name, float array[], int length){
 void normalize(float in[3], OUT float out[3]){
     float absolute = sqrt(in[0]*in[0] + in[1]*in[1] + in[2]*in[2]);
     vec3d(n){out[n] = in[n]/absolute;}
-    not_simulation_destroying(out, "Noramlisation is simulation destroying."); // this is a cheaty way to give a c-style assertion an actual message.
+    if (boost::math::isnan(out[0])){
+        out[0] = 0; out[1] = 0; out[2] = 0;
+    }
+    not_simulation_destroying(out, "Noramlisation is simulation destroying.");
 }
+
+/**
+ There is some weird behaviour in FFEA when -ffast-math and -O1 or more
+ are both turned on (which are our default compiler settings). It
+ normalizes vectors to floating-point precision, but the std::acos
+ function will take the absolute value of that vector to be <1.
+ Do not remove this function! If you compare the values it returns
+ to rod::normalize, they will *look* identical, but they do not
+ behave identically.
+ */
+void precise_normalize(float in[3], float out[3]){
+    double in_double[3] = {(double)in[0], (double)in[1], (double)in[2]};
+    float absolute = sqrt(in_double[0]*in_double[0] + in_double[1]*in_double[1] + in_double[2]*in_double[2]);
+    float absolute_float = (float)absolute;
+    vec3d(n){out[n] = in[n]/absolute_float;}
+    if (boost::math::isnan(out[0])){
+        out[0] = 0; out[1] = 0; out[2] = 0;
+    }
+    not_simulation_destroying(out, "Noramlisation is simulation destroying.");
+
+}
+
 /**
  Get the absolute value of a vector.
 */
@@ -176,7 +203,7 @@ void get_rotation_matrix(float a[3], float b[3], float rotation_matrix[9]){
     float identity_matrix[9] = {1,0,0,0,1,0,0,0,1};
     
     float vx_squared[9] = {-(v[1]*v[1])-(v[2]*v[2]), v[0]*v[1], v[0]*v[2], v[0]*v[1], -(v[0]*v[0])-(v[2]*v[2]), v[1]*v[2], v[0]*v[2], v[1]*v[2], -(-v[0]*-v[0])-(v[1]*v[1]) };
-    
+        
     for (int i=0; i<9; i++){
         rotation_matrix[i] = identity_matrix[i] + vx[i] + (vx_squared[i]*m_f);
     }
@@ -244,25 +271,64 @@ void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3])
  some imprecisions. Obviously acos(a milllion) isn't a number, but for values very close to 1, we4
  will give the float the benefit of the doubt and say the acos is zero.
 */
+
 float safe_cos(float in){
-    if (in < 1.01){
+    
+    float absin = std::abs(in);
+    
+    if (absin >= 1){
         return 0;
     }
     
-    float out = std::acos(in);
-    if (std::isnan(out) or std::isinf(out)){
-        if (abort_on_fail){ rod_abort("Cosine of something much larger than 1."); }
-        else{ std::cout << "Warning: suspicious inverse cosine.\n"; return 0; }
+    else{
+        return acos(absin);
     }
+}
+
+/*
+float safe_cos(float in){
+    
+    float absin = abs(in);
+    
+    if (absin >= 1.0 && absin < 1.03){ // 3 for luck
+        return 0;
+    }
+    
+    float out = std::acos(absin);
+    
+    if (!debug_nan){ return out; }
+    
+    if ((boost::math::isnan)(out) or std::isnan(out) or std::isinf(out)){
+        rod_abort("Cosine of something much larger than 1.");
+    }
+
     
     return out;
 }
+*/
  
  /**
- * Get the value of l_i.
+ * Get the value of L_i.
  */
 float get_l_i(float p_i[3], float p_im1[3]){
-    return absolute(p_i) + absolute(p_im1);
+    return (absolute(p_i) + absolute(p_im1))/2.0;
+}
+
+/**
+ \f[  arctan2( (m2 \cross m1) \cdot l), m1 \cdot m2) )  \f]
+ Get the angle between two vectors. The angle is signed (left hand rotation).
+ Params: m1, m2 - the two material axis vectors being measured.
+ l: the normalized element vector.
+ returns: the angle between them, in radians.
+ Credit: StackOverflow user Adrian Leonhard (https://stackoverflow.com/a/33920320)
+ */ 
+float get_signed_angle(float m1[3], float m2[3], float l[3]){
+    float m2_cross_m1[3];
+    cross_product(m2, m1, m2_cross_m1);
+    print_array("cross", m2_cross_m1, 3);
+    if(dbg_print){std::cout << "top: " << (m2_cross_m1[0] * l[0] + m2_cross_m1[1] * l[1] + m2_cross_m1[2] * l[2]) << "\n";}
+    if(dbg_print){std::cout << "bottom: " << (m1[0]*m2[0]+m1[1]*m2[1]+m1[2]*m2[2]) << "\n";}
+    return atan2( (m2_cross_m1[0] * l[0] + m2_cross_m1[1] * l[1] + m2_cross_m1[2] * l[2]), (m1[0]*m2[0]+m1[1]*m2[1]+m1[2]*m2[2]) );
 }
 
      /*-----------------------*/
@@ -288,7 +354,11 @@ void perpendicularize(float m_i[3], float p_i[3], OUT float m_i_prime[3]){
 void update_m1_matrix(float m_i[3], float p_i[3], float p_i_prime[3], float m_i_prime[3]){
     float rm[9];
     float m_i_rotated[3];
-    get_rotation_matrix(p_i, p_i_prime, rm);
+    float p_i_norm[3];
+    float p_i_prime_norm[3];
+    normalize(p_i, p_i_norm);
+    normalize(p_i_prime, p_i_prime_norm);
+    get_rotation_matrix(p_i_norm, p_i_prime_norm, rm);
     apply_rotation_matrix(m_i, rm, m_i_rotated);
     perpendicularize(m_i_rotated, p_i, m_i_prime);
     normalize(m_i_prime, m_i_prime);
@@ -303,10 +373,13 @@ void update_m1_matrix(float m_i[3], float p_i[3], float p_i_prime[3], float m_i_
  where \f$k\f$ is the spring constant, \f$p\f$ is the current segment and \f$m'\f$ is the equilbrium one.
 */
 float get_stretch_energy(float k, float p_i[3], float p_i_equil[3]){
-    
+    if(dbg_print){std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1] << ", " << p_i_equil[2] << "}, ";}
+    if(dbg_print){std::cout << "p_i = {" << p_i[0] << ", " << p_i[1] << ", " << p_i[2] << "}, ";}
     float diff = absolute(p_i) - absolute(p_i_equil);
-    
+    if(dbg_print){std::cout << "k = " << k << ", ";}
+    if(dbg_print){std::cout << "diff = " << diff << ", ";}
     float stretch_energy = (diff*diff*0.5*k)/absolute(p_i_equil);
+    if(dbg_print){std::cout << "stretch energy: " << stretch_energy << "\n";}
     not_simulation_destroying(stretch_energy, "get_stretch_energy is simulation destroying.");
     
     return stretch_energy;
@@ -332,6 +405,8 @@ void parallel_transport(float m[3], float m_prime[3], float p_im1[3], float p_i[
 */
 float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil[3], float m_im1_equil[3], float p_im1[3], float p_i[3], float p_im1_equil[3], float p_i_equil[3]){
     
+    if (dbg_print){std::cout << "\n\ntwist energy being calculated.\n\n";}
+    
     float l_i = get_l_i(p_im1_equil, p_i_equil);
     
     float p_i_norm[3];
@@ -339,19 +414,67 @@ float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil
     float p_i_equil_norm[3];
     float p_im1_equil_norm[3];
     
+    float m_i_norm[3];
+    float m_i_equil_norm[3];
+    float m_im1_norm[3];
+    float m_im1_equil_norm[3];
+    
     normalize(p_i, p_i_norm);
     normalize(p_im1, p_im1_norm);
     normalize(p_i_equil, p_i_equil_norm);
     normalize(p_im1_equil, p_im1_equil_norm);
     
+    precise_normalize(m_i, m_i_norm);
+    precise_normalize(m_i_equil, m_i_equil_norm);
+    precise_normalize(m_im1, m_im1_norm);
+    precise_normalize(m_im1_equil, m_im1_equil_norm);
+    
     float m_prime[3];
-    parallel_transport(m_im1, m_prime, p_im1_norm, p_i_norm);
+    parallel_transport(m_im1_norm, m_prime, p_im1_norm, p_i_norm);
     float m_equil_prime[3];
-    parallel_transport(m_im1_equil, m_equil_prime, p_im1_equil_norm, p_i_equil_norm);
-    float delta_theta = safe_cos( m_prime[x]*m_i[x] + m_prime[y]*m_i[y] + m_prime[z]*m_i[z] );
-    float delta_theta_equil = safe_cos( m_equil_prime[x]*m_i_equil[x] + m_equil_prime[y]*m_i_equil[y] + m_equil_prime[z]*m_i_equil[z] );   
-    float twist_energy = (beta/l_i)*((delta_theta - delta_theta_equil)*(delta_theta - delta_theta_equil));
+    parallel_transport(m_im1_equil_norm, m_equil_prime, p_im1_equil_norm, p_i_equil_norm);
+    
+    if(dbg_print){std::cout << "parallel transport at equil is occuring.\n";}
+    print_array("m_im1_equil_norm", m_im1_equil_norm, 3);
+    print_array("m_equil_prime", m_equil_prime, 3);
+    print_array("p_im1_equil_norm", p_im1_equil_norm, 3);
+    print_array("p_i_equil_norm", p_i_equil_norm, 3);
+    
+    precise_normalize(m_prime, m_prime);
+    precise_normalize(m_equil_prime, m_equil_prime);
+    
+    float delta_theta = get_signed_angle(m_prime, m_i_norm, p_i_norm);
+    float delta_theta_equil = get_signed_angle(m_equil_prime, m_i_equil_norm, p_i_equil_norm);
+    
+    //std::cout << "delta_theta = " << delta_theta << " - " << delta_theta_equil << " = " << delta_theta-delta_theta_equil << "\n";
+    
+    float twist_energy = beta/(l_i*2) * pow(fmod( delta_theta - delta_theta_equil + M_PI, 2*M_PI) - M_PI, 2);
+
+    if(dbg_print){std::cout << " m_i_norm: [" << m_i_norm[0] << ", " << m_i_norm[1] << ", " << m_i_norm[2] << "\n";}
+    if(dbg_print){std::cout << " m_im1_norm: [" << m_im1_norm[0] << ", " << m_im1_norm[1] << ", " << m_im1_norm[2] << "\n";}
+
+    if(dbg_print){std::cout << " m_i_equil: [" << m_i_equil_norm[0] << ", " << m_i_equil_norm[1] << ", " << m_i_equil_norm[2] << "\n";}
+    if(dbg_print){std::cout << " m_im1_equil: [" << m_im1_equil_norm[0] << ", " << m_im1_equil_norm[1] << ", " << m_im1_equil_norm[2] << "\n";}
+
+    if(dbg_print){std::cout << "p_i_norm: [" << p_i_norm[0] << ", " << p_i_norm[1] << ", " << p_i_norm[2] << "]\n";}
+    if(dbg_print){std::cout << "p_im1_norm: [" << p_im1_norm[0] << ", " << p_im1_norm[1] << ", " << p_im1_norm[2] << "]\n";}
+    if(dbg_print){std::cout << "p_i_equil_norm: [" << p_i_equil_norm[0] << ", " << p_i_equil_norm[1] << ", " << p_i_equil_norm[2] << "]\n";}
+    if(dbg_print){std::cout << "p_im1_equil_norm: [" << p_im1_equil_norm[0] << ", " << p_im1_equil_norm[1] << ", " << p_im1_equil_norm[2] << "]\n";}
+    
+    if(dbg_print){std::cout << " m_prime: [" << m_prime[0] << ", " << m_prime[1] << ", " << m_prime[2] << "\n";}
+    if(dbg_print){std::cout << " m_equil_prime: [" << m_equil_prime[0] << ", " << m_equil_prime[1] << ", " << m_equil_prime[2] << "\n";}
+    
+    if(dbg_print){std::cout << " delta_theta: " << delta_theta << "\n";}
+    if(dbg_print){std::cout << " delta_theta_equil: " << delta_theta_equil << "\n";}
+    if(dbg_print){std::cout << " twist_energy: " << twist_energy << "\n";}
+    
+    //float delta_theta = safe_cos( m_prime[x]*m_i_norm[x] + m_prime[y]*m_i_norm[y] + m_prime[z]*m_i_norm[z] );
+    //float delta_theta_equil = safe_cos( m_equil_prime[x]*m_i_equil_norm[x] + m_equil_prime[y]*m_i_equil_norm[y] + m_equil_prime[z]*m_i_equil_norm[z] );   
+    //float twist_energy = (beta/l_i)*((delta_theta - delta_theta_equil)*(delta_theta - delta_theta_equil));
+    //float twist_energy = (beta/l_i)*pow((delta_theta - delta_theta_equil), 2);
     not_simulation_destroying(twist_energy, "get_twist_energy is simulation destroying.");
+    
+    if (dbg_print){std::cout << "\n\ntwist has been calculated.\n\n";}
 
     return twist_energy;
 }
@@ -361,6 +484,8 @@ float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil
  Where \f$p_i\f$ and \f$p_{i-1}\f$ are the i-1 and ith segments, respectively.
 */
 void get_kb_i(float p_im1[3], float p_i[3], OUT float kb_i[3]){
+//    print_array("p_im1", p_im1, 3);
+//    print_array("p_i", p_i, 3);
     float two_p_im1[3];
     vec3d(n){ two_p_im1[n] = p_im1[n] + p_im1[n];}
     float top[3];
@@ -392,6 +517,9 @@ float get_bend_energy(float omega_i_im1[2], float omega_i_im1_equil[2], float B_
     delta_omega[1] = omega_i_im1[1] - omega_i_im1_equil[1];
     float result = delta_omega[0]*(delta_omega[0]*B_equil[0] + delta_omega[1]*B_equil[2]) + delta_omega[1]*(delta_omega[0]*B_equil[1] + delta_omega[1]*B_equil[3]);
     not_simulation_destroying(result, "get_bend_energy is simulation destroying.");
+    print_array("    B_equil", B_equil, 4);
+    print_array("    delta_omega", delta_omega, 2);
+    if(dbg_print){std::cout << "    result:" << result << "\n";}
     return result;
 }
 
@@ -455,7 +583,7 @@ float get_bend_energy_from_p(
     not_simulation_destroying(bend_energy, "get_bend_energy_from_p is simulation destroying.");
     
     if (bend_energy >= 1900000850){
-        std::cout << "bend energy looks a bit large... here's a dump \n";
+        if(dbg_print){std::cout << "bend energy looks a bit large... here's a dump \n";}
         print_array("p_im1", p_im1, 3);
         print_array("p_i", p_i, 3);
         print_array("p_im1_equil", p_im1_equil, 3);
@@ -472,27 +600,46 @@ float get_bend_energy_from_p(
         print_array("B_i_equil", B_i_equil, 3);
         
         print_array("B_im1_equil", B_im1_equil, 4);
-        std::cout << "l_equil = " << l_i << "\n";
-        std::cout << "Energon Crystals = " << bend_energy << "\n";
+        if(dbg_print){std::cout << "l_equil = " << l_i << "\n";}
+        if(dbg_print){std::cout << "Energon Crystals = " << bend_energy << "\n";}
 //        assert(false);
     }
     
     return bend_energy;
 }
 
-void get_mutual_frame_inverse(float a[3], float b[3], OUT float mutual_frame[3]){
+float get_weights(float a[3], float b[3]){
     float a_length = absolute(a);
     float b_length = absolute(b);
-    vec3d(n){ mutual_frame[n] = (1/a_length)*a[n] + (1/b_length)*b[n]; }
-    normalize(mutual_frame, mutual_frame);
+    float weight1 = a_length/(a_length+b_length);
+    return weight1; // weight2 = 1-weight1
 }
 
-float get_mutual_angle_inverse(float a[3], float b[3], float angle){
-    float a_length = absolute(a);
-    float b_length = absolute(b);
-    float a_b_ratio = b_length/(b_length+a_length);
-    return angle*a_b_ratio;
+void get_mutual_element_inverse(float pim1[3], float pi[3], float weight, OUT float mutual_element[3]){
+    float pim1_norm[3];
+    float pi_norm[3];
+    normalize(pi, pi_norm);
+    normalize(pim1, pim1_norm);
+    vec3d(n){mutual_element[n] = (1/weight)*pim1_norm[n] + (1/(1-weight))*pi_norm[n]; }
+    //vec3d(n){ mutual_frame[n] = (1/a_length)*a[n] + (1/b_length)*b[n]; }
+    normalize(mutual_element, mutual_element);
 }
+
+void get_mutual_axes_inverse(float mim1[3], float mi[3], float weight, OUT float m_mutual[3]){
+    float mi_length = absolute(mi);
+    float mim1_length = absolute(mim1);
+    vec3d(n){m_mutual[n] = (mim1[n]*(1.0/weight) + mi[n]*(1.0/(1-weight)))/(mi_length+mim1_length); }
+    normalize(m_mutual, m_mutual);
+}
+
+//float get_mutual_angle_inverse(float a[3], float b[3], float angle){
+//    float a_length = absolute(a);
+//    float b_length = absolute(b);
+//    float a_b_ratio = b_length/(b_length+a_length);
+//    return angle*a_b_ratio;
+//}
+
+
 
 float get_bend_energy_mutual_parallel_transport(
         float p_im1[3],
@@ -528,11 +675,14 @@ float get_bend_energy_mutual_parallel_transport(
     get_kb_i(p_im1_norm, p_i_norm, kb_i);
     get_kb_i(p_im1_equil_norm, p_i_equil_norm, kb_i_equil);
     
+    float weight = get_weights(p_im1, p_i);
+    float equil_weight = get_weights(p_im1_equil, p_i_equil);
+    
     // create our mutual l_i
     float mutual_l[3];
     float equil_mutual_l[3];
-    get_mutual_frame_inverse(p_i, p_im1, OUT mutual_l);
-    get_mutual_frame_inverse(p_i_equil, p_im1_equil, OUT equil_mutual_l);
+    get_mutual_element_inverse(p_im1, p_i, weight, OUT mutual_l);
+    get_mutual_element_inverse(p_im1_equil, p_i_equil, weight, OUT equil_mutual_l);
     
     // parallel transport our existing material frames to our mutual l_i
     float m_im1_transported[3];
@@ -546,39 +696,73 @@ float get_bend_energy_mutual_parallel_transport(
     parallel_transport(m_i_equil, m_i_equil_transported, p_i_equil_norm, equil_mutual_l);
     
     // get the angle between the two sets of material axes
-    float angle_between_axes = safe_cos((m_i_transported[0] * m_im1_transported[0])+(m_i_transported[1] * m_im1_transported[1])+(m_i_transported[2] * m_im1_transported[2]));
-    float angle_between_axes_equil = safe_cos((m_i_equil_transported[0] * m_im1_equil_transported[0])+(m_i_equil_transported[1] * m_im1_equil_transported[1])+(m_i_equil_transported[2] * m_im1_equil_transported[2]));
+    //float angle_between_axes = safe_cos((m_i_transported[0] * m_im1_transported[0])+(m_i_transported[1] * m_im1_transported[1])+(m_i_transported[2] * m_im1_transported[2]));
+    //float angle_between_axes_equil = safe_cos((m_i_equil_transported[0] * m_im1_equil_transported[0])+(m_i_equil_transported[1] * m_im1_equil_transported[1])+(m_i_equil_transported[2] * m_im1_equil_transported[2]));
 
-    float angle_to_rotate = get_mutual_angle_inverse(p_i, p_im1, angle_between_axes);
-    float angle_to_rotate_equil = get_mutual_angle_inverse(p_i_equil, p_im1_equil, angle_between_axes_equil);
+    //float angle_to_rotate = get_mutual_angle_inverse(p_i, p_im1, angle_between_axes);
+    //float angle_to_rotate_equil = get_mutual_angle_inverse(p_i_equil, p_im1_equil, angle_between_axes_equil);
     
-    float m_im1_rotated[3];
-    float m_im1_rotated_equil[3];
+    //float m_im1_rotated[3];
+    //float m_im1_rotated_equil[3];
     
     // rotate by the angle in question
-    rodrigues_rotation(m_im1_transported, mutual_l, angle_to_rotate, m_im1_rotated);
-    rodrigues_rotation(m_im1_equil_transported, equil_mutual_l, angle_to_rotate_equil, m_im1_rotated_equil);
+    //rodrigues_rotation(m_im1_transported, mutual_l, angle_to_rotate, m_im1_rotated);
+    //rodrigues_rotation(m_im1_equil_transported, equil_mutual_l, angle_to_rotate_equil, m_im1_rotated_equil);
     
-    float n_im1_rotated[3];
-    float n_im1_rotated_equil[3];
+    float m_mutual[3];
+    get_mutual_axes_inverse(m_im1_transported, m_i_transported, weight, m_mutual);
+    //vec3d(n){m_mutual[n] = (m_i_transported[n]*(1.0/weight_i) + m_im1_transported[n]*(1.0/weight_im1))/(absolute(m_i_transported)+absolute(m_im1_transported)) ;}
+
+    float m_mutual_equil[3];
+    get_mutual_axes_inverse(m_im1_equil_transported, m_i_equil_transported, equil_weight, m_mutual_equil);
+    //vec3d(n){m_mutual_equil[n] = (m_i_equil_transported[n]*(1.0/weight_i_equil) + m_im1_equil_transported[n]*(1.0/weight_im1_equil))/(absolute(m_i_equil_transported)+absolute(m_im1_equil_transported)) ;}
+
+    normalize(m_mutual_equil, m_mutual_equil);
+    normalize(m_mutual, m_mutual);
+
+    float n_mutual[3];
+    float n_mutual_equil[3];
+
+    //print_array("B", B_i_equil, 4);
+    print_array("    m_im1", m_im1, 3);
+    print_array("    m_i", m_i, 3);
+    print_array("    m_im1_transported", m_im1_transported, 3);
+    print_array("    m_i_transported", m_i_transported, 3);
+    print_array("    m_mutual", m_mutual, 3);
+    print_array("    l_mutual", mutual_l, 3);
     
-    cross_product(mutual_l, m_im1_rotated, n_im1_rotated);
-    cross_product(equil_mutual_l, m_im1_rotated_equil, n_im1_rotated_equil);
+    print_array("    p_im1", p_im1, 3);
+    print_array("    p_i", p_i, 3);
+    print_array("    p_im1_equil", p_im1_equil, 3);
+    print_array("    p_i_equil", p_i_equil, 3);
+    print_array("    mutual_l", mutual_l, 3);
+    print_array("    equil_mutual_l", equil_mutual_l, 3);
+    
+    cross_product(mutual_l, m_mutual, n_mutual);
+    cross_product(equil_mutual_l, m_mutual_equil, n_mutual_equil);
     
     // finally get omega
     float omega_j_im1[2];    
-    get_omega_j_i(kb_i, n_im1_rotated, m_im1_rotated, omega_j_im1);
+    get_omega_j_i(kb_i, n_mutual, m_mutual, omega_j_im1);
     
     float omega_j_im1_equil[2];    
-    get_omega_j_i(kb_i_equil, n_im1_rotated, m_im1_rotated_equil, omega_j_im1_equil);
+    get_omega_j_i(kb_i_equil, n_mutual_equil, m_mutual_equil, omega_j_im1_equil);
     
     float bend_energy = 0;
     bend_energy += get_bend_energy(omega_j_im1, omega_j_im1_equil, B_i_equil);
-    bend_energy = bend_energy*(1/(L_i)); // constant!
+    bend_energy = bend_energy*(0.5/(L_i)); // constant!
 
     not_simulation_destroying(bend_energy, "get_bend_energy_from_p is simulation destroying.");
     if(bend_energy >= 1900000850){ std::cout << "bend energy is very large. Please fire this up in gdb!\n"; }
 
+    if(dbg_print){std::cout << "    benergy delta_omega : [" << omega_j_im1[0]-omega_j_im1_equil[0] << ", " << omega_j_im1[1] - omega_j_im1_equil[1] << "]\n";}
+
+    //std::cout << "delta_omega = [" << omega_j_im1[0] << ", " << omega_j_im1[1] << "]\n";
+    //std::cout << "delta_omega_equil = [" << omega_j_im1_equil[0] << ", " << omega_j_im1_equil[1] << "]\n";
+    print_array("    kb_i", kb_i, 3);
+    print_array("    kb_i_equil", kb_i_equil, 3);
+    
+    if(dbg_print){std::cout << "    benergy is " << bend_energy << "\n";}
 
     return bend_energy;
 }
@@ -659,7 +843,7 @@ float get_noise(float timestep, float kT, float friction, float random_number){ 
     /* Shorthands */
    /*------------*/
 
-// Dear function pointer likers: I know, but I would rather directly call these functions.
+// Dear function pointer likers: no.
 
 /**
 * This will load a region of a 1-d array containing nodes into an array
@@ -712,7 +896,7 @@ void cross_all(float p[4][3], float m[4][3], OUT float n[4][3]){
     for (int j=0; j<4; j++){
         float p_norm[3];
         normalize(p[j], p_norm);
-        cross_product(p_norm, m[j], n[j]);
+        cross_product(m[j], p_norm, n[j]);
     }
 }
 
@@ -813,22 +997,25 @@ void set_cutoff_values(int p_i_node_no, int num_nodes, OUT int *start_cutoff, in
 /** Returns the absolute length of an element, given an array of elements
  *  and the index of the element itself.   */
 float get_absolute_length_from_array(float* array, int node_no, int length){
-    if (node_no*3 >= length){
+    if (node_no*3 >= length-3){
         return 0;
     }
     else if (node_no*3 < 0){
         return 0;
     }
     else{
-        float p[3] = {array[node_no*3], array[(node_no*3)+1], array[(node_no*3)+2]};
-        return absolute(p);
+        float r_i[3] = {array[node_no*3], array[(node_no*3)+1], array[(node_no*3)+2]};
+        float r_ip1[3] = {array[(node_no*3)+3], array[(node_no*3)+4], array[(node_no*3)+5]};
+        float p_i[3];
+        vec3d(n){ p_i[n] = r_ip1[n] - r_i[n]; }
+        return absolute(p_i);
     }
 } 
 
 /** Get the centroid of a particular rod, specified by the array of node
  positions for that rod (and the length). Updates the 'centroid' array
  given as a parameter. */
-void get_centroid(float* r, int length, OUT float centroid[3]){
+void get_centroid_generic(float* r, int length, OUT float centroid[3]){
     float sum_pos[3] = {0,0,0};
     for(int i=0; i<length; i+=3){
         sum_pos[0] += r[i];
@@ -875,6 +1062,10 @@ void get_perturbation_energy(
         OUT
         float energies[3]
     ){
+        
+    if(dbg_print){std::cout << "getting energy for node " << p_i_node_no << " in dimension " << perturbation_dimension << "\n";} //temp
+        
+    //feenableexcept( FE_INVALID | FE_OVERFLOW );
         
     // Put a 5-node segment onto the stack.
     // We need to make a copy of it, because we'l be modifying it for our

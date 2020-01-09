@@ -226,7 +226,7 @@ class Blob:
           else:
                # Surface file uses the secondary nodes for the interactions, so it can't be used to determine the linearity
                print("Linear nodes cannot be known without a topology.")
-
+          
           
           # Any initialisation done in ffea?
           if b.centroid != None:
@@ -250,7 +250,6 @@ class Blob:
      
      def load_topology(self, top_fname):
           print("Reading in topology file " + top_fname)
-       
           top = open(top_fname, "r")
           line = top.readline().rstrip()
           if line != "ffea topology file" and line != "walrus topology file":

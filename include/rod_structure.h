@@ -26,6 +26,8 @@
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
  */
+#ifndef ROD_STRUCTURE
+#define ROD_STRUCTURE
 
 #include <iostream>
 #include <fstream>
@@ -37,7 +39,6 @@
 #include <omp.h>
 #include "RngStream.h"
 #include <stdio.h>
-#include <random>
 
 namespace rod {
 
@@ -81,6 +82,9 @@ struct Rod
 
   float * applied_forces; /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
   bool * pinned_nodes; /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
+  bool interface_at_start = false; /** if this is true, the positioning of the start node is being handled by a rod-blob interface, so its energies will be ignored. **/
+  bool interface_at_end = false; /** if this is true, the positioning of the end node is being handled by a rod-blob interface, so its energies will be ignored. **/
+
 
   /** Unit conversion factors - the input\output files are in SI, but internally it uses FFEA's units as determined in dimensions.h **/
   float bending_response_factor;
@@ -92,8 +96,6 @@ struct Rod
   FILE * file_ptr;
   int frame_no = 0;
   int step_no = 0;
-  std::mt19937 *mersenne_twister;
-  std::uniform_real_distribution <float> *real_distribution;
   Rod (int length, int set_rod_no);
   Rod (std::string path, int set_rod_no);
   Rod set_units();
@@ -110,6 +112,11 @@ struct Rod
   Rod equilibrate_rod(RngStream rng[]);
   Rod translate_rod(float* r, float translation_vec[3]);
   Rod rotate_rod(float euler_angles[3]);
+  Rod scale_rod(float scale);
+  Rod get_centroid(float *r, float centroid[3]);
+  Rod get_min_max(float *r, OUT float min[3], float max[3]);
+  Rod get_p(int index, OUT float p[3], bool equil);
 };
 
 } //end namespace
+#endif
