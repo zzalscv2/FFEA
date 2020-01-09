@@ -321,6 +321,8 @@ public:
     // vector3 get_node(int index);
     // std::array<scalar,3> get_node(int index);
     void get_node(int index, arr3 &v);
+    
+    void get_node_0(int index, arr3 &v);
 
     void copy_node_positions(vector3 *nodes);
 

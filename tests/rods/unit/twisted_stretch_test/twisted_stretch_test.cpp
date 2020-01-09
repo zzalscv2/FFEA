@@ -1,4 +1,5 @@
 #include "rod_math_v9.h"
+#include "stdio.h"
 
 int main(){
     // regular energy
@@ -28,5 +29,7 @@ int main(){
     if (unperturbed_energy - twisted_stretch_energy < 0.001 and unperturbed_energy - twisted_stretch_energy > -0.001){
         return 0;
     }
+    printf("Unperturbed energy: %f", unperturbed_energy);
+    printf("Twisted energy: %f", twisted_stretch_energy);
     return 1;
 }

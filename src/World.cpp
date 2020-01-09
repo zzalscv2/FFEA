@@ -464,7 +464,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.ssint_cutoff);
         params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.ssint_cutoff);
     }
-
+    
     // Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
     box_dim.x = params.ssint_cutoff * params.es_N_x;
     box_dim.y = params.ssint_cutoff * params.es_N_y;
@@ -485,14 +485,26 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             rod_array[i]->translate_rod(rod_array[i]->equil_r, shift_rod);
             rod_array[i]->write_frame_to_file(); // rod traj contains initial state but positioned in box
         }
+            // todo: for each attachment, move the attachment_node_pos by shift
+        for(i = 0; i< params.num_interfaces; i++){
+            //for(int j=0; j<3; j++){rod_blob_interface_array[i]->attachment_node_pos[j] += shift_rod[j];}
+            rod_blob_interface_array[i]->update_internal_state(true, true);
+//            if(rod::dbg_print){rod::print_array("shifted interface position", rod_blob_interface_array[i]->attachment_node_pos_equil, 3);}
+            
+        }
+            
+        if(rod::dbg_print){rod::print_array("shift", shift_rod, 3);}
     }
+        
     // Now everything has been moved into boxes etc, save all initial positions
     for(i = 0; i < params.num_blobs; ++i) {
         for(j = 0; j < params.num_conformations[i]; ++j) {
             blob_array[i][j].set_pos_0();
         }
     }
-
+    for (int i=0; i<params.num_interfaces; i++){
+        rod_blob_interface_array[i]->update_J_0();
+    }
 
     // If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
     if(mode == 0) {
@@ -865,7 +877,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
 
     }
-
+    
     // Check if there are static blobs: 
     bool there_are_static_blobs = false;
     for (i = 0; i < params.num_blobs; i++) {
@@ -991,7 +1003,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             J_Gamma[i] = 0;
     }
 
-
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
 #endif
@@ -1004,6 +1015,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     et = MPI::Wtime() -st;
     cout<<"benchmarking--------Initialising time of ffea :"<<et<<"seconds"<<endl;
 #endif
+
     return FFEA_OK;
 }
 
@@ -1787,6 +1799,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
  * Update entire World for num_steps time steps
  * */
 int World::run() {
+
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
 #ifdef BENCHMARK
@@ -1821,7 +1834,6 @@ int World::run() {
             } else
                 es_count++;
         } // es_update will turn to false at the begining of next timestep
-
 
         // Zero the force across all blobs
 #ifdef USE_OPENMP
@@ -1895,8 +1907,6 @@ int World::run() {
             if (es_update) active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
         }
 
-
-
         if (es_update) {
             // REFRESH LINKED LISTS:
             // Refresh the VdW-LinkedList
@@ -1938,12 +1948,16 @@ int World::run() {
 
         // Apply springs directly to nodes
         apply_springs();
-        
+                        
         // Todo: computing the force on the face nodes from the rod would go here
         // Todo: setting the pseudo-rod on the face to its correct position would go here
         // Do rods
         for (int i=0; i<params.num_rods; i++){
             rod_array[i]->do_timestep(rng);
+        }
+                
+        for (int i=0; i<params.num_interfaces; i++){
+            rod_blob_interface_array[i]->do_connection_timestep();
         }
 
 
@@ -1974,8 +1988,6 @@ int World::run() {
         time1 += wtime2 - wtime1;
 #endif
 
-
-
 #ifdef FFEA_PARALLEL_FUTURE
         // Get the thread updating the VdW-LinkedLists if it has finished.
         // #pragma omp master // Then a single thread does the catching and swapping
@@ -1985,7 +1997,6 @@ int World::run() {
         // #pragma omp barrier // the barrier holds people off, before catching the thread
 #endif
 
-
         // Calculate the VdW forces:
         if (params.calc_ssint == 1 || params.calc_steric == 1) {
            vdw_solver->solve(blob_corr); // blob_corr == NULL if force_pbc = 0.
@@ -1993,7 +2004,6 @@ int World::run() {
         if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.ssint_cutoff);
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
-
 
 #ifdef BENCHMARK
         wtime3 = omp_get_wtime();
@@ -2021,7 +2031,7 @@ int World::run() {
             print_trajectory_and_measurement_files(step, wtime);
             print_kinetic_files(step);
         }
-
+        
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
 
@@ -2617,7 +2627,7 @@ int World::read_and_build_system(vector<string> script_vector) {
         set_rates = 0; // aux reader flag
         set_states = 0; // aux reader flag
     }
-
+    
     // Blobs are now configured. Initialisation will allocate memory,
     //    and thus it may be performance wise to initialise things in the 
     //    thread they will be. Hopefully will work, though that 
@@ -2655,6 +2665,16 @@ int World::read_and_build_system(vector<string> script_vector) {
                     // if Blob has a number of beads, transform them too:
                     if (blob_array[i][j].get_num_beads() > 0)
                         blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
+                    
+                    // transform the rod, too
+                    // note to future FFEA authors: yes, you have to translate your stuff here as well
+                    //float shift_rod[3] = {(float)dv.x, (float)dv.y, (float)dv.z};
+                    //for (i = 0; i < params.num_rods; i++) {
+                    //    rod_array[i]->translate_rod(rod_array[i]->current_r, shift_rod);
+                    //    rod_array[i]->translate_rod(rod_array[i]->equil_r, shift_rod);
+                    //}    
+                    
+                    
                 }
 
                 if (blob_conf[i].set_rotation) {
@@ -2732,8 +2752,8 @@ int World::read_and_build_system(vector<string> script_vector) {
     if (fatal_errors > 0) {
       cout << "There were fatal errors initialising the blobs" << endl;
       return FFEA_ERROR;
-    } 
-
+    }
+    
     // Create rods
     rod_array = new rod::Rod*[params.num_rods];
     for (int i=0; i<params.num_rods; i++){
@@ -2746,13 +2766,36 @@ int World::read_and_build_system(vector<string> script_vector) {
         rod_array[i]->kT = params.kT;
     }
     
-    // Create couplings
+    // Create rod-blob interfaces
     rod_blob_interface_array = new rod::Rod_blob_interface*[params.num_interfaces];
     for (int i=0; i<params.num_interfaces; i++){
         rod_blob_interface_array[i] = rod_blob_interface_from_block(script_vector, i, systemreader, rod_array, blob_array);
     }
+    
+    // Set up rod-blob interfaces (in order!)
+    // Iterate over 'order' variable to set up resolve order of connection positioning
+    for (int order=0; order<999; order++){
+        for (int i=0; i<params.num_interfaces; i++){
+            if (rod_blob_interface_array[i]->order == order){
+                std::cout << "Ordering interface " << i << "...\n";
+                rod_blob_interface_array[i]->update_internal_state(true, true);
+                if (rod_blob_interface_array[i]->ends_at_rod){
+                    std::cout << "Positioning rod from blob...\n";
+                    rod_blob_interface_array[i]->position_rod_from_blob(false);
+                    rod_blob_interface_array[i]->position_rod_from_blob(true);
+                }
+                else{
+                    std::cout << "Positioning blob from rod...\n";
+                    rod_blob_interface_array[i]->position_blob_from_rod();
+                }
+            }
+        }
+    }
+    
+    for (int i=0; i<params.num_interfaces; i++){
+        rod_blob_interface_array[i]->set_initial_values();
+    }
 
-/// /// 
     // Finally, get springs
     if (params.calc_springs == 1) {
         if(load_springs(params.springs_fname.c_str()) != 0) {
@@ -2763,6 +2806,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             return FFEA_ERROR;
         }
     }
+    
     return FFEA_OK;
 }
 
@@ -3533,9 +3577,13 @@ rod::Rod_blob_interface* World::rod_blob_interface_from_block(vector<string> blo
     int rod_id;
     int rod_node_id;
     int blob_element_id;
-    int blob_face_id;
+    int blob_node_ids[3];
     int from_index;
     int to_index;
+    int order;
+    float rotation[3];
+    float node_weighting[3];
+    
     
     for ( auto &tag_str : block ) {
         
@@ -3557,20 +3605,42 @@ rod::Rod_blob_interface* World::rod_blob_interface_from_block(vector<string> blo
                 ends_at_rod = false;
             }
             vector<string> sub_block;
-            systemreader->extract_block("coupling", coupling_counter, block, &sub_block, true);
+            systemreader->extract_block("coupling", interface_id, block, &sub_block, true);
             string sub_tag_out[2];
             for ( auto &sub_tag_str : sub_block ) {
                 systemreader->parse_tag(sub_tag_str, sub_tag_out);
                 if ((sub_tag_out[0] == "rod_id")){ rod_id = stof(sub_tag_out[1]); }
                 if ((sub_tag_out[0] == "blob_id")){ blob_id = stof(sub_tag_out[1]); }
-                if ((sub_tag_out[0] == "rod_node_id")){ rod_node_id = stof(sub_tag_out[1]); } // no way to add couplings yet
+                if ((sub_tag_out[0] == "rod_node_id")){ rod_node_id = stof(sub_tag_out[1]); }
                 if ((sub_tag_out[0] == "blob_element_id")){ blob_element_id = stof(sub_tag_out[1]); }
-                if ((sub_tag_out[0] == "blob_face_id")){ blob_face_id = stof(sub_tag_out[1]); }
+                
+                if (sub_tag_out[0] == "blob_node_ids"){
+                    sub_tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(sub_tag_out[1], "("), ")");
+                    systemreader->split_string(sub_tag_out[1], blob_node_ids, ",");
+                }
+                
+                if ((sub_tag_out[0] == "order")){ order = stoi(sub_tag_out[1]); }
+                
+                if (sub_tag_out[0] == "rotation"){
+                    scalar rotation_scalar[3];
+                    sub_tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(sub_tag_out[1], "("), ")");
+                    systemreader->split_string(sub_tag_out[1], rotation_scalar, ",");
+                    std::copy(rotation_scalar, rotation_scalar+3, rotation);
+                }
+                
+                if (sub_tag_out[0] == "node_weighting"){
+                    scalar node_weighting_scalar[3];
+                    sub_tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(sub_tag_out[1], "("), ")");
+                    systemreader->split_string(sub_tag_out[1], node_weighting_scalar, ",");
+                    std::cout << "node weighting = [" << node_weighting_scalar[0] << ", " << node_weighting_scalar[1] << ", " << node_weighting_scalar[2] << "\n";
+                    std::copy(node_weighting_scalar, node_weighting_scalar+3, node_weighting);
+                }
 
             }
             coupling_counter += 1;
+            break;
         }
-            
+        
     }
     
     if (ends_at_rod == false){
@@ -3585,7 +3655,7 @@ rod::Rod_blob_interface* World::rod_blob_interface_from_block(vector<string> blo
     rod::Rod* connected_rod_ptr = rod_array[rod_id];
     Blob* connected_blob_ptr = blob_array[blob_id];
     
-    rod::Rod_blob_interface* curr_rbi = new rod::Rod_blob_interface(connected_rod_ptr, connected_blob_ptr, ends_at_rod, to_index, from_index, blob_face_id);
+    rod::Rod_blob_interface* curr_rbi = new rod::Rod_blob_interface(connected_rod_ptr, connected_blob_ptr, ends_at_rod, to_index, from_index, blob_node_ids, rotation, node_weighting, order);
     
     return curr_rbi;
     
@@ -3670,22 +3740,22 @@ rod::Rod* World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
             current_rod->rotate_rod(converted_rotation);
         }
         // parse coupling block
-        if (tag_out[0] == "coupling type" && rod_parent){
-            std::cout << "Coupling data parsed, but coupling is not yet implemented!\n";
-            vector<string> sub_block;
-            systemreader->extract_block("coupling", coupling_counter, block, &sub_block, true);
-            string sub_tag_out[2];
-            for ( auto &sub_tag_str : sub_block ) {
-                systemreader->parse_tag(sub_tag_str, sub_tag_out);
-                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "rod")){ }
-                if ((sub_tag_out[0] == "to_rod_id") & (tag_out[1] == "rod")){ }
-                if ((sub_tag_out[0] == "to_rod_node_id") & (tag_out[1] == "rod")){ } // no way to add couplings yet
-                if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "blob")){ }
-                if ((sub_tag_out[0] == "to_blob_id") & (tag_out[1] == "blob")){ }
-                if ((sub_tag_out[0] == "to_blob_node_id") & (tag_out[1] == "blob")){ }
-            }
-            coupling_counter += 1;
-        }
+        //if (tag_out[0] == "coupling type" && rod_parent){
+        //    std::cout << "Coupling data parsed, but coupling is not yet implemented!\n";
+        //    vector<string> sub_block;
+        //    systemreader->extract_block("coupling", coupling_counter, block, &sub_block, true);
+        //    string sub_tag_out[2];
+        //    for ( auto &sub_tag_str : sub_block ) {
+        //        systemreader->parse_tag(sub_tag_str, sub_tag_out);
+        //        if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "rod")){ }
+        //        if ((sub_tag_out[0] == "to_rod_id") & (tag_out[1] == "rod")){ }
+        //        if ((sub_tag_out[0] == "to_rod_node_id") & (tag_out[1] == "rod")){ } // no way to add couplings yet
+        //        if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "blob")){ }
+        //        if ((sub_tag_out[0] == "to_blob_id") & (tag_out[1] == "blob")){ }
+        //        if ((sub_tag_out[0] == "to_blob_node_id") & (tag_out[1] == "blob")){ }
+        //    }
+        //    coupling_counter += 1;
+        //}
             
     }
     

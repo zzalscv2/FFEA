@@ -706,14 +706,23 @@ int Blob::update_positions() {
     if (aggregate_forces_and_solve() == FFEA_ERROR) {
         FFEA_ERROR_MESSG("There was a problem in 'aggregate_forces_and_solve' function.\n");
     }
-
+    
     // Update node velocities and positions
     euler_integrate();
+    
+    // todo: remove this
+    //for (int i=0; i<this->get_num_elements(); i++){
+    //    for (int j=0; j<9; j++){
+    //        printf("%f", this->get_element(i)->n[j]->pos.data[0]);
+    //    }
+    //}
 
     // Linearise the 2nd order elements
     for (int n = 0; n < num_elements; n++) {
         elem[n].linearise_element();
     }
+    
+    return FFEA_OK;
 }
 
 int Blob::reset_solver() {
@@ -2109,6 +2118,8 @@ int Blob::apply_ctforces() {
         auxndx += ctf_sl_surfsize[i];
         delete[] faceAreas;
     }
+    
+    return FFEA_OK;
 }
 
 /*
@@ -2133,6 +2144,12 @@ void Blob::set_forces_to_zero() {
 void Blob::get_node(int index, arr3 &v) {
     
     arr3Store<scalar,arr3>(node[index].pos.data, v); 
+    
+}
+
+void Blob::get_node_0(int index, arr3 &v) {
+    
+    arr3Store<scalar,arr3>(node[index].pos_0.data, v); 
     
 }
 

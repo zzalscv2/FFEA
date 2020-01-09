@@ -68,10 +68,10 @@ endif(USE_EIGEN3_INTERNAL)
 
 
 target_link_libraries(ffea ffea_lib ${LIBS_TO_LINK} ${CMAKE_THREAD_LIBS_INIT})
-install (TARGETS ffea ffea_mb RUNTIME DESTINATION bin)
+install (TARGETS ffea RUNTIME DESTINATION bin)
 
 if(USE_OPENMP)
     target_link_libraries(ffea_mb ffea_lib ${LIBS_TO_LINK} ${CMAKE_THREAD_LIBS_INIT})
-    install (TARGETS ffea RUNTIME DESTINATION bin)
+    install (TARGETS ffea ffea_mb RUNTIME DESTINATION bin)
 endif(USE_OPENMP)
 

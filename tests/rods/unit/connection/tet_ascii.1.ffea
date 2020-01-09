@@ -33,7 +33,10 @@
         <blob_id = 0>
         <rod_node_id = 0>
         <blob_element_id = 0>
-        <blob_face_id = 0>
+        <blob_node_ids = (1,2,3)>
+        <node_weighting = (-1,-1,-1)>
+        <rotation = (0,0,0)>
+        <order = 0>
     </coupling>
     
 </system>

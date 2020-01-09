@@ -67,10 +67,12 @@ static const int ip1 = 3; ///< index of i+1th thing
 
 #define vec3d(x)for(int x = 0; x < 3; ++ x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
 
+extern bool dbg_print; // prints tons of intermediate info for debugging purposes. don't enable this
 
 static const float rod_software_version = 0.3;
 
 void rod_abort(std::string message);
+
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point
 void print_array(std::string array_name, float array[], int length);
 void print_array(std::string array_name, double array[], int length);
@@ -83,11 +85,11 @@ void apply_rotation_matrix_row(float vec[3], float matrix[9], OUT float rotated_
 void matmul_3x3_3x3(float a[9], float b[9], OUT float out[9]);
 
 // These are utility functions specific to the math for the rods
-
 void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]);
 void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3]);
 float safe_cos(float in);
 float get_l_i(float p_i[3], float p_im1[3]);
+float get_signed_angle(float m1[3], float m2[3], float l[3]);
 
      /*-----------------------*/
     /* Update Material Frame */
@@ -122,6 +124,10 @@ float get_bend_energy_from_p(
         float m_i_equil[3],
         float B_i_equil[4],
         float B_im1_equil[4]);
+        
+float get_weights(float a[3], float b[3]);
+void get_mutual_element_inverse(float pim1[3], float pi[3], float weight, OUT float mutual_element[3]);
+void get_mutual_axes_inverse(float mim1[3], float mi[3], float weight, OUT float m_mutual[3]);
         
 float get_bend_energy_mutual_parallel_transport(
         float p_im1[3],

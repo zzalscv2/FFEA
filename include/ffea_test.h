@@ -53,5 +53,31 @@ struct ffea_test{
     static int do_ffea_test(std::string filename);
 
     static int connection_test();
+    
+    static int arbitrary_equilibrium_twist();
+
+    static int connection_orientation_test();
+    
+    static int arbitrary_equilibrium_bend();
+    
+    static int identify_face();
+    
+    static int connection_energy();
+    
+    static int connection_energy_2();
+    
+    static int jacobian_rotate();
+    
+    static int connection_energy_3();
+
+    static int connection_propagation_every_way();
+    
+    static int connection_propagation(int mode, bool ends_at_rod);
+    
+    static int recover_normal();
+    
+    static int dump_twist_info();
+    
+    static int euler_beam();
 
 };

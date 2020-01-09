@@ -164,12 +164,37 @@ Rod Rod::set_units(){
 */
 Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
+    // if there is a rod-blob interface, this will avoid doing dynamics
+    // on nodes which are attached to blobs
+    int end_node = this->num_elements;
+    
+    int node_min = 0;
+    //if (this->interface_at_start){
+    //    node_min = 1;
+    //}
+    
+    //if (this->interface_at_end){
+    //    end_node = num_elements-1;
+    //}
+    
+    if(dbg_print){std::cout << "Num elements: " << this->num_elements << "\n";} //temp
+    if(dbg_print){std::cout << "End node: " << end_node << "\n";} //temp
+    if(dbg_print){std::cout << "Node min: " << node_min << "\n";} //temp
+    
     //The first loop is over all the nodes, and it computes all the energies for each one
     #pragma omp parallel for schedule(dynamic) //most of the execution time is spent in this first loop
-    for (int node_no = 0; node_no<num_elements; node_no++){
+    for (int node_no = 0; node_no<end_node; node_no++){
+        
+        //std::cout << "node " << node_no << "\n";
+        
+        if(dbg_print){std::cout << "IT BREAKS DURING NODE" << node_no << " ENERGY\n";}
                 
         // if the node is pinned, we go to the next iteration of the loop (e.g. the next node)
         if (pinned_nodes[node_no] == true){
+            continue;
+        }
+        
+        if (node_no < node_min){
             continue;
         }
 
@@ -192,6 +217,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         
         // We move the node backwards and forwards in each degree of freedom, so we end up calling get_perturbation_energy eight whole times
         // Fill the temporary variable with energies ( we basically pass the entire state of the rod to get_perturbation_energy)
+        if(dbg_print){std::cout << "getting perturbation energy 1...\n";} //temp
         get_perturbation_energy( 
             perturbation_amount*0.5, //half one way, half the other
             x, // dimension (x, y, z are array indices, defined to be 1, 2, 3 at the top of this file, twist is = 4)
@@ -210,7 +236,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         perturbed_x_energy_positive[node_no*3] = energies[stretch_index];
         perturbed_x_energy_positive[(node_no*3)+1] = energies[bend_index];
         perturbed_x_energy_positive[(node_no*3)+2] = energies[twist_index];   
-                   
+        
+        if(dbg_print){std::cout << "getting perturbation energy 2...\n";} //temp
         get_perturbation_energy( //from rod_math
             perturbation_amount*0.5, 
             y, // dimension
@@ -339,12 +366,16 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
         
     }
-    
+        
     //This loop is for the dynamics
-    for (int node_no = 0; node_no<num_elements; node_no++){
-                
+    for (int node_no = 0; node_no<end_node; node_no++){
+                                
         // If the node is pinned, there's nothing to do
         if (pinned_nodes[node_no] == true){
+            continue;
+        }
+        
+        if (node_no < node_min){
             continue;
         }
         
@@ -396,15 +427,16 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float delta_r_y = get_delta_r(translational_friction, timestep, y_force, y_noise, applied_force_y);
         float delta_r_z = get_delta_r(translational_friction, timestep, z_force, z_noise, applied_force_z);
         float delta_twist = get_delta_r(rotational_friction, timestep, twist_force, twist_noise, applied_force_twist);
+        //std::cout << "delta_twist: " << delta_twist << "\n";
 
         // Apply our delta x
         current_r[node_no*3] += delta_r_x;
         current_r[(node_no*3)+1] += delta_r_y;
         current_r[(node_no*3)+2] += delta_r_z;
-        
+                
         // A wee sanity check to stop your simulations from exploding horribly
         for (int i=0; i<length; i++){
-            if (std::abs(delta_r_x) >= 8000 or std::abs(delta_r_y) >= 8000 or std::abs(delta_r_z) >= 8000){
+            if (std::abs(delta_r_x) >= 800000 or std::abs(delta_r_y) >= 800000 or std::abs(delta_r_z) >= 800000){
                 std::cout << "node " << node_no << " frame " << frame_no << "\n";
                 std::cout << "dynamics: " << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "\n";
                 rod_abort("Rod dynamics explosion. Bring your debugger.");
@@ -851,6 +883,23 @@ Rod Rod::get_min_max(float *r, OUT float min[3], float max[3]){
         if (r[i+x] < min[x]){ min[x] = r[i+x]; }
         if (r[i+y] < min[y]){ min[y] = r[i+y]; }
         if (r[i+z] < min[z]){ min[z] = r[i+z]; }
+    }
+    return *this;
+}
+
+Rod Rod::get_p(int index, OUT float p[3], bool equil){
+    if (equil){
+        p[0] =  equil_r[(index*3)+3] - equil_r[index*3];
+        p[1] =  equil_r[(index*3)+4] - equil_r[(index*3)+1];
+        p[2] =  equil_r[(index*3)+5] - equil_r[(index*3)+2];
+    }
+    else{
+        if(dbg_print){std::cout << "index = " << index << "\n";}
+        if(dbg_print){std::cout << "   r_i = [" << current_r[index*3] << ", " << current_r[(index*3)+1] << ", " << current_r[(index*3)+1] << "]\n";}
+        if(dbg_print){std::cout << "   r_ip1 = [" << current_r[(index*3)+3] << ", " << current_r[(index*3)+4] << ", " << current_r[(index*3)+5] << "]\n";}
+        p[0] =  current_r[(index*3)+3] - current_r[index*3];
+        p[1] =  current_r[(index*3)+4] - current_r[(index*3)+1];
+        p[2] =  current_r[(index*3)+5] - current_r[(index*3)+2];
     }
     return *this;
 }

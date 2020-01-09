@@ -194,7 +194,7 @@ endif(OPENMP_FOUND)
 # pg++: 13.2 crashes with flag -std=c++0x, besides it does not support
 #         the latest standard ("cannot open source file "future"). 
 # MSVC: does not need any flag.
-include(cmake/CheckForCXX11Features.cmake)
+#include(cmake/CheckForCXX11Features.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_COMPILER_FLAGS}")
 if (USE_FUTURE)
   if (HAS_CXX11_FUTURE)

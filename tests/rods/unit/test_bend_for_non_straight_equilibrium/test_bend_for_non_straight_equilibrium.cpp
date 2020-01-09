@@ -3,7 +3,7 @@
 #include <string>
 
 int main(){
-    float mathematica_result = 0.04;
+    float mathematica_result = 0.08;
     
     float e_im1[3] = {50, 0, 0};
     float e_i[3] = {50, 0, 0};

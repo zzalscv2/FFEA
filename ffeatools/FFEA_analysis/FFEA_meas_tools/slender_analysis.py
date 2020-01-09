@@ -29,7 +29,7 @@ Created on Wed Dec  2 16:37:06 2015
 """
 
 import argparse
-import myosin_analysis_lib
+import slender_analysis_lib
 import json
 import numpy as np
 
@@ -77,7 +77,7 @@ args = parser.parse_args()
 args.head_line = convert_string_list(args.head_line)
 args.tail_line = convert_string_list(args.tail_line)
 
-results = myosin_analysis_lib.run_sequential_tests(args.FFEA_filename,
+results = slender_analysis_lib.run_sequential_tests(args.FFEA_filename,
                                                    args.head_pin_file,
                                                    args.tail_pin_file,
                                                    int(args.head_point_index),
@@ -93,7 +93,7 @@ results = myosin_analysis_lib.run_sequential_tests(args.FFEA_filename,
                                    
 results = convert_array_in_dict_to_list(results)
 
-out_filename = args.FFEA_filename.split('.')[0]+"_myosin_analysis.json"
+out_filename = args.FFEA_filename.split('.')[0]+"_slender_analysis.json"
 
 with open(out_filename, 'w') as outfile:
     json.dump(results, outfile)

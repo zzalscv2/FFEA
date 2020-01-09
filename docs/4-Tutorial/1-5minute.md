@@ -1,4 +1,4 @@
-FFEA's Famous 5-Minute Tutorial {#fiveminute}
+Quickstart {#quickstart}
 =========================
 
 If you haven't already, [install FFEA!](\ref install) This shouldn't take too much of your alotted 5 minutes, all dependencies are automatically taken care of by cmake.

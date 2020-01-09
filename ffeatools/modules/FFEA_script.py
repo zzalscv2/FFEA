@@ -433,6 +433,7 @@ class FFEA_script:
          try:
              rod = FFEA_rod.FFEA_rod(out_path)
          except IOError:
+             print("Couldn't find "+out_path)
              rod = FFEA_rod.FFEA_rod(in_path)
 
           #scaling, translation, rotation etc go here

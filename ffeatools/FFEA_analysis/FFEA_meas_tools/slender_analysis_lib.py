@@ -32,6 +32,7 @@ import FFEA_trajectory, FFEA_pin, FFEA_script
 import numpy as np
 import sys
 import matplotlib.pyplot as plot
+from FFEA_rod import rod_math
 
 def run_sequential_tests(input_ffea_file,
                          head_pin_file,
@@ -250,6 +251,14 @@ def twist_analysis(trajectory, head_pin, tail_pin, head_line_indices, tail_line_
 #  VECTOR STUFF  #
 #                #
 ##################
+
+def transform_point_two_vectors(point_to_transform, start_point, hinge1, hinge2, end_point):
+    vec1 = rod_math.normalize(hinge1 - start_point)
+    vec2 = rod_math.normalize(end_point - hinge2)
+    plane_normal = rod_math.normalize(np.cross(vec1, vec2))
+    t = get_t_from_plane_normal_and_position(plane_normal, hinge1, point_to_transform)
+    transformed_point = get_new_point_coords(plane_normal, point_to_transform, t)
+    return transformed_point
 
 def transform_point(point_to_transform, head_centroid, tail_centroid):
     """
