@@ -289,7 +289,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 
 # 9 ### PYTHON ######
-find_package(PythonInterp REQUIRED)
+find_package(PythonInterp 2.7 REQUIRED)
 # python will be used to run some f.
 # Now look for NumPy
 execute_process(
@@ -311,12 +311,12 @@ if (NOT USE_DEBUG)
   if (USE_FAST)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
       if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.8")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -ffast-math -fipa-pta")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -ffast-math -fipa-pta")
       else(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.8")
         if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "7.0")
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -fipa-pta -march=native")
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -ffast-math -fipa-pta -march=native")
         else(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "7.0")
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -march=native")
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -ffast-math -march=native")
         endif (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "7.0")
       endif(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.8")
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")

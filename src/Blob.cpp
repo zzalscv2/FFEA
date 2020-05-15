@@ -2376,6 +2376,7 @@ scalar Blob::get_kinetic_energy() {
 }
 
 scalar Blob::get_strain_energy() {
+    //std::cout << "Blob " << blob_index << " strain energy: " << strainenergy << "\n";
     return strainenergy;
 }
 

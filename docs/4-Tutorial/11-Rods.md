@@ -83,14 +83,14 @@ def rotate_function(t):
 my_rod.current_m[0] = FFEA_rod.create_rod.rotate_material_frame(my_rod, rotate_function, my_rod.current_m, function_range(0, 2*pi))
 ```
 
-To set material parameters on the rod, use `set_params`. For example, with a known stretch constant, torsion constant, radius and isotropic B matrix:
+To set material parameters on the rod, use `FFEA_rod.rod_creator.set_params`. For example, with a known stretch constant, torsion constant, radius and isotropic B matrix:
 ```python
 # some sensible defaults
 stretch_constant = 3.5e-11
 twist_constant = 5e-29
 radius = 5e-9
 bend_constant = 3.5e-29
-set_params(my_rod, stretch_constant, torsion_constant, radius, bending_modulus=bend_constant)
+FFEA_rod.rod_creator.set_params(my_rod, stretch_constant, torsion_constant, radius, bending_modulus=bend_constant)
 ```
 `set_params` also accepts the values of the young's modulus and radius to set the bending modulus, and you can specify a list of indices to apply these values to with the parameter `rod_segments`. Note again that the indexing will be off-by-one for properties specified at elements rather than nodes (such as the stretching constant). Sorry.
 

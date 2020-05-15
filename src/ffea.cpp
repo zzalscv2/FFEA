@@ -346,7 +346,10 @@ int main(int argc, char *argv[])
 
     /* Delete the world (oh no!) */
     cout << "Deleting world..." << endl;
-    delete world;
+    if (myreturn != FFEA_ERROR){
+        std::cout << "Exiting gracefully...\n";
+        //delete world;
+    }
 #ifdef USE_MPI
     st = MPI::Wtime();
     et = MPI::Wtime()-st;

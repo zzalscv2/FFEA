@@ -84,7 +84,7 @@ struct Rod
   bool * pinned_nodes; /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
   bool interface_at_start = false; /** if this is true, the positioning of the start node is being handled by a rod-blob interface, so its energies will be ignored. **/
   bool interface_at_end = false; /** if this is true, the positioning of the end node is being handled by a rod-blob interface, so its energies will be ignored. **/
-
+  bool restarting = false; /** If this is true, the rod will skip writing a frame of the trajectory (this is normally done so that the trajectory starts with correct box positioning) **/
 
   /** Unit conversion factors - the input\output files are in SI, but internally it uses FFEA's units as determined in dimensions.h **/
   float bending_response_factor;

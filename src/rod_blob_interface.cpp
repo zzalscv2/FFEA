@@ -822,7 +822,12 @@ void Rod_blob_interface::get_attachment_node(OUT float attachment_node[3], float
     else{
         get_tri_norm(face_node_1, face_node_2, face_node_3, attachment_node);
     }
+    
+    print_array("attachment node", attachment_node, 3);
+    
     normalize(attachment_node, attachment_node);
+    
+    print_array("normalized attachment node", attachment_node, 3);
     
     // note: if there is a rotation of the node needed, put it here!
     
@@ -859,7 +864,7 @@ void Rod_blob_interface::get_attachment_node(OUT float attachment_node[3], float
     
     float end_node_pos[3];
     vec3d(n){end_node_pos[n] = this->connected_rod->current_r[(index*3)+n];}
-    normalize(end_node, end_node);
+    //normalize(end_node, end_node);
     
     
     
@@ -1044,6 +1049,18 @@ void Rod_blob_interface::set_tet(tetra_element_linear *tet){
     vec3d(n){this->deformed_tet_nodes[1]->pos[n] = tet->n[1]->pos[n];}
     vec3d(n){this->deformed_tet_nodes[2]->pos[n] = tet->n[2]->pos[n];}
     vec3d(n){this->deformed_tet_nodes[3]->pos[n] = tet->n[3]->pos[n];}
+    bool garbage_tet = false;
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j<3; j++){
+            if (this->deformed_tet_nodes[i]->pos[j] > 1e20 || this->deformed_tet_nodes[i]->pos[j] < -1e20){
+                garbage_tet = true;
+            }
+        }
+    }
+    
+    if (garbage_tet){
+        std::cout << "Warning: tetrahdron is full of garbage\n";
+    }
 }
 
 /**
@@ -1585,6 +1602,8 @@ void Rod_blob_interface::do_connection_timestep(){ // run this after regular blo
         get_node_energy(i, this->attachment_node_equil, this->attachment_m_equil, this->attachment_node, this->attachment_m, dynamics_displacement*0.5, curr_node_energy)   ; 
         vector3 force;
         vec3d(n){force[n] = (curr_node_energy[n+3] - curr_node_energy[n])/dynamics_displacement;}
+        print_array("Force added to node: ", force.data, 3);
+        //std::cout << "Interface " << this->order << " node " << i << " force: [" << force.data[0] << ", " << force.data[1] << ", " << force.data[2] << "]\n"; //DEBUGGO
         this->connected_blob->add_force_to_node(force, this->connected_tet->n[i]->index);
     }
     

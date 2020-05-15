@@ -136,6 +136,17 @@ void normalize(float in[3], OUT float out[3]){
 }
 
 /**
+ Normalize a 3-d vector. The there is no return value, but it populates
+ an array whose pointer is specified as a function parameter, stl-style.
+ Note: this version is 'unsafe' because it does not check for the
+ presence of NaN or infinity.
+*/
+void normalize_unsafe(float in[3], OUT float out[3]){
+    float absolute = sqrt(in[0]*in[0] + in[1]*in[1] + in[2]*in[2]);
+    vec3d(n){out[n] = in[n]/absolute;}
+}
+
+/**
  There is some weird behaviour in FFEA when -ffast-math and -O1 or more
  are both turned on (which are our default compiler settings). It
  normalizes vectors to floating-point precision, but the std::acos
@@ -162,7 +173,7 @@ void precise_normalize(float in[3], float out[3]){
 float absolute(float in[3]){
     float absolute = sqrt(in[x]*in[x] + in[y]*in[y] + in[z]*in[z]);
     not_simulation_destroying(absolute, "Absolute value is simulation destroying.");
-    assert(absolute>0 && "Absolute value is lower than zero (WHAT?).");
+//    assert(absolute>0 && "Absolute value is lower than zero (WHAT?).");
     return absolute;
 }
 
@@ -175,6 +186,12 @@ void cross_product(float a[3], float b[3], float out[3]){ // 3x1 x 3x1
     out[y] = (a[z]*b[x]) - (a[x] * b[z]);
     out[z] = (a[x]*b[y]) - (a[y] * b[x]);
     not_simulation_destroying(out, "Cross product is simulation destroying.");
+}
+
+void cross_product_unsafe(float a[3], float b[3], float out[3]){ // 3x1 x 3x1
+    out[x] = (a[y]*b[z]) - (a[z] * b[y]);
+    out[y] = (a[z]*b[x]) - (a[x] * b[z]);
+    out[z] = (a[x]*b[y]) - (a[y] * b[x]);
 }
 
 /**
@@ -258,7 +275,7 @@ void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3])
     normalize(k, k_norm);
     float k_cross_v[3];
     float sin_theta = std::sin(theta); float cos_theta = std::cos(theta);
-    cross_product(k_norm, v, k_cross_v);
+    cross_product_unsafe(k_norm, v, k_cross_v);
     float right_multiplier = (1-cos_theta)*( (k_norm[x]*v[x])+(k_norm[y]*v[y])+(k_norm[z]*v[z]));
     float rhs[3];
     vec3d(n){ rhs[n] = right_multiplier * k_norm[n]; }
@@ -875,7 +892,7 @@ void load_m(float m_loaded[4][3], float *m, int offset){
 */   
 void normalize_all(float p[4][3]){
     for (int j=0; j<4; j++){
-        normalize(p[j], p[j]);
+        normalize_unsafe(p[j], p[j]);
     }
 }
 
@@ -895,8 +912,8 @@ void absolute_all(float p[4][3], float absolutes[4]){
 void cross_all(float p[4][3], float m[4][3], OUT float n[4][3]){
     for (int j=0; j<4; j++){
         float p_norm[3];
-        normalize(p[j], p_norm);
-        cross_product(m[j], p_norm, n[j]);
+        normalize_unsafe(p[j], p_norm);
+        cross_product_unsafe(m[j], p_norm, n[j]);
     }
 }
 
@@ -1071,6 +1088,8 @@ void get_perturbation_energy(
     // We need to make a copy of it, because we'l be modifying it for our
     // Numerical differentiation later on.
 
+    if(dbg_print){std::cout << "Setting up...\n";}
+
     float B_equil[4][4];
     load_B_all(B_equil, B_matrix, p_i_node_no);
     
@@ -1091,6 +1110,8 @@ void get_perturbation_energy(
     load_m(m_equil, m_all_equil, p_i_node_no);
     load_m(material, material_params, p_i_node_no);
     
+    if(dbg_print){std::cout << "Applying perturbation...\n";}
+    
     // Apply our perturbation in x, y or z (for numerical differentiation)
     if (perturbation_dimension < 4 and perturbation_amount != 0){ //e.g. if we're perturbing x, y, or z
         p[im1][perturbation_dimension] += perturbation_amount;
@@ -1101,21 +1122,29 @@ void get_perturbation_energy(
     if(perturbation_dimension == 4 and perturbation_amount != 0){ // if we're perturbing the twist
         rodrigues_rotation(m[i], p[i], perturbation_amount, m[i]);
     }
+    
+    if(dbg_print){std::cout << "Update m1...\n";}
 
     // If we've perturbed it in x, y, or z, we need to update m, and then adjust it to make sure it's perpendicular
     if (perturbation_dimension < 4 and perturbation_amount != 0){ 
         update_m1_matrix_all(m, original_p, p, m, start_cutoff, end_cutoff);
     }
+    
+    if(dbg_print){std::cout << "Normalize...\n";}
 
     // Normalize m1, just to be sure (the maths doesn't work if it's not normalized)
     normalize_all(m);
     normalize_all(m_equil);
+    
+    if(dbg_print){std::cout << "Compute m_i_2...\n";}
 
     // Compute m_i_2 (we know it's perpendicular to e_i and m_i_1, so this shouldn't be too hard)
     float n[4][3];
     float n_equil[4][3];
     cross_all(p, m, n);
     cross_all(p_equil, m_equil, n_equil);
+    
+    if(dbg_print){std::cout << "Computing energies...\n";}
     
     // Compute unperturbed energy.
     // I could make this less verbose, but the explicit lookup table is a bit clearer about what's going on.

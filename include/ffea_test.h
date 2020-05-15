@@ -79,5 +79,9 @@ struct ffea_test{
     static int dump_twist_info();
     
     static int euler_beam();
+    
+    static int twist_bend_coil();
+    
+    static int lower_sphere();
 
 };

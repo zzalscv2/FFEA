@@ -497,6 +497,7 @@ class FFEA_surface:
 		#  f_center = list of faces at the center (1 per linear face)
 		#  f_edge = list of faces at the edge (3 per linear face)
       #  n_edge = list of 1st order nodes in f_edge (3 per linear face)
+		# this is too slow
 		fs_center = []
 		fn_center = []
 		fs_edge = []

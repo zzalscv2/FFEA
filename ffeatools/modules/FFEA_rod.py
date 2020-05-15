@@ -106,7 +106,7 @@ class FFEA_rod:
                 if line.split(',')[0] == 'HEADER':
                     self.rod_id = int(line.split(',')[2])
                 if line.split(',')[0] == 'num_elements':
-                    self.num_elements = int(line.split(',')[1])                
+                    self.num_elements = int(line.split(',')[1])   
                 if line.split(',')[0] == 'length':
                     self.length = int(line.split(',')[1])          
                 if line.split(',')[0] == 'num_rods':
@@ -1459,7 +1459,7 @@ class anal_rod:
         self.rod.perturbed_z_energy_negative = determine_simplification_func(self.rod.perturbed_z_energy_negative, target_length, margin)
         self.rod.twisted_energy_negative = determine_simplification_func(self.rod.twisted_energy_negative, target_length, margin)
         self.rod.material_params = determine_simplification_func(self.rod.material_params, target_length, margin)
-        self.rod.B_matrix = determine_simplification_func(self.rod.B_matrix, target_length, margin)
+        self.rod.B_matrix = determine_simplification_fu5nc(self.rod.B_matrix, target_length, margin)
         self.rod.num_elements = len(self.rod.equil_r[0])
         self.rod.length=3*self.rod.num_elements
 
