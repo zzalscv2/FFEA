@@ -208,9 +208,9 @@ Note: by default, the FFEA_rod module will try to compile some math functions in
 
 This software is still in relatively early development. If you encounter problems, please leave an issue on our [issue tracker](https://bitbucket.org/FFEA/ffea/issues?status=new&status=open).  For more detailed information on the code behind the rod algorithm, please visit the developer documentation [todo: link here].
 
-## Creating rods from all-atom trajectories
+## Parameterising rods from all-atom trajectories
 
-You can create an FFEA_rod file from an all-atom trajectory. The method behind this is described in the paper 'KOBRA: A Fluctuating Elastic Rod Model for Slender Biological Macromolecules', which isn't out yet. In summary, this method selects rod parameters such that the local mean square fluctuations in
+You can create an FFEA_rod file from an all-atom trajectory. This method selects rod parameters such that the local mean square fluctuations in
 bending, twisting and extension will match those observed in the MD trajectory. As you might expect, this needs a relatively long trajectory to be accurate. It also needs the trajectory to be composed solely of coiled-coils, so if your trajectory contains globular regions, cut those out!
 
 This tool is accessible in two ways - from the new FFEA python API, and from the ffeatools command-line. For the API, it is accessible under the following namespace:
@@ -242,9 +242,11 @@ The parameters are the same for both versions and are accessible under the `ndc_
 * `cluster_size` - the size of the cluster of atoms used to define a node. This 'clustered averaging' is used to avoid averaging out useful dynamics. The default is 10.
 * `radius` - the radius, in meters, of the coiled-coil. Most are about 5e-9m.
 
-## Creating a rod-blob coupling
+## Connecting rods to blobs
 
 Rods can connect to FFEA blobs in order to form systems containing a mixture of coiled-coils and globular domains, which are extremely common. In order to have a rod-blob coupling, an FFEA simulation must contain at least one rod and at least one blob. The parameters of the coupling are set by a 'coupling' block in the FFEA file, and each block refers to only a single coupling (e.g. a rod with one blob at each end will have two connections).
+
+Rod-blob connections are positioned *relatively* from one another. If you couple a blob to a rod, the positioning of that rod as specified in the ffea script file will be ignored, and it will instead be positioned such that it starts at whatever configuration is the equilibrium for that coupling. Similarly, if it's a rod-to-blob coupling, the position of the blob will be ignored. 
 
 To start with, create an FFEA file populated with all the rods and blobs that you might want. Then, for each coupling, add a block in the .ffea file that looks like this:
 
@@ -263,16 +265,41 @@ To start with, create an FFEA file populated with all the rods and blobs that yo
 
 The parameters should be set as follows:
 
-* `coupling type` - can be either blob-to-rod or rod-to-blob. This is a purely technical distinction, but you can think of all rods as starting at element 0 and going to element n. Going from 0 to n is 'forward' and going from n to 0 is 'backward' along the rod. If the connection is at the 'end' of the rod (element n) this should be set to 'rod-to-blob'. If it at the start of the rod, it should be set to 'blob-to-rod'.
+* `coupling type` - can be either blob-to-rod or rod-to-blob. This is only used in initialisation, and it specifies which object has absolute positioning and which object has relative positioning. If it's blob-to-rod, the rod is positioned relative to the blob, and if it's blob-to-rod, the rod is positioned relative to the blob.
 * `rod_id` - the numerical id of the rod to connect. These are indexed by the order that they appear in your .ffea file, starting at zero.
 * `blob_id` - the same, but for blobs.
-* `rod_node_id` - the id of the node that the interface is at (either 0 or n - you can put the connection in the middle, if you really want, but I wouldn't recommend it).
-* `blob_element_id` - the id of the element (the tetrahedron) on the blob that the rod is going to connect to. I would suggest finding the nodes first, then using FFEA_rod.rod_creator.get_connection_info to get the id of the element containing those nodes. Check the function docstring for more information.
+* `rod_node_id` - the id of the node that the interface is at (usually either 0 or n - you can put the connection in the middle, if you really want, but I wouldn't recommend it).
+* `blob_element_id` - the id of the element (the tetrahedron) on the blob that the rod is going to connect to.
 * `blob_node_ids` = the ids of the three linear nodes on the element to which the rod will connect. You can easily view these by opening up the FFEA viewer, setting 'add atoms' to 'onto linear nodes', and typing 'label all, resi' into the pymol console.
-* `node_weighting` - how to position the connection inside the node. The three values are between 0 and 1 and correspond to the three tetrahedron edges eminating from the internal node (the node which isn't on the face). The resulting position will be the sum of these edges multiplied by these three values. In general, either (-1, -1, -1) or (0.3333333, 0.3333333, 0.3333333) should be enough, that will put the coupling node in the middle of the element
+* `node_weighting` - how to position the connection inside the node. The three values are between 0 and 1 and correspond to the three tetrahedron edges eminating from the internal node (the node which isn't on the face). The resulting position will be the sum of these edges multiplied by these three values. In general, either (-1, -1, -1) or (0.33333333, 0.33333333, 0.33333333) should be enough, that will put the coupling node in the middle of the element
 * `rotation` - euler rotation angles relative to the normal of the surface face of the connection element. In radians.
 * `order` - this just refers to the order in which the connection is set up. When you create a rod-blob coupling, the equilibrium position of the coupled object becomes relative to the object that it's coupling to. For example, if you create a connection that goes from a blob to a rod, then the starting position of the rod will be relative to the position of the blob. The 'order' is the order that these equilibrium positions are calculated in. If you are creating a chain of objects, the first object in the chain should have order 0, the second should have order 1, etc. Note: you can set this to -1 if you'd rather set up your connections manually, but be wary - the simulation will crash if you start with connections way out of equilibrium.
 
-There are a few other things to consider when setting up rod-blob connections. Make sure that the simulation box is large enough contain the longest axis of your chain. Don't set up a simulation with a connection crossing over a periodic boundary. If possible, use hard boundary conditions.
+There are a few other things to consider when setting up rod-blob connections. Make sure that the simulation box is large enough contain the longest axis of your chain. Don't set up a simulation with a connection crossing over a periodic boundary. If possible, use hard boundary conditions. You can do this by setting <wall_[dim]_[idx] = HARD> in the .ffea script file.
 
-This feature could be considered to be in early alpha, and its mechanics are rather opaque, but a publication should be out soon. If you have questions or comments, please pay a visit to the FFEA issue tracker. Hypothetical future editions of the software might also make setting up a connection less cumbersome. 
+While setting up the connection, it's easiest to set the position using the blob node ids. You can easily get the element id associated with those nodes using the following FFEA rod function:
+
+```python
+import ffeatools
+# blob index = 0, node indices = 1,2,3
+ffeatools.FFEA_rod.rod_creator.get_connection_info(ffeatools.FFEA_script.FFEA_script("/path/to/script.ffea"), 0, nodes=[1,2,3])
+```
+The function will return in index of the corresponding element.
+
+To determine the euler angles, use the rod creator function 'get_euler_angles_from_pdb'. This requires the positions of five points on the PDB: three points no the surface that the connection points out of, and two to determine the direction the connection is pointing in. r0 is where the rod will attach to the blob, and r1 is some distance further up the rod.
+
+```python
+import ffeatools
+ffeatools.FFEA_rod.rod_creator.get_euler_angles_from_pdb(surface_nodes, r0, r1)
+```
+
+In this case, surface_nodes is a list two-dimensional array containing three points, in three dimensions, and r0 and r1 are one-dimensional arrays. For example:
+
+```python
+ffeatools.FFEA_rod.rod_creator.get_euler_angles_from_pdb( [[69.086, 32.527, -80.842], [57.958, 44.780, -79.189], [72.632, 43.230, -66.172]], [59.7865,  44.4165, -70.7155], [52.0625, 25.4695, -71.863] )
+array([ 0.22285619, -0.32060353,  0.5368136 ])
+```
+
+The values returned are the euler angles that can be used for the coupling's 'rotation' parameter.
+
+Rod-blob connections are the newest and most experimental rod feature, please log issues in the issue tracker if you encounter errors. Finally, a tip: the numerical stability of the connection is determined by the coarseness and aspect ratio tetrahedron to which it is connected. If your tetrahedrons are inverting, or if the solver is failing to converge, it likely means that the tetrahedron is too small. The exact size it should be will depend on the size of the forces involved and the geometry of the system, but as a rule of thumb, 10-20A is probably ideal, the larger the better.
