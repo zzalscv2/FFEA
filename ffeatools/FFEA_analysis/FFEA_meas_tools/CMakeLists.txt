@@ -21,6 +21,7 @@
 #  the research papers on the package.
 #
 
-#from test_equilibration import test_equilibration
-import hinge_analysis_lib
-import slender_analysis_lib
+install(FILES 
+        plot_rmsd.py plotEnergyDistributions.py plotEnergyTraces.py slender_analysis.py slender_analysis_lib.py hinge_analysis_lib.py
+        DESTINATION "${PYTHONSTUFF}/FFEA_analysis/FFEA_meas_tools")
+

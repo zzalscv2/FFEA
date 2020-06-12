@@ -23,14 +23,17 @@
 #
 
 import sys
-sys.path.insert(0, '/home/rob/software/ffea/ffeatools/FFEA_analysis/FFEA_meas_tools/')
+#sys.path.insert(0, '/home/rob/software/ffea/ffeatools/FFEA_analysis/FFEA_meas_tools/')
 
 import slender_analysis_lib
 import FFEA_rod
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
-import global_plot_params
+try:
+    import global_plot_params
+except:
+    pass #whatever
 
 def setrc():
     global_plot_params.setrc(plt)

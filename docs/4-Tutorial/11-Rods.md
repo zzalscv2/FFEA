@@ -166,10 +166,11 @@ One final note: for best performance, make sure the number of threads you're run
 export OMP_NUM_THREADS=7
 ```
 ## Analysis of rods
-`FFEA_rod` comes with its own set of analysis tools, which can be accessed by creating an instance of the `anal_rod` class.
+`FFEA_rod` comes with its own set of analysis tools, which can be accessed by creating an instance of the `anal_rod` class. The rod trajectory is loaded in the exact same manner as the rod file and is in fact the same object:
 
 ```python
-my_analysis = FFEA_rod.anal_rod(my_rod)
+my_rod_traj = FFEA_rod.FFEA_rod("my_rod.rodtraj")
+my_analysis = FFEA_rod.anal_rod(my_rod_traj)
 ```
 To compute all of the energies in the rod, run
 ```python

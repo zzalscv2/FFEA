@@ -741,7 +741,7 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
             #return np.concatenate([chain1_nearest_node_table, chain2_nearest_node_table])
             return chain1_nearest_node_table+chain1_end
             
-        def get_node_traj(cluster_indices, node_index, backbone_traj, nearest_node_table):
+        def get_node_traj(cluster_indices, node_index, backbone_traj, nearest_node_table, chain1_end):
             """
             Given the cluster indices and nearest nodes, (see above), get the
             cluster-averaged position of a particular rod node, for the whole
@@ -769,7 +769,20 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
             chain1_avg = np.average(chain1_nodes, axis=0)
             chain2_avg = np.average(chain2_nodes, axis=0)
             
-            mataxis = chain1_nodes - chain2_nodes
+            #setup mataxis_cluster
+            mataxis_chain1_nodes = np.zeros([cluster_size, len(backbone_traj), 3])
+            mataxis_chain2_nodes = np.zeros([cluster_size, len(backbone_traj), 3])
+            mataxis_offset = int(np.average(cluster_indices[1] - cluster_indices[0])/2.0)
+            
+            j=0
+            for curr_node_index in cluster_indices[node_index]:
+                if curr_node_index+mataxis_offset > chain1_end:
+                    break # we're at the end of the rod and this is error handling for control flow becauseit's 6AM and I'm sad
+                mataxis_chain1_nodes[j] = backbone_traj[:,curr_node_index+mataxis_offset]
+                mataxis_chain2_nodes[j] = backbone_traj[:,nearest_node_table[curr_node_index+mataxis_offset-1]]
+                j+=1
+            
+            mataxis = mataxis_chain1_nodes - mataxis_chain2_nodes
             m_average = np.average(mataxis, axis=0)
             absolutes = np.linalg.norm(m_average, axis=1)
             absolutes = np.array([absolutes, absolutes, absolutes])
@@ -786,13 +799,16 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
         rod_r = np.zeros([len(backbone_traj), target_length, 3])
         rod_m = np.zeros([len(backbone_traj), target_length, 3])
         for node_index in range(target_length):
-            rod_r[:,node_index], rod_m[:,node_index] = get_node_traj(cluster_indices, node_index, backbone_traj, nearest_node_table)
+            rod_r[:,node_index], rod_m[:,node_index] = get_node_traj(cluster_indices, node_index, backbone_traj, nearest_node_table, chain1_end)
 
         equil_r = np.zeros([len(backbone_traj), target_length, 3])
         equil_m = np.zeros([len(backbone_traj), target_length, 3])
         for node_index in range(target_length):
-            equil_r[:,node_index], equil_m[:,node_index] = get_node_traj(cluster_indices, node_index, np.array([initial_backbone]), nearest_node_table)
+            equil_r[:,node_index], equil_m[:,node_index] = get_node_traj(cluster_indices, node_index, np.array([initial_backbone]), nearest_node_table, chain1_end)
    
+        rod_m[np.isnan(rod_m)] = 0
+        equil_m[np.isnan(equil_m)] = 0 # old trick
+    
         print("Initializing FFEA rod object...")
         rod = FFEA_rod.FFEA_rod(num_elements=target_length)
         rod.current_r = rod_r
@@ -905,8 +921,8 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
 
     return analysis, delta_omega, L_i, np.array(B), inhomogeneous_beta, inhomogeneous_kappa
     
-if __name__ == '__main__' and '__file__' in globals():
-    args = parser.parse_args()
-    # Get args and build objects
-    out = main(args.prmtop_file, args.mdcrd_file, args.inpcrd_file, args.chain1_end, args.trj_format, args.inp_format, get_B = args.get_B, target_length=args.target_length, cluster_size = args.cluster_size, simplify_only = False, rod=None, radius = args.radius, rod_out=args.rod_out, unroll_rod=args.unroll_rod, get_inhomogenous_beta=args.get_inhomogeneous_beta, get_inhomogenous_kappa=args.get_inhomogeneous_kappa)
-    print out
+#if __name__ == '__main__' and '__file__' in globals():
+#    args = parser.parse_args()
+#    # Get args and build objects
+#    out = main(args.prmtop_file, args.mdcrd_file, args.inpcrd_file, args.chain1_end, args.trj_format, args.inp_format, get_B = args.get_B, target_length=args.target_length, cluster_size = args.cluster_size, simplify_only = False, rod=None, radius = args.radius, rod_out=args.rod_out, unroll_rod=args.unroll_rod, get_inhomogenous_beta=args.get_inhomogeneous_beta, get_inhomogenous_kappa=args.get_inhomogeneous_kappa)
+#    print out
