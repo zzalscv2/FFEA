@@ -32,6 +32,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
 from mpl_toolkits.mplot3d import Axes3D # do not remove
+try:
+    import rod.ndc_extractor as cc_extractor # for old-style module imports
+except:
+    pass
 
 global rod_creator_version
 rod_creator_version = 0.3
