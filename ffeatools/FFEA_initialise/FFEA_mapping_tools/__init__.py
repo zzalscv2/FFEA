@@ -21,4 +21,4 @@
 #  the research papers on the package.
 #
 
-from node_pdb_align import node_pdb_align
+import node_pdb_align

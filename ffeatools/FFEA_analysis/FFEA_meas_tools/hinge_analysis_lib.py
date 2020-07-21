@@ -25,7 +25,7 @@
 #import sys
 #sys.path.insert(0, '/home/rob/software/ffea/ffeatools/FFEA_analysis/FFEA_meas_tools/')
 try:
-    import ffeatools.FFEA_analysis.slender_analysis_lib as slender_analysis_lib
+    import slender_analysis_lib
 except ImportError:
     raise ImportError("Please install ffeatools using setuptools (e.g. python setup.py install) or manually add ffea/ffeatools/FFEA_analysis/FFEA_meas_tools/ to your $PYTHONPATH.")
     
