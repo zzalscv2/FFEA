@@ -22,7 +22,13 @@
 #  the research papers on the package.
 #
 
-import MDAnalysis
+MDAnalysis_preset = True
+
+try:
+    import MDAnalysis
+except ImportError:
+    MDAnalysis_preset = False
+    pass
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -641,6 +647,10 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
     if not rod:
         
         print("Loading files...")
+        
+        if MDAnalysis_preset == False:
+            raise ImportError("Please install MDAnalysis")
+        
         topology = prmtop_file
         trajectory = mdcrd_traj_file
         
