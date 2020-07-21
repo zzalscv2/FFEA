@@ -22,10 +22,13 @@
 #  the research papers on the package.
 #
 
-import sys
+#import sys
 #sys.path.insert(0, '/home/rob/software/ffea/ffeatools/FFEA_analysis/FFEA_meas_tools/')
-
-import slender_analysis_lib
+try:
+    import ffeatools.FFEA_analysis.slender_analysis_lib as slender_analysis_lib
+except ImportError:
+    raise ImportError("Please install ffeatools using setuptools (e.g. python setup.py install) or manually add ffea/ffeatools/FFEA_analysis/FFEA_meas_tools/ to your $PYTHONPATH.")
+    
 import FFEA_rod
 import copy
 import numpy as np
@@ -154,13 +157,14 @@ def plot_angle_distribution(bin_list, value_list, label_list, ticktype_list, fil
     
     with plt.style.context("fast"):
         setrc()
+        plt.rcParams['figure.figsize'] = 3.26772, 2.45079000001
         if not errors:
             for item_no in range(len(bin_list)):
                 plt.plot(bin_list[item_no], new_value_list[item_no], linestyle=ticktype_list[item_no], label=label_list[item_no])
         if errors:
             for error in range(len(new_err_list)):
                 if type(new_err_list[error]) != type(None):
-                    plt.errorbar(bin_list[error], new_value_list[error], yerr=new_err_list[error], linestyle=ticktype_list[error], label=label_list[error])
+                    plt.errorbar(bin_list[error], new_value_list[error], yerr=new_err_list[error], linestyle=ticktype_list[error], label=label_list[error] )
                 else:
                     plt.plot(bin_list[error], new_value_list[error], linestyle=ticktype_list[error], label=label_list[error])
         plt.xlabel(xlabel)
@@ -169,6 +173,7 @@ def plot_angle_distribution(bin_list, value_list, label_list, ticktype_list, fil
         plt.tight_layout()
         plt.savefig(filename, dpi=300)
         plt.clf()
+        plt.close()
     return
 
 def auto(error=True):
@@ -179,8 +184,8 @@ def auto(error=True):
     """
     source_rod = FFEA_rod.FFEA_rod("/home/rob/pCloudSync/Notebooks/FFEA/Rods_Publication_1/datums/structure/source.rodtraj")
     destination_rod = FFEA_rod.FFEA_rod("/home/rob/pCloudSync/Notebooks/FFEA/Rods_Publication_1/datums/iter1/dest.rodtraj")
-    source_angles = get_hinge_bend_angles(source_rod, 4, 9, end_index=-2)
-    destination_angles = get_hinge_bend_angles(destination_rod, 4, 9, end_index=-2)
+    source_angles = get_hinge_bend_angles(source_rod, 4, 10, end_index=-1)
+    destination_angles = get_hinge_bend_angles(destination_rod, 4, 10, end_index=-1)
     source_bins, source_values = get_angle_distribution(source_angles, scatter_plot_mode = True)
     destination_bins, destination_values = get_angle_distribution(destination_angles, scatter_plot_mode = True)
     experimental_bins, experimental_values = get_angle_distribution(experimental_angles, scatter_plot_mode = True)

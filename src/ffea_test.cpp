@@ -746,13 +746,14 @@ int ffea_test::connection_propagation(int mode, bool ends_at_rod){ // mode 0 = t
     current_rod->pinned_nodes[end_index] = true;
 
     float curr_sample_edge_vec[3];
-    for (int i=0; i<3; i++){curr_sample_edge_vec[i] = world->rod_blob_interface_array[0]->edge_vecs[0][i];}
-    rod::normalize(curr_sample_edge_vec, curr_sample_edge_vec);
     
     float rotmat[9];
     float edgevec_dot_prod_pre;
     
     if (mode == 0){ //twist
+        
+        for (int i=0; i<3; i++){curr_sample_edge_vec[i] = world->rod_blob_interface_array[0]->edge_vecs[0][i];}
+        rod::normalize(curr_sample_edge_vec, curr_sample_edge_vec);
         
         //twist end_p
         float end_p[3];
@@ -1203,14 +1204,15 @@ int ffea_test::lower_sphere(){
         cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
     }
     
-    for (int i=0; i<500; i++){
+    for (int i=0; i<1000; i++){
         std::cout << "Sphere lowered.\n";
-        world->blob_array[7]->move(-0.2, 0, 0);
+        world->blob_array[7]->move(-0.1, 0, 0);
         world->run();
     }
     
     world->params.check *= 100;
     world->params.num_steps *= 10000000000;
+    //world->params.dt *= 3;
     
     world->run();
     

@@ -1,7 +1,7 @@
 #include "rod_math_v9.h"
 
 int main(){
-    float mathematica_result = 059.6893;
+    float mathematica_result = 059.6893*2;
     float bbar[4] = {1,0,0,1};
     float eim1[3] = {0,0, 0.008};
     float ei[3] = {0, 0.00841471, 0.00540302};
@@ -38,8 +38,8 @@ int main(){
         return 0;
     }
     else{
-//        std::cout << "Computed energy: " << computed_energy << "\n";
-//        std::cout << "Analytical energy: " << mathematica_result << "\n";
+        std::cout << "Computed energy: " << computed_energy << "\n";
+        std::cout << "Analytical energy: " << mathematica_result << "\n";
         return 1;
     }
 }

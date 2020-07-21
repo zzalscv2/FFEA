@@ -44,7 +44,7 @@
 
 namespace rod {
     
-const static bool debug_nan = true;
+const static bool debug_nan = false;
 
 const double boltzmann_constant = 1.3806503e-23/mesoDimensions::Energy;
 
