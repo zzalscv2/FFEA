@@ -32,6 +32,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
 from mpl_toolkits.mplot3d import Axes3D # do not remove
+try:
+    import rod.ndc_extractor as cc_extractor # for old-style module imports
+except:
+    pass
 
 global rod_creator_version
 rod_creator_version = 0.3
@@ -106,7 +110,7 @@ class FFEA_rod:
                 if line.split(',')[0] == 'HEADER':
                     self.rod_id = int(line.split(',')[2])
                 if line.split(',')[0] == 'num_elements':
-                    self.num_elements = int(line.split(',')[1])                
+                    self.num_elements = int(line.split(',')[1])   
                 if line.split(',')[0] == 'length':
                     self.length = int(line.split(',')[1])          
                 if line.split(',')[0] == 'num_rods':
@@ -1459,7 +1463,7 @@ class anal_rod:
         self.rod.perturbed_z_energy_negative = determine_simplification_func(self.rod.perturbed_z_energy_negative, target_length, margin)
         self.rod.twisted_energy_negative = determine_simplification_func(self.rod.twisted_energy_negative, target_length, margin)
         self.rod.material_params = determine_simplification_func(self.rod.material_params, target_length, margin)
-        self.rod.B_matrix = determine_simplification_func(self.rod.B_matrix, target_length, margin)
+        self.rod.B_matrix = determine_simplification_fu5nc(self.rod.B_matrix, target_length, margin)
         self.rod.num_elements = len(self.rod.equil_r[0])
         self.rod.length=3*self.rod.num_elements
 
@@ -1664,6 +1668,24 @@ class py_rod_math:
         m_i_dot_t_i = np.dot(m_i, t_i)
         m_i_prime = m_i - m_i_dot_t_i*t_i
         return m_i_prime
+    
+    def get_euler_angles(self, rm):
+    
+        if rm[6] is not 1 and rm[6] is not -1:
+            theta_1 = -np.arcsin(rm[6])
+            psi_1 = np.arctan2(rm[7]/np.cos(theta_1), rm[8]/np.cos(theta_1) )
+            phi_1 = np.arctan2(rm[3]/np.cos(theta_1), rm[0]/np.cos(theta_1) )
+            
+        else:
+            print("Gimbal lock! Nice!")
+            if rm[6] == -1:
+                theta_1 = np.pi/2
+                psi_1 = phi_1 + np.arctan2(rm[1], rm[2])
+            else:
+                theta_1 = -np.pi/2;
+                psi_1 = -phi_1 + np.arctan2(-rm[1], -rm[2])
+
+        return np.array([phi_1, theta_1, psi_1])
 
 class fast_rod_math(py_rod_math):
     def __init__(this):
@@ -2028,6 +2050,33 @@ class rod_creator:
         
         print("Supply a face_no or an element_no.")
         return
+    
+    def get_euler_angles_from_pdb(self, surface_nodes, r0, r1):
+        surf_vec_1 = np.array(surface_nodes[0]) - np.array(surface_nodes[1])
+        surf_vec_2 = np.array(surface_nodes[0]) - np.array(surface_nodes[2])
+        surf_vec_1 = rod_math.normalize(surf_vec_1)
+        surf_vec_2 = rod_math.normalize(surf_vec_2)
+        surf_norm = np.cross(surf_vec_1, surf_vec_2)
+        p_a_norm = rod_math.normalize(np.array(r1) - np.array(r0))
+        
+        direction_dotprod = np.dot(surf_norm, p_a_norm)
+        if direction_dotprod < 0:
+            surf_norm *= -1
+        
+        a = surf_norm
+        b = p_a_norm
+        
+        v = np.cross(a,b)
+        c = np.dot(a,b)
+        vx = np.matrix([   [0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]  ])
+        c_factor = 1./(1+c)
+        R = np.identity(3) + vx + np.linalg.matrix_power(vx,2)*c_factor
+        
+        rm = np.squeeze(np.asarray(R)).flatten()
+        
+        euler_angles = rod_math.get_euler_angles(rm)
+        return euler_angles
+        
 
 rod_creator = rod_creator()
 

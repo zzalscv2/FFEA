@@ -1,34 +1,4 @@
-# -*- coding: utf-8 -*-
-# 
-#  This file is part of the FFEA simulation package
-#  
-#  Copyright (c) by the Theory and Development FFEA teams,
-#  as they appear in the README.md file. 
-# 
-#  FFEA is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-# 
-#  FFEA is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-# 
-#  You should have received a copy of the GNU General Public License
-#  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-# 
-#  To help us fund FFEA development, we humbly ask that you cite 
-#  the research papers on the package.
-#
-
-MDAnalysis_preset = True
-
-try:
-    import MDAnalysis
-except ImportError:
-    MDAnalysis_preset = False
-    pass
+import MDAnalysis
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -40,10 +10,7 @@ parser = argparse.ArgumentParser(description="Create an FFEA_rod structure and e
 parser.add_argument("prmtop_file", action="store", type=str, help="Input .prmtop (AMBER topology) file.")
 parser.add_argument("mdcrd_file", action="store", type=str, help="Input .mdcrd (AMBER trajectory) file.")
 parser.add_argument("inpcrd_file", action="store", type=str, help="Input .inpcrd (AMBER co-ordinate) file used for equilibrium configuration.")
-parser.add_argument("chain1_end", action="store", type=int, help="the index of the atom at which the first chain (the first coil) in the coiled-coil ends (int).")
 parser.add_argument("rod_out", action="store", type=str, help="Path to output file to write (.rodtraj type).")
-parser.add_argument("--trj_format", action="store", dest='trj_format', type=str, help="format of the trajectory file (string). Uses MDAnalysis formats.")
-parser.add_argument("--inp_format", action="store", dest='inp_format', type=str, help="format of the equilibrium structure file (string). Uses MDAnalysis formats.")
 parser.add_argument("--unroll_rod", action="store_true", dest='unroll_rod', help="Whether to unroll the rod (force the equilibrium twist angle to be zero). Note: this will not alter the energies, only the relative values.") #args.o
 parser.add_argument("--get_B", action="store_true", dest='get_B', help="Whether to compute the values of the B matrix (bending stiffness) for each node") #args.o
 parser.add_argument("--get_beta", action="store_true", dest='get_inhomogeneous_beta', help="Whether to compute the values of beta, the twisting stiffness for each node") #args.o
@@ -218,7 +185,7 @@ def get_inhomogeneous_param(analysis, parm_index, kbT=300*1.38064852e-23):
     return params, error
     
 
-def get_delta_omega(analysis, fast=False):
+def get_delta_omega(analysis, fast=False, return_absolute_omega=False):
     """
     This function computes the value of $\Delta \omega$, the material curvature,
     in the same way that analysis.get_bending_response_mutual() from FFEA_rod does.
@@ -336,8 +303,10 @@ def get_delta_omega(analysis, fast=False):
             L_i[frame][element] = (analysis.py_rod_math.get_length(equil_pi)+analysis.py_rod_math.get_length(equil_pim1))/2.0
             
     # return np.average(delta_omega, 0), np.average(L_i, 0)
-    
-    return delta_omega, L_i
+    if return_absolute_omega:
+        return delta_omega, L_i, omega
+    else:
+        return delta_omega, L_i
             
             #inner = np.dot(np.transpose(delta_omega), np.dot(B, delta_omega))
 
@@ -506,51 +475,7 @@ def recover_B(rodtraj_path, new_rod_path=None, fast=True):
         rod.write_rod(new_rod_path)
     return np.array(B)
 
-def complete_parallel_transport(analysis, from_index, to_index, equil=True, force_normalize=True):
-
-    if force_normalize:
-        n = FFEA_rod.rod_math.normalize
-    else:
-        n = lambda n: n
-    
-    try:
-        analysis.p_i
-    except AttributeError:
-        analysis.p_i = analysis.get_p_i(analysis.rod.current_r)
-        analysis.equil_p_i = analysis.get_p_i(analysis.rod.equil_r)
-    
-    if equil:
-        m = analysis.rod.current_m
-        p = analysis.equil_p_i
-    else:
-        m = analysis.rod.equil_m
-        p = analysis.p_i
-    
-    curr_mataxis = n(m[0][from_index])
-    for i in range(from_index,to_index-1):
-        curr_mataxis = np.asarray(FFEA_rod.rod_math.parallel_transport(curr_mataxis, n(p[0][i]), n(p[0][i+1])))[0]
-    return curr_mataxis
-
-def get_material_axis_angle(analysis, node_index, frame=0, equil=True):
-    
-    n = FFEA_rod.rod_math.normalize
-    
-    try:
-        analysis.p_i
-    except AttributeError:
-        analysis.p_i = analysis.get_p_i(analysis.rod.current_r)
-        analysis.equil_p_i = analysis.get_p_i(analysis.rod.equil_r)
-    
-    m1 = analysis.rod.equil_m[0][node_index]
-    m2 = analysis.rod.equil_m[0][node_index+1]
-    p1 = n(analysis.equil_p_i[0][node_index])
-    p2 = n(analysis.equil_p_i[0][node_index+1])
-    
-    m1_prime = FFEA_rod.rod_math.parallel_transport(m1, p1, p2)
-    angle = FFEA_rod.rod_math.get_signed_angle(m1_prime, m2, p2)
-    return angle
-
-def unroll(analysis, perpendicularize=True, do_complete_parallel_transport=False):
+def unroll(analysis, perpendicularize=True):
     print("Unrolling material axes...")
     try:
         analysis.p_i
@@ -583,17 +508,10 @@ def unroll(analysis, perpendicularize=True, do_complete_parallel_transport=False
     
     print("Creating rotation table...")
     for mataxis_index in range(len(rod.equil_m[0])-1):
-        if do_complete_parallel_transport:
-            transported_mataxis = complete_parallel_transport(analysis, 0, mataxis_index, equil=True, force_normalize=True)
-            curr_mataxis = FFEA_rod.rod_math.normalize(rod.equil_m[0][mataxis_index])
-            curr_elem = FFEA_rod.rod_math.normalize(analysis.p_i_equil[0][mataxis_index])
-            rotation_table[mataxis_index] = FFEA_rod.rod_math.get_signed_angle(transported_mataxis, curr_mataxis, curr_elem)
-            
-        else:
-            transported_mataxis = np.squeeze(np.asarray(FFEA_rod.rod_math.parallel_transport(FFEA_rod.rod_math.normalize(rod.equil_m[0][mataxis_index]), FFEA_rod.rod_math.normalize(analysis.p_i_equil[0][mataxis_index]), elem1)))
-            # note: transported mataxis is np array type
-            rotation_table[mataxis_index] = FFEA_rod.rod_math.get_signed_angle(mat1, transported_mataxis, elem1)
-
+        transported_mataxis = np.squeeze(np.asarray(FFEA_rod.rod_math.parallel_transport(FFEA_rod.rod_math.normalize(rod.equil_m[0][mataxis_index]), FFEA_rod.rod_math.normalize(analysis.p_i_equil[0][mataxis_index]), elem1)))
+        # note: transported mataxis is np array type
+        rotation_table[mataxis_index] = FFEA_rod.rod_math.get_signed_angle(mat1, transported_mataxis, elem1)
+    
     print("Applying rotation table...")
     for frame in range(len(rod.current_m)):
         if frame%10000 == 0:
@@ -607,22 +525,20 @@ def unroll(analysis, perpendicularize=True, do_complete_parallel_transport=False
     analysis.rod = rod
     return analysis
 
-#prmtop_file = "/home/rob/pCloudDrive/pCloud Sync/scratchpad/samsim/SMC_extract/short11799SMC_open_no_atpmd4.top"
-#mdcrd_traj_file = "/home/rob/pCloudDrive/pCloud Sync/scratchpad/samsim/SMC_extract/short11799SMC_open_no_atpmd4.x"
-#inpcrd_file = "/home/rob/pCloudDrive/pCloud Sync/scratchpad/samsim/SMC_extract/short11799SMC_open_no_atpmd4.rst7"
-#get_B = True
-#target_length=15
-#cluster_size = 10
-#simplify_only = False
-#rod=None
-#get_inhomogeneous_beta=True
-#get_inhomogeneous_kappa=True
-#unroll_rod = True
-#rod_out = "/home/rob/pCloudDrive/pCloud Sync/scratchpad/samsim/SMC_extract/SMC.rodtraj" # CHANGE ME
+prmtop_file = "/localhome/py12rw/Simulations/NDC80_Wholedangthing_V2/SANDER/ndc80_amber_vac.prmtop"
+mdcrd_traj_file = "/localhome/py12rw/Simulations/NDC80_Wholedangthing_V2/SANDER/combined.mdcrd"
+inpcrd_file = "/localhome/py12rw/Simulations/NDC80_Wholedangthing_V2/SANDER/ndc80_amber_vac.inpcrd"
+get_B = True
+target_length=15
+cluster_size = 10
+simplify_only = False
+rod=None
+get_inhomogeneous_beta=True
+get_inhomogeneous_kappa=True
+unroll_rod = True
+rod_out = "/localhome/py12rw/Temp/parm_recovery/rod_fixed.rodtraj" # CHANGE ME
 
-# out = main(prmtop_file, mdcrd_traj_file, inpcrd_file, get_B = True, target_length=15, cluster_size = 10, simplify_only = False, rod=None, radius = 5e-9, rod_out=rod_out, unroll_rod=True, get_inhomogenous_beta=True, get_inhomogenous_kappa=True)
-
-def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ", inp_format="INPCRD", get_B = True, target_length=15, cluster_size = 10, simplify_only = False, rod=None, radius = 5e-9, rod_out=None, unroll_rod=True, get_inhomogenous_beta=True, get_inhomogenous_kappa=True):
+def main(prmtop_file, mdcrd_traj_file, inpcrd_file, get_B = False, target_length=15, cluster_size = 10, simplify_only = False, rod=None, radius = 5e-9, rod_out=None, unroll_rod=True, get_inhomogenous_beta=False, get_inhomogenous_kappa=False):
     """
     For an atomistic trajectory, this will create an equivalent rod trajectory,
     and use that trajectory to compute the material parameters of the rod.
@@ -630,10 +546,6 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
     Parameters:
         prmtop_file, mdcrd_tarj_file, inpcrd_file: paths to AMBER output files
         (strings)
-        chain1_end: the index of the atom at which the first chain (the first
-        coil) in the coiled-coil ends (int)
-        trj_format and inp_format: formats of the trajectory and equilibrium
-        structure files (strings). Uses MDAnalysis formats.
         get_B: whether to also compute the anisotropic B matrices (bool)
         target_length: the number of elements in the rod to be created (int)
         simplify_only: if True, don't parameterise rod, just make it (bool)
@@ -647,14 +559,13 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
     if not rod:
         
         print("Loading files...")
-        
-        if MDAnalysis_preset == False:
-            raise ImportError("Please install MDAnalysis")
-        
+        input_frame = inpcrd_file
         topology = prmtop_file
         trajectory = mdcrd_traj_file
+        #topology = '/home/rob/Downloads/ndc80long/ndc80_amber_vac.prmtop'
+        #trajectory = '/home/rob/Downloads/ndc80long/05_prod.mdcrd'
         
-        u_initial = MDAnalysis.Universe(topology, inpcrd_file, format=inp_format)
+        u_initial = MDAnalysis.Universe(topology, inpcrd_file, format="INPCRD")
         initial_backbone = u_initial.select_atoms('protein and backbone').positions/1e10
         #initial_chain_len = (np.shape(initial_backbone)[0])/2
         #initial_chain2 = initial_backbone[:initial_chain_len]
@@ -662,7 +573,7 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
         #initial_r = (initial_chain1+initial_chain2)/2
         #initial_m = initial_chain2 - initial_chain1
         
-        u = MDAnalysis.Universe(topology, trajectory, format=trj_format)
+        u = MDAnalysis.Universe(topology, trajectory, format="TRJ")
         backbone = u.select_atoms('protein and backbone')
         backbone_traj = np.zeros([len(u.trajectory), len(backbone), 3])
         
@@ -676,11 +587,11 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
             except StopIteration:
                 break
         
-        #chain1_end = 1372
+        chain1_end = 1373
 #        chain2_hinge = backbone_traj[:][1997:2023]
 #        chain1_hinge_len = 78
 #        chain2_hinge_len = len(chain2_hinge)
-        #pivot_index = 624
+        pivot_index = 624
         
         print("Constructing rod...")
         
@@ -751,7 +662,7 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
             #return np.concatenate([chain1_nearest_node_table, chain2_nearest_node_table])
             return chain1_nearest_node_table+chain1_end
             
-        def get_node_traj(cluster_indices, node_index, backbone_traj, nearest_node_table, chain1_end):
+        def get_node_traj(cluster_indices, node_index, backbone_traj, nearest_node_table):
             """
             Given the cluster indices and nearest nodes, (see above), get the
             cluster-averaged position of a particular rod node, for the whole
@@ -764,7 +675,7 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
                 backbone_traj: all-atom trajectory from mdanalysis as an ndarray
                 nearest_node_table: generated from get_nearest_node_table
             Returns:
-                node position as a http://www.np.array/3-d array where the first index is the frame,
+                node position as a 3-d array where the first index is the frame,
                 second axis is the node index, and third axis is the dimension.
                 material axis vector in the same structure.
             """
@@ -774,25 +685,12 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
             i=0
             for curr_node_index in cluster_indices[node_index]:
                 chain1_nodes[i] = backbone_traj[:,curr_node_index]
-                chain2_nodes[i] = backbone_traj[:,nearest_node_table[curr_node_index-1]]
+                chain2_nodes[i] = backbone_traj[:,nearest_node_table[curr_node_index]]
                 i+=1
             chain1_avg = np.average(chain1_nodes, axis=0)
             chain2_avg = np.average(chain2_nodes, axis=0)
             
-            #setup mataxis_cluster
-            mataxis_chain1_nodes = np.zeros([cluster_size, len(backbone_traj), 3])
-            mataxis_chain2_nodes = np.zeros([cluster_size, len(backbone_traj), 3])
-            mataxis_offset = int(np.average(cluster_indices[1] - cluster_indices[0])/2.0)
-            
-            j=0
-            for curr_node_index in cluster_indices[node_index]:
-                if curr_node_index+mataxis_offset > chain1_end:
-                    break # we're at the end of the rod and this is error handling for control flow becauseit's 6AM and I'm sad
-                mataxis_chain1_nodes[j] = backbone_traj[:,curr_node_index+mataxis_offset]
-                mataxis_chain2_nodes[j] = backbone_traj[:,nearest_node_table[curr_node_index+mataxis_offset-1]]
-                j+=1
-            
-            mataxis = mataxis_chain1_nodes - mataxis_chain2_nodes
+            mataxis = chain1_nodes - chain2_nodes
             m_average = np.average(mataxis, axis=0)
             absolutes = np.linalg.norm(m_average, axis=1)
             absolutes = np.array([absolutes, absolutes, absolutes])
@@ -809,16 +707,13 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
         rod_r = np.zeros([len(backbone_traj), target_length, 3])
         rod_m = np.zeros([len(backbone_traj), target_length, 3])
         for node_index in range(target_length):
-            rod_r[:,node_index], rod_m[:,node_index] = get_node_traj(cluster_indices, node_index, backbone_traj, nearest_node_table, chain1_end)
+            rod_r[:,node_index], rod_m[:,node_index] = get_node_traj(cluster_indices, node_index, backbone_traj, nearest_node_table)
 
         equil_r = np.zeros([len(backbone_traj), target_length, 3])
         equil_m = np.zeros([len(backbone_traj), target_length, 3])
         for node_index in range(target_length):
-            equil_r[:,node_index], equil_m[:,node_index] = get_node_traj(cluster_indices, node_index, np.array([initial_backbone]), nearest_node_table, chain1_end)
+            equil_r[:,node_index], equil_m[:,node_index] = get_node_traj(cluster_indices, node_index, np.array([initial_backbone]), nearest_node_table)
    
-        rod_m[np.isnan(rod_m)] = 0
-        equil_m[np.isnan(equil_m)] = 0 # old trick
-    
         print("Initializing FFEA rod object...")
         rod = FFEA_rod.FFEA_rod(num_elements=target_length)
         rod.current_r = rod_r
@@ -847,6 +742,10 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
     
     if simplify_only:
         return rod
+    
+    #path_to_rod = '/home/rob/Downloads/ndc80long/ndc80_nohinge.rod'
+    #print("Saving rod...")
+    #rod.write_rod(path_to_rod)
     
     analysis = FFEA_rod.anal_rod(rod)
     
@@ -891,19 +790,23 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
     print("B (isotropic bend constant) = "+str(B_isotropic)+"+/-"+str(bend_error))
     print("beta (twist constant)       = "+str(beta)+"+/-"+str(twist_error))
     
-    if not get_inhomogenous_beta and not get_inhomogenous_kappa and not get_B:
-        return analysis
+    #if not get_B:
+    #    if rod_out:
+    #        print("todo: write rod!")
+    #    return analysis
     
-    if get_inhomogenous_beta or get_inhomogenous_kappa:
+    B_error = False
+    
+    if get_inhomogeneous_beta or get_inhomogeneous_kappa:
         print("Computing inhomogeneous constants...")
     
-    if get_inhomogenous_beta:
+    if get_inhomogeneous_beta:
         inhomogeneous_beta, beta_err = get_inhomogeneous_param(analysis, 1, kbT=analytical_kbT)
         inhomogeneous_beta = np.concatenate([[inhomogeneous_beta[0]], inhomogeneous_beta, [inhomogeneous_beta[-1]] ])
         analysis.rod.material_params[:,:,1] = inhomogeneous_beta
         print("beta (inhomogeneous)"+str(inhomogeneous_beta))
         
-    if get_inhomogenous_kappa:
+    if get_inhomogeneous_kappa:
         inhomogeneous_kappa, kappa_err = get_inhomogeneous_param(analysis, 0, kbT=analytical_kbT)
         inhomogeneous_kappa = np.concatenate([inhomogeneous_kappa, [inhomogeneous_kappa[-1]] ])
         analysis.rod.material_params[:,:,0] = inhomogeneous_kappa
@@ -911,28 +814,26 @@ def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ"
     
     if get_B:
         print("Computing B...")
-        delta_omega, L_i = get_delta_omega(analysis, fast=False)
+        delta_omega, L_i = get_delta_omega(analysis, fast=True)
         B = []
         for element_no in range(len(delta_omega[0])):
             B.append(get_B_avg(delta_omega, temp, L_i, element_no))
 
-        B_flat = np.ndarray.flatten(np.asarray(B))
-        B_arr = np.zeros([np.shape(delta_omega)[1]+2, 4 ])
-        B_arr[1:-1] = np.reshape(B_flat, [np.shape(delta_omega)[1], 4])
-        B_arr[0] = B_arr[1]
-        B_arr[-1] = B_arr[-2]
-        analysis.rod.B_matrix[:] = B_arr
-        print("Saving rod...")
-        print("B (inhomogeneous, anisotropic): "+str(B_arr))
-        print("Writing rod...")
+        if rod_out:
+            B_flat = np.ndarray.flatten(np.asarray(B))
+            B_arr = np.zeros([np.shape(delta_omega)[1]+2, 4 ])
+            B_arr[1:-1] = np.reshape(B_flat, [np.shape(delta_omega)[1], 4])
+            B_arr[0] = B_arr[1]
+            B_arr[-1] = B_arr[-2]
+            analysis.rod.B_matrix[:] = B_arr
+            print("B (inhomogeneous, anisotropic): "+str(B_arr))
+            print("Writing rod...")
+            analysis.rod.write_rod(rod_out)
 
-    if rod_out:
-        analysis.rod.write_rod(rod_out)
-
-    return analysis, delta_omega, L_i, np.array(B), inhomogeneous_beta, inhomogeneous_kappa
+        return analysis, delta_omega, L_i, np.array(B), inhomogeneous_beta, inhomogeneous_kappa
     
-#if __name__ == '__main__' and '__file__' in globals():
-#    args = parser.parse_args()
-#    # Get args and build objects
-#    out = main(args.prmtop_file, args.mdcrd_file, args.inpcrd_file, args.chain1_end, args.trj_format, args.inp_format, get_B = args.get_B, target_length=args.target_length, cluster_size = args.cluster_size, simplify_only = False, rod=None, radius = args.radius, rod_out=args.rod_out, unroll_rod=args.unroll_rod, get_inhomogenous_beta=args.get_inhomogeneous_beta, get_inhomogenous_kappa=args.get_inhomogeneous_kappa)
-#    print out
+if __name__ == "__main__":
+    args = parser.parse_args()
+    # Get args and build objects
+    out = main(args.prmtop_file, args.mdcrd_file, args.inpcrd_file, get_B = args.get_B, target_length=args.target_length, cluster_size = args.cluster_size, simplify_only = False, rod=None, radius = args.radius, rod_out=args.rod_out, unroll_rod=args.unroll_rod, get_inhomogenous_beta=args.get_inhomogeneous_beta, get_inhomogenous_kappa=args.get_inhomogeneous_kappa)
+    print out

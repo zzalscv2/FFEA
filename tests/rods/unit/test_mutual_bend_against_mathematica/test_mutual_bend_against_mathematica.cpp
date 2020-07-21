@@ -36,6 +36,7 @@ int main(){
         bbar);
         
     if (computed_energy > mathematica_result - 0.01 and computed_energy < mathematica_result + 0.01){
+        std::cout << "Mutual bend against mathematica: passed\n";
         return 0;
     }
     else{

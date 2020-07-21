@@ -11,10 +11,12 @@ try:
     import wrap
     import FFEA_script
     import FFEA_rod
+    ndc_extractor = FFEA_rod.cc_extractor
 except ImportError:
     from ffeatools import wrap
     from ffeatools import FFEA_script
     from ffeatools import FFEA_rod
+    import ffeatools.rod.cc_extractor as ndc_extractor
 
 try:
     np
@@ -23,9 +25,9 @@ except NameError:
     import numpy as np
     import matplotlib.pyplot as plt
 
-import sys
-sys.path.insert(0, '/home/rob/pCloudSync/scratchpad/ndc_full_reader/')
-import ndc_extractor
+#import sys
+#sys.path.insert(0, '/home/rob/pCloudSync/scratchpad/ndc_full_reader/') # not my fault
+
 
 def plot_energy_histogram(energy, energy_name, bins=100, bin_range=None, scatter_plot_mode=False, do_plot=True, line=None, col='c'):
     flat_energy = energy[1:].flatten()

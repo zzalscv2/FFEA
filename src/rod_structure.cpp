@@ -625,6 +625,7 @@ Rod Rod::load_contents(std::string filename){
     
     /** Check that we got the last frame */
     assert(line_of_last_frame != 0);
+    std::cout << "[rod] Last frame: line " << line_of_last_frame << "\n";
     
     /** Seek back to the start of the file */
     infile.clear();
@@ -689,6 +690,7 @@ Rod Rod::write_frame_to_file(){
     write_array(twisted_energy_negative, length, mesoDimensions::Energy);
     write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
     write_array(B_matrix, length+(length/3), bending_response_factor );
+    std:fflush(file_ptr);
     return *this;
 }
     
@@ -737,6 +739,13 @@ Rod Rod::write_mat_params_array(float *array_ptr, int array_len, float stretch_s
  file into this one.
 */
 Rod Rod::change_filename(std::string new_filename){
+    /** Check if output file exists */
+    std::ifstream out_test(new_filename);
+    if (out_test.good()){
+        this->rod_filename = new_filename;
+        return *this;
+    }
+    
     /** Get contents of current file */
     std::string current_file_contents = "";
     std::ifstream infile(this->rod_filename);

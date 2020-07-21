@@ -66,3 +66,39 @@ current_rod->rotate_rod(euler_angles);
 * The math functions in mat_vec_functions are not reused.
 * OpemMP acts upon the per-node loop of the energy calculations, but not the dynamics, resulting in a 4% serial fraction.
 * Unlike rod_math and rod_structure, the contents of rod_blob_interface are deeply coupled to the FFEA algorithm and associated data structures. Please refer instead to the publication on this topic (which isn't out yet) or contact us.
+
+## Rod-blob connections
+
+Unfortunately, rod-blob connections are tightly coupled to the existing FFEA data structures and also have a lot of state, so be careful when creating or using them.
+
+```cpp
+rod::Rod_blob_interface* curr_rbi = new rod::Rod_blob_interface(connected_rod_ptr, connected_blob_ptr, ends_at_rod, to_index, from_index, blob_node_ids, rotation, node_weighting, order);
+```
+Rod-blob connections (called 'interfaces' in the code) are initialised after the rods and the blobs have been created. The pointers to the FFEA_rod and FFEA_blob objects are given as parameters. ends_at_rod is a bool, if true then the connection is blob_to_rod, if false it's rod_to_blob. to_index and from_index are integers, the indices of the rod nodes/blob elements in the connection, the blob node ids is an array of three integers (the nodes on the connected face), rotation is an array of floats specifying the euler angles, node_weighting is an array of floats specifying the position of the connection within the element, and order is initialisation order ID, another integer.
+
+You can't use a rod-blob connection right after connecting it. First, in order of order, update the internal state of the connection. Updating the internal state copies the state of the tetrahedron from the blob to the rod. This copying is necessary because the state of the tetrahedron is actually different when calculating the energies in the rod-blob connection.
+
+```cpp
+curr_rbi->update_internal_state(true, true);
+```
+If, for any reason, the connection is repositioned, this function must run. That includes relative positioning and situating objects in the simulation box, which happens later in the init process.
+
+Then, position the connection. If the connection goes blob-to-rod (e.g. if ends_at_rod==true), then
+```cpp
+curr_rbi->position_rod_from_blob(false);
+curr_rbi->position_rod_from_blob(true);
+```
+Or, if ends_at_rod=false:
+```cpp
+curr_rbi->position_blob_from_rod();
+```
+
+Finally, set the initial values. This includes the initial positions of the connection node and element, and the equilibrium jacobian of the tetrahedron. This should be done right before the simulation starts running.
+```cpp
+curr_rbi->set_initial_values();
+```
+Luckily, actually running the dynamics of the connection is a lot easier. It doesn't matter to much *when* you do them, but by default, they happen just after the rod dynamics, the very last thing that's done in a timestep.
+```cpp
+curr_rbi->do_connection_timestep();
+```
+

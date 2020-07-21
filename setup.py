@@ -23,6 +23,24 @@
 
 from setuptools import setup, find_packages#, Extension
 import subprocess
+import sys as _sys
+
+if len(_sys.argv) == 1:
+    print("""
+        This is the installer for the FFEA python package, but not FFEA itself! To install FFEA, do the following:
+        
+        cd ..
+        mkdir FFEA_Build
+        cd FFEA_Build
+        cmake ../ffea
+        make
+        make install
+        
+        Alternatively, to install the FFEA python package, run 'python setup.py install'
+        
+        For more detailed information, please visit ffea.readthedocs.io
+        """)
+    _sys.exit(1)
 
 def subprocess_cmd(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True) #dragons
@@ -46,11 +64,11 @@ subprocess_cmd('cd ffeatools_build; cmake ../ffeatools/FFEA_initialise/Surface_t
 
 setup(name='ffeatools',
       version='1.0',
-      description='FFEA file generation and analysis tools',
+      description='FFEA input file generation and analysis tools',
       url='http://ffea.bitbucket.com',
       author='FFEA Team',
       author_email='???',
-      license='???',
+      license='GPLv3',
       packages=find_packages(),
       install_requires=[
           'numpy',

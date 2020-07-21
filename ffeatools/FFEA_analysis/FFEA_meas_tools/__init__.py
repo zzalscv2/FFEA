@@ -21,4 +21,6 @@
 #  the research papers on the package.
 #
 
-from test_equilibration import test_equilibration
+#from test_equilibration import test_equilibration
+import hinge_analysis_lib
+import slender_analysis_lib

@@ -44,7 +44,7 @@
 
 namespace rod {
     
-const static bool debug_nan = true;
+const static bool debug_nan = false;
 
 const double boltzmann_constant = 1.3806503e-23/mesoDimensions::Energy;
 
@@ -77,8 +77,10 @@ void rod_abort(std::string message);
 void print_array(std::string array_name, float array[], int length);
 void print_array(std::string array_name, double array[], int length);
 void normalize(float in[3], OUT float out[3]);
+void normalize_unsafe(float in[3], OUT float out[3]);
 float absolute(float in[3]);
 void cross_product(float a[3], float b[3], float out[3]);
+void cross_product_unsafe(float a[3], float b[3], float out[3]);
 void get_rotation_matrix(float a[3], float b[3], float rotation_matrix[9]);
 void apply_rotation_matrix(float vec[3], float matrix[9], OUT float rotated_vec[3]);
 void apply_rotation_matrix_row(float vec[3], float matrix[9], OUT float rotated_vec[3]);

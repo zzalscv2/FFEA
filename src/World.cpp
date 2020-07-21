@@ -169,7 +169,7 @@ World::~World() {
     vector3_set_zero(L);
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
-    rmsd = 0.0;
+    rmsd = 0.0; 
 
 }
 
@@ -481,9 +481,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
         float shift_rod[3] = {(float)shift.x, (float)shift.y, (float)shift.z}; // this class is some historical junk
         for (i = 0; i < params.num_rods; i++) {
-            rod_array[i]->translate_rod(rod_array[i]->current_r, shift_rod);
-            rod_array[i]->translate_rod(rod_array[i]->equil_r, shift_rod);
-            rod_array[i]->write_frame_to_file(); // rod traj contains initial state but positioned in box
+            if (rod_array[i]->restarting == false){
+                rod_array[i]->translate_rod(rod_array[i]->current_r, shift_rod);
+                rod_array[i]->translate_rod(rod_array[i]->equil_r, shift_rod);
+                rod_array[i]->write_frame_to_file(); // rod traj contains initial state but positioned in box
+            }
         }
             // todo: for each attachment, move the attachment_node_pos by shift
         for(i = 0; i< params.num_interfaces; i++){
@@ -1949,13 +1951,12 @@ int World::run() {
         // Apply springs directly to nodes
         apply_springs();
                         
-        // Todo: computing the force on the face nodes from the rod would go here
-        // Todo: setting the pseudo-rod on the face to its correct position would go here
         // Do rods
         for (int i=0; i<params.num_rods; i++){
             rod_array[i]->do_timestep(rng);
         }
-                
+            
+        // Rod-blob interface
         for (int i=0; i<params.num_interfaces; i++){
             rod_blob_interface_array[i]->do_connection_timestep();
         }
@@ -3678,7 +3679,9 @@ rod::Rod* World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
     // Find trajectory file
     string tag_out[2];
     string filename;
+    string out_filename;
     int rod_block_no = -1; // start indexing rod blocks from 0 (we add 1 to this if rod is found)
+    bool restart = false;
     for ( auto &tag_str : block ) {
         systemreader->parse_tag(tag_str, tag_out);
         if (tag_out[0] == "input"){
@@ -3687,13 +3690,33 @@ rod::Rod* World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
         }
     }
     
+    // If an output file already exists, we're on a restart, so load that instead
+    rod_block_no = -1;
+    for ( auto &tag_str : block ) {
+        systemreader->parse_tag(tag_str, tag_out);
+        if (tag_out[0] == "output"){
+            rod_block_no += 1;
+            if (rod_block_no == block_id){ out_filename = tag_out[1]; }
+        }
+    }
+    
+    ifstream out_test(out_filename);
+    if (out_test.good()){
+        filename = out_filename;
+        restart = true;
+    }
+    
     // Create rod object
     //rod::Rod *current_rod;
     rod::Rod* current_rod = new rod::Rod(filename, block_id);
     current_rod->load_header(filename);
-    
     current_rod->load_contents(filename);
+    
     current_rod->set_units();
+    
+    if (restart){
+        current_rod->restarting = true;
+    }
     
     bool rod_parent = false;
     rod_block_no = -1; // start indexing rod blocks from 0
@@ -3710,18 +3733,18 @@ rod::Rod* World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
         if (rod_block_no != current_rod->rod_no){ continue; }
         
         // Set filename
-        if (tag_out[0] == "output" && rod_parent){ current_rod->change_filename(tag_out[1]); }
+        if (tag_out[0] == "output" && rod_parent && !restart){ current_rod->change_filename(tag_out[1]); }
         
         
         // Scale rod
-        if (tag_out[0] == "scale" && rod_parent){
+        if (tag_out[0] == "scale" && rod_parent && !restart){
             float scale = stof(tag_out[1]);
             //std::cout << "I have been told to scale this rod by a factor of " << scale << " but I can't.\n";
             current_rod->scale_rod(scale);
         }
         
         // Move centroid
-        if (tag_out[0] == "centroid_pos" && rod_parent){
+        if (tag_out[0] == "centroid_pos" && rod_parent && !restart){
             // get centroid and convert it to array
             scalar centroid_pos[3];
             float converted_centroid[3];
@@ -3735,7 +3758,7 @@ rod::Rod* World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
         }
         
         // Rotate rod
-        if (tag_out[0] == "rotation" && rod_parent){
+        if (tag_out[0] == "rotation" && rod_parent && !restart){
             // get centroid and convert it to array
             scalar rotation[3];
             tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
@@ -4161,9 +4184,14 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
 #endif
     // TRAJECTORY END
 
-    //Write rod trajectory
+    //Write rod trajectory (skip first frame if this is a restart)
     for (int i=0; i<params.num_rods; i++){
-        rod_array[i]->write_frame_to_file();
+        if (rod_array[i]->restarting){
+            rod_array[i]->restarting = false;
+        }
+        else{
+            rod_array[i]->write_frame_to_file();
+        }
     }
 
 

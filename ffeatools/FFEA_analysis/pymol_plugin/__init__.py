@@ -27,7 +27,7 @@ import numpy as np
 
 from pymol import cmd
 if (cmd.get_version()[1] < 1.7):
-   print("You are running PyMOL v ", cmd.get_version()[1], " but the FFEAPlugin needs a version higher than 1.7")
+   print "You are running PyMOL v ", cmd.get_version()[1], " but the FFEAPlugin needs a version higher than 1.7"
    raise Exception("FFEAPlugin --- You need a version higher than 1.7 to run the FFEAPlugin")
 
 from pymol.callback import Callback
@@ -37,20 +37,11 @@ try:
     from mtTkinter import *
 except ImportError:
     warnings.warn("DANGER: Tkinter is not thread-safe. PyMOL will eventually crash while loading an FFEA trajectory. Please install mtTKinter.", RuntimeWarning)
+    from Tkinter import *
 
-    if (int(sys.version[0]) < 3):
-      from Tkinter import *
-    else:
-      from tkinter import *
-
-if (int(sys.version[0]) < 3):
-  import tkFileDialog
-  import tkMessageBox
-  import tkColorChooser
-else:
-  from tkinter import filedialog as tkFileDialog
-  from tkinter import messagebox as tkMessageBox
-  from tkinter import colorchooser as tkColorChooser
+import tkFileDialog
+import tkMessageBox
+import tkColorChooser
 
 import Blob
 import threading
@@ -59,7 +50,7 @@ import threading
 import subprocess, traceback, Pmw
 
 # Temporary solution to take comments out:
-#import StringIO
+import StringIO
 
 # from multiprocessing import Process, Pipe
 
@@ -387,271 +378,271 @@ class FFEA_viewer_control_window:
  
   def update_material(self):
 
-     print("Updating Material File...\n")
+	print("Updating Material File...\n")
 
-     ## Check we're ok and ready to go
-     # Is there a selection?
-     try:
-          num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
-     except CmdException:
-          print("Cannot make material file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
-          return
+	## Check we're ok and ready to go
+	# Is there a selection?
+	try:
+		num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
+	except CmdException:
+		print("Cannot make material file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
+		return
 
-     # Does it have atoms?
-     if num_atoms == 0:
-          print("Will not make material file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
-          return
+	# Does it have atoms?
+	if num_atoms == 0:
+		print("Will not make material file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
+		return
 
-     # Are they all in the same blob?
-     stored.blob_IDs = []
-     cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
-     if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
-          print("Cannot make material file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
-          return
+	# Are they all in the same blob?
+	stored.blob_IDs = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
+	if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
+		print("Cannot make material file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
+		return
 
-     # Get the blob_ID, to identify the blob within self.blob_list
-     blob_ID = int(stored.blob_IDs[0].split("_")[1])
+	# Get the blob_ID, to identify the blob within self.blob_list
+	blob_ID = int(stored.blob_IDs[0].split("_")[1])
 
-     # If the blob is not DYNAMIC, abort:
-     if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
-          print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Because of being static, material parameters would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
-          return
+	# If the blob is not DYNAMIC, abort:
+	if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
+		print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Because of being static, material parameters would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
+		return
 
 
-     ## Ok, we're ready!
-     
-     # Get indices and index type
-     stored.baseindices = []
-     cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
-     stored.baseindices = [int(i) for i in stored.baseindices]
-     indextype = stored.blob_IDs[0].split("_")[2]
+	## Ok, we're ready!
+	
+	# Get indices and index type
+	stored.baseindices = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
+	indextype = stored.blob_IDs[0].split("_")[2]
 
-     # Different things depending on index type
-     indices = []
-     if indextype == "efa":
+	# Different things depending on index type
+	indices = []
+	if indextype == "efa":
 
-          # Element indices. Great!
-          indices = stored.baseindices
+		# Element indices. Great!
+		indices = stored.baseindices
 
-     elif indextype == "nfa" or indextype == "lnfa":
+	elif indextype == "nfa" or indextype == "lnfa":
 
-          # Node indices. Get elements with 1 or more indices present
-          try:
-               indices = self.blob_list[blob_ID][0].top.index_switch(stored.baseindices, "node", limit=1)
-          except(IndexError):
-               print("Could not make material file as correct indices could not be extracted from topology using node selection")
-               return
+		# Node indices. Get elements with 1 or more indices present
+		try:
+			indices = self.blob_list[blob_ID][0].top.index_switch(stored.baseindices, "node", limit=1)
+		except(IndexError):
+			print("Could not make material file as correct indices could not be extracted from topology using node selection")
+			return
 
-     elif indextype == "sfa" or indextype == "ffa":
+	elif indextype == "sfa" or indextype == "ffa":
 
-          # Surface indices. Get elements with surface face present
-          try:
-               indices = self.blob_list[blob_ID][0].top.index_switch(stored.baseindices, "surf", limit=1, surf=self.blob_list[blob_ID][0].surf)
-          except(IndexError):
-               print("Could not make material file as correct indices could not be extracted from topology using face selection")
-               return
+		# Surface indices. Get elements with surface face present
+		try:
+			indices = self.blob_list[blob_ID][0].top.index_switch(stored.baseindices, "surf", limit=1, surf=self.blob_list[blob_ID][0].surf)
+		except(IndexError):
+			print("Could not make material file as correct indices could not be extracted from topology using face selection")
+			return
 
-          except(IOError):
-               print("Could not make material file as there was a problem linking topology to surface")
+		except(IOError):
+			print("Could not make material file as there was a problem linking topology to surface")
 
-     # Get a new material file and copy relevent stuff
-     mat = FFEA_material.FFEA_material()
-     mat.element = self.blob_list[blob_ID][0].mat.element
-     mat.num_elements = self.blob_list[blob_ID][0].mat.num_elements
+	# Get a new material file and copy relevent stuff
+	mat = FFEA_material.FFEA_material()
+	mat.element = self.blob_list[blob_ID][0].mat.element
+	mat.num_elements = self.blob_list[blob_ID][0].mat.num_elements
 
-     # Update stuff
-     for i in indices:
-          mat.set_params(i, self.display_flags["mat_d"], self.display_flags["mat_sv"], self.display_flags["mat_bv"], self.display_flags["mat_sm"], self.display_flags["mat_bm"], 1.0)
+	# Update stuff
+	for i in indices:
+		mat.set_params(i, self.display_flags["mat_d"], self.display_flags["mat_sv"], self.display_flags["mat_bv"], self.display_flags["mat_sm"], self.display_flags["mat_bm"], 1.0)
 
-     # Write out
-     mat.write_to_file(self.display_flags["mat_fname"])
-     print("...done!\n")
+	# Write out
+	mat.write_to_file(self.display_flags["mat_fname"])
+	print("...done!\n")
 
   def update_pin(self):
 
-     print("Updating Pin File...\n")
+	print("Updating Pin File...\n")
 
-     ## Check we're ok and ready to go
-     # Is there a selection?
-     try:
-          num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
-     except CmdException:
-          print("Cannot make pin file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
-          return
+	## Check we're ok and ready to go
+	# Is there a selection?
+	try:
+		num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
+	except CmdException:
+		print("Cannot make pin file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
+		return
 
-     # Does it have atoms?
-     if num_atoms == 0:
-          print("Will not make pin file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
-          return
+	# Does it have atoms?
+	if num_atoms == 0:
+		print("Will not make pin file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
+		return
 
-     # Are they all in the same blob?
-     # # get the list of names:
-     stored.blob_IDs = []
-     cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
-     # # ignore those coming from "pinned" selections:
-     ndx = len(stored.blob_IDs) - 1
-     for i in reversed(stored.blob_IDs):
-          if i.split("_")[2] == "pinned": stored.blob_IDs.pop(ndx)
-          ndx -= 1
-     # # check if they are all equal:
-     if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
-          print("Cannot make pin file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
-          return
-     blob_ID = int(stored.blob_IDs[0].split("_")[1])
+	# Are they all in the same blob?
+	# # get the list of names:
+	stored.blob_IDs = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
+	# # ignore those coming from "pinned" selections:
+	ndx = len(stored.blob_IDs) - 1
+	for i in reversed(stored.blob_IDs):
+		if i.split("_")[2] == "pinned": stored.blob_IDs.pop(ndx)
+		ndx -= 1
+	# # check if they are all equal:
+	if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
+		print("Cannot make pin file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
+		return
+	blob_ID = int(stored.blob_IDs[0].split("_")[1])
 
-     # If the blob is not DYNAMIC, abort:
-     if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
-          print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Pinning nodes in this case would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
-          return
+	# If the blob is not DYNAMIC, abort:
+	if self.blob_list[blob_ID][0].motion_state != 'DYNAMIC':
+		print("Selection :" + self.display_flags["sele_name"] + " belongs to a non-dynamic blob. Pinning nodes in this case would not make any effect, so we are aborting. Edit your ffea file to make the corresponding blob DYNAMIC if you want to pursue.")
+		return
 
 
-     ## Ok, we're ready!
-     
-     # Get indices and index type
-     stored.baseindices = []
-     cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
-     stored.baseindices = [int(i) for i in stored.baseindices]
-     indextype = stored.blob_IDs[0].split("_")[2]
+	## Ok, we're ready!
+	
+	# Get indices and index type
+	stored.baseindices = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
+	indextype = stored.blob_IDs[0].split("_")[2]
 
-     # Different things depending on index type
-     indices = []
-     if indextype == "lnfa":
-          # Node indices. Great!
-          indices = stored.baseindices
+	# Different things depending on index type
+	indices = []
+	if indextype == "lnfa":
+		# Node indices. Great!
+		indices = stored.baseindices
 
-     elif indextype == "nfa":
-          # try to remove the non-linear nodes:
-          snfa = []
-          for i in stored.baseindices:
-               # store only linear nodes
-               if self.blob_list[blob_ID][0].linear_node_list.count(i):
-                    indices.append(i)
-               else:
-                    snfa.append(i)
-          if len(snfa) > 0:
-               print("Only linear nodes can be pinned, but nodes: ", snfa, " are auxilliary, and adding them in the .pin node file has no effect")
+	elif indextype == "nfa":
+		# try to remove the non-linear nodes:
+		snfa = []
+		for i in stored.baseindices:
+			# store only linear nodes
+			if self.blob_list[blob_ID][0].linear_node_list.count(i):
+				indices.append(i)
+			else:
+				snfa.append(i)
+		if len(snfa) > 0:
+			print "Only linear nodes can be pinned, but nodes: ", snfa, " are auxilliary, and adding them in the .pin node file has no effect"
 
-     elif indextype == "efa":
+	elif indextype == "efa":
 
-          # Element indices. Get all (linear) nodes on each element
-          try:
-               indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "topology", top = self.blob_list[blob_ID][0].top)
-          except(IndexError):
-               print("Could not make pin file as correct indices could not be extracted from nodes using topology selection")
-               return
+		# Element indices. Get all (linear) nodes on each element
+		try:
+			indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "topology", top = self.blob_list[blob_ID][0].top)
+		except(IndexError):
+			print("Could not make pin file as correct indices could not be extracted from nodes using topology selection")
+			return
 
-     elif indextype == "sfa" or indextype == "ffa":
+	elif indextype == "sfa" or indextype == "ffa":
 
-          # Surface indices. Get all nodes on each face
-          try:
-               indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "surface", surf = self.blob_list[blob_ID][0].surf)
-          except(IndexError):
-               print("Could not make pin file as correct indices could not be extracted from nodes using surface selection")
-               return
+		# Surface indices. Get all nodes on each face
+		try:
+			indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "surface", surf = self.blob_list[blob_ID][0].surf)
+		except(IndexError):
+			print("Could not make pin file as correct indices could not be extracted from nodes using surface selection")
+			return
 
-     # Add already pinned stuff
-     indices.extend(self.blob_list[blob_ID][0].pin.index)
+	# Add already pinned stuff
+	indices.extend(self.blob_list[blob_ID][0].pin.index)
 
-     # Make unique entries
-     indices = list(set(indices))
+	# Make unique entries
+	indices = list(set(indices))
 
-     # Get a new pin file and copy relevent stuff
-     pin = FFEA_pin.FFEA_pin()
-     for i in indices:
-          pin.add_pinned_node(i) 
+	# Get a new pin file and copy relevent stuff
+	pin = FFEA_pin.FFEA_pin()
+	for i in indices:
+		pin.add_pinned_node(i) 
 
-     # Write out
-     pin.write_to_file(self.display_flags["pin_fname"])
-     print("...done!\n")
+	# Write out
+	pin.write_to_file(self.display_flags["pin_fname"])
+	print("...done!\n")
 
   def update_vdw(self):
 
-     print("Updating VdW File...\n")
+	print("Updating VdW File...\n")
 
-     ## Check we're ok and ready to go
-     # Is there a selection?
-     try:
-          num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
-     except CmdException:
-          print("Cannot make VdW file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
-          return
+	## Check we're ok and ready to go
+	# Is there a selection?
+	try:
+		num_atoms = cmd.count_atoms(self.display_flags["sele_name"])
+	except CmdException:
+		print("Cannot make VdW file as '" + self.display_flags["sele_name"] + "' selection does not exist.")
+		return
 
-     # Does it have atoms?
-     if num_atoms == 0:
-          print("Will not make VdW file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
-          return
+	# Does it have atoms?
+	if num_atoms == 0:
+		print("Will not make VdW file as '" + self.display_flags["sele_name"] + "' contains 0 selected pseudoatoms.")
+		return
 
-     # Are they all in the same blob?
-     stored.blob_IDs = []
-     cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
-     if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
-          print("Cannot make VdW file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
-          return
-     blob_ID = int(stored.blob_IDs[0].split("_")[1])
+	# Are they all in the same blob?
+	stored.blob_IDs = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.blob_IDs.append(model)")
+	if stored.blob_IDs.count(stored.blob_IDs[0]) != len(stored.blob_IDs):
+		print("Cannot make VdW file as '" + self.display_flags["sele_name"] + "' contains pseudoatoms from more than 1 blob.")
+		return
+	blob_ID = int(stored.blob_IDs[0].split("_")[1])
 
-     ## Ok, we're ready!
-     
-     # Get indices and index type
-     stored.baseindices = []
-     cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
-     stored.baseindices = [int(i) for i in stored.baseindices]
-     indextype = stored.blob_IDs[0].split("_")[2]
+	## Ok, we're ready!
+	
+	# Get indices and index type
+	stored.baseindices = []
+	cmd.iterate(self.display_flags["sele_name"], "stored.baseindices.append(resi)")
+	stored.baseindices = [int(i) for i in stored.baseindices]
+	indextype = stored.blob_IDs[0].split("_")[2]
 
-     # Different things depending on index type
-     indices = []
-     if indextype == "sfa" or indextype == "ffa":
+	# Different things depending on index type
+	indices = []
+	if indextype == "sfa" or indextype == "ffa":
 
-          # Surface indices. Great!
-          indices = stored.baseindices
+		# Surface indices. Great!
+		indices = stored.baseindices
 
-     elif indextype == "nfa" or indextype == "lnfa":
+	elif indextype == "nfa" or indextype == "lnfa":
 
-          # Node indices. Get all (linear) nodes on each element
-          try:
-               indices = self.blob_list[blob_ID][0].surf.index_switch(stored.baseindices, "node", limit=1)
-          except(IndexError):
-               print("Could not make VdW file as correct indices could not be extracted from surface using node selection")
-               return
+		# Node indices. Get all (linear) nodes on each element
+		try:
+			indices = self.blob_list[blob_ID][0].surf.index_switch(stored.baseindices, "node", limit=1)
+		except(IndexError):
+			print("Could not make VdW file as correct indices could not be extracted from surface using node selection")
+			return
 
-     elif indextype == "efa":
+	elif indextype == "efa":
 
-          # Element indices. Get all (linear) nodes on each element
-          try:
-               indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "element", surf = self.blob_list[blob_ID][0].surf)
-          except(IndexError):
-               print("Could not make VdW file as correct indices could not be extracted from surface using element selection")
-               return
+		# Element indices. Get all (linear) nodes on each element
+		try:
+			indices = self.blob_list[blob_ID][0].node.index_switch(stored.baseindices, "element", surf = self.blob_list[blob_ID][0].surf)
+		except(IndexError):
+			print("Could not make VdW file as correct indices could not be extracted from surface using element selection")
+			return
 
-     # Get a vdw file
-     newvdw = FFEA_vdw.FFEA_vdw()
-     newvdw.num_faces = self.blob_list[blob_ID][0].vdw.num_faces
-     newvdw.index = self.blob_list[blob_ID][0].vdw.index
+	# Get a vdw file
+	newvdw = FFEA_vdw.FFEA_vdw()
+	newvdw.num_faces = self.blob_list[blob_ID][0].vdw.num_faces
+	newvdw.index = self.blob_list[blob_ID][0].vdw.index
 
-     # Update list
-     vdwindex = self.display_flags["vdw_type" + str(self.display_flags["which_vdw_type"])]
-     for i in indices: 
-          newvdw.set_index(int(i), vdwindex)
+	# Update list
+	vdwindex = self.display_flags["vdw_type" + str(self.display_flags["which_vdw_type"])]
+	for i in indices: 
+		newvdw.set_index(int(i), vdwindex)
 
-     # Write
-     newvdw.write_to_file(self.display_flags["vdw_fname"])
-     print("...done!\n")
+	# Write
+	newvdw.write_to_file(self.display_flags["vdw_fname"])
+	print("...done!\n")
 
   def update_lj(self):
 
-     print("Updating LJ File...\n")
+	print("Updating LJ File...\n")
 
-     # No need to check for selections
+	# No need to check for selections
 
-     # Load an LJ file and copy stuff
-     lj = FFEA_lj.FFEA_lj()
-     lj.interaction = self.lj.interaction
+	# Load an LJ file and copy stuff
+	lj = FFEA_lj.FFEA_lj()
+	lj.interaction = self.lj.interaction
 
-     # Update stuff
-     lj.set_interaction_pair(self.display_flags["vdw_type0"], self.display_flags["vdw_type1"], self.display_flags["lj_eps"], self.display_flags["lj_r0"])
+	# Update stuff
+	lj.set_interaction_pair(self.display_flags["vdw_type0"], self.display_flags["vdw_type1"], self.display_flags["lj_eps"], self.display_flags["lj_r0"])
 
-     # Write out
-     lj.write_to_file(self.display_flags["lj_fname"])
-     print("...done!\n")
+	# Write out
+	lj.write_to_file(self.display_flags["lj_fname"])
+ 	print("...done!\n")
 
  #################################################
   # # # # Update display_flags from buttons # # #
@@ -663,11 +654,11 @@ class FFEA_viewer_control_window:
   def update_display_flags(self, key, val=-1, text=""):
      # If unset (i.e. checkbutton)
      if val == -3:
-       try:
-         self.display_flags[key] = float(text)
-         return True
-       except(ValueError):
-         return False
+	try:
+	    self.display_flags[key] = float(text)
+	    return True
+	except(ValueError):
+	    return False
 
      elif val == -2:
        self.display_flags[key] = text
@@ -677,13 +668,13 @@ class FFEA_viewer_control_window:
      else:
        self.display_flags[key] = val
 
-     print(key, ": ", self.display_flags[key])
+     print key, ": ", self.display_flags[key]
 
 
   def new_system_name(self):
 
-     self.system_name.set(self.system_names[rint(0, len(self.system_names) - 1)])
-     self.display_flags["system_name"] = self.system_name.get()
+	self.system_name.set(self.system_names[rint(0, len(self.system_names) - 1)])
+	self.display_flags["system_name"] = self.system_name.get()
 
   # # # # # # # # # # # # # # # # # # # # # #
   # # Open dialogue for FFEA input file # # # 
@@ -698,7 +689,7 @@ class FFEA_viewer_control_window:
 
      # Ask user to select a file
      ffea_fname = tkFileDialog.askopenfilename(**options)
-     print("ffea_fname: ", ffea_fname)
+     print "ffea_fname: ", ffea_fname
      if len(ffea_fname) == 0:
              return
 
@@ -718,7 +709,7 @@ class FFEA_viewer_control_window:
      # Ask user to select a file
      self.mat_fname.set(tkFileDialog.asksaveasfilename(**options))
      if self.mat_fname.get() == None or self.mat_fname.get().strip() == "":
-       return
+	return
      self.update_display_flags("mat_fname", -2, self.mat_fname.get())
      self.update_material()
 
@@ -733,7 +724,7 @@ class FFEA_viewer_control_window:
      # Ask user to select a file
      self.pin_fname.set(tkFileDialog.asksaveasfilename(**options))
      if self.pin_fname.get() == None or self.pin_fname.get().strip() == "":
-       return
+	return
      self.update_display_flags("pin_fname", -2, self.pin_fname.get())
      self.update_pin()
 
@@ -748,7 +739,7 @@ class FFEA_viewer_control_window:
      # Ask user to select a file
      self.vdw_fname.set(tkFileDialog.asksaveasfilename(**options))
      if self.vdw_fname.get() == None or self.vdw_fname.get().strip() == "":
-       return
+	return
      self.update_display_flags("vdw_fname", -2, self.vdw_fname.get())
      self.update_vdw()
 
@@ -764,7 +755,7 @@ class FFEA_viewer_control_window:
      self.lj_fname.set(tkFileDialog.asksaveasfilename(**options))
 
      if self.lj_fname.get() == None or self.lj_fname.get().strip() == "":
-       return
+	return
      self.update_display_flags("lj_fname", -2, self.lj_fname.get())
      self.update_lj()
 
@@ -773,305 +764,328 @@ class FFEA_viewer_control_window:
   # # # # # # # # # # # # # # # # # # # # # # 
   def load_ffea(self, ffea_fname):
       
-     tbegin = time.time()
-     self.notebook.selectpage("Editor")
-       
-     # Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
-     self.display_flags['matparam'] = self.matparam.get()
+	tbegin = time.time()
+	self.notebook.selectpage("Editor")
+  	
+	# Update display flags patch (the .get() function got the old spinbox value, so here it's definitely updated)
+	self.display_flags['matparam'] = self.matparam.get()
 
-     # Try to reset previous system and update
-     self.num_frames = 0
+	# Try to reset previous system and update
+	self.num_frames = 0
 
-     # Check if given file exists
-     if os.path.isfile(ffea_fname) == False:
-          print("No such file:", ffea_fname)
-          return
-     else: 
-          self.ffea_fname = ffea_fname
+	# Check if given file exists
+	if os.path.isfile(ffea_fname) == False:
+		print "No such file:", ffea_fname
+		return
+	else: 
+		self.ffea_fname = ffea_fname
         
-     print("Loading ffea file: " + self.ffea_fname)
+	print "Loading ffea file: " + self.ffea_fname
     
     # Load script (comments are now removed inside this module, by the way :) )
-     self.script = FFEA_script.FFEA_script(self.ffea_fname, fix=True)
-     if (self.script.params == None):
-          print("Something went wrong reading the FFEA input file", self.ffea_fname)
-          return
-     p = self.script.params
-     bl = self.script.blob
-     
-     # See whether or not to remove traj file (make this better later i.e. rolling loading by storing file pointers)
-     if self.display_flags['load_trajectory'] == "System (Into box)" or self.display_flags['load_trajectory'] == "System (Plainly)":
-          print("Requested not to load the trajectory")
-          #p.trajectory_out_fname = None
-     if self.display_flags['load_trajectory'] == "System (Plainly)":
-          print("Requested to show the coordinates as they are in the .node(s) file(s)")
-          # print("... equivalently, setting < move_into_box = 0 >"  and no PBC:
-          p.move_into_box = 0
+	self.script = FFEA_script.FFEA_script(self.ffea_fname, fix=True)
+	if (self.script.params == None):
+		print "Something went wrong reading the FFEA input file", self.ffea_fname
+		return
+	p = self.script.params
+	bl = self.script.blob
+	
+	# See whether or not to remove traj file (make this better later i.e. rolling loading by storing file pointers)
+	if self.display_flags['load_trajectory'] == "System (Into box)" or self.display_flags['load_trajectory'] == "System (Plainly)":
+		print "Requested not to load the trajectory"
+		#p.trajectory_out_fname = None
+	if self.display_flags['load_trajectory'] == "System (Plainly)":
+		print "Requested to show the coordinates as they are in the .node(s) file(s)"
+		# print "... equivalently, setting < move_into_box = 0 >"  and no PBC:
+		p.move_into_box = 0
         
     # Rebuild the script object depending on whether or not there is a trajectory (keep only first conformation)
-     if p.trajectory_out_fname == None:
-          for i in range(p.num_blobs):
-               p.num_conformations[i] = 1
-               bl[i].conformation = [bl[i].conformation[0]]     
-         
+	if p.trajectory_out_fname == None:
+		for i in range(p.num_blobs):
+			p.num_conformations[i] = 1
+			bl[i].conformation = [bl[i].conformation[0]]     
+    	
     #
     # Build the blob objects one at a time
     #
-     self.blob_list = [[None for j in range(p.num_conformations[i])] for i in range(p.num_blobs)]
+	self.blob_list = [[None for j in range(p.num_conformations[i])] for i in range(p.num_blobs)]
     
-     idnum = 0
-     bindex = -1
-     for b in bl:
-          bindex += 1
-          cindex = -1
-          for c in b.conformation:
-               cindex += 1
-               ffea_id_string = "lol"
-               print("\nLoading blob " + str(bindex) + ", conformation " + str(cindex))
-               new_blob = Blob.Blob()
-               # try:
-               new_blob.load(idnum, bindex, cindex, self.script, self.display_flags)
-               # except:
-                    # print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
-                    # return
+	idnum = 0
+	bindex = -1
+	for b in bl:
+		bindex += 1
+		cindex = -1
+		for c in b.conformation:
+			cindex += 1
+			ffea_id_string = "lol"
+			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
+			new_blob = Blob.Blob()
+			# try:
+			new_blob.load(idnum, bindex, cindex, self.script, self.display_flags)
+			# except:
+				# print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
+				# return
 
-               self.blob_list[bindex][cindex] = new_blob
-               new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
-               info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + c.motion_state + "\n"
-               add_blob_info = {'name': new_blob_name, 'info': info_string}
-               
-               idnum += 1
-                 
+			self.blob_list[bindex][cindex] = new_blob
+			new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
+			info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + c.motion_state + "\n"
+			add_blob_info = {'name': new_blob_name, 'info': info_string}
+			
+			idnum += 1
+	# Load some lj
+	try:
+		self.lj = self.script.load_lj()
+	except:
+		print("\nERROR: '" + self.script.params.vdw_forcefield_params + "' could not be loaded.")
+		print("\nERROR: Could not load system. Please try again.")
+		return
 
-     # Load some lj
-     try:
-          self.lj = self.script.load_lj()
-     except:
-          print("\nERROR: '" + self.script.params.vdw_forcefield_params + "' could not be loaded.")
-          print("\nERROR: Could not load system. Please try again.")
-          return
+	if (not self.lj.valid): 
+		print('Something went wrong initialising lennard-jones (lj) parameters')
+		print("\nERROR: Could not load system. Please try again.")
+		return
 
-     if (not self.lj.valid): 
-          print('Something went wrong initialising lennard-jones (lj) parameters')
-          print("\nERROR: Could not load system. Please try again.")
-          return
+	# Load some springs
+	if self.display_flags['show_springs'] == 1:
+		try:
+			self.springs = FFEA_springs.FFEA_springs(self.script.spring)
+		except:
+			sys.stdout.write("Springs could not be loaded. Continuing...")
+			sys.stdout.flush()
+			self.springs = None
+			
+	# Send binding sites to control
+	binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
+	for i in range(self.script.params.num_blobs):
+		for j in range(self.script.params.num_conformations[i]):
+			if self.blob_list[i][j].bsites != None:
+				binding_sites[i][j] = self.blob_list[i][j].bsites.num_binding_sites
 
-     # Load some springs
-     if self.display_flags['show_springs'] == 1:
-          try:
-               self.springs = FFEA_springs.FFEA_springs(self.script.spring)
-          except:
-               sys.stdout.write("Springs could not be loaded. Continuing...")
-               sys.stdout.flush()
-               self.springs = None
-               
-     # Send binding sites to control
-     binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
-     for i in range(self.script.params.num_blobs):
-          for j in range(self.script.params.num_conformations[i]):
-               if self.blob_list[i][j].bsites != None:
-                    binding_sites[i][j] = self.blob_list[i][j].bsites.num_binding_sites
+	# Rescale and translate initial system if necessary
+	self.global_scale = 1e-10	# angstroms cos pymol works in angstroms and FFEA works in SI
+	self.global_scale = 1.0 / self.global_scale
 
-     # Rescale and translate initial system if necessary
-     self.global_scale = 1e-10     # angstroms cos pymol works in angstroms and FFEA works in SI
-     self.global_scale = 1.0 / self.global_scale
+	# Rescale blobs
+	for b in self.blob_list:
+		for c in b:
+			c.set_global_scale(self.global_scale)
+            
+    # Rescale rods
+	if len(self.script.rod) > 0:
+		for rod_num in range(len(self.script.rod)):
+			self.script.rod[rod_num].scale(self.global_scale)
 
-     # Rescale blobs
-     for b in self.blob_list:
-          for c in b:
-               c.set_global_scale(self.global_scale)
-               
-     # Rescale rods
-     if len(self.script.rod) > 0:
-          for rod_num in range(len(self.script.rod)):
-               self.script.rod[rod_num].scale(self.global_scale)
+	# Move simulation into box, if necessary
+	world_centroid = np.array([0.0, 0.0, 0.0])
+	shift = np.array([0.0, 0.0, 0.0])
+	total_num_nodes = 0
 
-     # Move simulation into box, if necessary
-     world_centroid = np.array([0.0, 0.0, 0.0])
-     shift = np.array([0.0, 0.0, 0.0])
-     total_num_nodes = 0
+	# Load all initial blobs and get a global centroid. Set secondary blobs to have placeholder 'None' frames
+	bindex = -1	
+	for b in self.blob_list:
+		bindex += 1
+		cindex = -1
+		for c in b:
+			cindex += 1
+			if cindex == 0:
+		
+				c.set_nodes_as_frame()
+				x, y, z = c.calc_centroid(0)
+				world_centroid[0] += x * c.node.num_nodes
+				world_centroid[1] += y * c.node.num_nodes
+				world_centroid[2] += z * c.node.num_nodes
+				total_num_nodes += c.node.num_nodes
+			else:
+				c.set_dead_frame()
+    
+	rods_found = False
+	if len(self.script.rod) > 0:
+		print("Rods found in script file")
+		num_script_rods = 0
+		rods_found = True
+		for rod in self.script.rod:
+			num_script_rods+=1
+			rod_centroid = rod.calc_centroid()[0] # centroid only for the 0th frame
+			world_centroid[0] += rod_centroid[0] * rod.num_elements
+			world_centroid[1] += rod_centroid[1] * rod.num_elements
+			world_centroid[2] += rod_centroid[2] * rod.num_elements
+			total_num_nodes += rod.num_elements
+		
+		print("Number of rods: "+str(num_script_rods))
+	
+	if rods_found == False:
+		print("No rods found in script file")
 
-     # Load all initial blobs and get a global centroid. Set secondary blobs to have placeholder 'None' frames
-     bindex = -1     
-     for b in self.blob_list:
-          bindex += 1
-          cindex = -1
-          for c in b:
-               cindex += 1
-               if cindex == 0:
-          
-                    c.set_nodes_as_frame()
-                    x, y, z = c.calc_centroid(0)
-                    world_centroid[0] += x * c.node.num_nodes
-                    world_centroid[1] += y * c.node.num_nodes
-                    world_centroid[2] += z * c.node.num_nodes
-                    total_num_nodes += c.node.num_nodes
-               else:
-                    c.set_dead_frame()
-               
+	# Calculate global centroid
+	world_centroid *= 1.0 / total_num_nodes	
 
+	# Build the box:
+	# Do we need to calculate the size of the box? Double the rounded up size of the system
+	for i in range(3):
+		if p.es_N[i] < 1:
+			dims = self.get_system_dimensions(0)
+			for j in range(3):
+				p.es_N[j] = 2 * int(np.ceil(dims[j] / (self.global_scale*p.vdw_cutoff)))
+			break
 
-     # Calculate global centroid
-     world_centroid *= 1.0 / total_num_nodes     
+	self.box = p.vdw_cutoff * p.es_N
+	self.box_exists = True
+	
+		
+	# Rescale box
+	self.box *= self.global_scale
 
-     # Build the box:
-     # Do we need to calculate the size of the box? Double the rounded up size of the system
-     for i in range(3):
-          if p.es_N[i] < 1:
-               dims = self.get_system_dimensions(0)
-               for j in range(3):
-                    p.es_N[j] = 2 * int(np.ceil(dims[j] / (self.global_scale*p.vdw_cutoff)))
-               break
+	# Shift all blobs to center of box if necessary
+	shift = 0.5 * self.box - world_centroid
+	# if p.calc_vdw == 1 and p.move_into_box == 1:
+	if p.move_into_box == 1:
+		for b in self.blob_list:
+			b[0].frames[0].translate(shift)
+			if b[0].beads.pdb != None: b[0].beads.pdb.translate(shift) # beads only work for conf 0
+     # move rods into box
+     # note: FFEA only does this box thing for the first frame of a given trajectory!!!
+     # I can't get the box positioning to work for .node and .rod objects, but .rodtraj and .ftj works fine
+     # so this will stay commented out for the meantime.
+    	#if len(self.script.rod) > 0:
+    	#	for rod_num in range(len(self.script.rod)):
+    	#		self.script.rod[rod_num].translate(shift)
+    	print("Shift: "+str(shift))
+    		
 
-     self.box = p.vdw_cutoff * p.es_N
-     self.box_exists = True
-     
-          
-     # Rescale box
-     self.box *= self.global_scale
+	# Now, apply PBC if necessary
+	# if p.calc_vdw == 1 and self.display_flags['load_trajectory'] != "System (Plainly)":
+	if self.display_flags['load_trajectory'] != "System (Plainly)":
+		for b in self.blob_list:
+			trans = np.array([0.0,0.0,0.0])
+			cent = b[0].frames[0].calc_centroid()
+			print "Centroid = ", cent
+			if self.box_exists:
+				for i in range(3):
+					if cent[i] > self.box[i]:
+						trans[i] = -1 * self.box[i]
+					elif cent[i] < 0:
+						trans[i] = self.box[i]
 
-     # Shift all blobs to center of box if necessary
-     shift = 0.5 * self.box - world_centroid
-     # if p.calc_vdw == 1 and p.move_into_box == 1:
-     if p.move_into_box == 1:
-          for b in self.blob_list:
-               b[0].frames[0].translate(shift)
-               if b[0].beads.pdb != None: b[0].beads.pdb.translate(shift) # beads only work for conf 0
-          # move rods into box
-          if len(self.script.rod) > 0:
-               for rod_num in range(len(self.script.rod)):
-                    self.script.rod[rod_num].translate(shift)
+				b[0].frames[0].translate(trans)
+				print "Translation = ", trans
 
-     # Now, apply PBC if necessary
-     # if p.calc_vdw == 1 and self.display_flags['load_trajectory'] != "System (Plainly)":
-     if self.display_flags['load_trajectory'] != "System (Plainly)":
-          for b in self.blob_list:
-               trans = np.array([0.0,0.0,0.0])
-               cent = b[0].frames[0].calc_centroid()
-               print("Centroid = ", cent)
-               if self.box_exists:
-                    for i in range(3):
-                         if cent[i] > self.box[i]:
-                              trans[i] = -1 * self.box[i]
-                         elif cent[i] < 0:
-                              trans[i] = self.box[i]
-
-                    b[0].frames[0].translate(trans)
-                    print("Translation = ", trans)
-
-         # Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
-     # Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
-         
+    	# Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
+	# Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
+    	
        
-     # Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
-     #if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
-     traj_fname = self.script.params.trajectory_out_fname
-     cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
-     cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
-     if self.display_flags['load_trajectory'] == "CGO":
-          if os.path.isfile(cgo_fname) == False:
-               print("No cached traj found at "+cgo_fname+", generating one...")
-               turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
-               turbotraj.populate_turbotraj_from_ftj(self.script.params.trajectory_out_fname)
-               turbotraj.create_cgo(self.script, self.display_flags)
-               turbotraj.dump_cgo()
-          self.load_cgo(cgo_fname, cgo_index_fname)
-          #cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
-     else:
-          self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
-          self.load_trajectory_thread.start()
-          waitForTrajToLoad = True
-          # self.load_trajectory(p.trajectory_out_fname) # serial
+	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
+	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
+	traj_fname = self.script.params.trajectory_out_fname
+	cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
+	cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
+	if self.display_flags['load_trajectory'] == "CGO":
+		if os.path.isfile(cgo_fname) == False:
+			print("No cached traj found at "+cgo_fname+", generating one...")
+			turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
+			turbotraj.populate_turbotraj_from_ftj(self.script.params.trajectory_out_fname)
+			turbotraj.create_cgo(self.script, self.display_flags)
+			turbotraj.dump_cgo()
+		self.load_cgo(cgo_fname, cgo_index_fname)
+		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
+	elif self.display_flags:
+		try:
+    			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
+    			self.load_trajectory_thread.start()
+    			waitForTrajToLoad = True
+		except IOError:
+			print("An unspecified error occured while loading the trajectory.")
+		# self.load_trajectory(p.trajectory_out_fname) # serial
 
 
-     #
-     # Print info for the user that won't be deleted from the command line by the trajectory loading
-     #
-     if self.display_flags['show_springs'] == 1 and self.springs != None:
-          if self.script.params.calc_springs == 0 and self.springs.get_num_springs() > 0:
-               for b in self.script.blob:
-                    if b.solver == "CG_nomass":
-                         print("INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs.")
-                         break
-                    
-     if waitForTrajToLoad: 
-          self.load_trajectory_thread.join()
+	#
+	# Print info for the user that won't be deleted from the command line by the trajectory loading
+	#
+	if self.display_flags['show_springs'] == 1 and self.springs != None:
+		if self.script.params.calc_springs == 0 and self.springs.get_num_springs() > 0:
+			for b in self.script.blob:
+				if b.solver == "CG_nomass":
+					print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
+					break
+				
+	if waitForTrajToLoad: 
+		self.load_trajectory_thread.join()
 
-     # Requires knowledge of whole trajectory
-     if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
-          if self.display_flags["show_inverted"] == 1:  # Show inverted elements
-               self.draw_inverted_elements()
-          if self.display_flags["show_beads"] == "Trajectory": # Load the trajectory of the beads.
-               if self.script.params.beads_out_fname != "":
-                    beads_traj_name = self.display_flags['system_name'] + "_b"
-                    cmd.load(self.script.params.beads_out_fname, beads_traj_name)
-                    cmd.hide("everything", beads_traj_name)
-                    cmd.show("spheres", beads_traj_name)
-               else:
-                    print("Beads trajectory won't load: beads_out_fname was not defined in the .ffea input file")
+	# Requires knowledge of whole trajectory
+	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
+		if self.display_flags["show_inverted"] == 1:  # Show inverted elements
+			self.draw_inverted_elements()
+		if self.display_flags["show_beads"] == "Trajectory": # Load the trajectory of the beads.
+			if self.script.params.beads_out_fname != "":
+				beads_traj_name = self.display_flags['system_name'] + "_b"
+				cmd.load(self.script.params.beads_out_fname, beads_traj_name)
+				cmd.hide("everything", beads_traj_name)
+				cmd.show("spheres", beads_traj_name)
+			else:
+				print "Beads trajectory won't load: beads_out_fname was not defined in the .ffea input file"
 
-     # Load up ye rods
-     if len(self.script.rod) > 0:
-          for rod_num in range(len(self.script.rod)):
-               self.load_rod(self.script.rod[rod_num], rod_num)
+	# Load up ye rods
+	if len(self.script.rod) > 0:
+		for rod_num in range(len(self.script.rod)):
+			self.load_rod(self.script.rod[rod_num], rod_num)
 
-        # Center everything, zoom and sort clipping plane
-     cmd.center()
-     cmd.zoom()
+   	# Center everything, zoom and sort clipping plane
+	cmd.center()
+ 	cmd.zoom()
 
-     # deactivate load options:
-     self.check_button_show_springs.config(state=DISABLED)
-     self.check_button_show_pinned.config(state=DISABLED)
-     self.check_button_show_inverted.config(state=DISABLED)
-     self.check_button_show_danger.config(state=DISABLED)
+	# deactivate load options:
+	self.check_button_show_springs.config(state=DISABLED)
+	self.check_button_show_pinned.config(state=DISABLED)
+	self.check_button_show_inverted.config(state=DISABLED)
+	self.check_button_show_danger.config(state=DISABLED)
 
-     self.text_button_system_name.config(state=DISABLED)
-     self.random_name_button.config(state=DISABLED)
-     self.spinbox_material_param.config(state=DISABLED)
-     self.om_show_mesh.config(state=DISABLED)
-     self.index_option.config(state=DISABLED)
-     self.om_show_box.config(state=DISABLED)
-     self.om_load_sfa.config(state=DISABLED)
-     self.om_do_load_trajectory.config(state=DISABLED)
-     self.load_button.config(state=DISABLED)
+	self.text_button_system_name.config(state=DISABLED)
+	self.random_name_button.config(state=DISABLED)
+	self.spinbox_material_param.config(state=DISABLED)
+	self.om_show_mesh.config(state=DISABLED)
+	self.index_option.config(state=DISABLED)
+	self.om_show_box.config(state=DISABLED)
+	self.om_load_sfa.config(state=DISABLED)
+	self.om_do_load_trajectory.config(state=DISABLED)
+	self.load_button.config(state=DISABLED)
 
-     if self.load_sfa.get() != "None":
+	if self.load_sfa.get() != "None":
 
-          # activate Editor options:
-          self.text_button_sele_name.config(state="normal")
+		# activate Editor options:
+		self.text_button_sele_name.config(state="normal")
 
-          self.text_button_mat_d.config(state="normal")
-          self.text_button_mat_sm.config(state="normal")
-          self.text_button_mat_bm.config(state="normal")
-          self.text_button_mat_sv.config(state="normal")
-          self.text_button_mat_bv.config(state="normal")
-          self.load_mat_button.config(state="normal")
+		self.text_button_mat_d.config(state="normal")
+		self.text_button_mat_sm.config(state="normal")
+		self.text_button_mat_bm.config(state="normal")
+		self.text_button_mat_sv.config(state="normal")
+		self.text_button_mat_bv.config(state="normal")
+		self.load_mat_button.config(state="normal")
 
-          self.load_pin_button.config(state="normal")
+		self.load_pin_button.config(state="normal")
 
-          self.spinbox_vdw_type0.config(state="normal")
-          self.spinbox_vdw_type1.config(state="normal")
+		self.spinbox_vdw_type0.config(state="normal")
+		self.spinbox_vdw_type1.config(state="normal")
 
-          self.load_vdw_button.config(state="normal")
+		self.load_vdw_button.config(state="normal")
 
-          self.text_button_lj_eps.config(state="normal")
-          self.text_button_lj_r0.config(state="normal")
+		self.text_button_lj_eps.config(state="normal")
+		self.text_button_lj_r0.config(state="normal")
 
-          self.load_lj_button.config(state="normal")
-     else:
-          self.root.destroy()
+		self.load_lj_button.config(state="normal")
+	else:
+		self.root.destroy()
 
-     print("System loaded in ", time.time() - tbegin, "s.")
+	print "System loaded in ", time.time() - tbegin, "s."
+
 
   def get_normal(self, node0, node1, node2):
-     ax = node1[0] - node0[0]
-     ay = node1[1] - node0[1]
-     az = node1[2] - node0[2]
-     bx = node2[0] - node1[0]
-     by = node2[1] - node1[1]
-     bz = node2[2] - node1[2]
+	ax = node1[0] - node0[0]
+	ay = node1[1] - node0[1]
+	az = node1[2] - node0[2]
+	bx = node2[0] - node1[0]
+	by = node2[1] - node1[1]
+	bz = node2[2] - node1[2]
 
-     return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
+	return [az * by - ay * bz, ax * bz - az * bx, ay * bx - ax * by]
 
   def load_cgo(self, cgo_fname, cgo_index_fname):
       cgo = np.load(cgo_fname)
@@ -1080,7 +1094,9 @@ class FFEA_viewer_control_window:
       for frame in range(len(cgo_index)):
           cmd.load_cgo(cgo[frame], cgo_index[frame][0], str(cgo_index[frame][1]))
 
+
   def load_turbotrajectory(self, turbotraj):
+    warnings.warn("DEPRECATION WARNING: old turbotraj loader.")
       
     def setup(self, turbotraj):
         frames = range(len(turbotraj.turbotraj[0][0]))
@@ -1120,6 +1136,22 @@ class FFEA_viewer_control_window:
 
   def load_rod(self, rod, rod_num=0):
     
+    def rescale_m(rod):
+        m_lengths = np.linalg.norm(rod.current_m, axis=2)
+        
+        avg_pi = 0
+        pi = rod.get_p_i(rod.current_r)
+        for frame in pi:
+            for p in range(len(frame)):
+                avg_pi += np.linalg.norm(frame[p])
+        avg_pi = avg_pi / (( len(pi)*len(pi[0]) ))
+        
+        m_scale = avg_pi / m_lengths
+        for frame in range(len(rod.current_m)):
+            for m_idx in range(len(rod.current_m[frame])):
+                rod.current_m[frame][m_idx] *= m_scale[frame][m_idx]
+        return rod
+        
     def get_avg_lengths(rod):
         # Get scale factor for ei
         avg_pi = 0
@@ -1136,21 +1168,23 @@ class FFEA_viewer_control_window:
                 avg_m += np.linalg.norm(frame[m])
         avg_m = avg_m / (( len(rod.current_m)*len(rod.current_m[0]) ))
         
+        print avg_m, avg_pi
         return avg_m, avg_pi
     
-    avg_m, avg_p = get_avg_lengths(rod)
+    #avg_m, avg_p = get_avg_lengths(rod)
     
     # Scale the material frame to be a similar size to the rod elements
-    rod.current_m /= (avg_m/avg_p)/np.sqrt(2)
+    #rod.current_m *= (avg_m/avg_p)/np.sqrt(2)
+    rod = rescale_m(rod)
     
     # units note: radii are arbitrary so far. the *10**10 is to go from SI to angstroms (I should remove this after I add proper scaling)
     for i in range(len(rod.current_r)):
       line = []
       for j in range(len(rod.current_r[i])-1):
-        line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 10, 0, 1, 0, 0, 1, 0 ]
+        line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, 0, 1, 0, 0, 1, 0 ]
         # material frame in center of each element
         mid_x, mid_y, mid_z = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2, (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2, (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
-        line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 5, 0, 0, 1, 0, 0, 1 ]
+        line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 4, 0, 0, 1, 0, 0, 1 ]
 #        print("frame "+str(i)+" element "+str(j)+"= "+str(line))
 #        print(line)
       cmd.load_cgo(line, self.display_flags['system_name']+"_rod_"+str(rod_num), i)
@@ -1162,7 +1196,7 @@ class FFEA_viewer_control_window:
      elif self.display_flags['load_trajectory'] == "Trajectory":
         self.add_node_pseudoatoms()
      else:
-        print("Cannot add pseudoatoms if selecting System (Into box)")
+        print "Cannot add pseudoatoms if selecting System (Into box)" 
 
     
   def add_node_pseudoatoms(self):
@@ -1187,305 +1221,305 @@ class FFEA_viewer_control_window:
  
   def draw_inverted_elements(self):
 
-     # For each blob
-     bin = 0
-     for b in self.blob_list:
-          # Change when conformations are stable
-          cin = 0
-          c = b[cin]
+	# For each blob
+	bin = 0
+	for b in self.blob_list:
+		# Change when conformations are stable
+		cin = 0
+		c = b[cin]
 
-          element_list = []
-          
-          # Get last two frames and check whether volume / jacobian has changed it's sign
-          
-          index = 0
-          if (c.top == None):
-               if (c.motion_state != "STATIC"):
-                    print("Cannot draw inverted elements for blob %d as there is not topology" % (bin))
-               bin += 1
-               continue
+		element_list = []
+		
+		# Get last two frames and check whether volume / jacobian has changed it's sign
+		
+		index = 0
+		if (c.top == None):
+			if (c.motion_state != "STATIC"):
+				print("Cannot draw inverted elements for blob %d as there is not topology" % (bin))
+			bin += 1
+			continue
 
-          flast = self.traj.blob[bin][cin].frame[-1]
+		flast = self.traj.blob[bin][cin].frame[-1]
 
-          try:
-               f2last = self.traj.blob[bin][cin].frame[-2]
-          except:
-               f2last = c.node
+		try:
+			f2last = self.traj.blob[bin][cin].frame[-2]
+		except:
+			f2last = c.node
 
-          for el in c.top.element:
-               jac = np.linalg.det(el.calc_jacobian(flast))
-               jac_last = np.linalg.det(el.calc_jacobian(f2last))
-               if jac * jac_last < 0:
-                    element_list.append(index)
+		for el in c.top.element:
+			jac = np.linalg.det(el.calc_jacobian(flast))
+			jac_last = np.linalg.det(el.calc_jacobian(f2last))
+			if jac * jac_last < 0:
+				element_list.append(index)
 
-               index += 1
-          
-          # Draw these as a new object on the last frame          
-          invele = []
-          numtxt = []
-          txtscale = 0.1
-          axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
-          invele.extend( [BEGIN, LINES] )
+			index += 1
+		
+		# Draw these as a new object on the last frame		
+		invele = []
+		numtxt = []
+		txtscale = 0.1
+		axes = np.array([[15.0,0.0,0.0],[0.0,15.0,0.0],[0.0,0.0,15.0]])
+		invele.extend( [BEGIN, LINES] )
 
-          for el in element_list:
-               n1 = flast.pos[c.top.element[el].n[0]]
-               n2 = flast.pos[c.top.element[el].n[1]]
-               n3 = flast.pos[c.top.element[el].n[2]]
-               n4 = flast.pos[c.top.element[el].n[3]]
+		for el in element_list:
+			n1 = flast.pos[c.top.element[el].n[0]]
+			n2 = flast.pos[c.top.element[el].n[1]]
+			n3 = flast.pos[c.top.element[el].n[2]]
+			n4 = flast.pos[c.top.element[el].n[3]]
 
-               invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-               invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+			invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+			invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
 
-               invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-               invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+			invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+			invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
-               invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
-               invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+			invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+		        invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
-               invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
-               invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+		        invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+		        invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
 
-               invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
-               invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
+		        invele.extend( [ VERTEX, n1[0], n1[1], n1[2] ] )
+			invele.extend( [ VERTEX, n3[0], n3[1], n3[2] ] )
 
-               invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
-               invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
+			invele.extend( [ VERTEX, n2[0], n2[1], n2[2] ] )
+		        invele.extend( [ VERTEX, n4[0], n4[1], n4[2] ] )
 
-               nn = c.top.element[el].calc_centroid(flast)
-               cyl_text(numtxt,plain,nn,str(el), txtscale, axes=axes * txtscale)
+			nn = c.top.element[el].calc_centroid(flast)
+			cyl_text(numtxt,plain,nn,str(el), txtscale, axes=axes * txtscale)
 
-          invele.append(END)
+		invele.append(END)
 
-          if len(invele) > 3:
-               cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted", self.num_frames)
-               cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex", self.num_frames)
-          bin += 1
+		if len(invele) > 3:
+			cmd.load_cgo(invele, self.display_flags['system_name'] + "_" + str(c.idnum) + "_inverted", self.num_frames)
+			cmd.load_cgo(numtxt, self.display_flags['system_name'] + "_" + str(c.idnum) + "_invertedindex", self.num_frames)
+		bin += 1
 
   def load_trajectory(self, trajectory_out_fname):
 
-     tbegin = time.time()
-     
-     #
-     # All blobs already have the first frame. They will keep this permanently.
-     # All subsequent frames will be readed, loaded, drawn and deleted until failure
-     #     
+	tbegin = time.time()
+	
+	#
+	# All blobs already have the first frame. They will keep this permanently.
+	# All subsequent frames will be readed, loaded, drawn and deleted until failure
+	#	
 
-     # Load header and skip first frame (we already have it from the node files)
-     try:
-          self.traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0, onlyNodes=True)
-          try:
-               failure = self.traj.skip_frame()
-          except:
-               failure = 1
-     except(IOError):
-          failure = 1     
+	# Load header and skip first frame (we already have it from the node files)
+	try:
+		self.traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0, onlyNodes=True)
+		try:
+			failure = self.traj.skip_frame()
+		except:
+			failure = 1
+	except(IOError):
+		failure = 1	
 
-     # Get smallest edge in system
-     lmin = float("inf")
-     for b in self.blob_list:
-          for f in b[0].surf.face:
-               l = 2 * f.calc_area(b[0].frames[0])**0.5
-               if l < lmin:
-                    lmin = l
+	# Get smallest edge in system
+	lmin = float("inf")
+	for b in self.blob_list:
+		for f in b[0].surf.face:
+			l = 2 * f.calc_area(b[0].frames[0])**0.5
+			if l < lmin:
+				lmin = l
 
-     # Draw first frame
-     self.num_frames = 1
-     self.draw_frame(self.num_frames - 1, scale = lmin / 20.0)
+	# Draw first frame
+	self.num_frames = 1
+	self.draw_frame(self.num_frames - 1, scale = lmin / 20.0)
 
-     # If necessary, stop now (broken traj or user asked for)
-     if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or self.traj.num_blobs == 0:          
-          if failure == 1: 
-               print("Failed to load the trajectory: ", failure)
-          self.wontLoadTraj = 1
-          return
+	# If necessary, stop now (broken traj or user asked for)
+	if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or self.traj.num_blobs == 0:		
+		if failure == 1: 
+			print "Failed to load the trajectory: ", failure
+		self.wontLoadTraj = 1
+		return
 
-     # Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
-     # Save final two frames for later calculations though
-     
-     while True:
-          
-          # Get frame from traj
-          if self.traj.load_frame(onlyNodes=True) == 0:
+	# Else, load rest of trajectory 1 frame at a time, drawing and deleting as we go
+	# Save final two frames for later calculations though
+	
+	while True:
+		
+		# Get frame from traj
+		if self.traj.load_frame(onlyNodes=True) == 0:
 
-               # Scale traj frame
-               self.traj.rescale(self.global_scale, -1)
-               
-               # Load into blob objects asnd increment frame count
-               self.add_frame_to_blobs(self.traj)
-               self.num_frames += 1
+			# Scale traj frame
+			self.traj.rescale(self.global_scale, -1)
+			
+			# Load into blob objects asnd increment frame count
+			self.add_frame_to_blobs(self.traj)
+			self.num_frames += 1
 
-               # Draw whole frame (if above worked, these should work no problem...)
-               self.draw_frame(self.num_frames - 1, scale = lmin, draw_static = False)
+			# Draw whole frame (if above worked, these should work no problem...)
+			self.draw_frame(self.num_frames - 1, scale = lmin, draw_static = False)
 
-               # Delete frames from memory
-               if(self.num_frames > 3):
-                    self.traj.delete_frame(index = -3)
-     
-               self.remove_frame_from_blobs()
-          else:
-               break
+			# Delete frames from memory
+			if(self.num_frames > 3):
+				self.traj.delete_frame(index = -3)
+	
+			self.remove_frame_from_blobs()
+		else:
+			break
 
-     # Finally show the "progress bar":
-     if self.num_frames > 1:
-          cmd.mset("1-"+str(self.num_frames))
-     # If the trajectory was a single frame, then we loaded nothing:
-     else: self.wontLoadTraj = 1
+	# Finally show the "progress bar":
+	if self.num_frames > 1:
+		cmd.mset("1-"+str(self.num_frames))
+	# If the trajectory was a single frame, then we loaded nothing:
+	else: self.wontLoadTraj = 1
 
-     print("Trajectory loaded in: ", time.time() - tbegin, "s.")
+	print "Trajectory loaded in: ", time.time() - tbegin, "s."
 
 
   def get_system_dimensions(self, findex):
-     maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])     
-     mindims = np.array([float("inf"),float("inf"),float("inf")])
-     dims = np.array([0.0,0.0,0.0])
+	maxdims = np.array([float("-inf"),float("-inf"),float("-inf")])	
+	mindims = np.array([float("inf"),float("inf"),float("inf")])
+	dims = np.array([0.0,0.0,0.0])
 
-     try:
-          for b in self.blob_list:
-               for c in b:
-                    try:
-                         for p in c.frames[findex].pos:
-                              for i in range(3):
-                                   if p[i] > maxdims[i]:
-                                        maxdims[i] = p[i]
-                                   if p[i] < mindims[i]:
-                                        mindims[i] = p[i]
+	try:
+		for b in self.blob_list:
+			for c in b:
+				try:
+					for p in c.frames[findex].pos:
+						for i in range(3):
+							if p[i] > maxdims[i]:
+								maxdims[i] = p[i]
+							if p[i] < mindims[i]:
+								mindims[i] = p[i]
 
-                         
-                    except:
-                         continue
-          
-          for i in range(3):
-               dims[i] = maxdims[i] - mindims[i]
+					
+				except:
+					continue
+		
+		for i in range(3):
+			dims[i] = maxdims[i] - mindims[i]
 
-          return dims
-                    
-     except:
-          return np.array([0.0,0.0,0.0])
-     
+		return dims
+				
+	except:
+		return np.array([0.0,0.0,0.0])
+	
   #def load_trajectory(self, trajectory_out_fname):
   #
-  #     # This function will load the trajectory by:
-  #          # Loading header.
-  #          # Skip first frame (we already have it). 
-  #          # Load frames 1 at a time and leave thread open to be manually activated by user and constantly check for newly written frames
-  #          
-  #          # Load header stuff automatically
-  #          traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
-  #          
-  #          # Check for failure!
- #           if traj.num_blobs == 0:
- #           
- #                # This will activate the draw_stuff for a single frame
- #                print("Error. Problem with trajectory file. Cannot load.")
- #                self.script.params.trajectory_out_fname = None
-#               return
-#     
-#          # Skip first frame as we already have it
-#          traj.skip_frame()
-#          
-#          # Set num_frames for external stuff
-#          self.num_frames = 1
-#          
-#          # Now, let's load a trajectory (while we can)
-#          while True:
-#          
-#               # If user wants frames, give them frames
-#               if self.display_flags['load_trajectory'] == 1:
-#               
-#                    # Get a frame
-#                    if traj.load_frame() == 0:
-#                    
-#                         # Success! We got a new frame. Add it to blob
-#                         self.add_frame_to_blobs(traj)
-#                         self.num_frames += 1
-#                         self.draw_frame()
-#                         
-#                         # And clear the blob
-#                         traj.clear_frame()
-#                         self.remove_frame_from_blobs()
-#                    else:
-#                         
-#                         # All failures move to the beginning of what will be the next available frame. Wait a bit and continue
-#                         print self.num_frames
-#                         break
-#                         time.sleep(10)
-#          
-#               else:
-#               
-#                    # Check again every 3 seconds
-#                    time.sleep(3)
-#               
-#               if self.num_frames > 1:
-#                    cmd.mset("1-"+str(self.num_frames))
-#                    if self.num_frames > 2:
-#                         cmd.mplay()
+  #	# This function will load the trajectory by:
+  #		# Loading header.
+  #		# Skip first frame (we already have it). 
+  #		# Load frames 1 at a time and leave thread open to be manually activated by user and constantly check for newly written frames
+  #		
+  #		# Load header stuff automatically
+  #		traj = FFEA_trajectory.FFEA_trajectory(trajectory_out_fname, load_all = 0)
+  #		
+  #		# Check for failure!
+ # 		if traj.num_blobs == 0:
+ # 		
+ # 			# This will activate the draw_stuff for a single frame
+ # 			print "Error. Problem with trajectory file. Cannot load."
+ # 			self.script.params.trajectory_out_fname = None
+#			return
+#	
+#		# Skip first frame as we already have it
+#		traj.skip_frame()
+#		
+#		# Set num_frames for external stuff
+#		self.num_frames = 1
+#		
+#		# Now, let's load a trajectory (while we can)
+#		while True:
+#		
+#			# If user wants frames, give them frames
+#			if self.display_flags['load_trajectory'] == 1:
+#			
+#				# Get a frame
+#				if traj.load_frame() == 0:
+#				
+#					# Success! We got a new frame. Add it to blob
+#					self.add_frame_to_blobs(traj)
+#					self.num_frames += 1
+#					self.draw_frame()
+#					
+#					# And clear the blob
+#					traj.clear_frame()
+#					self.remove_frame_from_blobs()
+#				else:
+#					
+#					# All failures move to the beginning of what will be the next available frame. Wait a bit and continue
+#					print self.num_frames
+#					break
+#					time.sleep(10)
+#		
+#			else:
+#			
+#				# Check again every 3 seconds
+#				time.sleep(3)
+#			
+#			if self.num_frames > 1:
+#				cmd.mset("1-"+str(self.num_frames))
+#				if self.num_frames > 2:
+#					cmd.mplay()
           
   def add_frame_to_blobs(self, traj, index = -1):
-       
-       for i in range(self.script.params.num_blobs):
-            for j in range(self.script.params.num_conformations[i]):
-                 self.blob_list[i][j].frames.append(traj.blob[i][j].frame[index])
-                 self.blob_list[i][j].num_frames += 1
+  	
+  	for i in range(self.script.params.num_blobs):
+  		for j in range(self.script.params.num_conformations[i]):
+  			self.blob_list[i][j].frames.append(traj.blob[i][j].frame[index])
+  			self.blob_list[i][j].num_frames += 1
 
   def remove_frame_from_blobs(self, index = -1):
-       
-       for i in range(self.script.params.num_blobs):
-            for j in range(self.script.params.num_conformations[i]):
-                 del self.blob_list[i][j].frames[index]
-                 self.blob_list[i][j].num_frames -= 1
-     
+  	
+  	for i in range(self.script.params.num_blobs):
+  		for j in range(self.script.params.num_conformations[i]):
+  			del self.blob_list[i][j].frames[index]
+  			self.blob_list[i][j].num_frames -= 1
+	
   def init_vars(self):
 
-     # Empty traj object
-     self.traj = None
+	# Empty traj object
+	self.traj = None
 
-     # camera
-     # self.orientation = Quaternion()
-     self.z = 1
+	# camera
+	# self.orientation = Quaternion()
+	self.z = 1
 
-     # mouse
-     self.last_x = -1
-     self.last_y = -1
+	# mouse
+	self.last_x = -1
+	self.last_y = -1
 
-     # frames
-     self.frame = 0
-     self.num_frames = 0
+	# frames
+	self.frame = 0
+	self.num_frames = 0
 
-     # list of loaded blobs
-     self.blob_list = []
+	# list of loaded blobs
+	self.blob_list = []
 
-     self.animate = False
-     self.speed = 1
-     self.pause_loading = False
-     self.pausing = False
+	self.animate = False
+	self.speed = 1
+	self.pause_loading = False
+	self.pausing = False
 
-     self.system_index = 0
-     self.system_names = []
+	self.system_index = 0
+	self.system_names = []
 
-     self.waitForTrajToLoad = False # who is closing tkinter window
-     
-     # Change to any file of names you like
-     # fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_dbzcharacters.txt")
-     fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_greekletters.txt"
-     with open(fname, "r") as f:
-          for line in f:
-               self.system_names.append(line.strip())
+	self.waitForTrajToLoad = False # who is closing tkinter window
+	
+	# Change to any file of names you like
+	# fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_dbzcharacters.txt"
+	fname = os.path.dirname(os.path.realpath(__file__)) + "/system_names_greekletters.txt"
+	with open(fname, "r") as f:
+		for line in f:
+			self.system_names.append(line.strip())
 
-     self.display_flags = {
-          'matparam': "Plain Solid",
-          'show_mesh': "No Mesh",
-          'show_numbers': "No Indices", ## PYMOL OK
-          'show_pinned': 1,
-          'show_beads': "No Beads",
-          'show_danger': 0,
-          'show_inverted': 1,
-          'show_vdw': 0,
-          'show_shortest_edge': 0,
-          'show_springs': 1,
-          'show_box': "No Box",
-          'load_trajectory': "Trajectory", ## PYMOL OK
-          'highlight': '',
-          'load_sfa': 'None',
+	self.display_flags = {
+		'matparam': "Plain Solid",
+		'show_mesh': "No Mesh",
+		'show_numbers': "No Indices", ## PYMOL OK
+		'show_pinned': 1,
+		'show_beads': "No Beads",
+		'show_danger': 0,
+		'show_inverted': 1,
+		'show_vdw': 0,
+		'show_shortest_edge': 0,
+		'show_springs': 1,
+		'show_box': "No Box",
+		'load_trajectory': "Trajectory", ## PYMOL OK
+		'highlight': '',
+		'load_sfa': 'None',
       'system_name': self.system_names[rint(0, len(self.system_names) - 1)],
       'sele_name': "sele",
       'pin_fname': "",
@@ -1503,221 +1537,219 @@ class FFEA_viewer_control_window:
       'mat_sv': 1e-3,
       'mat_bv': 1e-3}
 
-     self.selected_index = 0
-     self.selected_blob = 0
-     self.selected_conformation = 0
+	self.selected_index = 0
+	self.selected_blob = 0
+	self.selected_conformation = 0
 
-     self.offset_x = 0
-     self.offset_y = 0
-     self.offset_z = 0
+	self.offset_x = 0
+	self.offset_y = 0
+	self.offset_z = 0
   
-     self.wontLoadTraj = 0 # if traj was not found or there was an error, we'll remember
+	self.wontLoadTraj = 0 # if traj was not found or there was an error, we'll remember
 
-     # Assume box exists
-     self.box_exists = True
-     self.box = np.array([-1.0,-1.0,-1.0])
-     self.springs = None
-     self.lj = None
+	# Assume box exists
+	self.box_exists = True
+	self.box = np.array([-1.0,-1.0,-1.0])
+	self.springs = None
+	self.lj = None
 
-     self.modifying_frame = False
+	self.modifying_frame = False
 
-     self.recording = 0
-     self.movie_dir = "__temp__FFEA_viewer_movie_dir__"
+	self.recording = 0
+	self.movie_dir = "__temp__FFEA_viewer_movie_dir__"
 
-     self.projection = "perspective"
+	self.projection = "perspective"
 
 
   def get_system_centroid(self, frameIndex = -1):
 
-     cent = np.array([0.0,0.0,0.0])
-     total_num_nodes = 0
-     bindex = -1
-     for b in self.blob_list:
-          bindex += 1
-          cindex = -1          
-          for c in b:
-               cindex += 1
-               if cindex == 0:
+	cent = np.array([0.0,0.0,0.0])
+	total_num_nodes = 0
+	bindex = -1
+	for b in self.blob_list:
+		bindex += 1
+		cindex = -1		
+		for c in b:
+			cindex += 1
+			if cindex == 0:
 
-                    x, y, z = c.calc_centroid(frameIndex)
-                    cent[0] += x * c.node.num_nodes
-                    cent[1] += y * c.node.num_nodes
-                    cent[2] += z * c.node.num_nodes
-                    total_num_nodes += c.node.num_nodes
-     cent *= 1.0 / total_num_nodes
-     return cent
+				x, y, z = c.calc_centroid(frameIndex)
+				cent[0] += x * c.node.num_nodes
+				cent[1] += y * c.node.num_nodes
+				cent[2] += z * c.node.num_nodes
+				total_num_nodes += c.node.num_nodes
+	cent *= 1.0 / total_num_nodes
+	return cent
 
   def draw_frame(self, index, scale = 1.0, draw_static = True):
 
-     # Blobs should only ever have at most 2 frames on them, the initial one and the currently loaded one. So...
-     frame_real_index = index
+	# Blobs should only ever have at most 2 frames on them, the initial one and the currently loaded one. So...
+	frame_real_index = index
 
-     if index > 0:
-          frame_stored_index = 1
-     else:
-          frame_stored_index = 0
-          
-     # World first
-     if self.display_flags['show_box'] != "No Box":
-          if self.box_exists == True:
-               self.draw_box(frame_real_index)
-          else:
-               print("Box does not exist")
+	if index > 0:
+		frame_stored_index = 1
+	else:
+		frame_stored_index = 0
+		
+	# World first
+	if self.display_flags['show_box'] != "No Box":
+		if self.box_exists == True:
+			self.draw_box(frame_real_index)
+		else:
+			print "Box does not exist"
 
-     if self.display_flags['show_springs'] == 1 and self.springs != None and self.springs.num_springs != 0:
-          self.draw_springs(frame_real_index)
+	if self.display_flags['show_springs'] == 1 and self.springs != None:
+		self.draw_springs(frame_real_index)
 
-     for i in range(self.script.params.num_blobs):
-          for j in range(self.script.params.num_conformations[i]):
-               frame_real_index = index
-               if self.blob_list[i][j].motion_state == "STATIC": 
-                    if draw_static == True:
-                      frame_real_index = "ALL"
-                    else:
-                      continue
-               self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags, scale = scale)
+	for i in range(self.script.params.num_blobs):
+		for j in range(self.script.params.num_conformations[i]):
+			frame_real_index = index
+			if self.blob_list[i][j].motion_state == "STATIC": 
+				if draw_static == True: frame_real_index = "ALL"
+				else: continue
+			self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags, scale = scale)
 
   def draw_box(self, f):
-     
-     # A cube has 8 vertices and 12 sides. A hypercube has 16 and 32! "Whoa, that's well cool Ben!" Yeah, ikr 
-     obj = [BEGIN, LINES]
-     
-     # If only outline, no need to loop over entire plane
-     #step = self.box
-     #step = [b for b in self.box]
-     if self.display_flags['show_box'] == "Simulation Box (outline)":
-          step = self.box
-          # Loop over the three planes
-          for i in range(2):
-               for j in range(2):
-                    
-                    # Get a pair of vertices
-                    verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+	
+	# A cube has 8 vertices and 12 sides. A hypercube has 16 and 32! "Whoa, that's well cool Ben!" Yeah, ikr 
+	obj = [BEGIN, LINES]
+	
+	# If only outline, no need to loop over entire plane
+	#step = self.box
+	#step = [b for b in self.box]
+	if self.display_flags['show_box'] == "Simulation Box (outline)":
+		step = self.box
+		# Loop over the three planes
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-          for i in range(2):
-               for j in range(2):
-                    
-                    # Get a pair of vertices
-                    verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-          for i in range(2):
-               for j in range(2):
-                    
-                    # Get a pair of vertices
-                    verts = [[j * step[0], 0.0, i * step[2]], [j * step[0], self.box[1], i * step[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
-               
-     elif self.display_flags['show_box'] == "Simulation Box (whole)":
-          for i in range(3):
-               step = [self.box[i] / self.script.params.es_N[i] for i in range(3)]
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[j * step[0], 0.0, i * step[2]], [j * step[0], self.box[1], i * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+			
+	elif self.display_flags['show_box'] == "Simulation Box (whole)":
+		for i in range(3):
+			step = [self.box[i] / self.script.params.es_N[i] for i in range(3)]
 
-          # Loop over the three planes
-          for i in range(self.script.params.es_N[0] + 1):
-               for j in range(self.script.params.es_N[1] + 1):
+		# Loop over the three planes
+		for i in range(self.script.params.es_N[0] + 1):
+			for j in range(self.script.params.es_N[1] + 1):
 
-                    # Get a pair of vertices
-                    verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+				# Get a pair of vertices
+				verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-          # Loop over the three planes
-          for i in range(self.script.params.es_N[1] + 1):
-               for j in range(self.script.params.es_N[2] + 1):
+		# Loop over the three planes
+		for i in range(self.script.params.es_N[1] + 1):
+			for j in range(self.script.params.es_N[2] + 1):
 
-                    # Get a pair of vertices
-                    verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+				# Get a pair of vertices
+				verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-          # Loop over the three planes
-          for i in range(self.script.params.es_N[0] + 1):
-               for j in range(self.script.params.es_N[2] + 1):
+		# Loop over the three planes
+		for i in range(self.script.params.es_N[0] + 1):
+			for j in range(self.script.params.es_N[2] + 1):
 
-                    # Get a pair of vertices
-                    verts = [[i * step[0], 0.0, j * step[2]], [i * step[0], self.box[1], j * step[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+				# Get a pair of vertices
+				verts = [[i * step[0], 0.0, j * step[2]], [i * step[0], self.box[1], j * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-                    
-                         
+				END
+					
 
-     obj.append(END)
-     cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box", f + 1)
+	obj.append(END)
+	cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box", f + 1)
 
   def draw_springs(self, f):
 
       for s in self.springs.spring:
-     # print(self.springs.spring.index(s))
+	# print(self.springs.spring.index(s))
          # Get correct frames
          correct_frame = [-1 for i in range(self.script.params.num_blobs)]
          for i in range(self.script.params.num_blobs):
             if self.blob_list[i][0].motion_state == "STATIC":
                correct_frame[i] = 0
-         # print("correct_frame: ", correct_frame
+         # print "correct_frame: ", correct_frame
 
          # Draw, because this spring exists
          try:
-       # s.print_details()
+	  # s.print_details()
            springjoints = np.array([self.blob_list[s.blob_index[i]][s.conformation_index[i]].frames[correct_frame[s.blob_index[i]]].pos[s.node_index[i]][0:3] for i in range(2)])
-        #print(springjoints)
+	   #print(springjoints)
          except(AttributeError):
          #  print("Whut!")
            continue
          except:
-           print("Something went wrong with this spring")
-          #     except(IndexError):
-               #     if s.blob_index[i] >= self.num_blobs:
-               #          print("fuck")
-               #     if s.conformation_index[i] >= self.num_conformations[i]:
-               #          print("fuck2")
-               #     if s.node_index[i] >= self.blob_list[i].
+           print "Something went wrong with this spring"
+		#	except(IndexError):
+			#	if s.blob_index[i] >= self.num_blobs:
+			#		print "fuck"
+			#	if s.conformation_index[i] >= self.num_conformations[i]:
+			#		print "fuck2"
+			#	if s.node_index[i] >= self.blob_list[i].
 
          # Axes for helix
          zax = springjoints[1] - springjoints[0]
          l = np.linalg.norm(zax)
          zax = zax / l
 
-      if np.fabs(np.dot(zax, np.array([1.0,0.0,0.0]))) < 1.0:
-        xax = np.cross(zax, np.array([1.0,0.0,0.0]))
-        yax = np.cross(zax, xax)
-      else:
-        xax = np.cross(zax, np.array([0.0,1.0,0.0]))
-        yax = np.cross(zax, xax)
+	 if np.fabs(np.dot(zax, np.array([1.0,0.0,0.0]))) < 1.0:
+                 xax = np.cross(zax, np.array([1.0,0.0,0.0]))
+                 yax = np.cross(zax, xax)
+	 else:
+	         xax = np.cross(zax, np.array([0.0,1.0,0.0]))
+	         yax = np.cross(zax, xax)
 
-      xax = xax / np.linalg.norm(xax)
-      yax = yax / np.linalg.norm(yax)
+         xax = xax / np.linalg.norm(xax)
+         yax = yax / np.linalg.norm(yax)
 
-      # Radius of helix (let original radius be 5A, poisson ratio = 0.01)
-      r = 2 - 0.01 * (l - s.l)
+         # Radius of helix (let original radius be 5A, poisson ratio = 0.01)
+         r = 2 - 0.01 * (l - s.l)
 
-      # We want 5 spins, say, so pitch:
-      c = l / (10 * np.pi)
+         # We want 5 spins, say, so pitch:
+         c = l / (10 * np.pi)
 
-      # Draw 40 nodes. Equation is r = r0 + (Rcos(t), Rsin(t), ct)
-      step = (10 * np.pi) / 40
-      obj = [ BEGIN, LINES, LINEWIDTH, 4.0 ]
-      # obj.extend( [ COLOR, 192/255.0, 192/255.0, 192/255.0 ] )
-      for i in range(40):
-        tstart = step * i
-        tend = step * (i + 1)
-        verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
-        obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-        verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
-        obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+         # Draw 40 nodes. Equation is r = r0 + (Rcos(t), Rsin(t), ct)
+         step = (10 * np.pi) / 40
+         obj = [ BEGIN, LINES, LINEWIDTH, 4.0 ]
+         # obj.extend( [ COLOR, 192/255.0, 192/255.0, 192/255.0 ] )
+         for i in range(40):
+            tstart = step * i
+            tend = step * (i + 1)
+            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
+            obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
+            obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
 
-      obj.append(END)
-      cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), f + 1)
+         obj.append(END)
+         cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), f + 1)
          
 
 

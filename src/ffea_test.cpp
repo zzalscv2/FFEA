@@ -88,6 +88,14 @@ int ffea_test::do_ffea_test(std::string filename){
         result = ffea_test::euler_beam();
     }
     
+    if (buffer.str().find("twist_bend_coil") != std::string::npos ){
+        result = ffea_test::twist_bend_coil();
+    }
+    
+    if (buffer.str().find("lower_sphere") != std::string::npos ){
+        result = ffea_test::lower_sphere();
+    }
+    
     return result;
 }
 
@@ -738,13 +746,14 @@ int ffea_test::connection_propagation(int mode, bool ends_at_rod){ // mode 0 = t
     current_rod->pinned_nodes[end_index] = true;
 
     float curr_sample_edge_vec[3];
-    for (int i=0; i<3; i++){curr_sample_edge_vec[i] = world->rod_blob_interface_array[0]->edge_vecs[0][i];}
-    rod::normalize(curr_sample_edge_vec, curr_sample_edge_vec);
     
     float rotmat[9];
     float edgevec_dot_prod_pre;
     
     if (mode == 0){ //twist
+        
+        for (int i=0; i<3; i++){curr_sample_edge_vec[i] = world->rod_blob_interface_array[0]->edge_vecs[0][i];}
+        rod::normalize(curr_sample_edge_vec, curr_sample_edge_vec);
         
         //twist end_p
         float end_p[3];
@@ -1130,3 +1139,103 @@ int ffea_test::euler_beam(){ // the euler beam test returns!
     
     return 0;
 }
+
+int ffea_test::twist_bend_coil(){
+    RngStream *rng;
+    rng = new RngStream[omp_get_max_threads()];
+    //int iterations = 5000000;
+    rod::Rod bending_beam("beam.rod", 0);
+    bending_beam.load_header("beam.rod");
+    bending_beam.load_contents("beam.rod");
+    bending_beam.set_units();
+    bending_beam.timestep *= 20;
+    bending_beam.kT = 1.12e-23/mesoDimensions::Energy;
+    bending_beam.viscosity /= 2;
+    
+    int end_index = bending_beam.num_elements-2;
+    
+    bending_beam.pinned_nodes[0] = true;
+    bending_beam.pinned_nodes[1] = true;
+    bending_beam.pinned_nodes[end_index+1] = true;
+    bending_beam.pinned_nodes[end_index] = true;
+    
+    float end_p[3];
+    float end_m_pre[3];
+    bending_beam.get_p(end_index, end_p, false);
+    for( int n=0; n<3; n++){end_m_pre[n] = bending_beam.current_m[n];}
+    rod::normalize(end_p, end_p);
+    rod::normalize(end_m_pre, end_m_pre);    
+
+    for (int i=0; i<110000; i++){
+        
+        float end_m[3];
+
+        rod::rodrigues_rotation(end_m_pre, end_p, (M_PI*(float)i)/100000.0, end_m);
+        
+        for( int n=0; n<3; n++){bending_beam.current_m[n+(end_index*3)] = end_m[n];}
+        if (i%400==0){std::cout << "Step " << i << ", m, = [" << end_m[0] << ", " << end_m[1] << ", " << end_m[2] << "], angle = " << (M_PI*2.0)/10000.0 << "p, = [" << end_p[0] << ", " << end_p[1] << ", " << end_p[2] <<  "]\n";}
+        
+        bending_beam.do_timestep(rng);
+        if (i%400==0){bending_beam.write_frame_to_file();}
+        
+    }
+    
+    bending_beam.kT = 0;
+    
+    for (int i=0; i<800000; i++){
+        
+        bending_beam.do_timestep(rng);
+        if (i%400==0){std::cout << "Step " << i+40000 << "\n";}
+        if (i%400==0){bending_beam.write_frame_to_file();}
+        
+    }
+    
+    return 0;
+
+}
+
+
+int ffea_test::lower_sphere(){
+    
+    World *world;
+    world = new World();
+    if(world->init("ndc80c_mt_multi.ffea", 0, 0, 1) == FFEA_ERROR) {
+        FFEA_error_text();
+        cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
+    }
+    
+    for (int i=0; i<1000; i++){
+        std::cout << "Sphere lowered.\n";
+        world->blob_array[7]->move(-0.1, 0, 0);
+        world->run();
+    }
+    
+    world->params.check *= 100;
+    world->params.num_steps *= 10000000000;
+    //world->params.dt *= 3;
+    
+    world->run();
+    
+    return 1;
+
+}
+
+
+//    int ffea_test::numerical_stability(){
+    
+//    World *world;
+//    world = new World();
+//    if(world->init("ndc80c_mt.ffea", 0, 0, 1) == FFEA_ERROR) {
+//        FFEA_error_text();
+//        cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
+//    }
+//    rod::dbg_print = true;
+//
+//    rod::Rod_blob_interface *interface1 = world->rod_blob_interface_array[0];
+//    rod::Rod_blob_interface *interface2 = world->rod_blob_interface_array[1];
+//
+//    for (int i=0; i<20000; i++){
+//        world->run(); // how about it's only 1 step?
+//
+//        
+//    }

@@ -15,7 +15,7 @@ int main(){
 
 import os
 import subprocess
-out = subprocess.check_output("gcc -shared -O3 -o "+os.path.dirname(os.path.realpath(__file__))+os.path.sep+"librodmath.so "+os.path.dirname(os.path.realpath(__file__))+os.path.sep+"rod_math_core.c", shell=True)
+out = subprocess.check_output("gcc -shared -fPIC -O3 -o "+os.path.dirname(os.path.realpath(__file__))+os.path.sep+"librodmath.so "+os.path.dirname(os.path.realpath(__file__))+os.path.sep+"rod_math_core.c", shell=True)
 dir_path = os.path.dirname(os.path.realpath(__file__))
 #os.system("echo '"+inlinec+"' | gcc -x -shared -o librodmath.so -O3")
 #os.system("echo -e '"+inlinec.replace("\n", "")+"' | gcc -xc -O3 -shared -o inline.so ")
