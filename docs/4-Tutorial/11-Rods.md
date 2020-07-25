@@ -1,13 +1,17 @@
 Using FFEA_rod {#rods}
 =========================
 
+This tutorial will teach you how to use KOBRA (FFEA_rod) to create rod structures and run simulations based on them. Unlike the regular FFEA tutorial, this won't focus on any particular structure, so please find some data to use! Any list of nodes in 3 dimensions will work (though you need some way to get them into a numpy array), but FFEA_rod provides an interface for reading in pdb files.
+
+Note: FFEA_rod only provides a Python API. This tutorial will assume a smattering of Python knowledge. IPython, or a Python IDE that implements IPython, is highly recommended.
+
 ## The FFEA_rod object
 
-You can create rods using the FFEA_rod python API. With FFEA installed, you can import it with
+You can create rods using the FFEA_rod python API. With the FFEA python API installed, you can import it with
 
 ```python
-import FFEA_rod # FFEA installed normally
-import ffeatools.modules.FFEA_rod # FFEA python paackage installed
+import ffeatools
+FFEA_rod = ffeatools.modules.FFEA_rod
 ```
 In order to manually create a rod, you can initialize a rod object without a filename:
 ```python
@@ -18,9 +22,11 @@ The attributes of the rod are stored in numpy `ndarray` objects. There are 3 dim
 * current_m - current vectors for the material frames.
 * equil_r - equilibrium configuration of the rod.
 * equil_m - equilibrium material frame of the rod.
-* perturbed x, y, z and twist energy, positive and negative - results from each stage of the numerical derivatives taken during the simulation. These are used for analysis.
+* perturbed x, y, z and twist energy, positive and negative - results from each stage of the numerical integrals taken during the simulation. These are used for analysis.
 * material_params - each node has the structure [stretch, twist, radius]. This mixes indices, as the stretch and radii are properties of elements, whereas the twist is the property of a node.
 * B_matrix - the parameter for the bending energy. Each element of each frame is a 4-element array specifying the contents of the 2x2 B matrix (the bending modulus).
+
+Note: all parameters are in S.I. units.
 
 Try accessing and modifying some of these now! To write out a newly-created rod,
 ```python
@@ -86,10 +92,10 @@ my_rod.current_m[0] = FFEA_rod.create_rod.rotate_material_frame(my_rod, rotate_f
 To set material parameters on the rod, use `FFEA_rod.rod_creator.set_params`. For example, with a known stretch constant, torsion constant, radius and isotropic B matrix:
 ```python
 # some sensible defaults
-stretch_constant = 3.5e-11
-twist_constant = 5e-29
-radius = 5e-9
-bend_constant = 3.5e-29
+stretch_constant = 3.5e-11 # N
+twist_constant = 5e-29 # N.m^2
+radius = 5e-9 # m
+bend_constant = 3.5e-29 # m^4.Pa
 FFEA_rod.rod_creator.set_params(my_rod, stretch_constant, torsion_constant, radius, bending_modulus=bend_constant)
 ```
 `set_params` also accepts the values of the young's modulus and radius to set the bending modulus, and you can specify a list of indices to apply these values to with the parameter `rod_segments`. Note again that the indexing will be off-by-one for properties specified at elements rather than nodes (such as the stretching constant). Sorry.
@@ -123,7 +129,7 @@ Rods can be included in FFEA script files either with or without other FFEA obje
 	<calc_kinetics = 0>
 	<vdw_type = steric>
 	<vdw_cutoff = 5e-10>
-   <inc_self_vdw = 0>
+	<inc_self_vdw = 0>
 	<vdw_steric_factor = 2e3>
 	<calc_es = 0>
 	<es_update = 4>
