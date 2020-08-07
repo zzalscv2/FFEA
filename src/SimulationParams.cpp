@@ -72,6 +72,8 @@ SimulationParams::SimulationParams() {
     // Initialised to zero or equivalent for later initialisation
     restart = -1;
     num_blobs = 0;
+    num_rods = 0;
+    num_interfaces = 0;
     num_conformations = NULL;
     num_states = NULL;
     state_array_size = 0;
@@ -108,6 +110,8 @@ SimulationParams::~SimulationParams() {
     num_steps = -1;
     check = 0;
     num_blobs = 0;
+    num_rods = 0;
+    num_interfaces = 0;    
     delete[] num_conformations;
     num_conformations = NULL;
     delete[] num_states;
@@ -242,6 +246,14 @@ int SimulationParams::assign(string lvalue, string rvalue) {
     } else if (lvalue == "num_blobs") {
         num_blobs = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_blobs << endl;
+
+    } else if (lvalue == "num_rods") {
+        num_rods = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_rods << endl;
+
+    } else if (lvalue == "num_couplings") {
+        num_interfaces = atoi(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << num_rods << endl;
 
     } else if (lvalue == "num_conformations") {
 
@@ -579,8 +591,8 @@ int SimulationParams::validate(int sim_mode) {
     if (num_steps < 0) {
         FFEA_ERROR_MESSG("Required: Number of time steps, 'num_steps', must be greater than or equal to 0.\n");
     }
-    if (num_blobs <= 0) {
-        FFEA_ERROR_MESSG("\tRequired: Number of Blobs, 'num_blobs', must be greater than 0.\n");
+    if (num_blobs <= 0 && num_rods <= 0) {
+        FFEA_ERROR_MESSG("\tRequired: Number of Blobs, 'num_blobs' or Number of rods, 'num_rods' must be greater than 0.\n");
     }
 
     if (kappa < 0) {

@@ -130,6 +130,11 @@ public:
     int update_internal_forces();
 
     /**
+     * Checks whether any of the elements have inverted or not
+     */
+    int check_inversion();
+
+    /**
      * Solves the EOM on the finite element mesh, updating the node positions and velocities by one time step
      */
     int update_positions();
@@ -321,6 +326,8 @@ public:
     // vector3 get_node(int index);
     // std::array<scalar,3> get_node(int index);
     void get_node(int index, arr3 &v);
+    
+    void get_node_0(int index, arr3 &v);
 
     void copy_node_positions(vector3 *nodes);
 

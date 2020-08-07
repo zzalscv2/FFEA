@@ -254,6 +254,9 @@ int tetra_element_linear::calc_shape_function_derivatives_and_volume(matrix3 J) 
     det = J[0][0] * dpsi[DPSI2_DX] + J[1][0] * dpsi[DPSI3_DX] + J[2][0] * dpsi[DPSI4_DX];
 
     // Check if element has inverted itself (determinant changed sign)
+ /*   if(index == 681) {
+	printf("J Dets: Last = %e Now = %e\n", last_det, det);
+    } */
     if (last_det * det < 0) {
         return FFEA_ERROR;
     }
@@ -562,7 +565,6 @@ void tetra_element_linear::zero_force() {
 }
 
 void tetra_element_linear::linearise_element() {
-
     n[4]->pos.x = .5 * (n[0]->pos.x + n[1]->pos.x);
     n[4]->pos.y = .5 * (n[0]->pos.y + n[1]->pos.y);
     n[4]->pos.z = .5 * (n[0]->pos.z + n[1]->pos.z);

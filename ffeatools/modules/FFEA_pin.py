@@ -140,10 +140,11 @@ class FFEA_pin:
 				f.write("%d\n" % (i))
 
 
-	def pin_radially(self, node, oindex, radius, top=None, linear=0):
+	def pin_radially(self, node, oindex, radius, top=None, linear=0, reset=1):
 		
 		# Reset first
-		self.reset()
+		if reset > 0:
+			self.reset()
 
 		# Pin all within radius
 		origin = node.pos[oindex]

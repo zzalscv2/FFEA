@@ -968,7 +968,7 @@ class Surface
 		}
 		
 		int clean() {
-			
+			printf("Cleaning...\n");
 			list<Face*>::iterator face_iterator, neighbour_iterator, temp_iterator;
 			//list<Face*> to_erase;
 			list<int> to_erase;
@@ -1145,7 +1145,7 @@ int main(int argc, char **argv) {
 	surf->coarsen(atof(argv[3]), argv[4], argv[5], limits);
 	
 	// Get rid of surface errors
-	surf->clean();
+	//surf->clean();
 
 	// Output surface filebuf
 	surf->write_to_file(argv[2]);

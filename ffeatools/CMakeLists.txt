@@ -70,7 +70,9 @@ set(PYMOL_FILES FFEA_analysis/pymol_plugin/Blob.py
                 modules/FFEA_exceptions.py 
                 modules/FFEA_kinetic_map.py
                 modules/FFEA_kinetic_rates.py
-                modules/FFEA_kinetic_states.py)
+                modules/FFEA_kinetic_states.py
+                modules/FFEA_rod.py
+		modules/FFEA_skeleton.py)
 file ( COPY ${PYMOL_FILES} DESTINATION "${FFEA_TAR_DIR}/FFEAplugin" )
 set ( FFEA_TAR_BALL "${FFEA_TAR_DIR}/FFEAplugin.tar.gz")
 set ( COMPRESSING TRUE )

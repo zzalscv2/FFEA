@@ -68,6 +68,7 @@ import FFEA_trajectory
 import FFEA_turbotrajectory
 import FFEA_surface
 import FFEA_pin, FFEA_vdw, FFEA_lj
+import FFEA_rod
 
 from numpy.random import randint as rint
 
@@ -808,239 +809,272 @@ class FFEA_viewer_control_window:
     # Build the blob objects one at a time
     #
      self.blob_list = [[None for j in range(p.num_conformations[i])] for i in range(p.num_blobs)]
+
+	idnum = 0
+	bindex = -1
+	for b in bl:
+		bindex += 1
+		cindex = -1
+		for c in b.conformation:
+			cindex += 1
+			ffea_id_string = "lol"
+			print "\nLoading blob " + str(bindex) + ", conformation " + str(cindex)
+			new_blob = Blob.Blob()
+			# try:
+			new_blob.load(idnum, bindex, cindex, self.script, self.display_flags)
+			# except:
+				# print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
+				# return
+
+			self.blob_list[bindex][cindex] = new_blob
+			new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
+			info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + c.motion_state + "\n"
+			add_blob_info = {'name': new_blob_name, 'info': info_string}
+			
+			idnum += 1
+	# Load some lj
+	try:
+		self.lj = self.script.load_lj()
+	except:
+		print("\nERROR: '" + self.script.params.vdw_forcefield_params + "' could not be loaded.")
+		print("\nERROR: Could not load system. Please try again.")
+		return
+
+	if (not self.lj.valid): 
+		print('Something went wrong initialising lennard-jones (lj) parameters')
+		print("\nERROR: Could not load system. Please try again.")
+		return
+
+	# Load some springs
+	if self.display_flags['show_springs'] == 1:
+		try:
+			self.springs = FFEA_springs.FFEA_springs(self.script.spring)
+		except:
+			sys.stdout.write("Springs could not be loaded. Continuing...")
+			sys.stdout.flush()
+			self.springs = None
+			
+	# Send binding sites to control
+	binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
+	for i in range(self.script.params.num_blobs):
+		for j in range(self.script.params.num_conformations[i]):
+			if self.blob_list[i][j].bsites != None:
+				binding_sites[i][j] = self.blob_list[i][j].bsites.num_binding_sites
+
+	# Rescale and translate initial system if necessary
+	self.global_scale = 1e-10	# angstroms cos pymol works in angstroms and FFEA works in SI
+	self.global_scale = 1.0 / self.global_scale
+
+	# Rescale blobs
+	for b in self.blob_list:
+		for c in b:
+			c.set_global_scale(self.global_scale)
+            
+    # Rescale rods
+	if len(self.script.rod) > 0:
+		for rod_num in range(len(self.script.rod)):
+			self.script.rod[rod_num].scale(self.global_scale)
+
+	# Move simulation into box, if necessary
+	world_centroid = np.array([0.0, 0.0, 0.0])
+	shift = np.array([0.0, 0.0, 0.0])
+	total_num_nodes = 0
+
+	# Load all initial blobs and get a global centroid. Set secondary blobs to have placeholder 'None' frames
+	bindex = -1	
+	for b in self.blob_list:
+		bindex += 1
+		cindex = -1
+		for c in b:
+			cindex += 1
+			if cindex == 0:
+		
+				c.set_nodes_as_frame()
+				x, y, z = c.calc_centroid(0)
+				world_centroid[0] += x * c.node.num_nodes
+				world_centroid[1] += y * c.node.num_nodes
+				world_centroid[2] += z * c.node.num_nodes
+				total_num_nodes += c.node.num_nodes
+			else:
+				c.set_dead_frame()
     
-     idnum = 0
-     bindex = -1
-     for b in bl:
-          bindex += 1
-          cindex = -1
-          for c in b.conformation:
-               cindex += 1
-               ffea_id_string = "lol"
-               print("\nLoading blob " + str(bindex) + ", conformation " + str(cindex))
-               new_blob = Blob.Blob()
-               # try:
-               new_blob.load(idnum, bindex, cindex, self.script, self.display_flags)
-               # except:
-                    # print("ERROR: Could not load Blob %d, conformation %d. Please try again." % (bindex, cindex))
-                    # return
+	rods_found = False
+	if len(self.script.rod) > 0:
+		print("Rods found in script file")
+		num_script_rods = 0
+		rods_found = True
+		for rod in self.script.rod:
+			num_script_rods+=1
+			rod_centroid = rod.calc_centroid()[0] # centroid only for the 0th frame
+			world_centroid[0] += rod_centroid[0] * rod.num_elements
+			world_centroid[1] += rod_centroid[1] * rod.num_elements
+			world_centroid[2] += rod_centroid[2] * rod.num_elements
+			total_num_nodes += rod.num_elements
+		
+		print("Number of rods: "+str(num_script_rods))
+	
+	if rods_found == False:
+		print("No rods found in script file")
 
-               self.blob_list[bindex][cindex] = new_blob
-               new_blob_name = ffea_id_string + "#" + str(bindex) + ", " + str(cindex)
-               info_string = "Name:\t" + ffea_id_string + "\nConformation:\t" + str(cindex) + "\nNodes:\t" + c.nodes + "\nTopology:\t" + c.topology + "\nSurface:\t" + c.surface + "\nVdW:\t" + c.vdw + "\npin:\t" + c.pin + "\nMotion State:\t" + c.motion_state + "\n"
-               add_blob_info = {'name': new_blob_name, 'info': info_string}
-               
-               idnum += 1
-                 
+	# Calculate global centroid
+	world_centroid *= 1.0 / total_num_nodes	
 
-     # Load some lj
-     try:
-          self.lj = self.script.load_lj()
-     except:
-          print("\nERROR: '" + self.script.params.vdw_forcefield_params + "' could not be loaded.")
-          print("\nERROR: Could not load system. Please try again.")
-          return
+	# Build the box:
+	# Do we need to calculate the size of the box? Double the rounded up size of the system
+	for i in range(3):
+		if p.es_N[i] < 1:
+			dims = self.get_system_dimensions(0)
+			for j in range(3):
+				p.es_N[j] = 2 * int(np.ceil(dims[j] / (self.global_scale*p.vdw_cutoff)))
+			break
 
-     if (not self.lj.valid): 
-          print('Something went wrong initialising lennard-jones (lj) parameters')
-          print("\nERROR: Could not load system. Please try again.")
-          return
+	self.box = p.vdw_cutoff * p.es_N
+	self.box_exists = True
+	
+		
+	# Rescale box
+	self.box *= self.global_scale
 
-     # Load some springs
-     if self.display_flags['show_springs'] == 1:
-          try:
-               self.springs = FFEA_springs.FFEA_springs(self.script.spring)
-          except:
-               sys.stdout.write("Springs could not be loaded. Continuing...")
-               sys.stdout.flush()
-               self.springs = None
-               
-     # Send binding sites to control
-     binding_sites = [[0 for j in range(self.script.params.num_conformations[i])] for i in range(self.script.params.num_blobs)]
-     for i in range(self.script.params.num_blobs):
-          for j in range(self.script.params.num_conformations[i]):
-               if self.blob_list[i][j].bsites != None:
-                    binding_sites[i][j] = self.blob_list[i][j].bsites.num_binding_sites
+	# Shift all blobs to center of box if necessary
+	shift = 0.5 * self.box - world_centroid
+	# if p.calc_vdw == 1 and p.move_into_box == 1:
+	if p.move_into_box == 1:
+		for b in self.blob_list:
+			b[0].frames[0].translate(shift)
+			if b[0].beads.pdb != None: b[0].beads.pdb.translate(shift) # beads only work for conf 0
+     # move rods into box
+     # note: FFEA only does this box thing for the first frame of a given trajectory!!!
+     # I can't get the box positioning to work for .node and .rod objects, but .rodtraj and .ftj works fine
+     # so this will stay commented out for the meantime.
+    	#if len(self.script.rod) > 0:
+    	#	for rod_num in range(len(self.script.rod)):
+    	#		self.script.rod[rod_num].translate(shift)
+    	print("Shift: "+str(shift))
+    		
 
-     # Rescale and translate initial system if necessary
-     self.global_scale = 1e-10     # angstroms cos pymol works in angstroms and FFEA works in SI
-     self.global_scale = 1.0 / self.global_scale
+	# Now, apply PBC if necessary
+	# if p.calc_vdw == 1 and self.display_flags['load_trajectory'] != "System (Plainly)":
+	if self.display_flags['load_trajectory'] != "System (Plainly)":
+		for b in self.blob_list:
+			trans = np.array([0.0,0.0,0.0])
+			cent = b[0].frames[0].calc_centroid()
+			print "Centroid = ", cent
+			if self.box_exists:
+				for i in range(3):
+					if cent[i] > self.box[i]:
+						trans[i] = -1 * self.box[i]
+					elif cent[i] < 0:
+						trans[i] = self.box[i]
 
-     # Rescale blobs
-     for b in self.blob_list:
-          for c in b:
-               c.set_global_scale(self.global_scale)
+				b[0].frames[0].translate(trans)
+				print "Translation = ", trans
 
-     # Move simulation into box, if necessary
-     world_centroid = np.array([0.0, 0.0, 0.0])
-     shift = np.array([0.0, 0.0, 0.0])
-     total_num_nodes = 0
-
-     # Load all initial blobs and get a global centroid. Set secondary blobs to have placeholder 'None' frames
-     bindex = -1     
-     for b in self.blob_list:
-          bindex += 1
-          cindex = -1
-          for c in b:
-               cindex += 1
-               if cindex == 0:
-          
-                    c.set_nodes_as_frame()
-                    x, y, z = c.calc_centroid(0)
-                    world_centroid[0] += x * c.node.num_nodes
-                    world_centroid[1] += y * c.node.num_nodes
-                    world_centroid[2] += z * c.node.num_nodes
-                    total_num_nodes += c.node.num_nodes
-               else:
-                    c.set_dead_frame()
-               
-
-
-     # Calculate global centroid
-     world_centroid *= 1.0 / total_num_nodes     
-
-     # Build the box:
-     # Do we need to calculate the size of the box? Double the rounded up size of the system
-     for i in range(3):
-          if p.es_N[i] < 1:
-               dims = self.get_system_dimensions(0)
-               for j in range(3):
-                    p.es_N[j] = 2 * int(np.ceil(dims[j] / (self.global_scale*p.vdw_cutoff)))
-               break
-
-     self.box = p.vdw_cutoff * p.es_N
-     self.box_exists = True
-     
-          
-     # Rescale box
-     self.box *= self.global_scale
-
-     # Shift all blobs to center of box if necessary
-     shift = 0.5 * self.box - world_centroid
-     # if p.calc_vdw == 1 and p.move_into_box == 1:
-     if p.move_into_box == 1:
-          for b in self.blob_list:
-               b[0].frames[0].translate(shift)
-               if b[0].beads.pdb != None: b[0].beads.pdb.translate(shift) # beads only work for conf 0
-              
-
-     # Now, apply PBC if necessary
-     # if p.calc_vdw == 1 and self.display_flags['load_trajectory'] != "System (Plainly)":
-     if self.display_flags['load_trajectory'] != "System (Plainly)":
-          for b in self.blob_list:
-               trans = np.array([0.0,0.0,0.0])
-               cent = b[0].frames[0].calc_centroid()
-               print("Centroid = ", cent)
-               if self.box_exists:
-                    for i in range(3):
-                         if cent[i] > self.box[i]:
-                              trans[i] = -1 * self.box[i]
-                         elif cent[i] < 0:
-                              trans[i] = self.box[i]
-
-                    b[0].frames[0].translate(trans)
-                    print("Translation = ", trans)
-
-         # Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
-     # Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
-         
+    	# Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
+	# Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
+    	
        
-     # Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
-     #if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
-     traj_fname = self.script.params.trajectory_out_fname
-     cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
-     cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
-     if self.display_flags['load_trajectory'] == "CGO":
-          if os.path.isfile(cgo_fname) == False:
-               print("No cached traj found at "+cgo_fname+", generating one...")
-               turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
-               turbotraj.populate_turbotraj_from_ftj(self.script.params.trajectory_out_fname)
-               turbotraj.create_cgo(self.script, self.display_flags)
-               turbotraj.dump_cgo()
-          self.load_cgo(cgo_fname, cgo_index_fname)
-          #cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
-     else:
-          self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
-          self.load_trajectory_thread.start()
-          waitForTrajToLoad = True
-          # self.load_trajectory(p.trajectory_out_fname) # serial
+	# Now load trajectory (always run this function, regardless of stuff. It returns if anything is wrong)
+	#if (p.trajectory_out_fname != None): # and (self.display_flags['load_trajectory'] == 1):
+	traj_fname = self.script.params.trajectory_out_fname
+	cgo_fname = traj_fname.split(".")[0]+"_cgo.npy"
+	cgo_index_fname = traj_fname.split(".")[0]+"_cgoindex.npy"
+	if self.display_flags['load_trajectory'] == "CGO":
+		if os.path.isfile(cgo_fname) == False:
+			print("No cached traj found at "+cgo_fname+", generating one...")
+			turbotraj = FFEA_turbotrajectory.FFEA_turbotrajectory()
+			turbotraj.populate_turbotraj_from_ftj(self.script.params.trajectory_out_fname)
+			turbotraj.create_cgo(self.script, self.display_flags)
+			turbotraj.dump_cgo()
+		self.load_cgo(cgo_fname, cgo_index_fname)
+		#cmd.load_cgo(turbotraj.cgo, self.display_flags['system_name'], frame)
+	elif self.display_flags:
+		try:
+    			self.load_trajectory_thread = threading.Thread(target=self.load_trajectory, args=(p.trajectory_out_fname, ))
+    			self.load_trajectory_thread.start()
+    			waitForTrajToLoad = True
+		except IOError:
+			print("An unspecified error occured while loading the trajectory.")
+		# self.load_trajectory(p.trajectory_out_fname) # serial
 
 
-     #
-     # Print info for the user that won't be deleted from the command line by the trajectory loading
-     #
-     if self.display_flags['show_springs'] == 1 and self.springs != None:
-          if self.script.params.calc_springs == 0 and self.springs.get_num_springs() > 0:
-               for b in self.script.blob:
-                    if b.solver == "CG_nomass":
-                         print("INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs.")
-                         break
-                    
-     if waitForTrajToLoad: 
-          self.load_trajectory_thread.join()
+	#
+	# Print info for the user that won't be deleted from the command line by the trajectory loading
+	#
+	if self.display_flags['show_springs'] == 1 and self.springs != None:
+		if self.script.params.calc_springs == 0 and self.springs.get_num_springs() > 0:
+			for b in self.script.blob:
+				if b.solver == "CG_nomass":
+					print "INFO: Springs have been drawn but calc_springs == 0 in your script. Please change for ffea simulation if you want to use springs."
+					break
+				
+	if waitForTrajToLoad: 
+		self.load_trajectory_thread.join()
 
-     # Requires knowledge of whole trajectory
-     if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
-          if self.display_flags["show_inverted"] == 1:  # Show inverted elements
-               self.draw_inverted_elements()
-          if self.display_flags["show_beads"] == "Trajectory": # Load the trajectory of the beads.
-               if self.script.params.beads_out_fname != "":
-                    beads_traj_name = self.display_flags['system_name'] + "_b"
-                    cmd.load(self.script.params.beads_out_fname, beads_traj_name)
-                    cmd.hide("everything", beads_traj_name)
-                    cmd.show("spheres", beads_traj_name)
-               else:
-                    print("Beads trajectory won't load: beads_out_fname was not defined in the .ffea input file")
+	# Requires knowledge of whole trajectory
+	if self.traj != None and self.display_flags['load_trajectory'] == "Trajectory" and self.wontLoadTraj != 1:
+		if self.display_flags["show_inverted"] == 1:  # Show inverted elements
+			self.draw_inverted_elements()
+		if self.display_flags["show_beads"] == "Trajectory": # Load the trajectory of the beads.
+			if self.script.params.beads_out_fname != "":
+				beads_traj_name = self.display_flags['system_name'] + "_b"
+				cmd.load(self.script.params.beads_out_fname, beads_traj_name)
+				cmd.hide("everything", beads_traj_name)
+				cmd.show("spheres", beads_traj_name)
+			else:
+				print "Beads trajectory won't load: beads_out_fname was not defined in the .ffea input file"
 
+	# Load up ye rods
+	if len(self.script.rod) > 0:
+		for rod_num in range(len(self.script.rod)):
+			self.load_rod(self.script.rod[rod_num], rod_num)
 
-        # Center everything, zoom and sort clipping plane
-     cmd.center()
-     cmd.zoom()
+   	# Center everything, zoom and sort clipping plane
+	cmd.center()
+ 	cmd.zoom()
 
-     # deactivate load options:
-     self.check_button_show_springs.config(state=DISABLED)
-     self.check_button_show_pinned.config(state=DISABLED)
-     self.check_button_show_inverted.config(state=DISABLED)
-     self.check_button_show_danger.config(state=DISABLED)
+	# deactivate load options:
+	self.check_button_show_springs.config(state=DISABLED)
+	self.check_button_show_pinned.config(state=DISABLED)
+	self.check_button_show_inverted.config(state=DISABLED)
+	self.check_button_show_danger.config(state=DISABLED)
 
-     self.text_button_system_name.config(state=DISABLED)
-     self.random_name_button.config(state=DISABLED)
-     self.spinbox_material_param.config(state=DISABLED)
-     self.om_show_mesh.config(state=DISABLED)
-     self.index_option.config(state=DISABLED)
-     self.om_show_box.config(state=DISABLED)
-     self.om_load_sfa.config(state=DISABLED)
-     self.om_do_load_trajectory.config(state=DISABLED)
-     self.load_button.config(state=DISABLED)
+	self.text_button_system_name.config(state=DISABLED)
+	self.random_name_button.config(state=DISABLED)
+	self.spinbox_material_param.config(state=DISABLED)
+	self.om_show_mesh.config(state=DISABLED)
+	self.index_option.config(state=DISABLED)
+	self.om_show_box.config(state=DISABLED)
+	self.om_load_sfa.config(state=DISABLED)
+	self.om_do_load_trajectory.config(state=DISABLED)
+	self.load_button.config(state=DISABLED)
 
-     if self.load_sfa.get() != "None":
+	if self.load_sfa.get() != "None":
 
-          # activate Editor options:
-          self.text_button_sele_name.config(state="normal")
+		# activate Editor options:
+		self.text_button_sele_name.config(state="normal")
 
-          self.text_button_mat_d.config(state="normal")
-          self.text_button_mat_sm.config(state="normal")
-          self.text_button_mat_bm.config(state="normal")
-          self.text_button_mat_sv.config(state="normal")
-          self.text_button_mat_bv.config(state="normal")
-          self.load_mat_button.config(state="normal")
+		self.text_button_mat_d.config(state="normal")
+		self.text_button_mat_sm.config(state="normal")
+		self.text_button_mat_bm.config(state="normal")
+		self.text_button_mat_sv.config(state="normal")
+		self.text_button_mat_bv.config(state="normal")
+		self.load_mat_button.config(state="normal")
 
-          self.load_pin_button.config(state="normal")
+		self.load_pin_button.config(state="normal")
 
-          self.spinbox_vdw_type0.config(state="normal")
-          self.spinbox_vdw_type1.config(state="normal")
+		self.spinbox_vdw_type0.config(state="normal")
+		self.spinbox_vdw_type1.config(state="normal")
 
-          self.load_vdw_button.config(state="normal")
+		self.load_vdw_button.config(state="normal")
 
-          self.text_button_lj_eps.config(state="normal")
-          self.text_button_lj_r0.config(state="normal")
+		self.text_button_lj_eps.config(state="normal")
+		self.text_button_lj_r0.config(state="normal")
 
-          self.load_lj_button.config(state="normal")
-     else:
-          self.root.destroy()
+		self.load_lj_button.config(state="normal")
+	else:
+		self.root.destroy()
 
-     print("System loaded in ", time.time() - tbegin, "s.")
-
+	print "System loaded in ", time.time() - tbegin, "s."
 
   def get_normal(self, node0, node1, node2):
      ax = node1[0] - node0[0]
@@ -1059,7 +1093,9 @@ class FFEA_viewer_control_window:
       for frame in range(len(cgo_index)):
           cmd.load_cgo(cgo[frame], cgo_index[frame][0], str(cgo_index[frame][1]))
 
+
   def load_turbotrajectory(self, turbotraj):
+    warnings.warn("DEPRECATION WARNING: old turbotraj loader.")
       
     def setup(self, turbotraj):
         frames = range(len(turbotraj.turbotraj[0][0]))
@@ -1096,6 +1132,62 @@ class FFEA_viewer_control_window:
     # in each blob->conformation, consult the surface file
     # for each surf.face.n, grab the points at that index and draw a trinagle with them
     return
+
+  def load_rod(self, rod, rod_num=0):
+    
+    def rescale_m(rod):
+        m_lengths = np.linalg.norm(rod.current_m, axis=2)
+        
+        avg_pi = 0
+        pi = rod.get_p_i(rod.current_r)
+        for frame in pi:
+            for p in range(len(frame)):
+                avg_pi += np.linalg.norm(frame[p])
+        avg_pi = avg_pi / (( len(pi)*len(pi[0]) ))
+        
+        m_scale = avg_pi / m_lengths
+        for frame in range(len(rod.current_m)):
+            for m_idx in range(len(rod.current_m[frame])):
+                rod.current_m[frame][m_idx] *= m_scale[frame][m_idx]
+        return rod
+        
+    def get_avg_lengths(rod):
+        # Get scale factor for ei
+        avg_pi = 0
+        pi = rod.get_p_i(rod.current_r)
+        for frame in pi:
+            for p in range(len(frame)):
+                avg_pi += np.linalg.norm(frame[p])
+        avg_pi = avg_pi / (( len(pi)*len(pi[0]) ))
+        
+        # Get scale factor for m
+        avg_m = 0
+        for frame in rod.current_m:
+            for m in range(len(frame)-1):
+                avg_m += np.linalg.norm(frame[m])
+        avg_m = avg_m / (( len(rod.current_m)*len(rod.current_m[0]) ))
+        
+        print avg_m, avg_pi
+        return avg_m, avg_pi
+    
+    #avg_m, avg_p = get_avg_lengths(rod)
+    
+    # Scale the material frame to be a similar size to the rod elements
+    #rod.current_m *= (avg_m/avg_p)/np.sqrt(2)
+    rod = rescale_m(rod)
+    
+    # units note: radii are arbitrary so far. the *10**10 is to go from SI to angstroms (I should remove this after I add proper scaling)
+    for i in range(len(rod.current_r)):
+      line = []
+      for j in range(len(rod.current_r[i])-1):
+        line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, 0, 1, 0, 0, 1, 0 ]
+        # material frame in center of each element
+        mid_x, mid_y, mid_z = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2, (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2, (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
+        line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 4, 0, 0, 1, 0, 0, 1 ]
+#        print("frame "+str(i)+" element "+str(j)+"= "+str(line))
+#        print(line)
+      cmd.load_cgo(line, self.display_flags['system_name']+"_rod_"+str(rod_num), i)
+
 
   def call_add_node_pseudoatoms(self):
      if self.display_flags['load_trajectory'] == "System (Plainly)" or self.display_flags['load_trajectory'] == "CGO" or self.wontLoadTraj == 1:
@@ -1519,82 +1611,82 @@ class FFEA_viewer_control_window:
                self.blob_list[i][j].draw_frame(frame_stored_index, frame_real_index, self.display_flags, scale = scale)
 
   def draw_box(self, f):
-     
-     # A cube has 8 vertices and 12 sides. A hypercube has 16 and 32! "Whoa, that's well cool Ben!" Yeah, ikr 
-     obj = [BEGIN, LINES]
-     
-     # If only outline, no need to loop over entire plane
-     #step = self.box
-     #step = [b for b in self.box]
-     if self.display_flags['show_box'] == "Simulation Box (outline)":
-          step = self.box
-          # Loop over the three planes
-          for i in range(2):
-               for j in range(2):
-                    
-                    # Get a pair of vertices
-                    verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-          for i in range(2):
-               for j in range(2):
-                    
-                    # Get a pair of vertices
-                    verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+	# A cube has 8 vertices and 12 sides. A hypercube has 16 and 32! "Whoa, that's well cool Ben!" Yeah, ikr 
+	obj = [BEGIN, LINES]
+	
+	# If only outline, no need to loop over entire plane
+	#step = self.box
+	#step = [b for b in self.box]
+	if self.display_flags['show_box'] == "Simulation Box (outline)":
+		step = self.box
+		# Loop over the three planes
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-          for i in range(2):
-               for j in range(2):
-                    
-                    # Get a pair of vertices
-                    verts = [[j * step[0], 0.0, i * step[2]], [j * step[0], self.box[1], i * step[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
-               
-     elif self.display_flags['show_box'] == "Simulation Box (whole)":
-          for i in range(3):
-               step = [self.box[i] / self.script.params.es_N[i] for i in range(3)]
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-          # Loop over the three planes
-          for i in range(self.script.params.es_N[0] + 1):
-               for j in range(self.script.params.es_N[1] + 1):
+		for i in range(2):
+			for j in range(2):
+				
+				# Get a pair of vertices
+				verts = [[j * step[0], 0.0, i * step[2]], [j * step[0], self.box[1], i * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+			
+	elif self.display_flags['show_box'] == "Simulation Box (whole)":
+		for i in range(3):
+			step = [self.box[i] / self.script.params.es_N[i] for i in range(3)]
 
-                    # Get a pair of vertices
-                    verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+		# Loop over the three planes
+		for i in range(self.script.params.es_N[0] + 1):
+			for j in range(self.script.params.es_N[1] + 1):
 
-          # Loop over the three planes
-          for i in range(self.script.params.es_N[1] + 1):
-               for j in range(self.script.params.es_N[2] + 1):
+				# Get a pair of vertices
+				verts = [[i * step[0], j * step[1], 0.0], [i * step[0], j * step[1], self.box[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-                    # Get a pair of vertices
-                    verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+		# Loop over the three planes
+		for i in range(self.script.params.es_N[1] + 1):
+			for j in range(self.script.params.es_N[2] + 1):
 
-          # Loop over the three planes
-          for i in range(self.script.params.es_N[0] + 1):
-               for j in range(self.script.params.es_N[2] + 1):
+				# Get a pair of vertices
+				verts = [[0.0, i * step[1], j * step[2]], [self.box[0], i * step[1], j * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-                    # Get a pair of vertices
-                    verts = [[i * step[0], 0.0, j * step[2]], [i * step[0], self.box[1], j * step[2]]]
-                    
-                    for l in range(2):
-                         obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
+		# Loop over the three planes
+		for i in range(self.script.params.es_N[0] + 1):
+			for j in range(self.script.params.es_N[2] + 1):
 
-                    
-                         
+				# Get a pair of vertices
+				verts = [[i * step[0], 0.0, j * step[2]], [i * step[0], self.box[1], j * step[2]]]
+				
+				for l in range(2):
+					obj.extend([VERTEX, verts[l][0], verts[l][1], verts[l][2]])
 
-     obj.append(END)
-     cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box", f + 1)
+				END
+					
+
+	obj.append(END)
+	cmd.load_cgo(obj, self.display_flags['system_name'] +"_Simulation_Box", f + 1)
 
   def draw_springs(self, f):
 

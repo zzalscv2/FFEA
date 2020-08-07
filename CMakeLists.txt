@@ -31,7 +31,7 @@ set(VERSION "2")
 set(MINOR   "6")
 set(PATCH   "0")
 set(PACKAGE_VERSION "${VERSION}.${MINOR}.${PATCH}")
-set(FFEA_DEVEL "FALSE")
+set(FFEA_DEVEL "TRUE")
 if (FFEA_DEVEL STREQUAL "TRUE")
   add_definitions(-DFFEA_DEVEL)
 endif (FFEA_DEVEL STREQUAL "TRUE")
@@ -56,6 +56,9 @@ option(USE_PACK "Add generic automatic compiler flags" OFF)
 mark_as_advanced(USE_PACK)
 set(USE_PACK_DIST "RPM" CACHE STRING "accepted values are RPM and DEB")
 mark_as_advanced(USE_PACK_DIST)
+
+# Debug Build
+option(USE_DEBUG "Add debug compiler flags" OFF)
 
 set(BUILD_DOC "TRY" CACHE STRING "ONLY; YES; TRY; NO")
 
@@ -194,7 +197,7 @@ endif(OPENMP_FOUND)
 # pg++: 13.2 crashes with flag -std=c++0x, besides it does not support
 #         the latest standard ("cannot open source file "future"). 
 # MSVC: does not need any flag.
-include(cmake/CheckForCXX11Features.cmake)
+#include(cmake/CheckForCXX11Features.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_COMPILER_FLAGS}")
 if (USE_FUTURE)
   if (HAS_CXX11_FUTURE)
@@ -286,8 +289,8 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 
 # 9 ### PYTHON ######
-find_package(PythonInterp REQUIRED)
-# python will be used to run some tests.
+find_package(PythonInterp 2.7 REQUIRED)
+# python will be used to run some f.
 # Now look for NumPy
 execute_process(
     COMMAND "${PYTHON_EXECUTABLE}" -c "from __future__ import print_function\ntry:\n\t import numpy\n\t print('OK',end=\"\")\nexcept:\n\t print('FAIL',end=\"\")"
@@ -303,16 +306,17 @@ endif  ("${NUMPY_FOUND}" STREQUAL "OK")
 
 
 # 10 ### FAST! ##########
-if (NOT USE_PACK)
+if (NOT USE_DEBUG)
+ if (NOT USE_PACK)
   if (USE_FAST)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
       if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.8")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -ffast-math -fipa-pta")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -ffast-math -fipa-pta")
       else(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.8")
         if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "7.0")
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -fipa-pta -march=native")
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -ffast-math -fipa-pta -march=native")
         else(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "7.0")
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -march=native")
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -ffast-math -march=native")
         endif (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "7.0")
       endif(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.8")
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
@@ -328,7 +332,22 @@ else (NOT USE_PACK)
   if (USE_FAST)
       message(STATUS "USE_FAST changed to USE_PACK!")
   endif(USE_FAST)
-endif(NOT USE_PACK)
+ endif(NOT USE_PACK)
+endif(NOT USE_DEBUG)
+
+#
+# Debug last, to overwrite everything else
+#
+if (USE_DEBUG)
+	set(CMAKE_BUILD_TYPE Debug)
+
+	# Just in case
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb3")
+
+	# Let the user know what mayhem they may have caused
+	message(STATUS "\n\tDebug mode enabled\n")
+
+endif (USE_DEBUG)
 
 message(STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}")
 get_directory_property( DirDefs COMPILE_DEFINITIONS )
@@ -367,6 +386,7 @@ enable_testing()
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/consistency")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/physics")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tests/ffeatools")
+add_subdirectory("${PROJECT_SOURCE_DIR}/tests/rods")
 set(IGNORE_NUMPY_TESTS "")
 if (${NUMPY_FOUND} STREQUAL "FAIL")
   set(IGNORE_NUMPY_TESTS 

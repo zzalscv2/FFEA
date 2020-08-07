@@ -65,3 +65,4 @@ from FFEA_topology import FFEA_topology as topology
 from FFEA_trajectory import FFEA_trajectory as trajectory
 from FFEA_vdw import FFEA_vdw as vdw
 from FFEA_lj import FFEA_lj as lj
+from rod import __init__

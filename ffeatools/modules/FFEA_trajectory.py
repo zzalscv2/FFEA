@@ -48,7 +48,7 @@ class FFEA_trajectory:
 
 		# Test file exists
 		if not path.exists(fname):
-			raise IOError("No trajectory found at that location")
+			print("No trajectory found at that location")
 	
 		# Clear everything for beginning
 		self.reset()

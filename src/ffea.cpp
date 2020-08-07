@@ -39,6 +39,7 @@
 #include "Face.h"
 #include "Blob.h"
 #include "World.h"
+#include "ffea_test.h"
 
 #ifdef USE_MPI
 #include "mpi.h"
@@ -57,8 +58,8 @@ int main(int argc, char *argv[])
     cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
     //cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
     // cout << " Version:\tSuper Saiyan " << FFEA_MASCOT << " " << FFEA_VERSION << "(Version " << FFEA_VERSION << ")" << endl;
-    cout << "\tCoding:   Albert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk),\n" << endl;
-    cout << "\tTheory:   Oliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou\n" << endl;
+    cout << "\tCoding:   Albert Solernou (a.solernou@leeds.ac.uk), Ben Hanson (py09bh@leeds.ac.uk), Robin Richardson (pyrar@leeds.ac.uk), Rob Welch (py12rw@leeds.ac.uk)\n" << endl;
+    cout << "\tTheory:   Oliver Harlen, Sarah Harris, Robin Oliver, Daniel Read, Robin Richardson, Ben Hanson, Albert Solernou, Rob Welch\n" << endl;
 
     print_ffea_version(stdout);
     print_ffea_compilation_details(stdout);
@@ -147,6 +148,14 @@ int main(int argc, char *argv[])
     fs_script_fname = canonicalPath / fs_script_fname.filename();
     script_fname = fs_script_fname.string();
     cout << "\tInput FFEA script - " << script_fname << "\n\n";
+
+    // todo: check to see if the input file is a test script, if so, return the result from the test it specifies.
+    std::string testscript_extension = "ffeatest";
+    if((script_fname.size()>=testscript_extension.size()) && equal(testscript_extension.rbegin(), testscript_extension.rend(), script_fname.rbegin())){
+        cout << "Test script detected. Entering test mode.\n";
+        int test_return_value = ffea_test::do_ffea_test(script_fname);
+        return test_return_value;
+    }
 
     //The system of all proteins, electrostatics and water
     World *world;
@@ -337,7 +346,10 @@ int main(int argc, char *argv[])
 
     /* Delete the world (oh no!) */
     cout << "Deleting world..." << endl;
-    delete world;
+    if (myreturn != FFEA_ERROR){
+        std::cout << "Exiting gracefully...\n";
+        //delete world;
+    }
 #ifdef USE_MPI
     st = MPI::Wtime();
     et = MPI::Wtime()-st;

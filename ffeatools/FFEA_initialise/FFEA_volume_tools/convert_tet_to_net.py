@@ -24,7 +24,11 @@
 import argparse as _argparse
 import FFEA_node as _FFEA_node, FFEA_topology as _FFEA_topology, FFEA_surface as _FFEA_surface
 import sys
-import __builtin__
+try:
+    import __builtin__
+except:
+    import builtins as __builtin__
+
 from os.path import splitext
 from os.path import exists
 
@@ -71,11 +75,11 @@ def convert_tet_to_net(input_fnames, output_fname):
             surf = _FFEA_surface.FFEA_surface(f)
     
     if output_fname == None:
-	print("\tOutput filename not found. Creating default output filename...")
-	output_fname = splitext(input_fnames[0])[0] + ".vol"
-	if exists(output_fname):
-		print("\tDefault output filename already exists. Please supply your own filename (which will be overwritten if it exists")
-		raise IOError
+        print("\tOutput filename not found. Creating default output filename...")
+        output_fname = splitext(input_fnames[0])[0] + ".vol"
+        if exists(output_fname):
+             print("\tDefault output filename already exists. Please supply your own filename (which will be overwritten if it exists")
+             raise IOError
 
     # Now, write them all to file
     fout = open(output_fname, "w")
@@ -94,6 +98,6 @@ def convert_tet_to_net(input_fnames, output_fname):
 if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
     args = parser.parse_args()
     try:
-	convert_tet_to_net(args.i, args.o)
+        convert_tet_to_net(args.i, args.o)
     except IOError:
-	parser.print_help()
+        parser.print_help()

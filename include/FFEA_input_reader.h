@@ -65,7 +65,7 @@ class FFEA_input_reader {
 
 		/** Split string around delim and return as scalars */ 
 		int split_string(string input, scalar *output, string delim);
-
+        
 	private:
 
 		string buf_string;

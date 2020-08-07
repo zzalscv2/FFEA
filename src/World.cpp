@@ -30,6 +30,7 @@ World::World() {
 
     // Initialise everything to zero
     blob_array = NULL;
+    rod_array = NULL;
     spring_array = NULL;
     kinetic_map = NULL;
     kinetic_return_map = NULL;
@@ -84,6 +85,8 @@ World::~World() {
     blob_array = NULL;
     delete[] active_blob_array;
     active_blob_array = NULL;
+    delete[] rod_array;
+    rod_array = NULL;
 
     delete[] spring_array;
     spring_array = NULL;
@@ -166,7 +169,7 @@ World::~World() {
     vector3_set_zero(L);
     vector3_set_zero(CoM);
     vector3_set_zero(CoG);
-    rmsd = 0.0;
+    rmsd = 0.0; 
 
 }
 
@@ -374,7 +377,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             }
             for (int j=0; j<6; j++) {
                 try {
-                    Seeds[cnt_seeds][j] = stol(vline[j]);
+                    Seeds[cnt_seeds][j] = stoul(vline[j]);
                 } catch (invalid_argument& ia) {
                     FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
                 }
@@ -395,7 +398,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             }
             for (int j=0; j<6; j++) {
                 try {
-                    Seeds[cnt_seeds][j] = stol(vline[j]);
+                    Seeds[cnt_seeds][j] = stoul(vline[j]);
                 } catch (invalid_argument& ia) {
                     FFEA_ERROR_MESSG("Error reading seeds as integers: %s\n", ia.what());
                 }
@@ -461,7 +464,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.ssint_cutoff);
         params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.ssint_cutoff);
     }
-
+    
     // Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
     box_dim.x = params.ssint_cutoff * params.es_N_x;
     box_dim.y = params.ssint_cutoff * params.es_N_y;
@@ -476,14 +479,34 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             active_blob_array[i]->move(shift.x, shift.y, shift.z);
             active_blob_array[i]->calc_all_centroids();
         }
+        float shift_rod[3] = {(float)shift.x, (float)shift.y, (float)shift.z}; // this class is some historical junk
+        for (i = 0; i < params.num_rods; i++) {
+            if (rod_array[i]->restarting == false){
+                rod_array[i]->translate_rod(rod_array[i]->current_r, shift_rod);
+                rod_array[i]->translate_rod(rod_array[i]->equil_r, shift_rod);
+                rod_array[i]->write_frame_to_file(); // rod traj contains initial state but positioned in box
+            }
+        }
+            // todo: for each attachment, move the attachment_node_pos by shift
+        for(i = 0; i< params.num_interfaces; i++){
+            //for(int j=0; j<3; j++){rod_blob_interface_array[i]->attachment_node_pos[j] += shift_rod[j];}
+            rod_blob_interface_array[i]->update_internal_state(true, true);
+//            if(rod::dbg_print){rod::print_array("shifted interface position", rod_blob_interface_array[i]->attachment_node_pos_equil, 3);}
+            
+        }
+            
+        if(rod::dbg_print){rod::print_array("shift", shift_rod, 3);}
     }
+        
     // Now everything has been moved into boxes etc, save all initial positions
     for(i = 0; i < params.num_blobs; ++i) {
         for(j = 0; j < params.num_conformations[i]; ++j) {
             blob_array[i][j].set_pos_0();
         }
     }
-
+    for (int i=0; i<params.num_interfaces; i++){
+        rod_blob_interface_array[i]->update_J_0();
+    }
 
     // If not restarting a previous simulation, create new trajectory and measurement files. But only if full simulation is happening!
     if(mode == 0) {
@@ -856,7 +879,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
 
     }
-
+    
     // Check if there are static blobs: 
     bool there_are_static_blobs = false;
     for (i = 0; i < params.num_blobs; i++) {
@@ -982,7 +1005,6 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             J_Gamma[i] = 0;
     }
 
-
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     printf("Now initialised with 'within-blob parallelisation' (FFEA_PARALLEL_WITHIN_BLOB) on %d threads.\n", num_threads);
 #endif
@@ -1053,7 +1075,7 @@ int World::get_smallest_time_constants() {
             return FFEA_ERROR;
         }
         cout << "done!" << flush;
-
+	//cout << K * (mesoDimensions::force / mesoDimensions::velocity) << endl;
         // Build elasticity matrix, A
         cout << "\r\t\tCalculating the Elasticity Matrix, A (task 2/5)..." << flush;
         if(active_blob_array[i]->build_linear_node_elasticity_matrix(&A) == FFEA_ERROR) {
@@ -1470,8 +1492,8 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 	// Check this is allowed
 	if(num_modes > 3 * num_nodes - 6) {
 		cout << "\n\t\t" << num_modes << " unavailable for only " << num_nodes << " linear nodes. Deafulting to 3N-6 = " << 3 * num_nodes - 6 << " modes." << endl << endl; 
+		num_modes = 3 * num_nodes - 6;
 	}
-	num_modes = 3 * num_nodes - 6;
 
         Eigen::SparseMatrix<scalar> K(num_rows, num_rows);
 
@@ -1541,7 +1563,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
             dx = max.z - min.z;
         }
 
-        dx /= 20.0;
+        dx /= 10.0;
 
         // Make some trajectories (ignoring the first 6)
         // Firstly, normalise the first num_modes eigenvectors
@@ -1581,7 +1603,7 @@ int World::dmm(set<int> blob_indices, int num_modes) {
 
         // Get a filename
         evals_out_fname = base + "_FFEAdmm_blob" + bi.str() + ".evals";
-        evecs_out_fname = base + "_FFEA*dmm_blob" + bi.str() + ".evecs";
+        evecs_out_fname = base + "_FFEAdmm_blob" + bi.str() + ".evecs";
 
         print_evecs_to_file(evecs_out_fname, R, num_rows, num_modes);
         print_evals_to_file(evals_out_fname, esAhat.eigenvalues(), num_modes, 1.0);
@@ -1779,6 +1801,7 @@ int World::dmm_rp(set<int> blob_indices, int num_modes) {
  * Update entire World for num_steps time steps
  * */
 int World::run() {
+
     int es_count = params.es_update;
     scalar wtime = omp_get_wtime();
 #ifdef BENCHMARK
@@ -1813,7 +1836,6 @@ int World::run() {
             } else
                 es_count++;
         } // es_update will turn to false at the begining of next timestep
-
 
         // Zero the force across all blobs
 #ifdef USE_OPENMP
@@ -1887,8 +1909,6 @@ int World::run() {
             if (es_update) active_blob_array[i]->calc_centroids_and_normals_of_all_faces();
         }
 
-
-
         if (es_update) {
             // REFRESH LINKED LISTS:
             // Refresh the VdW-LinkedList
@@ -1930,6 +1950,17 @@ int World::run() {
 
         // Apply springs directly to nodes
         apply_springs();
+                        
+        // Do rods
+        for (int i=0; i<params.num_rods; i++){
+            rod_array[i]->do_timestep(rng);
+        }
+            
+        // Rod-blob interface
+        for (int i=0; i<params.num_interfaces; i++){
+            rod_blob_interface_array[i]->do_connection_timestep();
+        }
+
 
 #ifdef FFEA_PARALLEL_FUTURE
         // Get the thread updating the VdW-LinkedLists if it has finished.
@@ -1958,8 +1989,6 @@ int World::run() {
         time1 += wtime2 - wtime1;
 #endif
 
-
-
 #ifdef FFEA_PARALLEL_FUTURE
         // Get the thread updating the VdW-LinkedLists if it has finished.
         // #pragma omp master // Then a single thread does the catching and swapping
@@ -1969,7 +1998,6 @@ int World::run() {
         // #pragma omp barrier // the barrier holds people off, before catching the thread
 #endif
 
-
         // Calculate the VdW forces:
         if (params.calc_ssint == 1 || params.calc_steric == 1) {
            vdw_solver->solve(blob_corr); // blob_corr == NULL if force_pbc = 0.
@@ -1977,7 +2005,6 @@ int World::run() {
         if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.ssint_cutoff);
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
-
 
 #ifdef BENCHMARK
         wtime3 = omp_get_wtime();
@@ -2005,7 +2032,7 @@ int World::run() {
             print_trajectory_and_measurement_files(step, wtime);
             print_kinetic_files(step);
         }
-
+        
 	// Finally, update the positions
 #ifdef FFEA_PARALLEL_PER_BLOB
 
@@ -2108,25 +2135,42 @@ int World::change_kinetic_state(int blob_index, int target_state) {
     if(kinetic_state[blob_index][current_state].get_conformation_index() != kinetic_state[blob_index][target_state].get_conformation_index()) {
 
         // Conformation change!
+	int inversionCheck;
+
         // Get current nodes
         vector3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
 
-        // Change active conformation and activate all faces
-        active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
-        active_blob_array[blob_index]->kinetically_set_faces(true);
-
         // Get target nodes
-        vector3 ** target_nodes = active_blob_array[blob_index]->get_actual_node_positions();
+        vector3 **target_nodes = blob_array[blob_index][target_conformation].get_actual_node_positions();
 
         // Apply map
         kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
 
-        // Move the old one to random space so as not to interfere with calculations, and deactivate all faces
-        blob_array[blob_index][current_conformation].position(blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10);
-        blob_array[blob_index][current_conformation].kinetically_set_faces(false);
+	// Check inversion
+	inversionCheck = blob_array[blob_index][target_conformation].check_inversion();
 
-        // Reactivate springs
-        activate_springs();
+	if(inversionCheck == FFEA_ERROR) {
+		printf("Conformational change rejected.\n");
+
+		// Move target conformation back to infinity
+	        blob_array[blob_index][target_conformation].position(blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10, blob_array[blob_index][target_conformation].get_RandU01() * 1e10);
+
+		return FFEA_OK;
+
+	} else {
+
+		// Change active conformation and activate all faces
+		active_blob_array[blob_index] = &blob_array[blob_index][target_conformation];
+		active_blob_array[blob_index]->kinetically_set_faces(true);
+
+		// Move the old one to random space so as not to interfere with calculations, and deactivate all faces
+		blob_array[blob_index][current_conformation].position(blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10, blob_array[blob_index][current_conformation].get_RandU01() * 1e10);
+		blob_array[blob_index][current_conformation].kinetically_set_faces(false);
+
+		// Reactivate springs
+		activate_springs();
+
+	}
 
     } else if (!kinetic_state[blob_index][current_state].is_bound() && kinetic_state[blob_index][target_state].is_bound()) {
 
@@ -2154,7 +2198,7 @@ int World::change_kinetic_state(int blob_index, int target_state) {
 }
 
 /**
- * @brief Parses <blobs>, <springs> and <precomp>.
+ * @brief Parses <blobs>, <springs>, <rods> and <precomp>.
  * @param[in] vector<string> script_vector, which is essentially the FFEA input file,
  *            line by line, as it comes out of FFEA_input_reader::file_to_lines
  */
@@ -2601,7 +2645,7 @@ int World::read_and_build_system(vector<string> script_vector) {
         set_rates = 0; // aux reader flag
         set_states = 0; // aux reader flag
     }
-
+    
     // Blobs are now configured. Initialisation will allocate memory,
     //    and thus it may be performance wise to initialise things in the 
     //    thread they will be. Hopefully will work, though that 
@@ -2639,6 +2683,16 @@ int World::read_and_build_system(vector<string> script_vector) {
                     // if Blob has a number of beads, transform them too:
                     if (blob_array[i][j].get_num_beads() > 0)
                         blob_array[i][j].position_beads(dv.x, dv.y, dv.z);
+                    
+                    // transform the rod, too
+                    // note to future FFEA authors: yes, you have to translate your stuff here as well
+                    //float shift_rod[3] = {(float)dv.x, (float)dv.y, (float)dv.z};
+                    //for (i = 0; i < params.num_rods; i++) {
+                    //    rod_array[i]->translate_rod(rod_array[i]->current_r, shift_rod);
+                    //    rod_array[i]->translate_rod(rod_array[i]->equil_r, shift_rod);
+                    //}    
+                    
+                    
                 }
 
                 if (blob_conf[i].set_rotation) {
@@ -2716,9 +2770,50 @@ int World::read_and_build_system(vector<string> script_vector) {
     if (fatal_errors > 0) {
       cout << "There were fatal errors initialising the blobs" << endl;
       return FFEA_ERROR;
-    } 
+    }
+    
+    // Create rods
+    rod_array = new rod::Rod*[params.num_rods];
+    for (int i=0; i<params.num_rods; i++){
+        // Init rod object
+        rod_array[i] = rod_from_block(script_vector, i, systemreader);
+        
+        // Carry over params from script file
+        rod_array[i]->viscosity = params.stokes_visc;
+        rod_array[i]->timestep = params.dt;
+        rod_array[i]->kT = params.kT;
+    }
+    
+    // Create rod-blob interfaces
+    rod_blob_interface_array = new rod::Rod_blob_interface*[params.num_interfaces];
+    for (int i=0; i<params.num_interfaces; i++){
+        rod_blob_interface_array[i] = rod_blob_interface_from_block(script_vector, i, systemreader, rod_array, blob_array);
+    }
+    
+    // Set up rod-blob interfaces (in order!)
+    // Iterate over 'order' variable to set up resolve order of connection positioning
+    for (int order=0; order<999; order++){
+        for (int i=0; i<params.num_interfaces; i++){
+            if (rod_blob_interface_array[i]->order == order){
+                std::cout << "Ordering interface " << i << "...\n";
+                rod_blob_interface_array[i]->update_internal_state(true, true);
+                if (rod_blob_interface_array[i]->ends_at_rod){
+                    std::cout << "Positioning rod from blob...\n";
+                    rod_blob_interface_array[i]->position_rod_from_blob(false);
+                    rod_blob_interface_array[i]->position_rod_from_blob(true);
+                }
+                else{
+                    std::cout << "Positioning blob from rod...\n";
+                    rod_blob_interface_array[i]->position_blob_from_rod();
+                }
+            }
+        }
+    }
+    
+    for (int i=0; i<params.num_interfaces; i++){
+        rod_blob_interface_array[i]->set_initial_values();
+    }
 
-/// /// 
     // Finally, get springs
     if (params.calc_springs == 1) {
         if(load_springs(params.springs_fname.c_str()) != 0) {
@@ -2729,7 +2824,7 @@ int World::read_and_build_system(vector<string> script_vector) {
             return FFEA_ERROR;
         }
     }
-
+    
     return FFEA_OK;
 }
 
@@ -2964,16 +3059,6 @@ int World::calculate_kinetic_rates() {
                 // Unbnding event! Kinetic switch is constant
                 kinetic_rate[i][current_state][j] = kinetic_base_rate[i][current_state][j];
 
-                // Dynein specific. Delete for generality. Cannot both unbind!
-                if(i == 0 || i == 1) {
-                    int other_state = active_blob_array[(i + 1) % 2]->get_state_index();
-                    /*if(other_state == 0 || other_state == 2 || other_state == 3 || other_state == 5) {
-                    	kinetic_rate[i][current_state][j] = 0.0;
-                    }*/
-                    if(current_state == 1 && other_state != 1) {
-                        kinetic_rate[i][current_state][j] = 0.0;
-                    }
-                }
             } else {
 
                 // Identity event. Nothing changes here either
@@ -3294,6 +3379,7 @@ void World::get_system_CoM(vector3 *system_CoM) {
 
 /* */
 void World::get_system_centroid(vector3 *centroid) {
+    /** Blob centroid */
     centroid->x = 0;
     centroid->y = 0;
     centroid->z = 0;
@@ -3307,6 +3393,18 @@ void World::get_system_centroid(vector3 *centroid) {
 
         total_num_nodes += active_blob_array[i]->get_num_nodes();
     }
+    
+    /** Rod centroid */
+    for (int i = 0; i<params.num_rods; i++) {
+        float rod_centroid[3];
+        rod_array[i]->get_centroid(rod_array[i]->current_r, rod_centroid);
+        /** I'm leaving it like this and there's nothing you can do about it */
+        centroid->x += rod_centroid[0]*rod_array[i]->num_elements;
+        centroid->y += rod_centroid[1]*rod_array[i]->num_elements;
+        centroid->z += rod_centroid[2]*rod_array[i]->num_elements;
+        total_num_nodes += rod_array[i]->num_elements;
+    }
+    
     centroid->x /= total_num_nodes;
     centroid->y /= total_num_nodes;
     centroid->z /= total_num_nodes;
@@ -3349,6 +3447,17 @@ void World::get_system_dimensions(vector3 *dimension) {
         if(blob_max.z > max.z) {
             max.z = blob_max.z;
         }
+    }
+    
+    float rod_min[3], rod_max[3];
+    for(int i=0; i < params.num_rods; i++){
+        rod_array[i]->get_min_max(rod_array[i]->current_r, rod_min, rod_max);
+        if (rod_max[0] > max.x){ max.x = rod_max[0]; }
+        if (rod_max[1] > max.y){ max.y = rod_max[1]; }
+        if (rod_max[2] > max.z){ max.z = rod_max[2]; }
+        if (rod_min[0] < min.x){ min.x = rod_min[0]; }
+        if (rod_min[1] < min.y){ min.y = rod_min[1]; }
+        if (rod_min[2] < min.z){ min.z = rod_min[2]; }
     }
 
     dimension->x = max.x - min.x;
@@ -3461,6 +3570,227 @@ int World::load_springs(const char *fname) {
     printf("\t\tRead %d springs from %s\n", num_springs, fname);
     activate_springs();
     return 0;
+}
+
+rod::Rod_blob_interface* World::rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader, rod::Rod** rod_array, Blob** blob_array){
+    
+    string tag_out[2];
+    bool coupling_parent = false;
+    
+    int block_no = -1;
+    int coupling_counter = 0;
+    
+    bool ends_at_rod = true;
+    int blob_id;
+    int rod_id;
+    int rod_node_id;
+    int blob_element_id;
+    int blob_node_ids[3];
+    int from_index;
+    int to_index;
+    int order;
+    float rotation[3];
+    float node_weighting[3];
+    
+    
+    for ( auto &tag_str : block ) {
+        
+        systemreader->parse_tag(tag_str, tag_out);
+        
+        // Are we in a <coupling> block?
+        //if (tag_out[0] == "blob"){rod_parent = false;}
+        if (tag_out[0] == "coupling type"){coupling_parent = true; block_no+=1;}
+        
+        if (block_no != interface_id){ continue; }
+        
+        // Set filename
+        //if (tag_out[0] == "output" && coupling_parent){ current_rod->change_filename(tag_out[1]); }
+        
+        // parse coupling block
+        if (tag_out[0] == "coupling type" && coupling_parent && (tag_out[1] == "rod-to-blob" or tag_out[1] == "blob-to-rod")){
+            std::cout << "Coupling data parsing...";
+            if (tag_out[1] == "rod-to-blob"){
+                ends_at_rod = false;
+            }
+            vector<string> sub_block;
+            systemreader->extract_block("coupling", interface_id, block, &sub_block, true);
+            string sub_tag_out[2];
+            for ( auto &sub_tag_str : sub_block ) {
+                systemreader->parse_tag(sub_tag_str, sub_tag_out);
+                if ((sub_tag_out[0] == "rod_id")){ rod_id = stof(sub_tag_out[1]); }
+                if ((sub_tag_out[0] == "blob_id")){ blob_id = stof(sub_tag_out[1]); }
+                if ((sub_tag_out[0] == "rod_node_id")){ rod_node_id = stof(sub_tag_out[1]); }
+                if ((sub_tag_out[0] == "blob_element_id")){ blob_element_id = stof(sub_tag_out[1]); }
+                
+                if (sub_tag_out[0] == "blob_node_ids"){
+                    sub_tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(sub_tag_out[1], "("), ")");
+                    systemreader->split_string(sub_tag_out[1], blob_node_ids, ",");
+                }
+                
+                if ((sub_tag_out[0] == "order")){ order = stoi(sub_tag_out[1]); }
+                
+                if (sub_tag_out[0] == "rotation"){
+                    scalar rotation_scalar[3];
+                    sub_tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(sub_tag_out[1], "("), ")");
+                    systemreader->split_string(sub_tag_out[1], rotation_scalar, ",");
+                    std::copy(rotation_scalar, rotation_scalar+3, rotation);
+                }
+                
+                if (sub_tag_out[0] == "node_weighting"){
+                    scalar node_weighting_scalar[3];
+                    sub_tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(sub_tag_out[1], "("), ")");
+                    systemreader->split_string(sub_tag_out[1], node_weighting_scalar, ",");
+                    std::cout << "node weighting = [" << node_weighting_scalar[0] << ", " << node_weighting_scalar[1] << ", " << node_weighting_scalar[2] << "\n";
+                    std::copy(node_weighting_scalar, node_weighting_scalar+3, node_weighting);
+                }
+
+            }
+            coupling_counter += 1;
+            break;
+        }
+        
+    }
+    
+    if (ends_at_rod == false){
+        to_index = rod_node_id;
+        from_index = blob_element_id;
+    }
+    else{
+        to_index = blob_element_id;
+        from_index = rod_node_id;
+    }
+    
+    rod::Rod* connected_rod_ptr = rod_array[rod_id];
+    Blob* connected_blob_ptr = blob_array[blob_id];
+    
+    rod::Rod_blob_interface* curr_rbi = new rod::Rod_blob_interface(connected_rod_ptr, connected_blob_ptr, ends_at_rod, to_index, from_index, blob_node_ids, rotation, node_weighting, order);
+    
+    return curr_rbi;
+    
+}
+
+// Returns a pointer to a rod object from an .ffea script that's already
+// been converted into a vector<string>. Also needs the block_id. Before
+// this can be used, we need a way to get the number of rods specified
+// in the file, so we can allocate an array for their pointers and know
+// what block_ids to assign.
+rod::Rod* World::rod_from_block(vector<string> block, int block_id, FFEA_input_reader* systemreader){
+    
+    // Find trajectory file
+    string tag_out[2];
+    string filename;
+    string out_filename;
+    int rod_block_no = -1; // start indexing rod blocks from 0 (we add 1 to this if rod is found)
+    bool restart = false;
+    for ( auto &tag_str : block ) {
+        systemreader->parse_tag(tag_str, tag_out);
+        if (tag_out[0] == "input"){
+            rod_block_no += 1;
+            if (rod_block_no == block_id){ filename = tag_out[1]; }
+        }
+    }
+    
+    // If an output file already exists, we're on a restart, so load that instead
+    rod_block_no = -1;
+    for ( auto &tag_str : block ) {
+        systemreader->parse_tag(tag_str, tag_out);
+        if (tag_out[0] == "output"){
+            rod_block_no += 1;
+            if (rod_block_no == block_id){ out_filename = tag_out[1]; }
+        }
+    }
+    
+    ifstream out_test(out_filename);
+    if (out_test.good()){
+        filename = out_filename;
+        restart = true;
+    }
+    
+    // Create rod object
+    //rod::Rod *current_rod;
+    rod::Rod* current_rod = new rod::Rod(filename, block_id);
+    current_rod->load_header(filename);
+    current_rod->load_contents(filename);
+    
+    current_rod->set_units();
+    
+    if (restart){
+        current_rod->restarting = true;
+    }
+    
+    bool rod_parent = false;
+    rod_block_no = -1; // start indexing rod blocks from 0
+    
+    int coupling_counter = 0;
+    for ( auto &tag_str : block ) {
+        
+        systemreader->parse_tag(tag_str, tag_out);
+        
+        // Are we in a <rod> block?
+        if (tag_out[0] == "blob"){rod_parent = false;}
+        if (tag_out[0] == "rod"){rod_parent = true; rod_block_no+=1;}
+        
+        if (rod_block_no != current_rod->rod_no){ continue; }
+        
+        // Set filename
+        if (tag_out[0] == "output" && rod_parent && !restart){ current_rod->change_filename(tag_out[1]); }
+        
+        
+        // Scale rod
+        if (tag_out[0] == "scale" && rod_parent && !restart){
+            float scale = stof(tag_out[1]);
+            //std::cout << "I have been told to scale this rod by a factor of " << scale << " but I can't.\n";
+            current_rod->scale_rod(scale);
+        }
+        
+        // Move centroid
+        if (tag_out[0] == "centroid_pos" && rod_parent && !restart){
+            // get centroid and convert it to array
+            scalar centroid_pos[3];
+            float converted_centroid[3];
+            tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
+            systemreader->split_string(tag_out[1], centroid_pos, ",");
+            // convert to floats
+            std::copy(centroid_pos, centroid_pos+3, converted_centroid);
+            // set centroid
+            current_rod->translate_rod(current_rod->current_r, converted_centroid);
+            current_rod->translate_rod(current_rod->equil_r, converted_centroid);
+        }
+        
+        // Rotate rod
+        if (tag_out[0] == "rotation" && rod_parent && !restart){
+            // get centroid and convert it to array
+            scalar rotation[3];
+            tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
+            systemreader->split_string(tag_out[1], rotation, ",");
+            // convert to floats
+            float converted_rotation[3];
+            std::copy(rotation, rotation+3, converted_rotation);
+            // rotate that bad boy
+            current_rod->rotate_rod(converted_rotation);
+        }
+        // parse coupling block
+        //if (tag_out[0] == "coupling type" && rod_parent){
+        //    std::cout << "Coupling data parsed, but coupling is not yet implemented!\n";
+        //    vector<string> sub_block;
+        //    systemreader->extract_block("coupling", coupling_counter, block, &sub_block, true);
+        //    string sub_tag_out[2];
+        //    for ( auto &sub_tag_str : sub_block ) {
+        //        systemreader->parse_tag(sub_tag_str, sub_tag_out);
+        //        if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "rod")){ }
+        //        if ((sub_tag_out[0] == "to_rod_id") & (tag_out[1] == "rod")){ }
+        //        if ((sub_tag_out[0] == "to_rod_node_id") & (tag_out[1] == "rod")){ } // no way to add couplings yet
+        //        if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "blob")){ }
+        //        if ((sub_tag_out[0] == "to_blob_id") & (tag_out[1] == "blob")){ }
+        //        if ((sub_tag_out[0] == "to_blob_node_id") & (tag_out[1] == "blob")){ }
+        //    }
+        //    coupling_counter += 1;
+        //}
+            
+    }
+    
+    return current_rod;
+    
 }
 
 void World::activate_springs() {
@@ -3788,6 +4118,7 @@ void World::write_pre_print_to_trajfile(int step) {
     fprintf(trajectory_out, "*\n");
 
     fflush(trajectory_out);
+    
 }
 
 
@@ -3852,6 +4183,16 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime) {
     fflush(trajectory_out);
 #endif
     // TRAJECTORY END
+
+    //Write rod trajectory (skip first frame if this is a restart)
+    for (int i=0; i<params.num_rods; i++){
+        if (rod_array[i]->restarting){
+            rod_array[i]->restarting = false;
+        }
+        else{
+            rod_array[i]->write_frame_to_file();
+        }
+    }
 
 
     // Detailed Measurement Stuff.
@@ -4240,6 +4581,7 @@ int World::catch_thread_updatingPCLL(int step, scalar wtime, int where) {
 
     return FFEA_OK;
 }
+
 #endif
 
 

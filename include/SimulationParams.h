@@ -36,10 +36,10 @@
 #include <boost/lexical_cast.hpp>
 
 #include "FFEA_return_codes.h"
-#include "FFEA_input_reader.h"
 #include "FFEA_user_info.h"
 #include "mat_vec_types.h"
 #include "dimensions.h"
+#include "FFEA_input_reader.h"
 
 #define WALL_TYPE_PBC 0
 #define WALL_TYPE_HARD 1
@@ -78,6 +78,8 @@ public:
     long long num_steps; ///< Number of time steps to run simulation for
     int check; ///< Every how many steps should the program 'check' the system i.e calculate energies, print snapshots etc.
     int num_blobs; ///< Number of blobs in the system
+    int num_rods; ///< Number of rods in the system
+    int num_interfaces; ///< Number of rod-blob or rod-rod interfaces
     int *num_conformations; ///< Number of conformations for each blob
     int *num_states; ///< Number of states for each blob
     int state_array_size;

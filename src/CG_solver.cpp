@@ -95,7 +95,7 @@ int CG_solver::solve(SparseMatrixFixedPattern *A, scalar *x, scalar *b) {
 
         // Once convergence is achieved, return
         if (residual2() < tol) {
-            //					printf("CG_solver: Convergence reached on iteration %d\n", i);
+            std::cout << "CG_solver: Convergence reached on iteration " << i << "\n"; // DEBUGGO
             return FFEA_OK;
         }
 
@@ -113,7 +113,6 @@ int CG_solver::solve(SparseMatrixFixedPattern *A, scalar *x, scalar *b) {
         parallel_vector_add(d, (delta_new / delta_old), s);
 
     }
-
     // If desired convergence was not reached in the set number of iterations...
     FFEA_ERROR_MESSG("CG_solver: Could not converge after %d iterations.\n\tEither epsilon or max_iterations_cg are set too low, or something went wrong with the simulation.\n", max_num_iterations);
 }

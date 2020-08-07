@@ -722,7 +722,7 @@ template <class brr3> void getTetrahedraCM(brr3 &p1, brr3 &p2, brr3 &p3, brr3 &p
 
 }
 
-template <class t_scalar, class brr3, class brr4> void getLocalCoordinatesForLinTet(arr3_view<t_scalar,brr3> t0, arr3_view<t_scalar,brr3> t1, arr3_view<t_scalar,brr3> t2, arr3_view<t_scalar,brr3> t3, arr3_view<t_scalar,brr3> p, brr4 phi){
+template <class t_scalar, class brr3, class brr4> void getLocalCoordinatesForLinTet(arr3_view<t_scalar,brr3> t0, arr3_view<t_scalar,brr3> t1, arr3_view<t_scalar,brr3> t2, arr3_view<t_scalar,brr3> t3, arr3_view<t_scalar,brr3> p, brr4 &phi){
 
    phi[0] = getTetrahedraVolume(p, t1, t2, t3);
    phi[1] = - getTetrahedraVolume(p, t0, t2, t3);
@@ -921,7 +921,7 @@ template scalar getTetrahedraVolume<scalar,arr3>(arr3_view<scalar,arr3> p0, arr3
 
 template void getTetrahedraCM<arr3>(arr3 &p1, arr3 &p2, arr3 &p3, arr3 &p4, arr3 &c);
 
-template void getLocalCoordinatesForLinTet<scalar,arr3,arr4>(arr3_view<scalar,arr3> t0, arr3_view<scalar,arr3> t1, arr3_view<scalar,arr3> t2, arr3_view<scalar,arr3> t3, arr3_view<scalar,arr3> p, arr4 phi);
+template void getLocalCoordinatesForLinTet<scalar,arr3,arr4>(arr3_view<scalar,arr3> t0, arr3_view<scalar,arr3> t1, arr3_view<scalar,arr3> t2, arr3_view<scalar,arr3> t3, arr3_view<scalar,arr3> p, arr4 &phi);
 
    //////////////     
 template void vec3Vec3SubsToArr3<arr3>(vector3 &u, vector3 &v, arr3 (&w));
@@ -949,7 +949,7 @@ template void intersectingPointToLine<geoscalar, grr3>(vector3 &p0, arr3_view<ge
 template geoscalar distanceFromPointToLine<geoscalar,grr3>(arr3_view<geoscalar, grr3> p0, arr3_view<geoscalar, grr3> p1, arr3_view<geoscalar, grr3> p2);
 template geoscalar getTetrahedraVolume<geoscalar,grr3>(arr3_view<geoscalar,grr3> p0, arr3_view<geoscalar,grr3> p1, arr3_view<geoscalar,grr3> p2, arr3_view<geoscalar,grr3> p3);
 template void getTetrahedraCM<grr3>(grr3 &p1, grr3 &p2, grr3 &p3, grr3 &p4, grr3 &c);
-template void getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(arr3_view<geoscalar,grr3> t0, arr3_view<geoscalar,grr3> t1, arr3_view<geoscalar,grr3> t2, arr3_view<geoscalar,grr3> t3, arr3_view<geoscalar,grr3> p, grr4 phi);
+template void getLocalCoordinatesForLinTet<geoscalar,grr3,grr4>(arr3_view<geoscalar,grr3> t0, arr3_view<geoscalar,grr3> t1, arr3_view<geoscalar,grr3> t2, arr3_view<geoscalar,grr3> t3, arr3_view<geoscalar,grr3> p, grr4 &phi);
 template void vec3Vec3SubsToArr3<grr3>(vector3 &u, vector3 &v, grr3 (&w));
 #endif 
 

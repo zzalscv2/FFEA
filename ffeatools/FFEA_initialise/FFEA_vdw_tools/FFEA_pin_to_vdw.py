@@ -24,7 +24,11 @@
 import sys, os
 import FFEA_vdw, FFEA_pin, FFEA_surface
 import numpy as np
-import __builtin__
+
+if(sys.version_info[0] == 3):
+	import builtins
+else:
+	import __builtin__ as builtins
 
 import argparse as _argparse
 
@@ -60,11 +64,11 @@ def pin_to_vdw(vdw_fname, pin_fname, surf_fname, output_fname, index):
 
 	vdw.write_to_file(output_fname)
 
-if sys.stdin.isatty() and hasattr(__builtin__, 'FFEA_API_mode') == False:
-    args = parser.parse_args()
-    try:
-	pin_to_vdw(args.i[0], args.p[0], args.s[0], args.o[0], args.ind)
-    except IOError:
-	parser.print_help()
-    except TypeError:
-	parser.print_help()
+if sys.stdin.isatty() and hasattr(builtins, 'FFEA_API_mode') == False:
+	args = parser.parse_args()
+	try:
+		pin_to_vdw(args.i[0], args.p[0], args.s[0], args.o[0], args.ind)
+	except IOError:
+		parser.print_help()
+	except TypeError:
+		parser.print_help()

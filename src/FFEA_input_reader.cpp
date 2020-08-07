@@ -117,7 +117,7 @@ int FFEA_input_reader::file_to_lines(string script_fname, vector<string> *script
 int FFEA_input_reader::extract_block(string block_title, int block_index, vector<string> input, vector<string> *output, bool mandatory/*=true*/) {
 
 	// Immediate error checking
-	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs" && block_title != "precomp" && block_title != "ctforces") {
+	if(block_title != "param" && block_title != "system" && block_title != "blob" && block_title != "conformation" && block_title != "kinetics" && block_title != "maps" && block_title != "interactions" && block_title != "springs" && block_title != "precomp" && block_title != "ctforces" && block_title != "rod" && block_title != "coupling" ) {
 		FFEA_error_text();
 		cout << "Unrecognised block: " << block_title << ". Block structure is:" << endl;
 		cout << "<param>\n</param>\n<system>\n\t<blob>\n\t\t<conformation>\n\t\t</conformation>\n\t\t\t.\n\t\t\t.\n\t\t\t.\n\t\t<kinetics>\n\t\t\t<maps>\n\t\t\t</maps>\n\t\t</kinetics>\n\t</blob>\n\t\t.\n\t\t.\n\t\t.\n\t<interactions>\n\t\t<springs>\n\t\t</springs>\n\t\t<precomp>\n\t\t</precomp>\n\t\t<ctforces>\n\t\t</ctforces>\n\t</interactions>\n</system>" << endl;
@@ -130,7 +130,14 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 	for(string_it = input.begin(); string_it != input.end(); ++string_it) {
 		buf_string = boost::erase_last_copy(boost::erase_first_copy(*string_it, "<"), ">");
 		boost::trim(buf_string);
-		//cout << buf_string << endl;
+        
+        //Parse an enclosing blokc with attributes (e.g. <coupling type = rod>)
+        vector<string> split_buf_string;
+        boost::split(split_buf_string, buf_string, boost::is_any_of(" "));
+        if (split_buf_string.size() > 1){
+            buf_string = split_buf_string[0];
+        }
+        
 		if(buf_string == block_title) {
 			
 			if(copying == 1) {
@@ -169,7 +176,7 @@ int FFEA_input_reader::extract_block(string block_title, int block_index, vector
 	}
 	
 }
-
+	
 /** 
  * @brief parse an input ffea line
  * @param[in] string input e. g.,  string < blah = whatever>

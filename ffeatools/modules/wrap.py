@@ -30,12 +30,15 @@ Created on Tue Aug 16 09:39:41 2016
 
 import subprocess as _subprocess
 
-def wrap_process(name, argv):
+def wrap_process(name, argv, bash=False):
     args = [name]
     for arg in argv:
         args.append(arg)
     print("Trying args: "+str(args))
-    _subprocess.call(args)
+    if bash:
+        _subprocess.call(args, shell=True, executable="/bin/bash")
+    else:
+        _subprocess.call(args)
     return
     
 def sanitize_tuple(args):

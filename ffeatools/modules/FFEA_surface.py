@@ -201,7 +201,11 @@ class FFEA_surface:
 				continue
 
 			sline = line.split()[1:4]
-			sline = [int(s) - 1 for s in sline]
+			try:
+				sline = [np.absolute(int(s)) - 1 for s in sline]
+			except:
+				sline = [np.absolute(int(s.split("//")[0])) - 1 for s in sline]
+
 			f = FFEA_face_tri_lin()
 			f.set_indices(sline)
 			self.add_face(f)
@@ -493,6 +497,7 @@ class FFEA_surface:
 		#  f_center = list of faces at the center (1 per linear face)
 		#  f_edge = list of faces at the edge (3 per linear face)
       #  n_edge = list of 1st order nodes in f_edge (3 per linear face)
+		# this is too slow
 		fs_center = []
 		fn_center = []
 		fs_edge = []
@@ -541,6 +546,27 @@ class FFEA_surface:
 
 		return 0
 
+	def calculateSmallestEdge(self, node):
+		
+		# For this one, only worry about the edges
+		minL = float("inf")		
+		for f in self.face:
+			l = f.calculateSmallestEdge(node)
+			if l < minL:
+				minL = l
+		
+		return minL
+
+	def calculateSmallestLength(self, node):
+		
+		# For this one, worry about point-to-edge diagonals
+		minL = float("inf")
+		for f in self.face:
+			l = f.calculateSmallestLength(node)
+			if l < minL:
+				minL = l
+		
+		return minL
 
 	def reset(self):
 
@@ -592,6 +618,29 @@ class FFEA_face:
 			centroid += node.pos[i]
 			
 		return centroid * (1.0 / len(self.n))
+
+	def calculateSmallestEdge(self, node):
+		
+		# Get all edge lengths
+		l = [np.linalg.norm(node.pos[self.n[:3][i]] - node.pos[self.n[:3][i - 1]]) for i in range(3)]
+		return min(l)
+
+	def calculateSmallestLength(self, node):
+		
+		# Get all edges
+		e = [node.pos[self.n[:3][i]] - node.pos[self.n[:3][i - 1]] for i in range(3)]
+		
+		# For all pair of edges, work out the projection of one onto the other, and Pythagoras it
+		minD = float("inf")
+		for i in range(3):
+			l1 = np.linalg.norm(e[i])
+			l0 = np.linalg.norm(e[i - 1])
+			lp = np.dot(e[i], e[i - 1]) / l0
+			d = np.sqrt(l1 * l1 - lp * lp)
+			if d < minD:
+				minD = d
+ 
+		return minD
 
 	def get_centroid(self):
 		return self.centroid

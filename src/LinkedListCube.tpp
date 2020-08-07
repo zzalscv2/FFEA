@@ -164,33 +164,43 @@ void LinkedListCube<T>::clear() {
         root[i] = NULL;
 
     // Clear the pool
-    for (i = 0; i < max_num_nodes_in_pool; i++)
+    for (i = 0; i < max_num_nodes_in_pool; i++) {
         pool[i].next = NULL;
+	//pool[i].obj = NULL;
+    }
 }
 
 /* */
 template <class T>
 void LinkedListCube<T>::clear_layer(int l) {
 
-    if (l == 1) { 
-       // Clear the grid
-       for (int i = 0; i < N_x * N_y * N_z; i++)
-           root1[i] = NULL;
+	if (l == 1) {
 
-       // Clear the pool
-       for (int i = 0; i < max_num_nodes_in_pool; i++)
-           pool1[i].next = NULL;
+		// Clear the grid
+		for (int i = 0; i < N_x * N_y * N_z; i++) {
+			root1[i] = NULL;
+		}
 
-    } else if (l == 2) {
-       // Clear the grid
-       for (int i = 0; i < N_x * N_y * N_z; i++)
-           root2[i] = NULL;
-   
-       // Clear the pool
-       for (int i = 0; i < max_num_nodes_in_pool; i++)
-           pool2[i].next = NULL;
+		// Clear the pool
+		for (int i = 0; i < max_num_nodes_in_pool; i++) {
+			pool1[i].next = NULL;
+		//	pool1[i].obj = NULL;
+		}
 
-    }
+	} else if (l == 2) {
+
+		// Clear the grid
+		for (int i = 0; i < N_x * N_y * N_z; i++) {
+			root2[i] = NULL;
+		}
+
+		// Clear the pool
+		for (int i = 0; i < max_num_nodes_in_pool; i++) {
+			pool2[i].next = NULL;
+		//	pool2[i].obj = NULL;
+		}
+
+	}
 }
 
 
@@ -247,8 +257,8 @@ int LinkedListCube<T>::add_node_to_stack_shadow(int i, int x, int y, int z) {
 /* */
 template <class T>
 LinkedListNode<T> * LinkedListCube<T>::get_top_of_stack(int x, int y, int z) {
-    pbc(&x, &y, &z);
 
+    pbc(&x, &y, &z);
     if (x < 0 || x >= N_x || y < 0 || y >= N_y || z < 0 || z >= N_z) {
         printf("Error: Looking for stack in out of bounds cell %d %d %d\n", x, y, z);
         return NULL;

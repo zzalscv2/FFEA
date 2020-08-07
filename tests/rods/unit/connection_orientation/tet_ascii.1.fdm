@@ -1,0 +1,6 @@
+FFEA Detailed Measurement File
+
+Measurements:
+Time          | B0 StrainEnergy  Centroid.x    Centroid.y    Centroid.z    RMSD          | B1 StrainEnergy  Centroid.x    Centroid.y    Centroid.z    RMSD          | B0B0 | B0B1 | B1B1 
+1.000000e-14       0.000000e+00  1.158076e-07  6.682820e-08  3.508076e-08  0.000000e+00       0.000000e+00  4.019244e-08  2.317180e-08  1.325256e-08  0.000000e+00                       
+2.000000e-14       0.000000e+00  1.158076e-07  6.682820e-08  3.508076e-08  0.000000e+00       0.000000e+00  4.019244e-08  2.317180e-08  1.325256e-08  0.000000e+00                       

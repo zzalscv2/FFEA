@@ -184,6 +184,7 @@ int NoMassCGSolver::solve(vector3* x) {
         if (residual2() < epsilon2) {
 	    //cout << residual2() << " " << epsilon2 << endl;
 	    //exit(0);
+            //std::cout << "NoMassCG_solver: Convergence reached on iteration " << i << "\n"; // DEBUGGO
             return FFEA_OK;
         }
 	//cout << residual2() << " " << epsilon2 << endl;
