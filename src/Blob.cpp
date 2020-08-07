@@ -759,7 +759,7 @@ int Blob::update_positions() {
     for (int n = 0; n < num_elements; n++) {
         elem[n].linearise_element();
     }
-    
+
     return FFEA_OK;
 }
 
@@ -2798,7 +2798,6 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
             }
 
             surface[i].init(i, &node[n1], &node[n2], &node[n3], NULL, this, params);
-
 
             if (surface[i].area_0 < smallest_A) {
                 smallest_A = surface[i].area_0;
