@@ -91,7 +91,7 @@ void print_ffea_compilation_details(FILE *fout) {
 void print_ffea_version(FILE *fout) {
 
    stringstream ss; 
-   ss << "\tFFEA version: " << FFEA_version << endl;
+   ss << "\tFFEA version: " << FFEA_version << " (return of the Walrus)" << endl;
    #ifdef FFEA_DEVEL
    #ifdef USE_CMAKECONF
    ss << "\tFFEA commit " << FFEA_commit << endl;
