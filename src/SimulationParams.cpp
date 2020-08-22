@@ -525,7 +525,7 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         trajbeads_fname_set = 1;
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << trajectory_beads_fname << endl;
 
-    } else if (lvalue == "bsite_in_fname") {
+    } else if (lvalue == "bsite_in_fname" || "binding_site_params") {
         b_fs::path auxpath = FFEA_script_path / rvalue;
         bsite_in_fname = auxpath.string();
         bsite_in_fname_set = 1;

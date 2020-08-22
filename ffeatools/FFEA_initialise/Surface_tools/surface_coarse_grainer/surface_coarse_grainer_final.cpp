@@ -331,8 +331,8 @@ class Volume
 			volume = 0.0;
 		}
 		
-		void build_from_partial_surf(list <Face*> partial_surf, vector3 *new_node, vector3 *node) {
-			list<Face*>::iterator face_iterator;
+		void build_from_partial_surf(vector<Face*> partial_surf, vector3 *new_node, vector3 *node) {
+			vector<Face*>::iterator face_iterator;
 			
 			for(face_iterator = partial_surf.begin(); face_iterator != partial_surf.end(); face_iterator++) {
 				element.push_back(new Tetrahedron(&node[(*face_iterator)->n[0]], &node[(*face_iterator)->n[1]], &node[(*face_iterator)->n[2]], new_node));
@@ -486,9 +486,9 @@ class Surface
 						}
 
 						// Add to list
-						fs.push_back(n[0]);
-						fs.push_back(n[1]);
-						fs.push_back(n[2]);
+						fs.push_back(abs(n[0]));
+						fs.push_back(abs(n[1]));
+						fs.push_back(abs(n[2]));
 						num_faces++;
 					} else {
 						ignore = getline(&line2, &len, surf_file);
@@ -515,6 +515,7 @@ class Surface
 				// Build face list
 				for(i = 0; i < num_faces; ++i) {
 					n[0] = fs.front();
+//					fprintf(stderr, "%d ", n[0]);
 					fs.pop_front();
 					n[1] = fs.front();
 					fs.pop_front();
@@ -547,7 +548,7 @@ class Surface
 			int node_to_delete[2], remaining_node, do_not_delete, twod_section_exists, face_sharing_remaining_node[2];
 			double length_deleted, original_volume, new_volume, tolerance;
 			vector3 midpoint, connecting_node, distance_node, normal_vector, translate_vector, upper_limit_pos, lower_limit_pos, nodal_distance, nodal_distance_2;
-			list<Face*>::iterator face_iterator, face_to_delete[4];
+			vector<Face*>::iterator face_iterator, face_to_delete[4];
 			for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator) {
 				//cout << (*face_iterator)->n[0] << " " << (*face_iterator)->n[1] << " " << (*face_iterator)->n[2] << endl;
 			}
@@ -556,7 +557,7 @@ class Surface
 				// Output completion data
 				// Output Info
 				if((num_faces_initial - num_faces) % 10 == 0) {
-					printf("\rFaces Remaining = %d\tNodes Remaining = %d\tLast Length Deleted = %f", num_faces, num_nodes, length_deleted);
+					printf("\rFaces Left = %06d\tNodes Left = %06d\tLast Length Deleted = %5.3f", num_faces, num_nodes, length_deleted);
 					//printf("Nodes Remaining = %d\n", num_nodes);
 					//printf("Last Length Deleted = %f\n\n", length_deleted);					
 				}
@@ -925,7 +926,7 @@ class Surface
 					face.erase(face_to_delete[0]);
 					num_faces--;
 				} else {
-					printf("Something has gone wrong. %d faces are sharing an edge\n", num_shared_faces);
+					printf("\nSomething has gone wrong. %d faces are sharing an edge\n", num_shared_faces);
 					printf("A face:%d %d %d\n", (*face_to_delete[0])->n[0], (*face_to_delete[0])->n[1], (*face_to_delete[0])->n[2]);
 					break;
 				}
@@ -971,8 +972,8 @@ class Surface
 		
 		int clean() {
 			printf("Cleaning...\n");
-			list<Face*>::iterator face_iterator, neighbour_iterator, temp_iterator;
-			//list<Face*> to_erase;
+			vector<Face*>::iterator face_iterator, neighbour_iterator, temp_iterator;
+			//vector<Face*> to_erase;
 			list<int> to_erase;
 			list<int>::iterator it, it2;
 
@@ -1011,7 +1012,7 @@ class Surface
 		int write_to_file(char *surf_fname) {
 
 			int i;
-			list<Face*>::iterator face_iterator;	
+			vector<Face*>::iterator face_iterator;	
 			string fname(surf_fname), ext;
 			ext = GetFileExtension(fname);
 
@@ -1066,7 +1067,7 @@ class Surface
 		
 		void check_edges() {
 			int i, j, index0, index1;
-			list<Face*>::iterator face_iterator, face_iterator2;
+			vector<Face*>::iterator face_iterator, face_iterator2;
 			for(face_iterator = face.begin(); face_iterator != face.end(); ++face_iterator){
 				for(i = 0; i < 3; ++i) {
 					index0 = (*face_iterator)->edge[i].n_index[0];
@@ -1098,7 +1099,7 @@ class Surface
 		int num_faces_initial;
 		int *node_map;
 		vector3 *node; 
-		list<Face*> face, neighbourhood, local_volume_surf;
+		vector<Face*> face, neighbourhood, local_volume_surf;
 		Volume local_volume;
 };
 
@@ -1145,7 +1146,7 @@ int main(int argc, char **argv) {
 
 	// Coarsen surface
 	surf->coarsen(atof(argv[3]), argv[4], argv[5], limits);
-	
+
 	// Get rid of surface errors
 	//surf->clean();
 
