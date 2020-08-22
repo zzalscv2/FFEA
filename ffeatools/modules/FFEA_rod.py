@@ -1671,7 +1671,7 @@ class py_rod_math:
     
     def get_euler_angles(self, rm):
     
-        if rm[6] is not 1 and rm[6] is not -1:
+        if rm[6] != 1 and rm[6] != -1:
             theta_1 = -np.arcsin(rm[6])
             psi_1 = np.arctan2(rm[7]/np.cos(theta_1), rm[8]/np.cos(theta_1) )
             phi_1 = np.arctan2(rm[3]/np.cos(theta_1), rm[0]/np.cos(theta_1) )

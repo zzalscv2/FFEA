@@ -3806,7 +3806,7 @@ void World::activate_springs() {
 }
 
 int World::apply_springs() {
-    scalar force_mag;
+    scalar force_mag, lim;
     vector3 n1, n0, force0, force1, sep, sep_norm;
     for (int i = 0; i < num_springs; ++i) {
         if (spring_array[i].am_i_active == true) {
@@ -3815,6 +3815,23 @@ int World::apply_springs() {
             sep.x = n1.x - n0.x;
             sep.y = n1.y - n0.y;
             sep.z = n1.z - n0.z;
+
+	     // This is a hack for PBC
+	     for(int j = 0 ; j < 3; ++j) {
+		     	if(j == 0) {
+				lim = params.es_N_x * params.ssint_cutoff;
+			} else if (j == 1) {
+				params.es_N_y * params.ssint_cutoff;
+			} else {
+				params.es_N_z * params.ssint_cutoff;
+			}
+
+			if(sep[j] > lim / 2.0) {
+				sep[j] -= lim;
+			} else if (-sep[j] > lim / 2.0) {
+				sep[j] += lim;
+			}
+	    }
 
             try {
                 arr3Normalise2<scalar,arr3>(sep.data, sep_norm.data); 
@@ -3830,6 +3847,7 @@ int World::apply_springs() {
                 }
             }
 
+//	    fprintf(stderr, "%d %f, ", i, mag<scalar,arr3>(sep.data) * mesoDimensions::length / 1e-9);
             force_mag = spring_array[i].k * (mag<scalar,arr3>(sep.data) - spring_array[i].l);
             force0.x = force_mag * sep_norm.x;
             force0.y = force_mag * sep_norm.y;
@@ -4313,6 +4331,7 @@ void World::make_measurements() {
 
     // Now global stuff
     vector3 a, b, c;
+    scalar vMag, lim;
     if(params.calc_springs != 0) {
         for(i = 0; i < params.num_blobs; ++i) {
             for(j = 0; j < params.num_blobs; ++j) {
@@ -4324,6 +4343,25 @@ void World::make_measurements() {
             active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], a.data);
             active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], b.data);
             arr3arr3Substract<scalar,arr3>(a.data, b.data, c.data);
+
+	     // This is a hack for PBC
+	     for(j = 0 ; j < 3; ++j) {
+		     	if(j == 0) {
+				lim = params.es_N_x * params.ssint_cutoff;
+			} else if (j == 1) {
+				params.es_N_y * params.ssint_cutoff;
+			} else {
+				params.es_N_z * params.ssint_cutoff;
+			}
+
+			if(b[j] - a[j] > lim / 2.0) {
+				a[j] += lim;
+			} else if (a[j] - b[j] > lim / 2.0) {
+				a[j] -= lim;
+			}
+	    }
+
+
             springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag<scalar,arr3>(c.data) - spring_array[i].l) * (mag<scalar,arr3>(c.data) - spring_array[i].l);
         }
 

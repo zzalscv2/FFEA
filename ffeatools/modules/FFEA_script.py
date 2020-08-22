@@ -902,8 +902,8 @@ class FFEA_script_blob:
 		self.map_indices = []
 		self.solver = "CG_nomass"
 		self.scale = 1.0
-		self.centroid = None
-		self.rotation = None
+		self.centroid = []
+		self.rotation = []
 
 	def write_to_file(self, fout, fname, calc_kinetics, calc_preComp, verbose = False):
 
@@ -932,7 +932,7 @@ class FFEA_script_blob:
 			fout.write("\t\t<solver = %s>\n" % (self.solver))
 
 		fout.write("\t\t<scale = %6.2e>\n" % (self.scale))
-		if self.rotation != None:
+		if len(self.rotation) != 0:
 			fout.write("\t\t<rotation = (")
 			for i in range(len(self.rotation)):
 				fout.write("%6.2f" % (self.rotation[i]))
@@ -940,7 +940,7 @@ class FFEA_script_blob:
 					fout.write(",")
 
 			fout.write(")>\n")
-		if self.centroid != None:
+		if len(self.centroid) != 0:
 			fout.write("\t\t<centroid = (")
 			for i in range(len(self.centroid)):
 				fout.write("%6.2f" % (self.centroid[i]))
