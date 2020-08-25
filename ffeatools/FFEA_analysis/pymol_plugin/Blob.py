@@ -111,8 +111,6 @@ class Blob:
           self.init_rotation = []
           self.offset = np.array([0.0,0.0,0.0])
           self.min_length = None
-          self.scale = 1.0
-          self.global_scale = 1.0
 
           self.frames = []
           self.num_frames = 0
@@ -131,17 +129,11 @@ class Blob:
           
           self.motion_state = c.motion_state
 
-          try:
-               self.scale = b.scale
-          except:
-               self.scale = 1.0
-          
-          
           # All will be present
 
           # Try to load
           try:
-               self.node = FFEA_node.FFEA_node(c.nodes, scale = self.scale)
+               self.node = FFEA_node.FFEA_node(c.nodes, scale = 1.0)
           except:
                print("\nERROR: '" + c.nodes + "' could not be loaded.")
                raise
@@ -185,9 +177,11 @@ class Blob:
           # beads for active blobs need to know of the elements. 
           #if (len(c.beads)):
           assignBeads = False
+          scale = 1.0
           if display_flags != None and  display_flags['show_beads'] == "Configuration & Assignments":
                assignBeads = True
-          self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, self.scale, self.top, self.node, assignBeads)
+
+          self.beads = FFEA_beads.FFEA_beads(c.beads, self.motion_state, scale, self.top, self.node, assignBeads)
 
           # Successfully loaded, but structurally incorrect (the value self.<obj>.empty determines whether we have a default object or not i.e. not specified in script)
           if (not self.node.valid): raise IOError('Something went wrong initialising nodes')     
@@ -443,8 +437,8 @@ class Blob:
                print("==============================")
                print("Moving to starting position...")
                print("==============================")
-            
-               dx = aframe.set_pos(self.init_centroid * self.scale)
+               scale = 1.0
+               dx = aframe.set_pos(self.init_centroid * scale)
                if not self.beads.empty:
                     self.beads.pdb.translate(dx) # translate the beads too
 
@@ -459,8 +453,8 @@ class Blob:
                     self.beads.pdb.rotate_full_system(self.init_rotation, cent=origin, findex=0) # rotate the beads too
 
           # Now scale to PyMOL's scale.
-          aframe.rescale(self.global_scale)
-          if not self.beads.empty: self.beads.rescale(self.global_scale)
+#          aframe.rescale(self.global_scale)
+#          if not self.beads.empty: self.beads.rescale(self.global_scale)
 
 
           # Append it to the list
@@ -469,12 +463,6 @@ class Blob:
 
 
      
-     def set_scale(self, scale):
-          self.scale = scale
-
-     def set_global_scale(self, global_scale):
-          self.global_scale = global_scale
-
      def calc_normal(self, n1, n2, n3):
           ax = n2[0] - n1[0]
           ay = n2[1] - n1[1]
@@ -935,8 +923,9 @@ class Blob:
                # Calculate the element lengthscales and draw all < 5A
                eindex = 0
                dindex = []
+               scale = 1.0
                for e in self.top.element:
-                    if e.get_smallest_lengthscale(self.frames[i]) / self.global_scale < 5e-10:
+                    if e.get_smallest_lengthscale(self.frames[i]) / scale < 5e-10:
                          dindex.append(eindex)
                     eindex += 1
 

@@ -876,18 +876,18 @@ class FFEA_viewer_control_window:
 					binding_sites[i][j] = self.blob_list[i][j].bsites.num_binding_sites
 
 		# Rescale and translate initial system if necessary
-		self.global_scale = 1e-10	# angstroms cos pymol works in angstroms and FFEA works in SI
-		self.global_scale = 1.0 / self.global_scale
+#		self.global_scale = 1e-10	# angstroms cos pymol works in angstroms and FFEA works in SI
+#		self.global_scale = 1.0 / self.global_scale
 
 		# Rescale blobs
-		for b in self.blob_list:
-			for c in b:
-				c.set_global_scale(self.global_scale)
+#		for b in self.blob_list:
+#			for c in b:
+#				c.set_global_scale(self.global_scale)
 				
 		# Rescale rods
-		if len(self.script.rod) > 0:
-			for rod_num in range(len(self.script.rod)):
-				self.script.rod[rod_num].scale(self.global_scale)
+#		if len(self.script.rod) > 0:
+#			for rod_num in range(len(self.script.rod)):
+#				self.script.rod[rod_num].scale(self.global_scale)
 
 		# Move simulation into box, if necessary
 		world_centroid = np.array([0.0, 0.0, 0.0])
@@ -935,20 +935,18 @@ class FFEA_viewer_control_window:
 
 		# Build the box:
 		# Do we need to calculate the size of the box? Double the rounded up size of the system
+		scale = 1e-9
 		for i in range(3):
 			if p.es_N[i] < 1:
 				dims = self.get_system_dimensions(0)
 				for j in range(3):
-					p.es_N[j] = 2 * int(np.ceil(dims[j] / (self.global_scale*p.vdw_cutoff)))
+					p.es_N[j] = 2 * int(np.ceil(dims[j] / (p.ssint_cutoff / scale)))
 				break
 
-		self.box = p.vdw_cutoff * p.es_N
+		self.box = (p.ssint_cutoff / scale) * p.es_N
 		self.box_exists = True
 		
 			
-		# Rescale box
-		self.box *= self.global_scale
-
 		# Shift all blobs to center of box if necessary
 		shift = 0.5 * self.box - world_centroid
 		# if p.calc_vdw == 1 and p.move_into_box == 1:
@@ -967,7 +965,7 @@ class FFEA_viewer_control_window:
 				
 
 		# Now, apply PBC if necessary
-		# if p.calc_vdw == 1 and self.display_flags['load_trajectory'] != "System (Plainly)":
+		"""
 		if self.display_flags['load_trajectory'] != "System (Plainly)":
 			for b in self.blob_list:
 				trans = np.array([0.0,0.0,0.0])
@@ -982,7 +980,7 @@ class FFEA_viewer_control_window:
 
 					b[0].frames[0].translate(trans)
 					print("Translation = ", trans)
-
+		"""
 			# Now all blobs should have a single frame. Primary blobs should be in their starting configuration.
 		# Secondary blobs should have a "None" placeholder. Therefore, we can draw it!
 			
@@ -1329,16 +1327,17 @@ class FFEA_viewer_control_window:
 			failure = 1		
 
 		# Get smallest edge in system
-		lmin = float("inf")
-		for b in self.blob_list:
-			for f in b[0].surf.face:
-				l = 2 * f.calc_area(b[0].frames[0])**0.5
-				if l < lmin:
-					lmin = l
+#		lmin = float("inf")
+#		for b in self.blob_list:
+#			for f in b[0].surf.face:
+#				l = 2 * f.calc_area(b[0].frames[0])**0.5
+#				if l < lmin:
+#					lmin = l
 
 		# Draw first frame
+		scale = 1e9
 		self.num_frames = 1
-		self.draw_frame(self.num_frames - 1, scale = lmin / 20.0)
+		self.draw_frame(self.num_frames - 1, scale = scale)
 
 		# If necessary, stop now (broken traj or user asked for)
 		if failure == 1 or self.display_flags['load_trajectory'] != "Trajectory" or self.traj.num_blobs == 0:			
@@ -1356,14 +1355,14 @@ class FFEA_viewer_control_window:
 			if self.traj.load_frame(onlyNodes=True) == 0:
 
 				# Scale traj frame
-				self.traj.rescale(self.global_scale, -1)
+				self.traj.rescale(scale, -1)
 				
 				# Load into blob objects asnd increment frame count
 				self.add_frame_to_blobs(self.traj)
 				self.num_frames += 1
 
 				# Draw whole frame (if above worked, these should work no problem...)
-				self.draw_frame(self.num_frames - 1, scale = lmin, draw_static = False)
+				self.draw_frame(self.num_frames - 1, scale = scale, draw_static = False)
 
 				# Delete frames from memory
 				if(self.num_frames > 3):
@@ -1724,7 +1723,8 @@ class FFEA_viewer_control_window:
 			# Check distances
 			springjoints = np.array([self.blob_list[s.blob_index[j]][s.conformation_index[j]].frames[correct_frame[s.blob_index[j]]].pos[s.node_index[j]][0:3] for j in range(2)])
 			L = springjoints[1] - springjoints[0]
-			if(np.any(2 * L > box[0])):
+
+			if(np.any(2 * np.fabs(L) > box[0])):
 				offset -= 14
 				i += 1
 				continue

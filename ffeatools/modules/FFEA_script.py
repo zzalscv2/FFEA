@@ -644,7 +644,7 @@ class FFEA_script_params():
 		self.calc_springs = 0
 		self.calc_ctforces = 0
 		self.inc_self_vdw = 1
-		self.vdw_cutoff = 3e-9
+		self.ssint_cutoff = nparray([3.0e-9, 3.0e-9, 3.0e-9])
 		self.calc_preComp = 0
 		self.calc_es = 0
 		self.calc_kinetics = 0
@@ -726,8 +726,14 @@ class FFEA_script_params():
 			self.ssint_type = rvalue
 		elif lvalue == "inc_self_vdw":
 			self.inc_self_vdw = int(rvalue)
-		elif lvalue == "vdw_cutoff":
-			self.vdw_cutoff = float(rvalue)
+		elif lvalue == "ssint_cutoff":
+			self.ssint_cutoff = nparray([float(rvalue) for i in range(3)])
+		elif lvalue == "ssint_cutoff_x":
+			self.ssint_cutoff[0] = float(rvalue)
+		elif lvalue == "ssint_cutoff_y":
+			self.ssint_cutoff[1] = float(rvalue)
+		elif lvalue == "ssint_cutoff_z":
+			self.ssint_cutoff[2] = float(rvalue)
 		elif lvalue == "steric_factor":
 			self.steric_factor = float(rvalue)
 		elif lvalue == "calc_noise":
@@ -860,7 +866,9 @@ class FFEA_script_params():
 			astr += "\t<ssint_type = %s>\n" % (self.ssint_type)
 			if self.ssint_type == "steric" or self.ssint_type == "ljsteric":
 				astr += "\t<steric_factor = %6.2e>\n" % (self.steric_factor)
-			astr += "\t<vdw_cutoff = %6.2e>\n" % (self.vdw_cutoff)
+			astr += "\t<ssint_cutoff_x = %6.2e>\n" % (self.ssint_cutoff[0])
+			astr += "\t<ssint_cutoff_y = %6.2e>\n" % (self.ssint_cutoff[1])
+			astr += "\t<ssint_cutoff_z = %6.2e>\n" % (self.ssint_cutoff[2])
 			astr += "\t<inc_self_vdw = %d>\n" % (self.inc_self_vdw)
 		if (self.calc_springs == 1):
 			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
@@ -872,7 +880,7 @@ class FFEA_script_params():
 			astr += "\t<es_N_x = %d>\n" % (self.es_N[0])
 			astr += "\t<es_N_y = %d>\n" % (self.es_N[1])
 			astr += "\t<es_N_z = %d>\n" % (self.es_N[2])
-			# astr += "\t<move_into_box = %d>\n" % (self.move_into_box)
+			astr += "\t<move_into_box = %d>\n" % (self.move_into_box)
 			# astr += "\t<sticky_wall_xz = %d>\n" % (self.sticky_wall_xz)
 			# astr += "\t<wall_x_1 = %s>\n" % (self.wall_x_1)
 			# astr += "\t<wall_x_2 = %s>\n" % (self.wall_x_2)
