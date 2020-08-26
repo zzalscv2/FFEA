@@ -44,7 +44,7 @@ SSINT_matrix::~SSINT_matrix() {
     num_ssint_face_types = 0;
 }
 
-int SSINT_matrix::init(string ssint_params_fname, string ssint_type, int calc_ssint, scalar ssint_cutoff) {
+int SSINT_matrix::init(string ssint_params_fname, string ssint_type, int calc_ssint, scalar *ssint_cutoff) {
 
     int err;
     // In that case we do not need an input parameter file, 
@@ -151,7 +151,7 @@ int LJ_matrix::init_ssintOLD(string ssint_params_fname) {
 }
 */
 
-int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scalar ssint_cutoff) {
+int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scalar *ssint_cutoff) {
 
     int count, MAX_NUM_VARS = 3;
     string line, aset, head[MAX_NUM_VARS];
@@ -233,7 +233,7 @@ int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scala
 
 	    // In gensoft, set the Rmin value to the cutoff distance for now, so avoid turning points
 	    if (ssint_type == "gensoft") {
-		    params[LJI(i, j)]["Rmin"] = ssint_cutoff * mesoDimensions::length;
+		    params[LJI(i, j)]["Rmin"] = ssint_cutoff[0] * mesoDimensions::length;
 	    }
 
 	    // Defaulting the value if not found 

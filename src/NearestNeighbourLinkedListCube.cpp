@@ -24,7 +24,7 @@
 #include "NearestNeighbourLinkedListCube.h"
 
 /* */
-int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
+int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar *h) {
     // Clear the grid
     clear();
 
@@ -41,9 +41,9 @@ int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
 
 	// Do we have the correct centroid?? We do now!
         //pool[i].obj->calc_area_normal_centroid();
-        int x = (int) floor(pool[i].obj->centroid.x / h);
-        int y = (int) floor(pool[i].obj->centroid.y / h);
-        int z = (int) floor(pool[i].obj->centroid.z / h);
+        int x = (int) floor(pool[i].obj->centroid.x / h[0]);
+        int y = (int) floor(pool[i].obj->centroid.y / h[1]);
+        int z = (int) floor(pool[i].obj->centroid.z / h[2]);
         /*
                                         // If face centroid is out of bounds of the box, add its node to the nearest cell on the edge
                                         // of the box. This is necessary in the case of PBC since an entire blob is moved only if its centre
@@ -76,7 +76,7 @@ int NearestNeighbourLinkedListCube::build_nearest_neighbour_lookup(scalar h) {
 }
 
 
-int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup_and_swap(scalar h) {
+int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup_and_swap(scalar *h) {
     // Clear the grid
     clear_layer(shadow_layer);
 
@@ -94,9 +94,9 @@ int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup_and_swap(s
        // Do we have the correct centroid?? We do now!
        // pool[i].obj->calc_area_normal_centroid();
 
-        int x = (int) floor(pool[i].obj->centroid.x / h);
-        int y = (int) floor(pool[i].obj->centroid.y / h);
-        int z = (int) floor(pool[i].obj->centroid.z / h);
+        int x = (int) floor(pool[i].obj->centroid.x / h[0]);
+        int y = (int) floor(pool[i].obj->centroid.y / h[1]);
+        int z = (int) floor(pool[i].obj->centroid.z / h[2]);
 
         // attempt to add the node to the cell
         if (add_node_to_stack_shadow(i, x, y, z) == FFEA_ERROR) {
@@ -108,7 +108,7 @@ int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup_and_swap(s
     return FFEA_OK;
 }
 
-int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup(scalar h) {
+int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup(scalar *h) {
     // Clear the grid
     clear_layer(shadow_layer);
     can_swap = false;
@@ -127,9 +127,9 @@ int NearestNeighbourLinkedListCube::prebuild_nearest_neighbour_lookup(scalar h) 
        // Do we have the correct centroid?? We do now!
        // pool[i].obj->calc_area_normal_centroid();
 
-        int x = (int) floor(pool[i].obj->centroid.x / h);
-        int y = (int) floor(pool[i].obj->centroid.y / h);
-        int z = (int) floor(pool[i].obj->centroid.z / h);
+        int x = (int) floor(pool[i].obj->centroid.x / h[0]);
+        int y = (int) floor(pool[i].obj->centroid.y / h[1]);
+        int z = (int) floor(pool[i].obj->centroid.z / h[2]);
 
         // attempt to add the node to the cell
         if (add_node_to_stack_shadow(i, x, y, z) == FFEA_ERROR) {

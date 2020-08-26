@@ -460,15 +460,15 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         get_system_dimensions(&dimension_vector);
 
         // Calculate decent box size
-        params.es_N_x = 2 * (int)ceil(dimension_vector.x / params.ssint_cutoff);
-        params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.ssint_cutoff);
-        params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.ssint_cutoff);
+        params.es_N_x = 2 * (int)ceil(dimension_vector.x / params.ssint_cutoff[0]);
+        params.es_N_y = 2 * (int)ceil(dimension_vector.y / params.ssint_cutoff[1]);
+        params.es_N_z = 2 * (int)ceil(dimension_vector.z / params.ssint_cutoff[2]);
     }
     
     // Move to box centre (if it is a new simulation! Otherwise trajectory will already have taken care of the move)
-    box_dim.x = params.ssint_cutoff * params.es_N_x;
-    box_dim.y = params.ssint_cutoff * params.es_N_y;
-    box_dim.z = params.ssint_cutoff * params.es_N_z;
+    box_dim.x = params.ssint_cutoff[0] * params.es_N_x;
+    box_dim.y = params.ssint_cutoff[1] * params.es_N_y;
+    box_dim.z = params.ssint_cutoff[2] * params.es_N_z;
 
     shift.x = box_dim.x / 2.0 - world_centroid.x;
     shift.y = box_dim.y / 2.0 - world_centroid.y;
@@ -2002,7 +2002,7 @@ int World::run() {
         if (params.calc_ssint == 1 || params.calc_steric == 1) {
            vdw_solver->solve(blob_corr); // blob_corr == NULL if force_pbc = 0.
         }
-        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.ssint_cutoff);
+        if (params.sticky_wall_xz == 1) vdw_solver->solve_sticky_wall(params.ssint_cutoff[1]);
 
         //checks whether force periodic boundary conditions specified, calculates periodic array correction to array through vdw_solver as overload
 
@@ -3819,11 +3819,11 @@ int World::apply_springs() {
 	     // This is a hack for PBC
 	     for(int j = 0 ; j < 3; ++j) {
 		     	if(j == 0) {
-				lim = params.es_N_x * params.ssint_cutoff;
+				lim = params.es_N_x * params.ssint_cutoff[0];
 			} else if (j == 1) {
-				params.es_N_y * params.ssint_cutoff;
+				params.es_N_y * params.ssint_cutoff[1];
 			} else {
-				params.es_N_z * params.ssint_cutoff;
+				params.es_N_z * params.ssint_cutoff[2];
 			}
 
 			if(sep[j] > lim / 2.0) {
@@ -4347,11 +4347,11 @@ void World::make_measurements() {
 	     // This is a hack for PBC
 	     for(j = 0 ; j < 3; ++j) {
 		     	if(j == 0) {
-				lim = params.es_N_x * params.ssint_cutoff;
+				lim = params.es_N_x * params.ssint_cutoff[0];
 			} else if (j == 1) {
-				params.es_N_y * params.ssint_cutoff;
+				params.es_N_y * params.ssint_cutoff[1];
 			} else {
-				params.es_N_z * params.ssint_cutoff;
+				params.es_N_z * params.ssint_cutoff[2];
 			}
 
 			if(b[j] - a[j] > lim / 2.0) {
@@ -4546,7 +4546,7 @@ int World::die_with_dignity(int step, scalar wtime) {
 
 
 #ifdef FFEA_PARALLEL_FUTURE
-int World::prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size) {
+int World::prebuild_nearest_neighbour_lookup_wrapper(scalar *cell_size) {
     return lookup.prebuild_nearest_neighbour_lookup(cell_size);
 }
 

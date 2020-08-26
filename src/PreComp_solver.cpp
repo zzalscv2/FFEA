@@ -513,7 +513,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    // 5.1 - Allocate the linkedlist:
    printf("Allocating memory for the preComp linked list grid...\n");
    // the total size of the box is: 
-   scalar vdwVoxelSize = params->ssint_cutoff;
+   scalar vdwVoxelSize = params->ssint_cutoff[0];
    scalar dimBox[3];
    dimBox[0] = params->es_N_x * vdwVoxelSize;
    dimBox[1] = params->es_N_y * vdwVoxelSize;

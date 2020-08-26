@@ -326,7 +326,7 @@ private:
     void write_pre_print_to_trajfile(int step);
     void do_nothing(); 
 
-    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size); 
+    int prebuild_nearest_neighbour_lookup_wrapper(scalar *cell_size); 
 #ifdef FFEA_PARALLEL_FUTURE
     std::future<void> thread_writingTraj; 
     std::future<int> thread_updatingVdWLL; 

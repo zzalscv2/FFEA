@@ -132,7 +132,8 @@ public:
 
     int calc_steric; ///< Calculate steric interactions? 
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
-    scalar ssint_cutoff; ///< Cutoff distance for the surface-surface interactions. 
+//    scalar ssint_cutoff; ///< Cutoff distance for the surface-surface interactions. 
+    scalar ssint_cutoff[3];
     geoscalar steric_dr; ///< used to calculate the numerical derivative.
 
     string FFEA_script_filename;

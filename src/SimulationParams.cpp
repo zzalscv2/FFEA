@@ -39,7 +39,10 @@ SimulationParams::SimulationParams() {
     inc_self_ssint = 1;
     sticky_wall_xz = 0;
     ssint_type = "ljsteric";
-    ssint_cutoff = 3e-9 / mesoDimensions::length;
+//    ssint_cutoff = 3e-9 / mesoDimensions::length;
+    ssint_cutoff[0] = 3e-9 / mesoDimensions::length;
+    ssint_cutoff[1] = 3e-9 / mesoDimensions::length;
+    ssint_cutoff[2] = 3e-9 / mesoDimensions::length;
     calc_steric = 1;
     steric_factor = 1;
     steric_dr = 5e-3;
@@ -136,7 +139,10 @@ SimulationParams::~SimulationParams() {
     calc_ssint = -1;
     inc_self_ssint = 0;
     ssint_type = "";
-    ssint_cutoff = 0;
+//    ssint_cutoff = 0;
+    ssint_cutoff[0] = 0;
+    ssint_cutoff[1] = 0;
+    ssint_cutoff[2] = 0;
     calc_steric = 0;
     calc_es = 0;
     calc_noise = 0;
@@ -404,10 +410,35 @@ int SimulationParams::assign(string lvalue, string rvalue) {
         if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << stokes_visc << endl;
         stokes_visc /= mesoDimensions::pressure * mesoDimensions::time;
 
+//    } else if (lvalue == "ssint_cutoff" || lvalue == "vdw_cutoff") {
+//        ssint_cutoff = atof(rvalue.c_str());
+//        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_cutoff << endl;
+//        ssint_cutoff /= mesoDimensions::length;
+
     } else if (lvalue == "ssint_cutoff" || lvalue == "vdw_cutoff") {
-        ssint_cutoff = atof(rvalue.c_str());
-        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_cutoff << endl;
-        ssint_cutoff /= mesoDimensions::length;
+        ssint_cutoff[0] = atof(rvalue.c_str());
+        ssint_cutoff[1] = atof(rvalue.c_str());
+        ssint_cutoff[2] = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_cutoff[0] << endl;
+        ssint_cutoff[0] /= mesoDimensions::length;
+        ssint_cutoff[1] /= mesoDimensions::length;
+        ssint_cutoff[2] /= mesoDimensions::length;
+
+    } else if (lvalue == "ssint_cutoff_x" || lvalue == "vdw_cutoff_x") {
+        ssint_cutoff[0] = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_cutoff[0] << endl;
+        ssint_cutoff[0] /= mesoDimensions::length;
+
+    } else if (lvalue == "ssint_cutoff_y" || lvalue == "vdw_cutoff_y") {
+        ssint_cutoff[1] = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_cutoff[1] << endl;
+        ssint_cutoff[1] /= mesoDimensions::length;
+
+    } else if (lvalue == "ssint_cutoff_z" || lvalue == "vdw_cutoff_z") {
+        ssint_cutoff[2] = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1) cout << "\tSetting " << lvalue << " = " << ssint_cutoff[2] << endl;
+        ssint_cutoff[2] /= mesoDimensions::length;
+
 
     } else if (lvalue == "steric_factor" || lvalue == "vdw_steric_factor") {
         steric_factor = atof(rvalue.c_str());
@@ -619,9 +650,14 @@ int SimulationParams::validate(int sim_mode) {
         FFEA_ERROR_MESSG("Required: 'inc_self_ssint', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (ssint_cutoff <= 0) {
+//    if (ssint_cutoff <= 0) {
+//        FFEA_ERROR_MESSG("'ssint_cutoff' must be positive and larger than zero.\n");
+//    }
+
+    if (ssint_cutoff[0] <= 0 || ssint_cutoff[1] <= 0 || ssint_cutoff[2] <= 0) {
         FFEA_ERROR_MESSG("'ssint_cutoff' must be positive and larger than zero.\n");
     }
+
 
     if (calc_ssint == 1) {
 	
@@ -876,7 +912,8 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params) {
         fprintf(fout, "\n\tShort range parameters:\n");
         fprintf(fout, "\tssint_type = %s\n", ssint_type.c_str());
         fprintf(fout, "\tinc_self_ssint = %d\n", inc_self_ssint);
-        fprintf(fout, "\tssint_cutoff = %e\n", ssint_cutoff*mesoDimensions::length);
+//        fprintf(fout, "\tssint_cutoff = %e\n", ssint_cutoff*mesoDimensions::length);
+        fprintf(fout, "\tssint_cutoff = %e,%e,%e\n", ssint_cutoff[0]*mesoDimensions::length, ssint_cutoff[1]*mesoDimensions::length, ssint_cutoff[2]*mesoDimensions::length);
 
         fprintf(fout, "\tssint_in_fname = %s\n", ssint_in_fname.c_str());
         if (calc_steric == 1) {
