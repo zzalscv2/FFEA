@@ -640,6 +640,7 @@ class FFEA_script_params():
 		self.calc_stokes = 1
 		self.stokes_visc = 1e-3
 		self.calc_ssint = 1
+		self.calc_steric = 1
 		self.calc_noise = 1
 		self.calc_springs = 0
 		self.calc_ctforces = 0
@@ -716,6 +717,8 @@ class FFEA_script_params():
 			self.stokes_visc = float(rvalue)
 		elif lvalue == "calc_ssint":
 			self.calc_ssint = int(rvalue)
+		elif lvalue == "calc_steric":
+			self.calc_steric = int(rvalue)
 		elif lvalue == "calc_preComp":
 			self.calc_preComp = int(rvalue)
 		elif lvalue == "calc_springs":
@@ -863,6 +866,7 @@ class FFEA_script_params():
 			astr += "\t<stokes_visc = %6.2e>\n" % (self.stokes_visc)
 
 		astr += "\t<calc_ssint = %d>\n" % (self.calc_ssint)
+		astr += "\t<calc_steric = %d>\n" % (self.calc_steric)
 		astr += "\t<ssint_cutoff_x = %6.2e>\n" % (self.ssint_cutoff[0])
 		astr += "\t<ssint_cutoff_y = %6.2e>\n" % (self.ssint_cutoff[1])
 		astr += "\t<ssint_cutoff_z = %6.2e>\n" % (self.ssint_cutoff[2])
