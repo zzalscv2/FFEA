@@ -923,6 +923,10 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
         // Allocate memory for an NxNxN grid, with a 'pool' for the required number of surface faces
         printf("Allocating memory for nearest neighbour lookup grid...\n");
+//	fprintf(stderr, "%d,%d,%d\n", params.es_N_x, params.es_N_y, params.es_N_z);
+//	fprintf(stderr, "%e,%e,%e\n", box_dim.x*mesoDimensions::length, box_dim.y*mesoDimensions::length, box_dim.z*mesoDimensions::length);
+//	fprintf(stderr, "%e,%e,%e\n", params.ssint_cutoff[0]*mesoDimensions::length, params.ssint_cutoff[1]*mesoDimensions::length, params.ssint_cutoff[2]*mesoDimensions::length);
+//	exit(0);
 #ifdef FFEA_PARALLEL_FUTURE
         int lookup_error = lookup.alloc_dual(params.es_N_x, params.es_N_y, params.es_N_z, total_num_surface_faces);
 #else
