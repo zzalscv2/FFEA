@@ -3821,9 +3821,9 @@ int World::apply_springs() {
 		     	if(j == 0) {
 				lim = params.es_N_x * params.ssint_cutoff[0];
 			} else if (j == 1) {
-				params.es_N_y * params.ssint_cutoff[1];
+				lim = params.es_N_y * params.ssint_cutoff[1];
 			} else {
-				params.es_N_z * params.ssint_cutoff[2];
+				lim = params.es_N_z * params.ssint_cutoff[2];
 			}
 
 			if(sep[j] > lim / 2.0) {
@@ -4349,9 +4349,9 @@ void World::make_measurements() {
 		     	if(j == 0) {
 				lim = params.es_N_x * params.ssint_cutoff[0];
 			} else if (j == 1) {
-				params.es_N_y * params.ssint_cutoff[1];
+				lim = params.es_N_y * params.ssint_cutoff[1];
 			} else {
-				params.es_N_z * params.ssint_cutoff[2];
+				lim = params.es_N_z * params.ssint_cutoff[2];
 			}
 
 			if(b[j] - a[j] > lim / 2.0) {
