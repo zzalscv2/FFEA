@@ -913,7 +913,6 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params) {
         fprintf(fout, "\tssint_type = %s\n", ssint_type.c_str());
         fprintf(fout, "\tinc_self_ssint = %d\n", inc_self_ssint);
 //        fprintf(fout, "\tssint_cutoff = %e\n", ssint_cutoff*mesoDimensions::length);
-        fprintf(fout, "\tssint_cutoff = %e,%e,%e\n", ssint_cutoff[0]*mesoDimensions::length, ssint_cutoff[1]*mesoDimensions::length, ssint_cutoff[2]*mesoDimensions::length);
 
         fprintf(fout, "\tssint_in_fname = %s\n", ssint_in_fname.c_str());
         if (calc_steric == 1) {
@@ -927,6 +926,7 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params) {
     fprintf(fout, "\tes_N_x = %d\n", es_N_x);
     fprintf(fout, "\tes_N_y = %d\n", es_N_y);
     fprintf(fout, "\tes_N_z = %d\n", es_N_z);
+    fprintf(fout, "\tssint_cutoff = %e,%e,%e\n", ssint_cutoff[0]*mesoDimensions::length, ssint_cutoff[1]*mesoDimensions::length, ssint_cutoff[2]*mesoDimensions::length);
     fprintf(fout, "\tforce_pbc = %d\n", force_pbc);
     fprintf(fout, "\tmove_into_box = %d\n", move_into_box);
 

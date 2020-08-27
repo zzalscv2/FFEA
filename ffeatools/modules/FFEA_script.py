@@ -861,14 +861,18 @@ class FFEA_script_params():
 		if (self.calc_stokes == 1):
 			astr += "\t<calc_stokes = %d>\n" % (self.calc_stokes)
 			astr += "\t<stokes_visc = %6.2e>\n" % (self.stokes_visc)
+
+		astr += "\t<calc_ssint = %d>\n" % (self.calc_ssint)
+		astr += "\t<ssint_cutoff_x = %6.2e>\n" % (self.ssint_cutoff[0])
+		astr += "\t<ssint_cutoff_y = %6.2e>\n" % (self.ssint_cutoff[1])
+		astr += "\t<ssint_cutoff_z = %6.2e>\n" % (self.ssint_cutoff[2])
 		if (self.calc_ssint == 1):
-			astr += "\t<calc_ssint = %d>\n" % (self.calc_ssint)
+
 			astr += "\t<ssint_type = %s>\n" % (self.ssint_type)
 			if self.ssint_type == "steric" or self.ssint_type == "ljsteric":
 				astr += "\t<steric_factor = %6.2e>\n" % (self.steric_factor)
-			astr += "\t<ssint_cutoff_x = %6.2e>\n" % (self.ssint_cutoff[0])
-			astr += "\t<ssint_cutoff_y = %6.2e>\n" % (self.ssint_cutoff[1])
-			astr += "\t<ssint_cutoff_z = %6.2e>\n" % (self.ssint_cutoff[2])
+
+
 			astr += "\t<inc_self_vdw = %d>\n" % (self.inc_self_vdw)
 		if (self.calc_springs == 1):
 			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
