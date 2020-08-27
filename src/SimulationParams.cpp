@@ -729,9 +729,9 @@ int SimulationParams::validate(int sim_mode) {
 
     } else {
         printf("\tFRIENDLY WARNING: No electrostatic, vdw or pre-computed interactions will be simulated\n");
-        es_N_x = 0;
-        es_N_y = 0;
-        es_N_z = 0;
+//        es_N_x = 0;
+//        es_N_y = 0;
+ //       es_N_z = 0;
     }
 
     if (calc_noise != 0 && calc_noise != 1) {

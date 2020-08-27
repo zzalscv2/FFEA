@@ -4342,7 +4342,7 @@ void World::make_measurements() {
         for(i = 0; i < num_springs; ++i) {
             active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], a.data);
             active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], b.data);
-            arr3arr3Substract<scalar,arr3>(a.data, b.data, c.data);
+//            arr3arr3Substract<scalar,arr3>(a.data, b.data, c.data);
 
 	     // This is a hack for PBC
 	     for(j = 0 ; j < 3; ++j) {
@@ -4361,8 +4361,11 @@ void World::make_measurements() {
 			}
 	    }
 
+            arr3arr3Substract<scalar,arr3>(a.data, b.data, c.data);
 
             springfieldenergy[spring_array[i].blob_index[0]][spring_array[i].blob_index[1]] += 0.5 * spring_array[i].k * (mag<scalar,arr3>(c.data) - spring_array[i].l) * (mag<scalar,arr3>(c.data) - spring_array[i].l);
+
+
         }
 
         springenergy = get_spring_field_energy(-1, -1);
