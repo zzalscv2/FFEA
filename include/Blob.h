@@ -397,6 +397,12 @@ public:
     void linearise_force();
 
 
+    /*
+     *
+     */
+
+    int aggregate_forces();
+    int solve();
 
     /**compresses blob by compression factor specified in input script*/
     void compress_blob(scalar compress);

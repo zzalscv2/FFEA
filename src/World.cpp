@@ -2031,6 +2031,7 @@ int World::run() {
 
         if (fatal_errors > 0) return die_with_dignity(step, wtime);
 
+/*
 	// Now, for this step, all forces and positions are correct, as are the kinetic states
         if ((step) % params.check == 0) {
             print_trajectory_and_measurement_files(step, wtime);
@@ -2044,6 +2045,31 @@ int World::run() {
 #endif
         for (int i = 0; i < params.num_blobs; i++) {
             active_blob_array[i]->update_positions();
+        }
+*/
+
+	// Aggregate forces
+#ifdef FFEA_PARALLEL_PER_BLOB
+
+        #pragma omp parallel for default(none) schedule(static) 
+#endif
+        for (int i = 0; i < params.num_blobs; i++) {
+            active_blob_array[i]->aggregate_forces();
+        }
+
+	// Now, for this step, all forces and positions are correct, as are the kinetic states
+        if ((step) % params.check == 0) {
+            print_trajectory_and_measurement_files(step, wtime);
+            print_kinetic_files(step);
+        }
+        
+	// Finally, update the positions
+#ifdef FFEA_PARALLEL_PER_BLOB
+
+        #pragma omp parallel for default(none) schedule(static) 
+#endif
+        for (int i = 0; i < params.num_blobs; i++) {
+            active_blob_array[i]->solve();
         }
 
 #ifdef BENCHMARK

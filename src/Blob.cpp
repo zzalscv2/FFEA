@@ -734,6 +734,140 @@ int Blob::update_internal_forces() {
     return FFEA_OK;
 }
 
+int Blob::aggregate_forces() {
+
+    // Aggregate forces on nodes from all elements (if not static)
+    if (get_motion_state() != FFEA_BLOB_IS_DYNAMIC) {
+	return FFEA_OK;
+    }
+
+    int n, m;
+
+    // Aggregate the forces on each node by summing the contributions from each element.
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+    #pragma omp parallel for default(none) private(n, m) schedule(guided)
+#endif
+    for (n = 0; n < num_nodes; n++) {
+        for (m = 0; m < node[n].num_element_contributors; m++) {
+            force[n][0] += node[n].force_contributions[m]->x;
+            force[n][1] += node[n].force_contributions[m]->y;
+            force[n][2] += node[n].force_contributions[m]->z;
+        }
+    }
+
+    // Aggregate surface forces onto nodes
+    for (n = 0; n < num_surface_faces; n++) {
+        for (int i = 0; i < 4; i++) {
+            int sni = surface[n].n[i]->index;
+            force[sni].x += surface[n].force[i].x;
+            force[sni].y += surface[n].force[i].y;
+            force[sni].z += surface[n].force[i].z;
+
+            //			printf("force on %d from face %d = %e %e %e\n", sni, n, force[sni].x, force[sni].y, force[sni].z);
+        }
+    }
+    //	printf("----\n\n");
+    if (params->calc_stokes == 1) {
+        if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+            #pragma omp parallel default(none)
+            {
+#endif
+#ifdef USE_OPENMP
+                int thread_id = omp_get_thread_num();
+#else
+                int thread_id = 0;
+#endif
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+                #pragma omp for schedule(guided)
+#endif
+                for (int i = 0; i < num_nodes; i++) {
+                    force[i].x -= node[i].vel.x * node[i].stokes_drag;
+                    force[i].y -= node[i].vel.y * node[i].stokes_drag;
+                    force[i].z -= node[i].vel.z * node[i].stokes_drag;
+                    if (params->calc_noise == 1) {
+                        force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                    }
+                }
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+            }
+#endif
+        } else {
+            if (params->calc_noise == 1) {
+
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+                #pragma omp parallel default(none)
+                {
+#endif
+#ifdef USE_OPENMP
+                    int thread_id = omp_get_thread_num();
+#else
+                    int thread_id = 0;
+#endif
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+                    #pragma omp for schedule(guided)
+#endif
+                    for (int i = 0; i < num_nodes; i++) {
+                        force[i].x -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i].y -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i].z -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                    }
+#ifdef FFEA_PARALLEL_WITHIN_BLOB
+                }
+#endif
+            }
+        }
+    }
+
+    // Take forces off of second order nodes onto linear ones 
+    linearise_force();
+
+    // Set to zero any forces on the pinned nodes
+    for (n = 0; n < num_pinned_nodes; n++) {
+        int pn_index = pinned_nodes_list[n];
+        force[pn_index].x = 0;
+        force[pn_index].y = 0;
+        force[pn_index].z = 0;
+    }
+
+    // This should have a similar way of making the solver matrix become the identity matrix as the pinned nodes do
+    for(set<int>::iterator it = bsite_pinned_nodes_list.begin(); it != bsite_pinned_nodes_list.end(); ++it) {
+        force[*it].x = 0;
+        force[*it].y = 0;
+        force[*it].z = 0;
+    }
+
+    return FFEA_OK;
+}
+
+int Blob::solve() {
+
+    // Aggregate forces on nodes from all elements (if not static)
+    if (get_motion_state() != FFEA_BLOB_IS_DYNAMIC) {
+	return FFEA_OK;
+    }
+
+    // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix,
+    // or Kv = f where K is the viscosity matrix for the system
+    // x/v is the (unknown) force solution and f is the force vector for the system.
+    if (solver->solve(force) == FFEA_ERROR) {
+        FFEA_ERROR_MESSG("Error reported by Solver.\n");
+    }
+
+    // Update node velocities and positions
+    euler_integrate();
+
+    // Linearise the 2nd order elements
+    for (int n = 0; n < num_elements; n++) {
+        elem[n].linearise_element();
+    }
+
+    return FFEA_OK;
+}
+
+
 int Blob::update_positions() {
 
     // Aggregate forces on nodes from all elements (if not static)
@@ -1160,11 +1294,26 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
                     force[i].x*mesoDimensions::force, force[i].y*mesoDimensions::force, force[i].z*mesoDimensions::force);
         }
     } else {
+
         if (params->calc_es == 0) {
+
+
+/*		if(blob_index == 4948) {
+			fprintf(stderr, "Blob: %d, Node %d\n", blob_index, 14);
+			fprintf(stderr, "Pos: %e %e %e\n", node[14].pos.x*mesoDimensions::length, node[14].pos.y*mesoDimensions::length, node[14].pos.z*mesoDimensions::length);
+			fprintf(stderr, "Force: %e %e %e\n", force[14].x*mesoDimensions::force, force[14].y*mesoDimensions::force, force[14].z*mesoDimensions::force);
+		}
+
+		if(blob_index == 3168) {
+			fprintf(stderr, "Blob: %d, Node %d\n", blob_index, 8);
+			fprintf(stderr, "Pos: %e %e %e\n", node[8].pos.x*mesoDimensions::length, node[8].pos.y*mesoDimensions::length, node[8].pos.z*mesoDimensions::length);
+			fprintf(stderr, "Force: %e %e %e\n", force[8].x*mesoDimensions::force, force[8].y*mesoDimensions::force, force[8].z*mesoDimensions::force);
+		}
+*/
             for (int i = 0; i < num_nodes; i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         node[i].pos.x*mesoDimensions::length, node[i].pos.y*mesoDimensions::length, node[i].pos.z*mesoDimensions::length,
-                        0., 0., 0., 0., 0., 0., 0.);
+                        0., 0., 0., 0., force[i].x*mesoDimensions::force, force[i].y*mesoDimensions::force, force[i].z*mesoDimensions::force);
             }
         } else {
             for (int i = 0; i < num_nodes; i++) {
