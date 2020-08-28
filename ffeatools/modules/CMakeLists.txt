@@ -32,4 +32,4 @@ install (FILES __init__.py wrap.py FFEA_meta.py
          DESTINATION "${PYTHONSTUFF}/modules")
 
 install(DIRECTORY rod
-        DESTINATION "${PYTHONSTUFF}/modules/rod")
+        DESTINATION "${PYTHONSTUFF}/modules")
