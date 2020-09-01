@@ -1514,7 +1514,7 @@ class FFEA_viewer_control_window:
 		'show_inverted': 1,
 		'show_vdw': 0,
 		'show_shortest_edge': 0,
-		'show_springs': 1,
+		'show_springs': 0,
 		'show_box': "No Box",
 		'load_trajectory': "Trajectory", ## PYMOL OK
 		'highlight': '',
