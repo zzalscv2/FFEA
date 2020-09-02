@@ -28,6 +28,8 @@ ffeatoolsFound = False
 try:
     import ffeatools # python package
     ffeatoolsFound = True
+    FFEA_script = ffeatools.modules.FFEA_script
+    FFEA_material = ffeatools.modules.FFEA_script
 except:
     try:
         import FFEA_script, FFEA_material
