@@ -393,6 +393,17 @@ void tetra_element_linear::add_shear_elastic_stress(matrix3 J, matrix3 stress) {
     stress[0][0] -= G;
     stress[1][1] -= G;
     stress[2][2] -= G;
+
+/*
+	fprintf(stderr, "Shear Stress (MPa):\n");
+	for(int i = 0; i < 3; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, "%e, ", stress[i][j] * mesoDimensions::pressure / 1e6);
+		}
+		fprintf(stderr, "\n");
+	}
+	fprintf(stderr, "\n");
+*/
 }
 
 /*
@@ -405,6 +416,29 @@ void tetra_element_linear::add_bulk_elastic_stress(matrix3 stress) {
     stress[0][0] += c;
     stress[1][1] += c;
     stress[2][2] += c;
+
+/*	fprintf(stderr, "Bulk Stress (MPa):\n");
+	for(int i = 0; i < 3; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			if(i == j) {
+				fprintf(stderr, "%e, ", c * mesoDimensions::pressure / 1e6);
+			} else {
+				fprintf(stderr, "0, ");
+			}
+		}
+		fprintf(stderr, "\n");
+	}
+	fprintf(stderr, "\n");
+
+	fprintf(stderr, "Total Stress (MPa):\n");
+	for(int i = 0; i < 3; ++i) {
+		for(int j = 0; j < 3; ++j) {
+			fprintf(stderr, "%e, ", stress[i][j] * mesoDimensions::pressure / 1e6);
+		}
+		fprintf(stderr, "\n");
+	}
+	fprintf(stderr, "\n");
+*/
 }
 
 /*
