@@ -27,19 +27,21 @@ Features  {#features}
 Publications  {#publications}
 ============
 
-   * Methodology
-       * Welch R. J., Harris S. A., Harlen O. G. & Read D. J. "[KOBRA: A Fluctuating Elastic Rod Model for Slender Biological Macromolecules](https://doi.org/10.1039/D0SM00491J)", Soft Matter 16, 7544-7555 (2020).
-       * Solernou A., Hanson B. S., Richardson R. A., Welch R., Harris S. A., Read D. J., Harlen O. G. "[Fluctuating Finite Element Analysis (FFEA): A continuum mechanics software tool for mesoscale simulation of biomolecules](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005897)", PLoS Comput. Biol. 14(3): e1005897 (2018).
-       * Oliver R., Read D. J., Harlen O. G. & Harris S. A. "["A Stochastic finite element model for the dynamics of globular macromolecules"](http://www.sciencedirect.com/science/article/pii/S0021999112007589)", J. Comp. Phys. 239, 147-165 (2013).
-       * Patargias G. N., Harris S. A. & Harding J. "["A demonstration of the inhomogeneity of the local dielectric response of proteins by molecular dynamics simulations."](https://www.ncbi.nlm.nih.gov/pubmed/20572740)", J. Chem. Phys. 132, 235103 (2010).
-   * Applications
-       * Richardson R. A., Hanson B. S., Read D. J., Harlen O. G. & Harris S. A. "["Exploring the dynamics of flagellar dynein within the axoneme with Fluctuating Finite Element Analysis"](https://doi.org/10.1017/S0033583520000062)", Q. Rev. Biophys. 53, E9 (2020).
-       *Lee S. C., Collins R., Lin Y., Jamshad M., Broughton C., Harris S. A., Hanson B. S., Tognoloni C., Parslow R. A., Terry A. E., Rodger A., Smith C. J., Edler K. J., Ford R., Roper D. I. & Dafforn T. R. "["Nano-encapsulated Escherichia coli Divisome Anchor ZipA, and in Complex with FtsZ"](https://doi.org/10.1038/s41598-019-54999-x)", Sci. Rep. 9, 18712 (2019).
-       * Richardson R., Papachristos K., Read D. J., Harlen O. G., Harrison M. A., Paci E., Muench S. P. & Harris S. A "["Understanding the apparent stator-rotor connections in the rotary ATPase family using coarse-grained computer modelling"](https://www.ncbi.nlm.nih.gov/pubmed/25174610)", Proteins: Struct., Funct., Bioinf. 82, 3298-3311 (2014).
-   * Reviews
-       * Gray A., Harlen O. G., Harris S. A., Khalid S., Leung Y. M., Lonsdale R., Mulholland A. J., Pearson A. R., Read D. J. & Richardson R. A. "["In pursuit of an accurate spatial and temporal model of biomolecules at the atomistic level: a perspective on computer simulation"](https://www.ncbi.nlm.nih.gov/pubmed/25615870)", Acta Cryst. D71, 162-172 (2015).
-       * Hanson B., Richardson R., Oliver R., Read D. J., Harlen O. & Harris S. "["Modelling biomacromolecular assemblies with continuum mechanics"](https://www.ncbi.nlm.nih.gov/pubmed/25849915)", Biochem. Soc. Trans. 43, 186-192 (2015).
-       * Oliver R. , Richardson R. A., Hanson B., Kendrick K., Read D. J., Harlen O. G. & Harris S. A. "["Modelling the Dynamic Architecture of Biomaterials Using Continuum Mechanics"](http://link.springer.com/chapter/10.1007%2F978-3-319-09976-7_8)", Protein Modelling, G. Náray-Szabó, Editor. Springer International Publishing. p. 175-197 (2014).
+### Methodology: ###
+* Welch R. J., Harris S. A., Harlen O. G. & Read D. J. "["KOBRA: A Fluctuating Elastic Rod Model for Slender Biological Macromolecules"](https://doi.org/10.1039/D0SM00491J)" (2020), Soft Matter 16, 7544-7555.
+* Solernou A., Hanson B. S., Richardson R. A., Welch R., Harris S. A., Read D. J., Harlen O. G. "["Fluctuating Finite Element Analysis (FFEA): A continuum mechanics software tool for mesoscale simulation of biomolecules"](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005897)" (2018), PLoS Comput. Biol. 14(3): e1005897.
+* Oliver R., Read D. J., Harlen O. G. & Harris S. A. "["A Stochastic finite element model for the dynamics of globular macromolecules"](http://www.sciencedirect.com/science/article/pii/S0021999112007589)" (2013), J. Comp. Phys. 239, 147-165.
+* Patargias G. N., Harris S. A. & Harding J. "["A demonstration of the inhomogeneity of the local dielectric response of proteins by molecular dynamics simulations"](https://www.ncbi.nlm.nih.gov/pubmed/20572740)" (2010), J. Chem. Phys. 132, 235103.
+
+### Applications: ###
+* Richardson R. A., Hanson B. S., Read D. J., Harlen O. G. & Harris S. A. "["Exploring the dynamics of flagellar dynein within the axoneme with Fluctuating Finite Element Analysis"](https://doi.org/10.1017/S0033583520000062)", Q. Rev. Biophys. 53, E9 (2020).
+* Lee S. C., Collins R., Lin Y., Jamshad M., Broughton C., Harris S. A., Hanson B. S., Tognoloni C., Parslow R. A., Terry A. E., Rodger A., Smith C. J., Edler K. J., Ford R., Roper D. I. & Dafforn T. R. "["Nano-encapsulated Escherichia coli Divisome Anchor ZipA, and in Complex with FtsZ"](https://doi.org/10.1038/s41598-019-54999-x)" (2019), Sci. Rep. 9, 18712.
+* Richardson R., Papachristos K., Read D. J., Harlen O. G., Harrison M. A., Paci E., Muench S. P. & Harris S. A "["Understanding the apparent stator-rotor connections in the rotary ATPase family using coarse-grained computer modelling"](https://www.ncbi.nlm.nih.gov/pubmed/25174610)" (2014), Proteins: Struct., Funct., Bioinf. 82, 3298-3311.
+
+### Reviews: ###
+* Gray A., Harlen O. G., Harris S. A., Khalid S., Leung Y. M., Lonsdale R., Mulholland A. J., Pearson A. R., Read D. J. & Richardson R. A. "["In pursuit of an accurate spatial and temporal model of biomolecules at the atomistic level: a perspective on computer simulation"](https://www.ncbi.nlm.nih.gov/pubmed/25615870)" (2015), Acta Cryst. D71, 162-172.
+* Hanson B., Richardson R., Oliver R., Read D. J., Harlen O. & Harris S. "["Modelling biomacromolecular assemblies with continuum mechanics"](https://www.ncbi.nlm.nih.gov/pubmed/25849915)" (2015), Biochem. Soc. Trans. 43, 186-192.
+* Oliver R. , Richardson R. A., Hanson B., Kendrick K., Read D. J., Harlen O. G. & Harris S. A. "["Modelling the Dynamic Architecture of Biomaterials Using Continuum Mechanics"](http://link.springer.com/chapter/10.1007%2F978-3-319-09976-7_8)" (2014), Protein Modelling, G. Náray-Szabó, Editor. Springer International Publishing. p. 175-197.
        
 
 Getting Started  {#gettingstarted}
@@ -71,7 +73,7 @@ Technology  {#technology}
         in the steric repulsion module. 
    * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL] 
         is used to generate the documentation. 
-   * [PyMOL](https://www.pymol.org) (>=1.8) [OPTIONAL] can 
+   * [PyMOL](https://www.pymol.org) (>=1.8, [though 1.8 is recommended](https://anaconda.org/mw/pymol)) [OPTIONAL] can 
         be used, using the plugin we provide,
         to visualise FFEA systems and trajectories
         as well as molecular and EM systems.
@@ -91,10 +93,10 @@ Technology  {#technology}
      equivalent to those obtained from equivalent MD simulations.
      See [here](https://bitbucket.org/ramonbsc/pypcazip/wiki/Home) for their wiki.
 
-<a name="RngStreams1">1</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators", (1999) Oper Res, 47(1):159-164. <br> 
-<a name="RngStreams2">2</a>: P L'Ecuyer et al. "An Objected-Oriented Random-Number Package with Many Long Streams and Substreams", (2002) Oper Res, 50(6):1073-1075. <br>
-<a name="tetatetpaper">3</a>:  F Ganovelli, et al. "Fast tetrahedron-tetrahedron overlap algorithm", (2002) J.Graphics Tools. 7(2):17-25. <br>
-<a name="pyPCApaper">3</a>:  A Shkurti, et al. "pyPcazip: A PCA-based toolkit for compression and analysis of molecular simulation data", (2016) SoftwareX. 7:44-50.
+<a name="RngStreams1">1</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators" (1999), Oper. Res., 47(1):159-164. <br> 
+<a name="RngStreams2">2</a>: P L'Ecuyer et al., "An Objected-Oriented Random-Number Package with Many Long Streams and Substreams" (2002), Oper. Res., 50(6):1073-1075. <br>
+<a name="tetatetpaper">3</a>:  F Ganovelli, et al., "Fast tetrahedron-tetrahedron overlap algorithm" (2002), J. Graph. Tools, 7(2):17-25. <br>
+<a name="pyPCApaper">4</a>:  A Shkurti, et al., "pyPcazip: A PCA-based toolkit for compression and analysis of molecular simulation data" (2016), SoftwareX, 7:44-50.
 
 
 Contribute
@@ -103,8 +105,8 @@ Contribute
 Do you have a research question that FFEA could help to answer?
 
    * Try FFEA and let us know how you're using the software.
-   * Send bug reports, questions and feature requests to our [issue tracker](https://bitbucket.org/sohpc-ffea/ffea/issues)
-   * [Fork us](https://bitbucket.org/sohpc-ffea/ffea/fork) and help develop FFEA!
+   * Send bug reports, questions and feature requests to our [issue tracker](https://bitbucket.org/FFEA/ffea/issues?status=new&status=open)
+   * [Fork us](https://bitbucket.org/FFEA/ffea/fork) and help develop FFEA!
 
 If you have questions and comments, please contact us! For biophysics, contact Sarah Harris ([S.A.Harris@leeds.ac.uk](mailto:S.A.Harris@leeds.ac.uk)). For finite elements, contact Oliver Harlen ([O.G.Harlen@leeds.ac.uk](mailto:O.G.Harlen@leeds.ac.uk)). For KOBRA and stochastic enquiries, contact Daniel Read ([D.J.Read@leeds.ac.uk](mailto:D.J.Read@leeds.ac.uk)). For software engineering, contact Joanna Leng ([J.Leng@leeds.ac.uk](mailto:J.Leng@leeds.ac.uk)).
 
@@ -123,7 +125,7 @@ FFEA Team  {#FFEAteam}
    * [Rob Welch](http://robwel.ch/)
    * Tom Ridley
    * Molly Gravett
-   * Ryan Cocking
+   * [Ryan Cocking](mailto:bsrctb@leeds.ac.uk)
    * Jarvellis Rogers
 
 
