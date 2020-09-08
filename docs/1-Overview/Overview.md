@@ -34,7 +34,7 @@ Publications  {#publications}
 * Patargias G. N., Harris S. A. & Harding J. "["A demonstration of the inhomogeneity of the local dielectric response of proteins by molecular dynamics simulations"](https://www.ncbi.nlm.nih.gov/pubmed/20572740)" (2010), J. Chem. Phys. 132, 235103.
 
 ### Applications: ###
-* Richardson R. A., Hanson B. S., Read D. J., Harlen O. G. & Harris S. A. "["Exploring the dynamics of flagellar dynein within the axoneme with Fluctuating Finite Element Analysis"](https://doi.org/10.1017/S0033583520000062)", Q. Rev. Biophys. 53, E9 (2020).
+* Richardson R. A., Hanson B. S., Read D. J., Harlen O. G. & Harris S. A. "["Exploring the dynamics of flagellar dynein within the axoneme with Fluctuating Finite Element Analysis"](https://doi.org/10.1017/S0033583520000062)" (2020), Q. Rev. Biophys. 53, E9.
 * Lee S. C., Collins R., Lin Y., Jamshad M., Broughton C., Harris S. A., Hanson B. S., Tognoloni C., Parslow R. A., Terry A. E., Rodger A., Smith C. J., Edler K. J., Ford R., Roper D. I. & Dafforn T. R. "["Nano-encapsulated Escherichia coli Divisome Anchor ZipA, and in Complex with FtsZ"](https://doi.org/10.1038/s41598-019-54999-x)" (2019), Sci. Rep. 9, 18712.
 * Richardson R., Papachristos K., Read D. J., Harlen O. G., Harrison M. A., Paci E., Muench S. P. & Harris S. A "["Understanding the apparent stator-rotor connections in the rotary ATPase family using coarse-grained computer modelling"](https://www.ncbi.nlm.nih.gov/pubmed/25174610)" (2014), Proteins: Struct., Funct., Bioinf. 82, 3298-3311.
 
