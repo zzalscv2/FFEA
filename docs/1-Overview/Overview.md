@@ -28,16 +28,19 @@ Publications  {#publications}
 ============
 
    * Methodology
-       * Welch R. J., Harris S. A., Harlen O. G. & Read D. J. "[KOBRA: A Fluctuating Elastic Rod Model for Slender Biological Macromolecules](https://doi.org/10.1039/D0SM00491J)" (2020) Soft Matter.
-       * Solernou A., Hanson B. S., Richardson R. A., Welch R., Harris S. A., Read D. J., Harlen O. G. "[Fluctuating Finite Element Analysis (FFEA): A continuum mechanics software tool for mesoscale simulation of biomolecules](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005897)" (2017).
-       * Oliver R., Read D. J., Harlen O. G. & Harris S. A. ["A Stochastic finite element model for the dynamics of globular macromolecules"](http://www.sciencedirect.com/science/article/pii/S0021999112007589) (2013) J. Comp. Phys. 239, 147-165.
-       * Patargias G. N., Harris S. A. & Harding J. ["A demonstration of the inhomogeneity of the local dielectric response of proteins by molecular dynamics simulations."](https://www.ncbi.nlm.nih.gov/pubmed/20572740) (2010) J. Chem. Phys. 132, 235103.
+       * Welch R. J., Harris S. A., Harlen O. G. & Read D. J. "[KOBRA: A Fluctuating Elastic Rod Model for Slender Biological Macromolecules](https://doi.org/10.1039/D0SM00491J)", Soft Matter 16, 7544-7555 (2020).
+       * Solernou A., Hanson B. S., Richardson R. A., Welch R., Harris S. A., Read D. J., Harlen O. G. "[Fluctuating Finite Element Analysis (FFEA): A continuum mechanics software tool for mesoscale simulation of biomolecules](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005897)", PLoS Comput. Biol. 14(3): e1005897 (2018).
+       * Oliver R., Read D. J., Harlen O. G. & Harris S. A. "["A Stochastic finite element model for the dynamics of globular macromolecules"](http://www.sciencedirect.com/science/article/pii/S0021999112007589)", J. Comp. Phys. 239, 147-165 (2013).
+       * Patargias G. N., Harris S. A. & Harding J. "["A demonstration of the inhomogeneity of the local dielectric response of proteins by molecular dynamics simulations."](https://www.ncbi.nlm.nih.gov/pubmed/20572740)", J. Chem. Phys. 132, 235103 (2010).
    * Applications
-       * Richardson R., Papachristos K., Read D. J., Harlen O. G., Harrison M. A., Paci E., Muench S. P. & Harris S. A ["Understanding the apparent stator-rotor connections in the rotary ATPase family using coarse-grained computer modelling"](https://www.ncbi.nlm.nih.gov/pubmed/25174610) (2014), Proteins: Struct., Funct., Bioinf., 82, 3298-3311.
+       * Richardson R. A., Hanson B. S., Read D. J., Harlen O. G. & Harris S. A. "["Exploring the dynamics of flagellar dynein within the axoneme with Fluctuating Finite Element Analysis"](https://doi.org/10.1017/S0033583520000062)", Q. Rev. Biophys. 53, E9 (2020).
+       *Lee S. C., Collins R., Lin Y., Jamshad M., Broughton C., Harris S. A., Hanson B. S., Tognoloni C., Parslow R. A., Terry A. E., Rodger A., Smith C. J., Edler K. J., Ford R., Roper D. I. & Dafforn T. R. "["Nano-encapsulated Escherichia coli Divisome Anchor ZipA, and in Complex with FtsZ"](https://doi.org/10.1038/s41598-019-54999-x)", Sci. Rep. 9, 18712 (2019).
+       * Richardson R., Papachristos K., Read D. J., Harlen O. G., Harrison M. A., Paci E., Muench S. P. & Harris S. A "["Understanding the apparent stator-rotor connections in the rotary ATPase family using coarse-grained computer modelling"](https://www.ncbi.nlm.nih.gov/pubmed/25174610)", Proteins: Struct., Funct., Bioinf. 82, 3298-3311 (2014).
    * Reviews
-       * Gray A., Harlen O. G., Harris S. A., Khalid S., Leung Y. M., Lonsdale R., Mulholland A. J., Pearson A. R., Read D. J. & Richardson R. A. ["In pursuit of an accurate spatial and temporal model of biomolecules at the atomistic level: a perspective on computer simulation"](https://www.ncbi.nlm.nih.gov/pubmed/25615870), Acta Cryst. (2015) D71, 162-172.
-       * Oliver R. , Richardson R. A., Hanson B., Kendrick K., Read D. J., Harlen O. G. & Harris S. A. ["Modelling the Dynamic Architecture of Biomaterials Using Continuum Mechanics"](http://link.springer.com/chapter/10.1007%2F978-3-319-09976-7_8), Protein Modelling, G. Náray-Szabó, Editor. (2014) Springer International Publishing. p. 175-197.
-       * Hanson B., Richardson R., Oliver R., Read D. J., Harlen O. & Harris S. ["Modelling biomacromolecular assemblies with continuum mechanics"](https://www.ncbi.nlm.nih.gov/pubmed/25849915) Biochem. Soc. Trans. (2015), 43, 186-192.
+       * Gray A., Harlen O. G., Harris S. A., Khalid S., Leung Y. M., Lonsdale R., Mulholland A. J., Pearson A. R., Read D. J. & Richardson R. A. "["In pursuit of an accurate spatial and temporal model of biomolecules at the atomistic level: a perspective on computer simulation"](https://www.ncbi.nlm.nih.gov/pubmed/25615870)", Acta Cryst. D71, 162-172 (2015).
+       * Hanson B., Richardson R., Oliver R., Read D. J., Harlen O. & Harris S. "["Modelling biomacromolecular assemblies with continuum mechanics"](https://www.ncbi.nlm.nih.gov/pubmed/25849915)", Biochem. Soc. Trans. 43, 186-192 (2015).
+       * Oliver R. , Richardson R. A., Hanson B., Kendrick K., Read D. J., Harlen O. G. & Harris S. A. "["Modelling the Dynamic Architecture of Biomaterials Using Continuum Mechanics"](http://link.springer.com/chapter/10.1007%2F978-3-319-09976-7_8)", Protein Modelling, G. Náray-Szabó, Editor. Springer International Publishing. p. 175-197 (2014).
+       
 
 Getting Started  {#gettingstarted}
 ===============
@@ -57,7 +60,7 @@ Technology  {#technology}
      at the initialisation phase. Modules "system", "filesystem" and 
      "program-options" are required. A bundle of version 1.63 is shipped with FFEA.
    * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1).   
-     FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. CMake will download and use Eigen 3.3.2 if not told otherwise.
+     FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. CMake will download and use Eigen 3.3.7 if not told otherwise.
    * [RngStreams](http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/)<sup>[1](#RngStreams1)</sup><sup>,[2](#RngStreams2)</sup>
         is shipped with FFEA and used as Random Number Generator (RNG). RngStreams 
         allows the FFEA to **safely** generate random numbers when running 
@@ -109,24 +112,19 @@ If you have questions and comments, please contact us! For biophysics, contact S
 FFEA Team  {#FFEAteam}
 ==========
 
-### Code: ###
-   * Albert Solernou
-   * Ben Hanson
-   * Robin Richardson
-   * [Rob Welch](http://robwel.ch/)
-   * Tom Ridley
-
-
-### Theory: ###
    * [Oliver Harlen](https://www.maths.leeds.ac.uk/index.php?id=263&uid=1025)
    * [Sarah Harris](http://www.comp-bio.physics.leeds.ac.uk/)
    * [Daniel Read](http://www1.maths.leeds.ac.uk/~djread/)
+   * [Joanna Leng](https://www.eps.leeds.ac.uk/computing/staff/1509/joanna-leng)
    * Albert Solernou
    * Ben Hanson
    * Robin Richardson
    * Robin Oliver
    * [Rob Welch](http://robwel.ch/)
    * Tom Ridley
+   * Molly Gravett
+   * Ryan Cocking
+   * Jarvellis Rogers
 
 
 Thanks {#thanks}
@@ -135,9 +133,7 @@ We want to thank everybody who has helped in making FFEA possible, from
  summer students, to experimental professors, we would not be here without you:
    * Stan Burgess
    * Stephen Muench
-   * Tom Ridley
    * Kerrie Smith
-   * Joanna Leng
    * Thijs van der Heijden
    * Kees Storm
    * Paul van der Schoot 
@@ -152,5 +148,3 @@ We want to thank everybody who has helped in making FFEA possible, from
    * Katrina Goldman
    * Matthew Faulkner 
    * Ashley Fenton
-
-
