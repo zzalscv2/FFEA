@@ -337,7 +337,7 @@ int Blob::init(){
     }
 
     // Get the rest jacobian, rest volume etc. of this Blob and store it for later use
-    calc_rest_state_info();
+//    calc_rest_state_info();
 
     // Calculate the connectivity of the mesh, giving each node a list of pointers to elements
     // it is a member of. The pointers will be to the exact memory location in that element's struct
@@ -3962,6 +3962,7 @@ void Blob::calc_rest_state_info() {
         printf("\t\tLongest edge has length %e Angstroms.\n", longest_edge * mesoDimensions::length * 1e10);
         printf("\t\tLongest surface edge has length %e Angstroms.\n", longest_surface_edge * mesoDimensions::length * 1e10);
     }
+
 
     // Calc the total mass of this Blob
     for (int i = 0; i < num_elements; i++) {

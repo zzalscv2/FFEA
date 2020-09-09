@@ -2688,10 +2688,16 @@ int World::read_and_build_system(vector<string> script_vector) {
     for(i = 0; i < params.num_blobs; ++i) {
         for(j = 0; j < params.num_conformations[i]; ++j) {
 
+	    if (blob_array[i][j].init() == FFEA_ERROR) {
+	        printf("Error when initialising Blob %d, conformation %d", i, j); 
+	        fatal_errors += 1;
+	    }
+
             // If not an active conforamtion, move to random area in infinity so ssint and stuff are not active (face linked list is not set up for deleting elements)
             if (j > 0) {
                 blob_array[i][j].position(blob_array[i][j].get_RandU01() * 1e10, blob_array[i][j].get_RandU01() * 1e10, blob_array[i][j].get_RandU01() * 1e10);
             } else {
+
 
                 // Activate all faces
                 blob_array[i][j].kinetically_set_faces(true);
@@ -2738,14 +2744,10 @@ int World::read_and_build_system(vector<string> script_vector) {
                     blob_array[i][j].add_steric_nodes();
                 }
 
+	    blob_array[i][j].calc_rest_state_info();
                 // set the current node positions as pos_0 for this blob, so that all rmsd values
                 // are calculated relative to this conformation centred at this point in space.
                 //blob_array[i][j].set_pos_0();
-
-		    if (blob_array[i][j].init() == FFEA_ERROR) {
-		        printf("Error when initialising Blob %d, conformation %d", i, j); 
-		        fatal_errors += 1;
-		    }
 
             }
         }
@@ -3891,12 +3893,13 @@ int World::apply_springs() {
             active_blob_array[spring_array[i].blob_index[1]]->add_force_to_node(force1, spring_array[i].node_index[1]);
 
 //	    fprintf(stderr, "Spring Position (nm) and Force (pN)\n");
-
-//	    fprintf(stderr, "Pos: %e,%e,%e\n", n0.x * mesoDimensions::length / 1e-12, n0.y* mesoDimensions::length / 1e-12, n0.z* mesoDimensions::length / 1e-12);
+//	    fprintf(stderr, "Blob, Node: %d,%d %d,%d\n", spring_array[i].blob_index[0], spring_array[i].node_index[0], spring_array[i].blob_index[1], spring_array[i].node_index[1]);	
+//
+//	    fprintf(stderr, "Pos: %e,%e,%e\n", n0.x * mesoDimensions::length / 1e-9, n0.y* mesoDimensions::length / 1e-9, n0.z* mesoDimensions::length / 1e-9);
 //	    fprintf(stderr, "Force: %e,%e,%e\n\n", force0.x * mesoDimensions::force / 1e-12, force0.y* mesoDimensions::force / 1e-12, force0.z* mesoDimensions::force / 1e-12);
-//	    fprintf(stderr, "Pos: %e,%e,%e\n", n1.x * mesoDimensions::length / 1e-12, n1.y* mesoDimensions::length / 1e-12, n1.z* mesoDimensions::length / 1e-12);
+//	    fprintf(stderr, "Pos: %e,%e,%e\n", n1.x * mesoDimensions::length / 1e-9, n1.y* mesoDimensions::length / 1e-9, n1.z* mesoDimensions::length / 1e-9);
 //	    fprintf(stderr, "Force: %e,%e,%e\n\n", force1.x * mesoDimensions::force / 1e-12, force1.y* mesoDimensions::force / 1e-12, force1.z* mesoDimensions::force / 1e-12);
- 
+//		exit(0); 
         }
     }
     return FFEA_OK;

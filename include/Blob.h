@@ -477,6 +477,11 @@ public:
 
     int pbc_count[3];
 
+    /**
+     * Calculate some quantities such as the rest jacobian, rest volume etc.
+     */
+    void calc_rest_state_info();
+
 private:
 
     /** Total number of nodes in Blob */
@@ -738,7 +743,7 @@ private:
     /**
      * Calculate some quantities such as the rest jacobian, rest volume etc.
      */
-    void calc_rest_state_info();
+//    void calc_rest_state_info();
 
     /*
      *
