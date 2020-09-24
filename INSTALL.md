@@ -5,7 +5,7 @@ This document gives instructions on how to build and install the FFEA package,
  consisting of the FFEA runner and the FFEA tools. Compiling FFEA is very 
  easy, and essentially consists of three commands: "cmake", "make", 
  and "make install". If you don't want to perform the cmake and make steps, then
- you can download the program [here](https://bitbucket.org/FFEA/ffea/downloads/). 
+ you can download the latest binary release [here](https://bitbucket.org/FFEA/ffea/downloads/). 
  In that case, read the Prerequisites section [on using FFEA](\ref prerequisitesU),
  and then jump to [install](\ref makeinstall).
 
@@ -26,7 +26,7 @@ Prerequisites {#prerequisites}
      It will be used to build the documentation. Some mathematical formulae 
      will not render correctly if [LaTeX](https://www.tug.org/texlive/) is not found.
 
-   * [Python](https://www.python.org/) (>= 2.6), is used to run some tests to verify that the FFEA runner was correctly built, as well as in the FFEA tools.
+   * [Python](https://www.python.org/) (2.7.X), is used to run FFEA tools and some tests to verify that the FFEA runner was correctly built. **FFEA tools is currently incompatible with Python 3**, but an upgrade is in progress.
 
    * [NumPy](http://www.numpy.org/), [SciPy](https://www.scipy.org/) and [Matplotlib](https://matplotlib.org/) are needed to run some tests as well as in 
         several FFEAtools.
@@ -68,10 +68,11 @@ FFEA uses CMake to find the compiler, dependencies and to configure files and Ma
 
 There is a list of ` cmake ` ` [OPTIONS] ` later in this section. Our favourite option
 is to specify the installation directory, since the default (/usr/local/) 
-may not be available if you do not have administrator privileges.  
-To do this, use something like:
+may not be available if you do not have administrator privileges. You should also tell cmake
+to use a Python 2.7.X executable if it isn't already the
+system default (/usr/bin/python), so that ffeatools can be imported into Python correctly:
 
-    cmake ../ffea -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea
+     cmake ../ffea -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea -DPYTHON_EXECUTABLE=/usr/bin/python2.7
 
 where $HOME/softw/ffea can be replaced with an installation directory of your choice.
  CMake default options seeks to build FFEA for production, and will suit most of the users.
@@ -87,7 +88,7 @@ After configuring you will be able to build FFEA typing:
 
 Then, the following command will install FFEA:
 
-    make install
+     make install
 
 either to the folder specified through ` -DCMAKE_INSTALL_PREFIX `
   or into a default folder (where you may need administrative privileges).
@@ -98,7 +99,7 @@ Two parallel versions of the FFEA_runner, ` ffea ` and ` ffea_mb `,
  in ` $FFEA_HOME/bin `. Instructions on how to use them can be read 
  [here](\ref userManual) and [here](ffeamodules/html/index.html) respectively. 
  In addition, the ` ffeatools ` Python package will be found in 
- ` $FFEA_HOME/lib/python<version>/site-packages `
+ ` $FFEA_HOME/lib/python<version>/site-packages `.
 
 If you built the documentation you will be able to read it with a web browser, 
   and so if firefox was the browser of your choice, and you installed 
@@ -164,11 +165,12 @@ CMake options
 The following configuration flags are either fundamental to CMake or specific to FFEA:
 
   * `-DCMAKE_INSTALL_PREFIX=<install_dir>`       -  (default /usr/local) installation directory
+  * `-DPYTHON_EXECUTABLE=<program>`     - (default /usr/bin/python) Python executable
   * `-DCMAKE_BUILD_TYPE=<Debug|Release>` -  (default Release) build type
   * `-DCMAKE_CXX_COMPILER=<program>`     -  (default g++)  C++ compiler.
 
 By default, CMake will use the subset of Boost we bundled, and will download 
- Eigen 3.3.4. If you want to use your own installations you can still do so
+ Eigen 3.3.7. If you want to use your own installations you can still do so
  through:
   
   * `-DUSE_BOOST_INTERNAL=<ON|OFF>` - default ` ON `
@@ -208,7 +210,7 @@ Once FFEA has been installed, users may want to provide themselves with some
         system for processing and editing 3D triangular meshes.
 
 
-   * [GTS](http://gts.sourceforge.net) (>=0.7.6)[OPTIONAL]. The
+   * [GTS](http://gts.sourceforge.net) (>=0.7.6) [OPTIONAL]. The
      GNU Triangulated Surface Libraries
      allowing the manipulation and coarsening of surface profiles.
 
