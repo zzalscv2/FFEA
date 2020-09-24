@@ -1,9 +1,9 @@
 Quickstart {#quickstart}
 =========================
 
-If you haven't already, [install FFEA!](\ref install) This shouldn't take too much of your alotted 5 minutes, all dependencies are automatically taken care of by cmake.
+If you haven't already, [install FFEA!](\ref install).
 
-Once FFEA is installed, pick a protein that you want to simulate. Your protein should be globular (e.g. no long stringy bits - those are supported but require extra preparation) and large (ten nanometers long\wide at least!). Ideally, you should download your protein from [the EMDB](https://www.ebi.ac.uk/pdbe/emdb/), but you can also use the [regular PDB](http://www.rcsb.org/pdb/home/home.do). If you're not sure to pick, we like to [use GroEL](http://www.ebi.ac.uk/pdbe/entry/emdb/EMD-5043) as an example.
+Once this has been done, pick a protein that you want to simulate. Your protein should be globular (e.g. no long stringy bits - those are supported but require extra preparation) and large (ten nanometers long\wide at least!). Ideally, you should download your protein from [the EMDB](https://www.ebi.ac.uk/pdbe/emdb/), but you can also use the [regular PDB](http://www.rcsb.org/pdb/home/home.do). If you're not sure to pick, we like to [use GroEL](http://www.ebi.ac.uk/pdbe/entry/emdb/EMD-5043) as an example.
 
 Open up your molecule in a viewer (we recommend [UCSF Chimera](https://www.cgl.ucsf.edu/chimera/)). Under the 'visual analysis' link on the EMDB, you should see a 'recommended contour level' setting. Set this contour level in Chimera, and check that the model looks right - you should see a smooth, consistent, connected structure. If not, adjust the contour level.
 
