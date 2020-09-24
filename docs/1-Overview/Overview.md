@@ -61,8 +61,7 @@ Technology  {#technology}
      for ease of programming 
      at the initialisation phase. Modules "system", "filesystem" and 
      "program-options" are required. A bundle of version 1.63 is shipped with FFEA.
-   * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1).   
-     FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. CMake will download and use Eigen 3.3.7 if not told otherwise.
+   * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1). FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. CMake will download and use Eigen 3.3.7 if not told otherwise.
    * [RngStreams](http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/)<sup>[1](#RngStreams1)</sup><sup>,[2](#RngStreams2)</sup>
         is shipped with FFEA and used as Random Number Generator (RNG). RngStreams 
         allows the FFEA to **safely** generate random numbers when running 
