@@ -2,12 +2,11 @@ Installation {#install}
 ============
 
 This document gives instructions on how to build and install the FFEA package,
- consisting of the FFEA runner and the FFEA tools. Compiling FFEA is very 
+ consisting of the FFEA runner and FFEA tools. Compiling FFEA from the source code is very 
  easy, and essentially consists of three commands: "cmake", "make", 
- and "make install". If you don't want to perform the cmake and make steps, then
- you can download the latest binary release [here](https://bitbucket.org/FFEA/ffea/downloads/). 
- In that case, read the Prerequisites section [on using FFEA](\ref prerequisitesU),
- and then jump to [install](\ref makeinstall).
+ and "make install". If you don't want to compile FFEA, then
+ you can **download the latest x86_64 binary release [here](https://bitbucket.org/FFEA/ffea/downloads/)**.
+ Once FFEA has been installed, you can learn how to use it in the [tutorial](\ref Tutorial).
 
 
 Prerequisites {#prerequisites}
@@ -41,7 +40,7 @@ Optional:
     Used during rod parameterisation. If you don't plan to use KOBRA rods, you can ignore this.
 
 FFEA uses Boost and Eigen. To make your life easier, **the code is shipped with 
- a subset of Boost (v. 1.63), and Eigen (v 3.3.4)** will be downloaded by CMake
+ a subset of Boost (v. 1.63), and Eigen (v 3.3.7) will be downloaded by CMake**
  at configure time. Still, you are welcome to use your own versions of the libraries.
 
    * [Boost](http://www.boost.org) (>=1.54.0) [OPTIONAL]   
@@ -69,8 +68,8 @@ FFEA uses CMake to find the compiler, dependencies and to configure files and Ma
 There is a list of ` cmake ` ` [OPTIONS] ` later in this section. Our favourite option
 is to specify the installation directory, since the default (/usr/local/) 
 may not be available if you do not have administrator privileges. You should also tell cmake
-to use a Python 2.7.X executable if it isn't already the
-system default (/usr/bin/python), so that ffeatools can be imported into Python correctly:
+to use a Python 2.7.X interpreter if it isn't already the
+system default (/usr/bin/python), so that ffeatools can be correctly imported into Python:
 
      cmake ../ffea -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea -DPYTHON_EXECUTABLE=/usr/bin/python2.7
 
@@ -165,7 +164,7 @@ CMake options
 The following configuration flags are either fundamental to CMake or specific to FFEA:
 
   * `-DCMAKE_INSTALL_PREFIX=<install_dir>`       -  (default /usr/local) installation directory
-  * `-DPYTHON_EXECUTABLE=<program>`     - (default /usr/bin/python) Python executable
+  * `-DPYTHON_EXECUTABLE=<program>`     - (default /usr/bin/python) Python interpreter
   * `-DCMAKE_BUILD_TYPE=<Debug|Release>` -  (default Release) build type
   * `-DCMAKE_CXX_COMPILER=<program>`     -  (default g++)  C++ compiler.
 
