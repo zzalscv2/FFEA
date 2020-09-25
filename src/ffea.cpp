@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     // cout << " Version:\tSuper Saiyan " << FFEA_MASCOT << " " << FFEA_VERSION << "(Version " << FFEA_VERSION << ")" << endl;
     cout << "\tTeam:   Ryan Cocking (bsrctb@leeds.ac.uk), Molly Gravett (bsmgr@leeds.ac.uk), Ben Hanson (B.S.Hanson@leeds.ac.uk), Oliver Harlen, Sarah Harris," << endl;
     cout << "\t        Joanna Leng, Robin Oliver, Daniel Read, Robin Richardson (pyrar@leeds.ac.uk), Tom Ridley (tomridley08@gmail.com)," << endl;
-    cout << "\t        Jarvellis Rogers (J.F.Rogers1@leeds.ac.uk), Albert Solernou (a.solernou@leeds.ac.uk), Rob Welch (hello@robwel.ch)" << endl;     
+    cout << "\t        Jarvellis Rogers (J.F.Rogers1@leeds.ac.uk), Albert Solernou (a.solernou@leeds.ac.uk), Rob Welch (hello@robwel.ch)\n" << endl;     
 
     print_ffea_version(stdout);
     print_ffea_compilation_details(stdout);
