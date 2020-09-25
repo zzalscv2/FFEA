@@ -58,9 +58,9 @@ int main(int argc, char *argv[])
     cout << "\n\n\n***************************************************\n\tFLUCTUATING FINITE ELEMENT ANALYSIS\n***************************************************\n\n" << endl;
     //cout << " Version:\t" << FFEA_VERSION << " [" << FFEA_MASCOT << "]" << endl;
     // cout << " Version:\tSuper Saiyan " << FFEA_MASCOT << " " << FFEA_VERSION << "(Version " << FFEA_VERSION << ")" << endl;
-    cout << "\tTeam:   Ryan Cocking (bsrctb@leeds.ac.uk), Molly Gravett, Ben Hanson (B.S.Hanson@leeds.ac.uk), Oliver Harlen, Sarah Harris, Joanna Leng, Robin Oliver," << endl;
-    cout << "          Daniel Read, Robin Richardson (pyrar@leeds.ac.uk), Tom Ridley (tomridley08@gmail.com), Jarvellis Rogers (J.F.Rogers1@leeds.ac.uk)," << endl;
-    cout << "          Albert Solernou (a.solernou@leeds.ac.uk), Rob Welch (py12rw@leeds.ac.uk)" << endl;     
+    cout << "\tTeam:   Ryan Cocking (bsrctb@leeds.ac.uk), Molly Gravett (bsmgr@leeds.ac.uk), Ben Hanson (B.S.Hanson@leeds.ac.uk), Oliver Harlen, Sarah Harris," << endl;
+    cout << "\t        Joanna Leng, Robin Oliver, Daniel Read, Robin Richardson (pyrar@leeds.ac.uk), Tom Ridley (tomridley08@gmail.com)," << endl;
+    cout << "\t        Jarvellis Rogers (J.F.Rogers1@leeds.ac.uk), Albert Solernou (a.solernou@leeds.ac.uk), Rob Welch (hello@robwel.ch)" << endl;     
 
     print_ffea_version(stdout);
     print_ffea_compilation_details(stdout);
