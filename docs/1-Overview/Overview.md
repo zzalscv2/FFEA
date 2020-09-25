@@ -8,8 +8,8 @@ This technique has the potential to model large, complex systems, made of many m
 Features  {#features}
 ========
 
- * Protein Interactions:
-  * A 6-12 Lennard-Jones Potential.
+ * Protein-protein interactions.
+  * A 6-12 Lennard-Jones potential.
   * A repulsive potential that is proportional 
         to the overlapping volume.
   * Specific interactions defined using precomputed potentials.
@@ -22,7 +22,7 @@ Features  {#features}
  * [KOBRA model](\ref rods) for slender biological objects such as coiled-coils.
  * Lees-Edwards boundary conditions.
  * An extremely high degree of reproducity - check out our integration tests!
-
+ * Distance restraints with harmonic potentials, such as springs.
 
 Publications  {#publications}
 ============
@@ -49,7 +49,7 @@ Getting Started  {#gettingstarted}
 
 FFEA is free to download and use under the GPLv3 software license. We provide binary releases, and building from source is relatively painless.
 
-* Download the most recent [binary release](https://bitbucket.org/FFEA/ffea/downloads/) of FFEA from BitBucket, or [compile from source](cloning the repository) by cloning the repository. For the latest bleeding-edge features, switch to the [development branch](https://bitbucket.org/FFEA/ffea/src/superdev/) instead.
+* Download the most recent x86_64 [binary release](https://bitbucket.org/FFEA/ffea/downloads) of FFEA from BitBucket, or [compile from source](cloning the repository) by cloning the repository. For the latest bleeding-edge features, switch to the [development branch](https://bitbucket.org/FFEA/ffea/src/superdev/) instead.
 * If you're compiling from source, install FFEA according to the instructions found in the [installation guide](\ref install).
 * Once FFEA is installed, consult the [first-time user tutorial](\ref Tutorial). For KOBRA rods, try the [rods tutorial](\ref Tutorial) instead.
 
@@ -137,14 +137,18 @@ We want to thank everybody who has helped in making FFEA possible, from
    * Jana Boltersdorf
    * Jonathan Boyle
    * Stan Burgess
+   * Glenn Carrington
+   * Samantha Coffey
    * Toni Collis
    * Mike Croucher
+   * Ash Dwarka
    * Matthew Faulkner 
    * Ashley Fenton
    * Katrina Goldman
    * Thijs van der Heijden
    * Guanhao Lu
    * Stephen Muench
+   * Michelle Peckham
    * Paul van der Schoot
    * Kerrie Smith 
    * Kees Storm
