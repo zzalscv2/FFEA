@@ -9,7 +9,7 @@ Restarts {#ffea_restarts}
 =========================
 The FFEA runner has the possibility to continue or extend a simulation that 
  was completed or even crashed. In the case of ` calc_noise ` being enabled
- we take care that random number generator we use, [RngStreams](\ref technology), 
+ we take care that random number generator we use, [RngStreams](\ref prerequisites), 
  recovers the state of the last time step calculated, ensuring that unwanted 
  correlations arise. 
 
