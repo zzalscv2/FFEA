@@ -1,60 +1,86 @@
-Installation {#install}
-============
+# Installation {#install}
 
 This document gives instructions on how to build and install the FFEA package,
- consisting of the FFEA runner and the FFEA tools. Compiling FFEA is very 
+ consisting of the FFEA runner and FFEA tools. Compiling FFEA from the source code is very 
  easy, and essentially consists of three commands: "cmake", "make", 
- and "make install". If you don't want to perform the cmake and make steps, then
- you can download the program [here](https://bitbucket.org/FFEA/ffea/downloads/). 
- In that case, read the Prerequisites section [on using FFEA](\ref prerequisitesU),
- and then jump to [install](\ref makeinstall).
+ and "make install". If you don't want to compile FFEA, then
+ you can **download the latest x86_64 binary release [here](https://bitbucket.org/FFEA/ffea/downloads/)**.
+ Once FFEA has been installed, you can learn how to use it in the [tutorial](\ref Tutorial).
 
 
-Prerequisites {#prerequisites}
-=============
+# Prerequisites {#prerequisites}
 
-   * C and C++ compilers.   
-     There is some C++ code written using 
-       the C++11 standard, and so CMake will ensure that you have a 
-       recent enough compiler. FFEA will compile with GCC 4.8 or Intel 15
-       but we recommend to use an up to date compiler to get the best performance.
+### Essential
 
-   * [CMake](https://cmake.org) (>=2.8.11).   
-     Required for building FFEA.
+* [C and C++ compilers](https://gcc.gnu.org/). There is some C++ code written using 
+  the C++11 standard, and so CMake will ensure that you have a 
+  recent enough compiler. FFEA will compile with GCC 6.3.0 or Intel 15,
+  but we suggest using an up to date compiler to get the best performance.
 
-   * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL]   
-     It will be used to build the documentation. Some mathematical formulae 
+* [CMake](https://cmake.org) (>=2.8.11). Required for building FFEA.
+
+* [Python](https://www.python.org/) (2.7.X) is used to run the FFEA tools modules, in addition to unit and integration tests to verify that FFEA was correctly built. The [NumPy](http://www.numpy.org/), [SciPy](https://www.scipy.org/) and [Matplotlib](https://matplotlib.org/) libraries are required. **FFEA tools is currently incompatible with Python 3**, but an upgrade is in progress. 
+
+### Recommended
+
+* [PyMOL](https://pymol.org/) (>=1.8, though [1.8 is recommended](https://anaconda.org/mw/pymol))
+  can be used, with the plugin we provide,
+  to visualise FFEA systems and trajectories.
+    
+* [NETGEN](https://sourceforge.net/projects/netgen-mesher/) 
+   or [TETGEN](http://wias-berlin.de/software/tetgen/). 
+     Programs which convert surface profile into volumetric meshes 
+        to be used by FFEA. Essential if you want to generate meshes from
+        experimental imaging data.
+
+* [Doxygen](http://www.doxygen.org) (>= 1.8) builds the FFEA documentation. Some mathematical formulae 
      will not render correctly if [LaTeX](https://www.tug.org/texlive/) is not found.
 
-   * [Python](https://www.python.org/) (>= 2.6), is used to run some tests to verify that the FFEA runner was correctly built, as well as in the FFEA tools.
+### Optional
 
-   * [NumPy](http://www.numpy.org/), [SciPy](https://www.scipy.org/) and [Matplotlib](https://matplotlib.org/) are needed to run some tests as well as in 
-        several FFEAtools.
-
-Optional:
----------
-
-   * [PyMOL](https://pymol.org/) (>=1.8, though [1.8 is recommended](https://anaconda.org/mw/pymol))
-    Needed to visualise systems and trajectories.
-    
-   * [MDanalysis](https://www.mdanalysis.org/) (>=0.18.0)
+* [MDanalysis](https://www.mdanalysis.org/) (>=0.18.0)
     Used during rod parameterisation. If you don't plan to use KOBRA rods, you can ignore this.
 
-FFEA uses Boost and Eigen. To make your life easier, **the code is shipped with 
- a subset of Boost (v. 1.63), and Eigen (v 3.3.4)** will be downloaded by CMake
- at configure time. Still, you are welcome to use your own versions of the libraries.
+* [pyPcazip](https://pypi.python.org/pypi/pyPcazip)<sup>[1](#pyPCApaper)</sup> Some of the Python FFEA analysis tools interact with the pyPcazip 
+     Principal Component Analysis libraries in order to generate standard
+     PCA output(eigensystems, projections, animations etc)
+     equivalent to those obtained from equivalent MD simulations.
+     See [here](https://bitbucket.org/ramonbsc/pypcazip/wiki/Home) for their wiki.
 
-   * [Boost](http://www.boost.org) (>=1.54.0) [OPTIONAL]   
-     FFEA uses modules: program_options, filesystem and system.
+* [GTS](http://gts.sourceforge.net) (>=0.7.6). The
+     GNU Triangulated Surface Libraries
+     allowing the manipulation and coarsening of surface profiles.
 
-   * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1) [OPTIONAL]
-   FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models.
+### Included
 
-   > Warning - GCC >= 5 will require version 3.2.10 or higher for Eigen. Earlier versions (including 3.3 release candidates, marked internally as 3.2.91 and higher) did prove to be incompatible with GCC >= 5 and using C++11 standard. You may also need a newer version of Boost. 
+* [Boost](http://www.boost.org) (>=1.54.0)
+     is used for ease of programming 
+     at the initialisation phase. Modules "system", "filesystem" and 
+     "program-options" are required. Boost 1.63 is shipped with FFEA, but this can be adjusted with a [flag](\ref cmakeflags).
+
+* [Eigen](http://eigen.tuxfamily.org) (>=3.2.10)
+   FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. Eigen 3.3.7 will be downloaded by CMake, but this can be adjusted with a [flag](\ref cmakeflags).
+
+* [RngStreams](http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/)<sup>[2](#RngStreams1)</sup><sup>,[3](#RngStreams2)</sup>
+        is shipped with FFEA and used as Random Number Generator (RNG). RngStreams 
+        allows the FFEA to safely generate random numbers when running 
+        on a number of threads, as well as safe restarts, recovering the state 
+        of the RNGs in the last saved time step. 
+
+* [Tet_a_tet](https://github.com/erich666/jgt-code/blob/master/Volume_07/Number_2/Ganovelli2002/tet_a_tet.h)<sup>[4](#tetatetpaper)</sup>
+        is shipped with FFEA and used to detect element overlapping 
+        in the steric repulsion module. 
+
+* [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) (0.4) is shipped 
+        with FFEA and used in the PyMOL plugin, allowing safe threading. 
+
+<a name="pyPCApaper">1</a>:  A Shkurti, et al., "pyPcazip: A PCA-based toolkit for compression and analysis of molecular simulation data" (2016), SoftwareX, 7:44-50. <br> 
+<a name="RngStreams1">2</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators" (1999), Oper. Res., 47(1):159-164. <br> 
+<a name="RngStreams2">3</a>: P L'Ecuyer et al., "An Objected-Oriented Random-Number Package with Many Long Streams and Substreams" (2002), Oper. Res., 50(6):1073-1075. <br>
+<a name="tetatetpaper">4</a>:  F Ganovelli, et al., "Fast tetrahedron-tetrahedron overlap algorithm" (2002), J. Graph. Tools, 7(2):17-25.
 
 
-Configure {#configure}
-=========
+# Configure {#configure}
 
 FFEA uses CMake to find the compiler, dependencies and to configure files and Makefiles 
  automatically (a short introduction to CMake can be read [here](https://cmake.org/runningcmake)). 
@@ -68,10 +94,11 @@ FFEA uses CMake to find the compiler, dependencies and to configure files and Ma
 
 There is a list of ` cmake ` ` [OPTIONS] ` later in this section. Our favourite option
 is to specify the installation directory, since the default (/usr/local/) 
-may not be available if you do not have administrator privileges.  
-To do this, use something like:
+may not be available if you do not have administrator privileges. You should also tell cmake
+to use a Python 2.7.X interpreter if it isn't already the
+system default (/usr/bin/python), so that ffeatools can be correctly imported into Python:
 
-    cmake ../ffea -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea
+     cmake ../ffea -DCMAKE_INSTALL_PREFIX=$HOME/softw/ffea -DPYTHON_EXECUTABLE=/usr/bin/python2.7
 
 where $HOME/softw/ffea can be replaced with an installation directory of your choice.
  CMake default options seeks to build FFEA for production, and will suit most of the users.
@@ -79,15 +106,15 @@ where $HOME/softw/ffea can be replaced with an installation directory of your ch
  you can jump to [build](\ref build).
  
 
-Build and Install {#build} 
-=====
+# Build and Install {#build} 
+
 After configuring you will be able to build FFEA typing:
 
      make 
 
 Then, the following command will install FFEA:
 
-    make install
+     make install
 
 either to the folder specified through ` -DCMAKE_INSTALL_PREFIX `
   or into a default folder (where you may need administrative privileges).
@@ -98,7 +125,7 @@ Two parallel versions of the FFEA_runner, ` ffea ` and ` ffea_mb `,
  in ` $FFEA_HOME/bin `. Instructions on how to use them can be read 
  [here](\ref userManual) and [here](ffeamodules/html/index.html) respectively. 
  In addition, the ` ffeatools ` Python package will be found in 
- ` $FFEA_HOME/lib/python<version>/site-packages `
+ ` $FFEA_HOME/lib/python<version>/site-packages `.
 
 If you built the documentation you will be able to read it with a web browser, 
   and so if firefox was the browser of your choice, and you installed 
@@ -111,7 +138,7 @@ Install a plugin to visualise systems and trajectories in
 
      $FFEA_HOME/share/ffea/plugins/pymol/FFEAplugin.tar.gz
 
-and in order to install it, one would need to run PyMOL (>=1.6), and then click on
+and in order to install it, one would need to run PyMOL, and then click on
   ` Plugin ` -> ` Plugin Manager `, and on the new window, go to tab 
   ` Install New Plugin `, click ` Choose file... ` and finally find and 
   select ` FFEAplugin.tar.gz ` from your disk. You will be asked to install the 
@@ -123,8 +150,7 @@ and in order to install it, one would need to run PyMOL (>=1.6), and then click 
   to restart PyMOL to use the plugin.
 
 
-Working environment {#workingEnvironment}
-===================
+# Working environment {#workingEnvironment}
 
 Executing ` ffea `, ` ffea_mb ` and ` ffeatools ` is probably what most users will wish, so 
  UNIX users may find convenient to add the install folder in the ` PATH `:
@@ -144,8 +170,7 @@ ffeatools provides a suite of command-line tools to initialise FFEA systems. FFE
 The FFEA API may then be used within python by running `import ffeatools`. Note: KOBRA/FFEA_rod requires this module. Information on how to use `ffeatools` can be found in the [FFEA analysis tutorial](\ref FFEAanalysistut) and the [KOBRA/rods tutorial](\ref rods).
 
  
-Tests {#ctest}
-=====
+# Tests {#ctest}
 
 You may now want to check that the code was correctly compiled. 
  Do so running the provided suite of tests, either sequentially (using a single processor, 
@@ -158,17 +183,17 @@ or concurrently (multiple tests running independently on different processors):
      ctest -j <number-of-processes> 
  
   
-CMake options
-=============
+# CMake options {#cmakeflags}
 
 The following configuration flags are either fundamental to CMake or specific to FFEA:
 
   * `-DCMAKE_INSTALL_PREFIX=<install_dir>`       -  (default /usr/local) installation directory
+  * `-DPYTHON_EXECUTABLE=<program>`     - (default /usr/bin/python) Python interpreter
   * `-DCMAKE_BUILD_TYPE=<Debug|Release>` -  (default Release) build type
   * `-DCMAKE_CXX_COMPILER=<program>`     -  (default g++)  C++ compiler.
 
 By default, CMake will use the subset of Boost we bundled, and will download 
- Eigen 3.3.4. If you want to use your own installations you can still do so
+ Eigen 3.3.7. If you want to use your own installations you can still do so
  through:
   
   * `-DUSE_BOOST_INTERNAL=<ON|OFF>` - default ` ON `
@@ -197,8 +222,7 @@ Additional specific FFEA flags include:
     - `ONLY` will try to find Doxygen (raising an error if not found) and only build the documentation.
 
 
-Useful packages
-===============
+# Useful packages
 
 Once FFEA has been installed, users may want to provide themselves with some
  extra packages that have proved to be useful for setting up the system
@@ -208,7 +232,7 @@ Once FFEA has been installed, users may want to provide themselves with some
         system for processing and editing 3D triangular meshes.
 
 
-   * [GTS](http://gts.sourceforge.net) (>=0.7.6)[OPTIONAL]. The
+   * [GTS](http://gts.sourceforge.net) (>=0.7.6) [OPTIONAL]. The
      GNU Triangulated Surface Libraries
      allowing the manipulation and coarsening of surface profiles.
 

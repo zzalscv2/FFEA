@@ -1797,7 +1797,7 @@ class rod_creator:
         fig2 = plt.figure(2)
         ax3d = fig2.add_subplot(111, projection='3d')
         ax3d.plot(rod[:,0], rod[:,1], rod[:,2], 'g')
-        fig2.show()
+        plt.show()
 
     def create_spline(self, x_points, y_points, z_points, num_samples, degree=3, smoothness=0):
         """

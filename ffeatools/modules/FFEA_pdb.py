@@ -225,7 +225,7 @@ class FFEA_pdb:
 				# Read ATOM positions like a boss
 				for j in range(self.chain[c].num_atoms):
 					line = fin.readline()
-					print line
+					print(line)
 					frame.pos[j][0] = float(line[30:38])
 					frame.pos[j][1] = float(line[38:46])
 					frame.pos[j][2] = float(line[46:54])
@@ -394,7 +394,7 @@ class FFEA_pdb:
             
 			bin += 1
         
-        	self.num_frames = rod.num_frames
+			self.num_frames = rod.num_frames
 		self.valid = True
 		self.empty = False
         

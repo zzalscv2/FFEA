@@ -30,8 +30,8 @@ include(ExternalProject)
 		    # CONFIGURE_COMMAND ${CMAKE_COMMAND} ../getEigen -DCMAKE_INSTALL_PREFIX=${EIGEN_INSTALL_DIR} 
 		    # INSTALL_COMMAND make install 
 ExternalProject_Add(getEigen
-                    URL https://bitbucket.org/eigen/eigen/get/3.3.4.tar.bz2
-                    URL_HASH SHA256=dd254beb0bafc695d0f62ae1a222ff85b52dbaa3a16f76e781dce22d0d20a4a6
+                    URL https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar.gz
+                    URL_HASH SHA256=d56fbad95abf993f8af608484729e3d87ef611dd85b3380a8bad1d5cbc373a57
                     BUILD_IN_SOURCE 0
 		    CONFIGURE_COMMAND ""
                     BUILD_COMMAND "" 
