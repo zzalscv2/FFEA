@@ -10,20 +10,18 @@ This document gives instructions on how to build and install the FFEA package,
 
 # Prerequisites {#prerequisites}
 
-## Essential
+### Essential
 
-* C and C++ compilers.   
-  There is some C++ code written using 
+* [C and C++ compilers](https://gcc.gnu.org/). There is some C++ code written using 
   the C++11 standard, and so CMake will ensure that you have a 
   recent enough compiler. FFEA will compile with GCC 6.3.0 or Intel 15,
   but we suggest using an up to date compiler to get the best performance.
 
-* [CMake](https://cmake.org) (>=2.8.11).   
-  Required for building FFEA.
+* [CMake](https://cmake.org) (>=2.8.11). Required for building FFEA.
 
-* [Python](https://www.python.org/) (2.7.X) is used to run the FFEA tools modules, in addition to unit and integration tests that verify that FFEA was correctly built. The [NumPy](http://www.numpy.org/), [SciPy](https://www.scipy.org/) and [Matplotlib](https://matplotlib.org/) libraries are required. **FFEA tools is currently incompatible with Python 3**, but an upgrade is in progress. 
+* [Python](https://www.python.org/) (2.7.X) is used to run the FFEA tools modules, in addition to unit and integration tests to verify that FFEA was correctly built. The [NumPy](http://www.numpy.org/), [SciPy](https://www.scipy.org/) and [Matplotlib](https://matplotlib.org/) libraries are required. **FFEA tools is currently incompatible with Python 3**, but an upgrade is in progress. 
 
-## Recommended
+### Recommended
 
 * [PyMOL](https://pymol.org/) (>=1.8, though [1.8 is recommended](https://anaconda.org/mw/pymol))
   can be used, with the plugin we provide,
@@ -35,17 +33,15 @@ This document gives instructions on how to build and install the FFEA package,
         to be used by FFEA. Essential if you want to generate meshes from
         experimental imaging data.
 
-* [Doxygen](http://www.doxygen.org) (>= 1.8)   
-     builds the FFEA documentation. Some mathematical formulae 
+* [Doxygen](http://www.doxygen.org) (>= 1.8) builds the FFEA documentation. Some mathematical formulae 
      will not render correctly if [LaTeX](https://www.tug.org/texlive/) is not found.
 
-## Optional
+### Optional
 
 * [MDanalysis](https://www.mdanalysis.org/) (>=0.18.0)
     Used during rod parameterisation. If you don't plan to use KOBRA rods, you can ignore this.
 
-* [pyPcazip](https://pypi.python.org/pypi/pyPcazip)<sup>[1](#pyPCApaper)</sup>
-     Some of the Python FFEA analysis tools interact with the pyPcazip 
+* [pyPcazip](https://pypi.python.org/pypi/pyPcazip)<sup>[1](#pyPCApaper)</sup> Some of the Python FFEA analysis tools interact with the pyPcazip 
      Principal Component Analysis libraries in order to generate standard
      PCA output(eigensystems, projections, animations etc)
      equivalent to those obtained from equivalent MD simulations.
@@ -55,14 +51,14 @@ This document gives instructions on how to build and install the FFEA package,
      GNU Triangulated Surface Libraries
      allowing the manipulation and coarsening of surface profiles.
 
-## Included
+### Included
 
 * [Boost](http://www.boost.org) (>=1.54.0)
      is used for ease of programming 
      at the initialisation phase. Modules "system", "filesystem" and 
      "program-options" are required. Boost 1.63 is shipped with FFEA, but this can be adjusted with a [flag](\ref cmakeflags).
 
-* [Eigen](http://eigen.tuxfamily.org) (>=3.2.1)
+* [Eigen](http://eigen.tuxfamily.org) (>=3.2.10)
    FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. Eigen 3.3.7 will be downloaded by CMake, but this can be adjusted with a [flag](\ref cmakeflags).
 
 * [RngStreams](http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/)<sup>[2](#RngStreams1)</sup><sup>,[3](#RngStreams2)</sup>
@@ -78,18 +74,10 @@ This document gives instructions on how to build and install the FFEA package,
 * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) (0.4) is shipped 
         with FFEA and used in the PyMOL plugin, allowing safe threading. 
 
-<a name="pyPCApaper">1</a>:  A Shkurti, et al., "pyPcazip: A PCA-based toolkit for compression and analysis of molecular simulation data" (2016), SoftwareX, 7:44-50.
+<a name="pyPCApaper">1</a>:  A Shkurti, et al., "pyPcazip: A PCA-based toolkit for compression and analysis of molecular simulation data" (2016), SoftwareX, 7:44-50. <br> 
 <a name="RngStreams1">2</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators" (1999), Oper. Res., 47(1):159-164. <br> 
 <a name="RngStreams2">3</a>: P L'Ecuyer et al., "An Objected-Oriented Random-Number Package with Many Long Streams and Substreams" (2002), Oper. Res., 50(6):1073-1075. <br>
-<a name="tetatetpaper">4</a>:  F Ganovelli, et al., "Fast tetrahedron-tetrahedron overlap algorithm" (2002), J. Graph. Tools, 7(2):17-25. <br>
-
-
-FFEA uses Boost and Eigen. To make your life easier, **the code is shipped with 
- a subset of Boost (v. 1.63), and Eigen (v 3.3.7) will be downloaded by CMake**
- at configure time. Still, you are welcome to use your own versions of the libraries.
-
-   
-   > Warning - GCC >= 5 will require version 3.2.10 or higher for Eigen. Earlier versions (including 3.3 release candidates, marked internally as 3.2.91 and higher) did prove to be incompatible with GCC >= 5 and using C++11 standard. You may also need a newer version of Boost. 
+<a name="tetatetpaper">4</a>:  F Ganovelli, et al., "Fast tetrahedron-tetrahedron overlap algorithm" (2002), J. Graph. Tools, 7(2):17-25.
 
 
 # Configure {#configure}
@@ -150,7 +138,7 @@ Install a plugin to visualise systems and trajectories in
 
      $FFEA_HOME/share/ffea/plugins/pymol/FFEAplugin.tar.gz
 
-and in order to install it, one would need to run PyMOL (>=1.6), and then click on
+and in order to install it, one would need to run PyMOL, and then click on
   ` Plugin ` -> ` Plugin Manager `, and on the new window, go to tab 
   ` Install New Plugin `, click ` Choose file... ` and finally find and 
   select ` FFEAplugin.tar.gz ` from your disk. You will be asked to install the 
