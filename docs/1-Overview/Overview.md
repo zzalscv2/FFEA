@@ -29,9 +29,8 @@ Getting Started  {#gettingstarted}
 
 FFEA is free to download and use under the GPLv3 software license. We provide binary releases, and building from source is relatively painless.
 
-* Download the most recent x86_64 [binary release](https://bitbucket.org/FFEA/ffea/downloads) of FFEA from BitBucket, or [compile from source](\ref configure) by cloning the repository. For the latest bleeding-edge features, switch to the [development branch](https://bitbucket.org/FFEA/ffea/src/superdev/) instead.
-* If you're compiling from source, install FFEA according to the instructions found in the [installation guide](\ref install). The complete list of [software requirements]() is included in the guide.
-* The full list of software requirements for FFEA can be found [here](\ref prerequisites).
+* **Download the latest x86_64 [binary release](https://bitbucket.org/FFEA/ffea/downloads)** from BitBucket, or [compile from source](\ref configure) by cloning the repository. For the latest bleeding-edge features, switch to the [development branch](https://bitbucket.org/FFEA/ffea/src/superdev/) instead.
+* If you're compiling from source, install FFEA according to the instructions found in the [installation guide](\ref install), which includes the complete list of [software requirements](\ref prerequisites).
 * Once FFEA is installed, consult the [first-time user tutorial](\ref Tutorial). For KOBRA rods, try the [rods tutorial](\ref Tutorial) instead.
 
 Publications  {#publications}
