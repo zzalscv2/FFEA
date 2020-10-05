@@ -24,6 +24,16 @@ Features  {#features}
  * An extremely high degree of reproducity - check out our integration tests!
  * Distance restraints with harmonic potentials, such as springs.
 
+Getting Started  {#gettingstarted}
+===============
+
+FFEA is free to download and use under the GPLv3 software license. We provide binary releases, and building from source is relatively painless.
+
+* Download the most recent x86_64 [binary release](https://bitbucket.org/FFEA/ffea/downloads) of FFEA from BitBucket, or [compile from source](\ref configure) by cloning the repository. For the latest bleeding-edge features, switch to the [development branch](https://bitbucket.org/FFEA/ffea/src/superdev/) instead.
+* If you're compiling from source, install FFEA according to the instructions found in the [installation guide](\ref install). The complete list of [software requirements]() is included in the guide.
+* The full list of software requirements for FFEA can be found [here](\ref prerequisites).
+* Once FFEA is installed, consult the [first-time user tutorial](\ref Tutorial). For KOBRA rods, try the [rods tutorial](\ref Tutorial) instead.
+
 Publications  {#publications}
 ============
 
@@ -43,60 +53,6 @@ Publications  {#publications}
 * Hanson B., Richardson R., Oliver R., Read D. J., Harlen O. & Harris S. ["Modelling biomacromolecular assemblies with continuum mechanics"](https://www.ncbi.nlm.nih.gov/pubmed/25849915) (2015), Biochem. Soc. Trans. 43, 186-192.
 * Oliver R., Richardson R. A., Hanson B., Kendrick K., Read D. J., Harlen O. G. & Harris S. A. ["Modelling the Dynamic Architecture of Biomaterials Using Continuum Mechanics"](http://link.springer.com/chapter/10.1007%2F978-3-319-09976-7_8) (2014), Protein Modelling, G. Náray-Szabó, Editor. Springer International Publishing. p. 175-197.
        
-
-Getting Started  {#gettingstarted}
-===============
-
-FFEA is free to download and use under the GPLv3 software license. We provide binary releases, and building from source is relatively painless.
-
-* Download the most recent x86_64 [binary release](https://bitbucket.org/FFEA/ffea/downloads) of FFEA from BitBucket, or [compile from source](cloning the repository) by cloning the repository. For the latest bleeding-edge features, switch to the [development branch](https://bitbucket.org/FFEA/ffea/src/superdev/) instead.
-* If you're compiling from source, install FFEA according to the instructions found in the [installation guide](\ref install).
-* Once FFEA is installed, consult the [first-time user tutorial](\ref Tutorial). For KOBRA rods, try the [rods tutorial](\ref Tutorial) instead.
-
-       
-Technology  {#technology}
-============
- 
-   * [Boost](http://www.boost.org) (>=1.54.0) is used 
-     for ease of programming 
-     at the initialisation phase. Modules "system", "filesystem" and 
-     "program-options" are required. A bundle of version 1.63 is shipped with FFEA.
-   * [Eigen](http://eigen.tuxfamily.org) (>=3.2.1). FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. CMake will download and use Eigen 3.3.7 if not told otherwise.
-   * [RngStreams](http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/)<sup>[1](#RngStreams1)</sup><sup>,[2](#RngStreams2)</sup>
-        is shipped with FFEA and used as Random Number Generator (RNG). RngStreams 
-        allows the FFEA to **safely** generate random numbers when running 
-        on a number of threads, as well as safe restarts, recovering the state 
-        of the RNGs in the last saved time step.
-   * [Tet_a_tet](https://github.com/erich666/jgt-code/blob/master/Volume_07/Number_2/Ganovelli2002/tet_a_tet.h)<sup>[3](#tetatetpaper)</sup>
-        is shipped with FFEA and used to detect element overlapping 
-        in the steric repulsion module. 
-   * [Doxygen](http://www.doxygen.org) (>= 1.8) [OPTIONAL] 
-        is used to generate the documentation. 
-   * [PyMOL](https://www.pymol.org) (>=1.8, [though 1.8 is recommended](https://anaconda.org/mw/pymol)) [OPTIONAL] can 
-        be used, with the plugin we provide,
-        to visualise FFEA systems and trajectories
-        as well as molecular and EM systems.
-   * [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) (0.4) is shipped 
-        with FFEA and used in the PyMOL plugin, allowing safe threading. 
-   * [GTS](http://gts.sourceforge.net) (>=0.7.6) [OPTIONAL]. The
-     GNU Triangulated Surface Libraries
-     allowing the manipulation and coarsening of surface profiles.
-   * [NETGEN](https://sourceforge.net/projects/netgen-mesher/) 
-   or [TETGEN](http://wias-berlin.de/software/tetgen/) [OPTIONAL]. 
-     Programs which convert surface profile into volumetric meshes 
-        to be used by FFEA.
-   * [pyPcazip](https://pypi.python.org/pypi/pyPcazip)<sup>[4](#pyPCApaper)</sup>  [OPTIONAL]
-     Some of the Python FFEA analysis tools interact with the pyPcazip 
-     Principal Component Analysis libraries in order to generate standard
-     PCA output(eigensystems, projections, animations etc)
-     equivalent to those obtained from equivalent MD simulations.
-     See [here](https://bitbucket.org/ramonbsc/pypcazip/wiki/Home) for their wiki.
-
-<a name="RngStreams1">1</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators" (1999), Oper. Res., 47(1):159-164. <br> 
-<a name="RngStreams2">2</a>: P L'Ecuyer et al., "An Objected-Oriented Random-Number Package with Many Long Streams and Substreams" (2002), Oper. Res., 50(6):1073-1075. <br>
-<a name="tetatetpaper">3</a>:  F Ganovelli, et al., "Fast tetrahedron-tetrahedron overlap algorithm" (2002), J. Graph. Tools, 7(2):17-25. <br>
-<a name="pyPCApaper">4</a>:  A Shkurti, et al., "pyPcazip: A PCA-based toolkit for compression and analysis of molecular simulation data" (2016), SoftwareX, 7:44-50.
-
 
 Contribute
 ==========
