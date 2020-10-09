@@ -4,7 +4,7 @@ This document gives instructions on how to build and install the FFEA package,
  consisting of the FFEA runner and FFEA tools. Compiling FFEA from the source code is very 
  easy, and essentially consists of three commands: "cmake", "make", 
  and "make install". If you don't want to compile FFEA, then
- you can **download the latest x86_64 [binary release](https://bitbucket.org/FFEA/ffea/downloads/)** (you may require root access on your machine).
+ you can **download the latest x86_64 [binary release](https://bitbucket.org/FFEA/ffea/downloads/)**.
  Once FFEA has been installed, you can learn how to use it in the [tutorial](\ref Tutorial).
 
 
