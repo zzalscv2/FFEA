@@ -63,7 +63,7 @@ This document gives instructions on how to build and install the FFEA package,
    FFEA uses Eigen to calculate and solve linear approximations to the model i.e. Elastic / Dynamic Network Models. Eigen 3.3.7 will be downloaded by CMake, but this can be adjusted with a [flag](\ref cmakeflags).
 
 * [RngStreams](http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/)<sup>[2](#RngStreams1)</sup><sup>,[3](#RngStreams2)</sup>.
-        Allows the FFEA to safely generate random numbers when running 
+        Allows FFEA to safely generate random numbers when running 
         on a number of threads, as well as safe restarts, recovering the state 
         of the random number generators in the last saved time step. 
 
