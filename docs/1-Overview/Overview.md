@@ -6,10 +6,10 @@ This technique has the potential to model large, complex systems, made of many m
 
 # Features  {#features}
 
- * Protein-protein interactions.
- * A 6-12 Lennard-Jones potential.
- * A repulsive potential that is proportional to the overlapping volume.
- * Specific interactions defined using precomputed potentials. More documentation can be found [here](\ref fmApproach).
+ * Protein-protein interactions:
+     * A 6-12 Lennard-Jones potential.
+     * A repulsive potential that is proportional to the overlapping volume.
+     * Specific interactions defined using [precomputed potentials](\ref fmApproach).
  * Kinetic state changes can be simulated together with the continuum model to account for conformational changes and binding events.
  * Conversion tools for EM density data and atomistic structures into FFEA simulations.
  * A plugin for PyMOL, allowing the visualisation of FFEA systems and trajectories.
