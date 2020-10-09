@@ -8,9 +8,9 @@ This document gives instructions on how to build and install the FFEA package,
  Once FFEA has been installed, you can learn how to use it in the [tutorial](\ref Tutorial).
 
 
-## Prerequisites {#prerequisites}
+# Prerequisites {#prerequisites}
 
-### Essential
+## Essential
 
 * [C and C++ compilers](https://gcc.gnu.org/). There is some C++ code written using 
   the C++11 standard, and so CMake will ensure that you have a 
@@ -21,7 +21,7 @@ This document gives instructions on how to build and install the FFEA package,
 
 * [Python](https://www.python.org/) (2.7.X). Used to run the FFEA tools modules, in addition to unit and integration tests to verify that FFEA was correctly built. The [NumPy](http://www.numpy.org/), [SciPy](https://www.scipy.org/) and [Matplotlib](https://matplotlib.org/) libraries are required. **FFEA tools is currently incompatible with Python 3**, but an upgrade is in progress. 
 
-### Recommended
+## Recommended
 
 * [PyMOL](https://pymol.org/) (>=1.8, though [1.8 is recommended](https://anaconda.org/mw/pymol)).
   Used to visualise FFEA systems and trajectories, with the plugin we provide.
@@ -35,7 +35,7 @@ This document gives instructions on how to build and install the FFEA package,
 * [Doxygen](http://www.doxygen.org) (>= 1.8). Builds the FFEA documentation. Some mathematical formulae 
      will not render correctly if [LaTeX](https://www.tug.org/texlive/) is not found.
 
-### Optional
+## Optional
 
 * [MDanalysis](https://www.mdanalysis.org/) (>=0.18.0).
     Used during rod parameterisation. If you don't plan to use KOBRA rods, you can ignore this.
@@ -53,7 +53,7 @@ This document gives instructions on how to build and install the FFEA package,
 * [Meshlab](http://www.meshlab.net). An open soure 
      system for processing and editing 3D triangular meshes.
 
-### Included
+## Included
 
 * [Boost](http://www.boost.org) (>=1.54.0). Used for ease of programming 
      at the initialisation phase. Modules "system", "filesystem" and 
@@ -78,7 +78,7 @@ This document gives instructions on how to build and install the FFEA package,
 <a name="tetatetpaper">4</a>:  F Ganovelli, et al., "Fast tetrahedron-tetrahedron overlap algorithm" (2002), J. Graph. Tools, 7(2):17-25.
 
 
-## Configure {#configure}
+# Configure {#configure}
 
 FFEA uses CMake to find the compiler, dependencies and to configure files and Makefiles 
  automatically (a short introduction to CMake can be read [here](https://cmake.org/runningcmake)). 
@@ -104,7 +104,7 @@ where $HOME/softw/ffea can be replaced with an installation directory of your ch
  you can jump to [build](\ref build).
  
 
-## Build and Install {#build} 
+# Build and Install {#build} 
 
 After configuring you will be able to build FFEA typing:
 
@@ -148,7 +148,7 @@ and in order to install it, one would need to run PyMOL, and then click on
   to restart PyMOL to use the plugin.
 
 
-## Working environment {#workingEnvironment}
+# Working environment {#workingEnvironment}
 
 Executing ` ffea `, ` ffea_mb ` and ` ffeatools ` is probably what most users will wish, so 
  UNIX users may find convenient to add the install folder in the ` PATH `:
@@ -168,7 +168,7 @@ ffeatools provides a suite of command-line tools to initialise FFEA systems. FFE
 The FFEA API may then be used within python by running `import ffeatools`. Note: KOBRA/FFEA_rod requires this module. Information on how to use `ffeatools` can be found in the [FFEA analysis tutorial](\ref FFEAanalysistut) and the [KOBRA/rods tutorial](\ref rods).
 
  
-## Tests {#ctest}
+# Tests {#ctest}
 
 You may now want to check that the code was correctly compiled. 
  Do so running the provided suite of tests, either sequentially (using a single processor, 
@@ -181,7 +181,7 @@ or concurrently (multiple tests running independently on different processors):
      ctest -j <number-of-processes> 
  
   
-## CMake options {#cmakeflags}
+# CMake options {#cmakeflags}
 
 The following configuration flags are either fundamental to CMake or specific to FFEA:
 
