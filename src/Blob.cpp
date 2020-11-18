@@ -3372,6 +3372,7 @@ int Blob::load_ctforces(string ctforces_fname) {
         scalar Fx = F * ctf_d[0] / mesoDimensions::force;
         scalar Fy = F * ctf_d[1] / mesoDimensions::force;
         scalar Fz = F * ctf_d[2] / mesoDimensions::force;
+//	fprintf(stderr, "%e ", F);
         if (line_split[6].compare("all") != 0) {
             ctf_l_nodes[cnt] = boost::lexical_cast<int>(line_split[6]);
             ctf_l_forces[3*cnt   ]  = Fx;

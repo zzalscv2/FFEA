@@ -880,6 +880,8 @@ class FFEA_script_params():
 			astr += "\t<inc_self_vdw = %d>\n" % (self.inc_self_vdw)
 		if (self.calc_springs == 1):
 			astr += "\t<calc_springs = %d>\n" % (self.calc_springs)
+		if (self.calc_ctforces == 1):
+			astr += "\t<calc_ctforces = %d>\n" % (self.calc_ctforces)
 		if (self.calc_noise == 0):
 			astr += "\t<calc_noise = %d>\n" % (self.calc_noise)
 		if (self.calc_preComp == 1):
