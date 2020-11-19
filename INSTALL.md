@@ -70,7 +70,7 @@ This document gives instructions on how to build and install the FFEA package,
 * [Tet_a_tet](https://github.com/erich666/jgt-code/blob/master/Volume_07/Number_2/Ganovelli2002/tet_a_tet.h)<sup>[4](#tetatetpaper)</sup>. 
     Used to detect element overlapping in the steric repulsion module. 
 
-* [mtTkinter](http://tkinter.unpythonic.net/wiki/mtTkinter) (0.4). Used in the PyMOL plugin, allowing safe threading. 
+* [mtTkinter](https://github.com/RedFantom/mtTkinter/wiki) (0.4). Used in the PyMOL plugin, allowing safe threading. 
 
 <a name="pyPCApaper">1</a>:  A Shkurti, et al., "pyPcazip: A PCA-based toolkit for compression and analysis of molecular simulation data" (2016), SoftwareX, 7:44-50. <br> 
 <a name="RngStreams1">2</a>: P L'Ecuyer, "Good Parameter Sets for Combined Multiple Recursive Random Number Generators" (1999), Oper. Res., 47(1):159-164. <br> 
