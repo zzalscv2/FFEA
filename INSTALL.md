@@ -12,7 +12,7 @@ This document gives instructions on how to build and install the FFEA package,
 
 ## Essential
 
-* [C and C++ compilers](https://gcc.gnu.org/). There is some C++ code written using 
+* [C and C++ compilers](https://gcc.gnu.org/) (GCC >=6.3.0 or Intel >= 15). There is some C++ code written using 
   the C++11 standard, and so CMake will ensure that you have a 
   recent enough compiler. FFEA will compile with GCC 6.3.0 or Intel 15,
   but we suggest using an up to date compiler to get the best performance.
