@@ -12,7 +12,7 @@ This document gives instructions on how to build and install the FFEA package,
 
 ## Essential
 
-* [C and C++ compilers](https://gcc.gnu.org/) (GCC >=6.3.0 or Intel >= 15). There is some C++ code written using 
+* [C and C++ compilers](https://gcc.gnu.org/) (GCC >=6.3.0 or Intel >=15). There is some C++ code written using 
   the C++11 standard, and so CMake will ensure that you have a 
   recent enough compiler. FFEA will compile with GCC 6.3.0 or Intel 15,
   but we suggest using an up to date compiler to get the best performance.
@@ -32,7 +32,7 @@ This document gives instructions on how to build and install the FFEA package,
         to be used by FFEA. Essential if you want to generate meshes from
         experimental imaging data. **We suggest TETGEN!**
 
-* [Doxygen](http://www.doxygen.org) (>= 1.8). Builds the FFEA documentation. Some mathematical formulae 
+* [Doxygen](http://www.doxygen.org) (>=1.8). Builds the FFEA documentation. Some mathematical formulae 
      will not render correctly if [LaTeX](https://www.tug.org/texlive/) is not found.
 
 ## Optional
