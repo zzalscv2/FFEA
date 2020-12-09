@@ -45,7 +45,7 @@ if len(_sys.argv) == 1:
 def subprocess_cmd(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True) #dragons
     proc_stdout = process.communicate()[0].strip()
-    print proc_stdout
+    print(proc_stdout)
 
 subprocess_cmd('mkdir ffeatools_build')
 # there is a better way of compiling these, but doing so would disturb the all-inclusive build process
