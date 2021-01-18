@@ -24,10 +24,9 @@
 import numpy as np
 import sys
 
-def readAndAverage(iFile, ini, end, th):
+def readAndAverage(iFile, ini, end, th, Fields):
   H = []
   A = {}
-  Fields = th.keys()
   with open(iFile, 'r') as sta:
     while (sta.readline() != "Measurements:\n"):
       continue
@@ -43,37 +42,35 @@ def readAndAverage(iFile, ini, end, th):
 
   if (ini == 0): ini = 1
   for i in H:
-    if Fields.count(i[0]) == 0:
+    if i[0] not in Fields:
       continue
-    print i[0], abs(np.mean(i[ini:end])/th[i[0]] - 1), np.std(i[ini:end]), len(i[ini:end])
-    A[i[0]] = [abs(np.mean(i[ini:end])/th[i[0]] - 1), np.std(i[ini:end])]
+    print(i[0], abs(np.mean(i[ini:end])/th - 1), np.std(i[ini:end]), len(i[ini:end]))
+    A[i[0]] = [abs(np.mean(i[ini:end])/th - 1), np.std(i[ini:end])]
   return A
 
 nodes = 63
 KbT = 4.11e-21
-E = {"KineticEnergy":KbT*(3*nodes)/2, "StrainEnergy":KbT*(3*nodes - 6)/2}
-print "K_th: ", E["KineticEnergy"]
-print "E_th: ", E["StrainEnergy"]
-Tol = {"KineticEnergy": 0.04, "StrainEnergy":0.03}
+E = KbT*(3*nodes - 6)/2
+print("Equipartition th: ", E)
+Tol = {"StrainEnergy":0.03}
 ini = 40
 end = -1
 
-iFile = ["sphere_63_120_mass_measurement.out"]
-         
+iFile = ["sphere_63_120_nomass_measurement.out"]
 
 err = 0
 for f in iFile:
-  print f
-  A = readAndAverage(f, ini, end, E)
+  print(f)
+  A = readAndAverage(f, ini, end, E, Tol.keys())
   for s in Tol.keys():
-    print A[s]
-    if A[s][0] < Tol[s]: 
-      print s, ": correct ", A[s][0], " < ", Tol[s]
+    print(A[s])
+    if A[s][0] < Tol[s]:
+      print(s, ": correct ", A[s][0], " < ", Tol[s])
     else: 
-      print s, ": failed ", A[s][0], " > ", Tol[s]
+      print(s, ": failed ", A[s][0], " > ", Tol[s])
       err = 1
 
-  print "\n\n"
+  print("\n\n")
 
 
 sys.exit(err)
