@@ -72,8 +72,8 @@ r2theory = 3 * (script.params.kT / mass) * ((script.params.dt * script.params.ch
 err = 0
 tolerance = 0.1
 if np.fabs(r2mean - r2theory) / r2theory <= tolerance:
-	print "Inertial Diffusion", ": correct ", np.fabs(r2mean - r2theory) / r2theory , " < ", tolerance
+	print("Inertial Diffusion", ": correct ", np.fabs(r2mean - r2theory) / r2theory , " < ", tolerance)
 else:
-	print "Inertial Diffusion", ": failed ", np.fabs(r2mean - r2theory) / r2theory , " > ", tolerance
+	print("Inertial Diffusion", ": failed ", np.fabs(r2mean - r2theory) / r2theory , " > ", tolerance)
 	err = 1
 sys.exit(err)

@@ -45,6 +45,6 @@ try:
 except IOError:
     print("Couldn't find trajectroy file that's supposed to be packed in with these tests. Probably a CMake issue!")
     sys.exit(1)
-except Exception, e:
+except Exception as e:
     print(e)
     sys.exit(1)

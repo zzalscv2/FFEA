@@ -5,6 +5,8 @@ Created on Tue Mar 13 05:23:33 2018
 
 @author: rob
 """
+
+import sys
 try:
     import wrap
     import FFEA_script
@@ -36,11 +38,12 @@ def main():
     stretch_test_result = stretch_analysis.do_stretch_symmetry_test()
     
     if bend_test_result == False or stretch_test_result == False:
-        raise SystemExit, 1
+        return 1
 
-    raise SystemExit, 0
+    return 0
 
 
 
 if __name__ == "__main__":
-    main()
+    error_status = main()
+    sys.exit(error_status)

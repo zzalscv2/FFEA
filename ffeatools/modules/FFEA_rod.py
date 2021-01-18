@@ -156,7 +156,7 @@ class FFEA_rod:
             rod_file.readline()
         line = rod_file.readline()
         rod_file.close()
-        return len(line.split(","))/self.num_elements
+        return int(len(line.split(","))/self.num_elements)	# What if this isn't an integer? Potential bug here
 
         
     def get_trajectory_length(self):

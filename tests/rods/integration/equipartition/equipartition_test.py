@@ -7,6 +7,7 @@ Created on Tue Mar 13 05:23:33 2018
 """
 
 # allow old-style pythonpath or new module imports
+import sys
 try:
     import wrap
     import FFEA_script
@@ -168,9 +169,9 @@ def main():
     plot_x_histograms([stretchy_analysis, twisty_analysis, bendy_analysis], bin_no=100, bin_range=None)
     
     if twist_equal and bend_equal and stretch_equal:
-        raise SystemExit, 0
+        sys.exit(0)
     else:
-        raise SystemExit, 1
+        sys.exit(1)
 
 #if __name__ == "__main__":
 #    main()
