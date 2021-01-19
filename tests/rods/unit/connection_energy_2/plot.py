@@ -36,10 +36,10 @@ def plot_one(plusdict, minusdict, node_index, axis, filename):
     x = []
     y = []
     minuskeys = minusdict.keys()
-    minuskeys = reversed(minuskeys)
+    minuskeys = reversed(list(minuskeys))
     minusvalues = minusdict.values()
 #    minusvalues.reverse()
-    minusvalues = reversed(minusvalues)
+    minusvalues = reversed(list(minusvalues))
     for key in minuskeys:
         x.append(key*-1)
     for key in plusdict.keys():
